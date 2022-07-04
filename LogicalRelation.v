@@ -93,6 +93,13 @@ Record LogRelKit@{i j | i<j } := Kit {
   LREqTeRel : forall (Γ : context) (t u A : term), LRTyRel Γ A -> Type@{i}
 }.
 
+
+(*Ideas:
+  - add useless parameters to fill in monomorphic assumptions
+  hacky + bloating
+  - hope coq gets friendlier 
+  - index LR by l and rec ?
+  - ?????????*)
 Module Type Param.
 
   Parameter l : TypeLevel.
@@ -193,6 +200,8 @@ Import P.
   Notation "[ Γ ||-0 t ≅ u ::: A | R ]" := (TeEqRelO Γ t u A R) (at level 0).
 
   (*Type (n+4)*)
+
+  (*Introduces monomophic assumptions that breaks module types*)
   Record TyPiRel1@{u0 u2 e3 i3 eq0 ast94 ba0 snoc def |
     u0 < u2,
     e3 <= u0, e3 <= u2, i3 <= eq0,
@@ -219,7 +228,7 @@ Import P.
           TeEqRelO@{u0 u2} Δ a b F (_F h) ->
           TyEqRelO@{u0 u2} Δ (G{ 0 := a}) (G{0 := b}) (_G h ha);
   }.
-  Print TyPiRel1.
+  Print LRPack.
   Notation "[ Γ ||-1Π A | R ]" := (TyPiRel1 Γ A R) (at level 0).
 
   Arguments  G {_} {_} {_} _.
