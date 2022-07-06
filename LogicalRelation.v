@@ -93,7 +93,6 @@ Record LogRelKit@{i j | i<j } := Kit {
   LREqTeRel : forall (Γ : context) (t u A : term), LRTyRel Γ A -> Type@{i}
 }.
 
-
 (*Ideas:
   - add useless parameters to fill in monomorphic assumptions
   hacky + bloating
@@ -103,7 +102,7 @@ Record LogRelKit@{i j | i<j } := Kit {
 (*Module Type Param.
 
   Parameter l : TypeLevel.
-  Parameter rec@{u u0 u1 u2 e3 i3 eq0 ast94 ba0 snoc def
+  Parameter rec@{u u0 u1 u1 e3 i3 eq0 ast94 ba0 snoc def
   | u < u0, u1 < u , u0 < u2,
     e3 <= u0, e3 <= u2, i3 <= eq0,
     i3 <= ast94, i3 <= u0, i3 <= u2,
@@ -155,7 +154,7 @@ Notation "[ R | Γ ||-1U t :::U| l ]" := (UTerm R Γ t l) (at level 0).
 
 (*Universe term equality*)
 Record UTeEq {l l'} (rec : forall {l'} ,l' << l -> LogRelKit)
-(Γ : context) (t u : term) (l_ : l' << l) := {
+(Γ : context) (t u : term) (l_ : l' << l) := UTeEqMk {
     A'      : term;
     B'      : term;
     d_      : [ Γ |- t :⇒*: A' ::: U ];
@@ -167,7 +166,6 @@ Record UTeEq {l l'} (rec : forall {l'} ,l' << l -> LogRelKit)
     relu    : [ rec l_ | Γ ||- u ];
     reltequ : [ rec l_ | Γ ||- t ≅ u | relt ]
 }.
-
 Notation "[ R | Γ ||-1U t ≅ u :::U| l ]" := (UTeEq R Γ t u l) (at level 0).
 
 Definition RedRel@{i j} 
@@ -189,12 +187,12 @@ Record LRPack@{i j | i < j} (Γ : context) (A : term) (R : RedRel@{i j}) := LRPa
 Notation "[ Γ ||-0 A | R ]" := (LRPack Γ A R) (at level 0).
 
 Definition TyEqRelO@{i j} {R : RedRel@{i j}} (Γ : context) (A B : term) (L : LRPack@{i j} Γ A R ) : Type@{i} :=
-    relEq _ _ _ L A.
+    relEq _ _ _ L B.
 
 Notation "[ Γ ||-0 A ≅ B | R ]" := (TyEqRelO Γ A B R) (at level 0).
 
 Definition TeRelO@{i j} {R : RedRel@{i j}} (Γ : context) (t A : term) (L : LRPack@{i j} Γ A R ) : Type@{i} :=
-    relTerm _ _ _ L A.
+    relTerm _ _ _ L t.
 
 Notation "[ Γ ||-0 t ::: A | R ]" := (TeRelO Γ t A R) (at level 0).
 
@@ -282,7 +280,6 @@ Record TePiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (t u A : term)
 
 Notation "[ Γ ||-1Π t ≅ u ::: A | H ]" := (TePiEqRel1 Γ t u A H) (at level 0).
 
-#[bypass_check(positivity)]
 (*Inductive LR@{u u0 u1 u2 e3 i3 eq0 ast94 ba0 snoc def} : RedRel@{u0 u2} :=
   |LRU : forall (Γ : context) (_ : wfContext Γ) (l' : TypeLevel)
           (l_ : TypeLevelLe l' l),
@@ -312,9 +309,9 @@ Notation "[ Γ ||-1Π t ≅ u ::: A | H ]" := (TePiEqRel1 Γ t u A H) (at level 
             (fun t : term => LRTeRel (@rec@{u u0 u1 u2 e3 i3 eq0 ast94 ba0 snoc def} l' l_) Γ t A H)
             (fun t u : term =>
              LREqTeRel (@rec@{u u0 u1 u2 e3 i3 eq0 ast94 ba0 snoc def} l' l_) Γ t u A H).*)
-Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit) 
-  : RedRel := 
-
+#[bypass_check(positivity)]
+Inductive LR@{u u0 u1} {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit@{u u0}) 
+  : RedRel@{u0 u1} := 
   | LRU {Γ} (h : [ |- Γ]) (l' : TypeLevel) (l_ : l' << l) :
       LR rec Γ U 
       (fun B   => [ Γ ||-1U≅ B ])
@@ -330,20 +327,22 @@ Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
       (fun B   => [ Γ ||-1Π A ≅ B       | H ])
       (fun t   => [ Γ ||-1Π t     ::: A | H ]) 
       (fun t u => [ Γ ||-1Π t ≅ u ::: A | H ]) 
-  | LRemn {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
+  | LRemb {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
       LR rec Γ A
       (fun B   => [ rec _ l_ | Γ ||- A ≅ B       | H ])
       (fun t   => [ rec _ l_ | Γ ||- t     ::: A | H ]) 
       (fun t u => [ rec _ l_ | Γ ||- t ≅ u ::: A | H ])
       .
-Scheme LR_rec := Induction for LR  Sort Type.
+
+(*get a good induction principle*)
+Scheme LR_rect := Induction for LR Sort Type.
 
 Definition Rel1Ty 
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
   [ Γ ||-0 A | LR R ].
 
-Notation "[ R | Γ ||-1 A ]" := (Rel1Ty Γ A R) (at level 0). 
+Notation "[ R | Γ ||-1 A ]" := (Rel1Ty R Γ A) (at level 0). 
 
 Definition Rel1TyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (A B : term) (H : Rel1Ty R Γ A) :=
@@ -369,20 +368,32 @@ Definition rec0 (l' : TypeLevel) (h : l' << zero) : LogRelKit :=
 
 Definition LR0 := LR rec0.
 
-Definition kit1 := 
-  Kit
-  (URel rec0)
-  (fun Γ A => TyPiRel1 Γ A LR0) 
-  (Rel1Ty rec0)
-  Rel1TyEq
-  Rel1Te
-  Rel1TeEq.
-    
-Definition LogRelRec (l l' : TypeLevel) (h : l' << l) : LogRelKit.
-  destruct l.
-  exact (rec0 l' h).
-  exact kit1.
-Defined.
+(*Definition kit1@{u u0 u1} := 
+  Kit@{u1 u}
+  (URel@{u0 u1} rec0@{u0 u1})
+  (fun Γ A => TyPiRel1@{u1 u} Γ A LR0@{u1 u u0}) 
+  (Rel1Ty@{u1 u u0} rec0@{u0 u1})
+  Rel1TyEq@{u0 u1 u}
+  Rel1Te@{u0 u1 u}
+  Rel1TeEq@{u0 u1 u}.
+*)
+
+Definition kit1@{u u0 u1} := 
+  Kit@{u1 u}
+  (URel@{u0 u1} rec0@{u0 u1})
+  (fun Γ A => TyPiRel1@{u1 u} Γ A LR0@{u0 u1 u}) 
+  (Rel1Ty@{u1 u u0} rec0@{u0 u1})
+  Rel1TyEq@{u0 u1 u}
+  Rel1Te@{u0 u1 u}
+  Rel1TeEq@{u0 u1 u}.
+
+
+
+Definition LogRelRec (l l' : TypeLevel) (h : l' << l) : LogRelKit :=
+  match l with
+    | zero => fun h0 => rec0 l' h0
+    | one => fun _  => kit1
+end h.
 
 Definition rec1 :=
   LogRelRec one .
@@ -395,14 +406,17 @@ Definition LRL (l : TypeLevel) :=
     | one => LR1
   end.
 
-Definition kit (l : TypeLevel) : LogRelKit :=
-  let rec := 
-    match l with
-      | zero => rec0
-      | one  => rec1 
-    end
-  in Kit (URel rec) (fun Γ A => [ Γ ||-1Π A | LRL l ]) 
-  (Rel1Ty rec) Rel1TyEq Rel1Te Rel1TeEq.
+  (*TODO minimiser univers*)
+Definition kit@{u u0 u1 u2 u3 u4 u5 u6 u7 u8}
+ (l : TypeLevel)  :=
+  let rec := LogRelRec@{u8 u6 u} l in 
+  Kit@{u6 u0} 
+    (URel@{u8 u6} rec) 
+    (fun Γ A => [ Γ ||-1Π A | LRL@{u3 u1 u2 u4 u5} l ]) 
+    (Rel1Ty@{u6 u7 u8} rec) 
+    Rel1TyEq@{u8 u6 u7}
+    Rel1Te@{u8 u6 u7}
+    Rel1TeEq@{u8 u6 u7}.
 
 Record Ur (Γ : context) (l : TypeLevel) : Type := {
   l'' : TypeLevel;
@@ -414,6 +428,7 @@ Definition PiUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
   [ kit l | Γ ||-Π A].
 Definition TyUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
   [ kit l | Γ ||- A].
+
 Definition TyEqUr (Γ : context) (l : TypeLevel) (A B: term) (H : TyUr Γ l A): Type :=
   [ kit l | Γ ||- A ≅ B | H].
 Definition TeUr (Γ : context) (l : TypeLevel) (t A : term) (H : TyUr Γ l A) : Type :=
@@ -426,4 +441,4 @@ Notation "[ Γ ||-< l |Π A ]" := (PiUr Γ l A) (at level 0).
 Notation "[ Γ ||-< l | A ]" := (TyUr Γ l A) (at level 0).
 Notation "[ Γ ||-< l | A ≅ B | H ]" := (TyEqUr Γ l A B H) (at level 0).
 Notation "[ Γ ||-< l | t ::: A | H ]" := (TeUr Γ l t A H) (at level 0).
-Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TyEqUr Γ l t u A H) (at level 0).
+Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TeEqUr Γ l t u A H) (at level 0).

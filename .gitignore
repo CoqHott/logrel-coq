@@ -1,7 +1,8 @@
-.vos
-.vok
-.vo
-.aux
-.glob
-.aux
-.v#
+*.vos
+*.vok
+*.vo
+*.aux
+*.glob
+*.aux
+*.v#
+.vscode
