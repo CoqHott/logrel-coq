@@ -184,25 +184,30 @@ Record LRPack@{i j | i < j} (Γ : context) (A : term) (R : RedRel@{i j}) := LRPa
     relEqTerm :  term -> term -> Type@{i};
     relLR : R Γ A relEq relTerm relEqTerm
 }.
+
+Arguments relEq {_} {_} {_}.
+Arguments relTerm {_} {_} {_}.
+Arguments relEqTerm {_} {_} {_}.
+Arguments relLR {_} {_} {_}.
+ 
 Notation "[ Γ ||-0 A | R ]" := (LRPack Γ A R) (at level 0).
 
 Definition TyEqRelO@{i j} {R : RedRel@{i j}} (Γ : context) (A B : term) (L : LRPack@{i j} Γ A R ) : Type@{i} :=
-    relEq _ _ _ L B.
+    relEq L B.
 
 Notation "[ Γ ||-0 A ≅ B | R ]" := (TyEqRelO Γ A B R) (at level 0).
 
 Definition TeRelO@{i j} {R : RedRel@{i j}} (Γ : context) (t A : term) (L : LRPack@{i j} Γ A R ) : Type@{i} :=
-    relTerm _ _ _ L t.
+    relTerm L t.
 
 Notation "[ Γ ||-0 t ::: A | R ]" := (TeRelO Γ t A R) (at level 0).
 
 Definition TeEqRelO@{i j} {R : RedRel@{ i j}} (Γ : context) (t u A : term) (L : LRPack@{i j} Γ A R) : Type@{i} :=
-    relEqTerm _ _ _ L t u.
+    relEqTerm L t u.
 
 Notation "[ Γ ||-0 t ≅ u ::: A | R ]" := (TeEqRelO Γ t u A R) (at level 0).
 
 (*Type (n+4)*)
-(*Introduces monomophic assumptions that breaks module types*)
 Record TyPiRel1@{u0 u1}
   (Γ : context) (A : term) (R : RedRel@{u0 u1}) := {
     F : term;
@@ -225,6 +230,8 @@ Record TyPiRel1@{u0 u1}
 
 Notation "[ Γ ||-1Π A | R ]" := (TyPiRel1 Γ A R) (at level 0).
 
+Arguments  conF {_} {_} {_} _.
+Arguments  conG {_} {_} {_} _.
 Arguments  G {_} {_} {_} _.
 Arguments  F {_} {_} {_} _.
 Arguments _F {_} {_} {_} _ {_}.
@@ -334,8 +341,10 @@ Inductive LR@{u u0 u1} {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit@{u
       (fun t u => [ rec _ l_ | Γ ||- t ≅ u ::: A | H ])
       .
 
-(*get a good induction principle*)
-Scheme LR_rect := Induction for LR Sort Type.
+
+
+
+
 
 Definition Rel1Ty 
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
