@@ -5,17 +5,6 @@ From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
 From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
 From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
 
-
-Import MCMonadNotation.
-
-(* TODO: remove this export *)
-From MetaCoq Require Export LibHypsNaming.
-
-Require Import ssreflect.
-Require Import Equations.Type.Relation.
-From Equations Require Import Equations.
-Set Equations With UIP.
-
 Implicit Types (cf : checker_flags) (Σ : global_env_ext).
 
 Reserved Notation "[   |- Γ ]" (at level 0).
@@ -27,7 +16,6 @@ Reserved Notation "[ Γ |- t ⇒ u ::: A ]" (at level 0).
 Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0).
 Reserved Notation "[ Γ |- t ⇒* t' ::: A ]" (at level 0).
 Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0).
-Print tProd.
 
 Definition U := tSort Universe.type0.
 
@@ -164,7 +152,7 @@ Inductive termRed (Γ : context) : term -> term -> term -> Type :=
         [ Γ |- A ] -> 
         [ Γ ,, vass na A |- t ::: B ] ->
         [ Γ |- a ::: A ] ->
-        [ Γ |- tApp (tLambda na A t) a ⇒ t ::: B{0 := a} ]
+        [ Γ |- tApp (tLambda na A t) a ⇒ t{0 := a} ::: B{0 := a} ]
 
 where "[ Γ |- t ⇒ u ::: A ]" := (termRed Γ t u A).
     
