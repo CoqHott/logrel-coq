@@ -73,38 +73,17 @@ Fixpoint reflEqTerm {l} {Γ} {A t} (H : [ Γ ||-< l | A ] ) :
       destruct X; cbn in *.
 
       eapply neTeEq.
-      * assert [Γ |- A ≅ K].
-        destruct D.
-        exact (RedConvTyC D).
+      * gen_conv.
         destruct d.
-        gen_conv. eassumption.
-        
-        constructor.
-        eapply wfTermConv. eassumption.
-        apply TypeSym. assumption.
-        eapply wfTermConv. eassumption.
-        apply TypeSym. assumption.
-        eapply ClosureConv. eassumption.
-        exact (TypeSym X).
-      * assert [Γ |- A ≅ K].
-        destruct D.
-        exact (RedConvTy_ D).
-
-        destruct d.
-        constructor.
-        eapply wfTermConv. eassumption.
-        apply TypeSym. assumption.
-        eapply wfTermConv. eassumption.
-        apply TypeSym. assumption.
-        eapply ClosureConv. eassumption.
-        exact (TypeSym X).
+        gen_conv. eassumption. 
+      * gen_conv. eassumption.
       * destruct nf.
         constructor; try assumption.
         apply TermRefl.
         eapply wfTermConv.
         eassumption.
         destruct D.      
-        exact (TypeSym (RedConvTy_ D)).
+        exact (TypeSym (RedConvTyC D)).
     + inversion X.
       econstructor;
       try eassumption.
