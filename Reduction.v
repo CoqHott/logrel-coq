@@ -60,7 +60,7 @@ Definition ClosureConv {Γ} {t u A B} :
     exact (IHX X0).
 Defined.
 
-Definition RedWFConv {Γ} {t u A B} :
+Definition TermRedWFConv {Γ} {t u A B} :
     [Γ |- t :⇒*: u ::: A] ->
     [Γ |- A ≅ B] ->
     [Γ |- t :⇒*: u ::: B].
@@ -71,16 +71,52 @@ Definition RedWFConv {Γ} {t u A B} :
     exact (ClosureConv C X0).
 Defined.
 
-Ltac gen_conv goal :=
+Definition TypeRedWFConv {Γ} {A B} :
+    [Γ |- A :⇒*: B] ->
+    [Γ |- A ≅ B]. 
+    intro.
+    destruct X.
+    exact (RedConvTyC D).
+Defined.
+
+Ltac skip :=
     match goal with
-        | H : [ _ |- _ ⇒ _] |- _ => pose proof (RedConvTe H)
-        | H : [ _ |- _ ⇒* _] |- _ => pose proof (RedConvTeC H)
-        | H : [ _ |- _ ⇒ _ ::: _] |- _ => pose proof (RedConvTy H)
-        | H : [ _ |- _ ⇒* _ ::: _] |- _ => pose proof (RedConvTy H)
-        | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (ClosureConv H1 H2)
-        | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (RedWFConv H1 H2)
-        | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- _ ≅ ?A] |- _ => pose proof (ClosureConv H1 (TypeSym H2))
-        | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [ _ |- _ ≅ ?A ] |- _ => pose proof (RedWFConv H1 (TypeSym H2))     
+        | |- _ => try intro
+    end.
+
+Ltac gen_conv :=
+    match goal with
+    | H : [ ?Γ |- ?A ⇒ ?B ] , _ : [ ?Γ |- ?A ≅ ?B]|- _ => skip
+    | H : [ _ |- _ ⇒ _] |- _ => pose proof (RedConvTe H)
+    | |- _ => skip
+    end;match goal with
+    | H : [ ?Γ |- ?A ⇒* ?B ] , _ : [ ?Γ |- ?A ≅ ?B]|- _ => skip
+    | H : [ _ |- _ ⇒* _] |- _ => pose proof (RedConvTeC H)
+    | |- _ => skip
+    end;match goal with
+    | H : [ ?Γ |- ?t ⇒ ?u ::: ?A ] , _ : [ ?Γ |- ?t ≅ ?u ::: ?A]|- _ => skip
+    | H : [ _ |- _ ⇒ _ ::: _] |- _ => pose proof (RedConvTy H)
+    | |- _ => skip
+    end;match goal with
+    | H : [ ?Γ |- ?t ⇒* ?u ::: ?A ] , _ : [ ?Γ |- ?t ≅ ?u ::: ?A]|- _ => skip
+    | H : [ _ |- _ ⇒* _ ::: _] |- _ => pose proof (RedConvTy H)
+    | |- _ => skip
+    end;match goal with
+    | H : [ ?Γ |- ?A :⇒*: ?B ] , _ : [ ?Γ |- ?A ≅ ?B]|- _ => skip
+    | H : [ _ |- _ :⇒*: _ ] |- _ => pose proof (TypeRedWFConv H)
+    | |- _ => skip
+    end;match goal with
+    | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (ClosureConv H1 H2)
+    | |- _ => skip
+    end;match goal with
+    | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (TermRedWFConv H1 H2)
+    | |- _ => skip
+    end;match goal with
+    | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- _ ≅ ?A] |- _ => pose proof (ClosureConv H1 (TypeSym H2))
+    | |- _ => skip
+    end;match goal with
+    | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [ _ |- _ ≅ ?A ] |- _ => pose proof (TermRedWFConv H1 (TypeSym H2))  
+    | |- _ => skip   
     end.
 
     
