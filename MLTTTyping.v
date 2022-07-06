@@ -33,7 +33,10 @@ Inductive wfType  : context -> term -> Type :=
 
 with wfContext : context -> Type :=
     | connil : wfContext []
-    | concons {na} {Γ} {A} : [ Γ |- A ] -> [ |-  Γ ,, vass na A]
+    | concons {na} {Γ} {A} : 
+        [ |- Γ ] -> 
+        [ Γ |- A ] -> 
+        [ |-  Γ ,, vass na A]
 
 with wfTerm : context -> term -> term -> Type :=
     | wfVar {Γ} {n decl} :
