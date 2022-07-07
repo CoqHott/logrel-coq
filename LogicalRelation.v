@@ -280,9 +280,9 @@ Record TePiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (t u A : term)
     gFun' : isFun g';
     fEqg {na}: [ Γ |- f' ≅ g' ::: tProd na H.(F) H.(G) ];
     tRel : [ Γ ||-1Π t ::: A | H ];
-    appEqfg {Δ a b} (h : [ |- Δ ]) 
+    appEqfg {Δ a} (h : [ |- Δ ]) 
       (ha : [Δ ||-0 a ::: H.(F) | H.(_F) h ])
-      : [Δ ||-0 tApp f' a ≅ tApp g' b ::: H.(G){0 := a} | H.(_G) h ha ]
+      : [Δ ||-0 tApp f' a ≅ tApp g' a ::: H.(G){0 := a} | H.(_G) h ha ]
 }.
 
 Notation "[ Γ ||-1Π t ≅ u ::: A | H ]" := (TePiEqRel1 Γ t u A H) (at level 0).
@@ -334,17 +334,15 @@ Inductive LR@{u u0 u1} {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit@{u
       (fun B   => [ Γ ||-1Π A ≅ B       | H ])
       (fun t   => [ Γ ||-1Π t     ::: A | H ]) 
       (fun t u => [ Γ ||-1Π t ≅ u ::: A | H ]) 
+                                  (*TODO fix universe constraints related to H
+                                    H has a higher universe than base LR for some 
+                                    reason, making it hard to recurse over it*)
   | LRemb {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
       LR rec Γ A
       (fun B   => [ rec _ l_ | Γ ||- A ≅ B       | H ])
       (fun t   => [ rec _ l_ | Γ ||- t     ::: A | H ]) 
       (fun t u => [ rec _ l_ | Γ ||- t ≅ u ::: A | H ])
       .
-
-
-
-
-
 
 Definition Rel1Ty 
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
