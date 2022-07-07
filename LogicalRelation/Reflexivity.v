@@ -1,6 +1,8 @@
-Require Import MLTTTyping LogicalRelation Reduction.
+Require Import MLTTTyping LogicalRelation Reduction LRInduction.
 
 Set Universe Polymorphism.
+Check LR_rect.
+
 Axiom todo : forall {A}, A.
 
 Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A | H].
@@ -9,20 +11,14 @@ Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A |
     destruct H.
     cbn.
     induction relLR.
-    + apply URelEqMk.
+    + constructor.
       reflexivity.
     + destruct neA.
-      eapply nee.
+      econstructor; try eassumption.
       destruct D.
-      eapply mkTypeRedWF;
-      try eassumption.
-      apply typeRedId.
-      assumption.
-      exact neK.
-      cbn.
-      apply TypeRefl.
-      destruct D.
-      assumption.
+      constructor; try eassumption.
+      constructor. assumption.
+      exact (TypeRefl (wfB _ _ _ D)).
     + induction H.
       eapply TyPiEqRel1Mk.      
       intro.
@@ -39,16 +35,12 @@ Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A |
       exact (conG _).
       intros.
       cbn.
-      apply (reflEq l).
-      cbn.
-      intros.
-      apply (reflEq l).
+      apply X. assumption.
     + inversion l_.
       subst.
-      cbn in *.
-      unfold Rel1TyEq.
-      exact todo.
-      (*eapply reflEq.*)
+      cbn in reflEq.
+      (*exact (reflEq _ _ _ H).*)
+      admit.
 Admitted.
 
 
@@ -56,22 +48,20 @@ Admitted.
 Fixpoint reflEqTerm {l} {Γ} {A t} (H : [ Γ ||-< l | A ] ) : 
     [ Γ ||-< l | t ::: A | H ] ->
     [ Γ ||-< l | t ≅ t ::: A | H ].
+Proof.
     intro.
     destruct H.
     cbn in X.
-    destruct l;
-    destruct relLR.
+    induction relLR.
     all : cbn in *.
-    + destruct X.      
-      eapply UTeEqMk ; try eassumption;
-      destruct dd.
-      eapply TermRefl.
-      assumption.
-      cbn in *.
-      admit.
+    + destruct X.
+      econstructor;
+      try eassumption.
+      exact (TermRefl (wfu _ _ _ _ dd)).
+      (*eapply reflEq.*)
+      exact todo.
     + destruct neA;
       destruct X; cbn in *.
-
       eapply neTeEq.
       * gen_conv.
         destruct d.
@@ -84,15 +74,18 @@ Fixpoint reflEqTerm {l} {Γ} {A t} (H : [ Γ ||-< l | A ] ) :
         eassumption.
         destruct D.      
         exact (TypeSym (RedConvTyC D)).
-    + inversion X.
+    + destruct X.
       econstructor;
       try eassumption.
+      econstructor; try eassumption.      
       intros.
-      eapply appf.
-
-    + admit.
-    +
-
+      eapply appEq.
+      assumption.
+      exact (reflEqTerm _ _ _ _ _ ha).
+    + exact todo. 
+      (*exact (reflEqTerm _ _ _ _ _ X).*)
+    Unshelve. assumption.
+Defined.
   
 
       
