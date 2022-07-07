@@ -2,11 +2,28 @@ Require Import MLTTTyping LogicalRelation Reduction LRInduction.
 
 Set Universe Polymorphism.
 Check LR_rect.
-
+Require Import Arith.
+From Equations Require Import Equations.
 Axiom todo : forall {A}, A.
+Derive NoConfusion Subterm for LR.
 
-Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A | H].
-    cbn in H.
+
+
+Equations reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A | H] :=
+  reflEq (LRPackMk _ _ _ (LRU _ c a b)) := 
+    URelEqMk _ _  eq_refl;
+  reflEq (LRPackMk _ _ _ (LRne _ (ne _ _ a b c d))) :=
+    nee _ _ A (ne _ _ a b c d) a b c d;
+  reflEq (LRPackMk _ _ _ (LRemb _ l_ h)) :=
+    reflEq h; 
+  reflEq (LRPackMk _ _ _ (LRPi _ (TyPiRelMk _ _ a b c d e f g h i)))
+    (*Πᵣ′ F G [ ⊢A , ⊢B , D ] ⊢F ⊢G A≡A [F] [G] G-ext*) :=
+    TyPiEqRel1Mk _ _ D f
+       (fun h => reflEq (g h))
+       (fun h2 ha => reflEq (h h2 ha));
+  reflEq _ := todo.
+
+    (*cbn in H.
     unfold Rel1Ty in H.
     destruct H.
     cbn.
@@ -41,13 +58,14 @@ Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A |
       cbn in reflEq.
       (*exact (reflEq _ _ _ H).*)
       admit.
-Admitted.
+Admitted.*)
 
 
 
 Fixpoint reflEqTerm {l} {Γ} {A t} (H : [ Γ ||-< l | A ] ) : 
     [ Γ ||-< l | t ::: A | H ] ->
     [ Γ ||-< l | t ≅ t ::: A | H ].
+    
 Proof.
     intro.
     destruct H.
