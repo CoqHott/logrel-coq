@@ -16,17 +16,28 @@ Set Printing Universes.
 Record neType (Γ : context) (A : term) : Type := ne {
     K  : term;
     D  : [ Γ |- A :⇒*: K];
-    neK : neutral Γ K
+    neK : neutral Γ K;
+    KK : [ Γ |- K ≅ K ]
 }.
+
+Arguments K {_ _}.
+Arguments D {_ _}.
+Arguments neK {_ _}.
+Arguments KK {_ _}.
 
 Notation "[ Γ ||-ne A ]" := (neType Γ A)  (at level 0).
 
 Record neTypeEq (Γ : context) (A B : term) (C : [ Γ ||-ne A ]) : Type := nee {
     M   : term;
-    D'  : [ Γ |- B :⇒*: A];
+    D'  : [ Γ |- B :⇒*: M];
     neM : neutral Γ M;
-    KM  : [ Γ |- K _ _ C ≅ M]
+    KM  : [ Γ |- K C ≅ M]
 }.
+
+Arguments M {_ _ _ _}.
+Arguments D' {_ _ _ _}.
+Arguments neM {_ _ _ _}.
+Arguments KM {_ _ _ _}.
 
 Notation "[ Γ ||-ne A ≅ B | C ]" := (neTypeEq Γ A B C) (at level 0).
 
@@ -35,13 +46,20 @@ Record neTermNF (Γ : context) (k A : term) : Type := neTeNF {
     tkTy  : [ Γ |- k ::: A];
 }.
 
+Arguments neknf {_ _ _}.
+Arguments tkTy {_ _ _}.
+
 Notation "[ Γ ||-neNf t ::: A ]" := (neTermNF Γ t A) (at level 0).
 
 Record neTerm (Γ : context) (t A : term) (C : [ Γ ||-ne A ]) : Type := neTe {
     k  : term;
-    d  : [ Γ |- t :⇒*: k ::: K _ _ C];
-    nf : [ Γ ||-neNf k ::: K _ _ C]
+    d  : [ Γ |- t :⇒*: k ::: K C];
+    nf : [ Γ ||-neNf k ::: K C]
 }.
+
+Arguments k {_ _ _ _}.
+Arguments d {_ _ _ _}.
+Arguments nf {_ _ _ _}.
 
 Notation "[ Γ ||-ne t ::: A | B ]" := (neTerm Γ t A B) (at level 0).
 
@@ -50,6 +68,10 @@ Record neTermEqNF (Γ : context) (k m A : term): Type := neTeEqNF {
     nekmeq : neutral Γ m;
     kEqm   : [ Γ |- k ≅ m ::: A]
 }.
+
+Arguments nekeq {_ _ _ _}.
+Arguments nekmeq {_ _ _ _}.
+Arguments kEqm {_ _ _ _}.
 
 Notation "[ Γ ||-neNf t ≅ u ::: A ]" := (neTermEqNF Γ t u A) (at level 0).
 
@@ -61,6 +83,12 @@ Record neTermEq (Γ : context) (t u A : term) (C : [ Γ ||-ne A ]) : Type := neT
     d''    : [ Γ |- u :⇒*: m' ::: A ];
     kNFEqm : [ Γ ||-neNf k' ≅ m' ::: A ]
 }.
+
+Arguments k' {_ _ _ _ _}.
+Arguments m' {_ _ _ _ _}.
+Arguments d' {_ _ _ _ _}.
+Arguments d'' {_ _ _ _ _}.
+Arguments kNFEqm {_ _ _ _ _}.
 
 Notation "[ Γ ||-ne t ≅ u ::: A | B ] " := (neTermEq Γ t u A B) (at level 0).
 
@@ -84,7 +112,7 @@ Definition elimm (l l' : TypeLevel) (h : l' << l) : elim l l' :=
     | Oi => I
   end.
 
-Record LogRelKit@{i j | i<j } := Kit {
+Record LogRelKit@{i j | i<j} := Kit {
   LRURel    : context         -> Type@{j};
   LRPiRel   : context -> term -> Type@{j};
   LRTyRel   : context -> term -> Type@{j};
@@ -127,28 +155,39 @@ Notation "[ R | Γ ||- A ≅ B | C ]"       := (LREqTyRel R Γ A B C) (at level 
 Notation "[ R | Γ ||- t ::: A | C ]"     := (LRTeRel   R Γ t A C) (at level 0).
 Notation "[ R | Γ ||- t ≅ u ::: A | C ]" := (LREqTeRel R Γ t u A C) (at level 0).
 
-Record URel {l} (rec : forall {l'} ,l' << l -> LogRelKit)(Γ : context) 
-: Type := URelMk{ 
+Record URel {l} (rec : forall {l'} ,l' << l -> LogRelKit) 
+  (Γ : context) : Type := URelMk { 
   l'  : TypeLevel;
   l_  : l' << l;
   wfc : [ |- Γ ]
 }.
 
+Arguments l' {_ _}.
+Arguments l_ {_ _}.
+Arguments wfc {_ _}.
+
 Notation "[ R | Γ ||-1U ]" := (URel Γ R) (at level 0).
 
-Record URelEq (Γ : context) (B : term) : Type := URelEqMk{ 
+Record URelEq (Γ : context) (B : term) : Type := URelEqMk { 
   Beq : B = U
 }.
-  
+
+Arguments Beq {_ _}.
+
 Notation "[ Γ ||-1U≅ B ]" := (URelEq Γ B) (at level 0).
 
 Record UTerm {l l'} (rec : forall {l'} ,l' << l -> LogRelKit) 
-(Γ : context) (t : term) (l_ : l' << l) := {
+(Γ : context) (t : term) (l_ : l' << l) := UTermMk {
   A : term;
   dd : [ Γ |- t :⇒*: A ::: U ];
   typeA : isType A;
   tyrel : [ rec l_ | Γ ||- t] ;
 }.
+
+Arguments A {_ _ _ _}.
+Arguments dd {_ _ _ _}.
+Arguments typeA {_ _ _ _}.
+Arguments tyrel {_ _ _ _}.
 
 Notation "[ R | Γ ||-1U t :::U| l ]" := (UTerm R Γ t l) (at level 0).
 
@@ -166,10 +205,21 @@ Record UTeEq {l l'} (rec : forall {l'} ,l' << l -> LogRelKit)
     relu    : [ rec l_ | Γ ||- u ];
     reltequ : [ rec l_ | Γ ||- t ≅ u | relt ]
 }.
+
+Arguments A' {_ _ _ _ _}.
+Arguments B' {_ _ _ _ _}.
+Arguments d_ {_ _ _ _ _}.
+Arguments dd' {_ _ _ _ _}.
+Arguments typeA' {_ _ _ _ _}.
+Arguments typeB' {_ _ _ _ _}.
+Arguments AeqBU {_ _ _ _ _}.
+Arguments relt {_ _ _ _ _}.
+Arguments relu {_ _ _ _ _}.
+Arguments reltequ {_ _ _ _ _}.
+
 Notation "[ R | Γ ||-1U t ≅ u :::U| l ]" := (UTeEq R Γ t u l) (at level 0).
 
-Definition RedRel@{i j} 
-:= 
+Definition RedRel@{i j} := 
   context               -> 
   term                  -> 
  (term -> Type@{i})         -> 
@@ -184,11 +234,10 @@ Record LRPack@{i j | i < j} (Γ : context) (A : term) (R : RedRel@{i j}) := LRPa
     relEqTerm :  term -> term -> Type@{i};
     relLR : R Γ A relEq relTerm relEqTerm
 }.
-
-Arguments relEq {_} {_} {_}.
-Arguments relTerm {_} {_} {_}.
-Arguments relEqTerm {_} {_} {_}.
-Arguments relLR {_} {_} {_}.
+Arguments relEq {_ _ _}.
+Arguments relTerm {_ _ _}.
+Arguments relEqTerm {_ _ _}.
+Arguments relLR {_ _ _}.
  
 Notation "[ Γ ||-0 A | R ]" := (LRPack Γ A R) (at level 0).
 
@@ -209,7 +258,7 @@ Notation "[ Γ ||-0 t ≅ u ::: A | R ]" := (TeEqRelO Γ t u A R) (at level 0).
 
 (*Type (n+4)*)
 Record TyPiRel1@{u0 u1}
-  (Γ : context) (A : term) (R : RedRel@{u0 u1}) := {
+  (Γ : context) (A : term) (R : RedRel@{u0 u1})  := TyPiRelMk {
     F : term;
     G : term;
     D'_ {na} : [Γ |- A :⇒*: tProd na F G];
@@ -228,20 +277,23 @@ Record TyPiRel1@{u0 u1}
         TyEqRelO@{u0 u1} Δ (G{ 0 := a}) (G{0 := b}) (_G h ha);
 }.
 
+
 Notation "[ Γ ||-1Π A | R ]" := (TyPiRel1 Γ A R) (at level 0).
 
-Arguments  conF {_} {_} {_} _.
-Arguments  conG {_} {_} {_} _.
-Arguments  G {_} {_} {_} _.
-Arguments  F {_} {_} {_} _.
-Arguments _F {_} {_} {_} _ {_}.
-Arguments _G {_} {_} {_} _ {_} {_}.
+Arguments  conF {_ _ _}.
+Arguments  conG {_ _ _}.
+Arguments  G {_ _ _}.
+Arguments  F {_ _ _}.
+Arguments _F {_ _ _} _ {_}.
+Arguments _G {_ _ _} _ {_ _}.
+Arguments G_ext {_ _ _} _ {_ _ _}.
+
 
 Record TyPiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (A B : term) 
 (H : TyPiRel1@{i j} Γ A R) := TyPiEqRel1Mk {
     F'                       : term;
     G'                       : term;
-    D''_ {na}                : [Γ |- B :⇒*: tProd na F' G'];
+    D'' {na}                : [Γ |- B :⇒*: tProd na F' G'];
     AeqB {na nb}             : [Γ |- tProd na H.(F) H.(G) ≅ tProd nb F' G' ];
     FeqF' {Δ} (h : [ |- Δ ]) : [Δ ||-0 H.(F) ≅ F' | H.(_F) h ];
     GeqG' {Δ a} (h : [ |- Δ ]) 
@@ -249,11 +301,18 @@ Record TyPiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (A B : term)
       [Δ ||-0 H.(G){0 := a} ≅ G'{0 := a} | H.(_G) h ha ];
 }.
 
+Arguments F' {_ _ _ _ }.
+Arguments G' {_ _ _ _ }.
+Arguments D'' {_ _ _ _ _}.
+Arguments AeqB {_ _ _ _ _ _}.
+Arguments FeqF' {_ _ _ _ _}.
+Arguments GeqG' {_ _ _ _ _ _}.
+
 Notation "[ Γ ||-1Π A ≅ B | H ]" := (TyPiEqRel1 Γ A B H) (at level 0).
 
 Record TePiRel1@{i j} 
 {R : RedRel@{i j}} (Γ : context) (t A : term)  
-(H : TyPiRel1@{i j} Γ A R) := {
+(H : TyPiRel1@{i j} Γ A R) := TePiRelMk {
     f : term;
     redf {na} : [ Γ |- t :⇒*: f ::: tProd na H.(F) H.(G) ];
     fFun : isFun f;
@@ -268,10 +327,17 @@ Record TePiRel1@{i j}
       : [Δ ||-0 tApp f a ::: H.(G){0 := a} | H.(_G) h ha ]
 }.
 
+Arguments f {_ _ _ _}.
+Arguments redf {_ _ _ _ _}.
+Arguments fFun {_ _ _ _}.
+Arguments fEq {_ _ _ _ _}.
+Arguments appEq {_ _ _ _ _ _ _}.
+Arguments appf {_ _ _ _ _ _}.
+
 Notation "[ Γ ||-1Π t ::: A | R ]" := (TePiRel1 Γ t A R) (at level 0).
 
 Record TePiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (t u A : term) 
-(H : TyPiRel1@{i j} Γ A R)  := {
+(H : TyPiRel1@{i j} Γ A R)  := TePiEqRelMk {
     f' : term;
     g' : term;
     redf' {na} : [ Γ |- t :⇒*: f' ::: tProd na H.(F) H.(G) ];
@@ -284,6 +350,16 @@ Record TePiEqRel1@{i j} {R : RedRel@{i j}} (Γ : context) (t u A : term)
       (ha : [Δ ||-0 a ::: H.(F) | H.(_F) h ])
       : [Δ ||-0 tApp f' a ≅ tApp g' a ::: H.(G){0 := a} | H.(_G) h ha ]
 }.
+
+Arguments f' {_ _ _ _ _}.
+Arguments g' {_ _ _ _ _}.
+Arguments redf' {_ _ _ _ _ _}.
+Arguments redg' {_ _ _ _ _ _}.
+Arguments fFun' {_ _ _ _ _}.
+Arguments gFun' {_ _ _ _ _}.
+Arguments fEqg {_ _ _ _ _ _}.
+Arguments tRel {_ _ _ _ _}.
+Arguments appEqfg {_ _ _ _ _ _ _}.
 
 Notation "[ Γ ||-1Π t ≅ u ::: A | H ]" := (TePiEqRel1 Γ t u A H) (at level 0).
 
@@ -425,11 +501,15 @@ Definition kit@{u u0 u1 u2 u3 u4 u5 u6 u7 u8}
     Rel1Te@{u8 u6 u7}
     Rel1TeEq@{u8 u6 u7}.
 
-Record Ur (Γ : context) (l : TypeLevel) : Type := {
+Record Ur (Γ : context) (l : TypeLevel) : Type := UrMk {
   l'' : TypeLevel;
   l__ : l'' << l;
   con :  [ |- Γ ]
 }.
+
+Arguments l'' {_ _}.
+Arguments l__ {_ _}.
+Arguments con {_ _}.
 
 Definition PiUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
   [ kit l | Γ ||-Π A].
