@@ -6,8 +6,6 @@ From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
 
 Definition neutral := whne RedFlags.default empty_global_env.
 
-Inductive ne : term -> Set :=
-  | ne_var : Π (x : var), ne x.
 
 Inductive isType : term -> Type :=
   | ProdType {na A B} : isType (tProd na A B)
