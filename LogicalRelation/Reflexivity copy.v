@@ -8,8 +8,20 @@ Axiom todo : forall {A}, A.
 (*Derive NoConfusion Subterm for LR.
 Print LR_direct_subterm.*)
 Check TyPiEqRel1Mk.
-Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A | H].
-    cbn in H.
+Equations reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A | H] :=
+  reflEq (LRPackMk (LRU _ c a b)) := 
+    URelEqMk _ _  eq_refl;
+  reflEq (LRPackMk (LRne _ (ne _ _ k d nek kk))) :=
+    nee _ _ A (ne _ _ k d nek kk) k d nek kk;
+  reflEq (LRPackMk (LRemb _ l_ h)) :=
+    (*reflEq h;*) todo; 
+  reflEq (LRPackMk (LRPi _ (TyPiRelMk _ _ a b c d e f g h i)))
+    (*Πᵣ′ F G [ ⊢A , ⊢B , D ] ⊢F ⊢G A≡A [F] [G] G-ext*) :=
+    TyPiEqRel1Mk _ _ D f
+       (fun h => reflEq (g h))
+       (fun h2 ha => reflEq (h h2 ha)).
+
+    (*cbn in H.
     unfold Rel1Ty in H.
     destruct H.
     cbn.
@@ -18,6 +30,10 @@ Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A |
       reflexivity.
     + destruct neA.
       econstructor; try eassumption.
+      destruct D.
+      constructor; try eassumption.
+      constructor. assumption.
+      exact (TypeRefl (wfB _ _ _ D)).
     + induction H.
       eapply TyPiEqRel1Mk.      
       intro.
@@ -39,8 +55,8 @@ Fixpoint reflEq {l} {Γ} {A} (H : [ Γ ||-< l | A ] ) : [ Γ ||-< l |  A ≅ A |
       subst.
       cbn in reflEq.
       (*exact (reflEq _ _ _ H).*)
-      exact todo.
-Defined.
+      admit.
+Admitted.*)
 
 
 
@@ -58,8 +74,8 @@ Proof.
       econstructor;
       try eassumption.
       exact (TermRefl (wfu _ _ _ _ dd)).
-      assert [LogRelRec l l' l_ | Γ ||- t ≅ t | tyrel].
-      eapply reflEq.
+      (*eapply reflEq.*)
+      exact todo.
     + destruct neA;
       destruct X; cbn in *.
       eapply neTeEq.

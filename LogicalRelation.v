@@ -112,7 +112,7 @@ Definition elimm (l l' : TypeLevel) (h : l' << l) : elim l l' :=
     | Oi => I
   end.
 
-Record LogRelKit@{i j | i<j} := Kit {
+Record LogRelKit@{i j | i < j} := Kit {
   LRURel    : context         -> Type@{j};
   LRPiRel   : context -> term -> Type@{j};
   LRTyRel   : context -> term -> Type@{j};
@@ -219,21 +219,21 @@ Arguments reltequ {_ _ _ _ _}.
 
 Notation "[ R | Γ ||-1U t ≅ u :::U| l ]" := (UTeEq R Γ t u l) (at level 0).
 
-Definition RedRel@{i j} := 
+Definition RedRel@{i j | i < j} := 
   context               -> 
   term                  -> 
  (term -> Type@{i})         -> 
  (term -> Type@{i})         -> 
  (term -> term -> Type@{i}) -> 
   Type@{j}.
-  
 (*Type (n+3)*)
-Record LRPack@{i j | i < j} (Γ : context) (A : term) (R : RedRel@{i j}) := LRPackMk {
+Record LRPack@{i j} (Γ : context) (A : term) (R : RedRel@{i j}) := LRPackMk {
     relEq : term -> Type@{i};
     relTerm : term -> Type@{i};
     relEqTerm :  term -> term -> Type@{i};
     relLR : R Γ A relEq relTerm relEqTerm
 }.
+Arguments LRPackMk {_ _ _ _ _ _}.
 Arguments relEq {_ _ _}.
 Arguments relTerm {_ _ _}.
 Arguments relEqTerm {_ _ _}.
@@ -415,11 +415,11 @@ Inductive LR@{u u0 u1} {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit@{u
                                     reason, making it hard to recurse over it*)
   | LRemb {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
       LR rec Γ A
-      (fun B   => [ rec _ l_ | Γ ||- A ≅ B       | H ])
-      (fun t   => [ rec _ l_ | Γ ||- t     ::: A | H ]) 
-      (fun t u => [ rec _ l_ | Γ ||- t ≅ u ::: A | H ])
+      (fun B   => [ _ | Γ ||- A ≅ B       | H ])
+      (fun t   => [ _ | Γ ||- t     ::: A | H ])
+      (fun t u => [ _ | Γ ||- t ≅ u ::: A | H ])
       .
-
+Print TyPiRel1.    
 Definition Rel1Ty 
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
@@ -448,9 +448,7 @@ Notation "[ Γ ||-1 t ≅ u ::: A | H ]" := (Rel1TeEq Γ t u A H) (at level 0).
 Definition rec0 (l' : TypeLevel) (h : l' << zero) : LogRelKit :=
   match elimm zero l' h with
   end.
-
 Definition LR0 := LR rec0.
-
 (*Definition kit1@{u u0 u1} := 
   Kit@{u1 u}
   (URel@{u0 u1} rec0@{u0 u1})
@@ -461,22 +459,21 @@ Definition LR0 := LR rec0.
   Rel1TeEq@{u0 u1 u}.
 *)
 
-Definition kit1@{u u0 u1} := 
-  Kit@{u1 u}
-  (URel@{u0 u1} rec0@{u0 u1})
-  (fun Γ A => TyPiRel1@{u1 u} Γ A LR0@{u0 u1 u}) 
-  (Rel1Ty@{u1 u u0} rec0@{u0 u1})
-  Rel1TyEq@{u0 u1 u}
-  Rel1Te@{u0 u1 u}
-  Rel1TeEq@{u0 u1 u}.
-
-
+Definition kit0 := 
+  Kit
+  (URel rec0)
+  (fun Γ A => TyPiRel1 Γ A LR0) 
+  (Rel1Ty rec0)
+  Rel1TyEq
+  Rel1Te
+  Rel1TeEq.
 
 Definition LogRelRec (l l' : TypeLevel) (h : l' << l) : LogRelKit :=
-  match l with
-    | zero => fun h0 => rec0 l' h0
-    | one => fun _  => kit1
-end h.
+  match l as t return ((l') << (t) -> LogRelKit) with
+    | zero => fun h0 : (l') << (zero) => rec0 l' h0
+    | one => fun _ : (l') << (one) => kit0
+  end h.
+
 
 Definition rec1 :=
   LogRelRec one .
@@ -490,16 +487,21 @@ Definition LRL (l : TypeLevel) :=
   end.
 
   (*TODO minimiser univers*)
-Definition kit@{u u0 u1 u2 u3 u4 u5 u6 u7 u8}
- (l : TypeLevel)  :=
-  let rec := LogRelRec@{u8 u6 u} l in 
-  Kit@{u6 u0} 
-    (URel@{u8 u6} rec) 
-    (fun Γ A => [ Γ ||-1Π A | LRL@{u3 u1 u2 u4 u5} l ]) 
-    (Rel1Ty@{u6 u7 u8} rec) 
-    Rel1TyEq@{u8 u6 u7}
-    Rel1Te@{u8 u6 u7}
-    Rel1TeEq@{u8 u6 u7}.
+Definition kit (l : TypeLevel) : LogRelKit :=
+  let rec := LogRelRec l in 
+  Kit 
+    (URel rec) 
+    (fun Γ A => [ Γ ||-1Π A | LR rec]) 
+    (Rel1Ty rec) 
+    Rel1TyEq
+    Rel1Te
+    Rel1TeEq.
+
+Definition recl (l : TypeLevel) := 
+  match l with
+    |zero => rec0
+    |one => rec1
+  end.
 
 Record Ur (Γ : context) (l : TypeLevel) : Type := UrMk {
   l'' : TypeLevel;

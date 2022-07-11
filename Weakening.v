@@ -5,4 +5,4 @@ Definition isRel t :=
 
 
 
-Check subst.
+Definition eta {A B : Type} (f : A -> B) : f = (fun x => f x) := eq_refl.
