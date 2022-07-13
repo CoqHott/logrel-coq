@@ -246,20 +246,20 @@ Definition LRPackValid@{i j} {Γ : context} {A : term} (R : RedRel@{i j}) (P : L
 
 Notation "[ R ||-1 H ]" := (LRPackValid R H) (at level 0).
 
-Definition TyEqRelO (Γ : context) (A B : term) (L : LRPack Γ A) : Type :=
+Definition TyEqRel1 (Γ : context) (A B : term) (L : LRPack Γ A) : Type :=
     relEq L B.
 
-Notation "[ Γ ||-0 A ≅ B | R ]" := (TyEqRelO Γ A B R) (at level 0).
+Notation "[ Γ ||-1 A ≅ B | R ]" := (TyEqRel1 Γ A B R) (at level 0).
 
-Definition TeRelO (Γ : context) (t A : term) (L : LRPack Γ A) : Type :=
+Definition TeRel1 (Γ : context) (t A : term) (L : LRPack Γ A) : Type :=
     relTerm L t.
 
-Notation "[ Γ ||-0 t ::: A | R ]" := (TeRelO Γ t A R) (at level 0).
+Notation "[ Γ ||-1 t ::: A | R ]" := (TeRel1 Γ t A R) (at level 0).
 
-Definition TeEqRelO (Γ : context) (t u A : term) (L : LRPack Γ A) : Type :=
+Definition TeEqRel1 (Γ : context) (t u A : term) (L : LRPack Γ A) : Type :=
     relEqTerm L t u.
 
-Notation "[ Γ ||-0 t ≅ u ::: A | R ]" := (TeEqRelO Γ t u A R) (at level 0).
+Notation "[ Γ ||-1 t ≅ u ::: A | R ]" := (TeEqRel1 Γ t u A R) (at level 0).
 
 (*Type (n+4)*)
 Record TyPiRel0@{u0 u1}
@@ -272,15 +272,15 @@ Record TyPiRel0@{u0 u1}
     conG {na}: [Γ ,, vass na F |- G];
     _F {Δ} : [ |- Δ ] -> LRPack@{u0} Δ F;
     _G {Δ a} (h : [ |- Δ ]) :
-        [ Δ ||-0 a ::: F | _F h ] ->
+        [ Δ ||-1 a ::: F | _F h ] ->
         LRPack@{u0} Δ (G{0 := a});
     G_ext
         {Δ a b}
         (h :  [ |- Δ ])
         (ha : relTerm (_F h) a) :
-        [ Δ ||-0 b ::: F | _F h ] ->
-        [ Δ ||-0 a ≅ b ::: F | _F h ] ->
-        [ Δ ||-0 (G{0 := a}) ≅ (G{0 := b}) | _G h ha ];
+        [ Δ ||-1 b ::: F | _F h ] ->
+        [ Δ ||-1 a ≅ b ::: F | _F h ] ->
+        [ Δ ||-1 (G{0 := a}) ≅ (G{0 := b}) | _G h ha ];
 }.
 
 Notation "[ Γ ||-0Π A ]" := (TyPiRel0 Γ A) (at level 0).
@@ -296,19 +296,19 @@ Arguments G_ext {_ _} _ {_ _ _}.
 Record TyPiRel1 {Γ : context} {A : term} (R : RedRel) (_A : [ Γ ||-0Π A ]) :=
   TyPiRel1Mk {
     _F1 {Δ} (h : [ |- Δ ]) : LRPackValid R (_A.(_F) h);
-    _G1 {Δ a} (h : [ |- Δ ]) (ha : [ Δ ||-0 a ::: _A.(F) | _A.(_F) h ]) : LRPackValid R (_A.(_G) h ha);
+    _G1 {Δ a} (h : [ |- Δ ]) (ha : [ Δ ||-1 a ::: _A.(F) | _A.(_F) h ]) : LRPackValid R (_A.(_G) h ha);
 }.
 
-Record TyPiEqRel0 (Γ : context) (A B : term)
+Record TyPiEqRel1 (Γ : context) (A B : term)
 (H : TyPiRel0 Γ A) := TyPiEqRel0Mk {
     F'                       : term;
     G'                       : term;
     D'' {na}                : [Γ |- B :⇒*: tProd na F' G'];
     AeqB {na nb}             : [Γ |- tProd na H.(F) H.(G) ≅ tProd nb F' G' ];
-    FeqF' {Δ} (h : [ |- Δ ]) : [Δ ||-0 H.(F) ≅ F' | H.(_F) h ];
+    FeqF' {Δ} (h : [ |- Δ ]) : [Δ ||-1 H.(F) ≅ F' | H.(_F) h ];
     GeqG' {Δ a} (h : [ |- Δ ])
-      (ha : [ Δ ||-0 a ::: H.(F) | H.(_F) h ]) :
-      [Δ ||-0 H.(G){0 := a} ≅ G'{0 := a} | H.(_G) h ha ];
+      (ha : [ Δ ||-1 a ::: H.(F) | H.(_F) h ]) :
+      [Δ ||-1 H.(G){0 := a} ≅ G'{0 := a} | H.(_G) h ha ];
 }.
 
 Arguments F' {_ _ _ }.
@@ -318,22 +318,22 @@ Arguments AeqB {_ _ _ _ _}.
 Arguments FeqF' {_ _ _ _}.
 Arguments GeqG' {_ _ _ _ _}.
 
-Notation "[ Γ ||-0Π A ≅ B | H ]" := (TyPiEqRel0 Γ A B H) (at level 0).
+Notation "[ Γ ||-1Π A ≅ B | H ]" := (TyPiEqRel1 Γ A B H) (at level 0).
 
-Record TePiRel0 (Γ : context) (t A : term)
+Record TePiRel1 (Γ : context) (t A : term)
 (H : TyPiRel0 Γ A) := TePiRel0Mk {
     f : term;
     redf {na} : [ Γ |- t :⇒*: f ::: tProd na H.(F) H.(G) ];
     fFun : isFun f;
     fEq {na} : [ Γ |- f ≅ f ::: tProd na H.(F) H.(G) ];
     appEq {Δ a b} (h : [ |- Δ ])
-      (ha : [Δ ||-0 a ::: H.(F) | H.(_F) h ])
-      (hb : [Δ ||-0 b ::: H.(F) | H.(_F) h ])
-      (aeqb : [Δ ||-0 a ≅ b ::: H.(F) | H.(_F) h ])
-      : [Δ ||-0 tApp f a ≅ tApp f b ::: H.(G){0 := a} | H.(_G) h ha ];
+      (ha : [Δ ||-1 a ::: H.(F) | H.(_F) h ])
+      (hb : [Δ ||-1 b ::: H.(F) | H.(_F) h ])
+      (aeqb : [Δ ||-1 a ≅ b ::: H.(F) | H.(_F) h ])
+      : [Δ ||-1 tApp f a ≅ tApp f b ::: H.(G){0 := a} | H.(_G) h ha ];
     appf {Δ a} (h : [ |- Δ ])
-      (ha : [Δ ||-0 a ::: H.(F) | H.(_F) h ])
-      : [Δ ||-0 tApp f a ::: H.(G){0 := a} | H.(_G) h ha ]
+      (ha : [Δ ||-1 a ::: H.(F) | H.(_F) h ])
+      : [Δ ||-1 tApp f a ::: H.(G){0 := a} | H.(_G) h ha ]
 }.
 
 Arguments f {_ _ _}.
@@ -343,7 +343,7 @@ Arguments fEq {_ _ _ _}.
 Arguments appEq {_ _ _ _ _ _}.
 Arguments appf {_ _ _ _ _}.
 
-Notation "[ Γ ||-0Π t ::: A | R ]" := (TePiRel0 Γ t A R) (at level 0).
+Notation "[ Γ ||-1Π t ::: A | R ]" := (TePiRel1 Γ t A R) (at level 0).
 
 Record TePiEqRel0 (Γ : context) (t u A : term)
 (H : TyPiRel0 Γ A)  := TePiEqRel0Mk {
@@ -354,10 +354,10 @@ Record TePiEqRel0 (Γ : context) (t u A : term)
     fFun' : isFun f';
     gFun' : isFun g';
     fEqg {na}: [ Γ |- f' ≅ g' ::: tProd na H.(F) H.(G) ];
-    tRel : [ Γ ||-0Π t ::: A | H ];
+    tRel : [ Γ ||-1Π t ::: A | H ];
     appEqfg {Δ a} (h : [ |- Δ ])
-      (ha : [Δ ||-0 a ::: H.(F) | H.(_F) h ])
-      : [Δ ||-0 tApp f' a ≅ tApp g' a ::: H.(G){0 := a} | H.(_G) h ha ]
+      (ha : [Δ ||-1 a ::: H.(F) | H.(_F) h ])
+      : [Δ ||-1 tApp f' a ≅ tApp g' a ::: H.(G){0 := a} | H.(_G) h ha ]
 }.
 
 Arguments f' {_ _ _ _}.
@@ -370,7 +370,7 @@ Arguments fEqg {_ _ _ _ _}.
 Arguments tRel {_ _ _ _}.
 Arguments appEqfg {_ _ _ _ _ _}.
 
-Notation "[ Γ ||-0Π t ≅ u ::: A | H ]" := (TePiEqRel0 Γ t u A H) (at level 0).
+Notation "[ Γ ||-1Π t ≅ u ::: A | H ]" := (TePiEqRel0 Γ t u A H) (at level 0).
 
 Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
   : RedRel :=
@@ -386,9 +386,9 @@ Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
       (fun t u =>  [ Γ ||-ne t ≅ u ::: A | neA])
   | LRPi {Γ A} (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec) H0) :
     LR rec Γ A
-      (fun B   => [ Γ ||-0Π A ≅ B       | H0 ])
-      (fun t   => [ Γ ||-0Π t     ::: A | H0 ])
-      (fun t u => [ Γ ||-0Π t ≅ u ::: A | H0 ])
+      (fun B   => [ Γ ||-1Π A ≅ B       | H0 ])
+      (fun t   => [ Γ ||-1Π t     ::: A | H0 ])
+      (fun t u => [ Γ ||-1Π t ≅ u ::: A | H0 ])
   | LRemb {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
       LR rec Γ A
       (fun B   => [ _ | Γ ||- A ≅ B       | H ])
@@ -399,25 +399,25 @@ Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
 Definition Rel1Ty
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
-  [ Γ ||-0 A | LR R ].
+  [ Γ ||-0 A ].
 
 Notation "[ R | Γ ||-1 A ]" := (Rel1Ty R Γ A) (at level 0).
 
 Definition Rel1TyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (A B : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-0 A ≅ B | H ].
+  [ Γ ||-1 A ≅ B | H ].
 
 Notation "[ Γ ||-1 A ≅ B | H ]" := (Rel1TyEq Γ A B H) (at level 0).
 
 Definition Rel1Te   {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t A : term) (H : Rel1Ty R Γ A ) :=
-  [ Γ ||-0 t ::: A | H ].
+  [ Γ ||-1 t ::: A | H ].
 
 Notation "[ Γ ||-1 t ::: A | H ]" := (Rel1Te Γ t A H) (at level 0).
 
 Definition Rel1TeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t u A : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-0 t ≅ u ::: A | H ].
+  [ Γ ||-1 t ≅ u ::: A | H ].
 
 Notation "[ Γ ||-1 t ≅ u ::: A | H ]" := (Rel1TeEq Γ t u A H) (at level 0).
 
@@ -438,7 +438,7 @@ Definition LR0 := LR rec0.
 Definition kit0 :=
   Kit
   (URel rec0)
-  (fun Γ A => TyPiRel1 Γ A LR0)
+  (fun Γ A => TyPiRel0 Γ A)
   (Rel1Ty rec0)
   Rel1TyEq
   Rel1Te
@@ -467,7 +467,7 @@ Definition kit (l : TypeLevel) : LogRelKit :=
   let rec := LogRelRec l in
   Kit
     (URel rec)
-    (fun Γ A => [ Γ ||-1Π A | LR rec])
+    (fun Γ A => [ Γ ||-0Π A ])
     (Rel1Ty rec)
     Rel1TyEq
     Rel1Te
