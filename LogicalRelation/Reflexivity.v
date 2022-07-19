@@ -1,91 +1,57 @@
 Require Import MLTTTyping LogicalRelation Reduction LRInduction.
 
 Set Universe Polymorphism.
-Require Import Arith.
+
+Definition reflNe {Γ} {A} (neA : [Γ ||-ne A]) : [Γ ||-ne A ≅ A | neA].
+Proof. 
+  destruct neA; now econstructor.
+Defined.
+
+Definition reflPi l {Γ} {A} 
+(H0 : [Γ ||-0Π A]) (H1 : TyPiRel1 (LR (recl l)) H0) :
+(forall Δ (h : [  |- Δ]), relEq (_F H0 h) (F H0)) ->
+(forall Δ a (h1 : [  |- Δ])
+ (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}]),
+relEq (_G H0 h1 h2) (PCUICAst.subst1 a 0 (G H0))) -> 
+[Γ ||-1Π A ≅ A | H0].
+  destruct H0; econstructor; eauto.
+  intros. apply TypePiCong; try eapply TypeRefl; eauto.
+Defined.
 
 Definition reflEq0 {Γ} {A} (H : [ Γ ||-< zero | A ] ) : [ Γ ||-< zero |  A ≅ A | H].
-    cbn in H.
-    unfold Rel1Ty in H.
-    destruct H.
-    destruct pack.
-    revert Γ A relEq relTerm relEqTerm valid.      
-    eapply LR_rect0.
-    - intros.
-      cbn. 
-      destruct neA.
-      econstructor;try eassumption.
-    - intros. cbn in *.
-      destruct H0.  
-      econstructor; try eassumption.
-      cbn in *.
-      intros. apply TypePiCong.
-      assumption.
-      apply TypeRefl.
-      assumption.
-      apply TypeRefl.
-      exact (conG _).
+  destruct H as [[] ?]. 
+  revert Γ A relEq relTerm relEqTerm valid.
+  eapply LR_rect0; cbn; intros ; 
+  [apply reflNe | eapply (reflPi zero); eauto].
 Defined.
 
 Definition reflEq1 {Γ} {A} (H : [ Γ ||-< one | A ] ) : [ Γ ||-< one |  A ≅ A | H].
-  cbn in H.
-  unfold Rel1Ty in H.
-  destruct H.  
-  destruct pack.           
-  cbn in *.
+  destruct H as [[] ?]. 
+  revert Γ A relEq relTerm relEqTerm valid.
   eapply (LR_rect1 
   (fun Γ A T T0 T1 H => 
-    [Γ ||-< zero | A ≅ A | LRValidMk (@LRPackMk Γ A T T0 T1) H])
-  (fun Γ A T T0 T1 H => 
-  [Γ ||-< one  | A ≅ A | LRValidMk (@LRPackMk Γ A T T0 T1) H])). 
-  - intros.
-    cbn. 
-    destruct neA.
-    econstructor;try eassumption.
-  - intros. cbn in *.
-    destruct H0.  
-    econstructor; try eassumption.
-    cbn in *.
-    intros. apply TypePiCong.
-    assumption.
-    apply TypeRefl.
-    assumption.
-    apply TypeRefl.
-    exact (conG _).
-  - intros.
-    cbn.
-    constructor. reflexivity.
-  - intros.
-    cbn. 
-    destruct neA.
-    econstructor;try eassumption.
-  - intros. cbn in *.
-    destruct H0.  
-    econstructor; try eassumption.
-    cbn in *.
-    intros. apply TypePiCong.
-    assumption.
-    apply TypeRefl.
-    assumption.
-    apply TypeRefl.
-    exact (conG _).
-  - intros. cbn in *.
-    exact X.
-  Unshelve. 
-  all : assumption.
+    [Γ ||-< zero | A ≅ A | LRValidMk (@LRPackMk Γ A T T0 T1) H]));
+  intros.
+  1, 4 : apply reflNe.
+  1 : eapply (reflPi zero); eauto.
+  2 : eapply (reflPi one); eauto.
+  -  now econstructor.
+  - eauto.
 Defined.
 
-Fixpoint reflEqTerm {Γ} {A t} (H : [ Γ ||-< zero | A ] ) : 
+Definition reflEqTerm0 {Γ} {A t} (H : [ Γ ||-< zero | A ] ) : 
     [ Γ ||-< zero | t ::: A | H ] ->
     [ Γ ||-< zero | t ≅ t ::: A | H ].
-    
+   
 Proof.
     destruct H.
     destruct pack.
-    revert Γ A relEq relTerm relEqTerm valid.      
-    eapply LR_rect0.
-    exact valid.
-    + intros.
-      cbn.
+    eapply (LR_rec0 Γ A relEq relTerm relEqTerm valid).
+    + intros. cbn in *.
+      destruct X.
+      econstructor.
+      destruct neA.
+      try econstructor; try gen_conv.
     + destruct neA;
       destruct X; cbn in *.
       eapply neTeEq.
