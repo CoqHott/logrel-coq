@@ -121,33 +121,6 @@ Record LogRelKit@{i j | i < j} := Kit {
   LREqTeRel : forall (Γ : context) (t u A : term), LRTyRel Γ A -> Type@{i}
 }.
 
-(*Ideas:
-  - add useless parameters to fill in monomorphic assumptions
-  hacky + bloating
-  - hope coq gets friendlier
-  - index LR by l and rec ?
-  - ?????????*)
-(*Module Type Param.
-
-  Parameter l : TypeLevel.
-  Parameter rec@{u u0 u1 u1 e3 i3 eq0 ast94 ba0 snoc def
-  | u < u0, u1 < u , u0 < u2,
-    e3 <= u0, e3 <= u2, i3 <= eq0,
-    i3 <= ast94, i3 <= u0, i3 <= u2,
-    ba0 <= eq0, ba0 <= ast94,
-    ba0 <= snoc, ba0 <= u0, ba0 <= u2,
-    def <= eq0, def <= ast94, def <= u0, def <= u2,
-    ast94 <= eq0, ast94 <= snoc, ast94 <= u0, ast94 <= u2
-    }
-  : forall {l'} ,l' << l -> LogRelKit@{u u0}.
-End Param.
-
-Module LogRel (P : Param).
-Import P.
-(l : TypeLevel) (rec : forall {l'} ,l' << l -> LogRelKit)
-
-*)
-
 Notation "[ R | Γ ||-U ]"                := (LRURel    R Γ) (at level 0).
 Notation "[ R | Γ ||-Π A ]"              := (LRPiRel   R Γ A) (at level 0).
 Notation "[ R | Γ ||- A ]"               := (LRTyRel   R Γ A) (at level 0).
@@ -299,6 +272,10 @@ Record TyPiRel1 {Γ : context} {A : term} (R : RedRel) (_A : [ Γ ||-0Π A ]) :=
     _G1 {Δ a} (h : [ |- Δ ]) (ha : [ Δ ||-1 a ::: _A.(F) | _A.(_F) h ]) : LRPackValid R (_A.(_G) h ha);
 }.
 
+Arguments _F1 {_ _ _ _} _ {_}.
+Arguments _G1 {_ _ _ _} _ {_ _}.
+
+
 Record TyPiEqRel1 (Γ : context) (A B : term)
 (H : TyPiRel0 Γ A) := TyPiEqRel0Mk {
     F'                       : term;
@@ -399,25 +376,25 @@ Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
 Definition Rel1Ty
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
-  [ Γ ||-0 A ].
+  {h : [Γ ||-0 A] & [LR R ||-1 h]}.
 
 Notation "[ R | Γ ||-1 A ]" := (Rel1Ty R Γ A) (at level 0).
 
 Definition Rel1TyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
-(Γ : context) (A B : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-1 A ≅ B | H ].
+(Γ : context) (A B : term) (H : [R | Γ ||-1 A]) :=
+  [ Γ ||-1 A ≅ B | projT1 H ].
 
 Notation "[ Γ ||-1 A ≅ B | H ]" := (Rel1TyEq Γ A B H) (at level 0).
 
 Definition Rel1Te   {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t A : term) (H : Rel1Ty R Γ A ) :=
-  [ Γ ||-1 t ::: A | H ].
+  [ Γ ||-1 t ::: A | projT1 H ].
 
 Notation "[ Γ ||-1 t ::: A | H ]" := (Rel1Te Γ t A H) (at level 0).
 
 Definition Rel1TeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t u A : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-1 t ≅ u ::: A | H ].
+  [ Γ ||-1 t ≅ u ::: A | projT1 H ].
 
 Notation "[ Γ ||-1 t ≅ u ::: A | H ]" := (Rel1TeEq Γ t u A H) (at level 0).
 
