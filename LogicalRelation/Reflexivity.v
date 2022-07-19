@@ -50,33 +50,44 @@ Proof.
     + intros. cbn in *.
       destruct X.
       econstructor.
+      destruct d.
       destruct neA.
+      cbn in *.
+      induction C.
+      econstructor.
+      gen_conv.
+      eapply wfTermConv; try eassumption.
+      eapply TypeSym. assumption.
       try econstructor; try gen_conv.
-    + destruct neA;
-      destruct X; cbn in *.
-      eapply neTeEq.
-      * gen_conv.
-        destruct d.
-        gen_conv. eassumption. 
-      * gen_conv. eassumption.
-      * destruct nf.
-        constructor; try assumption.
-        apply TermRefl.
-        eapply wfTermConv.
-        eassumption.
-        destruct D.      
-        exact (TypeSym (RedConvTyC D)).
-    + destruct X.
-      econstructor;
-      try eassumption.
-      econstructor; try eassumption.      
-      intros.
-      eapply appEq.
-      assumption.
-      exact (reflEqTerm _ _ _ _ _ ha).
-    + exact todo. 
-      (*exact (reflEqTerm _ _ _ _ _ X).*)
-    Unshelve. assumption.
+      eassumption.
+      apply TypeSym; assumption.
+      constructor.
+      try econstructor; try gen_conv.
+      eassumption. exact (TypeSym X).
+      gen_conv.
+      constructor.
+      1, 2 : eapply wfTermConv; try eassumption; now apply TypeSym.
+      gen_conv.
+      econstructor; try eassumption.
+      econstructor; try eassumption.
+      now apply TypeSym.
+      eapply TermRedWFConv. eassumption.
+      destruct neA.
+      gen_conv.
+      exact (TypeSym X).
+      destruct nf.
+      constructor; try eassumption.
+      constructor.
+      eapply wfTermConv.
+      exact tkTy.
+      destruct neA.
+      gen_conv.
+      exact (TypeSym X).
+    + cbn in *. intros.
+      destruct X1.
+      econstructor; try eassumption.
+      econstructor; try eassumption.
+      intros. eapply appEq; try eassumption.
 Defined.
   
 
