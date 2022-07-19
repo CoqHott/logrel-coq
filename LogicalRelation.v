@@ -219,6 +219,14 @@ Definition LRPackValid@{i j} {Γ : context} {A : term} (R : RedRel@{i j}) (P : L
 
 Notation "[ R ||-1 H ]" := (LRPackValid R H) (at level 0).
 
+Record LRValid (Γ : context ) (A : term) (R : RedRel) := LRValidMk {
+  pack : [ Γ ||-0 A ];
+  valid : [ R ||-1 pack ]
+}.
+Arguments LRValidMk {_ _ _}.
+Arguments pack {_ _ _}.
+Arguments valid {_ _ _}.
+
 Definition TyEqRel1 (Γ : context) (A B : term) (L : LRPack Γ A) : Type :=
     relEq L B.
 
@@ -376,25 +384,25 @@ Inductive LR {l : TypeLevel} (rec : forall l' ,l' << l -> LogRelKit)
 Definition Rel1Ty
 {l : TypeLevel} (R : forall l' ,l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
-  {h : [Γ ||-0 A] & [LR R ||-1 h]}.
+  LRValid Γ A (LR R).
 
 Notation "[ R | Γ ||-1 A ]" := (Rel1Ty R Γ A) (at level 0).
 
 Definition Rel1TyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (A B : term) (H : [R | Γ ||-1 A]) :=
-  [ Γ ||-1 A ≅ B | projT1 H ].
+  [ Γ ||-1 A ≅ B | H.(pack) ].
 
 Notation "[ Γ ||-1 A ≅ B | H ]" := (Rel1TyEq Γ A B H) (at level 0).
 
 Definition Rel1Te   {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t A : term) (H : Rel1Ty R Γ A ) :=
-  [ Γ ||-1 t ::: A | projT1 H ].
+  [ Γ ||-1 t ::: A | H.(pack) ].
 
 Notation "[ Γ ||-1 t ::: A | H ]" := (Rel1Te Γ t A H) (at level 0).
 
 Definition Rel1TeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t u A : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-1 t ≅ u ::: A | projT1 H ].
+  [ Γ ||-1 t ≅ u ::: A | H.(pack) ].
 
 Notation "[ Γ ||-1 t ≅ u ::: A | H ]" := (Rel1TeEq Γ t u A H) (at level 0).
 
