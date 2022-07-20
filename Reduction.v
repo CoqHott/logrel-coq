@@ -79,6 +79,14 @@ Definition TypeRedWFConv {Γ} {A B} :
     exact (RedConvTyC D).
 Defined.
 
+Definition RedConvTeWFC {Γ} {t u A} :
+    [Γ |- t :⇒*: u ::: A] ->
+    [Γ |- t ≅ u ::: A]. 
+    intro.
+    destruct X.
+    exact (RedConvTeC C).
+Defined.
+
 Ltac skip :=
     match goal with
         | |- _ => try intro
@@ -118,9 +126,3 @@ Ltac gen_conv :=
     | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [ _ |- _ ≅ ?A ] |- _ => pose proof (TermRedWFConv H1 (TypeSym H2))  
     | |- _ => skip   
     end.
-
-    
-
-
-
-

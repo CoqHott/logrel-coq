@@ -61,24 +61,24 @@ with wfTerm : context -> term -> term -> Type :=
         [ Γ |- tApp f a ::: B{0 := a} ]
     
 with convType : context -> term -> term  -> Type :=
-    | convUniv {Γ} {A B} :
-        [ Γ |- A ≅ B ::: U ] -> 
-        [ Γ |- A ≅ B ]
     | TypeRefl {Γ} {A} : 
         [ Γ |- A ] -> 
         [ Γ |- A ≅ A]
+    | TypePiCong {Γ} {na nb} {A B C D} :
+        [ Γ |- A] ->
+        [ Γ |- A ≅ B] ->
+        [ Γ ,, vass na A |- C ≅ D] ->
+        [ Γ |- tProd na A C ≅ tProd nb B D]        
     | TypeSym {Γ} {A B} :
         [ Γ |- A ≅ B ] -> 
         [ Γ |- B ≅ A ]
     | TypeTrans {Γ} {A B C} :
         [ Γ |- A ≅ B] ->
         [ Γ |- B ≅ C] ->
-        [ Γ |- A ≅ C]
-    | TypePiCong {Γ} {na nb} {A B C D} :
-        [ Γ |- A] ->
-        [ Γ |- A ≅ B] ->
-        [ Γ ,, vass na A |- C ≅ D] ->
-        [ Γ |- tProd na A C ≅ tProd nb B D]
+        [ Γ |- A ≅ C]  
+    | convUniv {Γ} {A B} :
+        [ Γ |- A ≅ B ::: U ] -> 
+        [ Γ |- A ≅ B ]        
 
 with convTerm : context -> term -> term -> term -> Type :=
     | TermRefl {Γ} {t A} :

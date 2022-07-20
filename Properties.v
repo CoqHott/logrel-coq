@@ -37,8 +37,10 @@ Definition WFEqType {Γ} {A B} :
     [ |- Γ ].
     intros.
     induction X; try assumption.
+    destruct w; try eassumption.
+    exact (WFtype w1).
+    exact (WFterm w).
     exact (WFEqTerm c).
-    exact (WFtype w).
 Defined.
 
 Definition redFirstTerm {Γ t u A} : 
@@ -79,6 +81,20 @@ Definition redFirstC {Γ A B} :
   exact (redFirst t).
 Defined.
 
-
+Definition redFirstCWFTerm {Γ t u A} : 
+  [ Γ |- t :⇒*: u ::: A] ->
+  [ Γ |- t ::: A ].
+  intros.
+  destruct X.
+  exact (redFirstCTerm C).
+Defined.
+    
+Definition redFirstCWF {Γ A B} : 
+  [ Γ |- A :⇒*: B ] ->
+  [ Γ |- A ].
+  intro.
+  destruct X.
+  exact (redFirstC D).
+Defined.
 
 
