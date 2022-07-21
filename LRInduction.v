@@ -14,13 +14,13 @@ Fixpoint LR_rec0
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P0 (LRne rec0 neA))
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec0) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec0 ||-1Π H0 ]),
     (forall {Δ} (h : [ |- Δ]),
       P0(H1.(_F1) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : @Rel1Te _ rec0 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+      (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
       P0 (_G1 H1 h1 h2)) ->
-    P0 (LRPi rec0 H0 H1)) 
+    P0 (LRPi rec0 H0 H1))
   ->
    P0 lr.
 Proof.   
@@ -47,15 +47,14 @@ Fixpoint LR_rec1
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P0 (LRne rec0 neA)) 
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec0) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec0 ||-1Π H0 ]),
     (forall {Δ} (h : [ |- Δ]),
       P0 (H1.(_F1) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : @Rel1Te _ rec0 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+      (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
       P0 (_G1 H1 h1 h2)) ->
     P0 (LRPi rec0 H0 H1)) 
   ->
-
 
   (forall (Γ : context) (h : [  |- Γ]) {l' l_},
     P1 (LRU rec1 h l' l_)) 
@@ -63,15 +62,14 @@ Fixpoint LR_rec1
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P1 (LRne rec1 neA)) 
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec1) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec1 ||-1Π H0 ]),
   (forall {Δ} (h : [ |- Δ]),
     P1 (H1.(_F1) h)) ->
   (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : @Rel1Te _ rec1 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+    (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
     P1 (_G1 H1 h1 h2)) ->
   P1 (LRPi rec1 H0 H1)) 
   ->
-
 
   (forall (Γ : context) (A : term) {l' l_}
     (H : [kit0 | Γ ||- A]),
@@ -102,11 +100,11 @@ Definition LR_rect0 : forall
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P0 (LRne rec0 neA))
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec0) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec0 ||-1Π H0 ]),
     (forall {Δ} (h : [ |- Δ]),
       P0(H1.(_F1) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : @Rel1Te _ rec0 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+      (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
       P0 (_G1 H1 h1 h2)) ->
     P0 (LRPi rec0 H0 H1)) 
   ->
@@ -127,11 +125,11 @@ Definition LR_rect1 :
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P0 (LRne rec0 neA)) 
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec0) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec0 ||-1Π H0 ]),
     (forall {Δ} (h : [ |- Δ]),
       P0 (H1.(_F1) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : @Rel1Te _ rec0 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+      (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
       P0 (_G1 H1 h1 h2)) ->
     P0 (LRPi rec0 H0 H1)) 
   ->
@@ -143,11 +141,11 @@ Definition LR_rect1 :
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P1 (LRne rec1 neA)) 
   ->
-  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : TyPiRel1 (LR rec1) H0),
+  (forall (Γ : context) (A : term) (H0 : [ Γ ||-0Π A ]) (H1 : [ LR rec1 ||-1Π H0 ]),
   (forall {Δ} (h : [ |- Δ]),
     P1 (H1.(_F1) h)) ->
   (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : @Rel1Te _ rec1 Δ a (F H0) (LRValidMk (_F H0 h1) (H1.(_F1) h1))),
+    (h2 : [ Δ ||-1 a ::: F H0 | {|valid := H1.(_F1) h1|} ]),
     P1 (_G1 H1 h1 h2)) ->
   P1 (LRPi rec1 H0 H1)) 
   ->

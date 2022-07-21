@@ -101,6 +101,12 @@ Inductive TypeLevelLe : TypeLevel -> TypeLevel -> Set :=
 
 Notation "A << B" := (TypeLevelLe A B) (at level 0).
 
+Definition LESubst {l} (h : l = one) : zero << l.
+Proof.
+  rewrite h.
+  constructor.
+Defined.
+
 Definition elim (l l' : TypeLevel) :=
   match l with
     | zero => False
@@ -207,7 +213,7 @@ Record LRPack@{i} (Γ : context) (A : term) := LRPackMk {
     relEqTerm :  term -> term -> Type@{i};
 }.
 
-Arguments LRPackMk {_ _ _ _ _}.
+Arguments LRPackMk {_ _}.
 Arguments relEq {_ _}.
 Arguments relTerm {_ _}.
 Arguments relEqTerm {_ _}.
@@ -220,12 +226,20 @@ Definition LRPackValid@{i j} {Γ : context} {A : term} (R : RedRel@{i j}) (P : L
 Notation "[ R ||-1 H ]" := (LRPackValid R H) (at level 0).
 
 Record LRValid (Γ : context ) (A : term) (R : RedRel) := LRValidMk {
-  pack : [ Γ ||-0 A ];
-  valid : [ R ||-1 pack ]
+  relEq' : term -> Type;
+  relTerm' : term -> Type;
+  relEqTerm' :  term -> term -> Type;
+  valid : [ R ||-1 @LRPackMk Γ A relEq' relTerm' relEqTerm']
 }.
+
 Arguments LRValidMk {_ _ _}.
-Arguments pack {_ _ _}.
+Arguments relEq' {_ _ _}.
+Arguments relTerm' {_ _ _}.
+Arguments relEqTerm' {_ _ _}.
 Arguments valid {_ _ _}.
+
+Definition pack {Γ A R} (H : LRValid Γ A R) :=
+  @LRPackMk Γ A H.(relEq') H.(relTerm') H.(relEqTerm').
 
 Definition TyEqRel1 (Γ : context) (A B : term) (L : LRPack Γ A) : Type :=
     relEq L B.
@@ -280,9 +294,11 @@ Record TyPiRel1 {Γ : context} {A : term} (R : RedRel) (_A : [ Γ ||-0Π A ]) :=
     _G1 {Δ a} (h : [ |- Δ ]) (ha : [ Δ ||-1 a ::: _A.(F) | _A.(_F) h ]) : LRPackValid R (_A.(_G) h ha);
 }.
 
+Notation "[ R ||-1Π A ]" := (TyPiRel1 R A) (at level 0).
+
+
 Arguments _F1 {_ _ _ _} _ {_}.
 Arguments _G1 {_ _ _ _} _ {_ _}.
-
 
 Record TyPiEqRel1 (Γ : context) (A B : term)
 (H : TyPiRel0 Γ A) := TyPiEqRel0Mk {
@@ -390,19 +406,19 @@ Notation "[ R | Γ ||-1 A ]" := (Rel1Ty R Γ A) (at level 0).
 
 Definition Rel1TyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (A B : term) (H : [R | Γ ||-1 A]) :=
-  [ Γ ||-1 A ≅ B | H.(pack) ].
+  [ Γ ||-1 A ≅ B | pack H ].
 
 Notation "[ Γ ||-1 A ≅ B | H ]" := (Rel1TyEq Γ A B H) (at level 0).
 
 Definition Rel1Te   {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t A : term) (H : Rel1Ty R Γ A ) :=
-  [ Γ ||-1 t ::: A | H.(pack) ].
+  [ Γ ||-1 t ::: A | pack H ].
 
 Notation "[ Γ ||-1 t ::: A | H ]" := (Rel1Te Γ t A H) (at level 0).
 
 Definition Rel1TeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t u A : term) (H : Rel1Ty R Γ A) :=
-  [ Γ ||-1 t ≅ u ::: A | H.(pack) ].
+  [ Γ ||-1 t ≅ u ::: A | pack H ].
 
 Notation "[ Γ ||-1 t ≅ u ::: A | H ]" := (Rel1TeEq Γ t u A H) (at level 0).
 
@@ -492,3 +508,32 @@ Notation "[ Γ ||-< l | A ]" := (TyUr Γ l A) (at level 0).
 Notation "[ Γ ||-< l | A ≅ B | H ]" := (TyEqUr Γ l A B H) (at level 0).
 Notation "[ Γ ||-< l | t ::: A | H ]" := (TeUr Γ l t A H) (at level 0).
 Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TeEqUr Γ l t u A H) (at level 0).
+
+Definition LRU_ {Γ} (h : [ |- Γ ]) l {l'} (l_ : l << l') :=
+  LRValidMk _ _ _
+    (LRU (LogRelRec _) h l l_).
+
+Definition LRne_ (Γ : context) l {A : term} neA :=
+  (@LRValidMk Γ A _ _ _ _
+    (LRne (LogRelRec l) neA)).
+
+Definition LRPi_ (Γ : context) l {A : term} Π0A Π1A:=
+  (@LRValidMk Γ A _ _ _ _
+    (LRPi (LogRelRec l) Π0A Π1A)).
+
+Definition LREmb_ (Γ : context) {l l'} (l_ : l' << l) {A : term} H :=
+  (@LRValidMk Γ A _ _ _ _
+    (LRemb (LogRelRec l) l_ H)).
+
+(*Definition eta {A B} (f : A -> B) : f = fun x => f x := eq_refl.
+
+Definition emb' {Γ A} l (l_ : l = one) (p : [Γ ||-< zero | A ]) :  [Γ ||-< l | A].
+  destruct p.
+  econstructor.
+  rewrite l_.
+  rewrite (eta relEq'0) in valid0.
+  rewrite (eta relTerm'0) in valid0.
+  rewrite (eta relEqTerm'0) in valid0.
+  destruct valid0.
+  eapply LRemb.
+Defined.*)

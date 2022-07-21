@@ -11,7 +11,7 @@ Definition reflPi l {Γ} {A}
 (H0 : [Γ ||-0Π A]) (H1 : TyPiRel1 (LR (recl l)) H0) :
 (forall Δ (h : [  |- Δ]), relEq (_F H0 h) (F H0)) ->
 (forall Δ a (h1 : [  |- Δ])
- (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}]),
+ (h2 : [Δ ||-1 a ::: F H0 | LRValidMk _ _ _ (_F1 H1 h1) ]),
 relEq (_G H0 h1 h2) (PCUICAst.subst1 a 0 (G H0))) -> 
 [Γ ||-1Π A ≅ A | H0].
   destruct H0; econstructor; eauto.
@@ -19,18 +19,21 @@ relEq (_G H0 h1 h2) (PCUICAst.subst1 a 0 (G H0))) ->
 Defined.
 
 Definition reflEq0 {Γ} {A} (H : [ Γ ||-< zero | A ] ) : [ Γ ||-< zero |  A ≅ A | H].
-  destruct H as [[] ?]. 
-  revert Γ A relEq relTerm relEqTerm valid.
-  eapply LR_rect0; cbn; intros ; 
-  [apply reflNe | eapply (reflPi zero); eauto].
+  destruct H . 
+  revert Γ A relEq' relTerm' relEqTerm' valid.
+  eapply LR_rect0; cbn; intros .
+  + apply reflNe.
+  + now eapply (reflPi zero).
+  Unshelve.
+  all : eassumption.
 Defined.
 
 Definition reflEq1 {Γ} {A} (H : [ Γ ||-< one | A ] ) : [ Γ ||-< one |  A ≅ A | H].
-  destruct H as [[] ?]. 
-  revert Γ A relEq relTerm relEqTerm valid.
+  destruct H. 
+  revert Γ A relEq' relTerm' relEqTerm' valid.
   eapply (LR_rect1 
   (fun Γ A T T0 T1 H => 
-    [Γ ||-< zero | A ≅ A | LRValidMk (@LRPackMk Γ A T T0 T1) H]));
+    [Γ ||-< zero | A ≅ A | LRValidMk _ _ _  H]));
   intros.
   1, 4 : apply reflNe.
   1 : eapply (reflPi zero); eauto.
@@ -59,7 +62,7 @@ Definition reflTermPi {Γ0 A0} l (H0 : [Γ0 ||-0Π A0]) (H1 : TyPiRel1 (LR (recl
  relTerm (_F H0 h) t ->
  relEqTerm (_F H0 h) t t) ->
 (forall Δ a (h1 : [  |- Δ])
-   (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}]) t,
+   (h2 : [Δ ||-1 a ::: F H0 | LRValidMk _ _ _ (_F1 H1 h1) ]) t,
  relTerm (_G H0 h1 h2) t ->
  relEqTerm (_G H0 h1 h2) t t) ->
   forall t,
@@ -79,9 +82,8 @@ Definition reflEqTerm0 {Γ} {A t} (H : [ Γ ||-< zero | A ] ) :
    
 Proof.
     destruct H.
-    destruct pack.
     revert t.
-    eapply (LR_rec0 Γ A relEq relTerm relEqTerm valid).
+    eapply (LR_rec0 Γ A relEq' relTerm' relEqTerm' valid).
     + intros. now eapply reflTermNe.
     + intros. now eapply (reflTermPi zero).
     Unshelve. assumption.
@@ -95,13 +97,12 @@ Definition reflEqTerm1 {Γ} {A t} (H : [ Γ ||-< one | A ] ) :
     [ Γ ||-< one | t ≅ t ::: A | H ].
    
 Proof.
-    destruct H.
-    destruct pack.
+    destruct H.    
     revert t.
-    eapply (LR_rec1 Γ A relEq relTerm relEqTerm valid
+    eapply (LR_rec1 Γ A relEq' relTerm' relEqTerm' valid
     (fun Γ A T T0 T1 H => forall t,
-      [Γ ||-< zero | t ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] ->
-      [Γ ||-< zero | t ≅ t ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H])).
+      [Γ ||-< zero | t ::: A | LRValidMk _ _ _ H] ->
+      [Γ ||-< zero | t ≅ t ::: A | LRValidMk _ _ _ H])).
     1, 4 : intros; now eapply reflTermNe.
     1 : intros; now eapply (reflTermPi zero).
     2 : intros; now eapply (reflTermPi one).

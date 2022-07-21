@@ -7,7 +7,6 @@ Definition escape0 {Γ A} :
 Proof.
     intros.
     destruct X.
-    destruct pack.
     eapply (LR_rec0 Γ A). exact valid.
     + intros. destruct neA.
       destruct D. assumption.
@@ -22,7 +21,6 @@ Definition escape1 {Γ A} :
 Proof.
     intros.
     destruct X.
-    inversion pack.
     refine (LR_rec1 Γ A _ _ _ valid 
       (fun Γ A T T0 T1 H => 
         [Γ ||-< zero | A] ->
@@ -62,7 +60,7 @@ Definition escapeEqPi {Γ0 A0} l : forall (H0 : [Γ0 ||-0Π A0])
        (B : PCUICAst.term), LogicalRelation.relEq (_F H0 h) B -> [Δ |- F H0 ≅ B]) ->
     (forall (Δ : PCUICAst.PCUICEnvironment.context) (a : PCUICAst.term)
        (h1 : [  |- Δ])
-       (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}])
+       (h2 : [Δ ||-1 a ::: F H0 | {| valid := _F1 H1 h1 |}])
        (B : PCUICAst.term),
      LogicalRelation.relEq (_G H0 h1 h2) B ->
      [Δ |- PCUICAst.subst1 a 0 (G H0) ≅ B]) ->
@@ -84,11 +82,10 @@ Definition escapeEq0 {Γ A B H} :
 Proof.
     intros.
     destruct H.
-    destruct pack.
     revert B X.
     eapply (LR_rec0 Γ A _ _ _ valid
       (fun Γ A T T0 T1 H => forall B : PCUICAst.term,
-        [Γ ||-< zero | A ≅ B | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< zero | A ≅ B | LRValidMk _ _ _ H] -> 
         [Γ |- A ≅ B])).
     + intros; now eapply escapeEqNe. 
     + intros; now eapply (escapeEqPi zero).
@@ -102,14 +99,13 @@ Definition escapeEq1 {Γ A B H} :
 Proof.
     intros.
     destruct H.
-    destruct pack.
     revert B X.
     eapply (LR_rec1 Γ A _ _ _ valid
       (fun Γ A T T0 T1 H => forall B : PCUICAst.term,
-        [Γ ||-< zero | A ≅ B | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< zero | A ≅ B | LRValidMk _ _ _ H] -> 
         [Γ |- A ≅ B])
     (fun Γ A T T0 T1 H => forall B : PCUICAst.term,
-        [Γ ||-< one | A ≅ B | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< one | A ≅ B | LRValidMk _ _ _  H] -> 
         [Γ |- A ≅ B])).
     all :cbn in *.
     1, 4 : intros; now eapply escapeEqNe.
@@ -145,7 +141,7 @@ Definition escapeTermPi {Γ0 A0} l : forall
    LogicalRelation.relTerm (_F H0 h) t -> [Δ |- t ::: F H0]) ->
   (forall (Δ : PCUICAst.PCUICEnvironment.context) 
      (a : PCUICAst.term) (h1 : [  |- Δ])
-     (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}])
+     (h2 : [Δ ||-1 a ::: F H0 | {|  valid := _F1 H1 h1 |}])
      (t : PCUICAst.term),
    LogicalRelation.relTerm (_G H0 h1 h2) t ->
    [Δ |- t ::: PCUICAst.subst1 a 0 (G H0)]) ->
@@ -168,11 +164,10 @@ Definition escapeTerm0 {Γ t A} : forall
 Proof.
     intros.
     destruct H.
-    destruct pack.
     revert t X.
     eapply (LR_rec0 Γ A _ _ _ valid
       (fun Γ A T T0 T1 H => forall t : PCUICAst.term,
-        [Γ ||-< zero | t ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< zero | t ::: A | LRValidMk _ _ _ H] -> 
         [Γ |- t ::: A])).
     + intros. now eapply escapeTermNe.
     + intros. now eapply (escapeTermPi zero).
@@ -187,14 +182,13 @@ Definition escapeTerm1 {Γ t A} : forall
 Proof.
     intros.
     destruct H.
-    destruct pack.
     revert t X.
     eapply (LR_rec1 Γ A _ _ _ valid
       (fun Γ A T T0 T1 H => forall t : PCUICAst.term,
-        [Γ ||-< zero | t ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< zero | t ::: A | LRValidMk _ _ _  H] -> 
         [Γ |- t ::: A])
         (fun Γ A T T0 T1 H => forall t : PCUICAst.term,
-        [Γ ||-< one | t ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+        [Γ ||-< one | t ::: A | LRValidMk _ _ _  H] -> 
         [Γ |- t ::: A])).
     1, 4 : intros; now eapply escapeTermNe.
     1 : intros; now eapply (escapeTermPi zero).
@@ -228,7 +222,7 @@ Definition escapeEqTermPi {Γ0 A0} l : forall
    LogicalRelation.relEqTerm (_F H0 h) t u -> [Δ |- t ≅ u ::: F H0]) ->
   (forall Δ a
      (h1 : [  |- Δ])
-     (h2 : [Δ ||-1 a ::: F H0 | {| pack := _F H0 h1; valid := _F1 H1 h1 |}])
+     (h2 : [Δ ||-1 a ::: F H0 | {|valid := _F1 H1 h1 |}])
      t u,
    LogicalRelation.relEqTerm (_G H0 h1 h2) t u ->
    [Δ |- t ≅ u ::: PCUICAst.subst1 a 0 (G H0)]) ->
@@ -255,11 +249,10 @@ Definition escapeEqTerm0 {Γ t u A} : forall
 Proof.
   intros.
   destruct H.
-  destruct pack.
   revert t u X.
   eapply (LR_rec0 Γ A _ _ _ valid
   (fun Γ A T T0 T1 H => forall t u,
-    [Γ ||-< zero | t ≅ u ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+    [Γ ||-< zero | t ≅ u ::: A | LRValidMk _ _ _ H] -> 
     [Γ |- t ≅ u ::: A])).
   cbn in *.
   + intros; now eapply escapeEqTermNe.
@@ -275,14 +268,13 @@ Definition escapeEqTerm1 {Γ t u A} : forall
 Proof.
   intros.
   destruct H.
-  destruct pack.
   revert t u X.
   eapply (LR_rec1 Γ A _ _ _ valid
   (fun Γ A T T0 T1 H => forall t u,
-    [Γ ||-< zero | t ≅ u ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+    [Γ ||-< zero | t ≅ u ::: A | LRValidMk _ _ _ H] -> 
     [Γ |- t ≅ u ::: A])
   (fun Γ A T T0 T1 H => forall t u,
-    [Γ ||-< one | t ≅ u ::: A | LRValidMk (@LRPackMk Γ A T T0 T1) H] -> 
+    [Γ ||-< one | t ≅ u ::: A | LRValidMk _ _ _ H] -> 
     [Γ |- t ≅ u ::: A])).
   1, 4 : intros; now eapply escapeEqTermNe.
   1 : intros; now eapply (escapeEqTermPi zero).

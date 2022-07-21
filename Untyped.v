@@ -8,6 +8,8 @@ Definition neutral := whne RedFlags.default empty_global_env.
 Definition emptyName : aname := 
   ltac:(repeat econstructor).
 
+Definition eta {A B} (f : A -> B) : f = fun x => f x := rfl.
+
 Inductive isType : term -> Type :=
   | ProdType {na A B} : isType (tProd na A B)
   | NeType {Γ A}  : neutral Γ A -> isType A. 
