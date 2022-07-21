@@ -2,7 +2,7 @@ Require Import Untyped MLTTTyping LogicalRelation Properties Reduction LRInducti
 
 Set Universe Polymorphism.
 
-Definition Sym0 {Γ A B l l'} (ha : [Γ ||-< zero | A]) (hb : [Γ ||-< zero | B]) :
+Definition Sym0 {Γ A B} (ha : [Γ ||-< zero | A]) (hb : [Γ ||-< zero | B]) :
     [Γ ||-< zero | A ≅ B | ha ] ->
     [Γ ||-< zero | B ≅ A | hb ].
 Proof.
