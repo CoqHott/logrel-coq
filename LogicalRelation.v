@@ -516,12 +516,11 @@ Definition LRU_ {Γ} (h : [ |- Γ ]) l {l'} (l_ : l << l') :=
 Definition LRne_ (Γ : context) l {A : term} neA :=
   (@LRValidMk Γ A _ _ _ _
     (LRne (LogRelRec l) neA)).
-
-Definition LRPi_ (Γ : context) l {A : term} Π0A Π1A:=
+Definition LRPi_ (Γ : context) l {A : term} Π0A Π1A :=
   (@LRValidMk Γ A _ _ _ _
     (LRPi (LogRelRec l) Π0A Π1A)).
 
-Definition LREmb_ (Γ : context) {l l'} (l_ : l' << l) {A : term} H :=
+Definition LREmb_ (Γ : context) {l l'} (l_ : l' << l) {A : term} H : [Γ ||-< l | A] :=
   (@LRValidMk Γ A _ _ _ _
     (LRemb (LogRelRec l) l_ H)).
 
