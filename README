@@ -1,0 +1,22 @@
+This repo contains formalisation work on implementing a logical relation over MLTT with one universe.
+This formalisation follows the work done by Abel et al. (Decidability of conversion for Type Theory in Type Theory, 2018), and Loïc Pujet's work (https://github.com/loic-p/logrel-mltt) on removing inuction-recursion from Abel et al.'s work, making it feasable to translate this work from Agda to Coq.
+
+Here is a short description of every file's content:
+
+`Untyped` contains various useful definitions for defining the inference rules
+
+`MLTTTyping` defines the theory's inference rules, the current definition has a single universe as well as product types and eta-conversion for functions.
+
+`Properties` and `Reduction` contain basic theorem over the typing rules that are easily derivable by induction over the rules. `Reduction` also contains a basic, uncomplete and badly writte tactic `gen_conv` that can generate a few assumptions over the inference rules given the other rules in the context.
+
+`LogicalRelation` contains the logical relation's definition. This definition ressembles Loïc's in many ways, but also had to be modified for a few reasons :
+- Because of universe constraints and the fact that functors can't be indexed by terms in Coq whereas it's possible in Agda, the relevant structures had to be parametrized by a type level and a recursor, and the module system had to be dropped out entirely.
+- Since Coq and Agda's positivity checking for inductive types is different, it turns out that **LR**'s definition, even though it does not use any induction-induction or induction-recursion in agda, is not accepted in Coq. As such, the predicate over Pi-types for **LR** has been modified compared to Agda.
+
+`LRInduction` defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels.
+
+`Escape` contains a proof of the escape lemma for **LR**
+
+`Reflexivity` and `Symmetry` contains proofs of reflexivity and symmetry over the logical relation. Because of universe constraints, each proof has to be made on two different type levels. Also, the proof of symmetry is not finished, at all.
+
+`Shapeview` contains an attempt to mimic the file of the same name in the Agda formalization, with no success.
