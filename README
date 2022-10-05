@@ -11,7 +11,7 @@ Here is a short description of every file's content:
 
 `LogicalRelation` contains the logical relation's definition. This definition ressembles Loïc's in many ways, but also had to be modified for a few reasons :
 - Because of universe constraints and the fact that functors can't be indexed by terms in Coq whereas it's possible in Agda, the relevant structures had to be parametrized by a type level and a recursor, and the module system had to be dropped out entirely.
-- Since Coq and Agda's positivity checking for inductive types is different, it turns out that **LR**'s definition, even though it does not use any induction-induction or induction-recursion in agda, is not accepted in Coq. As such, the predicate over Pi-types for **LR** has been modified compared to Agda.
+- Since Coq and Agda's positivity checking for inductive types is different, it turns out that **LR**'s definition, even though it does not use any induction-induction or induction-recursion in agda, is not accepted in Coq. As such, the predicate over Pi-types for **LR** has been modified compared to Agda. You can find a MWE of the difference in positivity checking in the two systems in `MWE.v` and `MWE.agda`.
 
 `LRInduction` defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels.
 
