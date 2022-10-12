@@ -4,6 +4,9 @@ From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
   PCUICLiftSubst PCUICUnivSubst PCUICEquality PCUICUtils PCUICPosition.
 From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
 From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
+From LogRel Require Import Untyped.
+
+Set Primitive Projections.
 
 Implicit Types (cf : checker_flags) (Σ : global_env_ext).
 
@@ -18,6 +21,8 @@ Reserved Notation "[ Γ |- t ⇒* t' ::: A ]" (at level 0).
 Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0).
 
 Definition U := tSort Universe.type0.
+Definition eta_expand (f : term) := tApp (lift0 1 f) (tRel 0).
+
 
 Inductive wfType  : context -> term -> Type :=
     | wfTypeU {Γ} : 
@@ -113,9 +118,8 @@ with convTerm : context -> term -> term -> term -> Type :=
         [ Γ |- A ] ->
         [ Γ |- f ::: tProd na A B ] ->
         [ Γ |- g ::: tProd nb A B ] ->
-        [ Γ ,, vass na f |- tApp (lift0 1 f) (tRel 0) ≅ tApp (lift0 1 g) (tRel 0) ::: B ] ->
+        [ Γ ,, vass na f |- eta_expand f ≅ eta_expand g ::: B ] ->
         [ Γ |- f ≅ g ::: tProd na A B ]
-
     
 where "[   |- Γ ]" := (wfContext Γ)
 and   "[ Γ |- T ]" := (wfType Γ T)
@@ -186,28 +190,46 @@ Inductive typeRedClosure (Γ : context) : term -> term -> Type :=
 where "[ Γ |- A ⇒* B ]" := (typeRedClosure Γ A B). 
 
 
-Definition termRedStrict (Γ : context) (t u A : term) {t'} : Type :=
-    [ Γ |- t ⇒ t' ::: A ] × [Γ |- t' ⇒* u ::: A].
+Record termRedStrict (Γ : context) (t u A : term) {t'} : Type :=
+  {
+    termRedStrictOneRed : [ Γ |- t ⇒ t' ::: A ] ;
+    termRedStrictRed : [Γ |- t' ⇒* u ::: A]
+  }.
 
+Record typeRedStrict (Γ : context) (A B : term) {A'} : Type :=
+  {
+    typeRedStrictOneRed : [ Γ |- A ⇒ A'] ;
+    typeRedStrictRed : [Γ |- A' ⇒* B]
+  }.
 
-Definition typeRedStrict (Γ : context) (A B : term) {A'} : Type :=
-    [ Γ |- A ⇒ A'] × [Γ |- A' ⇒* B].
-
-
-Definition termRedWHNF (Γ : context) (t u A : term) : Type :=
-        [ Γ |- t ⇒* u ::: A ] × (whnf RedFlags.default empty_global_env Γ u).
+Record termRedWHNF (Γ : context) (t u A : term) : Type :=
+  {
+    termRedWHNFRed :> [ Γ |- t ⇒* u ::: A ] ;
+    termRedWHNFWHNF :> whnf Γ u
+  }.
 
 
 (*Type reduction to whnf*)
-Definition typeRedWHNF (Γ : context) (A B : term) : Type :=
-    [ Γ |- A ⇒* B ] × (whnf RedFlags.default empty_global_env Γ B).
+Record typeRedWHNF (Γ : context) (A B : term) : Type :=
+  {
+    typeRedWHNFRed :> [ Γ |- A ⇒* B ] ;
+    typeRedWHNFWHNF :> whnf Γ B
+  }.
 
-Definition termEqWF (Γ : context) (t u A : term) : Type :=
-    [Γ |- t ::: A] × [Γ |- u ::: A] × [Γ |- t ≅ u ::: A].
+Record termEqWF (Γ : context) (t u A : term) : Type :=
+  {
+    termEqWFLeft : [Γ |- t ::: A] ;
+    termEqWFRight : [Γ |- u ::: A] ;
+    termEqWFEq :> [Γ |- t ≅ u ::: A]
+  }.
 
 
-Definition typeEqWF (Γ : context) (A B : term) : Type :=
-    [Γ |- A] × [Γ |- B] × [Γ |- A ≅ B].
+Record typeEqWF (Γ : context) (A B : term) : Type :=
+  { 
+    typeEqWFLeft : [Γ |- A] ;
+    typeEqWFRight : [Γ |- B] ;
+    typeEqWFEq :> [Γ |- A ≅ B]
+  }.
  
 
 Notation "[ Γ |- t ⇒⁺ u ::: A ]" := (termRedStrict Γ t u A) (at level 0).   
@@ -217,18 +239,18 @@ Notation "[ Γ |- A ↘ B ]" := (typeRedWHNF Γ A B) (at level 0).
 Notation "[ Γ |- t :≡: u ::: A ]" := (termEqWF Γ t u A) (at level 0).
 Notation "[ Γ |- A :≡: B ]" := (typeEqWF Γ A B) (at level 0).
 
-Record TermRedWF (Γ : context) (t u A : term) : Type := mkTermRedWF {
-    wft : [Γ |- t ::: A];
-    wfu : [Γ |- u ::: A];
-    C   : [Γ |- t ⇒* u ::: A]
+Record termRedWF (Γ : context) (t u A : term) : Type := {
+    termRedWFLeft : [Γ |- t ::: A];
+    termRedWFRight : [Γ |- u ::: A];
+    termRedWFRed :> [Γ |- t ⇒* u ::: A]
 }.
 
 
-Record TypeRedWF (Γ : context) (A B : term) : Type := mkTypeRedWF {
-    wfA : [Γ |- A];
-    wfB : [Γ |- B];
-    D   : [Γ |- A ⇒* B]
+Record typeRedWF (Γ : context) (A B : term) : Type := {
+    typeRedWFLeft : [Γ |- A];
+    typeRedWFRight : [Γ |- B];
+    typeRedWFRed :> [Γ |- A ⇒* B]
 }.
 
-Notation "[ Γ |- t :⇒*: u ::: A ]" := (TermRedWF Γ t u A) (at level 0).   
-Notation "[ Γ |- A :⇒*: B ]" := (TypeRedWF Γ A B) (at level 0).   
+Notation "[ Γ |- t :⇒*: u ::: A ]" := (termRedWF Γ t u A) (at level 0).   
+Notation "[ Γ |- A :⇒*: B ]" := (typeRedWF Γ A B) (at level 0).   
