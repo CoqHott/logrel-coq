@@ -12,3 +12,5 @@
 Makefile.coq
 
 Makefile.coq.conf
+
+*.cache

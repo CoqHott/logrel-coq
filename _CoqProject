@@ -1,14 +1,15 @@
 -R theories LogRel
 
 theories/MLTTTyping.v
-theories/Untyped.v
 theories/Properties.v
 theories/Escape.v
 theories/LogicalRelation.v
 theories/LRInduction.v
-theories/MWE.v
 theories/Reduction.v
 theories/Reflexivity.v
 theories/Shapeview.v
-theories/Symmetry.v
+# theories/Symmetry.v
 theories/Weakening.v
+theories/Untyped.v
+
+# theories/MWE.v
