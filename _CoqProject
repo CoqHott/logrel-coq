@@ -12,4 +12,4 @@ theories/Shapeview.v
 theories/Weakening.v
 theories/Untyped.v
 
-# theories/MWE.v
+theories/Positivity.v
