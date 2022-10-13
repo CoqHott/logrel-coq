@@ -147,7 +147,7 @@ Combined Scheme wfInduction from
 End InductionPrinciples.
 
 Inductive termRed (Γ : context) : term -> term -> term -> Type :=
-    | conv {A B t u} : 
+    | termRedConv {A B t u} : 
         [ Γ |- t ⇒ u ::: A ] ->
         [ Γ |- A ≅ B ] ->
         [ Γ |- t ⇒ u ::: B ]

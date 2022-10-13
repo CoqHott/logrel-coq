@@ -3,89 +3,83 @@ From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
   PCUICLiftSubst PCUICUnivSubst PCUICEquality PCUICUtils PCUICPosition.
 From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
 From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
-Require Import MLTTTyping.
+Require Import MLTTTyping Properties.
 
 Definition RedConvTe {Γ} {t u A : term} :
     [Γ |- t ⇒ u ::: A] -> 
     [Γ |- t ≅ u ::: A].
-    intro.
-    induction X. 
-    eapply TermConv; eassumption.
-    eapply TermAppCong. eassumption.
-    constructor. assumption.
-    eapply TermBRed; assumption.
+Proof.
+    induction 1 ; mltt.
 Defined.
+
+#[global] Hint Resolve RedConvTe : mltt.
 
 Definition RedConvTeC {Γ} {t u A : term} :
     [Γ |- t ⇒* u ::: A] -> 
     [Γ |- t ≅ u ::: A].
-    intro.
-    induction X.
-    + constructor. assumption.
-    + eapply TermTrans.
-      exact (RedConvTe t0). 
-      assumption.
+Proof.
+  induction 1 ; mltt.
 Defined.
+
+#[global] Hint Resolve RedConvTeC : mltt.
 
 Definition RedConvTy {Γ} {A B : term} :
     [Γ |- A ⇒ B] -> 
     [Γ |- A ≅ B].
-    intro.
-    destruct X.
-    pose proof (RedConvTe t).
-    exact (convUniv X).
+Proof.
+  induction 1 ; mltt.
 Defined.
+
+#[global] Hint Resolve RedConvTy : mltt.
 
 Definition RedConvTyC {Γ} {A B : term} :
     [Γ |- A ⇒* B] -> 
     [Γ |- A ≅ B].
-    intro.
-    induction X.
-    exact (TypeRefl w).
-    eapply TypeTrans.
-    exact (RedConvTy t).
-    assumption.
+Proof.
+  induction 1 ; mltt.
 Defined.
+
+#[global] Hint Resolve RedConvTyC : mltt.
 
 Definition ClosureConv {Γ} {t u A B} :
     [Γ |- t ⇒* u ::: A] ->
     [Γ |- A ≅ B] ->
     [Γ |- t ⇒* u ::: B].
-    intros.
-    induction X.
-    constructor.
-    eapply wfTermConv; eassumption.
-    eapply termRedSucc.
-    eapply conv; eassumption.
-    exact (IHX X0).
+Proof.
+  induction 1 ; mltt.
+  all: econstructor ; mltt.
 Defined.
+
+#[global] Hint Resolve ClosureConv | 10 : mltt.
 
 Definition TermRedWFConv {Γ} {t u A B} :
     [Γ |- t :⇒*: u ::: A] ->
     [Γ |- A ≅ B] ->
     [Γ |- t :⇒*: u ::: B].
-    intros.
-    destruct X.
-    constructor.
-    1,2 : eapply wfTermConv; eassumption.
-    exact (ClosureConv C X0).
-Defined.
+Proof.
+  intros [] ?.
+  constructor ; mltt.
+Defined. 
+
+#[global] Hint Resolve TermRedWFConv | 10 : mltt.
 
 Definition TypeRedWFConv {Γ} {A B} :
     [Γ |- A :⇒*: B] ->
-    [Γ |- A ≅ B]. 
-    intro.
-    destruct X.
-    exact (RedConvTyC D).
+    [Γ |- A ≅ B].
+Proof.
+  intros [] ; mltt.
 Defined.
+
+#[global] Hint Resolve TypeRedWFConv : mltt.
 
 Definition RedConvTeWFC {Γ} {t u A} :
     [Γ |- t :⇒*: u ::: A] ->
-    [Γ |- t ≅ u ::: A]. 
-    intro.
-    destruct X.
-    exact (RedConvTeC C).
+    [Γ |- t ≅ u ::: A].
+Proof.
+  intros [] ; mltt.
 Defined.
+
+#[global] Hint Resolve RedConvTeWFC : mltt.
 
 Ltac skip :=
     match goal with
