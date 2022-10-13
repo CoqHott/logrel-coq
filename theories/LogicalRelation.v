@@ -24,7 +24,7 @@ Module neType.
 
 End neType.
 
-Import neType(neType, Build_neType).
+Export neType(neType, Build_neType).
 Notation "[ Γ ||-ne A ]" := (neType Γ A)  (at level 0).
 
 Module neTypeEq.
@@ -40,7 +40,7 @@ Module neTypeEq.
 
 End neTypeEq.
 
-Import neTypeEq(neTypeEq,Build_neTypeEq).
+Export neTypeEq(neTypeEq,Build_neTypeEq).
 Notation "[ Γ ||-ne A ≅ B | C ]" := (neTypeEq Γ A B C) (at level 0).
 
 Module neTerm.
@@ -62,7 +62,7 @@ Module neTerm.
 
 End neTerm.
 
-Import neTerm(neTermNf,Build_neTermNf, neTerm, Build_neTerm).
+Export neTerm(neTermNf,Build_neTermNf, neTerm, Build_neTerm).
 
 Notation "[ Γ ||-neNf t ::: A ]" := (neTermNf Γ t A) (at level 0).
 Notation "[ Γ ||-ne t ::: A | B ]" := (neTerm Γ t A B) (at level 0).
@@ -89,7 +89,7 @@ Module neTermEq.
 
 End neTermEq.
 
-Import neTermEq(neTermEqNF, Build_neTermEqNF, neTermEq, Build_neTermEq).
+Export neTermEq(neTermEqNF, Build_neTermEqNF, neTermEq, Build_neTermEq).
 Notation "[ Γ ||-neNf t ≅ u ::: A ]" := (neTermEqNF Γ t u A) (at level 0).
 Notation "[ Γ ||-ne t ≅ u ::: A | B ] " := (neTermEq Γ t u A B) (at level 0).
 
@@ -132,7 +132,7 @@ Module LRKit.
 
 End LRKit.
 
-Import LRKit(LogRelKit,Build_LogRelKit).
+Export LRKit(LogRelKit,Build_LogRelKit).
 
 Notation "[ R | Γ ||-U ]"                := (R.(LRKit.URel) Γ) (at level 0).
 Notation "[ R | Γ ||-Π A ]"              := (R.(LRKit.PiRel) Γ A) (at level 0).
@@ -160,7 +160,7 @@ Module URel.
 
 End URel.
 
-Import URel(URel,Build_URel,URelEq,Build_URelEq).
+Export URel(URel,Build_URel,URelEq,Build_URelEq).
 
 Notation "[ Γ ||-U ]" := (URel Γ) (at level 0).
 Notation "[ Γ ||-U≅ B ]" := (URelEq Γ B) (at level 0).
@@ -196,7 +196,7 @@ Module UTerm.
 
 End UTerm.
 
-Import UTerm(UTerm,Build_UTerm,UTermEq,Build_UTermEq).
+Export UTerm(UTerm,Build_UTerm,UTermEq,Build_UTermEq).
 Notation "[ R | Γ ||-U t :::U | l ]" := (UTerm R Γ t l) (at level 0).
 Notation "[ R | Γ ||-U t ≅ u :::U | l ]" := (UTermEq R Γ t u l) (at level 0).
 
@@ -221,7 +221,7 @@ Module LRPack.
 
 End LRPack.
 
-Import LRPack(LRPack,Build_LRPack).
+Export LRPack(LRPack,Build_LRPack).
 
 Notation "[ Γ ||-p A ≅ B | R ]" := (@LRPack.eq Γ A R B) (at level 0).
 Notation "[ Γ ||-p t ::: A | R ]" := (@LRPack.term Γ A R t ) (at level 0).
@@ -240,10 +240,11 @@ Module LRValid.
   }.
 
   Arguments LRValid : clear implicits.
+  Arguments Build_LRValid {_ _ _ _ _ _}.
 
 End LRValid.
 
-Import LRValid(LRValid,Build_LRValid).
+Export LRValid(LRValid,Build_LRValid).
 
 Coercion pack {Γ A R} (H : LRValid Γ A R) : LRPack Γ A :=
   @Build_LRPack Γ A H.(LRValid.eq) H.(LRValid.term) H.(LRValid.eqTerm).
@@ -287,7 +288,7 @@ Module TyPiRel.
 
 End TyPiRel.
 
-Import TyPiRel(TyPiRel,Build_TyPiRel,TyPiRelValid,Build_TyPiRelValid).
+Export TyPiRel(TyPiRel,Build_TyPiRel,TyPiRelValid,Build_TyPiRelValid).
 Notation "[ Γ ||-Πr A ]" := (TyPiRel Γ A) (at level 0).
 
 Module TyPiEqRel.
@@ -309,7 +310,7 @@ Module TyPiEqRel.
 
 End TyPiEqRel.
 
-Import TyPiEqRel(TyPiEqRel,Build_TyPiEqRel).
+Export TyPiEqRel(TyPiEqRel,Build_TyPiEqRel).
 Notation "[ Γ ||-Π A ≅ B | H ]" := (TyPiEqRel Γ A B H) (at level 0).
 
 Module TePiRel.
@@ -333,7 +334,7 @@ Module TePiRel.
 
 End TePiRel.
 
-Import TePiRel(TePiRel,Build_TePiRel).
+Export TePiRel(TePiRel,Build_TePiRel).
 Notation "[ Γ ||-Π t ::: A | R ]" := (TePiRel Γ t A R) (at level 0).
 
 Module TePiEqRel.
@@ -356,7 +357,7 @@ Module TePiEqRel.
 
 End TePiEqRel.
 
-Import TePiEqRel(TePiEqRel,Build_TePiEqRel).
+Export TePiEqRel(TePiEqRel,Build_TePiEqRel).
 
 Notation "[ Γ ||-Π t ≅ u ::: A | H ]" := (TePiEqRel Γ t u A H) (at level 0).
 
@@ -382,7 +383,7 @@ Inductive LR {l : TypeLevel} (rec : forall l', l' << l -> LogRelKit)
       (fun B   => [ _ | Γ ||- A ≅ B       | H ])
       (fun t   => [ _ | Γ ||- t     ::: A | H ])
       (fun t u => [ _ | Γ ||- t ≅ u ::: A | H ])
-      .
+  .
 
 Definition RelTy
 {l : TypeLevel} (R : forall l', l' << l -> LogRelKit)
@@ -481,26 +482,49 @@ Notation "[ Γ ||-< l | A ≅ B | H ]" := (TyEqUr Γ l A B H) (at level 0).
 Notation "[ Γ ||-< l | t ::: A | H ]" := (TeUr Γ l t A H) (at level 0).
 Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TeEqUr Γ l t u A H) (at level 0).
 
+Lemma LRbuild {Γ l A rEq rTe rTeEq} :
+  LR (recl l) Γ A rEq rTe rTeEq ->
+  [Γ ||-< l | A].
+Proof.
+  destruct l ; cbn.
+  - econstructor.
+    eassumption.
+  - econstructor.
+    eassumption.
+Defined.
+
+Lemma LRunbuild {Γ l A} :
+  [Γ ||-< l | A] ->
+  ∑ rEq rTe rTeEq , LR (recl l) Γ A rEq rTe rTeEq.
+Proof.
+  intros [].
+  destruct l ; red in valid ; cbn in *.
+  all: do 3 eexists ; eassumption.
+Qed.
+
+Create HintDb logrel.
+#[global] Hint Constants Opaque : logrel.
+#[global] Hint Variables Transparent : logrel.
+Ltac logrel := eauto with logrel.
+
+#[global] Hint Resolve LRbuild : logrel.
+
 Definition LRU_ {Γ} l (H : [Γ ||-U]) : [Γ ||-< l | U] :=
-  Build_LRValid Γ _ _ _ _ _
-    (LRU (LogRelRec l) H).
+  Build_LRValid (LRU (LogRelRec l) H).
 
 Definition LRne_ (Γ : context) l {A : term} (neA : [Γ ||-ne A])
   : [Γ ||-< l | A] :=
-  Build_LRValid Γ A _ _ _ _
-    (LRne (LogRelRec l) neA).
+  Build_LRValid (LRne (LogRelRec l) neA).
 
 Definition LRPi_ (Γ : context) l {A : term}
   (ΠrA : [Γ ||-Πr A]) (ΠvA : TyPiRelValid (LR (LogRelRec l)) ΠrA)
   : [Γ ||-<l | A] :=
-  Build_LRValid Γ A _ _ _ _
-    (LRPi (LogRelRec l) ΠrA ΠvA).
+  Build_LRValid (LRPi (LogRelRec l) ΠrA ΠvA).
 
 Definition LREmb_ (Γ : context) {l l'} (l_ : l' << l) {A : term}
   (H : [LogRelRec l l' l_ | Γ ||- A])
   : [ Γ ||-< l | A ]
-  := Build_LRValid Γ A _ _ _ _
-    (LREmb (LogRelRec l) l_ H).
+  := Build_LRValid (LREmb (LogRelRec l) l_ H).
 
 (*Definition eta {A B} (f : A -> B) : f = fun x => f x := eq_refl.
 
