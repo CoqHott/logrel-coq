@@ -35,6 +35,27 @@ Proof.
   - inversion l_.
 Defined.
 
+Theorem LR_rect0'
+  (P : forall {c t rEq rTe rTeEq}, @LR zero rec0 c t rEq rTe rTeEq  -> Type) :
+  (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+    P (LRne rec0 neA)) ->
+
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec0) ΠA),
+    (forall {Δ} (h : [ |- Δ]),
+      P (HAvalid.(TyPiRel.domValid) h)) ->
+    (forall {Δ a} (h1 : [ |- Δ ]) 
+      (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
+      P (HAvalid.(TyPiRel.codValid) h1 h2)) ->
+    P (LRPi rec0 ΠA HAvalid)) ->
+
+  forall (Γ : context) (A : term) (lr : [Γ ||-< zero | A]),
+  P (lr.(LRValid.valid)).
+Proof.
+  intros.
+  eapply LR_rect0.
+  all: eassumption.
+Qed.
+
 (*TODO : get a good induction principle*)
 (*Scheme LR_rect := Induction for LR Sort Type.*)
 Theorem LR_rect1
