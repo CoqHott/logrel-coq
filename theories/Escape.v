@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst.
-Require Import Untyped MLTTTyping LogicalRelation Properties Reduction LRInduction.
+Require Import Automation Untyped MLTTTyping LogicalRelation Properties Reduction LRInduction.
 Set Universe Polymorphism.
 
 Definition escape0 {Γ A} :
@@ -41,7 +41,7 @@ Proof.
     intros [] [] ; cbn in *.
     do 2 eapply TypeTrans.
     all: mltt.
-Defined.
+Qed.
 
 Definition escapeEqPi {Γ A} : forall (ΠA : [Γ ||-Πr A]),
     forall B, [Γ ||-Π A ≅ B | ΠA] -> [Γ |- A ≅ B].
@@ -49,7 +49,7 @@ Proof.
   intros [] ? [].
   do 2 eapply TypeTrans.
   all: mltt.
-Defined.
+Qed.
 
 Definition escapeEq0 {Γ A B} (H : [Γ ||-< zero | A]) :
     [ Γ ||-< zero | A ≅ B | H ] ->
@@ -61,7 +61,7 @@ Proof.
       [Γ |- A ≅ B])).
   + intros; now eapply escapeEqNe. 
   + intros; now eapply escapeEqPi.
-Defined.
+Qed.
 
 Definition escapeEq1 {Γ A B} (H : [Γ ||-< one | A]) :
     [ Γ ||-< one | A ≅ B | H ] ->
@@ -94,7 +94,7 @@ Definition escapeTermNe {Γ0 A0 t}: forall
 Proof.
   intros [] [? []] ; cbn in *.
   mltt.
-Defined.
+Qed.
 
 Definition escapeTermPi {Γ A} : forall (ΠA : [Γ ||-Πr A]) (t : term), 
   [Γ ||-Π t ::: A | ΠA] -> 
@@ -102,7 +102,7 @@ Definition escapeTermPi {Γ A} : forall (ΠA : [Γ ||-Πr A]) (t : term),
 Proof.
   intros [? ? ? ? []] ? [? []]; cbn in *.
   mltt.
-Defined.
+Qed.
 
 Definition escapeTerm0 {Γ t A} (H : [Γ ||-< zero | A ]) :
   [Γ ||-< zero | t ::: A | H ] ->
@@ -113,7 +113,7 @@ Proof.
       [Γ ||-< zero | t ::: A | Build_LRValid H] -> 
       [Γ |- t ::: A])).
   all: eauto using escapeTermNe, escapeTermPi.
-Defined.
+Qed.
 
 Definition escapeTerm1 {Γ t A} (H : [Γ ||-< one | A ]) :
   [Γ ||-< one | t ::: A | H ] ->
@@ -133,7 +133,7 @@ Proof.
   - eauto using escapeTermNe.
   - eauto using escapeTermPi.
   - auto.
-Defined.
+Qed.
 
 Definition escapeEqTermNe {Γ0 A0 t u}: forall
   (neA : [Γ0 ||-ne A0]),
@@ -143,7 +143,7 @@ Proof.
   intros [] [? ? [] [] []].
   do 2 eapply TermTrans.
   all: mltt.
-Defined.
+Qed.
 
 Definition escapeEqTermPi {Γ A} : forall (ΠA: [Γ ||-Πr A]) t u,
   [Γ ||-Π t ≅ u ::: A | ΠA] -> 
@@ -155,7 +155,7 @@ Proof.
   assert [Γ |- redPi ≅ A] by mltt.
   eapply (TermTrans (t' := nfR)).
   all: mltt.
-Defined.
+Qed.
 
 Definition escapeEqTerm0 {Γ t u A} (H : [Γ ||-< zero | A ]) :
   [Γ ||-< zero | t ≅ u ::: A | H ] ->
@@ -166,7 +166,7 @@ Proof.
     [Γ ||-< zero | t ≅ u ::: A | Build_LRValid H] -> 
     [Γ |- t ≅ u ::: A])).
   all: eauto using escapeEqTermNe, escapeEqTermPi.
-Defined.
+Qed.
 
 Definition escapeEqTerm1 {Γ t u A} (H : [Γ ||-< one | A ]) :
   [Γ ||-< one | t ≅ u ::: A | H ] ->
@@ -188,4 +188,4 @@ Proof.
   - eauto using escapeEqTermNe.
   - eauto using escapeEqTermPi.
   - eauto.
-Defined.
+Qed.

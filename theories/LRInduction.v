@@ -1,9 +1,5 @@
-From MetaCoq.Template Require Import config utils.
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
-  PCUICLiftSubst PCUICUnivSubst PCUICEquality PCUICUtils PCUICPosition.
-From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
-From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
-Require Import MLTTTyping LogicalRelation.
+From MetaCoq.PCUIC Require Import PCUICAst.
+From LogRel Require Import MLTTTyping LogicalRelation.
 
 Theorem LR_rect0
   (P : forall {c t rEq rTe rTeEq}, @LR zero rec0 c t rEq rTe rTeEq  -> Type) :
@@ -33,7 +29,7 @@ Proof.
     eapply HPi.
     all: intros ; eapply HRec.
   - inversion l_.
-Defined.
+Qed.
 
 Theorem LR_rect0'
   (P : forall {c t rEq rTe rTeEq}, @LR zero rec0 c t rEq rTe rTeEq  -> Type) :
@@ -111,7 +107,7 @@ Proof.
     eapply Hemb.
     eapply LR_rect0.
     all: assumption.
-Defined.
+Qed.
 
 (* Not reproving the lemmas for the lower level, since we can prove it using LR_rect0*)
 Theorem LR_rect1'
@@ -152,7 +148,7 @@ Proof.
   eapply LR_rect1.
   all: try solve [eauto].
   all: intros ; eapply H0.
-Defined.
+Qed.
 
 (*The nice, combined induction principle we would like to have… But sadly the naïve proof fails due to universe constraints.*)
 

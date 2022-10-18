@@ -6,7 +6,7 @@ Set Universe Polymorphism.
 Definition reflNe {Γ} {A} (neA : [Γ ||-ne A]) : [Γ ||-ne A ≅ A | neA].
 Proof.
   destruct neA; now econstructor.
-Defined.
+Qed.
 
 Definition reflPi l {Γ} {A} (ΠA : [Γ ||-Πr A]) (ΠAvalid : TyPiRelValid (LR (recl l)) ΠA) :
 (forall Δ (h : [  |- Δ]), (ΠA.(TyPiRel.domRel) h).(LRPack.eq) ΠA.(TyPiRel.dom)) ->
@@ -18,14 +18,14 @@ Proof.
   destruct ΠA.
   econstructor.
   all: mltt.
-Defined.
+Qed.
 
 Definition reflEq0 {Γ} {A} (lr : [ Γ ||-< zero | A ] ) : [ Γ ||-< zero |  A ≅ A | lr ].
 Proof.
   eapply (LR_rect0 (fun Γ A _ _ _ H => [Γ ||-< zero | A ≅ A | Build_LRValid H])).
   + intros. now apply reflNe.
   + intros. now eapply (reflPi zero).
-Defined.
+Qed.
 
 Definition reflEq1 {Γ} {A} (H : [ Γ ||-< one | A ] ) : [ Γ ||-< one |  A ≅ A | H].
 Proof.
@@ -36,17 +36,17 @@ Proof.
   - intros ; eapply reflNe.
   - intros ; now eapply (reflPi one).
   - eauto.
-Defined.
+Qed.
 
-Definition reflTermNe {Γ0 A0 t} : forall (neA : [Γ0 ||-ne A0]), 
-  [Γ0 ||-ne t ::: A0 | neA] -> [Γ0 ||-ne t ≅ t ::: A0 | neA].
+Definition reflTermNe {Γ A t} : forall (neA : [Γ ||-ne A]), 
+  [Γ ||-ne t ::: A | neA] -> [Γ ||-ne t ≅ t ::: A | neA].
 Proof.
   intros [] [? ? []] ; cbn in *.
   econstructor.
   1-2: now mltt.
   econstructor.
   all: mltt.
-Defined.
+Qed.
 
 Definition reflTermPi {Γ A} l (ΠA : [Γ ||-Πr A]) (ΠAvalid : TyPiRelValid (LR (recl l)) ΠA):
 (forall Δ (h : [  |- Δ]) t,
@@ -66,7 +66,7 @@ Proof.
   all: mltt.
   econstructor.
   all: mltt.
-Defined.
+Qed.
 
 Definition reflEqTerm0 {Γ} {A t} (H : [ Γ ||-< zero | A ] ) : 
     [ Γ ||-< zero | t ::: A | H ] ->
@@ -76,7 +76,7 @@ Proof.
     [Γ ||-< zero | t ≅ t ::: A | Build_LRValid H])).
   - intros. now eapply reflTermNe.
   - intros. now eapply (reflTermPi zero).
-Defined.
+Qed.
 
 Definition reflEqTerm1 {Γ} {A t} (H : [ Γ ||-< one | A ] ) : 
     [ Γ ||-< one | t ::: A | H ] ->
@@ -99,7 +99,7 @@ Proof.
   - intros. now apply reflTermNe.
   - intros. now apply (reflTermPi one).
   - auto.
-Defined.
+Qed.
 
   
 

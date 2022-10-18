@@ -1,13 +1,8 @@
-From MetaCoq.Template Require Import config utils.
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
-  PCUICLiftSubst PCUICUnivSubst PCUICEquality PCUICUtils PCUICPosition PCUICNormal PCUICCanonicity.
-From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
-From MetaCoq.PCUIC Require Export PCUICCases.
+From MetaCoq.PCUIC Require Import PCUICAst.
 From LogRel Require Import MLTTTyping Untyped.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
-Set Printing Universes.
 
 (*Modules are used as a hackish solution to go around uniqueness of field names for records*)
 
@@ -106,7 +101,7 @@ Definition LtSubst {l} (h : l = one) : zero << l.
 Proof.
   rewrite h.
   constructor.
-Defined.
+Qed.
 
 Definition elim (l l' : TypeLevel) :=
   match l with
@@ -171,7 +166,7 @@ Module UTerm.
   {Γ : context} {t : term} {l_ : l' << l} := {
     term : term;
     red : [ Γ |- t :⇒*: term ::: U ];
-    type : isType term;
+    type : isType Γ term;
     rel : [rec l_ | Γ ||- t ] ;
   }.
 
@@ -184,8 +179,8 @@ Module UTerm.
     termR     : PCUICAst.term;
     redL      : [ Γ |- t :⇒*: termL ::: U ];
     redR      : [ Γ |- u :⇒*: termR ::: U ];
-    tyL  : isType termL;
-    tyR  : isType termR;
+    tyL  : isType Γ termL;
+    tyR  : isType Γ termR;
     eq   : [ Γ |- termL ≅ termR ::: U ];
     relL    : [ rec l_ | Γ ||- t ] ;
     relR    : [ rec l_ | Γ ||- u ] ;
@@ -318,7 +313,7 @@ Module TePiRel.
   Record TePiRel {Γ : context} {t A : term} {H : TyPiRel Γ A} := {
     nf : term;
     red : [ Γ |- t :⇒*: nf ::: H.(TyPiRel.redPi) ];
-    nfFun : isFun nf;
+    nfFun : isFun Γ nf;
     refl : [ Γ |- nf ≅ nf ::: H.(TyPiRel.redPi) ];
     appRel {Δ a} (h : [ |- Δ ])
       (ha : [Δ ||-p a ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
@@ -344,8 +339,8 @@ Module TePiEqRel.
       nfR : term;
       redL : [ Γ |- t :⇒*: nfL ::: H.(TyPiRel.redPi) ];
       redR : [ Γ |- u :⇒*: nfR ::: H.(TyPiRel.redPi) ];
-      nfFunL : isFun nfL;
-      nfFunR : isFun nfR;
+      nfFunL : isFun Γ nfL;
+      nfFunR : isFun Γ nfR;
       eq : [ Γ |- nfL ≅ nfR ::: H.(TyPiRel.redPi) ];
       rel : [ Γ ||-Π t ::: A | H ];
       eqApp {Δ a} (h : [ |- Δ ])
@@ -482,16 +477,13 @@ Notation "[ Γ ||-< l | A ≅ B | H ]" := (TyEqUr Γ l A B H) (at level 0).
 Notation "[ Γ ||-< l | t ::: A | H ]" := (TeUr Γ l t A H) (at level 0).
 Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TeEqUr Γ l t u A H) (at level 0).
 
-Lemma LRbuild {Γ l A rEq rTe rTeEq} :
+Definition LRbuild {Γ l A rEq rTe rTeEq} :
   LR (recl l) Γ A rEq rTe rTeEq ->
-  [Γ ||-< l | A].
-Proof.
-  destruct l ; cbn.
-  - econstructor.
-    eassumption.
-  - econstructor.
-    eassumption.
-Defined.
+  [Γ ||-< l | A] :=
+  match l with
+    | zero => fun H => Build_LRValid H
+    | one => fun H => Build_LRValid H
+end.
 
 Lemma LRunbuild {Γ l A} :
   [Γ ||-< l | A] ->
@@ -537,4 +529,4 @@ Definition emb' {Γ A} l (l_ : l = one) (p : [Γ ||-< zero | A ]) :  [Γ ||-< l 
   rewrite (eta relEqTerm'0) in valid0.
   destruct valid0.
   eapply LRemb.
-Defined.*)
+Qed.*)

@@ -1,8 +1,10 @@
 -R theories LogRel
 
+theories/Automation.v
 theories/Untyped.v
 theories/MLTTTyping.v
 theories/Properties.v
+theories/Generation.v
 theories/Escape.v
 theories/LogicalRelation.v
 theories/LRInduction.v

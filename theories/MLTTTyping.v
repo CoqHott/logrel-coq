@@ -1,14 +1,8 @@
-(* Distributed under the terms of the MIT license. *)
-From MetaCoq.Template Require Import config utils.
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils
-  PCUICLiftSubst PCUICUnivSubst PCUICEquality PCUICUtils PCUICPosition.
-From MetaCoq.PCUIC Require Export PCUICCumulativitySpec.
-From MetaCoq.PCUIC Require Export PCUICCases PCUICNormal.
-From LogRel Require Import Untyped.
+From MetaCoq.Template Require Import Universes.
+From MetaCoq.PCUIC Require Import PCUICAst.
+From LogRel Require Import Untyped Automation.
 
 Set Primitive Projections.
-
-Implicit Types (cf : checker_flags) (Σ : global_env_ext).
 
 Reserved Notation "[   |- Γ ]" (at level 0).
 Reserved Notation "[ Γ |- T ]" (at level 0).
@@ -55,15 +49,15 @@ with wfTerm : context -> term -> term -> Type :=
     | wfTermLam {Γ} {na} {A B t} :
         [ Γ |- A ] ->        
         [ Γ ,, vass na A |- t ::: B ] -> 
-        [ Γ |- tLambda na A t ::: tProd na A B] 
-    | wfTermConv {Γ} {t A B} :
-        [ Γ |- t ::: A ] -> 
-        [ Γ |- A ≅ B ] -> 
-        [ Γ |- t ::: B ]
+        [ Γ |- tLambda na A t ::: tProd na A B]
     | wfTermApp {Γ} {na} {f a A B} :
         [ Γ |- f ::: tProd na A B ] -> 
         [ Γ |- a ::: A ] -> 
         [ Γ |- tApp f a ::: B{0 := a} ]
+    | wfTermConv {Γ} {t A B} :
+        [ Γ |- t ::: A ] -> 
+        [ Γ |- A ≅ B ] -> 
+        [ Γ |- t ::: B ]
     
 with convType : context -> term -> term  -> Type :=
     | TypeRefl {Γ} {A} : 
@@ -147,10 +141,6 @@ Combined Scheme wfInduction from
 End InductionPrinciples.
 
 Inductive termRed (Γ : context) : term -> term -> term -> Type :=
-    | termRedConv {A B t u} : 
-        [ Γ |- t ⇒ u ::: A ] ->
-        [ Γ |- A ≅ B ] ->
-        [ Γ |- t ⇒ u ::: B ]
     | appSubst {na A B t u a} :
         [ Γ |- t ⇒ u ::: tProd na A B] ->
         [ Γ |- a ::: A ] ->
@@ -160,6 +150,10 @@ Inductive termRed (Γ : context) : term -> term -> term -> Type :=
         [ Γ ,, vass na A |- t ::: B ] ->
         [ Γ |- a ::: A ] ->
         [ Γ |- tApp (tLambda na A t) a ⇒ t{0 := a} ::: B{0 := a} ]
+    | termRedConv {A B t u} : 
+        [ Γ |- t ⇒ u ::: A ] ->
+        [ Γ |- A ≅ B ] ->
+        [ Γ |- t ⇒ u ::: B ]
 
 where "[ Γ |- t ⇒ u ::: A ]" := (termRed Γ t u A).
     
@@ -230,7 +224,20 @@ Record typeEqWF (Γ : context) (A B : term) : Type :=
     typeEqWFRight : [Γ |- B] ;
     typeEqWFEq :> [Γ |- A ≅ B]
   }.
- 
+
+
+Record termRedWF (Γ : context) (t u A : term) : Type := {
+  termRedWFLeft : [Γ |- t ::: A];
+  termRedWFRight : [Γ |- u ::: A];
+  termRedWFRed :> [Γ |- t ⇒* u ::: A]
+}.
+
+
+Record typeRedWF (Γ : context) (A B : term) : Type := {
+  typeRedWFLeft : [Γ |- A];
+  typeRedWFRight : [Γ |- B];
+  typeRedWFRed :> [Γ |- A ⇒* B]
+}.
 
 Notation "[ Γ |- t ⇒⁺ u ::: A ]" := (termRedStrict Γ t u A) (at level 0).   
 Notation "[ Γ |- A ⇒⁺ B ]" := (typeRedStrict Γ A B) (at level 0).   
@@ -238,19 +245,20 @@ Notation "[ Γ |- t ↘ u ::: A ]" := (termRedWHNF Γ t u A) (at level 0).
 Notation "[ Γ |- A ↘ B ]" := (typeRedWHNF Γ A B) (at level 0).
 Notation "[ Γ |- t :≡: u ::: A ]" := (termEqWF Γ t u A) (at level 0).
 Notation "[ Γ |- A :≡: B ]" := (typeEqWF Γ A B) (at level 0).
-
-Record termRedWF (Γ : context) (t u A : term) : Type := {
-    termRedWFLeft : [Γ |- t ::: A];
-    termRedWFRight : [Γ |- u ::: A];
-    termRedWFRed :> [Γ |- t ⇒* u ::: A]
-}.
-
-
-Record typeRedWF (Γ : context) (A B : term) : Type := {
-    typeRedWFLeft : [Γ |- A];
-    typeRedWFRight : [Γ |- B];
-    typeRedWFRed :> [Γ |- A ⇒* B]
-}.
-
 Notation "[ Γ |- t :⇒*: u ::: A ]" := (termRedWF Γ t u A) (at level 0).   
-Notation "[ Γ |- A :⇒*: B ]" := (typeRedWF Γ A B) (at level 0).   
+Notation "[ Γ |- A :⇒*: B ]" := (typeRedWF Γ A B) (at level 0).
+
+#[global] Hint Constructors wfType wfContext wfTerm convType convTerm : mltt.
+#[global] Hint Constructors termRed typeRed termRedClosure typeRedClosure
+  termRedWHNF typeRedWHNF termEqWF typeEqWF termRedWF typeRedWF : mltt.
+
+(*Making the non syntax-directed hints more costly*)
+#[global] Remove Hints wfTermConv TermConv termRedConv TypeTrans TermTrans
+  termRedSucc typeRedSucc : mltt.
+#[global] Hint Resolve wfTermConv TermConv termRedConv TypeTrans TermTrans
+  termRedSucc typeRedSucc | 6 : mltt.
+
+#[global] Hint Resolve termRedWHNFRed termRedWHNFWHNF typeRedWHNFRed typeRedWHNFWHNF 
+  termEqWFLeft termEqWFRight termEqWFEq typeEqWFLeft typeEqWFRight typeEqWFEq
+  termRedWFLeft termRedWFRight termRedWFRed typeRedWFLeft typeRedWFRight
+  typeRedWFRed : mltt.
