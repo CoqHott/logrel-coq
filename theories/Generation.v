@@ -1,25 +1,25 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils.
-From LogRel Require Import Automation MLTTTyping Properties.
+From LogRel Require Import Notations Automation Untyped MLTTTyping Properties.
 
 Inductive termGenData Γ : term -> term -> Type :=
   | VarGen n decl :
       [|- Γ] -> nth_error Γ n = Some decl ->
       termGenData Γ (tRel n) (lift0 (S n) decl.(decl_type))
   | ProdGen na A B :
-      [Γ |- A ::: U] ->
-      [Γ,, vass na A |- B ::: U] ->
+      [Γ |- A : U] ->
+      [Γ,, vass na A |- B : U] ->
       termGenData Γ (tProd na A B) U
   | LamGen na A B t :
       [Γ |- A] ->
-      [Γ,, vass na A |- t ::: B] ->
+      [Γ,, vass na A |- t : B] ->
       termGenData Γ (tLambda na A t) (tProd na A B)
   | LamApp na f a A B :
-      [Γ |- f ::: tProd na A B] ->
-      [Γ |- a ::: A] ->
+      [Γ |- f : tProd na A B] ->
+      [Γ |- a : A] ->
       termGenData Γ (tApp f a) (B{0 := a}).
 
 Lemma termGen Γ t A :
-  [Γ |- t ::: A] ->
+  [Γ |- t : A] ->
   ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
 Proof.
   induction 1.
@@ -37,17 +37,17 @@ Qed.
 
 Inductive termRedGenData Γ : term -> term -> term -> Type :=
   | AppRedGen na A B t u a :
-      [ Γ |- t ⇒ u ::: tProd na A B] ->
-      [ Γ |- a ::: A ] ->
+      [ Γ |- t ⇒ u : tProd na A B] ->
+      [ Γ |- a : A ] ->
     termRedGenData Γ (tApp t a) (tApp u a) (B{0 := a})
   | BRedGen na A B a t :
       [ Γ |- A ] -> 
-      [ Γ ,, vass na A |- t ::: B ] ->
-      [ Γ |- a ::: A ] ->
+      [ Γ ,, vass na A |- t : B ] ->
+      [ Γ |- a : A ] ->
       termRedGenData Γ (tApp (tLambda na A t) a) (t{0 := a}) (B{0 := a}).
 
 Lemma termRedGen Γ t u A :
-  [Γ |- t ⇒ u ::: A] ->
+  [Γ |- t ⇒ u : A] ->
   ∑ A', (termRedGenData Γ t u A') × ((A' = A) + [Γ |- A' ≅ A]).
 Proof.
   induction 1. 
@@ -112,10 +112,10 @@ Qed.
 Lemma wfFrag :
   (forall Γ : context, [  |- Γ ] -> fragment_ctx Γ)
   × (forall (Γ : context) (t : term), [Γ |- t] -> fragment_ctx Γ && fragment t)
-    × (forall (Γ : context) (t A : term), [Γ |- t ::: A] -> fragment t && fragment A && fragment_ctx Γ)
+    × (forall (Γ : context) (t A : term), [Γ |- t : A] -> fragment t && fragment A && fragment_ctx Γ)
     × (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> fragment A && fragment B && fragment_ctx Γ)
         × (forall (Γ : context) (t u A : term),
-          [Γ |- t ≅ u ::: A] -> fragment t && fragment u && fragment A && fragment_ctx Γ).
+          [Γ |- t ≅ u : A] -> fragment t && fragment u && fragment A && fragment_ctx Γ).
 Proof.
   eapply wfInduction ; cbn in * ; intros.
   2: fold (fragment_ctx Γ).
@@ -138,7 +138,7 @@ Proof.
     now rewrite H.
 Qed.
 
-Corollary wfTermFrag Γ t A : [Γ |- t ::: A] -> fragment t.
+Corollary wfTermFrag Γ t A : [Γ |- t : A] -> fragment t.
 Proof.
   intros H.
   apply wfFrag in H.

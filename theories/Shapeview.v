@@ -1,46 +1,72 @@
-Require Import MLTTTyping LogicalRelation.
+From MetaCoq Require Import PCUICAst.
+From LogRel Require Import Automation Untyped MLTTTyping LogicalRelation Properties Reduction.
 
 Set Universe Polymorphism.
 
-
-
-Inductive ShapeView0 Γ : 
-    forall A B, [Γ ||-< zero | A] -> [Γ ||-< zero | B] -> Type 
+Inductive ShapeView l Γ :
+    forall A B, [Γ ||-< l > A] -> [Γ ||-< l > B] -> Type 
 :=
-    | SVne {A B} neA neB :
-        ShapeView0 Γ A B
-        (LRne_ _ zero  neA)
-        (LRne_ _ zero neB)
-
-    | SVPi {A B} Π0A Π0B Π1A Π1B:
-        ShapeView0 Γ A B
-        (LRPi_ _ _ Π0A Π1A)
-        (LRPi_ _ _ Π0B Π1B)
-         
-
-          .
-
-Inductive ShapeView1 Γ : 
-    forall A B, [Γ ||-< one | A] -> [Γ ||-< one | B] -> Type 
-:=
-    (*| SVU {l_a Γa l_b Γb} :
-      ShapeView Γ _ _
-        (LRValidMk _ _ _
-            (LRU (LogRelRec _) Γa _ l_a))
-        (LRValidMk _ _ _
-            (LRU (LogRelRec _) Γb _ l_b))
+    | SVU (Ured Ured' : [ Γ ||-U l]):
+        ShapeView l Γ U U (LRU_ Ured) (LRU_ Ured')
 
     | SVne {A B} neA neB :
-      ShapeView Γ A B
-        (LRne_ _ _ neA)
-        (LRne_ _ _  neB)
+        ShapeView l Γ A B (LRne_ l neA) (LRne_ l neB)
 
-    | SVPi {A B} Π0A Π0B Π1A Π1B :
-        ShapeView Γ A B
-        (LRPi_ _ _ Π0A Π1A)
-        (LRPi_ _ _ Π0B Π1B)*)
-         
-    | SVemb01 {A B p q} (leq : l = one):
-       @ShapeView Γ l l' A B p q ->
-        ShapeView Γ A B (LREmb_ _  (LESubst leq) p) q.
-(*universe error.....*)      
+    | SVPi {A B} ΠA ΠB ΠAvalid ΠBvalid:
+        ShapeView l Γ A B (LRPi_ l ΠA ΠAvalid) (LRPi_ l ΠB ΠBvalid).
+
+
+Lemma ShapeView0_conv {l Γ A B} (lrA : [Γ ||-< l > A]) (lrB : [Γ ||-< l > B]) :
+  [Γ ||-< l > A ≅ B | lrA] ->
+  ShapeView l Γ A B lrA lrB.
+Proof.
+  destruct lrA as [[] vA], lrB as [[] vB] ; cbn in *.
+  do 2 red in vA, vB ; cbn in *.
+  destruct vA.
+  - destruct vB.
+    + econstructor.
+    + intros [->].
+      exfalso.
+      inversion neA.
+      enough (ty = U) as -> by (now eapply neU).
+      eapply nred_det_ty.
+      all: mltt.
+    + intros [->].
+      exfalso.
+      inversion ΠA.
+      enough (U = redPi) by (unfold U, redPi in * ; congruence).
+      eapply nred_det_ty.
+      2: mltt.
+      mltt.
+  - destruct vB.
+    + intros [].
+      exfalso.
+      inversion neA.
+      enough (ty = U) as -> by (now eapply neU).
+      eapply nred_det_ty.
+      all: mltt.
+    + econstructor.
+    + intros [].
+      exfalso.
+      destruct ΠA ; cbn in *.
+      enough (ty = redPi) as -> by (now eapply nePi).
+      unfold redPi.
+      eapply nred_det_ty.
+      all: mltt.
+  - destruct vB.
+    + intros [].
+      exfalso.
+      inversion ΠA.
+      enough (U = redPi) by (unfold U, redPi in * ; congruence).
+      eapply nred_det_ty.
+      2: mltt.
+      mltt.
+    + intros [].
+      exfalso.
+      destruct neA.
+      enough (ty = redPi) as -> by now (eapply nePi).
+      unfold redPi.
+      eapply nred_det_ty.
+      all: mltt.
+    + econstructor.
+Qed.

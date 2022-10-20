@@ -1,122 +1,17 @@
 From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import MLTTTyping Untyped.
+From LogRel Require Import Notations MLTTTyping Untyped.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
 
-(*Modules are used as a hackish solution to go around uniqueness of field names for records*)
+(* Note: modules are used as a hackish solution to go around uniqueness of field names for records *)
 
-Module neType.
-
-  Record neType {Γ : context} {A : term} : Type := {
-    ty : term;
-    red :> [ Γ |- A :⇒*: ty];
-    ne :> whne Γ ty;
-    refl : [ Γ |- ty ≅ ty]
-  }.
-
-  Arguments neType : clear implicits.
-
-End neType.
-
-Export neType(neType, Build_neType).
-Notation "[ Γ ||-ne A ]" := (neType Γ A)  (at level 0).
-
-Module neTypeEq.
-
-  Record neTypeEq {Γ : context} {A B : term} {C : [ Γ ||-ne A ]} : Type := {
-      ty   : term;
-      red  :> [ Γ |- B :⇒*: ty];
-      ne : whne Γ ty;
-      eq  : [ Γ |- C.(neType.ty) ≅ ty]
-  }.
-
-  Arguments neTypeEq : clear implicits.
-
-End neTypeEq.
-
-Export neTypeEq(neTypeEq,Build_neTypeEq).
-Notation "[ Γ ||-ne A ≅ B | C ]" := (neTypeEq Γ A B C) (at level 0).
-
-Module neTerm.
-
-  Record neTermNf {Γ : context} {k A : term} : Type := {
-      ne : whne Γ k;
-      ty  : [ Γ |- k ::: A];
-  }.
-
-  Arguments neTermNf : clear implicits.
-
-  Record neTerm {Γ : context} {t A : term} {C : [ Γ ||-ne A ]} : Type := {
-      term  : term;
-      red  :> [ Γ |- t :⇒*: term ::: C.(neType.ty)];
-      ne' : neTermNf Γ term C.(neType.ty)
-  }.
-
-  Arguments neTerm : clear implicits.
-
-End neTerm.
-
-Export neTerm(neTermNf,Build_neTermNf, neTerm, Build_neTerm).
-
-Notation "[ Γ ||-neNf t ::: A ]" := (neTermNf Γ t A) (at level 0).
-Notation "[ Γ ||-ne t ::: A | B ]" := (neTerm Γ t A B) (at level 0).
-
-Module neTermEq.
-
-  Record neTermEqNF {Γ : context} {k m A : term} : Type := {
-      whneL : whne Γ k;
-      whneR : whne Γ m;
-      eq : [ Γ |- k ≅ m ::: A]
-  }.
-
-  Arguments neTermEqNF : clear implicits.
-
-  Record neTermEq {Γ : context} {t u A : term} {C : [ Γ ||-ne A ]} : Type := {
-      termL     : term;
-      termR     : term;
-      redL      : [ Γ |- t :⇒*: termL ::: A ];
-      redR      : [ Γ |- u :⇒*: termR ::: A ];
-      eq' :> neTermEqNF Γ termL termR A
-  }.
-
-  Arguments neTermEq : clear implicits.
-
-End neTermEq.
-
-Export neTermEq(neTermEqNF, Build_neTermEqNF, neTermEq, Build_neTermEq).
-Notation "[ Γ ||-neNf t ≅ u ::: A ]" := (neTermEqNF Γ t u A) (at level 0).
-Notation "[ Γ ||-ne t ≅ u ::: A | B ] " := (neTermEq Γ t u A B) (at level 0).
-
-Inductive TypeLevel : Set :=
-  | zero : TypeLevel
-  | one  : TypeLevel.
-
-Inductive TypeLevelLt : TypeLevel -> TypeLevel -> Set :=
-    | Oi : TypeLevelLt zero one.
-
-Notation "A << B" := (TypeLevelLt A B) (at level 0).
-
-Definition LtSubst {l} (h : l = one) : zero << l.
-Proof.
-  rewrite h.
-  constructor.
-Qed.
-
-Definition elim (l l' : TypeLevel) :=
-  match l with
-    | zero => False
-    | one => True
-  end.
-
-Definition elimm (l l' : TypeLevel) (h : l' << l) : elim l l' :=
-  match h with
-    | Oi => I
-  end.
+(** Helpers for manipulating logical relation data *)
 
 Module LRKit.
 
-  Record LogRelKit@{i j | i < j} := {
+  (* A LogRelKit contains all the data we will need from our logical relation*)
+  #[universes(polymorphic)] Record LogRelKit@{i j} := {
     URel    : context         -> Type@{j};
     PiRel   : context -> term -> Type@{j};
     TyRel   : context -> term -> Type@{j};
@@ -129,87 +24,36 @@ End LRKit.
 
 Export LRKit(LogRelKit,Build_LogRelKit).
 
-Notation "[ R | Γ ||-U ]"                := (R.(LRKit.URel) Γ) (at level 0).
-Notation "[ R | Γ ||-Π A ]"              := (R.(LRKit.PiRel) Γ A) (at level 0).
-Notation "[ R | Γ ||- A ]"               := (R.(LRKit.TyRel) Γ A) (at level 0).
-Notation "[ R | Γ ||- A ≅ B | C ]"       := (R.(LRKit.EqTyRel) Γ A B C) (at level 0).
-Notation "[ R | Γ ||- t ::: A | C ]"     := (R.(LRKit.TeRel) Γ t A C) (at level 0).
-Notation "[ R | Γ ||- t ≅ u ::: A | C ]" := (R.(LRKit.EqTeRel) Γ t u A C) (at level 0).
+Notation "[ K | Γ ||-U ]"                := (K.(LRKit.URel) Γ).
+Notation "[ K | Γ ||-Π A ]"              := (K.(LRKit.PiRel) Γ A).
+Notation "[ K | Γ ||- A ]"               := (K.(LRKit.TyRel) Γ A).
+Notation "[ K | Γ ||- A ≅ B | R ]"       := (K.(LRKit.EqTyRel) Γ A B R).
+Notation "[ K | Γ ||- t : A | R ]"     := (K.(LRKit.TeRel) Γ t A R).
+Notation "[ K | Γ ||- t ≅ u : A | R ]" := (K.(LRKit.EqTeRel) Γ t u A R).
 
-Module URel.
+(* The type of our inductively defined reducibility relation:
+  for some R : RedRel, R Γ A eqTy redTm eqTm says
+  that according to R, A is reducible in Γ and the associated reducible type equality
+  (resp. term reducibility, term reducible equality) is eqTy (resp. redTm eqTm).
+  One should think of RedRel as a functional relation taking two arguments (Γ and A) and returning
+  three outputs (eqTy, redTm and eqTm) *)
 
-  Record URel {l}
-    {Γ : context} : Type := {
-    level  : TypeLevel;
-    lt  : level << l;
-    wfCtx : [ |- Γ ]
-  }.
-
-  Arguments URel {_}.
-
-  Record URelEq {Γ : context} {B : term} : Type := {
-    eq : B = U
-  }.
-
-  Arguments URelEq : clear implicits.
-
-End URel.
-
-Export URel(URel,Build_URel,URelEq,Build_URelEq).
-
-Notation "[ Γ ||-U ]" := (URel Γ) (at level 0).
-Notation "[ Γ ||-U≅ B ]" := (URelEq Γ B) (at level 0).
-
-Module UTerm.
-
-  Record UTerm {l l'} {rec : forall {l'}, l' << l -> LogRelKit}
-  {Γ : context} {t : term} {l_ : l' << l} := {
-    term : term;
-    red : [ Γ |- t :⇒*: term ::: U ];
-    type : isType Γ term;
-    rel : [rec l_ | Γ ||- t ] ;
-  }.
-
-  Arguments UTerm {_ _}.
-
-  (*Universe term equality*)
-  Record UTermEq {l l'} {rec : forall {l'}, l' << l -> LogRelKit}
-  {Γ : context} {t u : PCUICAst.term} {l_ : l' << l} := {
-    termL     : PCUICAst.term;
-    termR     : PCUICAst.term;
-    redL      : [ Γ |- t :⇒*: termL ::: U ];
-    redR      : [ Γ |- u :⇒*: termR ::: U ];
-    tyL  : isType Γ termL;
-    tyR  : isType Γ termR;
-    eq   : [ Γ |- termL ≅ termR ::: U ];
-    relL    : [ rec l_ | Γ ||- t ] ;
-    relR    : [ rec l_ | Γ ||- u ] ;
-    relEq : [ rec l_ | Γ ||- t ≅ u | relL ] ;
-  }.
-
-  Arguments UTermEq {_ _}.
-
-End UTerm.
-
-Export UTerm(UTerm,Build_UTerm,UTermEq,Build_UTermEq).
-Notation "[ R | Γ ||-U t :::U | l ]" := (UTerm R Γ t l) (at level 0).
-Notation "[ R | Γ ||-U t ≅ u :::U | l ]" := (UTermEq R Γ t u l) (at level 0).
-
-Definition RedRel@{i j | i < j} :=
+  #[universes(polymorphic)]Definition RedRel@{i j | i < j +} :=
   context               ->
   term                  ->
- (term -> Type@{i})         ->
- (term -> Type@{i})         ->
- (term -> term -> Type@{i}) ->
+  (term -> Type@{i})         ->
+  (term -> Type@{i})         ->
+  (term -> term -> Type@{i}) ->
   Type@{j}.
+
+(* An LRPack contains the data corresponding to the codomain of RedRel seen as a functional relation *)
 
 Module LRPack.
 
-  (*Type (n+3)*)
-  Record LRPack@{i} {Γ : context} {A : term} := {
-      eq : term -> Type@{i};
-      term : term -> Type@{i};
-      eqTerm :  PCUICAst.term -> PCUICAst.term -> Type@{i};
+  #[universes(polymorphic)] Record LRPack@{i} {Γ : context} {A : term} := {
+      eqTy : term -> Type@{i};
+      redTm : term -> Type@{i};
+      eqTm :  term -> term -> Type@{i};
   }.
 
   Arguments LRPack : clear implicits.
@@ -218,174 +62,319 @@ End LRPack.
 
 Export LRPack(LRPack,Build_LRPack).
 
-Notation "[ Γ ||-p A ≅ B | R ]" := (@LRPack.eq Γ A R B) (at level 0).
-Notation "[ Γ ||-p t ::: A | R ]" := (@LRPack.term Γ A R t ) (at level 0).
-Notation "[ Γ ||-p t ≅ u ::: A | R ]" := (@LRPack.eqTerm Γ A R t u) (at level 0).
+Notation "[ P | Γ ||- A ≅ B ]" := (@LRPack.eqTy Γ A P B).
+Notation "[ P | Γ ||- t : A ]" := (@LRPack.redTm Γ A P t).
+Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
 
-Definition LRPackValid@{i j} {Γ : context} {A : term} (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
-  R Γ A P.(LRPack.eq) P.(LRPack.term) P.(LRPack.eqTerm).
+(* An LRPack it adequate wrt. a RedRel when its three unpacked components are *)
+#[universes(polymorphic)] Definition LRPackAdequate@{i j} {Γ : context} {A : term}
+  (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
+  R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
 
-Module LRValid.
+Module LRAd.
 
-  Record LRValid {Γ : context} {A : term} {R : RedRel} := {
-    eq : term -> Type;
-    term : term -> Type;
-    eqTerm :  PCUICAst.term -> PCUICAst.term -> Type;
-    valid : LRPackValid R (@Build_LRPack Γ A eq term eqTerm)
+  #[universes(polymorphic)] Record > LRAdequate {Γ : context} {A : term} {R : RedRel} := {
+    pack :> LRPack Γ A ;
+    adequate :> LRPackAdequate R pack
   }.
 
-  Arguments LRValid : clear implicits.
-  Arguments Build_LRValid {_ _ _ _ _ _}.
+  Arguments LRAdequate : clear implicits.
+  Arguments Build_LRAdequate {_ _ _ _}.
 
-End LRValid.
+End LRAd.
 
-Export LRValid(LRValid,Build_LRValid).
+Export LRAd(LRAdequate,Build_LRAdequate).
+(* These coercions would be defined using the >/:> syntax in the definition of the record,
+  but this fails here due to the module being only partially exported *)
+Coercion LRAd.pack : LRAdequate >-> LRPack.
+Coercion LRAd.adequate : LRAdequate >-> LRPackAdequate.
 
-Coercion pack {Γ A R} (H : LRValid Γ A R) : LRPack Γ A :=
-  @Build_LRPack Γ A H.(LRValid.eq) H.(LRValid.term) H.(LRValid.eqTerm).
+(** Universe levels *)
 
-Module TyPiRel.
+Inductive TypeLevel : Set :=
+  | zero : TypeLevel
+  | one  : TypeLevel.
 
-  (*Type (n+4)*)
-  Record TyPiRel@{i}
-    {Γ : context} {A : term}
-    := {
-      na : aname ;
-      dom : term ;
-      cod : term ;
-      redPi := tProd na dom cod ;
-      red : [Γ |- A :⇒*: redPi];
-      domTy : [Γ |- dom];
-      codTy : [Γ ,, vass na dom |- cod];
-      domRel {Δ} : [ |- Δ ] -> LRPack@{i} Δ dom;
-      codRel {Δ a} (h : [ |- Δ ]) :
-          [ Δ ||-p a ::: dom | domRel h ] ->
-          LRPack@{i} Δ (cod{0 := a});
-      codExt
-        {Δ a b}
-        (h :  [ |- Δ ])
-        (ha : (domRel h).(LRPack.term) a) :
-        [ Δ ||-p b ::: dom | domRel h ] ->
-        [ Δ ||-p a ≅ b ::: dom | domRel h ] ->
-        [ Δ ||-p (cod{0 := a}) ≅ (cod{0 := b}) | codRel h ha ];
+Inductive TypeLevelLt : TypeLevel -> TypeLevel -> Set :=
+    | Oi : TypeLevelLt zero one.
+
+Notation "A << B" := (TypeLevelLt A B).
+
+Definition LtSubst {l} (h : l = one) : zero << l.
+Proof.
+  rewrite h.
+  constructor.
+Qed.
+
+Definition elim {l : TypeLevel} (h : l << zero) : False :=
+  match h in _ << lz return (match lz with | zero => False | one => True end) with
+    | Oi => I
+  end.
+
+(** Reducibility of neutrals *)
+
+Module neRedTy.
+
+  Record neRedTy {Γ : context} {A : term} : Type := {
+    ty : term;
+    red : [ Γ |- A :⇒*: ty];
+    ne : whne Γ ty;
+    refl : [ Γ |- ty ≅ ty]
   }.
 
-  Arguments TyPiRel : clear implicits.
+  Arguments neRedTy : clear implicits.
 
-  Record TyPiRelValid {Γ : context} {A : term} {R : RedRel} {_A : TyPiRel Γ A} :=
+End neRedTy.
+
+Export neRedTy(neRedTy, Build_neRedTy).
+Notation "[ Γ ||-ne A ]" := (neRedTy Γ A).
+
+Module neRedTyEq.
+
+  Record neRedTyEq {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]} : Type := {
+      ty   : term;
+      red  : [ Γ |- B :⇒*: ty];
+      ne : whne Γ ty;
+      eq  : [ Γ |- neA.(neRedTy.ty) ≅ ty]
+  }.
+
+  Arguments neRedTyEq : clear implicits.
+
+End neRedTyEq.
+
+Export neRedTyEq(neRedTyEq,Build_neRedTyEq).
+Notation "[ Γ ||-ne A ≅ B | R ]" := (neRedTyEq Γ A B R).
+
+Module neRedTm.
+
+  Record neRedTm {Γ : context} {t A : term} {R : [ Γ ||-ne A ]} : Type := {
+      term  : term;
+      red  : [ Γ |- t :⇒*: term : R.(neRedTy.ty)];
+      ne : whne Γ term ;
+  }.
+
+  Arguments neRedTm : clear implicits.
+
+End neRedTm.
+
+Export neRedTm(neRedTm, Build_neRedTm).
+
+Notation "[ Γ ||-ne t : A | B ]" := (neRedTm Γ t A B).
+
+Module neRedTmEq.
+
+  Record neRedTmEq {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]} : Type := {
+      termL     : term;
+      termR     : term;
+      redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
+      redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
+      whneL : whne Γ termL;
+      whneR : whne Γ termR;
+      eq : [ Γ |- termL ≅ termR : A]
+  }.
+
+  Arguments neRedTmEq : clear implicits.
+
+End neRedTmEq.
+
+Export neRedTmEq(neRedTmEq, Build_neRedTmEq).
+Notation "[ Γ ||-ne t ≅ u : A | R ] " := (neRedTmEq Γ t u A R).
+
+Module URedTy.
+
+  Record URedTy {l} {Γ : context} : Type := {
+    level  : TypeLevel;
+    lt  : level << l;
+    wfCtx : [ |- Γ ]
+  }.
+
+  Arguments URedTy : clear implicits.
+
+  Record URedTyEq {Γ : context} {B : term} : Type := {
+    eq : B = U
+  }.
+
+  Arguments URedTyEq : clear implicits.
+
+End URedTy.
+
+Export URedTy(URedTy,Build_URedTy,URedTyEq,Build_URedTyEq).
+
+Notation "[ Γ ||-U l ]" := (URedTy l Γ).
+Notation "[ Γ ||-U≅ B ]" := (URedTyEq Γ B).
+
+Module URedTm.
+
+  Record URedTm {l} {rec : forall {l'}, l' << l -> LogRelKit}
+  {Γ : context} {t : term} {R : [Γ ||-U l]} : Type := {
+    term : term;
+    red : [ Γ |- t :⇒*: term : U ];
+    type : isType Γ term;
+    rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
+  }.
+
+  Arguments URedTm {_}.
+
+  (*Universe term equality*)
+  Record URedTmEq {l } {rec : forall {l'}, l' << l -> LogRelKit}
+  {Γ : context} {t u : PCUICAst.term} {R : [Γ ||-U l]} := {
+    redL : URedTm (@rec) Γ t R ;
+    redR : URedTm (@rec) Γ u R ;
+    eq   : [ Γ |- redL.(term) ≅ redR.(term) : U ];
+    relL    : [ rec R.(URedTy.lt) | Γ ||- t ] ;
+    relR    : [ rec R.(URedTy.lt) | Γ ||- u ] ;
+    relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ] ;
+  }.
+
+  Arguments URedTmEq {_}.
+
+End URedTm.
+
+Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
+Notation "[ R | Γ ||-U t :U | l ]" := (URedTm R Γ t l).
+Notation "[ R | Γ ||-U t ≅ u :U | l ]" := (URedTmEq R Γ t u l).
+
+Module PiRedTy.
+
+  #[universes(polymorphic)]Record PiRedTy@{i} {Γ : context} {A : term} := {
+    na : aname ;
+    dom : term ;
+    cod : term ;
+    redPi := tProd na dom cod ;
+    red : [Γ |- A :⇒*: redPi];
+    domTy : [Γ |- dom];
+    codTy : [Γ ,, vass na dom |- cod];
+    domRed {Δ} : [ |- Δ ] -> LRPack@{i} Δ dom;
+    codRed {Δ a} (h : [ |- Δ ]) :
+        [ (domRed h) |  Δ ||- a : dom ] ->
+        LRPack@{i} Δ (cod{0 := a});
+    codExt
+      {Δ a b}
+      (h :  [ |- Δ ])
+      (ha : [ (domRed h) | Δ ||- a : dom ]) :
+      [ (domRed h) | Δ ||- b : dom ] ->
+      [ (domRed h) | Δ ||- a ≅ b : dom ] ->
+      [ (codRed h ha) | Δ ||- (cod{0 := a}) ≅ (cod{0 := b}) ];
+  }.
+
+  Arguments PiRedTy : clear implicits.
+
+  #[universes(polymorphic)] Record PiRedTyAdequate
+    {Γ : context} {A : term} {R : RedRel} {ΠA : PiRedTy Γ A} :=
   {
-    domValid {Δ} (h : [ |- Δ ]) : LRPackValid R (_A.(domRel) h);
-    codValid {Δ a} (h : [ |- Δ ]) (ha : [ Δ ||-p a ::: _A.(dom) | _A.(domRel) h ])
-      : LRPackValid R (_A.(codRel) h ha);
+    domAd {Δ} (h : [ |- Δ ]) : LRPackAdequate R (ΠA.(domRed) h);
+    codAd {Δ a} (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) h) | Δ ||- a : ΠA.(dom) ])
+      : LRPackAdequate R (ΠA.(codRed) h ha);
   }.
 
-  Arguments TyPiRelValid {_ _}.
+  Arguments PiRedTyAdequate {_ _}.
 
-End TyPiRel.
+End PiRedTy.
 
-Export TyPiRel(TyPiRel,Build_TyPiRel,TyPiRelValid,Build_TyPiRelValid).
-Notation "[ Γ ||-Πr A ]" := (TyPiRel Γ A) (at level 0).
+Export PiRedTy(PiRedTy,Build_PiRedTy,PiRedTyAdequate,Build_PiRedTyAdequate).
+Notation "[ Γ ||-Πd A ]" := (PiRedTy Γ A).
 
-Module TyPiEqRel.
+Module PiRedTyEq.
 
-  Record TyPiEqRel {Γ : context} {A B : term} {H : TyPiRel Γ A} := {
+  Record PiRedTyEq {Γ : context} {A B : term} {ΠA : PiRedTy Γ A} := {
     na                        : aname ;
     dom                       : term;
     cod                       : term;
     redPi                     := tProd na dom cod ;
     red                       : [Γ |- B :⇒*: redPi];
-    eq                        : [Γ |- H.(TyPiRel.redPi) ≅ redPi ];
-    domRel {Δ} (h : [ |- Δ ]) : [Δ ||-p H.(TyPiRel.dom) ≅ dom | H.(TyPiRel.domRel) h ];
-    codRel {Δ a} (h : [ |- Δ ])
-      (ha : [ Δ ||-p a ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ]) :
-      [Δ ||-p H.(TyPiRel.cod){0 := a} ≅ cod{0 := a} | H.(TyPiRel.codRel) h ha ];
+    eq                        : [Γ |- ΠA.(PiRedTy.redPi) ≅ redPi ];
+    domRed {Δ} (h : [ |- Δ ]) : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- ΠA.(PiRedTy.dom) ≅ dom ];
+    codRed {Δ a} (h : [ |- Δ ])
+      (ha : [ ΠA.(PiRedTy.domRed) h | Δ ||- a : ΠA.(PiRedTy.dom)]) :
+      [ (ΠA.(PiRedTy.codRed) h ha) | Δ ||- ΠA.(PiRedTy.cod){0 := a} ≅ cod{0 := a} ];
   }.
 
-  Arguments TyPiEqRel : clear implicits.
+  Arguments PiRedTyEq : clear implicits.
 
-End TyPiEqRel.
+End PiRedTyEq.
 
-Export TyPiEqRel(TyPiEqRel,Build_TyPiEqRel).
-Notation "[ Γ ||-Π A ≅ B | H ]" := (TyPiEqRel Γ A B H) (at level 0).
+Export PiRedTyEq(PiRedTyEq,Build_PiRedTyEq).
+Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq Γ A B ΠA).
 
-Module TePiRel.
+Module PiRedTm.
 
-  Record TePiRel {Γ : context} {t A : term} {H : TyPiRel Γ A} := {
+  Record PiRedTm {Γ : context} {t A : term} {ΠA : PiRedTy Γ A} := {
     nf : term;
-    red : [ Γ |- t :⇒*: nf ::: H.(TyPiRel.redPi) ];
-    nfFun : isFun Γ nf;
-    refl : [ Γ |- nf ≅ nf ::: H.(TyPiRel.redPi) ];
-    appRel {Δ a} (h : [ |- Δ ])
-      (ha : [Δ ||-p a ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
-      : [Δ ||-p tApp nf a ::: H.(TyPiRel.cod){0 := a} | H.(TyPiRel.codRel) h ha ] ;
-    eqRel {Δ a b} (h : [ |- Δ ])
-      (ha : [Δ ||-p a ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
-      (hb : [Δ ||-p b ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
-      (eq : [Δ ||-p a ≅ b ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
-      : [Δ ||-p tApp nf a ≅ tApp nf b ::: H.(TyPiRel.cod){0 := a} | H.(TyPiRel.codRel) h ha ];
+    red : [ Γ |- t :⇒*: nf : ΠA.(PiRedTy.redPi) ];
+    isfun : isFun Γ nf;
+    refl : [ Γ |- nf ≅ nf : ΠA.(PiRedTy.redPi) ];
+    app {Δ a} (h : [ |- Δ ])
+      (ha : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- a : ΠA.(PiRedTy.dom) ])
+      : [(ΠA.(PiRedTy.codRed) h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod){0 := a} ] ;
+    eq {Δ a b} (h : [ |- Δ ])
+      (ha : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- a : ΠA.(PiRedTy.dom) ])
+      (hb : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- b : ΠA.(PiRedTy.dom) ])
+      (eq : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom) ])
+      : [ (ΠA.(PiRedTy.codRed) h ha) | Δ ||- tApp nf a ≅ tApp nf b : ΠA.(PiRedTy.cod){0 := a} ]
   }.
 
-  Arguments TePiRel : clear implicits.
+  Arguments PiRedTm : clear implicits.
 
-End TePiRel.
+End PiRedTm.
 
-Export TePiRel(TePiRel,Build_TePiRel).
-Notation "[ Γ ||-Π t ::: A | R ]" := (TePiRel Γ t A R) (at level 0).
+Export PiRedTm(PiRedTm,Build_PiRedTm).
+Notation "[ Γ ||-Π t : A | ΠA ]" := (PiRedTm Γ t A ΠA).
 
-Module TePiEqRel.
+Module PiRedTmEq.
 
-  Record TePiEqRel {Γ : context} {t u A : term} {H : TyPiRel Γ A}  := {
-      nfL : term;
-      nfR : term;
-      redL : [ Γ |- t :⇒*: nfL ::: H.(TyPiRel.redPi) ];
-      redR : [ Γ |- u :⇒*: nfR ::: H.(TyPiRel.redPi) ];
-      nfFunL : isFun Γ nfL;
-      nfFunR : isFun Γ nfR;
-      eq : [ Γ |- nfL ≅ nfR ::: H.(TyPiRel.redPi) ];
-      rel : [ Γ ||-Π t ::: A | H ];
+  Record PiRedTmEq {Γ : context} {t u A : term} {ΠA : PiRedTy Γ A}  := {
+      redL : [ Γ ||-Π t : A | ΠA ] ;
+      redR : [ Γ ||-Π u : A | ΠA ] ;
+      eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : ΠA.(PiRedTy.redPi) ];
       eqApp {Δ a} (h : [ |- Δ ])
-        (ha : [Δ ||-p a ::: H.(TyPiRel.dom) | H.(TyPiRel.domRel) h ])
-        : [Δ ||-p tApp nfL a ≅ tApp nfR a ::: H.(TyPiRel.cod){0 := a} | H.(TyPiRel.codRel) h ha ]
+        (ha : [ (ΠA.(PiRedTy.domRed) h) | Δ ||- a : ΠA.(PiRedTy.dom) ] )
+        : [ ( ΠA.(PiRedTy.codRed) h ha) | Δ ||-
+            tApp redL.(PiRedTm.nf) a ≅ tApp redR.(PiRedTm.nf) a : ΠA.(PiRedTy.cod){0 := a}]
   }.
 
-  Arguments TePiEqRel : clear implicits.
+  Arguments PiRedTmEq : clear implicits.
 
-End TePiEqRel.
+End PiRedTmEq.
 
-Export TePiEqRel(TePiEqRel,Build_TePiEqRel).
+Export PiRedTmEq(PiRedTmEq,Build_PiRedTmEq).
 
-Notation "[ Γ ||-Π t ≅ u ::: A | H ]" := (TePiEqRel Γ t u A H) (at level 0).
+Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
 
-Inductive LR {l : TypeLevel} (rec : forall l', l' << l -> LogRelKit)
+Unset Elimination Schemes.
+
+#[universes(polymorphic)]Inductive LR {l : TypeLevel} (rec : forall l', l' << l -> LogRelKit)
   : RedRel :=
-  | LRU {Γ} (H : [Γ ||-U ]) :
+  | LRU {Γ} (H : [Γ ||-U l]) :
       LR rec Γ U
       (fun B   => [Γ ||-U≅ B ])
-      (fun t   => [ rec | Γ ||-U t     :::U | H.(URel.lt) ])
-      (fun t u => [ rec | Γ ||-U t ≅ u :::U | H.(URel.lt) ])
+      (fun t   => [ rec | Γ ||-U t     :U | H ])
+      (fun t u => [ rec | Γ ||-U t ≅ u :U | H ])
   | LRne {Γ A} (neA : [ Γ ||-ne A ]) :
       LR rec Γ A
-      (fun B   =>  [ Γ ||-ne A ≅ B       | neA])
-      (fun t   =>  [ Γ ||-ne t     ::: A | neA])
-      (fun t u =>  [ Γ ||-ne t ≅ u ::: A | neA])
-  | LRPi {Γ : context} {A : term} (ΠA : [ Γ ||-Πr A ]) (ΠAvalid : TyPiRelValid (LR rec) ΠA) :
+      (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
+      (fun t   =>  [ Γ ||-ne t     : A | neA])
+      (fun t u =>  [ Γ ||-ne t ≅ u : A | neA])
+  | LRPi {Γ : context} {A : term} (ΠA : [ Γ ||-Πd A ]) (ΠAad : PiRedTyAdequate (LR rec) ΠA) :
     LR rec Γ A
-      (fun B   => [ Γ ||-Π A ≅ B       | ΠA ])
-      (fun t   => [ Γ ||-Π t     ::: A | ΠA ])
-      (fun t u => [ Γ ||-Π t ≅ u ::: A | ΠA ])
-  | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec _ l_ | Γ ||- A]) :
+      (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
+      (fun t   => [ Γ ||-Π t     : A | ΠA ])
+      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
+  (* Removed, as it is provable (!), cf LR_embedding in LRInduction *)
+  (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
       LR rec Γ A
-      (fun B   => [ _ | Γ ||- A ≅ B       | H ])
-      (fun t   => [ _ | Γ ||- t     ::: A | H ])
-      (fun t u => [ _ | Γ ||- t ≅ u ::: A | H ])
+      (fun B   => [ rec l' l_ | Γ ||- A ≅ B     | H ])
+      (fun t   => [ rec l' l_ | Γ ||- t     : A | H ])
+      (fun t u => [ rec l' l_ | Γ ||- t ≅ u : A | H ]) *)
   .
 
-Definition RelTy
+Set Elimination Schemes.
+
+(* Definition RelTy
 {l : TypeLevel} (R : forall l', l' << l -> LogRelKit)
 (Γ : context) (A : term) :=
-  LRValid Γ A (LR R).
+  LRAdequate Γ A (LR R).
 
-Notation "[ R | Γ ||-p A ]" := (RelTy R Γ A) (at level 0).
+Notation "[ R | Γ ||-p A ]" := (RelTy R Γ A) (at level 0). *)
 (* 
 Definition RelTyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (A B : term) (H : RelTy R Γ A) :=
@@ -393,68 +382,46 @@ Definition RelTyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 
 Definition RelTe {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t A : term) (H : RelTy R Γ A) :=
-  [ Γ ||-p t ::: A | H ].
+  [ Γ ||-p t : A | H ].
 
 Definition RelTeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 (Γ : context) (t u A : term) (H : RelTy R Γ A) :=
-  [ Γ ||-p t ≅ u ::: A | H ]. *)
+  [ Γ ||-p t ≅ u : A | H ]. *)
 
-Definition rec0 (l' : TypeLevel) (h : l' << zero) : LogRelKit :=
-  match elimm zero l' h with
+#[universes(polymorphic)]Definition rec0 (l' : TypeLevel) (h : l' << zero) : LogRelKit :=
+  match elim h with
   end.
-Definition LR0 := LR rec0.
-(*Definition kit1@{u u0 u1} :=
-  Kit@{u1 u}
-  (URel@{u0 u1} rec0@{u0 u1})
-  (fun Γ A => TyPiRel1@{u1 u} Γ A LR0@{u1 u u0})
-  (Rel1Ty@{u1 u u0} rec0@{u0 u1})
-  Rel1TyEq@{u0 u1 u}
-  Rel1Te@{u0 u1 u}
-  Rel1TeEq@{u0 u1 u}.
-*)
 
-Definition kit0 :=
+#[universes(polymorphic)]Definition kit0 :=
   Build_LogRelKit
-  (@URel zero)
-  TyPiRel
-  (fun Γ A => LRValid Γ A (LR rec0))
-  (fun Γ A B (R : LRValid Γ A (LR rec0)) => R.(LRPack.eq) B)
-  (fun Γ t A (R : LRValid Γ A (LR rec0)) => R.(LRPack.term) t)
-  (fun Γ t u A (R : LRValid Γ A (LR rec0)) => R.(LRPack.eqTerm) t u).
+  (URedTy zero)
+  PiRedTy
+  (fun Γ A => LRAdequate Γ A (LR rec0))
+  (fun Γ A B (R : LRAdequate Γ A (LR rec0)) => R.(LRPack.eqTy) B)
+  (fun Γ t A (R : LRAdequate Γ A (LR rec0)) => R.(LRPack.redTm) t)
+  (fun Γ t u A (R : LRAdequate Γ A (LR rec0)) => R.(LRPack.eqTm) t u).
 
-Definition LogRelRec (l l' : TypeLevel) (h : l' << l) : LogRelKit :=
-  match l as t return ((l') << (t) -> LogRelKit) with
-    | zero => fun h0 : (l') << (zero) => rec0 l' h0
-    | one => fun _ : (l') << (one) => kit0
-  end h.
+Definition LogRelRec (l : TypeLevel) : forall l', l' << l -> LogRelKit :=
+  match l with
+    | zero => rec0
+    | one => fun _ _ => kit0
+  end.
 
 Definition rec1 :=
   LogRelRec one.
 
-Definition LR1 := LR rec1.
-
-Definition LRL (l : TypeLevel) :=
-  match l with
-    | zero => LR0
-    | one => LR1
-  end.
+Definition LRl (l : TypeLevel) :=
+  LR (LogRelRec l).
 
   (*TODO minimiser univers*)
 Definition kit (l : TypeLevel) : LogRelKit :=
-  let rec := LogRelRec l in
   Build_LogRelKit
-    (@URel l)
-    (fun Γ A => TyPiRel Γ A)
-    (fun Γ A => LRValid Γ A (LR rec))
-    (fun Γ A B (R : LRValid Γ A (LR rec)) => R.(LRPack.eq) B)
-    (fun Γ t A (R : LRValid Γ A (LR rec)) => R.(LRPack.term) t)
-    (fun Γ t u A (R : LRValid Γ A (LR rec)) => R.(LRPack.eqTerm) t u).
-
-Definition recl (l : TypeLevel) :=
-  match l with
-    |zero => rec0
-    |one => rec1
-  end.
+    (URedTy l)
+    (fun Γ A => PiRedTy Γ A)
+    (fun Γ A => LRAdequate Γ A (LRl l))
+    (fun Γ A B (R : LRAdequate Γ A (LRl l)) => R.(LRPack.eqTy) B)
+    (fun Γ t A (R : LRAdequate Γ A (LRl l)) => R.(LRPack.redTm) t)
+    (fun Γ t u A (R : LRAdequate Γ A (LRl l)) => R.(LRPack.eqTm) t u).
 
 Definition Ur (Γ : context) (l : TypeLevel) : Type :=
   [ kit l | Γ ||-U].
@@ -466,67 +433,43 @@ Definition TyUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
 Definition TyEqUr (Γ : context) (l : TypeLevel) (A B: term) (H : TyUr Γ l A): Type :=
   [ kit l | Γ ||- A ≅ B | H].
 Definition TeUr (Γ : context) (l : TypeLevel) (t A : term) (H : TyUr Γ l A) : Type :=
-  [ kit l | Γ ||- t ::: A | H].
+  [ kit l | Γ ||- t : A | H].
 Definition TeEqUr (Γ : context) (l : TypeLevel) (t u A : term) (H : TyUr Γ l A) : Type :=
-  [ kit l | Γ ||- t ≅ u ::: A | H].
+  [ kit l | Γ ||- t ≅ u : A | H].
 
-Notation "[ Γ ||-< l |U]" := (Ur Γ l) (at level 0).
-Notation "[ Γ ||-< l |Π A ]" := (PiUr Γ l A) (at level 0).
-Notation "[ Γ ||-< l | A ]" := (TyUr Γ l A) (at level 0).
-Notation "[ Γ ||-< l | A ≅ B | H ]" := (TyEqUr Γ l A B H) (at level 0).
-Notation "[ Γ ||-< l | t ::: A | H ]" := (TeUr Γ l t A H) (at level 0).
-Notation "[ Γ ||-< l | t ≅ u ::: A | H ]" := (TeEqUr Γ l t u A H) (at level 0).
+Notation "[ Γ ||-< l >U]" := (Ur Γ l).
+Notation "[ Γ ||-< l >Π A ]" := (PiUr Γ l A).
+Notation "[ Γ ||-< l > A ]" := (TyUr Γ l A).
+Notation "[ Γ ||-< l > A ≅ B | R ]" := (TyEqUr Γ l A B R).
+Notation "[ Γ ||-< l > t : A | R ]" := (TeUr Γ l t A R).
+Notation "[ Γ ||-< l > t ≅ u : A | R ]" := (TeEqUr Γ l t u A R).
 
 Definition LRbuild {Γ l A rEq rTe rTeEq} :
-  LR (recl l) Γ A rEq rTe rTeEq ->
-  [Γ ||-< l | A] :=
-  match l with
-    | zero => fun H => Build_LRValid H
-    | one => fun H => Build_LRValid H
-end.
+  LR (LogRelRec l) Γ A rEq rTe rTeEq ->
+  [Γ ||-< l > A] :=
+  fun H => {|
+    LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
+    LRAd.adequate := H |}.
 
-Lemma LRunbuild {Γ l A} :
-  [Γ ||-< l | A] ->
-  ∑ rEq rTe rTeEq , LR (recl l) Γ A rEq rTe rTeEq.
-Proof.
-  intros [].
-  destruct l ; red in valid ; cbn in *.
-  all: do 3 eexists ; eassumption.
-Qed.
+Definition LRunbuild {Γ l A} :
+  [Γ ||-< l > A] ->
+  ∑ rEq rTe rTeEq , LR (LogRelRec l) Γ A rEq rTe rTeEq :=
+    fun H => (LRPack.eqTy H; LRPack.redTm H; LRPack.eqTm H; H.(LRAd.adequate)).
 
 Create HintDb logrel.
 #[global] Hint Constants Opaque : logrel.
 #[global] Hint Variables Transparent : logrel.
 Ltac logrel := eauto with logrel.
 
-#[global] Hint Resolve LRbuild : logrel.
+#[global] Hint Resolve LRbuild LRunbuild : logrel.
 
-Definition LRU_ {Γ} l (H : [Γ ||-U]) : [Γ ||-< l | U] :=
-  Build_LRValid (LRU (LogRelRec l) H).
+Definition LRU_ {l Γ} (H : [Γ ||-U l]) : [Γ ||-< l > U] :=
+  LRbuild (LRU (LogRelRec l) H).
 
-Definition LRne_ (Γ : context) l {A : term} (neA : [Γ ||-ne A])
-  : [Γ ||-< l | A] :=
-  Build_LRValid (LRne (LogRelRec l) neA).
+Definition LRne_ l {Γ A} (neA : [Γ ||-ne A])
+  : [Γ ||-< l > A] :=
+  LRbuild (LRne (LogRelRec l) neA).
 
-Definition LRPi_ (Γ : context) l {A : term}
-  (ΠrA : [Γ ||-Πr A]) (ΠvA : TyPiRelValid (LR (LogRelRec l)) ΠrA)
-  : [Γ ||-<l | A] :=
-  Build_LRValid (LRPi (LogRelRec l) ΠrA ΠvA).
-
-Definition LREmb_ (Γ : context) {l l'} (l_ : l' << l) {A : term}
-  (H : [LogRelRec l l' l_ | Γ ||- A])
-  : [ Γ ||-< l | A ]
-  := Build_LRValid (LREmb (LogRelRec l) l_ H).
-
-(*Definition eta {A B} (f : A -> B) : f = fun x => f x := eq_refl.
-
-Definition emb' {Γ A} l (l_ : l = one) (p : [Γ ||-< zero | A ]) :  [Γ ||-< l | A].
-  destruct p.
-  econstructor.
-  rewrite l_.
-  rewrite (eta relEq'0) in valid0.
-  rewrite (eta relTerm'0) in valid0.
-  rewrite (eta relEqTerm'0) in valid0.
-  destruct valid0.
-  eapply LRemb.
-Qed.*)
+Definition LRPi_ l {Γ A} (ΠA : [Γ ||-Πd A]) (ΠAad : PiRedTyAdequate (LR (LogRelRec l)) ΠA)
+  : [Γ ||-< l > A] :=
+  LRbuild (LRPi (LogRelRec l) ΠA ΠAad).

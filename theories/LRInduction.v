@@ -1,21 +1,24 @@
 From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import MLTTTyping LogicalRelation.
+From LogRel Require Import Notations Untyped MLTTTyping LogicalRelation.
+
+Set Universe Polymorphism.
 
 Theorem LR_rect0
-  (P : forall {c t rEq rTe rTeEq}, @LR zero rec0 c t rEq rTe rTeEq  -> Type) :
+  (rec : forall l', l' << zero -> LogRelKit)
+  (P : forall {c t rEq rTe rTeEq}, LR rec c t rEq rTe rTeEq  -> Type) :
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
-    P (LRne rec0 neA)) ->
+    P (LRne rec neA)) ->
 
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec0) ΠA),
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
     (forall {Δ} (h : [ |- Δ]),
-      P (HAvalid.(TyPiRel.domValid) h)) ->
+      P (HAad.(PiRedTy.domAd) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-      P (HAvalid.(TyPiRel.codValid) h1 h2)) ->
-    P (LRPi rec0 ΠA HAvalid)) ->
+      (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+      P (HAad.(PiRedTy.codAd) h1 h2)) ->
+    P (LRPi rec ΠA HAad)) ->
 
   forall (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR rec0 c t rEq rTe rTeEq), 
+    (rTeEq  : term -> term -> Type) (lr : LR rec c t rEq rTe rTeEq), 
    P lr.
 Proof.
   intros Hne HPi.
@@ -25,10 +28,9 @@ Proof.
   - destruct H as [? l_].
     inversion l_.
   - eapply Hne.
-  - destruct ΠAvalid ; unfold LRPackValid in * ; cbn in *.
+  - destruct ΠAad ; unfold LRPackAdequate in * ; cbn in *.
     eapply HPi.
     all: intros ; eapply HRec.
-  - inversion l_.
 Qed.
 
 Theorem LR_rect0'
@@ -36,166 +38,174 @@ Theorem LR_rect0'
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
     P (LRne rec0 neA)) ->
 
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec0) ΠA),
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec0) ΠA),
     (forall {Δ} (h : [ |- Δ]),
-      P (HAvalid.(TyPiRel.domValid) h)) ->
+      P (HAad.(PiRedTy.domAd) h)) ->
     (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-      P (HAvalid.(TyPiRel.codValid) h1 h2)) ->
-    P (LRPi rec0 ΠA HAvalid)) ->
+      (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+      P (HAad.(PiRedTy.codAd) h1 h2)) ->
+    P (LRPi rec0 ΠA HAad)) ->
 
-  forall (Γ : context) (A : term) (lr : [Γ ||-< zero | A]),
-  P (lr.(LRValid.valid)).
+  forall (Γ : context) (A : term) (lr : [Γ ||-< zero > A]),
+  P (lr.(LRAd.adequate)).
 Proof.
   intros.
   eapply LR_rect0.
   all: eassumption.
 Qed.
 
-(*TODO : get a good induction principle*)
-(*Scheme LR_rect := Induction for LR Sort Type.*)
+Fixpoint LR_embedding {l l'} (l_ : l << l')
+  {Γ A rEq rTe rTeEq} (lr : LRl l Γ A rEq rTe rTeEq) {struct lr} : (LRl l' Γ A rEq rTe rTeEq) :=
+  match lr with
+   | LRU Γ H =>
+      match
+        (match l_ with Oi => fun H' => elim H'.(URedTy.lt) end H)
+      with end
+   | LRne _ _ neA => LRne _ neA
+   | LRPi _ _ ΠA ΠAad => LRPi _ ΠA
+      {|
+        PiRedTy.domAd :=
+          fun (Δ : context) (h : [  |- Δ]) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) h) ;
+        PiRedTy.codAd :=
+          fun (Δ : context) (a : term) (h : [  |- Δ])
+            (ha : [PiRedTy.domRed ΠA h | _ ||- a : _]) =>
+          LR_embedding l_ (ΠAad.(PiRedTy.codAd) h ha)
+      |}
+  end.
+
 Theorem LR_rect1
-  (P0 : forall {c t rEq rTe rTeEq},
-  @LR zero rec0 c t rEq rTe rTeEq  -> Type)
-  (P1 : forall {c t rEq rTe rTeEq},
-  @LR one rec1 c t rEq rTe rTeEq  -> Type) :
+  (rec : forall l', l' << one -> LogRelKit)
+  (P : forall {c t rEq rTe rTeEq},
+  @LR one rec c t rEq rTe rTeEq  -> Type) :
+
+  (forall (Γ : context) (h : [Γ ||-U one]),
+    P (LRU rec h)) ->
 
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
-    P0 (LRne rec0 neA)) ->
+    P (LRne rec neA)) ->
 
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec0) ΠA),
-    (forall {Δ} (h : [ |- Δ]),
-      P0 (HAvalid.(TyPiRel.domValid) h)) ->
-    (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-      P0 (HAvalid.(TyPiRel.codValid) h1 h2)) ->
-    P0 (LRPi rec0 ΠA HAvalid)) ->
-
-  (forall (Γ : context) (h : [Γ ||-U]),
-    P1 (LRU rec1 h)) ->
-
-  (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
-    P1 (LRne rec1 neA)) ->
-
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec1) ΠA),
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
   (forall {Δ} (h : [ |- Δ]),
-    P1 (HAvalid.(TyPiRel.domValid) h)) ->
+    P (HAad.(PiRedTy.domAd) h)) ->
   (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-  P1 (HAvalid.(TyPiRel.codValid) h1 h2)) ->
-  P1 (LRPi rec1 ΠA HAvalid)) ->
-
-  (forall (Γ : context) (A : term) {l' l_}
-    (H : [Γ ||-< zero | A]),
-    P0 H.(LRValid.valid) ->
-    P1 (@LREmb _ _ _ _ l' l_ H)) ->
+    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+  P (HAad.(PiRedTy.codAd) h1 h2)) ->
+  P (LRPi rec ΠA HAad)) ->
 
   forall (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR rec1 c t rEq rTe rTeEq),
-    P1 lr.
+    (rTeEq  : term -> term -> Type) (lr : LR rec c t rEq rTe rTeEq),
+    P lr.
 Proof.
   cbn.
-  intros Hne0 HPi0 HU Hne1 HPi1 Hemb.
+  intros HU Hne HPi.
   fix HRec 6.
   destruct lr.
   - eapply HU.
-  - eapply Hne1.
-  - eapply HPi1.
+  - eapply Hne.
+  - eapply HPi.
     all: intros ; eapply HRec.
-  - inversion l_ ; subst.
-    cbn in *.
-    eapply Hemb.
-    eapply LR_rect0.
-    all: assumption.
 Qed.
 
-(* Not reproving the lemmas for the lower level, since we can prove it using LR_rect0*)
-Theorem LR_rect1'
-  (P0 : forall {c t rEq rTe rTeEq},
-  @LR zero rec0 c t rEq rTe rTeEq  -> Type)
-  (P1 : forall {c t rEq rTe rTeEq},
-  @LR one rec1 c t rEq rTe rTeEq  -> Type) :
+Theorem LR_rect (P : forall {l Γ A}, [Γ ||-< l > A] -> Type) :
 
-  (forall (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR rec0 c t rEq rTe rTeEq), 
-   P0 lr) ->
+  (forall (Γ : context) (h : [Γ ||-U one]),
+    P (LRU_ h)) ->
 
-  (forall (Γ : context) (h : [Γ ||-U]),
-    P1 (LRU rec1 h)) ->
+  (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+    P (LRne_ l neA)) ->
 
-  (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
-    P1 (LRne rec1 neA)) ->
-
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ]) (HAvalid : TyPiRelValid (LR rec1) ΠA),
+  (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LRl l) ΠA),
   (forall {Δ} (h : [ |- Δ]),
-    P1 (HAvalid.(TyPiRel.domValid) h)) ->
+    P (LRbuild (HAad.(PiRedTy.domAd) h))) ->
   (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-  P1 (HAvalid.(TyPiRel.codValid) h1 h2)) ->
-  P1 (LRPi rec1 ΠA HAvalid)) ->
+    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+  P (LRbuild (HAad.(PiRedTy.codAd) h1 h2))) ->
+  P (LRPi_ l ΠA HAad)) ->
 
-  (forall (Γ : context) (A : term) {l' l_}
-    (H : [ Γ ||-< zero | A]),
-    P0 H.(LRValid.valid) ->
-    P1 (@LREmb _ _ _ _ l' l_ H)) ->
-
-  forall (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR rec1 c t rEq rTe rTeEq),
-    P1 lr.
+  forall (l : TypeLevel) (Γ : context) (A : term) (lr : [Γ ||-< l > A]),
+    P lr.
 Proof.
-  cbn.
-  intros H0 HU Hne1 HPi1 Hemb.
-  eapply LR_rect1.
-  all: try solve [eauto].
-  all: intros ; eapply H0.
+  intros HU Hne HPi [] Γ A lr.
+  - apply (LR_rect0 rec0 (fun Γ A _ _ _ lr => P zero Γ A (LRbuild lr))).
+    + intros.
+      apply Hne.
+    + intros.
+      apply HPi ; try eassumption.
+  - apply (LR_rect1 rec1 (fun Γ A _ _ _ lr => P one Γ A (LRbuild lr))).
+    + assumption.
+    + intros.
+      apply Hne.
+    + intros.
+      apply HPi.
+      all: eassumption.
 Qed.
 
-(*The nice, combined induction principle we would like to have… But sadly the naïve proof fails due to universe constraints.*)
-
-Theorem LR_rect (P : RedRel) :
-
+Theorem LR_rec (P : RedRel) :
   (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
-    P Γ A (fun B : term => [Γ ||-ne A ≅ B | neA])
-    (fun t : term => [Γ ||-ne t ::: A | neA])
-    (fun t u : term => [Γ ||-ne t ≅ u ::: A | neA])) ->
+  P Γ A (fun B : term => [Γ ||-ne A ≅ B | neA])
+  (fun t : term => [Γ ||-ne t : A | neA])
+  (fun t u : term => [Γ ||-ne t ≅ u : A | neA])) ->
 
-  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πr A ])
-    (HAvalid : {l & TyPiRelValid (LRL l) ΠA}),
-    (forall {Δ} (h : [ |- Δ]),
-      P Δ (TyPiRel.dom ΠA) (LRPack.eq (TyPiRel.domRel ΠA h))
-      (LRPack.term (TyPiRel.domRel ΠA h)) (LRPack.eqTerm (TyPiRel.domRel ΠA h))) ->
-    (forall {Δ a} (h1 : [ |- Δ ]) 
-      (h2 : [ Δ ||-p a ::: ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-      P Δ ((TyPiRel.cod ΠA) {0 := a}) (LRPack.eq (TyPiRel.codRel ΠA h1 h2))
-      (LRPack.term (TyPiRel.codRel ΠA h1 h2))
-      (LRPack.eqTerm (TyPiRel.codRel ΠA h1 h2))) ->
-    P Γ A (fun B : term => [Γ ||-Π A ≅ B | ΠA])
-    (fun t : term => [Γ ||-Π t ::: A | ΠA])
-    (fun t u : term => [Γ ||-Π t ≅ u ::: A | ΠA])) ->
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ])
+  (HAad : {l & PiRedTyAdequate (LRl l) ΠA}),
+  (forall {Δ} (h : [ |- Δ]),
+    P Δ (PiRedTy.dom ΠA) (LRPack.eqTy (PiRedTy.domRed ΠA h))
+    (LRPack.redTm (PiRedTy.domRed ΠA h)) (LRPack.eqTm (PiRedTy.domRed ΠA h))) ->
+  (forall {Δ a} (h1 : [ |- Δ ]) 
+    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+    P Δ ((PiRedTy.cod ΠA) {0 := a}) (LRPack.eqTy (PiRedTy.codRed ΠA h1 h2))
+    (LRPack.redTm (PiRedTy.codRed ΠA h1 h2))
+    (LRPack.eqTm (PiRedTy.codRed ΠA h1 h2))) ->
+  P Γ A (fun B : term => [Γ ||-Π A ≅ B | ΠA])
+  (fun t : term => [Γ ||-Π t : A | ΠA])
+  (fun t u : term => [Γ ||-Π t ≅ u : A | ΠA])) ->
 
-  (forall (Γ : context) (h : [Γ ||-U]),
-    P Γ U (fun B : term => [Γ ||-U≅ B])
-    (fun t : term => [rec1 | Γ ||-U t :::U | URel.lt h])
-    (fun t u : term => [rec1 | Γ ||-U t ≅ u :::U | URel.lt h])) ->
-
-  (forall (Γ : context) (A : term)
-    (H : [kit0 | Γ ||- A]),
-    P Γ A H.(LRValid.eq) H.(LRValid.term) H.(LRValid.eqTerm) ->
-    P Γ A (fun B : term => LRKit.EqTyRel kit0 Γ A B H)
-    (fun t : term => LRKit.TeRel kit0 Γ t A H)
-    (fun t u : term => LRKit.EqTeRel kit0 Γ t u A H)) ->
+  (forall (Γ : context) (h : [Γ ||-U one ]),
+  P Γ U (fun B : term => [Γ ||-U≅ B])
+  (fun t : term => [rec1 | Γ ||-U t :U | h])
+  (fun t u : term => [rec1 | Γ ||-U t ≅ u :U | h])) ->
 
   forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR (recl l) Γ t rEq rTe rTeEq),
-    P Γ t rEq rTe rTeEq.
+  (rTeEq  : term -> term -> Type) (lr : LR (LogRelRec l) Γ t rEq rTe rTeEq),
+  P Γ t rEq rTe rTeEq.
 Proof.
-  cbn.
-  intros Hne HPi HU Hemb l.
-  case l ; cbn.
-  - eapply LR_rect0.
-    + eauto.
+  intros Hne HPi HU [].
+  - apply LR_rect0.
+    + assumption.
     + intros.
-      eapply HPi ; tea.
-      now exists zero.
-  - Fail eapply (LR_rect1 (fun Γ t rEq rTe rTeEq _ => P Γ t rEq rTe rTeEq) (fun Γ t rEq rTe rTeEq _ => P Γ t rEq rTe rTeEq)).
-Abort.
+      apply HPi ; try eassumption.
+      exists zero.
+      eassumption.
+  - apply LR_rect1.
+    + assumption.
+    + assumption.
+    + intros.
+      apply HPi ; try eassumption.
+      exists one.
+      eassumption.
+Qed.
+
+Theorem LR_rec' (P : context -> term -> Type) :
+  (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+  P Γ A) ->
+
+  (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ])
+    (HAad : {l & PiRedTyAdequate (LRl l) ΠA}),
+    (forall {Δ} (h : [ |- Δ]),
+      P Δ (PiRedTy.dom ΠA)) ->
+    (forall {Δ a} (h1 : [ |- Δ ]) 
+      (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
+      P Δ ((PiRedTy.cod ΠA) {0 := a})) ->
+    P Γ A) ->
+
+  (forall (Γ : context) (h : [Γ ||-U one ]),
+    P Γ U) ->
+
+  forall (l : TypeLevel) (Γ : context) (A : term),
+    [Γ ||-< l > A] -> P Γ A.
+Proof.
+  intros Hne HPi HU l Γ A [[] lr].
+  red in lr ; cbn in lr.
+  eapply (LR_rec (fun Γ A _ _ _ => P Γ A)).
+  all: eassumption.
+Qed.

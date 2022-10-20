@@ -1,22 +1,8 @@
 From MetaCoq.Template Require Import Universes.
 From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import Untyped Automation.
+From LogRel Require Import Untyped Automation Notations.
 
 Set Primitive Projections.
-
-Reserved Notation "[   |- Γ ]" (at level 0).
-Reserved Notation "[ Γ |- T ]" (at level 0).
-Reserved Notation "[ Γ |- t ::: T ]" (at level 0).
-Reserved Notation "[ Γ |- T ≅ T' ]" (at level 0).
-Reserved Notation "[ Γ |- t ≅ t' ::: T ]" (at level 0).
-Reserved Notation "[ Γ |- t ⇒ u ::: A ]" (at level 0).
-Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0).
-Reserved Notation "[ Γ |- t ⇒* t' ::: A ]" (at level 0).
-Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0).
-
-Definition U := tSort Universe.type0.
-Definition eta_expand (f : term) := tApp (lift0 1 f) (tRel 0).
-
 
 Inductive wfType  : context -> term -> Type :=
     | wfTypeU {Γ} : 
@@ -27,11 +13,11 @@ Inductive wfType  : context -> term -> Type :=
         [Γ ,, (vass na A) |- B ] -> 
         [ Γ |- tProd na A B ]
     | wfTypeUniv {Γ} {A} :
-        [ Γ |- A ::: U ] -> 
+        [ Γ |- A : U ] -> 
         [ Γ |- A ]
 
 with wfContext : context -> Type :=
-    | connil : wfContext []
+    | connil : [ |- [] ]
     | concons {na} {Γ} {A} : 
         [ |- Γ ] -> 
         [ Γ |- A ] -> 
@@ -41,23 +27,23 @@ with wfTerm : context -> term -> term -> Type :=
     | wfVar {Γ} {n decl} :
         [   |- Γ ] ->
         nth_error Γ n = Some decl ->
-        [ Γ |- tRel n ::: lift0 (S n) decl.(decl_type) ]
+        [ Γ |- tRel n : lift0 (S n) decl.(decl_type) ]
     | wfTermProd {Γ} {na} {A B} :
-        [ Γ |- A ::: U] -> 
-        [Γ ,, (vass na A) |- B ::: U ] ->
-        [ Γ |- tProd na A B ::: U ]
+        [ Γ |- A : U] -> 
+        [Γ ,, (vass na A) |- B : U ] ->
+        [ Γ |- tProd na A B : U ]
     | wfTermLam {Γ} {na} {A B t} :
         [ Γ |- A ] ->        
-        [ Γ ,, vass na A |- t ::: B ] -> 
-        [ Γ |- tLambda na A t ::: tProd na A B]
+        [ Γ ,, vass na A |- t : B ] -> 
+        [ Γ |- tLambda na A t : tProd na A B]
     | wfTermApp {Γ} {na} {f a A B} :
-        [ Γ |- f ::: tProd na A B ] -> 
-        [ Γ |- a ::: A ] -> 
-        [ Γ |- tApp f a ::: B{0 := a} ]
+        [ Γ |- f : tProd na A B ] -> 
+        [ Γ |- a : A ] -> 
+        [ Γ |- tApp f a : B{0 := a} ]
     | wfTermConv {Γ} {t A B} :
-        [ Γ |- t ::: A ] -> 
+        [ Γ |- t : A ] -> 
         [ Γ |- A ≅ B ] -> 
-        [ Γ |- t ::: B ]
+        [ Γ |- t : B ]
     
 with convType : context -> term -> term  -> Type :=
     | TypeRefl {Γ} {A} : 
@@ -76,50 +62,50 @@ with convType : context -> term -> term  -> Type :=
         [ Γ |- B ≅ C] ->
         [ Γ |- A ≅ C]  
     | convUniv {Γ} {A B} :
-        [ Γ |- A ≅ B ::: U ] -> 
+        [ Γ |- A ≅ B : U ] -> 
         [ Γ |- A ≅ B ]        
 
 with convTerm : context -> term -> term -> term -> Type :=
     | TermRefl {Γ} {t A} :
-        [ Γ |- t ::: A ] -> 
-        [ Γ |- t ≅ t ::: A ]
+        [ Γ |- t : A ] -> 
+        [ Γ |- t ≅ t : A ]
     | TermSym {Γ} {t t' A} :
-        [ Γ |- t ≅ t' ::: A ] ->
-        [ Γ |- t' ≅ t ::: A ]
+        [ Γ |- t ≅ t' : A ] ->
+        [ Γ |- t' ≅ t : A ]
     | TermTrans {Γ} {t t' t'' A} :
-        [ Γ |- t ≅ t' ::: A ] ->
-        [ Γ |- t' ≅ t'' ::: A ] ->
-        [ Γ |- t ≅ t'' ::: A ]
+        [ Γ |- t ≅ t' : A ] ->
+        [ Γ |- t' ≅ t'' : A ] ->
+        [ Γ |- t ≅ t'' : A ]
     | TermConv {Γ} {t t' A B} :
-        [ Γ |- t ≅ t'::: A ] ->
+        [ Γ |- t ≅ t': A ] ->
         [ Γ |- A ≅ B ] ->
-        [ Γ |- t ≅ t'::: B ]
+        [ Γ |- t ≅ t': B ]
     | TermPiCong {Γ} {na nb } {A B C D} :
         [ Γ |- A ] ->
-        [ Γ |- A ≅ B ::: U ] ->
-        [ Γ ,, vass na A |- C ≅ D ::: U ] ->
-        [ Γ |- tProd na A C ≅ tProd nb B D ::: U ]
+        [ Γ |- A ≅ B : U ] ->
+        [ Γ ,, vass na A |- C ≅ D : U ] ->
+        [ Γ |- tProd na A C ≅ tProd nb B D : U ]
     | TermAppCong {Γ} {na} {a b f g A B} :
-        [ Γ |- f ≅ g ::: tProd na A B ] ->
-        [ Γ |- a ≅ b ::: A ] ->
-        [ Γ |- tApp f a ≅ tApp g b ::: B{0 := a} ]
+        [ Γ |- f ≅ g : tProd na A B ] ->
+        [ Γ |- a ≅ b : A ] ->
+        [ Γ |- tApp f a ≅ tApp g b : B{0 := a} ]
     | TermBRed {Γ} {na} {a t A B} :
         [ Γ |- A ] ->
-        [ Γ ,, vass na A |- t ::: B ] ->
-        [ Γ |- a ::: A ] ->
-        [ Γ |- tApp (tLambda na A t) a ≅ t{0 := a} ::: B{0 := a} ]
+        [ Γ ,, vass na A |- t : B ] ->
+        [ Γ |- a : A ] ->
+        [ Γ |- tApp (tLambda na A t) a ≅ t{0 := a} : B{0 := a} ]
     | TermFunExt {Γ} {na nb} {f g A B} :
         [ Γ |- A ] ->
-        [ Γ |- f ::: tProd na A B ] ->
-        [ Γ |- g ::: tProd nb A B ] ->
-        [ Γ ,, vass na f |- eta_expand f ≅ eta_expand g ::: B ] ->
-        [ Γ |- f ≅ g ::: tProd na A B ]
+        [ Γ |- f : tProd na A B ] ->
+        [ Γ |- g : tProd nb A B ] ->
+        [ Γ ,, vass na f |- eta_expand f ≅ eta_expand g : B ] ->
+        [ Γ |- f ≅ g : tProd na A B ]
     
 where "[   |- Γ ]" := (wfContext Γ)
 and   "[ Γ |- T ]" := (wfType Γ T)
-and   "[ Γ |- t ::: T ]" := (wfTerm Γ t T)
+and   "[ Γ |- t : T ]" := (wfTerm Γ t T)
 and   "[ Γ |- A ≅ B ]" := (convType Γ A B)
-and   "[ Γ |- t ≅ t' ::: T ]" := (convTerm Γ t t' T).
+and   "[ Γ |- t ≅ t' : T ]" := (convTerm Γ t t' T).
 
 Section InductionPrinciples.
 
@@ -142,36 +128,38 @@ End InductionPrinciples.
 
 Inductive termRed (Γ : context) : term -> term -> term -> Type :=
     | appSubst {na A B t u a} :
-        [ Γ |- t ⇒ u ::: tProd na A B] ->
-        [ Γ |- a ::: A ] ->
-        [ Γ |- tApp t a ⇒ tApp u a ::: B{0 := a} ]
+        [ Γ |- t ⇒ u : tProd na A B] ->
+        [ Γ |- a : A ] ->
+        [ Γ |- tApp t a ⇒ tApp u a : B{0 := a} ]
     | BRed {na} {A B a t} :
         [ Γ |- A ] -> 
-        [ Γ ,, vass na A |- t ::: B ] ->
-        [ Γ |- a ::: A ] ->
-        [ Γ |- tApp (tLambda na A t) a ⇒ t{0 := a} ::: B{0 := a} ]
+        [ Γ ,, vass na A |- t : B ] ->
+        [ Γ |- a : A ] ->
+        [ Γ |- tApp (tLambda na A t) a ⇒ t{0 := a} : B{0 := a} ]
     | termRedConv {A B t u} : 
-        [ Γ |- t ⇒ u ::: A ] ->
+        [ Γ |- t ⇒ u : A ] ->
         [ Γ |- A ≅ B ] ->
-        [ Γ |- t ⇒ u ::: B ]
+        [ Γ |- t ⇒ u : B ]
 
-where "[ Γ |- t ⇒ u ::: A ]" := (termRed Γ t u A).
-    
+where "[ Γ |- t ⇒ u : A ]" := (termRed Γ t u A).
+
 Inductive typeRed (Γ : context) : term -> term -> Type :=
     | typeRedUniv {A B} :
-        [ Γ |- A ⇒ B ::: U ] ->
+        [ Γ |- A ⇒ B : U ] ->
         [ Γ |- A ⇒ B ]
+
 where "[ Γ |- A ⇒ B ]" := (typeRed Γ A B).
 
 Inductive termRedClosure (Γ : context) : term -> term -> term -> Type :=
     | termRedId {t A} :
-        [ Γ |- t ::: A ] ->
-        [ Γ |- t ⇒* t ::: A ]
+        [ Γ |- t : A ] ->
+        [ Γ |- t ⇒* t : A ]
     | termRedSucc {A t t' u} :
-        [ Γ |- t ⇒ t' ::: A ] ->
-        [ Γ |- t' ⇒* u ::: A ] ->
-        [ Γ |- t ⇒* u ::: A ]
-where "[ Γ |- t ⇒* t' ::: A ]" := (termRedClosure Γ t t' A).
+        [ Γ |- t ⇒ t' : A ] ->
+        [ Γ |- t' ⇒* u : A ] ->
+        [ Γ |- t ⇒* u : A ]
+
+where "[ Γ |- t ⇒* t' : A ]" := (termRedClosure Γ t t' A).
 
 Inductive typeRedClosure (Γ : context) : term -> term -> Type :=
 | typeRedId {A} :
@@ -181,14 +169,16 @@ Inductive typeRedClosure (Γ : context) : term -> term -> Type :=
     [ Γ |- A ⇒ A' ] ->
     [ Γ |- A' ⇒* B ] ->
     [ Γ |- A ⇒* B ]
-where "[ Γ |- A ⇒* B ]" := (typeRedClosure Γ A B). 
 
+where "[ Γ |- A ⇒* B ]" := (typeRedClosure Γ A B).
 
-Record termRedStrict (Γ : context) (t u A : term) {t'} : Type :=
+(* Record termRedStrict (Γ : context) (t u A : term) {t'} : Type :=
   {
-    termRedStrictOneRed : [ Γ |- t ⇒ t' ::: A ] ;
-    termRedStrictRed : [Γ |- t' ⇒* u ::: A]
+    termRedStrictOneRed : [ Γ |- t ⇒ t' : A ] ;
+    termRedStrictRed : [Γ |- t' ⇒* u : A]
   }.
+
+Notation  "[ Γ |- t ⇒⁺ u : A ]" := (termRedStrict Γ t u A).
 
 Record typeRedStrict (Γ : context) (A B : term) {A'} : Type :=
   {
@@ -196,27 +186,24 @@ Record typeRedStrict (Γ : context) (A B : term) {A'} : Type :=
     typeRedStrictRed : [Γ |- A' ⇒* B]
   }.
 
-Record termRedWHNF (Γ : context) (t u A : term) : Type :=
-  {
-    termRedWHNFRed :> [ Γ |- t ⇒* u ::: A ] ;
-    termRedWHNFWHNF :> whnf Γ u
-  }.
+Notation "[ Γ |- t ⇒⁺ u : A ]" := (termRedStrict Γ t u A). *)
 
-
-(*Type reduction to whnf*)
 Record typeRedWHNF (Γ : context) (A B : term) : Type :=
   {
     typeRedWHNFRed :> [ Γ |- A ⇒* B ] ;
     typeRedWHNFWHNF :> whnf Γ B
   }.
 
-Record termEqWF (Γ : context) (t u A : term) : Type :=
+Notation "[ Γ |- A ↘ B ]" := (typeRedWHNF Γ A B).
+
+
+Record termRedWHNF (Γ : context) (t u A : term) : Type :=
   {
-    termEqWFLeft : [Γ |- t ::: A] ;
-    termEqWFRight : [Γ |- u ::: A] ;
-    termEqWFEq :> [Γ |- t ≅ u ::: A]
+    termRedWHNFRed :> [ Γ |- t ⇒* u : A ] ;
+    termRedWHNFWHNF :> whnf Γ u
   }.
 
+Notation "[ Γ |- t ↘ u : A ]" := (termRedWHNF Γ t u A).
 
 Record typeEqWF (Γ : context) (A B : term) : Type :=
   { 
@@ -225,13 +212,16 @@ Record typeEqWF (Γ : context) (A B : term) : Type :=
     typeEqWFEq :> [Γ |- A ≅ B]
   }.
 
+Notation "[ Γ |- A :≅: B ]" := (typeEqWF Γ A B).
 
-Record termRedWF (Γ : context) (t u A : term) : Type := {
-  termRedWFLeft : [Γ |- t ::: A];
-  termRedWFRight : [Γ |- u ::: A];
-  termRedWFRed :> [Γ |- t ⇒* u ::: A]
-}.
+Record termEqWF (Γ : context) (t u A : term) : Type :=
+  {
+    termEqWFLeft : [Γ |- t : A] ;
+    termEqWFRight : [Γ |- u : A] ;
+    termEqWFEq :> [Γ |- t ≅ u : A]
+  }.
 
+Notation "[ Γ |- t :≅: u : A ]" := (termEqWF Γ t u A).
 
 Record typeRedWF (Γ : context) (A B : term) : Type := {
   typeRedWFLeft : [Γ |- A];
@@ -239,14 +229,15 @@ Record typeRedWF (Γ : context) (A B : term) : Type := {
   typeRedWFRed :> [Γ |- A ⇒* B]
 }.
 
-Notation "[ Γ |- t ⇒⁺ u ::: A ]" := (termRedStrict Γ t u A) (at level 0).   
-Notation "[ Γ |- A ⇒⁺ B ]" := (typeRedStrict Γ A B) (at level 0).   
-Notation "[ Γ |- t ↘ u ::: A ]" := (termRedWHNF Γ t u A) (at level 0).
-Notation "[ Γ |- A ↘ B ]" := (typeRedWHNF Γ A B) (at level 0).
-Notation "[ Γ |- t :≡: u ::: A ]" := (termEqWF Γ t u A) (at level 0).
-Notation "[ Γ |- A :≡: B ]" := (typeEqWF Γ A B) (at level 0).
-Notation "[ Γ |- t :⇒*: u ::: A ]" := (termRedWF Γ t u A) (at level 0).   
-Notation "[ Γ |- A :⇒*: B ]" := (typeRedWF Γ A B) (at level 0).
+Notation "[ Γ |- A :⇒*: B ]" := (typeRedWF Γ A B).
+
+Record termRedWF (Γ : context) (t u A : term) : Type := {
+  termRedWFLeft : [Γ |- t : A];
+  termRedWFRight : [Γ |- u : A];
+  termRedWFRed :> [Γ |- t ⇒* u : A]
+}.
+
+Notation "[ Γ |- t :⇒*: u : A ]" := (termRedWF Γ t u A).
 
 #[global] Hint Constructors wfType wfContext wfTerm convType convTerm : mltt.
 #[global] Hint Constructors termRed typeRed termRedClosure typeRedClosure

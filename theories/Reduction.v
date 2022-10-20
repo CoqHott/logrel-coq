@@ -4,15 +4,15 @@ From LogRel Require Import Automation Untyped MLTTTyping Generation Properties.
 (** Inclusion of the various reduction-like *)
 
 Definition RedConvTe {Γ} {t u A : term} :
-    [Γ |- t ⇒ u ::: A] -> 
-    [Γ |- t ≅ u ::: A].
+    [Γ |- t ⇒ u : A] -> 
+    [Γ |- t ≅ u : A].
 Proof.
     induction 1 ; mltt.
 Qed.
 
 #[global] Hint Resolve RedConvTe : mltt.
 
-Corollary termRedFrag Γ t u A : [Γ |- t ⇒ u ::: A] ->
+Corollary termRedFrag Γ t u A : [Γ |- t ⇒ u : A] ->
 fragment t && fragment u && fragment A && fragment_ctx Γ.
 Proof.
   intros.
@@ -21,8 +21,8 @@ Proof.
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
-    [Γ |- t ⇒* u ::: A] -> 
-    [Γ |- t ≅ u ::: A].
+    [Γ |- t ⇒* u : A] -> 
+    [Γ |- t ≅ u : A].
 Proof.
   induction 1 ; mltt.
 Qed.
@@ -57,8 +57,8 @@ Qed.
 #[global] Hint Resolve TypeRedWFConv : mltt.
 
 Definition RedConvTeWFC {Γ} {t u A} :
-    [Γ |- t :⇒*: u ::: A] ->
-    [Γ |- t ≅ u ::: A].
+    [Γ |- t :⇒*: u : A] ->
+    [Γ |- t ≅ u : A].
 Proof.
   intros [] ; mltt.
 Qed.
@@ -68,9 +68,9 @@ Qed.
 (** Type conversion for multi-step reduction *)
 
 Definition ClosureConv {Γ} {t u A B} :
-    [Γ |- t ⇒* u ::: A] ->
+    [Γ |- t ⇒* u : A] ->
     [Γ |- A ≅ B] ->
-    [Γ |- t ⇒* u ::: B].
+    [Γ |- t ⇒* u : B].
 Proof.
   induction 1 ; mltt.
   all: econstructor ; mltt.
@@ -79,9 +79,9 @@ Qed.
 #[global] Hint Resolve ClosureConv | 10 : mltt.
 
 Definition TermRedWFConv {Γ} {t u A B} :
-    [Γ |- t :⇒*: u ::: A] ->
+    [Γ |- t :⇒*: u : A] ->
     [Γ |- A ≅ B] ->
-    [Γ |- t :⇒*: u ::: B].
+    [Γ |- t :⇒*: u : B].
 Proof.
   intros [] ?.
   constructor ; mltt.
@@ -92,7 +92,7 @@ Qed.
 (** Whnf do not reduce *)
 
 Lemma whne_nored Γ n u A :
-  whne Γ n -> [Γ |- n ⇒ u ::: A] -> False.
+  whne Γ n -> [Γ |- n ⇒ u : A] -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
@@ -115,7 +115,7 @@ Proof.
 Qed.
 
 Lemma whnf_nored Γ n u A :
-  whnf Γ n -> [Γ |- n ⇒ u ::: A] -> False.
+  whnf Γ n -> [Γ |- n ⇒ u : A] -> False.
 Proof.
   intros nf red.
   induction red in nf |- *.
@@ -156,7 +156,7 @@ Proof.
   eauto using whnf_nored.
 Qed.
 
-Lemma whnf_cred Γ t u A : [Γ |- t ⇒* u ::: A] -> whnf Γ t -> t = u.
+Lemma whnf_cred Γ t u A : [Γ |- t ⇒* u : A] -> whnf Γ t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -175,7 +175,7 @@ Qed.
 (** Determinism of reduction *)
 
 Lemma red_det {Γ t u v A B} :
-  [Γ |- t ⇒ u ::: A] -> [Γ |- t ⇒ v ::: B] ->
+  [Γ |- t ⇒ u : A] -> [Γ |- t ⇒ v : B] ->
   u = v.
 Proof.
   intros red red'.
@@ -208,8 +208,8 @@ Proof.
 Qed.
 
 Lemma nred_cred_det Γ t u u' A A' :
-  [Γ |- t ↘ u ::: A] -> [Γ |- t ⇒* u' ::: A'] ->
-  [Γ |- u' ↘ u ::: A].
+  [Γ |- t ↘ u : A] -> [Γ |- t ⇒* u' : A'] ->
+  [Γ |- u' ↘ u : A].
 Proof.
   intros [red whnf] red'.
   induction red in whnf, A', u', red' |- *.
@@ -225,7 +225,7 @@ Proof.
 Qed.
 
 Corollary nred_det Γ t u u' A A' :
-  [Γ |- t ↘ u ::: A] -> [Γ |- t ↘ u' ::: A'] ->
+  [Γ |- t ↘ u : A] -> [Γ |- t ↘ u' : A'] ->
   u = u'.
 Proof.
   intros red []. eapply nred_cred_det in red as [] ; tea.
@@ -270,27 +270,27 @@ Ltac gen_conv :=
     | H : [ _ |- _ ⇒* _] |- _ => pose proof (RedConvTeC H)
     | |- _ => skip
     end;match goal with
-    | H : [ ?Γ |- ?t ⇒ ?u ::: ?A ] , _ : [ ?Γ |- ?t ≅ ?u ::: ?A]|- _ => skip
-    | H : [ _ |- _ ⇒ _ ::: _] |- _ => pose proof (RedConvTy H)
+    | H : [ ?Γ |- ?t ⇒ ?u : ?A ] , _ : [ ?Γ |- ?t ≅ ?u : ?A]|- _ => skip
+    | H : [ _ |- _ ⇒ _ : _] |- _ => pose proof (RedConvTy H)
     | |- _ => skip
     end;match goal with
-    | H : [ ?Γ |- ?t ⇒* ?u ::: ?A ] , _ : [ ?Γ |- ?t ≅ ?u ::: ?A]|- _ => skip
-    | H : [ _ |- _ ⇒* _ ::: _] |- _ => pose proof (RedConvTy H)
+    | H : [ ?Γ |- ?t ⇒* ?u : ?A ] , _ : [ ?Γ |- ?t ≅ ?u : ?A]|- _ => skip
+    | H : [ _ |- _ ⇒* _ : _] |- _ => pose proof (RedConvTy H)
     | |- _ => skip
     end;match goal with
     | H : [ ?Γ |- ?A :⇒*: ?B ] , _ : [ ?Γ |- ?A ≅ ?B]|- _ => skip
     | H : [ _ |- _ :⇒*: _ ] |- _ => pose proof (TypeRedWFConv H)
     | |- _ => skip
     end;match goal with
-    | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (ClosureConv H1 H2)
+    | H1 : [ _ |- _ ⇒* _ : ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (ClosureConv H1 H2)
     | |- _ => skip
     end;match goal with
-    | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (TermRedWFConv H1 H2)
+    | H1 : [ _ |- _ :⇒*: _ : ?A] , H2 : [_ |- ?A ≅ _] |- _ => pose proof (TermRedWFConv H1 H2)
     | |- _ => skip
     end;match goal with
-    | H1 : [ _ |- _ ⇒* _ ::: ?A] , H2 : [_ |- _ ≅ ?A] |- _ => pose proof (ClosureConv H1 (TypeSym H2))
+    | H1 : [ _ |- _ ⇒* _ : ?A] , H2 : [_ |- _ ≅ ?A] |- _ => pose proof (ClosureConv H1 (TypeSym H2))
     | |- _ => skip
     end;match goal with
-    | H1 : [ _ |- _ :⇒*: _ ::: ?A] , H2 : [ _ |- _ ≅ ?A ] |- _ => pose proof (TermRedWFConv H1 (TypeSym H2))  
+    | H1 : [ _ |- _ :⇒*: _ : ?A] , H2 : [ _ |- _ ≅ ?A ] |- _ => pose proof (TermRedWFConv H1 (TypeSym H2))  
     | |- _ => skip   
     end.

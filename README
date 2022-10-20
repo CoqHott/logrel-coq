@@ -21,6 +21,7 @@ File description
 
 | File | Description |
 |---|----|
+[Notations]  | defines the notations used throughout the file. It can be used as an index for notations!
 [Automation] | defines the mltt hint database and tactic |
 [Untyped] | contains various useful definitions for defining the inference rules |
 [MLTTTyping] | defines the theory's inference rules, the current definition has a single universe as well as product types and eta-conversion for functions. |
@@ -33,6 +34,7 @@ File description
 | [Shapeview] | contains an attempt to mimic the file of the same name in the Agda formalization, with no success. |
 | [Positivity.v] and [Positivity.agda] | showcase the difference between Coq and Agda's positivity checkers. |
 
+[Notations]: ./theories/Notations.v
 [Automation]: ./theories/Automation.v
 [Untyped]: ./theories/Untyped.v
 [MLTTTyping]: ./theories/MLTTTyping.v
