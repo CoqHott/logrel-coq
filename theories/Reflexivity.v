@@ -1,89 +1,54 @@
 From MetaCoq Require Import PCUICAst.
-Require Import Notations Automation MLTTTyping LogicalRelation Properties Reduction LRInduction Escape.
+Require Import Notations Untyped Automation MLTTTyping LogicalRelation Properties Reduction LRInduction Escape.
 
-Set Universe Polymorphism.
-
-(* Definition reflNe {Γ} {A} (neA : [Γ ||-ne A]) : [Γ ||-ne A ≅ A | neA].
+Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
+  (lr : LRl l Γ A eqTy redTm eqTm) : eqTy A.
 Proof.
-  destruct neA.
-  now econstructor.
-Qed.
-
-Definition reflPi l {Γ} {A} (ΠA : [Γ ||-Πr A]) (ΠAvalid : TyPiRelValid (LR (LogRelRec l)) ΠA) :
-(forall Δ (h : [  |- Δ]), (ΠA.(TyPiRel.domRel) h).(LRPack.eq) ΠA.(TyPiRel.dom)) ->
-(forall Δ a (h1 : [  |- Δ])
-  (h2 : [Δ ||-p a : ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]),
-  (ΠA.(TyPiRel.codRel) h1 h2).(LRPack.eq) (ΠA.(TyPiRel.cod){0 := a})) ->
-[Γ ||-Π A ≅ A | ΠA].
-Proof.
-  destruct ΠA.
-  econstructor.
-  all: mltt.
-Qed. *)
-
-Definition reflEq {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
-Proof.
-  eapply (LR_rect (fun l Γ A lr => [Γ ||-< l > A ≅ A | lr])).
-  + intros ? [].
-    econstructor.
+  induction lr as [ ? [] | ? ? [] | ? ? [] IHdom IHcod] using LR_rect.
+  + econstructor.
     reflexivity.
-  + intros ? ? ? [].
-    now econstructor.
-  + intros ? ? ? [] ; cbn in *.
-    econstructor.
+  + now econstructor.
+  + econstructor.
     all: mltt.
 Qed.
 
-(* Definition reflTermNe {Γ A t} : forall (neA : [Γ ||-ne A]), 
-  [Γ ||-ne t : A | neA] -> [Γ ||-ne t ≅ t : A | neA].
+Corollary LRTyEqRefl_ {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
 Proof.
-  intros [] [? ? []] ; cbn in *.
-  econstructor.
-  1-2: now mltt.
-  econstructor.
-  all: mltt.
+  destruct lr as [[] lr].
+  cbn in *.
+  now eapply LRTyEqRefl.
 Qed.
 
-Definition reflTermPi {Γ A} l (ΠA : [Γ ||-Πr A]) (ΠAvalid : TyPiRelValid (LR (LogRelRec l)) ΠA):
-(forall Δ (h : [  |- Δ]) t,
-  (ΠA.(TyPiRel.domRel) h).(LRPack.term) t ->
-  (ΠA.(TyPiRel.domRel) h).(LRPack.eqTerm) t t) ->
-
-(forall Δ a (h1 : [  |- Δ])
-   (h2 : [Δ ||-p a : ΠA.(TyPiRel.dom) | ΠA.(TyPiRel.domRel) h1 ]) t,
-   (ΠA.(TyPiRel.codRel) h1 h2).(LRPack.term) t ->
-   (ΠA.(TyPiRel.codRel) h1 h2).(LRPack.eqTerm) t t) ->
-
-forall t,
-  [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t ≅ t : A | ΠA].
+Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LRl l Γ A eqTy redTm eqTm) :
+  forall t, redTm t -> eqTm t t.
 Proof.
-  intros ? ? ? [].
-  econstructor.
-  all: mltt.
-  econstructor.
-  all: mltt.
-Qed. *)
+  induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod] using LR_rect.
+  - intros t [? ? ? [[] rel]] ; cbn in *.
+    assert (eqTy t)
+      by now eapply (LRTyEqRefl (l := zero)).
+    unshelve econstructor.
+    all : cbn.
+    1-2: econstructor ; tea ; cbn.
+    1-3,5: now eapply (LRbuild (l := zero)).
+    all: cbn.
+    all: mltt.
+  - intros t [].
+    econstructor ; cbn in *.
+    1-4: eassumption.
+    eapply TermConv.
+    all: mltt.
+  - intros t [].
+    unshelve econstructor ; cbn in *.
+    1-2: now econstructor.
+    all: cbn.
+    all: mltt.
+Qed.
 
-Definition reflEqTerm {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
+Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
     [ Γ ||-< l > t : A | lr ] ->
     [ Γ ||-< l > t ≅ t : A | lr ].
 Proof.
-  eapply (LR_rect (fun l Γ A lr => forall t, [Γ ||-< l > t : A | lr] -> [Γ ||-< l > t ≅ t : A | lr])).
-  - intros Γ' [] t' [].
-    assert [Γ' ||-< zero > t' ≅ t' | rel ] by apply reflEq.
-    unshelve econstructor.
-    1-2: now econstructor.
-    all: try eassumption.
-    mltt.
-  - intros ? ? ? [] ? Hne.
-    inversion Hne.
-    econstructor ; tea.
-    cbn in *.
-    econstructor.
-    mltt.
-  - intros ? ? ? [] [] ? ? ? [] ; cbn in *.
-    unfold PiRedTy.redPi in * ; cbn in *.
-    unshelve econstructor ; cbn in *.
-    1-2: econstructor ; tea.
-    all: auto.
+  destruct lr as [[] lr].
+  cbn in *.
+  now eapply LRTmEqRefl.
 Qed.

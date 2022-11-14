@@ -30,8 +30,9 @@ File description
 [LogicalRelation] | contains the logical relation's (**LR**) definition. |
 | [LRInduction] | defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels. |
 | [Escape] | contains a proof of the escape lemma for **LR** |
-[Reflexivity] and [Symmetry] | contain proofs of reflexivity and symmetry over the logical relation. Because of universe constraints, each proof has to be made on two different type levels. Also, the proof of symmetry is not finished, at all. |
-| [Shapeview] | contains an attempt to mimic the file of the same name in the Agda formalization, with no success. |
+| [Shapeview] | Technique to avoid considering non-diagonal cases for two reducibly convertible types. |
+[Reflexivity] | Reflexivity of the logical relation.
+[Irrelevance] | Irrelevance of the logical relation: two convertible types decode to equivalent predicates. Symmetry is a direct corollary. |
 | [Positivity.v] and [Positivity.agda] | showcase the difference between Coq and Agda's positivity checkers. |
 
 [Notations]: ./theories/Notations.v

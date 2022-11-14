@@ -4,6 +4,7 @@ From LogRel Require Import Notations MLTTTyping Untyped.
 Set Primitive Projections.
 Set Universe Polymorphism.
 
+
 (* Note: modules are used as a hackish solution to go around uniqueness of field names for records *)
 
 (** Helpers for manipulating logical relation data *)
@@ -12,8 +13,6 @@ Module LRKit.
 
   (* A LogRelKit contains all the data we will need from our logical relation*)
   #[universes(polymorphic)] Record LogRelKit@{i j} := {
-    URel    : context         -> Type@{j};
-    PiRel   : context -> term -> Type@{j};
     TyRel   : context -> term -> Type@{j};
     EqTyRel : forall (Γ : context) (A B   : term), TyRel Γ A -> Type@{i};
     TeRel   : forall (Γ : context) (t A   : term), TyRel Γ A -> Type@{i};
@@ -24,8 +23,6 @@ End LRKit.
 
 Export LRKit(LogRelKit,Build_LogRelKit).
 
-Notation "[ K | Γ ||-U ]"                := (K.(LRKit.URel) Γ).
-Notation "[ K | Γ ||-Π A ]"              := (K.(LRKit.PiRel) Γ A).
 Notation "[ K | Γ ||- A ]"               := (K.(LRKit.TyRel) Γ A).
 Notation "[ K | Γ ||- A ≅ B | R ]"       := (K.(LRKit.EqTyRel) Γ A B R).
 Notation "[ K | Γ ||- t : A | R ]"     := (K.(LRKit.TeRel) Γ t A R).
@@ -70,6 +67,8 @@ Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
 #[universes(polymorphic)] Definition LRPackAdequate@{i j} {Γ : context} {A : term}
   (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
   R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
+
+Arguments LRPackAdequate _ _ /.
 
 Module LRAd.
 
@@ -394,8 +393,6 @@ Definition RelTeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 
 #[universes(polymorphic)]Definition kit0 :=
   Build_LogRelKit
-  (URedTy zero)
-  PiRedTy
   (fun Γ A => LRAdequate Γ A (LR rec0))
   (fun Γ A B (R : LRAdequate Γ A (LR rec0)) => R.(LRPack.eqTy) B)
   (fun Γ t A (R : LRAdequate Γ A (LR rec0)) => R.(LRPack.redTm) t)
@@ -407,6 +404,8 @@ Definition LogRelRec (l : TypeLevel) : forall l', l' << l -> LogRelKit :=
     | one => fun _ _ => kit0
   end.
 
+Arguments LogRelRec l l' l_ /.
+
 Definition rec1 :=
   LogRelRec one.
 
@@ -416,33 +415,24 @@ Definition LRl (l : TypeLevel) :=
   (*TODO minimiser univers*)
 Definition kit (l : TypeLevel) : LogRelKit :=
   Build_LogRelKit
-    (URedTy l)
-    (fun Γ A => PiRedTy Γ A)
     (fun Γ A => LRAdequate Γ A (LRl l))
     (fun Γ A B (R : LRAdequate Γ A (LRl l)) => R.(LRPack.eqTy) B)
     (fun Γ t A (R : LRAdequate Γ A (LRl l)) => R.(LRPack.redTm) t)
     (fun Γ t u A (R : LRAdequate Γ A (LRl l)) => R.(LRPack.eqTm) t u).
 
-Definition Ur (Γ : context) (l : TypeLevel) : Type :=
-  [ kit l | Γ ||-U].
-Definition PiUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
-  [ kit l | Γ ||-Π A].
-Definition TyUr (Γ : context) (l : TypeLevel) (A : term) : Type :=
+Definition KitRedTy (Γ : context) (l : TypeLevel) (A : term) : Type :=
   [ kit l | Γ ||- A].
-
-Definition TyEqUr (Γ : context) (l : TypeLevel) (A B: term) (H : TyUr Γ l A): Type :=
+Definition KitEqTy (Γ : context) (l : TypeLevel) (A B: term) (H : KitRedTy Γ l A): Type :=
   [ kit l | Γ ||- A ≅ B | H].
-Definition TeUr (Γ : context) (l : TypeLevel) (t A : term) (H : TyUr Γ l A) : Type :=
+Definition KitRedTm (Γ : context) (l : TypeLevel) (t A : term) (H : KitRedTy Γ l A) : Type :=
   [ kit l | Γ ||- t : A | H].
-Definition TeEqUr (Γ : context) (l : TypeLevel) (t u A : term) (H : TyUr Γ l A) : Type :=
+Definition KitEqTm (Γ : context) (l : TypeLevel) (t u A : term) (H : KitRedTy Γ l A) : Type :=
   [ kit l | Γ ||- t ≅ u : A | H].
 
-Notation "[ Γ ||-< l >U]" := (Ur Γ l).
-Notation "[ Γ ||-< l >Π A ]" := (PiUr Γ l A).
-Notation "[ Γ ||-< l > A ]" := (TyUr Γ l A).
-Notation "[ Γ ||-< l > A ≅ B | R ]" := (TyEqUr Γ l A B R).
-Notation "[ Γ ||-< l > t : A | R ]" := (TeUr Γ l t A R).
-Notation "[ Γ ||-< l > t ≅ u : A | R ]" := (TeEqUr Γ l t u A R).
+Notation "[ Γ ||-< l > A ]" := (KitRedTy Γ l A).
+Notation "[ Γ ||-< l > A ≅ B | R ]" := (KitEqTy Γ l A B R).
+Notation "[ Γ ||-< l > t : A | R ]" := (KitRedTm Γ l t A R).
+Notation "[ Γ ||-< l > t ≅ u : A | R ]" := (KitEqTm Γ l t u A R).
 
 Definition LRbuild {Γ l A rEq rTe rTeEq} :
   LR (LogRelRec l) Γ A rEq rTe rTeEq ->

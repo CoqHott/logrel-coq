@@ -2,6 +2,7 @@
 
 theories/Notations.v
 theories/Automation.v
+theories/Utils.v
 theories/Untyped.v
 theories/MLTTTyping.v
 theories/Properties.v
@@ -11,7 +12,7 @@ theories/LogicalRelation.v
 theories/LRInduction.v
 theories/Reduction.v
 theories/Reflexivity.v
-theories/Shapeview.v
+theories/ShapeView.v
 # theories/Symmetry.v
 theories/Weakening.v
 
