@@ -2,7 +2,7 @@ Presentation
 =======
 
 This repo contains formalisation work on implementing a logical relation over MLTT with one universe.
-This formalisation follows the [work done by Abel et al.]((https://github.com/mr-ohman/logrel-mltt/)) (described in [Decidability of conversion for Type Theory in Type Theory, 2018](https://dl.acm.org/doi/10.1145/3158111)), and [Loïc Pujet's work](https://github.com/loic-p/logrel-mltt) on removing induction-recursion from the previous formalization, making it feasable to translate it from Agda to Coq.
+This formalisation follows the [work done by Abel et al.]((https://github.com/mr-ohman/logrel-mltt/)) (described in [Decidability of conversion for Type Theory in Type Theory, 2018](https://dl.acm.org/doi/10.1145/3158111)), and [Loïc Pujet's work](https://github.com/loic-p/logrel-mltt) on removing induction-recursion from the previous formalization, making it feasible to translate it from Agda to Coq.
 
 The definition of the logical relation (**LR**) ressembles Loïc's in many ways, but also had to be modified for a few reasons :
 - Because of universe constraints and the fact that functors cannot be indexed by terms in Coq whereas it is possible in Agda, the relevant structures had to be parametrized by a type level and a recursor, and the module system had to be dropped out entirely.
@@ -46,7 +46,7 @@ File description
 [LRInduction]: ./theories/LRInduction.v
 [Escape]: ./theories/Escape.v
 [Reflexivity]: ./theories/Reflexivity.v
-[Symmetry]: ./theories/Symmetry.v
+[Irrelevance]: ./theories/Irrelevance.v
 [ShapeView]: ./theories/Shapeview.v
 [Positivity.v]: ./theories/Positivity.v
 [Positivity.agda]: ./theories/Positivity.agda
