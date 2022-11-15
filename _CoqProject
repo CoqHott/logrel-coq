@@ -5,6 +5,7 @@ theories/Automation.v
 theories/Utils.v
 theories/Untyped.v
 theories/MLTTTyping.v
+theories/Weakening.v
 theories/Properties.v
 theories/Generation.v
 theories/Escape.v
@@ -13,7 +14,6 @@ theories/LRInduction.v
 theories/Reduction.v
 theories/Reflexivity.v
 theories/ShapeView.v
-# theories/Symmetry.v
-theories/Weakening.v
+theories/Irrelevance.v
 
 theories/Positivity.v

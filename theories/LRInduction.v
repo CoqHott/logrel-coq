@@ -1,5 +1,5 @@
-From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import Notations Untyped MLTTTyping LogicalRelation.
+From MetaCoq.PCUIC Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
+From LogRel Require Import Notations Untyped Weakening MLTTTyping LogicalRelation.
 
 #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')
   {Γ A rEq rTe rTeEq} (lr : LRl l Γ A rEq rTe rTeEq) {struct lr} : (LRl l' Γ A rEq rTe rTeEq) :=
@@ -12,11 +12,11 @@ From LogRel Require Import Notations Untyped MLTTTyping LogicalRelation.
    | LRPi _ _ ΠA ΠAad => LRPi _ ΠA
       {|
         PiRedTy.domAd :=
-          fun (Δ : context) (h : [  |- Δ]) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) h) ;
+          fun (Δ : context) (ρ : Δ ≤ _) (h : [  |- Δ]) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) ρ h) ;
         PiRedTy.codAd :=
-          fun (Δ : context) (a : term) (h : [  |- Δ])
-            (ha : [PiRedTy.domRed ΠA h | _ ||- a : _]) =>
-          LR_embedding l_ (ΠAad.(PiRedTy.codAd) h ha)
+          fun (Δ : context) (a : term) (ρ : Δ ≤ _) (h : [  |- Δ])
+            (ha : [PiRedTy.domRed ΠA ρ h | Δ ||- a : _]) =>
+          LR_embedding l_ (ΠAad.(PiRedTy.codAd) ρ h ha)
       |}
   end.
 
@@ -33,15 +33,15 @@ From LogRel Require Import Notations Untyped MLTTTyping LogicalRelation.
     P (LRne rec neA)) ->
 
   (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
-  (forall {Δ} (h : [ |- Δ]),
-    P (HAad.(PiRedTy.domAd) h)) ->
-  (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
-  P (HAad.(PiRedTy.codAd) h1 h2)) ->
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
+    P (HAad.(PiRedTy.domAd) ρ h)) ->
+  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+    (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+  P (HAad.(PiRedTy.codAd) ρ h ha)) ->
   P (LRPi rec ΠA HAad)) ->
 
-  forall (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR rec c t rEq rTe rTeEq),
+  forall (Γ : context) (t : term) (rEq rTe : term -> Type)
+    (rTeEq  : term -> term -> Type) (lr : LR rec Γ t rEq rTe rTeEq),
     P lr.
 Proof.
   cbn.
@@ -66,15 +66,15 @@ Theorem LR_rect_LogRelRec
 
   (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ])
     (HAad : PiRedTyAdequate (LRl l) ΠA),
-  (forall {Δ} (h : [ |- Δ]),
-    P (HAad.(PiRedTy.domAd) h)) ->
-  (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
-  P (HAad.(PiRedTy.codAd) h1 h2)) ->
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
+    P (HAad.(PiRedTy.domAd) ρ h)) ->
+  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+    (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+  P (HAad.(PiRedTy.codAd) ρ h ha)) ->
   P (LRPi (LogRelRec l) ΠA HAad)) ->
 
-  forall (l : TypeLevel) (c : context) (t : term) (rEq rTe : term -> Type)
-    (rTeEq  : term -> term -> Type) (lr : LR (LogRelRec l) c t rEq rTe rTeEq),
+  forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type)
+    (rTeEq  : term -> term -> Type) (lr : LR (LogRelRec l) Γ t rEq rTe rTeEq),
     P lr.
 Proof.
   intros.
@@ -98,11 +98,11 @@ Theorem LR_rect_TyUr
     P (LRne_ l neA)) ->
 
   (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LRl l) ΠA),
-  (forall {Δ} (h : [ |- Δ]),
-    P (LRbuild (HAad.(PiRedTy.domAd) h))) ->
-  (forall {Δ a} (h1 : [ |- Δ ]) 
-    (h2 : [ ΠA.(PiRedTy.domRed) h1 | Δ ||- a : ΠA.(PiRedTy.dom) ]),
-  P (LRbuild (HAad.(PiRedTy.codAd) h1 h2))) ->
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
+    P (LRbuild (HAad.(PiRedTy.domAd) ρ h))) ->
+  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+    (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+  P (LRbuild (HAad.(PiRedTy.codAd) ρ h ha))) ->
   P (LRPi_ l ΠA HAad)) ->
 
   forall (l : TypeLevel) (Γ : context) (A : term) (lr : [Γ ||-< l > A]),

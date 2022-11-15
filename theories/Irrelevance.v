@@ -1,50 +1,50 @@
-From MetaCoq Require Import PCUICAst.
-Require Import Utils Automation Untyped MLTTTyping LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
+From MetaCoq Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
+Require Import Utils Automation Untyped MLTTTyping Weakening LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
 
 Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
   (domTy : [Γ |- dom])
   (codTy : [Γ,, vass na dom |- cod])
   (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall Δ : context, [  |- Δ] -> LRPack Δ dom)
-  (codRed : forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed Δ h | Δ ||- a : dom] -> LRPack Δ (cod {0 := a}))
-  (codExt : forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed Δ h | Δ ||- a : dom]),
-            [domRed Δ h | Δ ||- b : dom] ->
-            [domRed Δ h | Δ ||- a ≅ b : dom] ->
-            [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ cod{0 := b}])
+  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
+  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]] -> LRPack Δ (cod.[a ⋅ ren ρ]))
+  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]]),
+            [domRed Δ ρ h | Δ ||- b : dom.[ren ρ]] ->
+            [domRed Δ ρ h | Δ ||- a ≅ b : dom.[ren ρ]] ->
+            [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
   (domTy': [Γ |- dom'])
   (codTy': [Γ,, vass na' dom' |- cod'])
   (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall Δ : context, [  |- Δ] -> LRPack Δ dom')
-  (codRed': forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed' Δ h | Δ ||- a : dom'] -> LRPack Δ (cod' {0 := a}))
-  (codExt': forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed' Δ h | Δ ||- a : dom']),
-            [domRed' Δ h | Δ ||- b : dom'] ->
-            [domRed' Δ h | Δ ||- a ≅ b : dom'] ->
-            [codRed' Δ a h ha | Δ ||- cod'{0 := a} ≅ cod'{0 := b}])
+  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
+  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]] -> LRPack Δ cod'.[a ⋅ ren ρ])
+  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
+            [domRed' Δ ρ h | Δ ||- b : dom'.[ren ρ]] ->
+            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'.[ren ρ]] ->
+            [codRed' Δ a ρ h ha | Δ ||- cod'.[a ⋅ ren ρ] ≅ cod'.[b ⋅ ren ρ]])
   (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
   
-  (forall (Δ : context) (h : [  |- Δ]),
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
   [× (forall B : term,
-      [domRed Δ h | Δ ||- dom ≅ B] <-> [domRed' Δ h | Δ ||- dom' ≅ B]),
+      [domRed Δ ρ h | Δ ||- dom.[ren ρ] ≅ B] <-> [domRed' Δ ρ h | Δ ||- dom'.[ren ρ] ≅ B]),
     (forall t : term,
-      [domRed Δ h | Δ ||- t : dom] <-> [domRed' Δ h | Δ ||- t : dom']) &
+      [domRed Δ ρ h | Δ ||- t : dom.[ren ρ]] <-> [domRed' Δ ρ h | Δ ||- t : dom'.[ren ρ]]) &
     (forall t u : term,
-      [domRed Δ h | Δ ||- t ≅ u : dom ] <-> [domRed' Δ h | Δ ||- t ≅ u : dom'])]) ->
-  (forall (Δ : context) (a : term) (h : [  |- Δ])
-      (ha : [domRed Δ h | Δ ||- a : dom])
-      (ha' : [domRed' Δ h | Δ ||- a : dom']),
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom.[ren ρ] ] <-> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'.[ren ρ]])]) ->
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
+      (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]])
+      (ha' : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
   [× (forall B : term,
-      [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ B] <->
-      [codRed' Δ a h ha' | Δ ||- cod'{0 := a} ≅ B]),
+      [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ B] <->
+      [codRed' Δ a ρ h ha' | Δ ||- cod'.[a ⋅ ren ρ] ≅ B]),
     (forall t : term,
-      [codRed Δ a h ha | Δ ||- t : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t : cod'{0 := a} ]) &
+      [codRed Δ a ρ h ha | Δ ||- t : cod.[a ⋅ ren ρ] ] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'.[a ⋅ ren ρ]]) &
     (forall t u : term,
-      [codRed Δ a h ha | Δ ||- t ≅ u : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t ≅ u : cod'{0 := a} ])]) ->
+      [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod.[a ⋅ ren ρ]] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'.[a ⋅ ren ρ] ])]) ->
   let ΠA : PiRedTy Γ A := {|
       PiRedTy.na := na ; PiRedTy.dom := dom ;
       PiRedTy.cod := cod ;
@@ -82,46 +82,124 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
   (domTy : [Γ |- dom])
   (codTy : [Γ,, vass na dom |- cod])
   (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall Δ : context, [  |- Δ] -> LRPack Δ dom)
-  (codRed : forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed Δ h | Δ ||- a : dom] -> LRPack Δ (cod {0 := a}))
-  (codExt : forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed Δ h | Δ ||- a : dom]),
-            [domRed Δ h | Δ ||- b : dom] ->
-            [domRed Δ h | Δ ||- a ≅ b : dom] ->
-            [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ cod{0 := b}])
+  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
+  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]] -> LRPack Δ (cod.[a ⋅ ren ρ]))
+  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]]),
+            [domRed Δ ρ h | Δ ||- b : dom.[ren ρ]] ->
+            [domRed Δ ρ h | Δ ||- a ≅ b : dom.[ren ρ]] ->
+            [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
   (domTy': [Γ |- dom'])
   (codTy': [Γ,, vass na' dom' |- cod'])
   (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall Δ : context, [  |- Δ] -> LRPack Δ dom')
-  (codRed': forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed' Δ h | Δ ||- a : dom'] -> LRPack Δ (cod' {0 := a}))
-  (codExt': forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed' Δ h | Δ ||- a : dom']),
-            [domRed' Δ h | Δ ||- b : dom'] ->
-            [domRed' Δ h | Δ ||- a ≅ b : dom'] ->
-            [codRed' Δ a h ha | Δ ||- cod'{0 := a} ≅ cod'{0 := b}])
+  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
+  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]] -> LRPack Δ cod'.[a ⋅ ren ρ])
+  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
+            [domRed' Δ ρ h | Δ ||- b : dom'.[ren ρ]] ->
+            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'.[ren ρ]] ->
+            [codRed' Δ a ρ h ha | Δ ||- cod'.[a ⋅ ren ρ] ≅ cod'.[b ⋅ ren ρ]])
   (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
-  
-  (forall (Δ : context) (h : [  |- Δ]),
+
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
   [× (forall B : term,
-      [domRed Δ h | Δ ||- dom ≅ B] <-> [domRed' Δ h | Δ ||- dom' ≅ B]),
+      [domRed Δ ρ h | Δ ||- dom.[ren ρ] ≅ B] <-> [domRed' Δ ρ h | Δ ||- dom'.[ren ρ] ≅ B]),
     (forall t : term,
-      [domRed Δ h | Δ ||- t : dom] <-> [domRed' Δ h | Δ ||- t : dom']) &
+      [domRed Δ ρ h | Δ ||- t : dom.[ren ρ]] <-> [domRed' Δ ρ h | Δ ||- t : dom'.[ren ρ]]) &
     (forall t u : term,
-      [domRed Δ h | Δ ||- t ≅ u : dom ] <-> [domRed' Δ h | Δ ||- t ≅ u : dom'])]) ->
-  (forall (Δ : context) (a : term) (h : [  |- Δ])
-      (ha : [domRed Δ h | Δ ||- a : dom])
-      (ha' : [domRed' Δ h | Δ ||- a : dom']),
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom.[ren ρ] ] <-> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'.[ren ρ]])]) ->
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
+      (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]])
+      (ha' : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
   [× (forall B : term,
-      [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ B] <->
-      [codRed' Δ a h ha' | Δ ||- cod'{0 := a} ≅ B]),
+      [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ B] <->
+      [codRed' Δ a ρ h ha' | Δ ||- cod'.[a ⋅ ren ρ] ≅ B]),
     (forall t : term,
-      [codRed Δ a h ha | Δ ||- t : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t : cod'{0 := a} ]) &
+      [codRed Δ a ρ h ha | Δ ||- t : cod.[a ⋅ ren ρ] ] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'.[a ⋅ ren ρ]]) &
     (forall t u : term,
-      [codRed Δ a h ha | Δ ||- t ≅ u : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t ≅ u : cod'{0 := a} ])]) ->
+      [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod.[a ⋅ ren ρ]] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'.[a ⋅ ren ρ] ])]) ->
+  let ΠA : PiRedTy Γ A := {|
+      PiRedTy.na := na ; PiRedTy.dom := dom ;
+      PiRedTy.cod := cod ;
+      PiRedTy.red := red ;
+      PiRedTy.domTy := domTy ;
+      PiRedTy.codTy := codTy ;
+      PiRedTy.domRed := domRed ;
+      PiRedTy.codRed := codRed ;
+      PiRedTy.codExt := codExt
+        |} in
+  let ΠA' : PiRedTy Γ A' := {|
+    PiRedTy.na := na' ; PiRedTy.dom := dom' ;
+    PiRedTy.cod := cod' ;
+    PiRedTy.red := red' ;
+    PiRedTy.domTy := domTy' ;
+    PiRedTy.codTy := codTy' ;
+    PiRedTy.domRed := domRed' ;
+    PiRedTy.codRed := codRed' ;
+    PiRedTy.codExt := codExt'
+    |} in
+  forall t, [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t : A' | ΠA'].
+Proof.
+  intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
+  econstructor.
+  1-3: now mltt.
+  - intros.
+    unshelve eapply IHcod.
+    2: now auto.
+    now apply IHdom.
+  - intros.
+    unshelve eapply IHcod, eq.
+    all: now eapply IHdom.
+Defined.
+
+Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
+  (domTy : [Γ |- dom])
+  (codTy : [Γ,, vass na dom |- cod])
+  (red : [Γ |- A :⇒*: tProd na dom cod])
+  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
+  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]] -> LRPack Δ (cod.[a ⋅ ren ρ]))
+  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]]),
+            [domRed Δ ρ h | Δ ||- b : dom.[ren ρ]] ->
+            [domRed Δ ρ h | Δ ||- a ≅ b : dom.[ren ρ]] ->
+            [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
+  (domTy': [Γ |- dom'])
+  (codTy': [Γ,, vass na' dom' |- cod'])
+  (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
+  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
+  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+            [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]] -> LRPack Δ cod'.[a ⋅ ren ρ])
+  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
+              (ha : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
+            [domRed' Δ ρ h | Δ ||- b : dom'.[ren ρ]] ->
+            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'.[ren ρ]] ->
+            [codRed' Δ a ρ h ha | Δ ||- cod'.[a ⋅ ren ρ] ≅ cod'.[b ⋅ ren ρ]])
+  (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
+
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
+  [× (forall B : term,
+      [domRed Δ ρ h | Δ ||- dom.[ren ρ] ≅ B] <-> [domRed' Δ ρ h | Δ ||- dom'.[ren ρ] ≅ B]),
+    (forall t : term,
+      [domRed Δ ρ h | Δ ||- t : dom.[ren ρ]] <-> [domRed' Δ ρ h | Δ ||- t : dom'.[ren ρ]]) &
+    (forall t u : term,
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom.[ren ρ] ] <-> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'.[ren ρ]])]) ->
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
+      (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]])
+      (ha' : [domRed' Δ ρ h | Δ ||- a : dom'.[ren ρ]]),
+  [× (forall B : term,
+      [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ B] <->
+      [codRed' Δ a ρ h ha' | Δ ||- cod'.[a ⋅ ren ρ] ≅ B]),
+    (forall t : term,
+      [codRed Δ a ρ h ha | Δ ||- t : cod.[a ⋅ ren ρ] ] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'.[a ⋅ ren ρ]]) &
+    (forall t u : term,
+      [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod.[a ⋅ ren ρ]] <->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'.[a ⋅ ren ρ] ])]) ->
   let ΠA : PiRedTy Γ A := {|
       PiRedTy.na := na ; PiRedTy.dom := dom ;
       PiRedTy.cod := cod ;
@@ -142,84 +220,6 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
     PiRedTy.codRed := codRed' ;
     PiRedTy.codExt := codExt'
       |} in
-  forall t, [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t : A' | ΠA'].
-Proof.
-  intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
-  econstructor.
-  1-3: now mltt.
-  - intros.
-    unshelve eapply IHcod.
-    2: now auto.
-    now apply IHdom.
-  - intros.
-    unshelve eapply IHcod, eq.
-    all: now eapply IHdom.
-Qed.
-
-Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
-  (domTy : [Γ |- dom])
-  (codTy : [Γ,, vass na dom |- cod])
-  (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall Δ : context, [  |- Δ] -> LRPack Δ dom)
-  (codRed : forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed Δ h | Δ ||- a : dom] -> LRPack Δ (cod {0 := a}))
-  (codExt : forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed Δ h | Δ ||- a : dom]),
-            [domRed Δ h | Δ ||- b : dom] ->
-            [domRed Δ h | Δ ||- a ≅ b : dom] ->
-            [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ cod{0 := b}])
-  (domTy': [Γ |- dom'])
-  (codTy': [Γ,, vass na' dom' |- cod'])
-  (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall Δ : context, [  |- Δ] -> LRPack Δ dom')
-  (codRed': forall (Δ : context) (a : term) (h : [  |- Δ]),
-            [domRed' Δ h | Δ ||- a : dom'] -> LRPack Δ (cod' {0 := a}))
-  (codExt': forall (Δ : context) (a b : term) (h : [  |- Δ])
-              (ha : [domRed' Δ h | Δ ||- a : dom']),
-            [domRed' Δ h | Δ ||- b : dom'] ->
-            [domRed' Δ h | Δ ||- a ≅ b : dom'] ->
-            [codRed' Δ a h ha | Δ ||- cod'{0 := a} ≅ cod'{0 := b}])
-  (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
-  
-  (forall (Δ : context) (h : [  |- Δ]),
-  [× (forall B : term,
-      [domRed Δ h | Δ ||- dom ≅ B] <-> [domRed' Δ h | Δ ||- dom' ≅ B]),
-    (forall t : term,
-      [domRed Δ h | Δ ||- t : dom] <-> [domRed' Δ h | Δ ||- t : dom']) &
-    (forall t u : term,
-      [domRed Δ h | Δ ||- t ≅ u : dom ] <-> [domRed' Δ h | Δ ||- t ≅ u : dom'])]) ->
-  (forall (Δ : context) (a : term) (h : [  |- Δ])
-      (ha : [domRed Δ h | Δ ||- a : dom])
-      (ha' : [domRed' Δ h | Δ ||- a : dom']),
-  [× (forall B : term,
-      [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ B] <->
-      [codRed' Δ a h ha' | Δ ||- cod'{0 := a} ≅ B]),
-    (forall t : term,
-      [codRed Δ a h ha | Δ ||- t : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t : cod'{0 := a} ]) &
-    (forall t u : term,
-      [codRed Δ a h ha | Δ ||- t ≅ u : cod{0 := a} ] <->
-      [codRed' Δ a h ha' | Δ ||- t ≅ u : cod'{0 := a} ])]) ->
-  let ΠA : PiRedTy Γ A := {|
-      PiRedTy.na := na ; PiRedTy.dom := dom ;
-      PiRedTy.cod := cod ;
-      PiRedTy.red := red ;
-      PiRedTy.domTy := domTy ;
-      PiRedTy.codTy := codTy ;
-      PiRedTy.domRed := domRed ;
-      PiRedTy.codRed := codRed ;
-      PiRedTy.codExt := codExt
-       |} in
-  let ΠA' : PiRedTy Γ A' := {|
-    PiRedTy.na := na' ; PiRedTy.dom := dom' ;
-    PiRedTy.cod := cod' ;
-    PiRedTy.red := red' ;
-    PiRedTy.domTy := domTy' ;
-    PiRedTy.codTy := codTy' ;
-    PiRedTy.domRed := domRed' ;
-    PiRedTy.codRed := codRed' ;
-    PiRedTy.codExt := codExt'
-     |} in
   forall t u, [Γ ||-Π t ≅ u : A | ΠA] -> [Γ ||-Π t ≅ u : A' | ΠA'].
 Proof.
   intros IHdom IHcod ΠA ΠA' t u [] ; cbn in *.
@@ -290,20 +290,20 @@ Proof.
       by (eapply nred_det_ty ; mltt).
     subst redPi redPi0 redPi1.
     inversion ePi ; subst ; clear ePi.
-    pose proof (IHdom_ := fun Δ h => IHdom Δ h _ _ _ _ _ (domAd0 Δ h) (domRed1 Δ h)).
-    assert (IHcod_ : forall Δ a (h : [ |- Δ])
-      (ha : [domRed Δ h | Δ ||- a : dom])
-      (ha' : [domRed0 Δ h | Δ ||- a : dom1]),
+    pose proof (IHdom_ := fun Δ ρ h => IHdom Δ ρ h _ _ _ _ _ (domAd0 Δ ρ h) (domRed1 Δ ρ h)).
+    assert (IHcod_ : forall Δ a (ρ : Δ ≤ Γ) (h : [|- Δ])
+      (ha : [domRed Δ ρ h | Δ ||- a : dom.[ren ρ]])
+      (ha' : [domRed0 Δ ρ h | Δ ||- a : dom1.[ren ρ]]),
       [×
         (forall B,
-          [codRed Δ a h ha | Δ ||- cod{0 := a} ≅ B] <->
-          [codRed0 Δ a h ha' | Δ ||- cod1{0 := a} ≅ B]),
+          [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ B] <->
+          [codRed0 Δ a ρ h ha' | Δ ||- cod1.[a ⋅ ren ρ] ≅ B]),
         (forall t,
-          [codRed Δ a h ha | Δ ||- t : cod{0 := a}] <->
-          [codRed0 Δ a h ha' | Δ ||- t : cod1{0 := a}]) &
+          [codRed Δ a ρ h ha | Δ ||- t : cod.[a ⋅ ren ρ]] <->
+          [codRed0 Δ a ρ h ha' | Δ ||- t : cod1.[a ⋅ ren ρ]]) &
       (forall t u,
-        [codRed Δ a h ha | Δ ||- t ≅ u : cod{0 := a}] <->
-        [codRed0 Δ a h ha' | Δ ||- t ≅ u : cod1{0 := a}])
+        [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod.[a ⋅ ren ρ]] <->
+        [codRed0 Δ a ρ h ha' | Δ ||- t ≅ u : cod1.[a ⋅ ren ρ]])
       ]).
     {
       intros.

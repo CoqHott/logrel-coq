@@ -18,7 +18,7 @@ Inductive wfType  : context -> term -> Type :=
 
 with wfContext : context -> Type :=
     | connil : [ |- [] ]
-    | concons {na} {Γ} {A} : 
+    | concons {Γ na A} : 
         [ |- Γ ] -> 
         [ Γ |- A ] -> 
         [ |-  Γ ,, vass na A]
@@ -45,41 +45,27 @@ with wfTerm : context -> term -> term -> Type :=
         [ Γ |- A ≅ B ] -> 
         [ Γ |- t : B ]
     
-with convType : context -> term -> term  -> Type :=
-    | TypeRefl {Γ} {A} : 
-        [ Γ |- A ] -> 
-        [ Γ |- A ≅ A]
+with convType : context -> term -> term  -> Type :=  
     | TypePiCong {Γ} {na nb} {A B C D} :
         [ Γ |- A] ->
         [ Γ |- A ≅ B] ->
         [ Γ ,, vass na A |- C ≅ D] ->
-        [ Γ |- tProd na A C ≅ tProd nb B D]        
+        [ Γ |- tProd na A C ≅ tProd nb B D]
+    | TypeRefl {Γ} {A} : 
+        [ Γ |- A ] -> 
+        [ Γ |- A ≅ A]       
     | TypeSym {Γ} {A B} :
         [ Γ |- A ≅ B ] -> 
         [ Γ |- B ≅ A ]
     | TypeTrans {Γ} {A B C} :
         [ Γ |- A ≅ B] ->
         [ Γ |- B ≅ C] ->
-        [ Γ |- A ≅ C]  
+        [ Γ |- A ≅ C]
     | convUniv {Γ} {A B} :
         [ Γ |- A ≅ B : U ] -> 
-        [ Γ |- A ≅ B ]        
+        [ Γ |- A ≅ B ]    
 
 with convTerm : context -> term -> term -> term -> Type :=
-    | TermRefl {Γ} {t A} :
-        [ Γ |- t : A ] -> 
-        [ Γ |- t ≅ t : A ]
-    | TermSym {Γ} {t t' A} :
-        [ Γ |- t ≅ t' : A ] ->
-        [ Γ |- t' ≅ t : A ]
-    | TermTrans {Γ} {t t' t'' A} :
-        [ Γ |- t ≅ t' : A ] ->
-        [ Γ |- t' ≅ t'' : A ] ->
-        [ Γ |- t ≅ t'' : A ]
-    | TermConv {Γ} {t t' A B} :
-        [ Γ |- t ≅ t': A ] ->
-        [ Γ |- A ≅ B ] ->
-        [ Γ |- t ≅ t': B ]
     | TermPiCong {Γ} {na nb } {A B C D} :
         [ Γ |- A ] ->
         [ Γ |- A ≅ B : U ] ->
@@ -98,8 +84,22 @@ with convTerm : context -> term -> term -> term -> Type :=
         [ Γ |- A ] ->
         [ Γ |- f : tProd na A B ] ->
         [ Γ |- g : tProd nb A B ] ->
-        [ Γ ,, vass na f |- eta_expand f ≅ eta_expand g : B ] ->
+        [ Γ ,, vass na A |- eta_expand f ≅ eta_expand g : B ] ->
         [ Γ |- f ≅ g : tProd na A B ]
+    | TermRefl {Γ} {t A} :
+        [ Γ |- t : A ] -> 
+        [ Γ |- t ≅ t : A ]
+    | TermSym {Γ} {t t' A} :
+        [ Γ |- t ≅ t' : A ] ->
+        [ Γ |- t' ≅ t : A ]
+    | TermTrans {Γ} {t t' t'' A} :
+        [ Γ |- t ≅ t' : A ] ->
+        [ Γ |- t' ≅ t'' : A ] ->
+        [ Γ |- t ≅ t'' : A ]
+    | TermConv {Γ} {t t' A B} :
+        [ Γ |- t ≅ t': A ] ->
+        [ Γ |- A ≅ B ] ->
+        [ Γ |- t ≅ t': B ]
     
 where "[   |- Γ ]" := (wfContext Γ)
 and   "[ Γ |- T ]" := (wfType Γ T)
@@ -124,7 +124,34 @@ Combined Scheme wfInduction from
     convType_rect_nodep,
     convTerm_rect_nodep.
 
+Definition wfInductionType
+  (PCon : context -> Type) (PTy : context -> term -> Type)
+  (PTm PTyEq : context -> term -> term -> Type)
+  (PTmEq : context -> term -> term -> term -> Type) :=
+  (forall Γ : context, [  |- Γ ] -> PCon Γ)
+  × (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
+  × (forall (Γ : context) (t A : term), [Γ |- t : A] -> PTm Γ t A)
+	× (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
+  × (forall (Γ : context) (t u A : term), [Γ |- t ≅ u : A] -> PTmEq Γ t u A).
+
+
 End InductionPrinciples.
+
+Lemma termMetaConv (Γ : context) (t A B : term) :
+  [Γ |- t : A] ->
+  A = B ->
+  [Γ |- t : B].
+Proof.
+  now intros ? ->.
+Qed.
+
+Lemma eqTermMetaConv (Γ : context) (t u A B : term) :
+  [Γ |- t ≅ u : A] ->
+  A = B ->
+  [Γ |- t ≅ u : B].
+Proof.
+  now intros ? ->.
+Qed.
 
 Inductive termRed (Γ : context) : term -> term -> term -> Type :=
     | appSubst {na A B t u a} :

@@ -11,6 +11,18 @@ Reserved Notation "[ Γ |- A ≅ B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |- t ≅ t' : A ]" (at level 0, Γ, t, t', A at level 50).
 (* Type A one-step weak-head reduces to type B in Γ *)
 
+(** Weakenings *)
+(* Well-formed weakening *)
+Reserved Notation "Γ ≤ Δ" (at level 40).
+(* Composition of weakenings *)
+Reserved Notation "ρ ∘w ρ'" (at level 50).
+
+(** Substitutions *)
+(* Substitution σ is of type Δ in context Γ*)
+Reserved Notation "[ Γ '|-s' σ : Δ ]" (at level 0, Γ, σ, Δ at level 50).
+(* Substitutions σ and τ are convertible at types Δ in context Γ *)
+Reserved Notation "[ Γ '|-s' σ ≅ τ : Δ ]" (at level 0, Γ, σ, τ, Δ at level 50).
+
 (** Reductions *)
 Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0, Γ, A, B at level 50).
 (* Term t one-step weak-head reduces to term u at type A in Γ *)
