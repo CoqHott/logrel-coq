@@ -1,10 +1,10 @@
 -R theories LogRel
 
 theories/Notations.v
-theories/Automation.v
 theories/Utils.v
 theories/Untyped.v
-theories/MLTTTyping.v
+theories/GenericTyping.v
+theories/DeclarativeTyping.v
 theories/Weakening.v
 theories/Properties.v
 theories/Generation.v

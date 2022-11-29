@@ -1,5 +1,5 @@
 From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import Automation Notations Untyped MLTTTyping.
+From LogRel Require Import Automation Notations Untyped DeclarativeTyping.
 
 Definition concons_inv {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
 Proof.

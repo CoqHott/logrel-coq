@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst.
-From LogRel Require Import Utils Automation Untyped MLTTTyping LogicalRelation Properties Reduction LRInduction Reflexivity.
+From LogRel Require Import Utils Automation Untyped DeclarativeTyping LogicalRelation Properties Reduction LRInduction Reflexivity.
 
 Set Universe Polymorphism.
 

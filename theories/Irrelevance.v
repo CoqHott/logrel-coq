@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
-Require Import Utils Automation Untyped MLTTTyping Weakening LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
+Require Import Utils Automation Untyped DeclarativeTyping Weakening LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
 
 Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
   (domTy : [Γ |- dom])

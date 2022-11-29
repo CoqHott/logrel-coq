@@ -22,9 +22,9 @@ File description
 | File | Description |
 |---|----|
 [Notations]  | defines the notations used throughout the file. It can be used as an index for notations!
-[Automation] | defines the mltt hint database and tactic |
 [Untyped] | contains various useful definitions for defining the inference rules |
-[MLTTTyping] | defines the theory's inference rules, the current definition has a single universe as well as product types and eta-conversion for functions. |
+[GenericTyping] | a generic notion of typing, used to define the logical relation, to be instantiated twice: once with the declarative version, and once with the algorithmic one.
+[DeclarativeTyping] | defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
 [Generation] | contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
 [Properties] and [Reduction] | contain basic theorem over the typing rules that are easily derivable by induction over the rules. `Reduction` also contains a basic tactic `gen_conv` that can generate a few assumptions over the inference rules given the other rules in the context. |
 [LogicalRelation] | contains the logical relation's (**LR**) definition. |
@@ -38,7 +38,8 @@ File description
 [Notations]: ./theories/Notations.v
 [Automation]: ./theories/Automation.v
 [Untyped]: ./theories/Untyped.v
-[MLTTTyping]: ./theories/MLTTTyping.v
+[GenericTyping]: ./theories/GenericTyping.v
+[DeclarativeTyping]: ./theories/DeclarativeTyping.v
 [Properties]: ./theories/Properties.v
 [Reduction]: ./theories/Reduction.v
 [Generation]: ./theories/Generation.v

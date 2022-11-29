@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst.
-Require Import Notations Untyped Automation MLTTTyping LogicalRelation Properties Reduction LRInduction Escape.
+Require Import Notations Untyped Automation DeclarativeTyping LogicalRelation Properties Reduction LRInduction Escape.
 
 Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
   (lr : LRl l Γ A eqTy redTm eqTm) : eqTy A.

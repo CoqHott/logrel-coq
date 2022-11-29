@@ -1,5 +1,5 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICSigmaCalculus PCUICRenameConv PCUICInstConv.
-From LogRel Require Import Notations MLTTTyping Untyped Weakening.
+From LogRel Require Import Notations DeclarativeTyping Untyped Weakening.
 
 Set Primitive Projections.
 Set Universe Polymorphism.

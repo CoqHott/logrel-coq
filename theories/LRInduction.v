@@ -1,5 +1,5 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
-From LogRel Require Import Notations Untyped Weakening MLTTTyping LogicalRelation.
+From LogRel Require Import Notations Untyped Weakening DeclarativeTyping LogicalRelation.
 
 #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')
   {Γ A rEq rTe rTeEq} (lr : LRl l Γ A rEq rTe rTeEq) {struct lr} : (LRl l' Γ A rEq rTe rTeEq) :=

@@ -1,5 +1,5 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils.
-From LogRel Require Import Notations Automation Untyped MLTTTyping Properties.
+From LogRel Require Import Notations Automation Untyped DeclarativeTyping Properties.
 
 Inductive termGenData Γ : term -> term -> Type :=
   | VarGen n decl :
