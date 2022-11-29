@@ -1,5 +1,8 @@
 From MetaCoq.PCUIC Require Import PCUICAst.
-From LogRel Require Import Automation Notations Untyped DeclarativeTyping.
+From LogRel Require Import Notations Untyped GenericTyping DeclarativeTyping.
+
+#[local] Open Scope untagged_scope.
+Import DeclarativeTypingData.
 
 Definition concons_inv {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
 Proof.
@@ -11,94 +14,68 @@ Proof.
   now inversion 1.
 Qed.
 
-#[global] Hint Resolve concons_inv concons_inv': mltt.
-
 Definition WFterm {Γ} {t A} :
     [ Γ |- t : A ] -> 
     [ |- Γ ].
 Proof.
-  induction 1 ; mltt.
+  induction 1 ; tea.
+  now eapply concons_inv.
 Qed.
-
-#[global] Hint Resolve WFterm : mltt.
 
 Definition WFtype {Γ} {A} :
     [ Γ |- A ] -> 
     [ |- Γ ].
 Proof.
-    induction 1; mltt.
+    induction 1; tea.
+    now eapply WFterm.
 Qed.
 
-#[global] Hint Resolve WFtype : mltt.
 
 Definition WFEqTerm {Γ} {t u A} :
     [ Γ |- t ≅ u : A ] -> 
     [ |- Γ ].
 Proof.
-    induction 1; mltt.
+    induction 1 ; eauto.
+    all: eapply WFterm ; eassumption.
 Qed.
-
-#[global] Hint Resolve WFEqTerm : mltt.
 
 Definition WFEqType {Γ} {A B} :
     [ Γ |- A ≅ B ] -> 
     [ |- Γ ].
 Proof.
-  induction 1 ; mltt.
+  induction 1 ; eauto.
+  1: now eapply WFtype.
+  now eapply WFEqTerm.
 Qed.
-
-#[global] Hint Resolve WFEqType : mltt.
 
 Definition redFirstTerm {Γ t u A} : 
   [ Γ |- t ⇒ u : A] ->
   [ Γ |- t : A ].
 Proof.
-  induction 1 ; mltt.
+  induction 1.
+  all: econstructor ; eauto.
+  now econstructor.
 Qed.
-
-#[global] Hint Resolve redFirstTerm : mltt.
 
 Definition redFirst {Γ A B} : 
   [ Γ |- A ⇒ B ] ->
   [ Γ |- A ].
 Proof.
-  induction 1 ; mltt.
+  destruct 1.
+  econstructor.
+  now eapply redFirstTerm.
 Qed.
-
-#[global] Hint Resolve redFirst : mltt.
 
 Definition redFirstCTerm {Γ t u A} : 
   [ Γ |- t ⇒* u : A] ->
   [ Γ |- t : A ].
 Proof.
-  induction 1 ; mltt.
+  induction 1 ; eauto using redFirstTerm.
 Qed.
-
-#[global] Hint Resolve redFirstCTerm : mltt.
 
 Definition redFirstC {Γ A B} : 
   [ Γ |- A ⇒* B ] ->
   [ Γ |- A ].
 Proof.
-  induction 1 ; mltt.
+  induction 1 ; eauto using redFirst.
 Qed.
-
-#[global] Hint Resolve redFirstC : mltt.
-
-(*Removed the next two lemmas, as they are just projections…*)
-
-(* Definition redFirstCWFTerm {Γ t u A} : 
-  [ Γ |- t :⇒*: u : A] ->
-  [ Γ |- t : A ].
-Proof.
-  now intros [].
-Qed. *)
-
-(* Definition redFirstCWF {Γ A B} : 
-  [ Γ |- A :⇒*: B ] ->
-  [ Γ |- A ].
-Proof.
-  now intros [].
-Qed. *)
-
-

@@ -1,5 +1,5 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-From LogRel Require Import Notations Automation Untyped.
+From LogRel Require Import Notations Untyped.
 
 Inductive weakening : Set :=
   | wk_id : weakening

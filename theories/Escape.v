@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst.
-Require Import Automation Untyped DeclarativeTyping LogicalRelation Properties Reduction LRInduction.
+Require Import Untyped DeclarativeTyping LogicalRelation Properties Reduction LRInduction.
 Set Universe Polymorphism.
 
 Definition escape {l Γ A} :

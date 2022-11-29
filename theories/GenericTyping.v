@@ -142,8 +142,8 @@ Section GenericTyping.
 
   Class WfTypeProp :=
   {
-    wft_wk {Γ Δ A} (ρ : Γ ≤ Δ) :
-      [Γ |- A] -> [Δ |- A.[ren ρ]] ;
+    wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A] -> [Δ |- A.[ren ρ]] ;
     wft_U {Γ} : 
       [ |- Γ ] -> 
       [ Γ |- U ] ;
@@ -158,8 +158,8 @@ Section GenericTyping.
 
   Class TypingProp :=
   {
-    ty_wk {Γ Δ t A} (ρ : Γ ≤ Δ) :
-      [Γ |- t : A] -> [Δ |- t.[ren ρ] : A.[ren ρ]] ;
+    ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t : A] -> [Δ |- t.[ren ρ] : A.[ren ρ]] ;
     ty_var {Γ} {n decl} :
       [   |- Γ ] ->
       nth_error Γ n = Some decl ->
@@ -183,15 +183,15 @@ Section GenericTyping.
   {
     convty_term {Γ A B} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B] ;
     convty_equiv {Γ} :> PER (fun A B => [Γ |- A ≅ B]) ;
-    convty_wk {Γ Δ A B} (ρ : Γ ≤ Δ) :
-      [Γ |- A ≅ B] -> [Δ |- A.[ren ρ] ≅ B.[ren ρ]] ;
+    convty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A ≅ B] -> [Δ |- A.[ren ρ] ≅ B.[ren ρ]] ;
     convty_whexp {Γ A A' B B'} :
       [Γ |- A ⇒* A'] -> [Γ |- B ⇒* B'] ->
       [Γ |- A' ≅ B'] -> [Γ |- A ≅ B] ;
     convty_uni {Γ} :
-      [Γ |- U ≅ U] ;
+      [|- Γ] -> [Γ |- U ≅ U] ;
     convty_prod {Γ na na' A A' B B'} :
-      eq_binder_annot na na' ->
+      eq_binder_annot na na' -> [Γ |- A] ->
       [Γ |- A ≅ A'] -> [Γ,, vass na A |- B ≅ B'] ->
       [Γ |- tProd na A B ≅ tProd na' A' B'] ;
   }.
@@ -200,15 +200,15 @@ Section GenericTyping.
   {
     convtm_equiv {Γ A} :> PER (fun t u => [Γ |- t ≅ u : A]) ;
     convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
-    convtm_wk {Γ Δ t u A} (ρ : Γ ≤ Δ) :
-      [Γ |- t ≅ u : A] -> [Δ |- t.[ren ρ] ≅ u.[ren ρ] : A.[ren ρ]] ;
+    convtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t.[ren ρ] ≅ u.[ren ρ] : A.[ren ρ]] ;
     convtm_whexp {Γ A A' t t' u u'} :
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ na na' A A' B B'} :
-      eq_binder_annot na na' ->
+      eq_binder_annot na na' -> [Γ |- A] ->
       [Γ |- A ≅ A' : U] -> [Γ,, vass na A |- B ≅ B' : U] ->
       [Γ |- tProd na A B ≅ tProd na' A' B' : U] ;
     convtm_eta {Γ na f g A B} :
@@ -223,8 +223,8 @@ Section GenericTyping.
   {
     convneu_equiv {Γ A} :> PER (fun t u => [Γ |- t ~ u : A]) ;
     convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
-    convneu_wk {Γ Δ t u A} (ρ : Γ ≤ Δ) :
-      [Γ |- t ~ u : A] -> [Δ |- t.[ren ρ] ~ u.[ren ρ] : A.[ren ρ]] ;
+    convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t.[ren ρ] ~ u.[ren ρ] : A.[ren ρ]] ;
     convneu_var {Γ n A} :
       [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
     convneu_app {Γ f g t u na A B} :
@@ -235,6 +235,8 @@ Section GenericTyping.
 
   Class OneRedTypeProp :=
   {
+    oredty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
+    [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A.[ren ρ] ⇒ B.[ren ρ]] ;
     oredty_whnf {Γ N A} :
       whnf Γ N -> [Γ |- N ⇒ A] -> False ;
     oredty_det {Γ T U V} :
@@ -246,6 +248,8 @@ Section GenericTyping.
 
   Class OneRedTermProp :=
   {
+    oredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t.[ren ρ] ⇒ u.[ren ρ] : A.[ren ρ]] ;
     oredtm_whnf {Γ n u A} :
       whnf Γ n -> [Γ |- n ⇒ u : A] -> False ;
     oredtm_det {Γ A B t u v} :
@@ -255,7 +259,7 @@ Section GenericTyping.
       [ Γ |- A ] ->
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- u : A ] ->
-      [ Γ |- tApp (tLambda na A t) u ≅ t{0 := u} : B{0 := u} ] ;
+      [ Γ |- tApp (tLambda na A t) u ⇒ t{0 := u} : B{0 := u} ] ;
     oredtm_app {Γ na A B f f' t} :
       [ Γ |- f ⇒ f' : tProd na A B ] ->
       [ Γ |- t : A ] ->
@@ -284,7 +288,7 @@ Class GenericTypingProp `(ta : tag)
   redtm_prop :> OneRedTermProp ;
 }.
 
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_term oredtm_beta oredtm_app | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_beta oredtm_app oredtm_wk | 2 : gen_typing.
 #[export] Hint Resolve wft_term ty_conv convty_term convtm_conv convneu_conv oredtm_conv | 4 : gen_typing.
 
 Section GenericConsequences.
@@ -292,7 +296,7 @@ Section GenericConsequences.
   `{wfc : !WfContext ta} `{wf_ty : !WfType ta} `{ty : !Typing ta}
   `{co_ty : !ConvType ta} `{co_tm : !ConvTerm ta} `{co_ne : !ConvNeu ta}
   `{ored_ty : !OneRedType ta} `{ored_tm : !OneRedTerm ta}
-  `{GenericTypingProp}.
+  `{GenericTypingProp ta}.
   Open Scope untagged_scope.
 
   Definition mredtm_conv {Γ t u A B} :
@@ -382,6 +386,20 @@ Section GenericConsequences.
     now eapply mredty_whnf.
   Qed.
 
+  Lemma mredty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
+    [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A.[ren ρ] ⇒* B.[ren ρ]].
+  Proof.
+    intros ? red.
+    induction red ; gen_typing.
+  Qed.
+
+  Lemma mredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+    [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t.[ren ρ] ⇒* u.[ren ρ] : A.[ren ρ]].
+  Proof.
+    intros ? red.
+    induction red ; gen_typing.
+  Qed.
+
   Lemma typing_meta_conv (Γ : context) (t A A' : term) :
     [Γ |- t : A] ->
     A' = A ->
@@ -408,6 +426,15 @@ Section GenericConsequences.
     now intros ? ->.
   Qed.
 
+  Lemma redtm_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ⇒ u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ⇒ u' : A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
 End GenericConsequences.
 
 
@@ -418,6 +445,7 @@ Ltac meta_constructor :=
     | |- [_ |- _ : _]%untagged => eapply typing_meta_conv
     | |- [_ |- _ ≅ _ : _ ]%untagged => eapply convtm_meta_conv
     | |- [_ |- _ ~ _ : _]%untagged => eapply convne_meta_conv
+    | |- [_ |- _ ⇒ _ : _]%untagged => eapply redtm_meta_conv
   end ;
   [ match goal with
     | |- [_ |- tRel _ : _ ]%untagged => eapply ty_var 
@@ -428,4 +456,6 @@ Ltac meta_constructor :=
     | |- [_ |- tRel _ ~ _ : _ ]%untagged => eapply convneu_var
     | |- [_ |- tApp _ _ ≅ _ : _ ]%untagged => eapply convtm_convneu ; eapply convneu_app
     | |- [_ |- tApp _ _ ~ _ : _ ]%untagged => eapply convneu_app
+    | |- [_ |- tApp (tLambda _ _ _) ⇒ _ : _]%untagged => eapply oredtm_beta
+    | |- [_ |- tApp _ ⇒ _ : _ ]%untagged => eapply oredtm_app
   end |..].

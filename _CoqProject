@@ -1,17 +1,16 @@
 -R theories LogRel
 
 theories/Notations.v
-theories/Utils.v
 theories/Untyped.v
 theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/Weakening.v
 theories/Properties.v
 theories/Generation.v
+theories/Reduction.v
 theories/Escape.v
 theories/LogicalRelation.v
 theories/LRInduction.v
-theories/Reduction.v
 theories/Reflexivity.v
 theories/ShapeView.v
 theories/Irrelevance.v

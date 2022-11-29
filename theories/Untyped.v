@@ -1,5 +1,4 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICNormal.
-From LogRel Require Import Automation.
 
 Definition U := (tSort Universe.type0).
 Notation "'eta_expand' f" := (tApp (lift0 1 f) (tRel 0)) (at level 40, only parsing).

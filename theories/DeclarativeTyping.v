@@ -54,10 +54,10 @@ Section Definitions.
           [ Γ ,, vass na A |- C ≅ D] ->
           [ Γ |- tProd na A C ≅ tProd nb B D]
       | TypeRefl {Γ} {A} : 
-          [ Γ |- A ] -> 
-          [ Γ |- A ≅ A]       
+          [ Γ |- A ] ->
+          [ Γ |- A ≅ A]
       | TypeSym {Γ} {A B} :
-          [ Γ |- A ≅ B ] -> 
+          [ Γ |- A ≅ B ] ->
           [ Γ |- B ≅ A ]
       | TypeTrans {Γ} {A B C} :
           [ Γ |- A ≅ B] ->
@@ -110,15 +110,15 @@ Section Definitions.
   and   "[ Γ |- t ≅ t' : T ]" := (ConvTermDecl Γ t t' T).
 
   Inductive OneRedTermDecl (Γ : context) : term -> term -> term -> Type :=
-  | appSubst {na A B t u a} :
-      [ Γ |- t ⇒ u : tProd na A B] ->
-      [ Γ |- a : A ] ->
-      [ Γ |- tApp t a ⇒ tApp u a : B{0 := a} ]
   | BRed {na} {A B a t} :
       [ Γ |- A ] -> 
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- a : A ] ->
       [ Γ |- tApp (tLambda na A t) a ⇒ t{0 := a} : B{0 := a} ]
+  | appSubst {na A B t u a} :
+      [ Γ |- t ⇒ u : tProd na A B] ->
+      [ Γ |- a : A ] ->
+      [ Γ |- tApp t a ⇒ tApp u a : B{0 := a} ]
   | termRedConv {A B t u} : 
       [ Γ |- t ⇒ u : A ] ->
       [ Γ |- A ≅ B ] ->
@@ -154,8 +154,8 @@ Module DeclarativeTypingData.
     change TypingDecl with typing in * ;
     change ConvTypeDecl with conv_type in * ;
     change ConvTermDecl with conv_term in * ;
-    change OneRedTypeDecl with red_ty in *;
-    change OneRedTermDecl with red_tm in *.
+    change OneRedTypeDecl with one_red_ty in *;
+    change OneRedTermDecl with one_red_tm in *.
 
 End DeclarativeTypingData.
 
@@ -198,6 +198,7 @@ Definition WfDeclInduction : WfDeclInductionType := _WfDeclInduction.
 End InductionPrinciples.
 
 Section TypingWk.
+
   Open Scope untagged_scope.
   Import DeclarativeTypingData.
 
@@ -389,3 +390,30 @@ Section TypingWk.
   Qed.
 
 End TypingWk.
+
+Module DeclarativeTypingProp.
+
+  Open Scope untagged_scope.
+  Import DeclarativeTypingData.
+
+  #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
+  Proof.
+    all: constructor.
+    all: eassumption.
+  Qed.
+  
+  #[export, refine] Instance WfTypeProp : WfTypeProp (ta := de) := {}.
+  Proof.
+    2-4: now econstructor.
+    intros.
+    now eapply typing_wk.
+  Qed.
+
+  #[export, refine] Instance TypingDeclProp : TypingProp (ta := de) := {}.
+  Proof.
+    2-6: now econstructor.
+    intros.
+    now eapply typing_wk.
+  Qed.
+
+End DeclarativeTypingProp.

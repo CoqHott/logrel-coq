@@ -1,5 +1,8 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils.
-From LogRel Require Import Notations Automation Untyped DeclarativeTyping Properties.
+From LogRel Require Import Notations Untyped DeclarativeTyping Properties.
+
+#[local] Open Scope untagged_scope.
+Import DeclarativeTypingData.
 
 Inductive termGenData Γ : term -> term -> Type :=
   | VarGen n decl :
@@ -32,7 +35,7 @@ Proof.
   - eexists. split.
     1: eassumption.
     right.
-    mltt.
+    now eapply TypeTrans.
 Qed.  
 
 Inductive termRedGenData Γ : term -> term -> term -> Type :=
@@ -56,7 +59,7 @@ Proof.
   destruct IHX as [? [? [-> | ]]].
   all: eexists ; split ; [eassumption | right ].
   1: now eassumption.
-  mltt.
+  now eapply TypeTrans.
 Qed.
 
 Fixpoint fragment (t : term) : bool :=
@@ -117,7 +120,7 @@ Lemma wfFrag :
         × (forall (Γ : context) (t u A : term),
           [Γ |- t ≅ u : A] -> fragment t && fragment u && fragment A && fragment_ctx Γ).
 Proof.
-  eapply wfInduction ; cbn in * ; intros.
+  eapply WfDeclInduction ; cbn in * ; intros.
   2: fold (fragment_ctx Γ).
   all : intros ;
     repeat match goal with
@@ -138,7 +141,7 @@ Proof.
     now rewrite H.
 Qed.
 
-Corollary wfTermFrag Γ t A : [Γ |- t : A] -> fragment t.
+Corollary TypingFrag Γ t A : [Γ |- t : A] -> fragment t.
 Proof.
   intros H.
   apply wfFrag in H.
