@@ -21,19 +21,21 @@ File description
 
 | File | Description |
 |---|----|
-[Notations]  | defines the notations used throughout the file. It can be used as an index for notations!
-[Untyped] | contains various useful definitions for defining the inference rules |
-[GenericTyping] | a generic notion of typing, used to define the logical relation, to be instantiated twice: once with the declarative version, and once with the algorithmic one.
-[DeclarativeTyping] | defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
-[Generation] | contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
-[Properties] and [Reduction] | contain basic theorem over the typing rules that are easily derivable by induction over the rules. `Reduction` also contains a basic tactic `gen_conv` that can generate a few assumptions over the inference rules given the other rules in the context. |
-[LogicalRelation] | contains the logical relation's (**LR**) definition. |
-| [LRInduction] | defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels. |
-| [Escape] | contains a proof of the escape lemma for **LR** |
+[Notations]  | Notations used throughout the file. It can be used as an index for notations!
+[Untyped] | Various useful definitions for defining the inference rules |
+[Weakening] | Definition of a well-formed weakening, and some properties.
+[Substitution] | Definition of a well-formed substitution.
+[GenericTyping] | A generic notion of typing, used to define the logical relation, to be instantiated twice: once with the declarative version, and once with the algorithmic one.
+[DeclarativeTyping] | Defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
+[Generation] | Contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
+[Properties] and [Reduction] | Contain basic theorem over the typing rules that are easily derivable by induction over the rules. |
+[LogicalRelation] | Contains the logical relation's (**LR**) definition. |
+| [LRInduction] | Defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels. |
+| [Escape] | Contains a proof of the escape lemma for **LR** |
 | [Shapeview] | Technique to avoid considering non-diagonal cases for two reducibly convertible types. |
 [Reflexivity] | Reflexivity of the logical relation.
 [Irrelevance] | Irrelevance of the logical relation: two convertible types decode to equivalent predicates. Symmetry is a direct corollary. |
-| [Positivity.v] and [Positivity.agda] | showcase the difference between Coq and Agda's positivity checkers. |
+| [Positivity.v] and [Positivity.agda] | Showcase the difference between Coq and Agda's positivity checkers. |
 
 [Notations]: ./theories/Notations.v
 [Automation]: ./theories/Automation.v
@@ -51,3 +53,5 @@ File description
 [ShapeView]: ./theories/Shapeview.v
 [Positivity.v]: ./theories/Positivity.v
 [Positivity.agda]: ./theories/Positivity.agda
+[Weakening]: ./theories/Weakening.v
+[Substitution]: ./theories/Substitution.v

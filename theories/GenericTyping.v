@@ -142,6 +142,8 @@ Section GenericTyping.
 
   Class WfTypeProp :=
   {
+    wft_wk {Γ Δ A} (ρ : Γ ≤ Δ) :
+      [Γ |- A] -> [Δ |- A.[ren ρ]] ;
     wft_U {Γ} : 
       [ |- Γ ] -> 
       [ Γ |- U ] ;
@@ -156,6 +158,8 @@ Section GenericTyping.
 
   Class TypingProp :=
   {
+    ty_wk {Γ Δ t A} (ρ : Γ ≤ Δ) :
+      [Γ |- t : A] -> [Δ |- t.[ren ρ] : A.[ren ρ]] ;
     ty_var {Γ} {n decl} :
       [   |- Γ ] ->
       nth_error Γ n = Some decl ->
@@ -265,7 +269,10 @@ Section GenericTyping.
 End GenericTyping.
 
 
-Class GenericTypingProp `(GenericTypingData) :=
+Class GenericTypingProp `(ta : tag)
+  `(WfContext ta) `(WfType ta) `(Typing ta)
+  `(ConvType ta) `(ConvTerm ta) `(ConvNeu ta)
+  `(OneRedType ta) `(OneRedTerm ta) :=
 {
   wfc_prop :> WfContextProp ;
   wfty_prop :> WfTypeProp ;
@@ -277,11 +284,15 @@ Class GenericTypingProp `(GenericTypingData) :=
   redtm_prop :> OneRedTermProp ;
 }.
 
-#[export] Hint Resolve wfc_nil wfc_cons wft_U wft_prod ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_term oredtm_beta oredtm_app | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_term oredtm_beta oredtm_app | 2 : gen_typing.
 #[export] Hint Resolve wft_term ty_conv convty_term convtm_conv convneu_conv oredtm_conv | 4 : gen_typing.
 
 Section GenericConsequences.
-  Context `{tyP : GenericTypingProp}.
+  Context {ta : tag}
+  `{wfc : !WfContext ta} `{wf_ty : !WfType ta} `{ty : !Typing ta}
+  `{co_ty : !ConvType ta} `{co_tm : !ConvTerm ta} `{co_ne : !ConvNeu ta}
+  `{ored_ty : !OneRedType ta} `{ored_tm : !OneRedTerm ta}
+  `{GenericTypingProp}.
   Open Scope untagged_scope.
 
   Definition mredtm_conv {Γ t u A B} :
@@ -298,10 +309,10 @@ Section GenericConsequences.
       [Γ |- A ≅ B] ->
       [Γ |- t :⇒*: u : B].
   Proof.
-    intros [? ? red] conv.
+    intros [wfr wfl red] ?.
     constructor.
     1-2: gen_typing.
-    clear - tyP red conv.
+    clear wfr wfl.
     induction red ; gen_typing.
   Qed.
 
@@ -371,4 +382,50 @@ Section GenericConsequences.
     now eapply mredty_whnf.
   Qed.
 
+  Lemma typing_meta_conv (Γ : context) (t A A' : term) :
+    [Γ |- t : A] ->
+    A' = A ->
+    [Γ |- t : A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
+  Lemma convtm_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ≅ u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ≅ u' : A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
+  Lemma convne_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ≅ u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ≅ u' : A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
 End GenericConsequences.
+
+
+(*To be able to still use typing/conversion term-directe rules even when the type or the other member of the conversion are not of the right shape*)
+Ltac meta_constructor :=
+  intros ;
+  match goal with
+    | |- [_ |- _ : _]%untagged => eapply typing_meta_conv
+    | |- [_ |- _ ≅ _ : _ ]%untagged => eapply convtm_meta_conv
+    | |- [_ |- _ ~ _ : _]%untagged => eapply convne_meta_conv
+  end ;
+  [ match goal with
+    | |- [_ |- tRel _ : _ ]%untagged => eapply ty_var 
+    | |- [_ |- tLambda _ _ _ : _]%untagged => eapply ty_lam
+    | |- [_ |- tApp _ _ : _]%untagged => eapply ty_app
+    | |- [_ |- tProd _ _ _ ≅ _ : _]%untagged => eapply convtm_prod
+    | |- [_ |- tRel _ ≅ _ : _]%untagged => eapply convtm_convneu ; eapply convneu_var
+    | |- [_ |- tRel _ ~ _ : _ ]%untagged => eapply convneu_var
+    | |- [_ |- tApp _ _ ≅ _ : _ ]%untagged => eapply convtm_convneu ; eapply convneu_app
+    | |- [_ |- tApp _ _ ~ _ : _ ]%untagged => eapply convneu_app
+  end |..].
