@@ -6,6 +6,10 @@ Set Primitive Projections.
 
 Section Definitions.
 
+  (* We locally disable typing notations to be able to use the in the definition here before declaring the right
+  instance *)
+  Close Scope typing_scope.
+
   Inductive WfContextDecl : context -> Type :=
       | connil : [ |- [] ]
       | concons {Γ na A} : 
@@ -105,9 +109,9 @@ Section Definitions.
       
   where "[   |- Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |- T ]" := (WfTypeDecl Γ T)
-  and   "[ Γ |- t : T ]" := (TypingDecl Γ t T)
+  and   "[ Γ |- t : T ]" := (TypingDecl Γ T t)
   and   "[ Γ |- A ≅ B ]" := (ConvTypeDecl Γ A B)
-  and   "[ Γ |- t ≅ t' : T ]" := (ConvTermDecl Γ t t' T).
+  and   "[ Γ |- t ≅ t' : T ]" := (ConvTermDecl Γ T t t').
 
   Inductive OneRedTermDecl (Γ : context) : term -> term -> term -> Type :=
   | BRed {na} {A B a t} :
@@ -124,7 +128,7 @@ Section Definitions.
       [ Γ |- A ≅ B ] ->
       [ Γ |- t ⇒ u : B ]
 
-  where "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ t u A).
+  where "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u).
 
   Inductive OneRedTypeDecl (Γ : context) : term -> term -> Type :=
   | typeRedUniv {A B} :
@@ -145,8 +149,6 @@ Module DeclarativeTypingData.
   #[export] Instance ConvNeu_Decl : ConvNeu de := ConvTermDecl.
   #[export] Instance OneRedType_Decl : OneRedType de := OneRedTypeDecl.
   #[export] Instance OneRedTerm_Decl : OneRedTerm de := OneRedTermDecl.
-  #[export, refine] Instance DeclTypingData : GenericTypingData de := {}.
-  Defined.
 
   Ltac fold_decl :=
     change WfContextDecl with wf_context in * ;
@@ -160,7 +162,6 @@ Module DeclarativeTypingData.
 End DeclarativeTypingData.
 
 Section InductionPrinciples.
-  Open Scope untagged_scope.
   Import DeclarativeTypingData.
 
 Scheme 
@@ -183,9 +184,9 @@ Definition WfDeclInductionConcl
   (PTmEq : context -> term -> term -> term -> Type) :=
   (forall Γ : context, [  |- Γ ] -> PCon Γ)
   × (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
-  × (forall (Γ : context) (t A : term), [Γ |- t : A] -> PTm Γ t A)
+  × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PTm Γ A t)
 	× (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
-  × (forall (Γ : context) (t u A : term), [Γ |- t ≅ u : A] -> PTmEq Γ t u A).
+  × (forall (Γ : context) (A t u : term), [Γ |- t ≅ u : A] -> PTmEq Γ A t u).
 
 Let WfDeclInductionType := ltac:
   (
@@ -198,8 +199,6 @@ Definition WfDeclInduction : WfDeclInductionType := _WfDeclInduction.
 End InductionPrinciples.
 
 Section TypingWk.
-
-  Open Scope untagged_scope.
   Import DeclarativeTypingData.
 
   Lemma nth_error_wk (Γ Δ : context) n decl (ρ : Δ ≤ Γ) :
@@ -241,11 +240,11 @@ Section TypingWk.
 
   Let PCon (Γ : context) := True.
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A.[ren ρ]].
-  Let PTm (Γ : context) (t A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTm (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t.[ren ρ] : A.[ren ρ]].
   Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- A.[ren ρ] ≅ B.[ren ρ]].
-  Let PTmEq (Γ : context) (t u A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t.[ren ρ] ≅ u.[ren ρ] : A.[ren ρ]].
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
@@ -269,11 +268,9 @@ Section TypingWk.
       now eapply IHA.
     - intros * _ IHΓ Hnth ? * ?.
       unshelve eapply nth_error_wk in Hnth as [decl' [? edecl]] ; tea.
-      unfold ren at 1.
-      cbn.
       eapply typing_meta_conv.
       1: econstructor ; eassumption.
-      rewrite <- rename_inst, ! lift_rename, rename_compose, (map_decl_type _ decl'), (map_decl_type _ decl).
+      rewrite <- rename_inst, !lift_rename, rename_compose, (map_decl_type _ decl'), (map_decl_type _ decl).
       f_equal.
       setoid_rewrite lift_renaming_0_rshift.
       rewrite <- edecl.
@@ -368,8 +365,6 @@ Section TypingWk.
       2: now econstructor.
       1: now econstructor ; fold_decl.
       cbn in *.
-      unfold ren in IHe' at 3 5.
-      cbn in *.
       rewrite ! lift0_inst, ! inst_assoc in IHe' |- *.
       replace B.[_] with B.[ren (shiftn 1 ρ)] by (now rewrite ren_shiftn).
       unshelve erewrite (inst_ext _ _ _ f), (inst_ext _ _ _ f').
@@ -390,30 +385,3 @@ Section TypingWk.
   Qed.
 
 End TypingWk.
-
-Module DeclarativeTypingProp.
-
-  Open Scope untagged_scope.
-  Import DeclarativeTypingData.
-
-  #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
-  Proof.
-    all: constructor.
-    all: eassumption.
-  Qed.
-  
-  #[export, refine] Instance WfTypeProp : WfTypeProp (ta := de) := {}.
-  Proof.
-    2-4: now econstructor.
-    intros.
-    now eapply typing_wk.
-  Qed.
-
-  #[export, refine] Instance TypingDeclProp : TypingProp (ta := de) := {}.
-  Proof.
-    2-6: now econstructor.
-    intros.
-    now eapply typing_wk.
-  Qed.
-
-End DeclarativeTypingProp.

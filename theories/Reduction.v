@@ -1,7 +1,6 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
 From LogRel Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping Properties Generation.
 
-#[local] Open Scope untagged_scope.
 Import DeclarativeTypingData.
 
 (** Inclusion of the various reduction-like *)
@@ -199,7 +198,31 @@ Proof.
   now apply redtm_wk.
 Qed.
 
-Module DeclarativeConvProp.
+Module DeclarativeTypingProp.
+  Import DeclarativeTypingData.
+
+  #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
+  Proof.
+    all: constructor.
+    all: eassumption.
+  Qed.
+
+  #[export, refine] Instance WfTypeProp : WfTypeProp (ta := de) := {}.
+  Proof.
+    2-4: now econstructor.
+    intros.
+    now eapply typing_wk.
+  Qed.
+
+  #[export, refine] Instance TypingDeclProp : TypingProp (ta := de) := {}.
+  Proof.
+    2-5: now econstructor.
+    - intros.
+      now eapply typing_wk.
+    - intros.
+      econstructor ; tea.
+      now eapply TypeSym, RedConvTyC. 
+  Qed.
 
   #[export, refine] Instance ConvTypeDeclProp : ConvTypeProp (ta := de) := {}.
   Proof.
@@ -225,8 +248,6 @@ Module DeclarativeConvProp.
     constructor ; red ; intros.
     all: now econstructor.
   - intros.
-    now econstructor.
-  - intros.
     now eapply typing_wk.
   - intros.
     eapply TermConv.
@@ -247,7 +268,7 @@ Module DeclarativeConvProp.
   - split ; red ; intros.
     all: now econstructor.
   - intros.
-    now eapply TermConv.
+    now eapply TermConv, RedConvTyC.
   - intros.
     now eapply typing_wk.
   - intros.
@@ -269,7 +290,8 @@ Module DeclarativeConvProp.
   - intros.
     now econstructor.
   - intros.
-    now econstructor.
+    econstructor ; tea.
+    now eapply TypeSym, RedConvTyC.
   Qed. 
 
   #[export, refine] Instance OneRedTypeDeclProp : OneRedTypeProp (ta := de) := {}.
@@ -284,13 +306,6 @@ Module DeclarativeConvProp.
     now econstructor.
   Qed.
 
-End DeclarativeConvProp.
-
-Module DeclarativeTypingProp.
-  Import DeclarativeTypingData DeclarativeTypingProp DeclarativeConvProp.
-
   #[export] Instance DeclarativeTypingProp : GenericTypingProp de _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProp.
-
-Import DeclarativeTypingProp.

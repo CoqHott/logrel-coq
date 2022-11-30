@@ -1,14 +1,16 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICSigmaCalculus.
 
 (* We have two families of definitions: the declarative ones (tagged de), and the algorithmic ones (tagged al) *)
-(* All notations come in two versions: the tagged and the untagged one. One or the other can be used by variating the scope, in order to use tags only when needed to disambiguate between different instances of typing. *)
+(* All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input,
+ideally wisely in cases where there is only one instance at hand. The tagged one is used systematically in printing,
+and can be used in input when disambiguation is needed.*)
 
 Variant tag := | de | al.
 
-Declare Scope tagged_scope.
-Delimit Scope tagged_scope with tagged.
-Declare Scope untagged_scope.
-Delimit Scope untagged_scope with untagged.
+Declare Scope typing_scope.
+Delimit Scope typing_scope with ty.
+
+Open Scope typing_scope.
 
 (** Typing *)
 Class WfContext (ta : tag) := wf_context : context -> Type.
@@ -20,34 +22,34 @@ Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Type.
 
 (* The context Γ is well-formed *)
 Notation "[ |- Γ ]" := (wf_context Γ)
-  (at level 0, Γ at level 50) : untagged_scope.
+  (at level 0, Γ at level 50, only parsing) : typing_scope.
 Notation "[ |-[ ta  ] Γ ]" := (wf_context (ta := ta) Γ)
-  (at level 0, ta, Γ at level 50) : tagged_scope.
+  (at level 0, ta, Γ at level 50) : typing_scope.
 (* The type A is well-formed in Γ *)
 Notation "[ Γ |- A ]" := (wf_type Γ A)
-  (at level 0, Γ, A at level 50) : untagged_scope.
+  (at level 0, Γ, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ]" := (wf_type (ta := ta) Γ A)
-  (at level 0, ta, Γ, A at level 50) : tagged_scope.
+  (at level 0, ta, Γ, A at level 50) : typing_scope.
 (* The term t has type A in Γ *)
-Notation "[ Γ |- t : A ]" := (typing Γ t A)
-  (at level 0, Γ, t, A at level 50) : untagged_scope.
+Notation "[ Γ |- t : A ]" := (typing Γ A t)
+  (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t : A ]" :=
-  (typing (ta := ta) Γ t A) (at level 0, ta, Γ, t, A at level 50) : tagged_scope.
+  (typing (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (* Types A and B are convertible in Γ *)
 Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
-  (at level 0, Γ, A, B at level 50) : untagged_scope.
+  (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ≅ B ]" := (conv_type (ta := ta) Γ A B)
-  (at level 0, ta, Γ, A, B at level 50) : tagged_scope.
+  (at level 0, ta, Γ, A, B at level 50) : typing_scope.
 (* Terms t and t' are convertible in Γ *)
-Notation "[ Γ |- t ≅ t' : A ]" := (conv_term Γ t t' A)
-  (at level 0, Γ, t, t', A at level 50) : untagged_scope.
-Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ t t' A)
-  (at level 0, ta, Γ, t, t', A at level 50) : tagged_scope.
+Notation "[ Γ |- t ≅ t' : A ]" := (conv_term Γ A t t')
+  (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ A t t')
+  (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
 (* Neutral n and n' are convertible in Γ *)
-Notation "[ Γ |- n ~ n' : A ]" := (conv_neu Γ n n' A)
-  (at level 0, Γ, n, n', A at level 50) : untagged_scope. 
-Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu (ta := ta) Γ n n' A)
-  (at level 0, ta, Γ, n, n', A at level 50) : tagged_scope.
+Notation "[ Γ |- n ~ n' : A ]" := (conv_neu Γ A n n')
+  (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
+Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu (ta := ta) Γ A n n')
+  (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** Reductions *)
 Class OneRedType (ta : tag) := one_red_ty : context -> term -> term -> Type.
@@ -59,14 +61,14 @@ Class WhNormTerm := wh_norm_tm : context -> term -> term ->term -> Type. *)
 
 (* Type A one-step weak-head reduces to type B in Γ *)
 Notation "[ Γ |- A ⇒ B ]" := (one_red_ty Γ A B)
-  (at level 0, Γ, A, B at level 50) : untagged_scope.
+  (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ⇒ B ]" := (one_red_ty (ta := ta) Γ A B)
-  (at level 0, ta, Γ, A, B at level 50) : tagged_scope.
+  (at level 0, ta, Γ, A, B at level 50) : typing_scope.
 (* Term t one-step weak-head reduces to term u at type A in Γ *)
-Notation "[ Γ |- t ⇒ u : A ]" := (one_red_tm Γ t u A)
-  (at level 0, Γ, t, u, A at level 50) : untagged_scope.
-Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (one_red_tm (ta := ta) Γ t u A)
-  (at level 0, ta, Γ, t, u, A at level 50) : untagged_scope.
+Notation "[ Γ |- t ⇒ u : A ]" := (one_red_tm Γ A t u)
+  (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (one_red_tm (ta := ta) Γ A t u)
+  (at level 0, ta, Γ, t, u, A at level 50, only parsing) : typing_scope.
 (* Type A multi-step weak-head reduces to type B in Γ *)
 Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |-[ ta  ] A ⇒* B ]" (at level 0, ta, Γ, A, B at level 50).
@@ -82,19 +84,19 @@ Reserved Notation "[ Γ |-[ ta  ] t ↘ u : A ]" (at level 0, ta, Γ, t, u, A at
 
 (** Substitutions *)
 
-Class WfSubst (ta : tag) := wf_subst : context -> substitution -> context -> Type.
-Class ConvSubst (ta : tag) := conv_subst : context -> substitution -> substitution -> context -> Type.
+Class WfSubst (ta : tag) := wf_subst : context -> context -> substitution -> Type.
+Class ConvSubst (ta : tag) := conv_subst : context -> context -> substitution -> substitution -> Type.
 
 (* Substitution σ is of type Δ in context Γ*)
 Notation "[ Γ '|-s' σ : Δ ]" := (wf_subst Γ σ Δ)
-  (at level 0, Γ, σ, Δ at level 50) : untagged_scope.
-Notation "[ Γ '|-'[ ta  ']s' σ : Δ ]" := (wf_subst (ta := ta) Γ σ Δ)
-  (at level 0, ta, Γ, σ, Δ at level 50) : tagged_scope.
+  (at level 0, Γ, σ, Δ at level 50, only parsing) : typing_scope.
+Notation "[ Γ '|-'[ ta  ']s' σ : Δ ]" := (wf_subst (ta := ta) Γ Δ σ)
+  (at level 0, ta, Γ, σ, Δ at level 50) : typing_scope.
 (* Substitutions σ and τ are convertible at types Δ in context Γ *)
-Notation "[ Γ '|-s' σ ≅ τ : Δ ]" := (conv_subst Γ σ τ Δ)
-  (at level 0, Γ, σ, τ, Δ at level 50) : untagged_scope.
-Notation "[ Γ '|-[ ta ']s' σ ≅ τ : Δ ]" := (conv_subst (ta := ta) Γ σ τ Δ)
-  (at level 0, ta, Γ, σ, τ, Δ at level 50) : tagged_scope.
+Notation "[ Γ '|-s' σ ≅ τ : Δ ]" := (conv_subst Γ Δ σ τ)
+  (at level 0, Γ, σ, τ, Δ at level 50, only parsing) : typing_scope.
+Notation "[ Γ '|-[ ta ']s' σ ≅ τ : Δ ]" := (conv_subst (ta := ta) Γ Δ σ τ)
+  (at level 0, ta, Γ, σ, τ, Δ at level 50) : typing_scope.
 
 (** Extra typing conditions *)
 (* Types A and B are well-formed and convertible in Γ *)

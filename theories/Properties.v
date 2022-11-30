@@ -1,7 +1,6 @@
 From MetaCoq.PCUIC Require Import PCUICAst.
 From LogRel Require Import Notations Untyped GenericTyping DeclarativeTyping.
 
-#[local] Open Scope untagged_scope.
 Import DeclarativeTypingData.
 
 Definition concons_inv {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].

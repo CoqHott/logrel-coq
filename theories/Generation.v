@@ -1,7 +1,6 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils.
 From LogRel Require Import Notations Untyped DeclarativeTyping Properties.
 
-#[local] Open Scope untagged_scope.
 Import DeclarativeTypingData.
 
 Inductive termGenData Γ : term -> term -> Type :=
@@ -115,9 +114,9 @@ Qed.
 Lemma wfFrag :
   (forall Γ : context, [  |- Γ ] -> fragment_ctx Γ)
   × (forall (Γ : context) (t : term), [Γ |- t] -> fragment_ctx Γ && fragment t)
-    × (forall (Γ : context) (t A : term), [Γ |- t : A] -> fragment t && fragment A && fragment_ctx Γ)
+    × (forall (Γ : context) (A t : term), [Γ |- t : A] -> fragment t && fragment A && fragment_ctx Γ)
     × (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> fragment A && fragment B && fragment_ctx Γ)
-        × (forall (Γ : context) (t u A : term),
+        × (forall (Γ : context) (A t u : term),
           [Γ |- t ≅ u : A] -> fragment t && fragment u && fragment A && fragment_ctx Γ).
 Proof.
   eapply WfDeclInduction ; cbn in * ; intros.
