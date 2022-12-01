@@ -68,7 +68,7 @@ Notation "[ Γ |-[ ta  ] A ⇒ B ]" := (one_red_ty (ta := ta) Γ A B)
 Notation "[ Γ |- t ⇒ u : A ]" := (one_red_tm Γ A t u)
   (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (one_red_tm (ta := ta) Γ A t u)
-  (at level 0, ta, Γ, t, u, A at level 50, only parsing) : typing_scope.
+  (at level 0, ta, Γ, t, u, A at level 50) : typing_scope.
 (* Type A multi-step weak-head reduces to type B in Γ *)
 Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |-[ ta  ] A ⇒* B ]" (at level 0, ta, Γ, A, B at level 50).

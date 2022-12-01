@@ -2,13 +2,6 @@ From Coq Require Import CRelationClasses.
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
 From LogRel Require Import Notations Untyped Weakening.
 
-(* The database used for generic typing *)
-Create HintDb gen_typing.
-#[global] Hint Constants Opaque : gen_typing.
-#[global] Hint Variables Transparent : gen_typing.
-
-Ltac gen_typing := typeclasses eauto 6 with gen_typing typeclass_instances.
-
 Section RedDefinitions.
 
   Context `{ta : tag}
@@ -137,7 +130,13 @@ Section GenericTyping.
   Class WfContextProp :=
   {
     wfc_nil : [|- []] ;
-    wfc_cons {Γ na A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,vass na A]
+    wfc_cons {Γ} na {A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,vass na A];
+    wfc_wft {Γ A} : [Γ |- A] -> [|- Γ];
+    wfc_ty {Γ A t} : [Γ |- t : A] -> [|- Γ];
+    wfc_convty {Γ A B} : [Γ |- A ≅ B] -> [|- Γ];
+    wfc_convtm {Γ A t u} : [Γ |- t ≅ u : A] -> [|- Γ];
+    wfc_redty {Γ A B} : [Γ |- A ⇒ B] -> [|- Γ];
+    wfc_redtm {Γ A t u} : [Γ |- t ⇒ u : A] -> [|- Γ];
   }.
 
   Class WfTypeProp :=
@@ -176,7 +175,8 @@ Section GenericTyping.
         [ Γ |- f : tProd na A B ] -> 
         [ Γ |- a : A ] -> 
         [ Γ |- tApp f a : B{0 := a} ] ;
-    ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
+    ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A];
+    ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
 
   Class ConvTypeProp :=
@@ -199,7 +199,7 @@ Section GenericTyping.
   Class ConvTermProp :=
   {
     convtm_equiv {Γ A} :> PER (conv_term Γ A) ;
-    (* convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ; *)
+    convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
     convtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t.[ren ρ] ≅ u.[ren ρ] : A.[ren ρ]] ;
     convtm_exp {Γ A A' t t' u u'} :
@@ -222,7 +222,7 @@ Section GenericTyping.
   Class ConvNeuProp :=
   {
     convneu_equiv {Γ A} :> PER (conv_neu Γ A) ;
-    convneu_red {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ⇒* A'] -> [Γ |- t ~ u : A'] ;
+    convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t.[ren ρ] ~ u.[ren ρ] : A.[ren ρ]] ;
     convneu_var {Γ n A} :
@@ -264,10 +264,10 @@ Section GenericTyping.
       [ Γ |- f ⇒ f' : tProd na A B ] ->
       [ Γ |- t : A ] ->
       [ Γ |- tApp f t ⇒ tApp f' t : B{0 := t} ];
-    oredtm_exp {Γ t u A A'} : 
-      [Γ |- t ⇒ u : A'] ->
-      [Γ |- A ⇒* A'] ->
-      [Γ |- t ⇒ u : A]
+    oredtm_conv {Γ t u A A'} : 
+      [Γ |- t ⇒ u : A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- t ⇒ u : A']
   }.
 
 End GenericTyping.
@@ -287,15 +287,17 @@ Class GenericTypingProp `(ta : tag)
   redtm_prop :> OneRedTermProp ;
 }.
 
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_beta oredtm_app oredtm_wk | 2 : gen_typing.
-#[export] Hint Resolve convty_exp convtm_exp ty_exp oredtm_exp convneu_red convtm_convneu wft_term convty_term | 4 : gen_typing.
+#[export] Hint Immediate wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_wk oredtm_beta oredtm_app | 2 : gen_typing.
+#[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv oredtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
   Context `{GenericTypingProp}.
 
   Definition mredtm_conv {Γ t u A B} :
       [Γ |- t ⇒* u : A] ->
-      [Γ |- B ⇒* A] ->
+      [Γ |- A ≅ B ] ->
       [Γ |- t ⇒* u : B].
   Proof.
     induction 1.
@@ -304,7 +306,7 @@ Section GenericConsequences.
 
   Definition wfredtm_conv {Γ} {t u A B} :
       [Γ |- t :⇒*: u : A] ->
-      [Γ |- B ⇒* A] ->
+      [Γ |- A ≅ B ] ->
       [Γ |- t :⇒*: u : B].
   Proof.
     intros [wfr wfl red] ?.
@@ -369,7 +371,7 @@ Section GenericConsequences.
       now epose proof (oredty_det o red') as <-.
   Qed.
 
-  Corollary nred_det_ty Γ A B B' :
+  Corollary whredty_det Γ A B B' :
     [Γ |- A ↘ B] -> [Γ |- A ↘ B'] ->
     B = B'.
   Proof.
@@ -430,6 +432,8 @@ Section GenericConsequences.
 
 End GenericConsequences.
 
+#[export] Hint Resolve mredtm_wk | 2 : gen_typing.
+#[export] Hint Resolve mredtm_conv | 6 : gen_typing.
 
 (*To be able to still use typing/conversion term-directe rules even when the type or the other member of the conversion are not of the right shape*)
 Ltac meta_constructor :=

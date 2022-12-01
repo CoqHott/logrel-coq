@@ -1,16 +1,23 @@
 From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICNormal.
 
+(* The database used for generic typing *)
+Create HintDb gen_typing.
+#[global] Hint Constants Opaque : gen_typing.
+#[global] Hint Variables Transparent : gen_typing.
+
+Ltac gen_typing := typeclasses eauto 6 with gen_typing typeclass_instances.
+
 Definition U := (tSort Universe.type0).
 Notation "'eta_expand' f" := (tApp (lift0 1 f) (tRel 0)) (at level 40, only parsing).
 
-#[global] Hint Transparent U : mltt.
+#[global] Hint Transparent U : gen_typing.
 
 Notation whne := (whne RedFlags.default empty_global_env).
 Notation whnf := (whnf RedFlags.default empty_global_env).
 Definition emptyName : aname := 
   ltac:(repeat econstructor).
 
-#[global] Hint Constructors PCUICNormal.whne PCUICNormal.whnf : mltt.
+#[global] Hint Constructors PCUICNormal.whne PCUICNormal.whnf : gen_typing.
 
 Inductive isType Γ : term -> Type :=
   | ProdType {na A B} : isType Γ (tProd na A B)
@@ -61,4 +68,4 @@ Proof.
   all: congruence.
 Qed.
 
-#[global] Hint Resolve nePi neLambda : mltt.
+#[global] Hint Resolve nePi neLambda : gen_typing.

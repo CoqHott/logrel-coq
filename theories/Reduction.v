@@ -203,8 +203,14 @@ Module DeclarativeTypingProp.
 
   #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
   Proof.
-    all: constructor.
-    all: eassumption.
+    1-2: now constructor.
+    all: intros.
+    - now eapply WFtype.
+    - now eapply WFterm.
+    - now eapply WFEqType.
+    - now eapply WFEqTerm.
+    - now eapply WFEqType, RedConvTy.
+    - now eapply WFEqTerm, RedConvTe. 
   Qed.
 
   #[export, refine] Instance WfTypeProp : WfTypeProp (ta := de) := {}.
@@ -221,7 +227,9 @@ Module DeclarativeTypingProp.
       now eapply typing_wk.
     - intros.
       econstructor ; tea.
-      now eapply TypeSym, RedConvTyC. 
+      now eapply TypeSym, RedConvTyC.
+    - intros.
+      econstructor ; tea.
   Qed.
 
   #[export, refine] Instance ConvTypeDeclProp : ConvTypeProp (ta := de) := {}.
@@ -248,6 +256,8 @@ Module DeclarativeTypingProp.
     constructor ; red ; intros.
     all: now econstructor.
   - intros.
+    now eapply TermConv.
+  - intros.
     now eapply typing_wk.
   - intros.
     eapply TermConv.
@@ -256,7 +266,7 @@ Module DeclarativeTypingProp.
     2: eassumption.
     2: eapply TermSym.
     all: now eapply RedConvTeC.
-  - eauto.
+  - intros. eassumption.
   - intros.
     now econstructor.
   - intros.
@@ -268,7 +278,7 @@ Module DeclarativeTypingProp.
   - split ; red ; intros.
     all: now econstructor.
   - intros.
-    now eapply TermConv, RedConvTyC.
+    now eapply TermConv.
   - intros.
     now eapply typing_wk.
   - intros.
@@ -290,8 +300,7 @@ Module DeclarativeTypingProp.
   - intros.
     now econstructor.
   - intros.
-    econstructor ; tea.
-    now eapply TypeSym, RedConvTyC.
+    now econstructor.
   Qed. 
 
   #[export, refine] Instance OneRedTypeDeclProp : OneRedTypeProp (ta := de) := {}.

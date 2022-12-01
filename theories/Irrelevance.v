@@ -1,9 +1,13 @@
 From MetaCoq Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
-Require Import Untyped DeclarativeTyping Weakening LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
+Require Import Notations Untyped GenericTyping Weakening LogicalRelation Properties Reduction LRInduction ShapeView Reflexivity.
+
+Section Irrelevances.
+Context `{GenericTypingProp}.
 
 Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
   (domTy : [Γ |- dom])
   (codTy : [Γ,, vass na dom |- cod])
+  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
   (red : [Γ |- A :⇒*: tProd na dom cod])
   (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
   (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -15,6 +19,7 @@ Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
             [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
   (domTy': [Γ |- dom'])
   (codTy': [Γ,, vass na' dom' |- cod'])
+  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
   (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
   (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
   (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -51,6 +56,7 @@ Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
       PiRedTy.red := red ;
       PiRedTy.domTy := domTy ;
       PiRedTy.codTy := codTy ;
+      PiRedTy.eq := eq ;
       PiRedTy.domRed := domRed ;
       PiRedTy.codRed := codRed ;
       PiRedTy.codExt := codExt
@@ -61,6 +67,7 @@ Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
     PiRedTy.red := red' ;
     PiRedTy.domTy := domTy' ;
     PiRedTy.codTy := codTy' ;
+    PiRedTy.eq := eq' ;
     PiRedTy.domRed := domRed' ;
     PiRedTy.codRed := codRed' ;
     PiRedTy.codExt := codExt'
@@ -69,18 +76,23 @@ Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
 Proof.
   intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
   econstructor.
-  1-2: now mltt.
-  1: intros ; now apply IHdom.
-  intros.
-  cbn in *.
-  unshelve eapply IHcod.
-  2: eauto.
-  now eapply IHdom.
+  - now gen_typing.
+  - cbn in *.
+    etransitivity.
+    2: eassumption.
+    now symmetry.
+  - intros ; now apply IHdom.
+  - intros.
+    cbn in *.
+    unshelve eapply IHcod.
+    2: eauto.
+    now eapply IHdom.
 Qed.
 
 Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
   (domTy : [Γ |- dom])
   (codTy : [Γ,, vass na dom |- cod])
+  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
   (red : [Γ |- A :⇒*: tProd na dom cod])
   (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
   (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -92,6 +104,7 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
             [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
   (domTy': [Γ |- dom'])
   (codTy': [Γ,, vass na' dom' |- cod'])
+  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
   (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
   (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
   (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -128,6 +141,7 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
       PiRedTy.red := red ;
       PiRedTy.domTy := domTy ;
       PiRedTy.codTy := codTy ;
+      PiRedTy.eq := eq ;
       PiRedTy.domRed := domRed ;
       PiRedTy.codRed := codRed ;
       PiRedTy.codExt := codExt
@@ -138,27 +152,34 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
     PiRedTy.red := red' ;
     PiRedTy.domTy := domTy' ;
     PiRedTy.codTy := codTy' ;
+    PiRedTy.eq := eq' ;
     PiRedTy.domRed := domRed' ;
     PiRedTy.codRed := codRed' ;
     PiRedTy.codExt := codExt'
-    |} in
+      |} in
   forall t, [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t : A' | ΠA'].
 Proof.
   intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
   econstructor.
-  1-3: now mltt.
+  - cbn.
+    econstructor.
+    all: gen_typing.
+  - eassumption.
+  - cbn.
+    gen_typing.
   - intros.
     unshelve eapply IHcod.
     2: now auto.
     now apply IHdom.
   - intros.
-    unshelve eapply IHcod, eq.
+    unshelve eapply IHcod, eq0.
     all: now eapply IHdom.
 Defined.
 
 Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
   (domTy : [Γ |- dom])
   (codTy : [Γ,, vass na dom |- cod])
+  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
   (red : [Γ |- A :⇒*: tProd na dom cod])
   (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom.[ren ρ])
   (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -170,6 +191,7 @@ Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
             [codRed Δ a ρ h ha | Δ ||- cod.[a ⋅ ren ρ] ≅ cod.[b ⋅ ren ρ]])
   (domTy': [Γ |- dom'])
   (codTy': [Γ,, vass na' dom' |- cod'])
+  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
   (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
   (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'.[ren ρ])
   (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
@@ -206,6 +228,7 @@ Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
       PiRedTy.red := red ;
       PiRedTy.domTy := domTy ;
       PiRedTy.codTy := codTy ;
+      PiRedTy.eq := eq ;
       PiRedTy.domRed := domRed ;
       PiRedTy.codRed := codRed ;
       PiRedTy.codExt := codExt
@@ -216,6 +239,7 @@ Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
     PiRedTy.red := red' ;
     PiRedTy.domTy := domTy' ;
     PiRedTy.codTy := codTy' ;
+    PiRedTy.eq := eq' ;
     PiRedTy.domRed := domRed' ;
     PiRedTy.codRed := codRed' ;
     PiRedTy.codExt := codExt'
@@ -227,7 +251,7 @@ Proof.
   - now eapply ΠIrrelevanceTm.
   - now eapply ΠIrrelevanceTm.
   - cbn.
-    mltt.
+    gen_typing.
   - intros.
     unshelve eapply IHcod.
     2: now auto.
@@ -244,7 +268,7 @@ Proof.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
   induction lrA as [? [? []] | ? ? [] | ? A [] [] IHdom IHcod]
-    using LR_rect in lA', A', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
+    in lA', A', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
   - destruct lrA' as [? [? []] | | ]; try solve [destruct s] ; clear s.
     split.
     + intros ?.
@@ -262,33 +286,42 @@ Proof.
       all: eassumption.
   - destruct lrA' as [|? A' neA'|] ; try solve [destruct s] ; clear s.
     destruct he as [AA], neA' as [AA'] ; cbn in *.
-    assert (AA' = AA) as ->
-      by (eapply nred_det_ty ; mltt).
+    assert (AA' = AA) as ->.
+    {
+      all: eapply whredty_det ; econstructor ; [idtac |now econstructor| idtac |now econstructor].
+      all: gen_typing.
+    }
+    assert [Γ |- ty ≅ AA] as convtAA by gen_typing.
     split.
     + intros ?.
       split.
       all: intros [].
       all: econstructor.
-      all: now mltt.
+      all: cbn in *.
+      all: try eauto.
+      2: etransitivity ; eassumption.
+      etransitivity ; [symmetry|..] ; eassumption.
     + intros ?.
       split.
+      2: symmetry in convtAA.
       all: intros [].
-      all: econstructor.
-      all: now mltt.
+      all: econstructor ; cbn in *.
+      all: try eauto.
+      1,3: eapply wfredtm_conv ; eassumption.
+      all: eapply convneu_conv ; eassumption.
     + intros ? ?.
       split.
+      2: symmetry in convtAA.
       all: intros [].
       all: econstructor.
       all: cbn in *.
-      1-2,6-7: now eapply TermRedWFConv ; mltt.
+      1-2,6-7: eapply wfredtm_conv ; eassumption.
       1-2,4-5: eassumption.
-      all: assert [Γ |- A ≅ A'] by (eapply TypeTrans ; mltt).
-      all: now mltt.
+      all: now gen_typing.
   - destruct lrA' as [| | ? A' [] []] ; try solve [destruct s] ; clear s.
     destruct he ; cbn -[subst1] in *.
-    assert (redPi0 = redPi1) as ePi
-      by (eapply nred_det_ty ; mltt).
-    subst redPi redPi0 redPi1.
+    assert (tProd na0 dom0 cod0 = tProd na1 dom1 cod1) as ePi
+      by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
     pose proof (IHdom_ := fun Δ ρ h => IHdom Δ ρ h _ _ _ _ _ (domAd0 Δ ρ h) (domRed1 Δ ρ h)).
     assert (IHcod_ : forall Δ a (ρ : Δ ≤ Γ) (h : [|- Δ])
@@ -314,27 +347,27 @@ Proof.
     split.
     + split ; intros.
       all: eapply ΠIrrelevanceTyEq.
-      4,8: eassumption.
-      1,4: mltt.
+      1,4,8: eassumption.
       1-2: now eauto.
+      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTm.
-      4,8: eassumption.
-      1,4: mltt.
+      1,4,8: eassumption.
       1-2: now eauto.
+      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTmEq.
-      4,8: eassumption.
-      1,4: mltt.
+      1,4,8: eassumption.
       1-2: now eauto.
+      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
@@ -441,3 +474,5 @@ Proof.
   cbn in *.
   now eapply TmEqRedConv.
 Qed.
+
+End Irrelevances.

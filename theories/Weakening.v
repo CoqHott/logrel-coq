@@ -9,7 +9,7 @@ Inductive weakening : Set :=
 (* Transforms an (intentional) weakening into a renaming *)
 Fixpoint wk_to_ren (ρ : weakening) : nat -> nat :=
   match ρ with
-    | wk_id => id
+    | wk_id => ren_id
     | wk_step ρ' => S ∘ (wk_to_ren ρ')
     | wk_lift ρ' => shiftn 1 (wk_to_ren ρ')
   end.
@@ -86,7 +86,7 @@ Proof.
 Qed.
 
 (* Testing that the definitions are right *)
-Lemma id_ren (Γ : context) (ρ : Γ ≤ Γ) : (wk_to_ren ρ) =1 id.
+Lemma id_ren (Γ : context) (ρ : Γ ≤ Γ) : (wk_to_ren ρ) =1 ren_id.
 Proof.
   destruct ρ as [ρ wellρ].
   cbn in *.
