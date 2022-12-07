@@ -1,6 +1,6 @@
 From Coq Require Import CRelationClasses.
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-From LogRel Require Import Notations Untyped Weakening.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening.
 
 Section RedDefinitions.
 
@@ -117,6 +117,7 @@ Section GenericTyping.
   Proof.
     intros * ; induction 1.
     1: easy.
+    intros.
     now econstructor.
   Qed.
 
@@ -129,7 +130,7 @@ Section GenericTyping.
 
   Class WfContextProp :=
   {
-    wfc_nil : [|- []] ;
+    wfc_nil : [|- ε ] ;
     wfc_cons {Γ} na {A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,vass na A];
     wfc_wft {Γ A} : [Γ |- A] -> [|- Γ];
     wfc_ty {Γ A t} : [Γ |- t : A] -> [|- Γ];
@@ -142,7 +143,7 @@ Section GenericTyping.
   Class WfTypeProp :=
   {
     wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A] -> [Δ |- A.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- A] -> [Δ |- A⟨ρ⟩] ;
     wft_U {Γ} : 
       [ |- Γ ] -> 
       [ Γ |- U ] ;
@@ -158,11 +159,11 @@ Section GenericTyping.
   Class TypingProp :=
   {
     ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t : A] -> [Δ |- t.[ren ρ] : A.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- t : A] -> [Δ |- t⟨ρ⟩ : A⟨ρ⟩] ;
     ty_var {Γ} {n decl} :
       [   |- Γ ] ->
-      nth_error Γ n = Some decl ->
-      [ Γ |- tRel n : lift0 (S n) decl.(decl_type) ] ;
+      in_ctx Γ n decl ->
+      [ Γ |- tRel n : decl.(decl_type) ] ;
     ty_prod {Γ} {na} {A B} :
         [ Γ |- A : U] -> 
         [Γ ,, (vass na A) |- B : U ] ->
@@ -174,7 +175,7 @@ Section GenericTyping.
     ty_app {Γ} {na} {f a A B} :
         [ Γ |- f : tProd na A B ] -> 
         [ Γ |- a : A ] -> 
-        [ Γ |- tApp f a : B{0 := a} ] ;
+        [ Γ |- tApp f a : B[a ..] ] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A];
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -184,7 +185,7 @@ Section GenericTyping.
     convty_term {Γ A B} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B] ;
     convty_equiv {Γ} :> PER (conv_type Γ) ;
     convty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A ≅ B] -> [Δ |- A.[ren ρ] ≅ B.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- A ≅ B] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩] ;
     convty_exp {Γ A A' B B'} :
       [Γ |- A ⇒* A'] -> [Γ |- B ⇒* B'] ->
       [Γ |- A' ≅ B'] -> [Γ |- A ≅ B] ;
@@ -201,7 +202,7 @@ Section GenericTyping.
     convtm_equiv {Γ A} :> PER (conv_term Γ A) ;
     convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
     convtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t.[ren ρ] ≅ u.[ren ρ] : A.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩] ;
     convtm_exp {Γ A A' t t' u u'} :
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
@@ -224,19 +225,19 @@ Section GenericTyping.
     convneu_equiv {Γ A} :> PER (conv_neu Γ A) ;
     convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t.[ren ρ] ~ u.[ren ρ] : A.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
     convneu_var {Γ n A} :
       [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
     convneu_app {Γ f g t u na A B} :
         [ Γ |- f ~ g : tProd na A B ] ->
         [ Γ |- t ≅ u : A ] ->
-        [ Γ |- tApp f t ≅ tApp g u : B{0 := t} ]
+        [ Γ |- tApp f t ≅ tApp g u : B[t..] ]
   }.
 
   Class OneRedTypeProp :=
   {
     oredty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-    [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A.[ren ρ] ⇒ B.[ren ρ]] ;
+    [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A⟨ρ⟩ ⇒ B⟨ρ⟩] ;
     oredty_whnf {Γ N A} :
       whnf Γ N -> [Γ |- N ⇒ A] -> False ;
     oredty_det {Γ T U V} :
@@ -249,7 +250,7 @@ Section GenericTyping.
   Class OneRedTermProp :=
   {
     oredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t.[ren ρ] ⇒ u.[ren ρ] : A.[ren ρ]] ;
+      [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] ;
     oredtm_whnf {Γ n u A} :
       whnf Γ n -> [Γ |- n ⇒ u : A] -> False ;
     oredtm_det {Γ A B t u v} :
@@ -259,11 +260,11 @@ Section GenericTyping.
       [ Γ |- A ] ->
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- u : A ] ->
-      [ Γ |- tApp (tLambda na A t) u ⇒ t{0 := u} : B{0 := u} ] ;
+      [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] : B[u..] ] ;
     oredtm_app {Γ na A B f f' t} :
       [ Γ |- f ⇒ f' : tProd na A B ] ->
       [ Γ |- t : A ] ->
-      [ Γ |- tApp f t ⇒ tApp f' t : B{0 := t} ];
+      [ Γ |- tApp f t ⇒ tApp f' t : B[t..] ];
     oredtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒ u : A] ->
       [Γ |- A ≅ A'] ->
@@ -382,14 +383,14 @@ Section GenericConsequences.
   Qed.
 
   Lemma mredty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-    [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A.[ren ρ] ⇒* B.[ren ρ]].
+    [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩].
   Proof.
     intros ? red.
     induction red ; gen_typing.
   Qed.
 
   Lemma mredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-    [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t.[ren ρ] ⇒* u.[ren ρ] : A.[ren ρ]].
+    [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩].
   Proof.
     intros ? red.
     induction red ; gen_typing.

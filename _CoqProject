@@ -1,7 +1,14 @@
--R theories LogRel
+-Q theories LogRel
+
+theories/Utils.v
+theories/BasicAst.v
+theories/AutoSubst/core.v
+theories/AutoSubst/unscoped.v
+theories/AutoSubst/Ast.v
+theories/Context.v
+theories/Untyped.v
 
 theories/Notations.v
-theories/Untyped.v
 theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/Weakening.v

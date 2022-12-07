@@ -170,7 +170,7 @@ Proof.
       1: shelve.
       2: now econstructor ; [eassumption | eapply typing_wk].
       cbn in *.
-      now replace (t.[_]) with (t.[ren (wk_lift ρ)])
+      now replace (t.[_]) with (t.[ren (wk_up ρ)])
         by (cbn ; now rewrite ren_shiftn).
     + cbn.
       now rewrite <- up_Up, ren_shiftn.

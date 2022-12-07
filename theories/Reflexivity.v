@@ -1,5 +1,5 @@
 From MetaCoq Require Import PCUICAst PCUICSigmaCalculus PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping LogicalRelation Properties Reduction LRInduction Escape.
+From LogRel Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping LogicalRelation Properties Reduction LRInduction Escape.
 
 Section Reflexivities.
   Context `{GenericTypingProp}.

@@ -1,6 +1,6 @@
-Require Import CRelationClasses.
+From Coq Require Import CRelationClasses.
 From MetaCoq Require Import PCUICAst.
-Require Import Notations Untyped GenericTyping LogicalRelation Properties Reduction LRInduction.
+From LogRel Require Import Notations Untyped GenericTyping LogicalRelation Properties Reduction LRInduction.
 Set Universe Polymorphism.
 
 Section Escapes.
