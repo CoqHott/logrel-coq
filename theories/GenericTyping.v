@@ -410,7 +410,7 @@ Section GenericConsequences.
     u' = u ->
     [Γ |- t ≅ u' : A'].
   Proof.
-    now intros ? ->.
+    now intros ? -> ->.
   Qed.
 
   Lemma convne_meta_conv (Γ : context) (t u u' A A' : term) :
@@ -419,7 +419,7 @@ Section GenericConsequences.
     u' = u ->
     [Γ |- t ≅ u' : A'].
   Proof.
-    now intros ? ->.
+    now intros ? -> ->.
   Qed.
 
   Lemma redtm_meta_conv (Γ : context) (t u u' A A' : term) :
@@ -428,7 +428,7 @@ Section GenericConsequences.
     u' = u ->
     [Γ |- t ⇒ u' : A'].
   Proof.
-    now intros ? ->.
+    now intros ? -> ->.
   Qed.
 
 End GenericConsequences.

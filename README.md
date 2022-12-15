@@ -13,7 +13,7 @@ In order to avoid some work on the syntax, this project uses the AST of [MetaCoq
 Building
 ===========
 
-The project depends on the MetaCoq 1.0 packages, available on opam. Once they have been installed, you can simply issue `make` in the root folder.
+The project builds with Coq version `8.15.2`. Once it has been installed, you can simply issue `make` in the root folder.
 
 
 File description

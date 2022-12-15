@@ -38,7 +38,7 @@ Section ShapeViews.
       + constructor.
       + intros [->].
         inversion neA.
-        enough (ty = U) as -> by inversion ne.
+        enough (ty = U) as -> by (now eapply neU).
         symmetry.
         eapply mredty_whnf.
         all: gen_typing.
@@ -50,14 +50,14 @@ Section ShapeViews.
     - destruct lrB.
       + intros [].
         inversion neA.
-        enough (ty = U) as -> by inversion ne.
+        enough (ty = U) as -> by (now eapply neU).
         symmetry.
         eapply mredty_whnf.
         all: gen_typing.
       + econstructor.
       + intros [].
         destruct ΠA ; cbn in *.
-        enough (ty = tProd na dom cod) as -> by inversion ne.
+        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
     - destruct lrB.
@@ -68,10 +68,10 @@ Section ShapeViews.
         all: gen_typing.
       + intros [].
         destruct neA.
-        enough (ty = tProd na dom cod) as -> by inversion ne.
+        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
-      + now easy.
+      + now econstructor.
   Qed.
 
   Corollary ShapeViewRefl {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
