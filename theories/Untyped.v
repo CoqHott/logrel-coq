@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Context.
 Export UnscopedNotations.
 #[global] Open Scope subst_scope.
 
-Definition U := (tSort set).
+Notation U := (tSort set).
 Notation "'eta_expand' f" := (tApp f ⟨ ↑ ⟩ (tRel 0)) (at level 40, only parsing).
 
 Inductive whnf (Γ : context) : term -> Type :=

@@ -1,5 +1,5 @@
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-From LogRel Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping Properties Generation.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping DeclarativeTyping Generation.
 
 Import DeclarativeTypingData.
 
@@ -13,14 +13,6 @@ Proof.
     1,3: now econstructor.
     econstructor ; eauto.
     now econstructor.
-Qed.
-
-Corollary termRedFrag Γ t u A : [Γ |- t ⇒ u : A] ->
-fragment t && fragment u && fragment A && fragment_ctx Γ.
-Proof.
-  intros.
-  apply wfFrag.
-  now eapply RedConvTe.
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
@@ -59,20 +51,10 @@ Proof.
   intros ne red.
   induction red in ne |- * ; fold_decl.
   - inversion ne ; subst ; clear ne.
-    1: now eapply neLambda.
-    eapply mkApps_tApp_inj in H as [H ->] ; cbn in *.
-    2: easy.
-    symmetry in H.
-    apply mkApps_nisApp in H as [].
-    2: cbn.
-    all: congruence.
+    eapply neLambda.
+    eassumption.
   - inversion ne ; subst.
     1: easy.
-    eapply mkApps_tApp_inj in H as [-> ->] ; cbn in *.
-    2: easy.
-    apply termRedFrag in red.
-    rewrite fragment_mkApps in red ; cbn in red.
-    now congruence.
   - easy.
 Qed.
 
@@ -81,34 +63,14 @@ Lemma whnf_nored Γ n u A :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  - inversion nf.
-    2-5:
-      match goal with
-        | H : mkApps _ _ = tApp _ _ |- _ =>
-          apply mkApps_tApp_inj in H as [He _]
-      end ; [|easy] ;
-      symmetry in He ;
-      apply mkApps_nisApp in He as [] ; cbn ; congruence.
-    inversion X ; subst.
-    1: now eapply neLambda.
-    match goal with
-        | H : mkApps _ _ = tApp _ _ |- _ =>
-          apply mkApps_tApp_inj in H as [He _]
-    end ; [|easy] ;
-    symmetry in He ;
-    apply mkApps_nisApp in He as [] ; cbn ; congruence.
   - inversion nf ; subst.
-    2-5:
-      match goal with
-        | H : mkApps _ _ = tApp _ _ |- _ =>
-          apply mkApps_tApp_inj in H as [-> ->]
-      end ; [|easy] ;
-      apply termRedFrag in red ;
-      rewrite fragment_mkApps in red ; cbn in red ;
-      now congruence.
-    eapply whne_nored.
-    1: eassumption.
-    now econstructor.
+    inversion H ; subst.
+    eapply neLambda.
+    eassumption.
+  - inversion nf ; subst.
+    inversion H ; subst.
+    eapply IHred.
+    now constructor.
   - easy.
 Qed.
 
@@ -156,49 +118,49 @@ Qed.
 
 
 Lemma redtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-[|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t.[ren ρ] ⇒ u.[ren ρ] : A.[ren ρ]].
+[|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
 Proof.
   intros ? red.
   induction red as [? ? ? ? ? ? Ht Ha | |]; fold_decl.
   - cbn in *.
-    rewrite ! subst10_inst.
     eapply redtm_meta_conv.
     1: econstructor ; fold_decl.
     1,3: now eapply typing_wk.
     + unshelve eapply typing_wk in Ht.
-      3: econstructor ; now eapply well_lift.
+      3: econstructor ; now eapply well_up.
       1: shelve.
       2: now econstructor ; [eassumption | eapply typing_wk].
       cbn in *.
-      now replace (t.[_]) with (t.[ren (wk_up ρ)])
-        by (cbn ; now rewrite ren_shiftn).
-    + cbn.
-      now rewrite <- up_Up, ren_shiftn.
-    + now rewrite <- up_Up, ren_shiftn.
+      now replace (ren_term _ t) with (t⟨wk_up ρ⟩)
+        by (cbn ; now asimpl).
+    + unfold ren1, RenWlWk_term.
+      cbn.
+      now asimpl.
+    + now asimpl. 
   - cbn in *.
-    rewrite subst10_inst.
-    econstructor ; fold_decl.
-    2: now eapply typing_wk.
-    eapply redtm_meta_conv ; try easy.
-    f_equal.
-    now rewrite up_Up.
+    eapply redtm_meta_conv.
+    1: econstructor ; fold_decl.
+    + now eauto.
+    + now eapply typing_wk.
+    + now asimpl.
+    + reflexivity.
   - econstructor.
     1: eassumption.
     now eapply typing_wk.
 Qed.
 
 Lemma redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-[|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A.[ren ρ] ⇒ B.[ren ρ]].
+[|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A⟨ρ⟩ ⇒ B⟨ρ⟩].
 Proof.
   intros ? red.
   destruct red.
   constructor.
   fold_decl.
-  change U with (U.[ren ρ]).
+  change U with (U⟨ρ⟩).
   now apply redtm_wk.
 Qed.
 
-Module DeclarativeTypingProp.
+Module DeclarativeTypingProperties.
   Import DeclarativeTypingData.
 
   #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
@@ -220,7 +182,7 @@ Module DeclarativeTypingProp.
     now eapply typing_wk.
   Qed.
 
-  #[export, refine] Instance TypingDeclProp : TypingProp (ta := de) := {}.
+  #[export, refine] Instance TypingDeclProp : TypingProperties (ta := de) := {}.
   Proof.
     2-5: now econstructor.
     - intros.
@@ -315,6 +277,6 @@ Module DeclarativeTypingProp.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProp : GenericTypingProp de _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ := {}.
 
-End DeclarativeTypingProp.
+End DeclarativeTypingProperties.

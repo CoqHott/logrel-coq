@@ -1,10 +1,10 @@
 From Coq Require Import CRelationClasses.
-From MetaCoq Require Import PCUICAst.
-From LogRel Require Import Notations Untyped GenericTyping LogicalRelation Properties Reduction LRInduction.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped GenericTyping LogicalRelation Reduction LRInduction.
 Set Universe Polymorphism.
 
 Section Escapes.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition escape {l Γ A eqTy redTm eqTm} :
     LRl l Γ A eqTy redTm eqTm ->

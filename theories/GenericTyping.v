@@ -156,7 +156,7 @@ Section GenericTyping.
       [ Γ |- A ] ;
   }.
 
-  Class TypingProp :=
+  Class TypingProperties :=
   {
     ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t : A] -> [Δ |- t⟨ρ⟩ : A⟨ρ⟩] ;
@@ -273,14 +273,14 @@ Section GenericTyping.
 
 End GenericTyping.
 
-Class GenericTypingProp `(ta : tag)
+Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeu ta)
   `(OneRedType ta) `(OneRedTerm ta) :=
 {
   wfc_prop :> WfContextProp ;
   wfty_prop :> WfTypeProp ;
-  typ_prop :> TypingProp ;
+  typ_prop :> TypingProperties ;
   convty_prop :> ConvTypeProp ;
   convtm_prop :> ConvTermProp ;
   convne_prop :> ConvNeuProp ;
@@ -294,7 +294,7 @@ Class GenericTypingProp `(ta : tag)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv oredtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition mredtm_conv {Γ t u A B} :
       [Γ |- t ⇒* u : A] ->

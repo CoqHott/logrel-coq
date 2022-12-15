@@ -1,8 +1,8 @@
-From MetaCoq Require Import PCUICAst PCUICSigmaCalculus PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-From LogRel Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping LogicalRelation Properties Reduction LRInduction Escape.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction LRInduction Escape.
 
 Section Reflexivities.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LRl l Γ A eqTy redTm eqTm) : eqTy A.

@@ -1,18 +1,18 @@
-From MetaCoq Require Import PCUICAst.
-From LogRel Require Import Notations Untyped GenericTyping LogicalRelation Properties Reduction LRInduction Reflexivity.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped GenericTyping LogicalRelation Reduction LRInduction Reflexivity.
 
 Set Universe Polymorphism.
 
 Section ShapeViews.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition ShapeView Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
     (lrA : LRl lA Γ A eqTyA redTmA redTyA) (lrB : LRl lB Γ B eqTyB redTmB redTyB) : Type :=
     match lrA, lrB with
       | LRU _ _, LRU _ _ => True
-      | LRne _ _ _, LRne _ _ _ => True
-      | LRPi _ _ _ _, LRPi _ _ _ _ => True
+      | LRne _ _, LRne _ _ => True
+      | LRPi _ _ _, LRPi _ _ _ => True
       | _, _ => False
     end.
     
@@ -38,40 +38,40 @@ Section ShapeViews.
       + constructor.
       + intros [->].
         inversion neA.
-        enough (ty = U) as -> by (now eapply neU).
+        enough (ty = U) as -> by inversion ne.
         symmetry.
         eapply mredty_whnf.
         all: gen_typing.
       + intros [->].
         inversion ΠA.
-        enough (U = tProd na dom cod) by (unfold U in * ; congruence).
+        enough (U = tProd na dom cod) by congruence.
         eapply mredty_whnf.
         all: gen_typing.
     - destruct lrB.
       + intros [].
         inversion neA.
-        enough (ty = U) as -> by (now eapply neU).
+        enough (ty = U) as -> by inversion ne.
         symmetry.
         eapply mredty_whnf.
         all: gen_typing.
       + econstructor.
       + intros [].
         destruct ΠA ; cbn in *.
-        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
+        enough (ty = tProd na dom cod) as -> by inversion ne.
         eapply whredty_det.
         all: gen_typing.
     - destruct lrB.
       + intros [].
         inversion ΠA.
-        enough (U = tProd na dom cod) by (unfold U in * ; congruence).
+        enough (U = tProd na dom cod) by congruence.
         eapply mredty_whnf.
         all: gen_typing.
       + intros [].
         destruct neA.
-        enough (ty = tProd na dom cod) as -> by now (eapply nePi).
+        enough (ty = tProd na dom cod) as -> by inversion ne.
         eapply whredty_det.
         all: gen_typing.
-      + now easy. 
+      + now easy.
   Qed.
 
   Corollary ShapeViewRefl {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}

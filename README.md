@@ -28,7 +28,7 @@ File description
 [GenericTyping] | A generic notion of typing, used to define the logical relation, to be instantiated twice: once with the declarative version, and once with the algorithmic one.
 [DeclarativeTyping] | Defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
 [Generation] | Contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
-[Properties] and [Reduction] | Contain basic theorem over the typing rules that are easily derivable by induction over the rules. |
+[[Reduction] | Basic properties of reduction, enough to derive that declarative typing is an instance of generic typing. |
 [LogicalRelation] | Contains the logical relation's (**LR**) definition. |
 | [LRInduction] | Defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels. |
 | [Escape] | Contains a proof of the escape lemma for **LR** |

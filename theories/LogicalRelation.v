@@ -1,5 +1,5 @@
-From MetaCoq.PCUIC Require Import PCUICAst PCUICSigmaCalculus PCUICRenameConv PCUICInstConv.
-From LogRel Require Import Notations Untyped Weakening GenericTyping.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -233,10 +233,10 @@ Module URedTm.
     {l} {rec : forall {l'}, l' << l -> LogRelKit}
     {Γ : context} {t : term} {R : [Γ ||-U l]}
   : Type := {
-    term : term;
-    red : [ Γ |- t :⇒*: term : U ];
-    type : isType Γ term;
-    eqr : [Γ |- term ≅ term : U];
+    te : term;
+    red : [ Γ |- t :⇒*: te : U ];
+    type : isType Γ te;
+    eqr : [Γ |- te ≅ te : U];
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
   }.
 
@@ -246,11 +246,11 @@ Module URedTm.
   Record URedTmEq `{ta : tag} `{WfContext ta}
     `{Typing ta} `{ConvTerm ta} `{OneRedTerm ta}
     {l} {rec : forall {l'}, l' << l -> LogRelKit}
-    {Γ : context} {t u : PCUICAst.term} {R : [Γ ||-U l]}
+    {Γ : context} {t u : term} {R : [Γ ||-U l]}
   : Type := {
       redL : URedTm (@rec) Γ t R ;
       redR : URedTm (@rec) Γ u R ;
-      eq   : [ Γ |- redL.(term) ≅ redR.(term) : U ];
+      eq   : [ Γ |- redL.(te) ≅ redR.(te) : U ];
       relL    : [ rec R.(URedTy.lt) | Γ ||- t ] ;
       relR    : [ rec R.(URedTy.lt) | Γ ||- u ] ;
       relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ] ;
@@ -277,18 +277,18 @@ Module PiRedTy.
     domTy : [Γ |- dom];
     codTy : [Γ ,, vass na dom |- cod];
     eq : [Γ |- tProd na dom cod ≅ tProd na dom cod];
-    domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom.[ren ρ] ;
+    domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩ ;
     codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-        [ (domRed ρ h) |  Δ ||- a : (dom.[ren ρ])] ->
-        LRPack@{i} Δ (cod.[a ⋅ ren ρ]) ;
+        [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
+        LRPack@{i} Δ (cod⟨ρ >> ↑ ⟩[a..]) ;
     codExt
       {Δ a b}
       (ρ : Δ ≤ Γ)
       (h :  [ |- Δ ])
-      (ha : [ (domRed ρ h) | Δ ||- a : dom.[ren ρ] ]) :
-      [ (domRed ρ h) | Δ ||- b : dom.[ren ρ]] ->
-      [ (domRed ρ h) | Δ ||- a ≅ b : dom.[ren ρ]] ->
-      [ (codRed ρ h ha) | Δ ||- (cod.[a ⋅ ren ρ]) ≅ (cod.[b ⋅ ren ρ]) ]
+      (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
+      [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
+      [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
+      [ (codRed ρ h ha) | Δ ||- (cod⟨ρ >> ↑ ⟩[a..]) ≅ (cod⟨ρ >> ↑ ⟩[b..]) ]
   }.
 
   Arguments PiRedTy {_ _ _ _ _}.
@@ -298,7 +298,7 @@ Module PiRedTy.
     {Γ : context} {A : term} {R : RedRel} {ΠA : PiRedTy Γ A}
   : Type := {
     domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate R (ΠA.(domRed) ρ h);
-    codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom).[ren ρ] ])
+    codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ])
       : LRPackAdequate R (ΠA.(codRed) ρ h ha);
   }.
 
@@ -320,10 +320,10 @@ Module PiRedTyEq.
     cod                       : term;
     red                       : [Γ |- B :⇒*: tProd na dom cod];
     eq                        : [Γ |- tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd na dom cod ];
-    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom).[ren ρ] ≅ dom.[ren ρ] ];
+    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
     codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ]]) :
-      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod).[a ⋅ ren ρ] ≅ cod.[a ⋅ ren ρ] ];
+      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]) :
+      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..] ≅ cod⟨ρ >> ↑ ⟩[a..] ];
   }.
 
   Arguments PiRedTyEq {_ _ _ _ _}.
@@ -345,13 +345,13 @@ Module PiRedTm.
     isfun : isFun Γ nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ])
-      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod).[a ⋅ ren ρ]] ;
+      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..]] ;
     eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ])
-      (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom).[ren ρ] ])
-      (eq : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom).[ren ρ] ])
-      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf.[ren ρ] a ≅ tApp nf.[ren ρ] b : ΠA.(PiRedTy.cod).[a⋅ren ρ] ]
+      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      (eq : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..] ]
   }.
 
   Arguments PiRedTm {_ _ _ _ _ _ _ _}.
@@ -372,9 +372,9 @@ Module PiRedTmEq.
     redR : [ Γ ||-Π u : A | ΠA ] ;
     eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     eqApp {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ] )
+      (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
       : [ ( ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||-
-          tApp redL.(PiRedTm.nf).[ren ρ] a ≅ tApp redR.(PiRedTm.nf).[ren ρ] a : ΠA.(PiRedTy.cod).[a ⋅ ren ρ]]
+          tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..]]
   }.
 
   Arguments PiRedTmEq {_ _ _ _ _ _ _ _}.

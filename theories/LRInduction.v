@@ -1,5 +1,5 @@
-From MetaCoq.PCUIC Require Import PCUICAst PCUICRenameConv PCUICInstConv PCUICSigmaCalculus.
-From LogRel Require Import Notations Untyped Weakening GenericTyping LogicalRelation.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation.
 
 Section Inductions.
   Context `{ta : tag}
@@ -10,12 +10,12 @@ Section Inductions.
   #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')
     {Γ A rEq rTe rTeEq} (lr : LRl l Γ A rEq rTe rTeEq) {struct lr} : (LRl l' Γ A rEq rTe rTeEq) :=
     match lr with
-    | LRU Γ H =>
+    | LRU _ H =>
         match
           (match l_ with Oi => fun H' => elim H'.(URedTy.lt) end H)
         with end
-    | LRne _ _ neA => LRne _ neA
-    | LRPi _ _ ΠA ΠAad => LRPi _ ΠA
+    | LRne _ neA => LRne _ neA
+    | LRPi _ ΠA ΠAad => LRPi _ ΠA
         {|
           PiRedTy.domAd :=
             fun (Δ : context) (ρ : Δ ≤ _) (h : [  |- Δ]) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) ρ h) ;
@@ -42,7 +42,7 @@ Section Inductions.
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
     P (HAad.(PiRedTy.codAd) ρ h ha)) ->
     P (LRPi rec ΠA HAad)) ->
 
@@ -60,6 +60,34 @@ Section Inductions.
       all: intros ; eapply HRec.
   Qed.
 
+  Theorem LR_rec
+    (l : TypeLevel)
+    (rec : forall l', l' << l -> LogRelKit)
+    (P : forall {c t rEq rTe rTeEq},
+      LR rec c t rEq rTe rTeEq  -> Set) :
+
+    (forall (Γ : context) (h : [Γ ||-U l]),
+      P (LRU rec h)) ->
+
+    (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+      P (LRne rec neA)) ->
+
+    (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
+    (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
+      P (HAad.(PiRedTy.domAd) ρ h)) ->
+    (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
+    P (HAad.(PiRedTy.codAd) ρ h ha)) ->
+    P (LRPi rec ΠA HAad)) ->
+
+    forall (Γ : context) (t : term) (rEq rTe : term -> Type)
+      (rTeEq  : term -> term -> Type) (lr : LR rec Γ t rEq rTe rTeEq),
+      P lr.
+  Proof.
+    intros.
+    now apply LR_rect.
+  Qed.
+
   Theorem LR_rect_LogRelRec
     (P : forall {l Γ t rEq rTe rTeEq},
     LRl l Γ t rEq rTe rTeEq  -> Type) :
@@ -75,7 +103,7 @@ Section Inductions.
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
     P (HAad.(PiRedTy.codAd) ρ h ha)) ->
     P (LRPi (LogRelRec l) ΠA HAad)) ->
 
@@ -107,7 +135,7 @@ Section Inductions.
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (LRbuild (HAad.(PiRedTy.domAd) ρ h))) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom).[ren ρ] ]),
+      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
     P (LRbuild (HAad.(PiRedTy.codAd) ρ h ha))) ->
     P (LRPi_ l ΠA HAad)) ->
 
