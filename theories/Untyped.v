@@ -5,7 +5,7 @@ Export UnscopedNotations.
 #[global] Open Scope subst_scope.
 
 Notation U := (tSort set).
-Notation "'eta_expand' f" := (tApp f ⟨ ↑ ⟩ (tRel 0)) (at level 40, only parsing).
+Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
 
 Inductive whnf (Γ : context) : term -> Type :=
   | whnf_tSort s : whnf Γ (tSort s)

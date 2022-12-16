@@ -280,7 +280,7 @@ Module PiRedTy.
     domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩ ;
     codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
         [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
-        LRPack@{i} Δ (cod⟨ρ >> ↑ ⟩[a..]) ;
+        LRPack@{i} Δ (cod[a .: (ρ >> tRel)]) ;
     codExt
       {Δ a b}
       (ρ : Δ ≤ Γ)
@@ -288,7 +288,7 @@ Module PiRedTy.
       (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
       [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
       [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-      [ (codRed ρ h ha) | Δ ||- (cod⟨ρ >> ↑ ⟩[a..]) ≅ (cod⟨ρ >> ↑ ⟩[b..]) ]
+      [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
   }.
 
   Arguments PiRedTy {_ _ _ _ _}.
@@ -323,7 +323,7 @@ Module PiRedTyEq.
     domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
     codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]) :
-      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..] ≅ cod⟨ρ >> ↑ ⟩[a..] ];
+      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ];
   }.
 
   Arguments PiRedTyEq {_ _ _ _ _}.
@@ -346,12 +346,12 @@ Module PiRedTm.
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..]] ;
+      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
     eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
       (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
       (eq : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..] ]
+      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
   }.
 
   Arguments PiRedTm {_ _ _ _ _ _ _ _}.
@@ -374,7 +374,7 @@ Module PiRedTmEq.
     eqApp {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
       : [ ( ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||-
-          tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)⟨ρ >> ↑ ⟩[a..]]
+          tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
   }.
 
   Arguments PiRedTmEq {_ _ _ _ _ _ _ _}.
