@@ -259,7 +259,7 @@ Proof.
 Qed.
 
 Theorem LRIrrelevant Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-    (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A' eqTyA' redTmA' eqTmA') :
+    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
     eqTyA A' ->
     [× forall B, eqTyA B <~> eqTyA' B ,
     forall t, redTmA t <~> redTmA' t &
@@ -375,7 +375,7 @@ Proof.
 Qed.
 
 Corollary TyEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall B, eqTyA B -> eqTyA' B.
 Proof.
   apply (LRIrrelevant _ _ _ lrA lrA').
@@ -391,7 +391,7 @@ Proof.
 Qed.
 
 Corollary RedTmIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
 Proof.
   apply (LRIrrelevant _ _ _ lrA lrA').
@@ -407,7 +407,7 @@ Proof.
 Qed.
 
 Corollary TmEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t u, eqTmA t u -> eqTmA' t u.
 Proof.
   apply (LRIrrelevant _ _ _ lrA lrA').
@@ -424,7 +424,7 @@ Qed.
 
 
 Corollary TyEqSym Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A' eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' -> eqTyA' A.
 Proof.
   intros.
@@ -442,7 +442,7 @@ Proof.
 Qed.
 
 Corollary RedTmConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A' eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
   forall t, redTmA t -> redTmA' t.
 Proof.
@@ -459,7 +459,7 @@ Proof.
 Qed.
 
 Corollary TmEqRedConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A' eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
   forall t u, eqTmA t u -> eqTmA' t u.
 Proof.

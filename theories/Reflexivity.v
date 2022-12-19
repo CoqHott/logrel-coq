@@ -5,7 +5,7 @@ Section Reflexivities.
   Context `{GenericTypingProperties}.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
-    (lr : LRl l Γ A eqTy redTm eqTm) : eqTy A.
+    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
     induction lr as [ ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
     all: now econstructor.
@@ -18,7 +18,7 @@ Section Reflexivities.
     now eapply LRTyEqRefl.
   Qed.
 
-  Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LRl l Γ A eqTy redTm eqTm) :
+  Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LogRel l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
     induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod].

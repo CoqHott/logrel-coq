@@ -8,7 +8,7 @@ Section ShapeViews.
 
   Definition ShapeView Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
-    (lrA : LRl lA Γ A eqTyA redTmA redTyA) (lrB : LRl lB Γ B eqTyB redTmB redTyB) : Type :=
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) (lrB : LogRel lB Γ B eqTyB redTmB redTyB) : Type :=
     match lrA, lrB with
       | LRU _ _, LRU _ _ => True
       | LRne _ _, LRne _ _ => True
@@ -29,7 +29,7 @@ Section ShapeViews.
   !lrA !lrB.
 
   Lemma ShapeViewConv {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
-    (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrB : LRl lB Γ B eqTyB redTmB eqTmB) :
+    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel lB Γ B eqTyB redTmB eqTmB) :
     eqTyA B ->
     ShapeView Γ A B lrA lrB.
   Proof.
@@ -75,7 +75,7 @@ Section ShapeViews.
   Qed.
 
   Corollary ShapeViewRefl {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-    (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A eqTyA' redTmA' eqTmA') :
+    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
     ShapeView Γ A A lrA lrA'.
   Proof.
     now eapply ShapeViewConv, LRTyEqRefl.

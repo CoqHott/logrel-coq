@@ -7,7 +7,7 @@ Section Escapes.
   Context `{GenericTypingProperties}.
 
   Definition escape {l Γ A eqTy redTm eqTm} :
-    LRl l Γ A eqTy redTm eqTm ->
+    LogRel l Γ A eqTy redTm eqTm ->
     [Γ |- A].
   Proof.
     induction 1 as [? [] | ? ? [] | ? ? [] ].
@@ -23,7 +23,7 @@ Section Escapes.
   Qed.
 
   Definition escapeEq {l Γ A eqTy redTm eqTm}
-    (lr : LRl l Γ A eqTy redTm eqTm) {B} :
+    (lr : LogRel l Γ A eqTy redTm eqTm) {B} :
     eqTy B ->
     [Γ |- A ≅ B].
   Proof.
@@ -49,7 +49,7 @@ Section Escapes.
   Qed.
 
   Definition escapeTerm {l Γ A eqTy redTm eqTm}
-    (lr : LRl l Γ A eqTy redTm eqTm) {t} :
+    (lr : LogRel l Γ A eqTy redTm eqTm) {t} :
     redTm t ->
     [Γ |- t : A].
   Proof.
@@ -68,7 +68,7 @@ Section Escapes.
   Qed.
 
   Definition escapeEqTerm {l Γ A eqTy redTm eqTm}
-    (lr : LRl l Γ A eqTy redTm eqTm) {t u} :
+    (lr : LogRel l Γ A eqTy redTm eqTm) {t u} :
     eqTm t u ->
     [Γ |- t ≅ u : A].
   Proof.

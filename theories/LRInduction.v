@@ -8,7 +8,7 @@ Section Inductions.
     `{!OneRedType ta} `{!OneRedTerm ta}.
 
   #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')
-    {Γ A rEq rTe rTeEq} (lr : LRl l Γ A rEq rTe rTeEq) {struct lr} : (LRl l' Γ A rEq rTe rTeEq) :=
+    {Γ A rEq rTe rTeEq} (lr : LogRel l Γ A rEq rTe rTeEq) {struct lr} : (LogRel l' Γ A rEq rTe rTeEq) :=
     match lr with
     | LRU _ H =>
         match
@@ -28,7 +28,7 @@ Section Inductions.
 
   #[universes(polymorphic)]Theorem LR_rect
     (l : TypeLevel)
-    (rec : forall l', l' << l -> LogRelKit)
+    (rec : forall l', l' << l -> RedRel)
     (P : forall {c t rEq rTe rTeEq},
       LR rec c t rEq rTe rTeEq  -> Type) :
 
@@ -62,7 +62,7 @@ Section Inductions.
 
   Theorem LR_rec
     (l : TypeLevel)
-    (rec : forall l', l' << l -> LogRelKit)
+    (rec : forall l', l' << l -> RedRel)
     (P : forall {c t rEq rTe rTeEq},
       LR rec c t rEq rTe rTeEq  -> Set) :
 
@@ -90,7 +90,7 @@ Section Inductions.
 
   Theorem LR_rect_LogRelRec
     (P : forall {l Γ t rEq rTe rTeEq},
-    LRl l Γ t rEq rTe rTeEq  -> Type) :
+    LogRel l Γ t rEq rTe rTeEq  -> Type) :
 
     (forall (Γ : context) (h : [Γ ||-U one]),
       P (LRU (rec1) h)) ->
@@ -99,7 +99,7 @@ Section Inductions.
       P (LRne (LogRelRec l) neA)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ])
-      (HAad : PiRedTyAdequate (LRl l) ΠA),
+      (HAad : PiRedTyAdequate (LogRel l) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -131,7 +131,7 @@ Section Inductions.
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne_ l neA)) ->
 
-    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LRl l) ΠA),
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LogRel l) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (LRbuild (HAad.(PiRedTy.domAd) ρ h))) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
