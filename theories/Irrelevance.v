@@ -4,33 +4,20 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 Section Irrelevances.
 Context `{GenericTypingProperties}.
 
-Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
-  (domTy : [Γ |- dom])
-  (codTy : [Γ,, vass na dom |- cod])
-  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
-  (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom⟨ρ⟩)
-  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩] -> LRPack Δ (cod[a .: (ρ >> tRel)]))
-  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩]),
-            [domRed Δ ρ h | Δ ||- b : dom⟨ρ⟩] ->
-            [domRed Δ ρ h | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-            [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ cod[b .: (ρ >> tRel)]])
-  (domTy': [Γ |- dom'])
-  (codTy': [Γ,, vass na' dom' |- cod'])
-  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
-  (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'⟨ρ⟩)
-  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩] -> LRPack Δ cod'[a .: (ρ >> tRel)])
-  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-            [domRed' Δ ρ h | Δ ||- b : dom'⟨ρ⟩] ->
-            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'⟨ρ⟩] ->
-            [codRed' Δ a ρ h ha | Δ ||- cod'[a .: (ρ >> tRel)] ≅ cod'[b .: (ρ >> tRel)]])
-  (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
-  
+
+Section ΠIrrelevanceLemmas.
+Context Γ A A' (ΠA : PiRedTy Γ A) (ΠA' : PiRedTy Γ A') 
+  (dom := PiRedTy.dom ΠA)
+  (dom' := PiRedTy.dom ΠA')
+  (domRed := (@PiRedTy.domRed _ _ _ _ _ _ _ ΠA))
+  (domRed' := (@PiRedTy.domRed _ _ _ _ _ _ _ ΠA'))
+  (cod := PiRedTy.cod ΠA)
+  (cod' := PiRedTy.cod ΠA')
+  (codRed := (@PiRedTy.codRed _ _ _ _ _ _ _ ΠA))
+  (codRed' := (@PiRedTy.codRed _ _ _ _ _ _ _ ΠA'))
+  (eqPi : [Γ |- tProd (PiRedTy.na ΠA) dom cod ≅ tProd (PiRedTy.na ΠA') dom' cod']).
+
+Lemma ΠIrrelevanceTyEq  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
   [× (forall B : term,
       [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <~> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
@@ -50,31 +37,9 @@ Lemma ΠIrrelevanceTyEq Γ A A' na na' dom dom' cod cod'
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <~>
       [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
-  let ΠA : PiRedTy Γ A := {|
-      PiRedTy.na := na ; PiRedTy.dom := dom ;
-      PiRedTy.cod := cod ;
-      PiRedTy.red := red ;
-      PiRedTy.domTy := domTy ;
-      PiRedTy.codTy := codTy ;
-      PiRedTy.eq := eq ;
-      PiRedTy.domRed := domRed ;
-      PiRedTy.codRed := codRed ;
-      PiRedTy.codExt := codExt
-        |} in
-  let ΠA' : PiRedTy Γ A' := {|
-    PiRedTy.na := na' ; PiRedTy.dom := dom' ;
-    PiRedTy.cod := cod' ;
-    PiRedTy.red := red' ;
-    PiRedTy.domTy := domTy' ;
-    PiRedTy.codTy := codTy' ;
-    PiRedTy.eq := eq' ;
-    PiRedTy.domRed := domRed' ;
-    PiRedTy.codRed := codRed' ;
-    PiRedTy.codExt := codExt'
-      |} in
   forall B, [Γ ||-Π A ≅ B | ΠA] -> [Γ ||-Π A' ≅ B | ΠA'].
 Proof.
-  intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
+  intros IHdom IHcod B [] ; cbn in *.
   econstructor.
   - now gen_typing.
   - cbn in *.
@@ -89,33 +54,7 @@ Proof.
     now eapply IHdom.
 Qed.
 
-Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
-  (domTy : [Γ |- dom])
-  (codTy : [Γ,, vass na dom |- cod])
-  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
-  (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom⟨ρ⟩)
-  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩] -> LRPack Δ (cod[a .: (ρ >> tRel)]))
-  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩]),
-            [domRed Δ ρ h | Δ ||- b : dom⟨ρ⟩] ->
-            [domRed Δ ρ h | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-            [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ cod[b .: (ρ >> tRel)]])
-  (domTy': [Γ |- dom'])
-  (codTy': [Γ,, vass na' dom' |- cod'])
-  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
-  (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'⟨ρ⟩)
-  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩] -> LRPack Δ cod'[a .: (ρ >> tRel)])
-  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-            [domRed' Δ ρ h | Δ ||- b : dom'⟨ρ⟩] ->
-            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'⟨ρ⟩] ->
-            [codRed' Δ a ρ h ha | Δ ||- cod'[a .: (ρ >> tRel)] ≅ cod'[b .: (ρ >> tRel)]])
-  (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
-
+Lemma ΠIrrelevanceTm  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
   [× (forall B : term,
       [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <~> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
@@ -135,31 +74,9 @@ Lemma ΠIrrelevanceTm Γ A na dom cod A' na' dom' cod'
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <~>
       [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
-  let ΠA : PiRedTy Γ A := {|
-      PiRedTy.na := na ; PiRedTy.dom := dom ;
-      PiRedTy.cod := cod ;
-      PiRedTy.red := red ;
-      PiRedTy.domTy := domTy ;
-      PiRedTy.codTy := codTy ;
-      PiRedTy.eq := eq ;
-      PiRedTy.domRed := domRed ;
-      PiRedTy.codRed := codRed ;
-      PiRedTy.codExt := codExt
-        |} in
-  let ΠA' : PiRedTy Γ A' := {|
-    PiRedTy.na := na' ; PiRedTy.dom := dom' ;
-    PiRedTy.cod := cod' ;
-    PiRedTy.red := red' ;
-    PiRedTy.domTy := domTy' ;
-    PiRedTy.codTy := codTy' ;
-    PiRedTy.eq := eq' ;
-    PiRedTy.domRed := domRed' ;
-    PiRedTy.codRed := codRed' ;
-    PiRedTy.codExt := codExt'
-      |} in
   forall t, [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t : A' | ΠA'].
 Proof.
-  intros IHdom IHcod ΠA ΠA' B [] ; cbn in *.
+  intros IHdom IHcod B [] ; cbn in *.
   econstructor.
   - cbn.
     econstructor.
@@ -172,37 +89,11 @@ Proof.
     2: now auto.
     now apply IHdom.
   - intros.
-    unshelve eapply IHcod, eq0.
+    unshelve eapply IHcod, eq.
     all: now eapply IHdom.
 Defined.
 
-Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
-  (domTy : [Γ |- dom])
-  (codTy : [Γ,, vass na dom |- cod])
-  (eq : [Γ |- tProd na dom cod ≅ tProd na dom cod])
-  (red : [Γ |- A :⇒*: tProd na dom cod])
-  (domRed : forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom⟨ρ⟩)
-  (codRed : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩] -> LRPack Δ (cod[a .: (ρ >> tRel)]))
-  (codExt : forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩]),
-            [domRed Δ ρ h | Δ ||- b : dom⟨ρ⟩] ->
-            [domRed Δ ρ h | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-            [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ cod[b .: (ρ >> tRel)]])
-  (domTy': [Γ |- dom'])
-  (codTy': [Γ,, vass na' dom' |- cod'])
-  (eq' : [Γ |- tProd na' dom' cod' ≅ tProd na' dom' cod'])
-  (red': [Γ |- A' :⇒*: tProd na' dom' cod'])
-  (domRed': forall (Δ : context) (ρ : Δ ≤ Γ), [  |- Δ] -> LRPack Δ dom'⟨ρ⟩)
-  (codRed': forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-            [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩] -> LRPack Δ cod'[a .: (ρ >> tRel)])
-  (codExt': forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [  |- Δ])
-              (ha : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-            [domRed' Δ ρ h | Δ ||- b : dom'⟨ρ⟩] ->
-            [domRed' Δ ρ h | Δ ||- a ≅ b : dom'⟨ρ⟩] ->
-            [codRed' Δ a ρ h ha | Δ ||- cod'[a .: (ρ >> tRel)] ≅ cod'[b .: (ρ >> tRel)]])
-  (eqPi : [Γ |- tProd na dom cod ≅ tProd na' dom' cod']) :
-
+Lemma ΠIrrelevanceTmEq  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
   [× (forall B : term,
       [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <~> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
@@ -222,31 +113,9 @@ Lemma ΠIrrelevanceTmEq Γ A na dom cod A' na' dom' cod'
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <~>
       [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
-  let ΠA : PiRedTy Γ A := {|
-      PiRedTy.na := na ; PiRedTy.dom := dom ;
-      PiRedTy.cod := cod ;
-      PiRedTy.red := red ;
-      PiRedTy.domTy := domTy ;
-      PiRedTy.codTy := codTy ;
-      PiRedTy.eq := eq ;
-      PiRedTy.domRed := domRed ;
-      PiRedTy.codRed := codRed ;
-      PiRedTy.codExt := codExt
-        |} in
-  let ΠA' : PiRedTy Γ A' := {|
-    PiRedTy.na := na' ; PiRedTy.dom := dom' ;
-    PiRedTy.cod := cod' ;
-    PiRedTy.red := red' ;
-    PiRedTy.domTy := domTy' ;
-    PiRedTy.codTy := codTy' ;
-    PiRedTy.eq := eq' ;
-    PiRedTy.domRed := domRed' ;
-    PiRedTy.codRed := codRed' ;
-    PiRedTy.codExt := codExt'
-      |} in
   forall t u, [Γ ||-Π t ≅ u : A | ΠA] -> [Γ ||-Π t ≅ u : A' | ΠA'].
 Proof.
-  intros IHdom IHcod ΠA ΠA' t u [] ; cbn in *.
+  intros IHdom IHcod t u [] ; cbn in *.
   unshelve econstructor.
   - now eapply ΠIrrelevanceTm.
   - now eapply ΠIrrelevanceTm.
@@ -257,6 +126,9 @@ Proof.
     2: now auto.
     now apply IHdom.
 Qed.
+
+End ΠIrrelevanceLemmas.
+
 
 Theorem LRIrrelevant Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
     (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
@@ -347,27 +219,27 @@ Proof.
     split.
     + split ; intros.
       all: eapply ΠIrrelevanceTyEq.
-      1,4,8: eassumption.
+      4,8: eassumption. 
+      1,4: assumption + now symmetry.
       1-2: now eauto.
-      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTm.
-      1,4,8: eassumption.
+      4,8: eassumption. 
+      1,4: assumption + now symmetry.
       1-2: now eauto.
-      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTmEq.
-      1,4,8: eassumption.
+      4,8: eassumption. 
+      1,4: assumption + now symmetry.
       1-2: now eauto.
-      1: now symmetry.
       * do 2 split ; intros.
         all: now eapply IHdom_ ; eauto.
       * do 2 split ; intros.
