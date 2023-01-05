@@ -1,18 +1,18 @@
-From MetaCoq Require Import PCUICAst.
-From LogRel Require Import Notations Untyped GenericTyping LogicalRelation Properties Reduction LRInduction Reflexivity.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped GenericTyping LogicalRelation Reduction LRInduction Reflexivity.
 
 Set Universe Polymorphism.
 
 Section ShapeViews.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition ShapeView Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
-    (lrA : LRl lA Γ A eqTyA redTmA redTyA) (lrB : LRl lB Γ B eqTyB redTmB redTyB) : Type :=
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) (lrB : LogRel lB Γ B eqTyB redTmB redTyB) : Type :=
     match lrA, lrB with
       | LRU _ _, LRU _ _ => True
-      | LRne _ _ _, LRne _ _ _ => True
-      | LRPi _ _ _ _, LRPi _ _ _ _ => True
+      | LRne _ _, LRne _ _ => True
+      | LRPi _ _ _, LRPi _ _ _ => True
       | _, _ => False
     end.
     
@@ -29,7 +29,7 @@ Section ShapeViews.
   !lrA !lrB.
 
   Lemma ShapeViewConv {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
-    (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrB : LRl lB Γ B eqTyB redTmB eqTmB) :
+    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel lB Γ B eqTyB redTmB eqTmB) :
     eqTyA B ->
     ShapeView Γ A B lrA lrB.
   Proof.
@@ -44,7 +44,7 @@ Section ShapeViews.
         all: gen_typing.
       + intros [->].
         inversion ΠA.
-        enough (U = tProd na dom cod) by (unfold U in * ; congruence).
+        enough (U = tProd na dom cod) by congruence.
         eapply mredty_whnf.
         all: gen_typing.
     - destruct lrB.
@@ -63,19 +63,19 @@ Section ShapeViews.
     - destruct lrB.
       + intros [].
         inversion ΠA.
-        enough (U = tProd na dom cod) by (unfold U in * ; congruence).
+        enough (U = tProd na dom cod) by congruence.
         eapply mredty_whnf.
         all: gen_typing.
       + intros [].
         destruct neA.
-        enough (ty = tProd na dom cod) as -> by now (eapply nePi).
+        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
-      + now easy. 
+      + now econstructor.
   Qed.
 
   Corollary ShapeViewRefl {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-    (lrA : LRl lA Γ A eqTyA redTmA eqTmA) (lrA' : LRl lA' Γ A eqTyA' redTmA' eqTmA') :
+    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
     ShapeView Γ A A lrA lrA'.
   Proof.
     now eapply ShapeViewConv, LRTyEqRefl.

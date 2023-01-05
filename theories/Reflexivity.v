@@ -1,11 +1,11 @@
-From MetaCoq Require Import PCUICAst PCUICSigmaCalculus PCUICRenameConv PCUICSigmaCalculus PCUICInstConv.
-Require Import Notations Untyped Weakening GenericTyping DeclarativeTyping LogicalRelation Properties Reduction LRInduction Escape.
+From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction LRInduction Escape.
 
 Section Reflexivities.
-  Context `{GenericTypingProp}.
+  Context `{GenericTypingProperties}.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
-    (lr : LRl l Γ A eqTy redTm eqTm) : eqTy A.
+    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
     induction lr as [ ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
     all: now econstructor.
@@ -18,7 +18,7 @@ Section Reflexivities.
     now eapply LRTyEqRefl.
   Qed.
 
-  Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LRl l Γ A eqTy redTm eqTm) :
+  Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LogRel l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
     induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod].

@@ -1,4 +1,4 @@
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICSigmaCalculus.
+From LogRel Require Import Utils BasicAst Ast Context.
 
 (* We have two families of definitions: the declarative ones (tagged de), and the algorithmic ones (tagged al) *)
 (* All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input,
@@ -13,12 +13,12 @@ Delimit Scope typing_scope with ty.
 Open Scope typing_scope.
 
 (** Typing *)
-Class WfContext (ta : tag) := wf_context : context -> Type.
-Class WfType (ta : tag) := wf_type : context -> term -> Type.
-Class Typing (ta : tag) := typing : context -> term -> term -> Type.
-Class ConvType (ta : tag) := conv_type : context -> term -> term -> Type.
-Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Type.
-Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Type.
+Class WfContext (ta : tag) := wf_context : context -> Set.
+Class WfType (ta : tag) := wf_type : context -> term -> Set.
+Class Typing (ta : tag) := typing : context -> term -> term -> Set.
+Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
+Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
+Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
 
 (* The context Γ is well-formed *)
 Notation "[ |- Γ ]" := (wf_context Γ)
@@ -52,14 +52,14 @@ Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** Reductions *)
-Class OneRedType (ta : tag) := one_red_ty : context -> term -> term -> Type.
-Class OneRedTerm (ta : tag) := one_red_tm : context -> term -> term -> term -> Type.
-(* Class MultiRedType := multi_red_ty : context -> term -> term -> Type.
-Class MultiRedTerm := multi_red_tm : context -> term -> term -> term -> Type.
-Class WhNormType := wh_norm_ty : context -> term -> term -> Type.
-Class WhNormTerm := wh_norm_tm : context -> term -> term ->term -> Type. *)
+Class OneRedType (ta : tag) := one_red_ty : context -> term -> term -> Set.
+Class OneRedTerm (ta : tag) := one_red_tm : context -> term -> term -> term -> Set.
+(* Class MultiRedType := multi_red_ty : context -> term -> term -> Set.
+Class MultiRedTerm := multi_red_tm : context -> term -> term -> term -> Set.
+Class WhNormType := wh_norm_ty : context -> term -> term -> Set.
+Class WhNormTerm := wh_norm_tm : context -> term -> term ->term -> Set. *)
 
-(* Type A one-step weak-head reduces to type B in Γ *)
+(* Set A one-step weak-head reduces to type B in Γ *)
 Notation "[ Γ |- A ⇒ B ]" := (one_red_ty Γ A B)
   (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ⇒ B ]" := (one_red_ty (ta := ta) Γ A B)
@@ -69,13 +69,13 @@ Notation "[ Γ |- t ⇒ u : A ]" := (one_red_tm Γ A t u)
   (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (one_red_tm (ta := ta) Γ A t u)
   (at level 0, ta, Γ, t, u, A at level 50) : typing_scope.
-(* Type A multi-step weak-head reduces to type B in Γ *)
+(* Set A multi-step weak-head reduces to type B in Γ *)
 Reserved Notation "[ Γ |- A ⇒* B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |-[ ta  ] A ⇒* B ]" (at level 0, ta, Γ, A, B at level 50).
 (* Term t multi-step weak-head reduces to term t' at type A in Γ *)
 Reserved Notation "[ Γ |- t ⇒* t' : A ]" (at level 0, Γ, t, t', A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t ⇒* t' : A ]" (at level 0, ta, Γ, t, t', A at level 50).
-(* Type A weak-head normalizes to B in Γ, ie it multi-step reduces to the weak-head normal form B*)
+(* Set A weak-head normalizes to B in Γ, ie it multi-step reduces to the weak-head normal form B*)
 Reserved Notation "[ Γ |- A ↘ B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |-[ ta  ] A ↘ B ]" (at level 0, ta, Γ, A, B at level 50).
 (* Term t weak-head normalizes to u at type A in Γ *)
@@ -84,8 +84,8 @@ Reserved Notation "[ Γ |-[ ta  ] t ↘ u : A ]" (at level 0, ta, Γ, t, u, A at
 
 (** Substitutions *)
 
-Class WfSubst (ta : tag) := wf_subst : context -> context -> substitution -> Type.
-Class ConvSubst (ta : tag) := conv_subst : context -> context -> substitution -> substitution -> Type.
+Class WfSubst (ta : tag) := wf_subst : context -> context -> (nat -> term) -> Set.
+Class ConvSubst (ta : tag) := conv_subst : context -> context -> (nat -> term) -> (nat -> term) -> Set.
 
 (* Substitution σ is of type Δ in context Γ*)
 Notation "[ Γ '|-s' σ : Δ ]" := (wf_subst Γ σ Δ)
@@ -105,7 +105,7 @@ Reserved Notation "[ Γ |-[ ta  ] A :≅: B ]" (at level 0, ta, Γ, A, B at leve
 (* Terms t and u are well-typed and convertible at type A in Γ *)
 Reserved Notation "[ Γ |- t :≅: u : A ]" (at level 0, Γ, t, u, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t :≅: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).
-(* Type A and B are well-formed and A weak-head reduces to B in Γ *)
+(* Set A and B are well-formed and A weak-head reduces to B in Γ *)
 Reserved Notation "[ Γ |- A :⇒*: B ]" (at level 0, Γ, A, B at level 50).
 Reserved Notation "[ Γ |-[ ta  ] A :⇒*: B ]" (at level 0, ta, Γ, A, B at level 50).
 (* Terms t and u have type A in Γ and t weak-head reduces to u *)
@@ -140,12 +140,12 @@ Reserved Notation "[ P | Γ ||- t : A ]" (at level 0, P, Γ, t, A at level 50).
 (* The terms t and u are reducibly equal at type A in Γ, according to the pack P *)
 Reserved Notation "[ P | Γ ||- t ≅ u : A ]" (at level 0, P, Γ, t, u, A at level 50).
 
-(* Type level l is (strictly) smaller than type level l' *)
+(* Set level l is (strictly) smaller than type level l' *)
 Reserved Notation "l << l'" (at level 70, l' at next level).
 
 (* A is reducible as a neutral in Γ *)
 Reserved Notation "[ Γ ||-ne A ]" (at level 0, Γ, A at level 50).
-(* Type B is reducibly convertible to type A in Γ, given the proof neA that A is reducible as neutral *)
+(* Set B is reducibly convertible to type A in Γ, given the proof neA that A is reducible as neutral *)
 Reserved Notation "[ Γ ||-ne A ≅ B | neA ]" (at level 0, Γ, A, B, neA at level 50).
 (* Term t is reducible at type A in Γ, given the proof neA that A is reducible as neutral *)
 Reserved Notation "[ Γ ||-ne t : A | neA ]" (at level 0, Γ, t, A, neA at level 50).
