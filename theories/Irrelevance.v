@@ -180,16 +180,17 @@ Proof.
       all: econstructor ; cbn in *.
       all: try eauto.
       1,3: eapply wfredtm_conv ; eassumption.
-      all: eapply convneu_conv ; eassumption.
+      all: etransitivity ; eassumption.
     + intros ? ?.
       split.
       2: symmetry in convtAA.
       all: intros [].
       all: econstructor.
       all: cbn in *.
-      1-2,6-7: eapply wfredtm_conv ; eassumption.
-      1-2,4-5: eassumption.
-      all: now gen_typing.
+      1-2,7-8: eapply wfredtm_conv ; eassumption.
+      1-2,5-6: eassumption.
+      1,3: eassumption.
+      all: now etransitivity.
   - destruct lrA' as [| | ? A' [] []] ; try solve [destruct s] ; clear s.
     destruct he ; cbn -[subst1] in *.
     assert (tProd na0 dom0 cod0 = tProd na1 dom1 cod1) as ePi

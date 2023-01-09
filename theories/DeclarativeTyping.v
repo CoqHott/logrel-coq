@@ -4,7 +4,7 @@ Set Primitive Projections.
 
 Section Definitions.
 
-  (* We locally disable typing notations to be able to use the in the definition here before declaring the right
+  (* We locally disable typing notations to be able to use them in the definition here before declaring the right
   instance *)
   Close Scope typing_scope.
 
@@ -67,7 +67,7 @@ Section Definitions.
           [ Γ |- A ≅ C]
       | convUniv {Γ} {A B} :
           [ Γ |- A ≅ B : U ] -> 
-          [ Γ |- A ≅ B ]    
+          [ Γ |- A ≅ B ]
 
   with ConvTermDecl : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {na} {a t A B} :
@@ -141,7 +141,8 @@ Module DeclarativeTypingData.
 
   #[export] Instance WfContext_Decl : WfContext de := WfContextDecl.
   #[export] Instance WfType_Decl : WfType de := WfTypeDecl.
-  #[export] Instance Typing_Decl : Typing de := TypingDecl.
+  #[export] Instance Typing_Decl : Infering de := TypingDecl.
+  #[export] Instance Infering_Decl : Typing de := TypingDecl.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeu_Decl : ConvNeu de := ConvTermDecl.

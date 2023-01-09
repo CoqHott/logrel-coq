@@ -9,6 +9,13 @@ Notation "`=2`" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at le
 Infix "=2" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 70).
 Infix "<~>" := iffT (at level 90).
 
+(* Since we work a lot with type-level propositions,
+we override the notation for negation from the
+standard library *)
+Export Set Warnings "-notation-overridden".
+Notation "~ x" := (notT x) : type_scope.
+Export Set Warnings "notation-overriden".
+
 Ltac tea := try eassumption.
 Ltac easy ::= solve [intuition eauto 3 with core crelations].
 

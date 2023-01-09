@@ -5,7 +5,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening.
 Section RedDefinitions.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Infering ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!OneRedType ta} `{!OneRedTerm ta}.
 
@@ -71,21 +71,21 @@ Section RedDefinitions.
 
 End RedDefinitions.
 
-Notation "[ Γ |- t ⇒* t' : A ]" := (TermRedClosure Γ A t t') : typing_scope.
+Notation "[ Γ |- t ⇒* t' : A ]" := (TermRedClosure Γ A t t') (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⇒* t' : A ]" := (TermRedClosure (ta := ta) Γ A t t') : typing_scope.
-Notation "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B) : typing_scope.
+Notation "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ⇒* B ]" := (TypeRedClosure (ta := ta) Γ A B) : typing_scope.
-Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) : typing_scope.
+Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ↘ B ]" := (TypeRedWhnf (ta := ta) Γ A B) : typing_scope.
-Notation "[ Γ |- t ↘ u : A ]" := (TermRedWhnf Γ A t u) : typing_scope.
+Notation "[ Γ |- t ↘ u : A ]" := (TermRedWhnf Γ A t u) (only parsing ): typing_scope.
 Notation "[ Γ |-[ ta  ] t ↘ u : A ]" := (TermRedWhnf (ta := ta) Γ A t u) : typing_scope.
-Notation "[ Γ |- A :≅: B ]" := (TypeConvWf Γ A B) : typing_scope.  
+Notation "[ Γ |- A :≅: B ]" := (TypeConvWf Γ A B) (only parsing) : typing_scope.  
 Notation "[ Γ |-[ ta  ] A :≅: B ]" := (TypeConvWf (ta := ta) Γ A B) : typing_scope.
-Notation "[ Γ |- t :≅: u : A ]" := (TermConvWf Γ A t u) : typing_scope.
+Notation "[ Γ |- t :≅: u : A ]" := (TermConvWf Γ A t u) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t :≅: u : A ]" := (TermConvWf (ta := ta) Γ A t u) : typing_scope.
-Notation "[ Γ |- A :⇒*: B ]" := (TypeRedWf Γ A B) : typing_scope.
+Notation "[ Γ |- A :⇒*: B ]" := (TypeRedWf Γ A B) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A :⇒*: B ]" := (TypeRedWf (ta := ta) Γ A B) : typing_scope.
-Notation "[ Γ |- t :⇒*: u : A ]" := (TermRedWf Γ A t u) : typing_scope.
+Notation "[ Γ |- t :⇒*: u : A ]" := (TermRedWf Γ A t u) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : typing_scope.
 
 
@@ -109,7 +109,7 @@ Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : 
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Infering ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!OneRedType ta} `{!OneRedTerm ta}.
 
@@ -128,11 +128,12 @@ Section GenericTyping.
     now econstructor.
   Qed.
 
-  Class WfContextProp :=
+  Class WfContextProperties :=
   {
     wfc_nil : [|- ε ] ;
     wfc_cons {Γ} na {A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,vass na A];
     wfc_wft {Γ A} : [Γ |- A] -> [|- Γ];
+    wfc_inf {Γ A t} : [Γ |- t ▹ A] -> [|- Γ] ;
     wfc_ty {Γ A t} : [Γ |- t : A] -> [|- Γ];
     wfc_convty {Γ A B} : [Γ |- A ≅ B] -> [|- Γ];
     wfc_convtm {Γ A t u} : [Γ |- t ≅ u : A] -> [|- Γ];
@@ -140,7 +141,7 @@ Section GenericTyping.
     wfc_redtm {Γ A t u} : [Γ |- t ⇒ u : A] -> [|- Γ];
   }.
 
-  Class WfTypeProp :=
+  Class WfTypeProperties :=
   {
     wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A] -> [Δ |- A⟨ρ⟩] ;
@@ -156,31 +157,39 @@ Section GenericTyping.
       [ Γ |- A ] ;
   }.
 
+  Class InferingProperties :=
+  {
+    inf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ▹ A] -> [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩] ;
+    inf_var {Γ} {n decl} :
+      [   |- Γ ] ->
+      in_ctx Γ n decl ->
+      [ Γ |- tRel n ▹ decl.(decl_type) ] ;
+    inf_prod {Γ} {na} {A B} :
+        [ Γ |- A ▹ U] -> 
+        [Γ ,, (vass na A) |- B ▹ U ] ->
+        [ Γ |- tProd na A B ▹ U ] ;
+    inf_lam {Γ} {na} {A B t} :
+        [ Γ |- A ] ->
+        [ Γ ,, vass na A |- t ▹ B ] -> 
+        [ Γ |- tLambda na A t ▹ tProd na A B] ;
+    inf_app {Γ} {na} {f a A B} :
+        [ Γ |- f ▹ tProd na A B ] -> 
+        [ Γ |- a : A ] -> 
+        [ Γ |- tApp f a ▹ B[a ..] ] ;
+    inf_exp {Γ t A A'} : [Γ |- t ▹ A] -> [Γ |- A ⇒* A'] -> [Γ |- t ▹ A'];
+  }.
+
   Class TypingProperties :=
   {
     ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t : A] -> [Δ |- t⟨ρ⟩ : A⟨ρ⟩] ;
-    ty_var {Γ} {n decl} :
-      [   |- Γ ] ->
-      in_ctx Γ n decl ->
-      [ Γ |- tRel n : decl.(decl_type) ] ;
-    ty_prod {Γ} {na} {A B} :
-        [ Γ |- A : U] -> 
-        [Γ ,, (vass na A) |- B : U ] ->
-        [ Γ |- tProd na A B : U ] ;
-    ty_lam {Γ} {na} {A B t} :
-        [ Γ |- A ] ->        
-        [ Γ ,, vass na A |- t : B ] -> 
-        [ Γ |- tLambda na A t : tProd na A B] ;
-    ty_app {Γ} {na} {f a A B} :
-        [ Γ |- f : tProd na A B ] -> 
-        [ Γ |- a : A ] -> 
-        [ Γ |- tApp f a : B[a ..] ] ;
-    ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A];
+    ty_inf {Γ t A A'} : [Γ |- t ▹ A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
+    ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ; 
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
 
-  Class ConvTypeProp :=
+  Class ConvTypeProperties :=
   {
     convty_term {Γ A B} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B] ;
     convty_equiv {Γ} :> PER (conv_type Γ) ;
@@ -197,7 +206,7 @@ Section GenericTyping.
       [Γ |- tProd na A B ≅ tProd na' A' B'] ;
   }.
 
-  Class ConvTermProp :=
+  Class ConvTermProperties :=
   {
     convtm_equiv {Γ A} :> PER (conv_term Γ A) ;
     convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
@@ -207,7 +216,7 @@ Section GenericTyping.
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
-      [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
+      [Γ |- n ~ n' ▹ A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ na na' A A' B B'} :
       eq_binder_annot na na' -> [Γ |- A] ->
       [Γ |- A ≅ A' : U] -> [Γ,, vass na A |- B ≅ B' : U] ->
@@ -220,21 +229,21 @@ Section GenericTyping.
       [ Γ |- f ≅ g : tProd na A B ] ;
   }.
 
-  Class ConvNeuProp :=
+  Class ConvNeuProperties :=
   {
     convneu_equiv {Γ A} :> PER (conv_neu Γ A) ;
-    convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
+    (* convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ; *)
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
+      [|- Δ ] -> [Γ |- t ~ u ▹ A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ ▹ A⟨ρ⟩] ;
     convneu_var {Γ n A} :
-      [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
+      [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n ▹ A] ;
     convneu_app {Γ f g t u na A B} :
-        [ Γ |- f ~ g : tProd na A B ] ->
+        [ Γ |- f ~ g ▹ tProd na A B ] ->
         [ Γ |- t ≅ u : A ] ->
         [ Γ |- tApp f t ≅ tApp g u : B[t..] ]
   }.
 
-  Class OneRedTypeProp :=
+  Class OneRedTypeProperties :=
   {
     oredty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
     [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A⟨ρ⟩ ⇒ B⟨ρ⟩] ;
@@ -247,7 +256,7 @@ Section GenericTyping.
     [Γ |- A ⇒ B : U] -> [Γ |- A ⇒ B]
   }.
 
-  Class OneRedTermProp :=
+  Class OneRedTermProperties :=
   {
     oredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] ;
@@ -274,24 +283,24 @@ Section GenericTyping.
 End GenericTyping.
 
 Class GenericTypingProperties `(ta : tag)
-  `(WfContext ta) `(WfType ta) `(Typing ta)
+  `(WfContext ta) `(WfType ta) `(Typing ta) `(Infering ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeu ta)
   `(OneRedType ta) `(OneRedTerm ta) :=
 {
-  wfc_prop :> WfContextProp ;
-  wfty_prop :> WfTypeProp ;
+  wfc_prop :> WfContextProperties ;
+  wfty_prop :> WfTypeProperties ;
   typ_prop :> TypingProperties ;
-  convty_prop :> ConvTypeProp ;
-  convtm_prop :> ConvTermProp ;
-  convne_prop :> ConvNeuProp ;
-  redty_prop :> OneRedTypeProp ;
-  redtm_prop :> OneRedTermProp ;
+  convty_prop :> ConvTypeProperties ;
+  convtm_prop :> ConvTermProperties ;
+  convne_prop :> ConvNeuProperties ;
+  redty_prop :> OneRedTypeProperties ;
+  redtm_prop :> OneRedTermProperties ;
 }.
 
 #[export] Hint Immediate wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_wk oredtm_beta oredtm_app | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_wk oredtm_beta oredtm_app | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
-#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv oredtm_conv | 6 : gen_typing.
+#[export] Hint Resolve inf_exp ty_conv ty_exp convty_exp convtm_exp convtm_conv oredtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
   Context `{GenericTypingProperties}.
@@ -396,6 +405,14 @@ Section GenericConsequences.
     induction red ; gen_typing.
   Qed.
 
+  Lemma inf_meta_conv (Γ : context) (t A A' : term) :
+    [Γ |- t ▹ A] ->
+    A' = A ->
+    [Γ |- t ▹ A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
   Lemma typing_meta_conv (Γ : context) (t A A' : term) :
     [Γ |- t : A] ->
     A' = A ->
@@ -440,20 +457,21 @@ End GenericConsequences.
 Ltac meta_constructor :=
   intros ;
   match goal with
-    | |- [_ |- _ : _] => eapply typing_meta_conv
+    | |- [_ |- _ ▹ _] => eapply inf_meta_conv
     | |- [_ |- _ ≅ _ : _ ] => eapply convtm_meta_conv
-    | |- [_ |- _ ~ _ : _] => eapply convne_meta_conv
+    | |- [_ |- _ ~ _ ▹ _] => eapply convne_meta_conv
     | |- [_ |- _ ⇒ _ : _] => eapply redtm_meta_conv
   end ;
   [ match goal with
-    | |- [_ |- tRel _ : _ ] => eapply ty_var 
-    | |- [_ |- tLambda _ _ _ : _] => eapply ty_lam
-    | |- [_ |- tApp _ _ : _] => eapply ty_app
+    | |- [_ |- tRel _ ▹ _ ] => eapply inf_var 
+    | |- [_ |- tProd _ _ _ ▹ _ ] => eapply inf_prod
+    | |- [_ |- tLambda _ _ _ ▹ _] => eapply inf_lam
+    | |- [_ |- tApp _ _ ▹ _] => eapply inf_app
     | |- [_ |- tProd _ _ _ ≅ _ : _] => eapply convtm_prod
     | |- [_ |- tRel _ ≅ _ : _] => eapply convtm_convneu ; eapply convneu_var
-    | |- [_ |- tRel _ ~ _ : _ ] => eapply convneu_var
+    | |- [_ |- tRel _ ~ _ ▹ _ ] => eapply convneu_var
     | |- [_ |- tApp _ _ ≅ _ : _ ] => eapply convtm_convneu ; eapply convneu_app
-    | |- [_ |- tApp _ _ ~ _ : _ ] => eapply convneu_app
+    | |- [_ |- tApp _ _ ~ _ ▹ _ ] => eapply convneu_app
     | |- [_ |- tApp (tLambda _ _ _) ⇒ _ : _] => eapply oredtm_beta
     | |- [_ |- tApp _ ⇒ _ : _ ] => eapply oredtm_app
   end |..].

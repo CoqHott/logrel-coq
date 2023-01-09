@@ -16,6 +16,7 @@ Open Scope typing_scope.
 Class WfContext (ta : tag) := wf_context : context -> Set.
 Class WfType (ta : tag) := wf_type : context -> term -> Set.
 Class Typing (ta : tag) := typing : context -> term -> term -> Set.
+Class Infering (ta : tag) := infering : context -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
 Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
@@ -35,6 +36,11 @@ Notation "[ Γ |- t : A ]" := (typing Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t : A ]" :=
   (typing (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
+(* The term t infers A in Γ *)
+Notation "[ Γ |- t ▹ A ]" := (infering Γ A t)
+  (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
+  (infering (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (* Types A and B are convertible in Γ *)
 Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
   (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
@@ -46,9 +52,9 @@ Notation "[ Γ |- t ≅ t' : A ]" := (conv_term Γ A t t')
 Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ A t t')
   (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
 (* Neutral n and n' are convertible in Γ *)
-Notation "[ Γ |- n ~ n' : A ]" := (conv_neu Γ A n n')
+Notation "[ Γ |- n ~ n' ▹ A ]" := (conv_neu Γ A n n')
   (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
-Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu (ta := ta) Γ A n n')
+Notation "[ Γ |-[ ta  ] n ~ n' ▹ A ]" := (conv_neu (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** Reductions *)

@@ -14,6 +14,9 @@ theories/DeclarativeTyping.v
 theories/Weakening.v
 theories/Generation.v
 theories/Reduction.v
+
+theories/AlgorithmicTyping.v
+
 theories/Escape.v
 theories/LogicalRelation.v
 theories/LRInduction.v

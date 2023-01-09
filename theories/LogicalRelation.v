@@ -113,7 +113,7 @@ Module neRedTy.
     ty : term;
     red : [ Γ |- A :⇒*: ty];
     ne : whne Γ ty;
-    eq : [ Γ |- ty ~ ty : U] ;
+    eq : [ Γ |- ty ~ ty ▹ U] ;
   }.
 
   Arguments neRedTy {_ _ _ _}.
@@ -132,7 +132,7 @@ Module neRedTyEq.
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
     ne : whne Γ ty;
-    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
+    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty ▹ U];
   }.
 
   Arguments neRedTyEq {_ _ _ _}.
@@ -146,16 +146,18 @@ Module neRedTm.
 
   Record neRedTm `{ta : tag}
     `{WfType ta} `{OneRedType ta}
-    `{Typing ta} `{ConvNeu ta} `{OneRedTerm ta}
+    `{Typing ta} `{ConvNeu ta} `{ConvType ta} `{OneRedTerm ta}
     {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
   : Type := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
     ne : whne Γ te ;
-    eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
+    infty : term ;
+    eq : [Γ |- te ~ te ▹ infty] ;
+    eqty : [Γ |- infty ≅ R.(neRedTy.ty)] ;
   }.
 
-  Arguments neRedTm {_ _ _ _ _ _}.
+  Arguments neRedTm {_ _ _ _ _ _ _}.
 
 End neRedTm.
 
@@ -167,7 +169,7 @@ Module neRedTmEq.
 
   Record neRedTmEq `{ta : tag}
     `{WfType ta} `{OneRedType ta}
-    `{Typing ta} `{ConvTerm ta} `{ConvNeu ta} `{OneRedTerm ta}
+    `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeu ta} `{OneRedTerm ta}
     {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]}
   : Type := {
     termL     : term;
@@ -176,10 +178,12 @@ Module neRedTmEq.
     redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
     whneL : whne Γ termL;
     whneR : whne Γ termR;
-    eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)];
+    infty : term ;
+    eq : [ Γ |- termL ~ termR ▹ infty];
+    eqty : [ Γ |- infty ≅ R.(neRedTy.ty)] ;
   }.
 
-  Arguments neRedTmEq {_ _ _ _ _ _ _}.
+  Arguments neRedTmEq {_ _ _ _ _ _ _ _}.
 
 End neRedTmEq.
 

@@ -163,38 +163,50 @@ Qed.
 Module DeclarativeTypingProperties.
   Import DeclarativeTypingData.
 
-  #[export, refine] Instance WfTypeDeclProp : WfContextProp (ta := de) := {}.
+  #[export, refine] Instance WfTypeDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
     1-2: now constructor.
     all: intros.
     - now eapply WFtype.
     - now eapply WFterm.
+    - now eapply WFterm. 
     - now eapply WFEqType.
     - now eapply WFEqTerm.
     - now eapply WFEqType, RedConvTy.
     - now eapply WFEqTerm, RedConvTe. 
   Qed.
 
-  #[export, refine] Instance WfTypeProp : WfTypeProp (ta := de) := {}.
+  #[export, refine] Instance WfTypeProperties : WfTypeProperties (ta := de) := {}.
   Proof.
     2-4: now econstructor.
     intros.
     now eapply typing_wk.
   Qed.
 
-  #[export, refine] Instance TypingDeclProp : TypingProperties (ta := de) := {}.
+  #[export, refine] Instance InferingDeclProperties : InferingProperties (ta := de) := {}.
   Proof.
     2-5: now econstructor.
     - intros.
       now eapply typing_wk.
     - intros.
       econstructor ; tea.
-      now eapply TypeSym, RedConvTyC.
+      now eapply RedConvTyC.
+  Qed.  
+
+  #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.
+  Proof.
+    - intros.
+      now eapply typing_wk.
+    - intros.
+      now econstructor.
     - intros.
       econstructor ; tea.
+      now apply TypeSym, RedConvTyC.
+    - intros.
+      now econstructor.
   Qed.
 
-  #[export, refine] Instance ConvTypeDeclProp : ConvTypeProp (ta := de) := {}.
+  #[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := de) := {}.
   Proof.
   - now econstructor.
   - intros.
@@ -212,7 +224,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   Qed.
 
-  #[export, refine] Instance ConvTermDeclProp : ConvTermProp (ta := de) := {}.
+  #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
   Proof.
   - intros.
     constructor ; red ; intros.
@@ -235,12 +247,12 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export, refine] Instance ConvNeuDeclProp : ConvNeuProp (ta := de) := {}.
+  #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
   Proof.
   - split ; red ; intros.
     all: now econstructor.
-  - intros.
-    now eapply TermConv.
+  (* - intros.
+    now eapply TermConv. *)
   - intros.
     now eapply typing_wk.
   - intros.
@@ -249,7 +261,7 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
   
-  #[export, refine] Instance OneRedTermDeclProp : OneRedTermProp (ta := de) := {}.
+  #[export, refine] Instance OneRedTermDeclProperties : OneRedTermProperties (ta := de) := {}.
   Proof.
   - intros.
     now eapply redtm_wk.
@@ -265,7 +277,7 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed. 
 
-  #[export, refine] Instance OneRedTypeDeclProp : OneRedTypeProp (ta := de) := {}.
+  #[export, refine] Instance OneRedTypeDeclProperties : OneRedTypeProperties (ta := de) := {}.
   Proof.
   - intros.
     now eapply redty_wk.
@@ -277,6 +289,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.
