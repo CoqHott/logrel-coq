@@ -41,21 +41,33 @@ Notation "[ Γ |- t ▹ A ]" := (infering Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
   (infering (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
+(* The term t infers the reduced A in Γ *)
+Reserved Notation "[ Γ |- t ▹h A ]" (at level 0, Γ, t, A at level 50).
+Reserved Notation "[ Γ |-[ ta  ] t ▹h A ]" (at level 0, ta, Γ, t, A at level 50).
 (* Types A and B are convertible in Γ *)
 Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
   (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ≅ B ]" := (conv_type (ta := ta) Γ A B)
   (at level 0, ta, Γ, A, B at level 50) : typing_scope.
+(* Types in whnf A and B are convertible in Γ *)
+Reserved Notation "[ Γ |- A '≅h' B ]" (at level 0, Γ, A, B at level 50).
+Reserved Notation "[ Γ |-[ ta  ] A '≅h' B ]" (at level 0, ta, Γ, A, B at level 50).
 (* Terms t and t' are convertible in Γ *)
 Notation "[ Γ |- t ≅ t' : A ]" := (conv_term Γ A t t')
   (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ A t t')
   (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
+(* Whnfs t and t' are convertible in Γ *)
+Reserved Notation "[ Γ |- t '≅h' t' : A ]" (at level 0, Γ, t, t', A at level 50).
+Reserved Notation "[ Γ |-[ ta  ] t '≅h' t' : A ]" (at level 0, ta, Γ, t, t', A at level 50).
 (* Neutral n and n' are convertible in Γ *)
 Notation "[ Γ |- n ~ n' ▹ A ]" := (conv_neu Γ A n n')
   (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
 Notation "[ Γ |-[ ta  ] n ~ n' ▹ A ]" := (conv_neu (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
+(* Neutral n and n' are convertible at the reduced type A in Γ *)
+Reserved Notation "[ Γ |- n '~h' n' ▹ A ]" (at level 0, Γ, n, n', A at level 50).
+Reserved Notation "[ Γ |-[ ta  ] n '~h' n' ▹ A ]" (at level 0, ta, Γ, n, n', A at level 50).
 
 (** Reductions *)
 Class OneRedType (ta : tag) := one_red_ty : context -> term -> term -> Set.
