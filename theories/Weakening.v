@@ -110,3 +110,42 @@ Proof.
     2: now cbn in * ; lia.
     now intros [] ; reflexivity.
 Qed.
+
+
+Lemma map_decl_lift (ρ : weakening) d :
+  map_decl (ren_term (up_ren ρ)) (map_decl (ren_term shift) d) =
+  map_decl (ren_term shift) (map_decl (ren_term ρ) d).
+Proof.
+  rewrite ! compose_map_decl.
+  eapply map_decl_ext.
+  intros t.
+  asimpl.
+  reflexivity.
+Qed.
+
+Lemma in_ctx_wk (Γ Δ : context) n decl (ρ : Δ ≤ Γ) :
+  in_ctx Γ n decl ->
+  in_ctx Δ (ρ n) (map_decl (ren_term ρ) decl).
+Proof.
+  intros Hdecl.
+  destruct ρ as [ρ wfρ] ; cbn.
+  induction wfρ in n, decl, Hdecl |- *.
+  - cbn.
+    rewrite map_decl_id.
+    1: eassumption.
+    now asimpl.
+  - cbn.
+    change ((ρ >> S) n) with (S (ρ n)).
+    replace (map_decl _ _) with (map_decl (ren_term shift) (map_decl (ren_term ρ) decl))
+      by (now rewrite compose_map_decl ; asimpl).
+    now econstructor.
+  - destruct n ; cbn.
+    + cbn.
+      inversion Hdecl ; subst ; clear Hdecl.
+      unfold ren1, Ren_decl.
+      rewrite map_decl_lift.
+      now constructor.
+    + inversion Hdecl ; subst ; cbn in *.
+      rewrite map_decl_lift.
+      now econstructor.
+  Qed.

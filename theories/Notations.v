@@ -44,8 +44,6 @@ Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
 (* The term t infers the reduced A in Γ *)
 Reserved Notation "[ Γ |- t ▹h A ]" (at level 0, Γ, t, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t ▹h A ]" (at level 0, ta, Γ, t, A at level 50).
-(* The term t checks against A in Γ *)
-Reserved Notation "[ Γ |- t ◃ A ]" (at level 0, Γ, t, A at level 50).
 (* Types A and B are convertible in Γ *)
 Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
   (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.

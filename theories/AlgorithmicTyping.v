@@ -8,6 +8,23 @@ Section Definitions.
   instance *)
   Close Scope typing_scope.
 
+  Inductive OneRedAlg : context -> term -> term -> Type :=
+    | termBetaAlg {Γ na A t u} :
+      [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] ]
+    | termRedAppAlg {Γ t t' u} :
+      [ Γ |- t ⇒ t' ] ->
+      [ Γ |- tApp t u ⇒ tApp t' u ]
+  where "[ Γ |- t ⇒ t' ]" := (OneRedAlg Γ t t').
+
+  Inductive RedClosureAlg : context -> term -> term -> Type :=
+  | redIdAlg {Γ t} :
+    [ Γ |- t ⇒* t ]
+  | redSuccAlg {Γ t t' u} :
+    [ Γ |- t ⇒ t'] ->
+    [ Γ |- t' ⇒* u ] ->
+    [ Γ |- t ⇒* u ]
+  where "[ Γ |- t ⇒* t' ]" := (RedClosureAlg Γ t t').
+
   Inductive WfTypeAlg : context -> term -> Type :=
     | wfTypeU Γ : [ Γ |- U ]
     | wfTypeProd {Γ na A B} :
@@ -84,39 +101,23 @@ Section Definitions.
       [ Γ |- A ≅ A' : U] ->
       [ Γ ,, vass na A |- B ≅ B' : U] ->
       [ Γ |- tProd na A B ≅h tProd na' A' B' : U]
-    | termFunConvAlg {Γ f g na A B} :
+    | termFunConvAlg {Γ : context} {f g na A B} :
       [ Γ,, vass na A |- eta_expand f ≅ eta_expand g : B] -> 
       [ Γ |- f ≅h g : tProd na A B]
     | termNeuConvAlg {Γ m n T N} :
       [Γ |- m ~ n ▹ T] ->
       [Γ |- m ≅h n : N]
-  with OneRedAlg : context -> term -> term -> Type :=
-    | termBetaAlg {Γ na A t u} :
-      [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] ]
-    | termRedAppAlg {Γ t t' u} :
-      [ Γ |- t ⇒ t' ] ->
-      [ Γ |- tApp t u ⇒ tApp t' u ]
-
-  with RedClosureAlg : context -> term -> term -> Type :=
-  | redIdAlg {Γ t} :
-    [ Γ |- t ⇒* t ]
-  | redSuccAlg {Γ t t' u} :
-    [ Γ |- t ⇒ t'] ->
-    [ Γ |- t' ⇒* u ] ->
-    [ Γ |- t ⇒* u ]
 
   where "[ Γ |- A ]" := (WfTypeAlg Γ A)
-  and   "[ Γ |- t ▹ T ]" := (InferAlg Γ T t)
-  and   "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t)
-  and   "[ Γ |- t : T ]" := (CheckAlg Γ T t)
-  and   "[ Γ |- A ≅ B ]" := (ConvTypeAlg Γ A B)
-  and   "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B)
-  and   "[ Γ |- m ~ n ▹ T ]" := (ConvNeuAlg Γ T m n)
-  and   "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n)
-  and   "[ Γ |- t ≅ u : T ]" := (ConvTermAlg Γ T t u)
-  and   "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u)
-  and   "[ Γ |- t ⇒ t' ]" := (OneRedAlg Γ t t')
-  and   "[ Γ |- t ⇒* t' ]" := (RedClosureAlg Γ t t').
+  and "[ Γ |- t ▹ T ]" := (InferAlg Γ T t)
+  and "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t)
+  and "[ Γ |- t : T ]" := (CheckAlg Γ T t)
+  and "[ Γ |- A ≅ B ]" := (ConvTypeAlg Γ A B)
+  and "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B)
+  and "[ Γ |- m ~ n ▹ T ]" := (ConvNeuAlg Γ T m n)
+  and "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n)
+  and "[ Γ |- t ≅ u : T ]" := (ConvTermAlg Γ T t u)
+  and "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u).
 
   (* Inductive WfContextAlgo : context -> Type :=
   | conNilAlg : [|- ε]
@@ -153,12 +154,12 @@ Module AlgorithmicTypingData.
 
 End AlgorithmicTypingData.
 
-Notation "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t) : typing_scope.
-Notation "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B) : typing_scope.
-Notation "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ m n T) : typing_scope.
-Notation "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ t u T) : typing_scope.
 Notation "[ Γ |- t ⇒ t' ]" := (OneRedAlg Γ t t') : typing_scope.
 Notation "[ Γ |- t ⇒* t' ]" := (RedClosureAlg Γ t t') : typing_scope.
+Notation "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t) : typing_scope.
+Notation "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B) : typing_scope.
+Notation "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n) : typing_scope.
+Notation "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u) : typing_scope.
 
 Section InductionPrinciples.
   Import AlgorithmicTypingData.
@@ -173,9 +174,7 @@ Scheme
     Minimality for ConvNeuAlg Sort Type with
     Minimality for ConvNeuRedAlg Sort Type with
     Minimality for ConvTermAlg Sort Type with
-    Minimality for ConvTermRedAlg Sort Type with
-    Minimality for OneRedAlg Sort Type with
-    Minimality for RedClosureAlg Sort Type.
+    Minimality for ConvTermRedAlg Sort Type.
 
 Combined Scheme _WfAlgoInduction from
     WfTypeAlg_rect_nodep,
@@ -187,15 +186,12 @@ Combined Scheme _WfAlgoInduction from
     ConvNeuAlg_rect_nodep,
     ConvNeuRedAlg_rect_nodep,
     ConvTermAlg_rect_nodep,
-    ConvTermRedAlg_rect_nodep,
-    OneRedAlg_rect_nodep,
-    RedClosureAlg_rect_nodep.
+    ConvTermRedAlg_rect_nodep.
     
 Definition WfAlgoInductionConcl
   (PTy : context -> term -> Type)
   (PInf PInfRed PCheck PTyEq PTyRedEq : context -> term -> term -> Type)
-  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type)
-  (PORed PCRed : context -> term -> term -> Type) :=
+  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type) :=
   (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
   × (forall (Γ : context) (A t : term), [Γ |- t ▹ A] -> PInf Γ A t)
   × (forall (Γ : context) (A t : term), [Γ |- t ▹h  A] -> PInfRed Γ A t)
@@ -205,9 +201,7 @@ Definition WfAlgoInductionConcl
   × (forall (Γ : context) (A m n : term), [Γ |- m ~ n ▹ A] -> PNeEq Γ A m n)
   × (forall (Γ : context) (A m n : term), [Γ |- m ~h n ▹ A] -> PNeRedEq Γ A m n)
   × (forall (Γ : context) (A t u : term), [Γ |- t ≅ u : A] -> PTmEq Γ A t u)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅h u : A] -> PTmRedEq Γ A t u)
-  × (forall (Γ : context) (t u : term), [Γ |- t ⇒ u] -> PORed Γ t u)
-  × (forall (Γ : context) (t u : term), [Γ |- t ⇒* u] -> PCRed Γ t u).
+  × (forall (Γ : context) (A t u : term), [Γ |- t ≅h u : A] -> PTmRedEq Γ A t u).
 
 Definition WfAlgoInduction :=
   ltac:(let ind := fresh "ind" in
@@ -217,3 +211,155 @@ Definition WfAlgoInduction :=
       exact (ind : ind_ty)).
 
 End InductionPrinciples.
+
+Section TypingWk.
+  Import AlgorithmicTypingData.
+
+  Lemma ored_alg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
+    [Γ |- t ⇒ u] ->
+    [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩].
+  Proof.
+    intros Hred.
+    induction Hred in Δ, ρ |- *.
+    - cbn ; asimpl.
+      evar (t' : term).
+      replace (subst_term _ t) with t'.
+      all: subst t'.
+      1: econstructor.
+      now asimpl.
+    - cbn ; asimpl.
+      now econstructor.
+  Qed.
+
+  Lemma cred_alg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
+    [Γ |- t ⇒* u] ->
+    [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩].
+  Proof.
+    induction 1 ; econstructor ; eauto using ored_alg_wk.
+  Qed.
+  
+  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
+  Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩].
+  Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩].
+  Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
+  Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
+  Let PTyRedEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+      [Δ |- A⟨ρ⟩ ≅h B⟨ρ⟩].
+  Let PNeEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ ▹ A⟨ρ⟩].
+  Let PNeRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- t⟨ρ⟩ ~h u⟨ρ⟩ ▹ A⟨ρ⟩].
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
+  Let PTmRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+      [Δ |- t⟨ρ⟩ ≅h u⟨ρ⟩ : A⟨ρ⟩].
+
+  Theorem typing_alg_wk :
+    WfAlgoInductionConcl PTy PInf PInfRed PCheck PTyEq PTyRedEq
+      PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    apply WfAlgoInduction.
+    - constructor.
+    - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
+      econstructor ; fold ren_term.
+      1: now eapply IHA.
+      change (ren_term _ B) with (B⟨wk_up ρ⟩).
+      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      all: now constructor.
+    - intros * _ IHA.
+      econstructor.
+      now apply IHA.
+    - intros * ? Δ ? * ?.
+      eapply typing_meta_conv.
+      1: now econstructor ; eapply in_ctx_wk.
+      reflexivity.
+    - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
+      econstructor ; fold ren_term.
+      1: now eapply IHA.
+      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      all: now constructor.
+    - intros * HA IHA Ht IHt Δ ρ HΔ.
+      econstructor ; fold ren_term.
+      1: now eapply IHA.
+      unshelve eapply (IHt _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      all: now constructor.
+    - intros * Hf IHf Ha IHa Δ ρ HΔ.
+      cbn.
+      eapply typing_meta_conv.
+      red in IHf. cbn in IHf.
+      1: cbn ; econstructor.
+      1: now eapply IHf.
+      1: now eapply IHa.
+      now asimpl.
+    - intros * ? IHt ?.
+      econstructor.
+      + now eapply IHt.
+      + eauto using cred_alg_wk.
+    - intros * ? IHt ? IHAA'.
+      econstructor.
+      + now eapply IHt.
+      + now eapply IHAA'.
+    - intros * ? ? ? IH.
+      econstructor.
+      1-2: eauto using cred_alg_wk.
+      now eapply IH.
+    - intros * ? IHA ? IHB ? *.
+      cbn.
+      econstructor.
+      1: now eapply IHA.
+      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      all: now econstructor.
+    - econstructor.
+    - intros * ? IHM.
+      econstructor.
+      now apply IHM.
+    - intros * ? ? ? ?.
+      eapply convne_meta_conv.
+      1: econstructor ; eauto using in_ctx_wk.
+      all: reflexivity.
+    - intros * ? IHm ? IHt ? ? ?.
+      cbn.
+      eapply convne_meta_conv.
+      1:{
+        econstructor.
+        2: now eapply IHt.
+        red in IHm ; cbn in IHm.
+        now eapply IHm.
+      }
+      1: asimpl.
+      all: reflexivity.
+    - intros * ? IHm ?.
+      econstructor.
+      + now apply IHm.
+      + eauto using cred_alg_wk.
+    - intros * ? ? ? ? IHt.
+      econstructor.
+      1-3: eauto using cred_alg_wk.
+      now eapply IHt.
+    - intros * ? IHA ? IHB ? ? ?.
+      cbn.
+      econstructor.
+      1: now eapply IHA.
+      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      all: now econstructor.
+    - intros ? f f' * ? IH ? ? ?.
+      cbn.
+      econstructor.
+      unshelve epose proof (IH _ {| wk := wk_up ρ ; well_wk := _ |} _) as IH'.
+      2,3: now econstructor.
+      red in IH'.
+      unfold ren1, RenWlWk_term in IH'.
+      cbn in *.
+      asimpl.
+      repeat (erewrite compRenRen_term in IH' ; [..|reflexivity]).
+      now apply IH'.
+    - intros * ? IH.
+      econstructor.
+      now eapply IH.
+  Qed.
+
+End TypingWk.

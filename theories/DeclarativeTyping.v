@@ -198,44 +198,6 @@ End InductionPrinciples.
 
 Section TypingWk.
   Import DeclarativeTypingData.
-
-  Lemma map_decl_lift (ρ : weakening) d :
-    map_decl (ren_term (up_ren ρ)) (map_decl (ren_term shift) d) =
-    map_decl (ren_term shift) (map_decl (ren_term ρ) d).
-  Proof.
-    rewrite ! compose_map_decl.
-    eapply map_decl_ext.
-    intros t.
-    asimpl.
-    reflexivity.
-  Qed.
-
-  Lemma nth_error_wk (Γ Δ : context) n decl (ρ : Δ ≤ Γ) :
-    in_ctx Γ n decl ->
-    in_ctx Δ (ρ n) (map_decl (ren_term ρ) decl).
-  Proof.
-    intros Hdecl.
-    destruct ρ as [ρ wfρ] ; cbn.
-    induction wfρ in n, decl, Hdecl |- *.
-    - cbn.
-      rewrite map_decl_id.
-      1: eassumption.
-      now asimpl.
-    - cbn.
-      change ((ρ >> S) n) with (S (ρ n)).
-      replace (map_decl _ _) with (map_decl (ren_term shift) (map_decl (ren_term ρ) decl))
-        by (now rewrite compose_map_decl ; asimpl).
-      now econstructor.
-    - destruct n ; cbn.
-      + cbn.
-        inversion Hdecl ; subst ; clear Hdecl.
-        unfold ren1, Ren_decl.
-        rewrite map_decl_lift.
-        now constructor.
-      + inversion Hdecl ; subst ; cbn in *.
-        rewrite map_decl_lift.
-        now econstructor.
-    Qed.
   
   Let PCon (Γ : context) := True.
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
@@ -248,7 +210,7 @@ Section TypingWk.
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
-    apply _WfDeclInduction.
+    apply WfDeclInduction.
     - red.
       trivial.
     - red. trivial.
@@ -268,14 +230,12 @@ Section TypingWk.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
-      1: eapply nth_error_wk ; tea.
+      1: eapply in_ctx_wk ; tea.
       reflexivity.
     - intros * _ IHA _ IHB ? ρ ?.
       cbn.
       econstructor.
       1: now eapply IHA.
-      replace (ren_term _ B) with (B⟨wk_up ρ⟩)
-        by (now unfold ren1, RenWk_term ; asimpl).
       unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
       1: now econstructor.
       econstructor ; tea.
@@ -286,10 +246,6 @@ Section TypingWk.
       econstructor.
       1: now eapply IHA.
       red in IHt.
-      replace (ren_term _ t) with (t⟨wk_up ρ⟩)
-        by (now unfold ren1, RenWk_term ; asimpl).
-      replace (ren_term _ B) with (B⟨wk_up ρ⟩)
-        by (now unfold ren1, RenWk_term ; asimpl).
       unshelve eapply (IHt _ {| wk := wk_up ρ ; well_wk := _ |} _).
       1: now econstructor.
       econstructor ; tea.
@@ -312,10 +268,8 @@ Section TypingWk.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + replace (ren_term _ B) with (B⟨wk_up ρ⟩)
-          by (now unfold ren1, RenWk_term ; asimpl).
-        replace (ren_term _ B') with (B'⟨wk_up ρ⟩)
-          by (now unfold ren1, RenWk_term ; asimpl).
+      + change (ren_term _ B) with (B⟨wk_up ρ⟩).
+        change (ren_term _ B') with (B'⟨wk_up ρ⟩).
         unshelve eapply (IHBB' _ {| wk := wk_up ρ ; well_wk := _ |} _).
         1: now econstructor.
         econstructor ; tea.
@@ -382,10 +336,7 @@ Section TypingWk.
       unfold ren1, RenWlWk_term in IHe'.
       cbn in *.
       asimpl.
-      replace (ren_term _ f) with (f⟨↑⟩⟨up_ren ρ⟩)
-        by now asimpl.
-      replace (ren_term _ f') with (f'⟨↑⟩⟨up_ren ρ⟩)
-          by now asimpl.
+      repeat (erewrite compRenRen_term in IHe' ; [..|reflexivity]).
       now apply IHe'.
     - intros * _ IHt ? ρ ?.
       now econstructor ; fold_decl.
