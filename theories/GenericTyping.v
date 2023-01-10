@@ -5,7 +5,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening.
 Section RedDefinitions.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Infering ta}
+    `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!OneRedType ta} `{!OneRedTerm ta}.
 
@@ -30,6 +30,13 @@ Section RedDefinitions.
       [ Γ |- A ⇒* B ]
 
   where "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B).
+
+  Record InferRed (Γ : context) (A t : term) : Type :=
+    {
+      infty : term ;
+      inf_inf :> [Γ |- t ▹ infty] ;
+      inf_red :> [Γ |- infty ⇒* A] ;
+    }.
 
   Record TypeRedWhnf (Γ : context) (A B : term) : Type :=
     {
@@ -71,6 +78,8 @@ Section RedDefinitions.
 
 End RedDefinitions.
 
+Notation "[ Γ |- t ▹h A ]" := (InferRed Γ A t) (only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ▹h A ]" := (InferRed (ta := ta) Γ A t) : typing_scope.
 Notation "[ Γ |- t ⇒* t' : A ]" := (TermRedClosure Γ A t t') (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⇒* t' : A ]" := (TermRedClosure (ta := ta) Γ A t t') : typing_scope.
 Notation "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B) (only parsing) : typing_scope.
@@ -88,15 +97,15 @@ Notation "[ Γ |-[ ta  ] A :⇒*: B ]" := (TypeRedWf (ta := ta) Γ A B) : typing
 Notation "[ Γ |- t :⇒*: u : A ]" := (TermRedWf Γ A t u) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : typing_scope.
 
-
 #[export] Hint Resolve
   term_red_id term_red_succ type_red_id type_red_succ
-  Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
+  Build_InferRed Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
   Build_TermConvWf Build_TypeRedWf Build_TermRedWf
   : gen_typing.
 
 #[export] Hint Extern 1 =>
   match goal with
+    | H : [ _ |- _ ▹h _ ] |- _ => destruct H
     |  H : [ _ |- _ ↘ _ ] |- _ => destruct H
     |  H : [ _ |- _ ↘ _ : _ ] |- _ => destruct H
     |  H : [ _ |- _ :≅: _ ] |- _ => destruct H
@@ -109,7 +118,7 @@ Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : 
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Infering ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Inferring ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!OneRedType ta} `{!OneRedTerm ta}.
 
@@ -157,7 +166,7 @@ Section GenericTyping.
       [ Γ |- A ] ;
   }.
 
-  Class InferingProperties :=
+  Class InferringProperties :=
   {
     inf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ▹ A] -> [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩] ;
@@ -166,18 +175,17 @@ Section GenericTyping.
       in_ctx Γ n decl ->
       [ Γ |- tRel n ▹ decl.(decl_type) ] ;
     inf_prod {Γ} {na} {A B} :
-        [ Γ |- A ▹ U] -> 
-        [Γ ,, (vass na A) |- B ▹ U ] ->
+        [ Γ |- A ▹h U] -> 
+        [Γ ,, (vass na A) |- B ▹h U ] ->
         [ Γ |- tProd na A B ▹ U ] ;
     inf_lam {Γ} {na} {A B t} :
         [ Γ |- A ] ->
         [ Γ ,, vass na A |- t ▹ B ] -> 
         [ Γ |- tLambda na A t ▹ tProd na A B] ;
     inf_app {Γ} {na} {f a A B} :
-        [ Γ |- f ▹ tProd na A B ] -> 
+        [ Γ |- f ▹h tProd na A B ] -> 
         [ Γ |- a : A ] -> 
-        [ Γ |- tApp f a ▹ B[a ..] ] ;
-    inf_exp {Γ t A A'} : [Γ |- t ▹ A] -> [Γ |- A ⇒* A'] -> [Γ |- t ▹ A'];
+        [ Γ |- tApp f a ▹ B[a ..] ]
   }.
 
   Class TypingProperties :=
@@ -283,7 +291,7 @@ Section GenericTyping.
 End GenericTyping.
 
 Class GenericTypingProperties `(ta : tag)
-  `(WfContext ta) `(WfType ta) `(Typing ta) `(Infering ta)
+  `(WfContext ta) `(WfType ta) `(Typing ta) `(Inferring ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeu ta)
   `(OneRedType ta) `(OneRedTerm ta) :=
 {
@@ -300,7 +308,7 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Immediate wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 #[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app oredty_wk oredty_term oredtm_wk oredtm_beta oredtm_app | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
-#[export] Hint Resolve inf_exp ty_conv ty_exp convty_exp convtm_exp convtm_conv oredtm_conv | 6 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv oredtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
   Context `{GenericTypingProperties}.

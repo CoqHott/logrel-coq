@@ -43,6 +43,15 @@ Proof.
   now apply RedConvTy.
 Qed.
 
+Lemma InfRedTy {Γ A t} :
+  [Γ |- t ▹h A] ->
+  [Γ |- t : A].
+Proof.
+  intros [].
+  econstructor ; tea.
+  now apply RedConvTyC.
+Qed.
+
 (** Whnf do not reduce *)
 
 Lemma whne_nored Γ n u A :
@@ -183,14 +192,15 @@ Module DeclarativeTypingProperties.
     now eapply typing_wk.
   Qed.
 
-  #[export, refine] Instance InferingDeclProperties : InferingProperties (ta := de) := {}.
+  #[export, refine] Instance InferringDeclProperties : InferringProperties (ta := de) := {}.
   Proof.
-    2-5: now econstructor.
+    2-5: intros ;
+    repeat match goal with
+      | H : [_ |- _ ▹h _ ] |- _ => apply InfRedTy in H
+    end ;
+    now econstructor.
     - intros.
       now eapply typing_wk.
-    - intros.
-      econstructor ; tea.
-      now eapply RedConvTyC.
   Qed.  
 
   #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.

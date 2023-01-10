@@ -141,8 +141,8 @@ Module DeclarativeTypingData.
 
   #[export] Instance WfContext_Decl : WfContext de := WfContextDecl.
   #[export] Instance WfType_Decl : WfType de := WfTypeDecl.
-  #[export] Instance Typing_Decl : Infering de := TypingDecl.
-  #[export] Instance Infering_Decl : Typing de := TypingDecl.
+  #[export] Instance Typing_Decl : Inferring de := TypingDecl.
+  #[export] Instance Inferring_Decl : Typing de := TypingDecl.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeu_Decl : ConvNeu de := ConvTermDecl.
