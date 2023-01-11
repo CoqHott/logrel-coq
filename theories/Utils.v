@@ -77,4 +77,4 @@ Create HintDb gen_typing.
 #[global] Hint Constants Opaque : gen_typing.
 #[global] Hint Variables Transparent : gen_typing.
 
-Ltac gen_typing := typeclasses eauto 6 with gen_typing typeclass_instances.
+Ltac gen_typing := typeclasses eauto bfs 6 with gen_typing typeclass_instances.

@@ -135,7 +135,37 @@ Section Definitions.
 
   where "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
+  Inductive TermRedClosure (Γ : context) : term -> term -> term -> Type :=
+      | term_red_id {t A} :
+        [ Γ |- t : A ] ->
+        [ Γ |- t ⇒* t : A ]
+      | term_red_red {A t t'} :
+        [ Γ |- t ⇒ t' : A] ->
+        [Γ |- t ⇒* t' : A]
+      | term_red_trans {A t t' u} :
+        [ Γ |- t ⇒* t' : A ] ->
+        [ Γ |- t' ⇒* u : A ] ->
+        [ Γ |- t ⇒* u : A ]
+  where "[ Γ |- t ⇒* t' : A ]" := (TermRedClosure Γ A t t').
+
+  Inductive TypeRedClosure (Γ : context) : term -> term -> Type :=
+  | type_red_id {A} :
+    [ Γ |- A ] ->
+    [ Γ |- A ⇒* A]
+  | type_red_red {A B} :
+    [Γ |- A ⇒ B] ->
+    [Γ |- A ⇒* B]
+  | type_red_succ {A A' B} :
+    [ Γ |- A ⇒* A' ] ->
+    [ Γ |- A' ⇒* B ] ->
+    [ Γ |- A ⇒* B ]
+
+  where "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B).
+
 End Definitions.
+
+Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u).
+Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
 Module DeclarativeTypingData.
 
@@ -146,8 +176,8 @@ Module DeclarativeTypingData.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeu_Decl : ConvNeu de := ConvTermDecl.
-  #[export] Instance OneRedType_Decl : OneRedType de := OneRedTypeDecl.
-  #[export] Instance OneRedTerm_Decl : OneRedTerm de := OneRedTermDecl.
+  #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
+  #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 
   Ltac fold_decl :=
     change WfContextDecl with wf_context in * ;
@@ -155,8 +185,8 @@ Module DeclarativeTypingData.
     change TypingDecl with typing in * ;
     change ConvTypeDecl with conv_type in * ;
     change ConvTermDecl with conv_term in * ;
-    change OneRedTypeDecl with one_red_ty in *;
-    change OneRedTermDecl with one_red_tm in *.
+    change TypeRedClosure with red_ty in *;
+    change TermRedClosure with red_tm in *.
 
 End DeclarativeTypingData.
 

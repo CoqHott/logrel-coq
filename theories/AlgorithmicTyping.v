@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction GenericTyping.
 Set Primitive Projections.
 
 Section Definitions.
@@ -7,23 +7,6 @@ Section Definitions.
   (* We locally disable typing notations to be able to use them in the definition here before declaring the right
   instance *)
   Close Scope typing_scope.
-
-  Inductive OneRedAlg : context -> term -> term -> Type :=
-    | termBetaAlg {Γ na A t u} :
-      [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] ]
-    | termRedAppAlg {Γ t t' u} :
-      [ Γ |- t ⇒ t' ] ->
-      [ Γ |- tApp t u ⇒ tApp t' u ]
-  where "[ Γ |- t ⇒ t' ]" := (OneRedAlg Γ t t').
-
-  Inductive RedClosureAlg : context -> term -> term -> Type :=
-  | redIdAlg {Γ t} :
-    [ Γ |- t ⇒* t ]
-  | redSuccAlg {Γ t t' u} :
-    [ Γ |- t ⇒ t'] ->
-    [ Γ |- t' ⇒* u ] ->
-    [ Γ |- t ⇒* u ]
-  where "[ Γ |- t ⇒* t' ]" := (RedClosureAlg Γ t t').
 
   Inductive WfTypeAlg : context -> term -> Type :=
     | wfTypeU Γ : [ Γ |- U ]
@@ -53,7 +36,7 @@ Section Definitions.
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
       [Γ |- t ▹ A ] ->
-      [Γ |- A ⇒* A'] ->
+      [ A ⇒* A'] ->
       [Γ |- t ▹h A']
   with CheckAlg : context -> term -> term -> Type :=
     | checkConv {Γ t A A'} :
@@ -62,8 +45,8 @@ Section Definitions.
       [ Γ |- t : A' ]
   with ConvTypeAlg : context -> term -> term  -> Type :=
     | typeConvRed {Γ A A' B B'} :
-      [Γ |- A ⇒* A'] ->
-      [Γ |- B ⇒* B'] ->
+      [A ⇒* A'] ->
+      [B ⇒* B'] ->
       [Γ |- A' ≅h B'] ->
       [Γ |- A ≅ B]
   with ConvTypeRedAlg : context -> term -> term -> Type :=
@@ -87,13 +70,13 @@ Section Definitions.
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
       [Γ |- m ~ n ▹ A] ->
-      [Γ |- A ⇒* A'] ->
+      [A ⇒* A'] ->
       [Γ |- m ~h n ▹ A']
   with ConvTermAlg : context -> term -> term -> term -> Type :=
     | termConvRed {Γ t t' u u' A A'} :
-      [Γ |- A ⇒* A'] ->
-      [Γ |- t ⇒* t'] ->
-      [Γ |- u ⇒* u' ] ->
+      [A ⇒* A'] ->
+      [t ⇒* t'] ->
+      [u ⇒* u' ] ->
       [Γ |- t' ≅h u' : A'] ->
       [Γ |- t ≅ u : A]
   with ConvTermRedAlg : context -> term -> term -> term -> Type :=
@@ -117,7 +100,9 @@ Section Definitions.
   and "[ Γ |- m ~ n ▹ T ]" := (ConvNeuAlg Γ T m n)
   and "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n)
   and "[ Γ |- t ≅ u : T ]" := (ConvTermAlg Γ T t u)
-  and "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u).
+  and "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u)
+  and "[ t ⇒ t' ]" := (OneRedAlg t t')
+  and "[ t ⇒* t' ]" := (RedClosureAlg t t').
 
   (* Inductive WfContextAlgo : context -> Type :=
   | conNilAlg : [|- ε]
@@ -140,9 +125,9 @@ Module AlgorithmicTypingData.
   #[export] Instance ConvTerm_Algo : ConvTerm al := ConvTermAlg.
   #[export] Instance ConvNeu_Algo : ConvNeu al := ConvNeuAlg.
   (* Reduction is untyped *)
-  #[export] Instance OneRedType_Algo : OneRedType al := OneRedAlg.
-  #[export] Instance OneRedTerm_Algo : OneRedTerm al :=
-  fun Γ _ t u => OneRedAlg Γ t u.
+  #[export] Instance RedType_Algo : RedType al := fun _ => RedClosureAlg.
+  #[export] Instance RedTerm_Algo : RedTerm al :=
+  fun _ _ => RedClosureAlg.
 
   Ltac fold_algo :=
     change WfTypeAlg with wf_type in *;
@@ -154,8 +139,6 @@ Module AlgorithmicTypingData.
 
 End AlgorithmicTypingData.
 
-Notation "[ Γ |- t ⇒ t' ]" := (OneRedAlg Γ t t') : typing_scope.
-Notation "[ Γ |- t ⇒* t' ]" := (RedClosureAlg Γ t t') : typing_scope.
 Notation "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t) : typing_scope.
 Notation "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B) : typing_scope.
 Notation "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n) : typing_scope.
@@ -214,29 +197,6 @@ End InductionPrinciples.
 
 Section TypingWk.
   Import AlgorithmicTypingData.
-
-  Lemma ored_alg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
-    [Γ |- t ⇒ u] ->
-    [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩].
-  Proof.
-    intros Hred.
-    induction Hred in Δ, ρ |- *.
-    - cbn ; asimpl.
-      evar (t' : term).
-      replace (subst_term _ t) with t'.
-      all: subst t'.
-      1: econstructor.
-      now asimpl.
-    - cbn ; asimpl.
-      now econstructor.
-  Qed.
-
-  Lemma cred_alg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
-    [Γ |- t ⇒* u] ->
-    [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩].
-  Proof.
-    induction 1 ; econstructor ; eauto using ored_alg_wk.
-  Qed.
   
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
   Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
@@ -298,14 +258,14 @@ Section TypingWk.
     - intros * ? IHt ?.
       econstructor.
       + now eapply IHt.
-      + eauto using cred_alg_wk.
+      + eauto using credalg_wk.
     - intros * ? IHt ? IHAA'.
       econstructor.
       + now eapply IHt.
       + now eapply IHAA'.
     - intros * ? ? ? IH.
       econstructor.
-      1-2: eauto using cred_alg_wk.
+      1-2: eauto using credalg_wk.
       now eapply IH.
     - intros * ? IHA ? IHB ? *.
       cbn.
@@ -335,10 +295,10 @@ Section TypingWk.
     - intros * ? IHm ?.
       econstructor.
       + now apply IHm.
-      + eauto using cred_alg_wk.
+      + eauto using credalg_wk.
     - intros * ? ? ? ? IHt.
       econstructor.
-      1-3: eauto using cred_alg_wk.
+      1-3: eauto using credalg_wk.
       now eapply IHt.
     - intros * ? IHA ? IHB ? ? ?.
       cbn.

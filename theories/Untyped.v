@@ -7,46 +7,46 @@ Export UnscopedNotations.
 Notation U := (tSort set).
 Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
 
-Inductive whnf (Γ : context) : term -> Type :=
-  | whnf_tSort s : whnf Γ (tSort s)
-  | whnf_tProd na A B : whnf Γ (tProd na A B)
-  | whnf_tLambda na A t : whnf Γ (tLambda na A t)
-  | whnf_whne n : whne Γ n -> whnf Γ n
-with whne (Γ : context) : term -> Type :=
-  | whne_tRel v : whne Γ (tRel v)
-  | whne_tApp n t : whne Γ n -> whne Γ (tApp n t).
+Inductive whnf : term -> Type :=
+  | whnf_tSort s : whnf (tSort s)
+  | whnf_tProd na A B : whnf (tProd na A B)
+  | whnf_tLambda na A t : whnf (tLambda na A t)
+  | whnf_whne n : whne n -> whnf n
+with whne : term -> Type :=
+  | whne_tRel v : whne (tRel v)
+  | whne_tApp n t : whne n -> whne (tApp n t).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
-Inductive isType Γ : term -> Type :=
-  | ProdType {na A B} : isType Γ (tProd na A B)
-  | NeType {A}  : whne Γ A -> isType Γ A. 
+Inductive isType : term -> Type :=
+  | ProdType {na A B} : isType (tProd na A B)
+  | NeType {A}  : whne A -> isType A.
 
-Inductive isFun Γ : term -> Type :=
-  | lamFun {na A t} : isFun Γ (tLambda na A t)
-  | NeFun  {A}  : whne Γ A -> isFun Γ A.
+Inductive isFun : term -> Type :=
+  | lamFun {na A t} : isFun (tLambda na A t)
+  | NeFun  {A}  : whne A -> isFun A.
 
-Lemma isType_whnf Γ t : isType Γ t -> whnf Γ t.
+Lemma isType_whnf t : isType t -> whnf t.
 Proof.
   induction 1; now constructor.
 Qed.
 
-Lemma isFun_whnf Γ t : isFun Γ t -> whnf Γ t.
+Lemma isFun_whnf t : isFun t -> whnf t.
 Proof.
   induction 1 ; now constructor.
 Qed.
 
-Lemma neU Γ : whne Γ U -> False.
+Lemma neU : whne U -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma nePi Γ na A B : whne Γ (tProd na A B) -> False.
+Lemma nePi na A B : whne (tProd na A B) -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma neLambda Γ na A t : whne Γ (tLambda na A t) -> False.
+Lemma neLambda na A t : whne (tLambda na A t) -> False.
 Proof.
   inversion 1.
 Qed.
