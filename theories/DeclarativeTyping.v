@@ -180,13 +180,13 @@ Module DeclarativeTypingData.
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 
   Ltac fold_decl :=
-    change WfContextDecl with wf_context in * ;
-    change WfTypeDecl with wf_type in *;
-    change TypingDecl with typing in * ;
-    change ConvTypeDecl with conv_type in * ;
-    change ConvTermDecl with conv_term in * ;
-    change TypeRedClosure with red_ty in *;
-    change TermRedClosure with red_tm in *.
+    change WfContextDecl with (wf_context (ta := de)) in * ;
+    change WfTypeDecl with (wf_type (ta := de)) in *;
+    change TypingDecl with (typing (ta := de)) in * ;
+    change ConvTypeDecl with (conv_type (ta := de)) in * ;
+    change ConvTermDecl with (conv_term (ta := de)) in * ;
+    change TypeRedClosure with (red_ty (ta := de)) in *;
+    change TermRedClosure with (red_tm (ta := de)) in *.
 
 End DeclarativeTypingData.
 
@@ -249,10 +249,7 @@ Section TypingWk.
     - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      replace (ren_term _ B) with (B⟨wk_up ρ⟩)
-        by (now unfold ren1, RenWk_term ; asimpl).
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
-      1: now constructor.
+      eapply (IHB _ (wk_up _ _ ρ)).
       now constructor ; fold_decl.
     - intros * _ IHA ? * ?.
       econstructor.
@@ -266,8 +263,7 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
-      1: now econstructor.
+      eapply (IHB _ (wk_up _ _ ρ)).
       econstructor ; tea.
       econstructor.
       now eapply IHA.
@@ -276,8 +272,7 @@ Section TypingWk.
       econstructor.
       1: now eapply IHA.
       red in IHt.
-      unshelve eapply (IHt _ {| wk := wk_up ρ ; well_wk := _ |} _).
-      1: now econstructor.
+      eapply (IHt _ (wk_up _ _ ρ)).
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHf _ IHu ? ρ ?.
@@ -298,10 +293,7 @@ Section TypingWk.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + change (ren_term _ B) with (B⟨wk_up ρ⟩).
-        change (ren_term _ B') with (B'⟨wk_up ρ⟩).
-        unshelve eapply (IHBB' _ {| wk := wk_up ρ ; well_wk := _ |} _).
-        1: now econstructor.
+      + eapply (IHBB' _ (wk_up _ _ ρ)).
         econstructor ; tea.
         now eapply IHA.
     - intros * _ IHA ? ρ ?.
@@ -322,29 +314,18 @@ Section TypingWk.
       eapply convtm_meta_conv.
       1: econstructor.
       + now eapply IHA.
-      + unfold upRen_term_term.
-        replace (ren_term _ t) with (t⟨wk_up ρ⟩)
-          by (now asimpl).
-        unshelve eapply (IHt _ {| wk := wk_up ρ ; well_wk := _ |} _).
-        1: now econstructor.
+      + eapply (IHt _ (wk_up _ _ ρ)).
         econstructor ; tea.
         now eapply IHA.
       + now eapply IHu.
-      + unfold ren1 at 2, RenWlWk_term.   
-        cbn.
-        now asimpl.
+      + now asimpl.
       + now asimpl. 
     - intros Γ ? ? A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + replace (ren_term _ B) with (B⟨wk_up ρ⟩)
-          by (now unfold ren1, RenWk_term ; asimpl).
-        replace (ren_term _ B') with (B'⟨wk_up ρ⟩)
-          by (now unfold ren1, RenWk_term ; asimpl).
-        unshelve eapply (IHBB' _ {| wk := wk_up ρ ; well_wk := _ |} _).
-        1: now econstructor.
+      + eapply (IHBB' _ (wk_up _ _ ρ)).
         all: now econstructor ; fold_decl.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
@@ -360,14 +341,13 @@ Section TypingWk.
       cbn.
       econstructor ; fold_decl.
       1-3: easy.
-      unshelve epose proof (IHe _ {| wk := wk_up ρ ; well_wk := _ |} _) as IHe'.
-      2: now econstructor.
-      1: now econstructor ; fold_decl.
-      unfold ren1, RenWlWk_term in IHe'.
+      specialize (IHe _ (wk_up _ _ ρ)).
       cbn in *.
       asimpl.
-      repeat (erewrite compRenRen_term in IHe' ; [..|reflexivity]).
-      now apply IHe'.
+      repeat (erewrite compRenRen_term in IHe ; [..|reflexivity]).
+      eapply IHe.
+      econstructor ; tea.
+      now eapply IHA.
     - intros * _ IHt ? ρ ?.
       now econstructor ; fold_decl.
     - intros * _ IHt ? ρ ?.
@@ -376,6 +356,40 @@ Section TypingWk.
       now eapply TermTrans ; fold_decl.
     - intros * _ IHt _ IHA ? ρ ?.
       now eapply TermConv ; fold_decl.
+  Qed.
+
+  Corollary typing_eta (Γ : context) na A B f :
+    [|- Γ] ->
+    [Γ |- A] ->
+    [Γ,, vass na A |- B] ->
+    [Γ |- f : tProd na A B] ->
+    [Γ,, vass na A |- eta_expand f : B].
+  Proof.
+    intros ? ? ? Hf.
+    replace B with (B⟨upRen_term_term ↑⟩)[(tRel 0)..].
+    2:{
+      asimpl.
+      rewrite idSubst_term ; try easy.
+      intros [] ; reflexivity.
+    }
+    econstructor.
+    2: now do 2 econstructor.
+    fold_decl.
+    cbn.
+    eapply typing_wk in Hf.
+    red in Hf ; cbn in Hf.
+    set (ρ := wk_step na A (wk_id (Γ := Γ))).
+    specialize (Hf _ ρ).
+    assert (↑ =1 ρ) as Hshift.
+    {
+     unfold ρ, shift, wk_step ; cbn.
+     rewrite wk_to_ren_id.
+     reflexivity.
+    }
+    repeat rewrite (extRen_term _ _ Hshift).
+    rewrite (extRen_term _ _ (upExtRen_term_term _ _ Hshift)).
+    eapply Hf.
+    now econstructor.
   Qed.
 
 End TypingWk.

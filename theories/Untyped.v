@@ -19,6 +19,7 @@ with whne : term -> Type :=
 #[global] Hint Constructors whne whnf : gen_typing.
 
 Inductive isType : term -> Type :=
+  | UnivType : isType U
   | ProdType {na A B} : isType (tProd na A B)
   | NeType {A}  : whne A -> isType A.
 
@@ -51,4 +52,4 @@ Proof.
   inversion 1.
 Qed.
 
-#[global] Hint Resolve neU nePi neLambda : gen_typing.
+#[global] Hint Resolve isType_whnf isFun_whnf neU nePi neLambda : gen_typing.

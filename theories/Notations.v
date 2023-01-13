@@ -26,6 +26,9 @@ Notation "[ |- Γ ]" := (wf_context Γ)
   (at level 0, Γ at level 50, only parsing) : typing_scope.
 Notation "[ |-[ ta  ] Γ ]" := (wf_context (ta := ta) Γ)
   (at level 0, ta, Γ at level 50) : typing_scope.
+(* The contexts Γ and Δ are convertible *)
+Reserved Notation "[ |- Γ ≅ Δ ]" (at level 0, Γ, Δ at level 50).
+Reserved Notation "[ |-[ ta  ] Γ ≅ Δ ]" (at level 0, ta, Γ, Δ at level 50).
 (* The type A is well-formed in Γ *)
 Notation "[ Γ |- A ]" := (wf_type Γ A)
   (at level 0, Γ, A at level 50, only parsing) : typing_scope.
@@ -100,19 +103,12 @@ Reserved Notation "[ Γ |-[ ta  ] t ↘ u : A ]" (at level 0, ta, Γ, t, u, A at
 
 (** Substitutions *)
 
-Class WfSubst (ta : tag) := wf_subst : context -> context -> (nat -> term) -> Set.
-Class ConvSubst (ta : tag) := conv_subst : context -> context -> (nat -> term) -> (nat -> term) -> Set.
-
 (* Substitution σ is of type Δ in context Γ*)
-Notation "[ Γ '|-s' σ : Δ ]" := (wf_subst Γ σ Δ)
-  (at level 0, Γ, σ, Δ at level 50, only parsing) : typing_scope.
-Notation "[ Γ '|-'[ ta  ']s' σ : Δ ]" := (wf_subst (ta := ta) Γ Δ σ)
-  (at level 0, ta, Γ, σ, Δ at level 50) : typing_scope.
+Reserved Notation "[ Γ '|-s' σ : Δ ]" (at level 0, Γ, σ, Δ at level 50).
+Reserved Notation "[ Γ |-[ ta  ']s' σ : Δ ]" (at level 0, ta, Γ, σ, Δ at level 50).
 (* Substitutions σ and τ are convertible at types Δ in context Γ *)
-Notation "[ Γ '|-s' σ ≅ τ : Δ ]" := (conv_subst Γ Δ σ τ)
-  (at level 0, Γ, σ, τ, Δ at level 50, only parsing) : typing_scope.
-Notation "[ Γ '|-[ ta ']s' σ ≅ τ : Δ ]" := (conv_subst (ta := ta) Γ Δ σ τ)
-  (at level 0, ta, Γ, σ, τ, Δ at level 50) : typing_scope.
+Reserved Notation "[ Γ '|-s' σ ≅ τ : Δ ]" (at level 0, Γ, σ, τ, Δ at level 50).
+Reserved Notation "[ Γ |-[ ta  ']s' σ ≅ τ : Δ ]" (at level 0, ta, Γ, σ, τ, Δ at level 50).
 
 (** Extra typing conditions *)
 (* Types A and B are well-formed and convertible in Γ *)

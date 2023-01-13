@@ -54,6 +54,25 @@ Section RedDefinitions.
     tmr_wf_red :> [Γ |- t ⇒* u : A]
   }.
 
+  Inductive WellSubst (Γ : context) : context -> (nat -> term) -> Type :=
+    | well_sempty (σ : nat -> term) : [Γ |-s σ : ε ]
+    | well_scons (σ : nat -> term) (Δ : context) na A :
+      [Γ |-s ↑ >> σ : Δ] -> [Γ |- σ var_zero : A[↑ >> σ]] ->
+      [Γ |-s σ : Δ,, vass na A]
+  where "[ Γ '|-s' σ : Δ ]" := (WellSubst Γ Δ σ).
+
+  Inductive ConvSubst (Γ : context) : context -> (nat -> term) -> (nat -> term) -> Type :=
+  | conv_sempty (σ τ : nat -> term) : [Γ |-s σ ≅ τ : ε ]
+  | conv_scons (σ τ : nat -> term) (Δ : context) na A :
+    [Γ |-s ↑ >> σ ≅ ↑ >> τ : Δ] -> [Γ |- σ var_zero ≅ τ var_zero: A[↑ >> σ]] ->
+    [Γ |-s σ ≅ τ : Δ,, vass na A]
+  where "[ Γ '|-s' σ ≅ τ : Δ ]" := (ConvSubst Γ Δ σ τ).
+
+  Inductive ConvCtx : context -> context -> Type :=
+  | conv_cempty : [ |- ε ≅ ε]
+  | conv_ccons Γ na A Δ nb B : [ |- Γ ≅ Δ ] -> [Γ |- A ≅ B] -> [ |- Γ,, vass na A ≅ Δ,, vass nb B]
+  where "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ).
+
 End RedDefinitions.
 
 Notation "[ Γ |- t ▹h A ]" := (InferRed Γ A t) (only parsing) : typing_scope.
@@ -70,10 +89,17 @@ Notation "[ Γ |- A :⇒*: B ]" := (TypeRedWf Γ A B) (only parsing) : typing_sc
 Notation "[ Γ |-[ ta  ] A :⇒*: B ]" := (TypeRedWf (ta := ta) Γ A B) : typing_scope.
 Notation "[ Γ |- t :⇒*: u : A ]" := (TermRedWf Γ A t u) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : typing_scope.
+Notation "[ Γ '|-s' σ : A ]" := (WellSubst Γ A σ) (only parsing) : typing_scope.
+Notation "[ Γ |-[ ta ']s' σ : A ]" := (WellSubst (ta := ta) Γ A σ) : typing_scope.
+Notation "[ Γ '|-s' σ ≅ τ : A ]" := (ConvSubst Γ A σ τ) (only parsing) : typing_scope.
+Notation "[ Γ |-[ ta ']s' σ ≅ τ : A ]" := (ConvSubst (ta := ta) Γ A σ τ) : typing_scope.
+Notation "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ) (only parsing) : typing_scope.
+Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 
 #[export] Hint Resolve
   Build_InferRed Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
   Build_TermConvWf Build_TypeRedWf Build_TermRedWf
+  well_sempty well_scons conv_sempty conv_scons
   : gen_typing.
 
 #[export] Hint Extern 1 =>
@@ -366,6 +392,21 @@ Section GenericConsequences.
     [Γ |- t ⇒* u' : A'].
   Proof.
     now intros ? -> ->.
+  Qed.
+
+  Lemma well_subst_ext Γ Δ (σ σ' : nat -> term) :
+    σ =1 σ' ->
+    [Γ |-s σ : Δ] ->
+    [Γ |-s σ' : Δ].
+  Proof.
+    intros Heq.
+    induction 1 in σ', Heq |- *.
+    all: constructor.
+    - eapply IHWellSubst.
+      now rewrite Heq.
+    - rewrite <- Heq.
+      now replace A[↑ >> σ'] with A[↑ >> σ]
+        by (now rewrite Heq).
   Qed.
 
 End GenericConsequences.

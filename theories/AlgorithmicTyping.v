@@ -1,6 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction GenericTyping.
-Set Primitive Projections.
 
 Section Definitions.
 
@@ -85,10 +84,13 @@ Section Definitions.
       [ Γ ,, vass na A |- B ≅ B' : U] ->
       [ Γ |- tProd na A B ≅h tProd na' A' B' : U]
     | termFunConvAlg {Γ : context} {f g na A B} :
+      isFun f ->
+      isFun g ->
       [ Γ,, vass na A |- eta_expand f ≅ eta_expand g : B] -> 
       [ Γ |- f ≅h g : tProd na A B]
     | termNeuConvAlg {Γ m n T N} :
       [Γ |- m ~ n ▹ T] ->
+      whne N ->
       [Γ |- m ≅h n : N]
 
   where "[ Γ |- A ]" := (WfTypeAlg Γ A)
@@ -130,16 +132,15 @@ Module AlgorithmicTypingData.
   fun _ _ => RedClosureAlg.
 
   Ltac fold_algo :=
-    change WfTypeAlg with wf_type in *;
-    change InferAlg with inferring in * ;
-    change CheckAlg with typing in * ;
-    change ConvTypeAlg with conv_type in * ;
-    change ConvTermAlg with conv_term in * ;
-    change ConvNeuAlg with conv_neu in *.
+    change WfTypeAlg with (wf_type (ta := al)) in *;
+    change InferAlg with (inferring (ta := al)) in * ;
+    change CheckAlg with (typing (ta := al)) in * ;
+    change ConvTypeAlg with (conv_type (ta := al)) in * ;
+    change ConvTermAlg with (conv_term (ta := al)) in * ;
+    change ConvNeuAlg with (conv_neu (ta := al)) in *.
 
 End AlgorithmicTypingData.
 
-Notation "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t) : typing_scope.
 Notation "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B) : typing_scope.
 Notation "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n) : typing_scope.
 Notation "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u) : typing_scope.
@@ -177,7 +178,7 @@ Definition WfAlgoInductionConcl
   (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type) :=
   (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
   × (forall (Γ : context) (A t : term), [Γ |- t ▹ A] -> PInf Γ A t)
-  × (forall (Γ : context) (A t : term), [Γ |- t ▹h  A] -> PInfRed Γ A t)
+  × (forall (Γ : context) (A t : term), InferRedAlg Γ A t -> PInfRed Γ A t)
   × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PCheck Γ A t)
 	× (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
   × (forall (Γ : context) (A B : term), [Γ |- A ≅h B] -> PTyRedEq Γ A B)
@@ -202,7 +203,7 @@ Section TypingWk.
   Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩].
   Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
-    [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩].
+    InferRedAlg Δ (A⟨ρ⟩) t⟨ρ⟩.
   Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
   [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
   Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
@@ -227,8 +228,7 @@ Section TypingWk.
     - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      change (ren_term _ B) with (B⟨wk_up ρ⟩).
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      eapply (IHB _ (wk_up _ _ ρ)).
       all: now constructor.
     - intros * _ IHA.
       econstructor.
@@ -240,12 +240,12 @@ Section TypingWk.
     - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      eapply (IHB _ (wk_up _ _ ρ)).
       all: now constructor.
     - intros * HA IHA Ht IHt Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      unshelve eapply (IHt _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      eapply (IHt _ (wk_up _ _ ρ)).
       all: now constructor.
     - intros * Hf IHf Ha IHa Δ ρ HΔ.
       cbn.
@@ -271,7 +271,7 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      eapply (IHB _ (wk_up _ _ ρ)).
       all: now econstructor.
     - econstructor.
     - intros * ? IHM.
@@ -304,22 +304,25 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      unshelve eapply (IHB _ {| wk := wk_up ρ ; well_wk := _ |} _).
+      eapply (IHB _ (wk_up _ _ ρ)).
       all: now econstructor.
-    - intros ? f f' * ? IH ? ? ?.
+    - intros ? f f' * ? ? ? IH ? ? ?.
       cbn.
       econstructor.
-      unshelve epose proof (IH _ {| wk := wk_up ρ ; well_wk := _ |} _) as IH'.
-      2,3: now econstructor.
-      red in IH'.
-      unfold ren1, RenWlWk_term in IH'.
+      1-2: asimpl ; gen_typing.
+      specialize (IH _ (wk_up _ _ ρ)).
+      red in IH.
       cbn in *.
       asimpl.
-      repeat (erewrite compRenRen_term in IH' ; [..|reflexivity]).
-      now apply IH'.
-    - intros * ? IH.
+      repeat (erewrite compRenRen_term in IH ; [..|reflexivity]).
+      apply IH.
+      now econstructor.
+    - intros * ? IH ?.
       econstructor.
+      2: cbn ; asimpl ; now gen_typing.
       now eapply IH.
   Qed.
 
 End TypingWk.
+
+Import AlgorithmicTypingData.

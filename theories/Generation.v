@@ -35,7 +35,19 @@ Proof.
     1: eassumption.
     right.
     now eapply TypeTrans.
-Qed.  
+Qed.
+
+Lemma prod_ty_inv Γ na A B :
+  [Γ |- tProd na A B] ->
+  [Γ |- A] × [Γ,, vass na A |- B].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as [? [Hgen]].
+  inversion Hgen ; subst ; clear Hgen.
+  split ; now econstructor.
+Qed.
 
 Inductive termRedGenData Γ : term -> term -> term -> Type :=
   | AppRedGen na A B t u a :

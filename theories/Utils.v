@@ -1,6 +1,6 @@
 From Coq Require Import Morphisms List CRelationClasses.
 From Coq Require Import ssrbool.
-From LogRel.AutoSubst Require Import core.
+From LogRel.AutoSubst Require Import core unscoped.
 
 Notation "#| l |" := (List.length l) (at level 0, l at level 99, format "#| l |").
 Notation "`=1`" := (pointwise_relation _ Logic.eq) (at level 80).
@@ -78,3 +78,6 @@ Create HintDb gen_typing.
 #[global] Hint Variables Transparent : gen_typing.
 
 Ltac gen_typing := typeclasses eauto bfs 6 with gen_typing typeclass_instances.
+
+(* Forcing some unfolding *)
+Arguments ren1 {_ _ _} _ _ !_/.

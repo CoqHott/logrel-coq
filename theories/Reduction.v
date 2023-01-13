@@ -74,14 +74,11 @@ Proof.
     1: econstructor ; fold_decl.
     1,3: now eapply typing_wk.
     + unshelve eapply typing_wk in Ht.
-      3: econstructor ; now eapply well_up.
+      3: now eapply wk_up.
       1: shelve.
       2: now econstructor ; [eassumption | eapply typing_wk].
-      cbn in *.
       now apply Ht.
-    + unfold ren1, RenWlWk_term.
-      cbn.
-      now asimpl.
+    + now asimpl.
     + now asimpl. 
   - cbn in *.
     eapply oredtm_meta_conv.
@@ -217,9 +214,9 @@ Proof.
 Qed.
 
 Module DeclarativeTypingProperties.
-  Import DeclarativeTypingData.
+  Include DeclarativeTypingData.
 
-  #[export, refine] Instance WfTypeDeclProperties : WfContextProperties (ta := de) := {}.
+  #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
     1-2: now constructor.
     all: intros.
@@ -232,7 +229,7 @@ Module DeclarativeTypingProperties.
     - now eapply WFEqTerm, RedConvTeC. 
   Qed.
 
-  #[export, refine] Instance WfTypeProperties : WfTypeProperties (ta := de) := {}.
+  #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
   Proof.
     2-4: now econstructor.
     intros.

@@ -19,12 +19,13 @@ theories/Generation.v
 theories/Reduction.v
 
 theories/AlgorithmicTyping.v
+theories/AlgorithmicTypingProperties.v
 
 theories/LogicalRelation.v
 theories/LRInduction.v
 theories/Escape.v
-theories/Reflexivity.v
 theories/ShapeView.v
+theories/Reflexivity.v
 theories/Irrelevance.v
 
 theories/Positivity.v

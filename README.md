@@ -21,25 +21,37 @@ File description
 
 | File | Description |
 |---|----|
-[Notations]  | Notations used throughout the file. It can be used as an index for notations!
+[Utils] | Basic generically useful definitions, notations, tactics…
+[BasicAst] | Definitions preceding the definition of the AST itself: sorts, binder annotations…
+[AutoSubst/] | Abstract syntax tree, renamings, substitutions and many lemmas, generated using the [autosubst-ocaml] opam package.
+[Notations] | Notations used throughout the file. It can be used as an index for notations!
+[Context] | Context-related definitions: declaration, mapping over a context, find a type in a context…
 [Untyped] | Various useful definitions for defining the inference rules |
+[UntypedReduction] | Definiton and basic properties of untyped reduction, used to define algorithmic typing.
 [Weakening] | Definition of a well-formed weakening, and some properties.
 [Substitution] | Definition of a well-formed substitution.
 [GenericTyping] | A generic notion of typing, used to define the logical relation, to be instantiated twice: once with the declarative version, and once with the algorithmic one.
 [DeclarativeTyping] | Defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
 [Generation] | Contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
-[[Reduction] | Basic properties of reduction, enough to derive that declarative typing is an instance of generic typing. |
+[Reduction] | Basic properties of reduction, enough to derive that declarative typing is an instance of generic typing. |
+[AlgorithmicTyping] | Definition of the second notion of typing : algorithmic typing (and algorithmic conversion together with it).
 [LogicalRelation] | Contains the logical relation's (**LR**) definition. |
 | [LRInduction] | Defines the induction principles over **LR**. Because of universe constraints, **LR** needs two induction principles, one for each type levels. |
 | [Escape] | Contains a proof of the escape lemma for **LR** |
 | [Shapeview] | Technique to avoid considering non-diagonal cases for two reducibly convertible types. |
 [Reflexivity] | Reflexivity of the logical relation.
 [Irrelevance] | Irrelevance of the logical relation: two convertible types decode to equivalent predicates. Symmetry is a direct corollary. |
+[AlgorithmicTypingProperties] | Properties of the algorithmic typing, in order to derive the second instance of generic typing. |
 | [Positivity.v] and [Positivity.agda] | Showcase the difference between Coq and Agda's positivity checkers. |
 
+[Utils]: ./theories/Utils.v
+[BasicAst]: ./theories/BasicAst.v
+[Context]: ./theories/Context.v
+[AutoSubst/]: ./theories/Autosubst/
 [Notations]: ./theories/Notations.v
 [Automation]: ./theories/Automation.v
 [Untyped]: ./theories/Untyped.v
+[UntypedReduction]: ./theories/UntypedReduction.v
 [GenericTyping]: ./theories/GenericTyping.v
 [DeclarativeTyping]: ./theories/DeclarativeTyping.v
 [Properties]: ./theories/Properties.v
@@ -50,8 +62,12 @@ File description
 [Escape]: ./theories/Escape.v
 [Reflexivity]: ./theories/Reflexivity.v
 [Irrelevance]: ./theories/Irrelevance.v
-[ShapeView]: ./theories/Shapeview.v
+[ShapeView]: ./theories/ShapeView.v
 [Positivity.v]: ./theories/Positivity.v
-[Positivity.agda]: ./theories/Positivity.agda
 [Weakening]: ./theories/Weakening.v
 [Substitution]: ./theories/Substitution.v
+[AlgorithmicTyping]: ./theories/AlgorithmicTyping.v
+[AlgorithmicTypingProperties]: ./theories/AlgorithmicTypingProperties.v
+
+[autosubst-ocaml]: https://github.com/uds-psl/autosubst-ocaml
+[Positivity.agda]: ./theories/Positivity.agda
