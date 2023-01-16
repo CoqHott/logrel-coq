@@ -1,3 +1,4 @@
+From Coq Require Import ssreflect.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
 Set Primitive Projections.
@@ -358,6 +359,27 @@ Section TypingWk.
       now eapply TermConv ; fold_decl.
   Qed.
 
+  Corollary typing_shift : WfDeclInductionConcl
+    (fun _ => True)
+    (fun (Γ : context) (A : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- A⟨↑⟩])
+    (fun (Γ : context) (A t : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- t⟨↑⟩ : A⟨↑⟩])
+    (fun (Γ : context) (A B : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- A⟨↑⟩ ≅ B⟨↑⟩])
+    (fun (Γ : context) (A t u : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩]).
+  Proof.
+    red.
+    repeat match goal with |- _ × _ => split end.
+    1: now constructor.
+    all: intros * Hty nt T HΓ HA.
+    all: eapply typing_wk in Hty.
+    all: set (ρ := wk_step nt T (wk_id (Γ := Γ))).
+    all: specialize (Hty _ ρ).
+    all: assert (↑ =1 ρ) as Hshift by
+      (rewrite /ρ /shift /wk_step /= wk_to_ren_id //).
+    all: repeat rewrite -> (extRen_term _ _ Hshift).
+    all: eapply Hty.
+    all: now econstructor.
+  Qed.
+
   Corollary typing_eta (Γ : context) na A B f :
     [|- Γ] ->
     [Γ |- A] ->
@@ -366,31 +388,18 @@ Section TypingWk.
     [Γ,, vass na A |- eta_expand f : B].
   Proof.
     intros ? ? ? Hf.
-    replace B with (B⟨upRen_term_term ↑⟩)[(tRel 0)..].
-    2:{
-      asimpl.
-      rewrite idSubst_term ; try easy.
-      intros [] ; reflexivity.
-    }
-    econstructor.
-    2: now do 2 econstructor.
-    fold_decl.
-    cbn.
-    eapply typing_wk in Hf.
-    red in Hf ; cbn in Hf.
-    set (ρ := wk_step na A (wk_id (Γ := Γ))).
-    specialize (Hf _ ρ).
-    assert (↑ =1 ρ) as Hshift.
-    {
-     unfold ρ, shift, wk_step ; cbn.
-     rewrite wk_to_ren_id.
-     reflexivity.
-    }
-    repeat rewrite (extRen_term _ _ Hshift).
-    rewrite (extRen_term _ _ (upExtRen_term_term _ _ Hshift)).
-    eapply Hf.
-    now econstructor.
-  Qed.
+    eapply typing_shift in Hf ; tea.
+    eapply typing_meta_conv.
+    1: econstructor ; fold_decl.
+    - cbn in Hf.
+      now eassumption.
+    - eapply typing_meta_conv.
+      1: now do 2 econstructor.
+      now reflexivity.
+    - asimpl.
+      rewrite scons_eta'.
+      now asimpl.
+    Qed.
 
 End TypingWk.
 

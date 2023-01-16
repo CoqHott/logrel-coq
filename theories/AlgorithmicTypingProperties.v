@@ -12,28 +12,22 @@ Qed.
 
 Section AlgTypingWh.
 
-  Let PTy (Γ : context) (A : term) := True.
-  Let PInf (Γ : context) (A t : term) := True.
-  Let PInfRed (Γ : context) (A t : term) := True.
-  Let PCheck (Γ : context) (A t : term) := True.
   Let PTyEq (Γ : context) (A B : term) := True.
   Let PTyRedEq (Γ : context) (A B : term) := 
     isType A × isType B.
   Let PNeEq (Γ : context) (A t u : term) := 
     whne t × whne u.
   Let PNeRedEq (Γ : context) (A t u : term) :=
-    whne t × whne u.
+    [× whne t, whne u & whnf A].
   Let PTmEq (Γ : context) (A t u : term) := True.
   Let PTmRedEq (Γ : context) (A t u : term) := 
     [× whnf t, whnf u & isType A].
 
-  Theorem typing_alg_wh :
-    WfAlgoInductionConcl PTy PInf PInfRed PCheck PTyEq PTyRedEq
-      PNeEq PNeRedEq PTmEq PTmRedEq.
+  Theorem algo_conv_wh :
+    AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    subst PTy PInf PInfRed PCheck PTyEq PTyRedEq
-      PNeEq PNeRedEq PTmEq PTmRedEq.
-    apply WfAlgoInduction.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply AlgoConvInduction.
     all: try solve [now constructor].
     all: intros ;
       repeat match goal with
@@ -63,11 +57,7 @@ Conjecture validity : WfDeclInductionConcl
 
 Conjecture prod_ty_inj : forall Γ na A B na' A' B',
   [Γ |-[de] tProd na A B ≅ tProd na' A' B'] ->
-  [Γ |-[de] A' ≅ A] × [Γ,, vass na A |-[de] B ≅ B'].
-
-Conjecture prod_tm_inj : forall Γ na A B na' A' B',
-  [Γ |-[de] tProd na A B ≅ tProd na' A' B' : U ] ->
-  [Γ |-[de] A' ≅ A : U ] × [Γ,, vass na A |-[de] B ≅ B' : U].
+  [Γ |-[de] A' ≅ A] × [Γ,, vass na' A' |-[de] B ≅ B'].
 
 Conjecture app_neu_inj : forall Γ m t n u T,
   whne m ->
@@ -79,16 +69,25 @@ Conjecture app_neu_inj : forall Γ m t n u T,
     [Γ |-[de] B[t..] ≅ T]].
 
 Conjecture prod_ty_red_compl : forall Γ na A B T,
-  [Γ |-[de] tProd na A B ≅ T] ->
+  [Γ |-[de] T ≅ tProd na A B] ->
   ∑ na' A' B', [Γ |-[de] T ⇒* tProd na' A' B'].
 
-Conjecture prod_tm_red_compl : forall Γ na A B T,
-  [Γ |-[de] tProd na A B ≅ T : U] ->
-  ∑ na' A' B', [Γ |-[de] T ⇒* tProd na' A' B' : U].
-
 Conjecture univ_red_compl : forall Γ T,
-  [Γ |-[de] U ≅ T] ->
+  [Γ |-[de] T ≅ U] ->
   [Γ |-[de] T ⇒* U].
+
+Corollary prod_ty_red_compl_inj Γ na A B T :
+  [Γ |-[de] T ≅ tProd na A B] ->
+  ∑ na' A' B', [× [Γ |-[de] T ⇒* tProd na' A' B'], [Γ |-[de] A ≅ A'] & [Γ,, vass na A |-[de] B' ≅ B]].
+Proof.
+  intros HT.
+  pose proof HT as HT'.
+  eapply prod_ty_red_compl in HT' as (na'&A'&B'&?).
+  assert (Hconv : [Γ |-[de] tProd na' A' B' ≅ tProd na A B]) by
+    now etransitivity ; tea ; symmetry ; eapply RedConvTyC.
+  eapply prod_ty_inj in Hconv as [].
+  now do 3 eexists ; split.
+Qed.
 
 Section Stability.
 
@@ -98,7 +97,7 @@ Section Stability.
   Proof.
     induction 1.
     all: constructor ; tea.
-    now eapply TypeRefl.
+    now econstructor.
   Qed.
 
   Lemma wk_subst_compose (Γ Δ Δ' : context) (ρ : Δ' ≤ Δ) σ :
@@ -150,7 +149,7 @@ Section Stability.
       cbn ; now renamify.
   Qed.
 
-  Lemma wf_subst (Γ Δ : context) :
+  Lemma wf_conv_ctx (Γ Δ : context) :
     [ |- Γ ≅ Δ] ->
     [|- Γ].
   Proof.
@@ -179,7 +178,7 @@ Section Stability.
         now eapply validity in HA as [].
       assert [|-[de] Γ,, vass na A] by
         (econstructor ; fold_decl ;
-        eauto using wf_subst).
+        eauto using wf_conv_ctx).
       econstructor ; fold_decl ; tea.
       + eapply well_subst_ext, well_subst_up ; tea.
         reflexivity.
@@ -210,12 +209,31 @@ Section Stability.
     repeat match goal with |- _ × _ => split end.
     1: now unfold PCon.
     all: intros * Hty Δ HΔ.
-    all: pose proof (wf_subst _ _ HΔ).
+    all: pose proof (wf_conv_ctx _ _ HΔ).
     all: eapply conv_well_subst in HΔ.
     all: pose proof (subst_refl _ _ _ HΔ).
     all: eapply typing_subst in Hty ; tea.
-    all: repeat (rewrite idSubst_term in Hty ; [..|reflexivity]).
+    all: asimpl ; repeat (rewrite idSubst_term in Hty ; [..|reflexivity]).
     all: try eassumption.
+  Qed.
+
+  Theorem typing_subst1 Γ nt T :
+    (forall (t : term), [Γ |-[de] t : T] ->
+      forall (A : term), [Γ,, vass nt T |- A] -> [Γ |-[de] A[t..]]) ×
+    (forall (t : term), [Γ |-[de] t : T] ->
+      forall (A u : term), [Γ,, vass nt T |-[de] u : A] -> [Γ |-[de] u[t..] : A[t..]]) ×
+    (forall (t t' : term), [Γ |-[de] t ≅ t' : T] ->
+      forall (A B : term), [Γ,, vass nt T |-[de] A ≅ B] -> [Γ |-[de] A[t..] ≅ B[t'..]]) ×
+  (forall (t t' : term), [Γ |-[de] t ≅ t' : T] ->
+    forall (A u v : term), [Γ,, vass nt T |-[de] u ≅ v : A] -> [Γ |-[de] u[t..] ≅ v[t'..] : A[t..]]).
+  Proof.
+    repeat match goal with |- _ × _ => split end.
+    all: intros * Ht * Hty.
+    all: assert ([|-[de] Γ]) by gen_typing.
+    all: assert ([Γ |-[de]s tRel : Γ]) as Hsubst by now eapply id_subst.
+    3-4: apply subst_refl in Hsubst.
+    all: eapply typing_subst ; tea.
+    all: econstructor ; cbn ; fold_decl ; now asimpl.
   Qed.
 
 End Stability.
@@ -230,7 +248,7 @@ Section Soundness.
     destruct (termGen _ _ _ H) as [? [? [->|]]].
     2: now eexists.
     eexists ; split ; tea.
-    eapply TypeRefl.
+    econstructor.
     now eapply validity in H.
   Qed.
 
@@ -249,12 +267,8 @@ Section Soundness.
       econstructor ; fold_decl.
       1: econstructor ; fold_decl ; gen_typing.
       etransitivity ; tea.
-      eapply typing_subst ; tea.
-      1: now gen_typing.
-      econstructor ; cbn.
-      all: asimpl.
-      2: eapply TermRefl ; fold_decl ; gen_typing.
-      now eapply subst_refl, id_subst ; gen_typing.
+      eapply typing_subst1 ; tea.
+      now econstructor.
     - apply termGen' in Hty as [? [Hty Heq]].
       inversion Hty ; subst ; clear Hty.
       econstructor ; tea.
@@ -344,38 +358,17 @@ Section Soundness.
       (forall T, [Γ |-[de] m : T] -> [Γ |-[de] A ≅ T]) &
       (forall T, [Γ |-[de] n : T] -> [Γ |-[de] A ≅ T])].
 
-  Theorem typing_sound :
-    WfAlgoInductionConcl PTy PInf PInf PCheck PTyEq PTyEq
-      PNeEq PNeEq PTmEq PTmEq.
+  Theorem conv_sound : AlgoConvInductionConcl PTyEq PTyEq PNeEq PNeEq PTmEq PTmEq.
   Proof.
     subst PTy PInf PCheck PTyEq PNeEq PTmEq.
-    apply WfAlgoInduction.
-    - now econstructor.
-    - econstructor ; fold_decl ; gen_typing.
-    - econstructor ; fold_decl ; gen_typing.
-    - econstructor ; fold_decl ; gen_typing.
-    - econstructor ; fold_decl ; gen_typing.
-    - econstructor ; fold_decl ; gen_typing.
-    - intros * ? IHf ? IHA.
-      econstructor ; fold_decl.
-      1: gen_typing.
-      eapply validity, prod_ty_inv in IHf as [] ; tea.
-      now gen_typing.
-    - intros * ? IHt HA ?.
-      eapply subject_reduction_type, RedConvTyC in HA.
-      2: now eapply validity in IHt.
-      gen_typing.
-    - intros * ? IHt ? IHA ?.
-      unshelve epose proof (IHA _ _) ; tea.
-      1: eapply validity in IHt.
-      all: gen_typing.
+    apply AlgoConvInduction.
     - intros * HA HB ? IHA' ? ?.
       eapply subject_reduction_type, RedConvTyC in HA, HB ; tea.
       unshelve epose proof (IHA' _ _).
       1-2: now eapply validity in HA, HB.
       symmetry in HB.
       do 2 etransitivity ; tea.
-      now eapply TypeRefl.
+      now econstructor.
     - intros * ? IHA ? IHB ? ?.
       eapply prod_ty_inv in H1 as [], H2 as [].
       econstructor ; fold_decl ; tea.
@@ -389,14 +382,14 @@ Section Soundness.
       now gen_typing.
     - now gen_typing.
     - intros * Hconv IH HM HN.
-      eapply typing_alg_wh in Hconv as [neM neN].
+      eapply algo_conv_wh in Hconv as [neM neN].
       eapply convUniv ; fold_decl.
       inversion HM ; subst ; clear HM.
       1-2: now inversion neM.
       inversion HN ; subst ; clear HN.
       1-2: now inversion neN.
       now eapply IH.
-    - intros * Hin []  _.
+    - intros * Hin [] _.
       split.
       + do 2 constructor ; fold_decl ; gen_typing.
       + intros T Hty.
@@ -425,23 +418,17 @@ Section Soundness.
         inversion Happ ; subst ; clear Happ.
         eapply IHm', prod_ty_inj in H3 as [].
         etransitivity ; [..|eassumption].
-        eapply typing_subst.
-        1-2: gen_typing.
-        econstructor ; asimpl.
-        1: eapply subst_refl, id_subst.
-        2: eapply TermRefl ; fold_decl.
-        all: now gen_typing.
+        eapply typing_subst1 ; tea.
+        now econstructor.
       + intros ? Happ.
         eapply termGen' in Happ as [? [Happ ?]].
         inversion Happ ; subst ; clear Happ.
-        eapply IHn', prod_ty_inj in H3 as [].
+        eapply IHn', prod_ty_inj in H3 as [HA ?].
         etransitivity ; [..|eassumption].
-        eapply typing_subst.
-        1-2: gen_typing.
-        econstructor ; asimpl.
-        1: eapply subst_refl, id_subst.
-        all: now gen_typing.
-    - intros * ? IHm HA [? Htym] [? Htyn].
+        eapply typing_subst1 ; tea.
+        symmetry in HA.
+        now gen_typing.
+    - intros * ? IHm HA ? [? Htym] [? Htyn].
       edestruct IHm as [IHmc IHm' IHn'].
       1-2: now eexists.
       eapply subject_reduction_type, RedConvTyC in HA.
@@ -498,6 +485,31 @@ Section Soundness.
       1-2: now eexists.
       eapply TermConv ; tea ; fold_decl.
       now eapply Hm'.
+  Qed.
+
+  Theorem typing_sound : AlgoTypingInductionConcl PTy PInf PInf PCheck.
+  Proof.
+    subst PTy PInf PCheck.
+    apply AlgoTypingInduction.
+    - now econstructor.
+    - econstructor ; fold_decl ; gen_typing.
+    - econstructor ; fold_decl ; gen_typing.
+    - econstructor ; fold_decl ; gen_typing.
+    - econstructor ; fold_decl ; gen_typing.
+    - econstructor ; fold_decl ; gen_typing.
+    - intros * ? IHf ? IHA.
+      econstructor ; fold_decl.
+      1: gen_typing.
+      eapply validity, prod_ty_inv in IHf as [] ; tea.
+      now gen_typing.
+    - intros * ? IHt HA ?.
+      eapply subject_reduction_type, RedConvTyC in HA.
+      2: now eapply validity in IHt.
+      gen_typing.
+    - intros * ? IHt HA ?.
+      eapply conv_sound in HA ; red in HA.
+      assert [Γ |-[de] A] by (eapply validity in IHt ; gen_typing).
+      gen_typing.
   Qed.
 
 End Soundness.
