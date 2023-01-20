@@ -214,7 +214,7 @@ Proof.
 Qed.
 
 Module DeclarativeTypingProperties.
-  Include DeclarativeTypingData.
+  Export DeclarativeTypingData.
 
   #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.

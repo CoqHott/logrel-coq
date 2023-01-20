@@ -35,7 +35,7 @@ Section Definitions.
     | neuConvRed {Γ m n A A'} :
       [Γ |- m ~ n ▹ A] ->
       [A ⇒* A'] ->
-      whnf A' ->
+      isType A' ->
       [Γ |- m ~h n ▹ A']
   with ConvTermAlg : context -> term -> term -> term -> Type :=
     | termConvRed {Γ t t' u u' A A'} :
@@ -296,7 +296,7 @@ Section TypingWk.
       econstructor.
       + now apply IHm.
       + eauto using credalg_wk.
-      + now eapply whnf_ren. 
+      + now eapply isType_ren. 
     - intros * ? ? ? ? IHt.
       econstructor.
       1-3: eauto using credalg_wk.
@@ -370,3 +370,34 @@ Section TypingWk.
   Qed.
 
 End TypingWk.
+
+Section AlgTypingWh.
+
+  Let PTyEq (Γ : context) (A B : term) := True.
+  Let PTyRedEq (Γ : context) (A B : term) := 
+    isType A × isType B.
+  Let PNeEq (Γ : context) (A t u : term) := 
+    whne t × whne u.
+  Let PNeRedEq (Γ : context) (A t u : term) :=
+    [× whne t, whne u & isType A].
+  Let PTmEq (Γ : context) (A t u : term) := True.
+  Let PTmRedEq (Γ : context) (A t u : term) := 
+    [× whnf t, whnf u & isType A].
+
+  Theorem algo_conv_wh :
+    AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply AlgoConvInduction.
+    all: try solve [now constructor].
+    all: intros ;
+      repeat match goal with
+      | H : [× _, _ & _] |- _ => destruct H
+      | H : _ × _ |- _ => destruct H
+      end.
+    all: try solve [now do 2 constructor].
+    constructor.
+    1-2: gen_typing.
+    now constructor.
+  Qed.
+End AlgTypingWh.
