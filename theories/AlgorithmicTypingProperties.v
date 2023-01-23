@@ -190,26 +190,130 @@ Section Transitivity.
     [Γ |-[al] A ≅ C].
   Let PTyRedEq (Γ : context) (A B : term) := forall Δ C,
     [|-[de] Γ ≅ Δ] ->
-    [Δ |- B ≅h C] ->
-    [Γ |- A ≅h C].
+    [Δ |-[al] B ≅h C] ->
+    [Γ |-[al] A ≅h C].
   Let PNeEq (Γ : context) (A t u : term) := forall Δ v A',
     [|-[de] Γ ≅ Δ] ->
     [Δ |-[al] u ~ v ▹ A'] ->
-    [Γ |-[al] t ~ v ▹ A].
+    [Γ |-[al] t ~ v ▹ A] × [Γ |-[de] A ≅ A'].
   Let PNeRedEq (Γ : context) (A t u : term) := forall Δ A' v,
     [|-[de] Γ ≅ Δ] ->
-    [Δ |- u ~h v ▹ A'] ->
-    [Γ |- t ~h v ▹ A].
+    [Δ |-[al] u ~h v ▹ A'] ->
+    [Γ |-[al] t ~h v ▹ A] × [Γ |-[de] A ≅ A'].
   Let PTmEq (Γ : context) (A t u : term) := forall Δ A' v,
     [|-[de] Γ ≅ Δ] ->
-    [Δ |-[de] A ≅ A'] ->
+    [Γ |-[de] A' ≅ A] ->
     [Δ |-[al] u ≅ v : A'] ->
-    [Γ |- t ≅ v : A].
+    [Γ |-[al] t ≅ v : A].
   Let PTmRedEq (Γ : context) (A t u : term) := forall Δ A' v,
     [|-[de] Γ ≅ Δ] ->
-    [Δ |-[de] A ≅ A'] ->
-    [Δ |- u ≅h v : A'] ->
-    [Γ |- t ≅h v : A].
+    [Γ |-[de] A' ≅ A] ->
+    [Δ |-[al] u ≅h v : A'] ->
+    [Γ |-[al] t ≅h v : A].
+
+  Theorem algo_conv_trans :
+  BundledConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply BundledConvInduction.
+    - intros ? ? ? ? B' ? ? Hconv IH ? ? ? * ? Hconv'.
+      inversion Hconv' ; subst ; clear Hconv'.
+      assert (A'0 = B') as ->.
+      {
+        eapply whred_det ; tea.
+        - eapply algo_conv_wh in H7 as [] ; gen_typing.
+        - eapply algo_conv_wh in Hconv as [] ; gen_typing. 
+      }
+      econstructor ; tea.
+      eapply IH ; tea.
+    - intros * ? IHA ? IHB ? ? ? * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv.
+      2:{
+        apply algo_conv_wh in H5 as [e _].
+        now inversion e.
+        }
+        econstructor ; fold_algo.
+        + eapply IHA ; tea.
+        + eapply IHB ; tea.
+          econstructor ; tea.
+          eapply conv_sound in H ; tea.
+          all: now eapply prod_ty_inv.
+    - intros * ? ? _ * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv.
+      2:{ apply algo_conv_wh in H2 as [e _]. now inversion e. }
+      now constructor.
+    - intros * ? IH ? ? ? * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      1-2: apply algo_conv_wh in H as [_ e] ; now inversion e.
+      econstructor ; fold_algo.
+      now eapply IH.
+    - intros * ? ? _ _ * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      split.
+      + now econstructor.
+      + eapply in_ctx_conv in H5 as [? [Hin ]]; tea.
+        now eapply in_ctx_inj in Hin as ->.
+    - intros * ? IHm Ht IHt ? ? ? * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      eapply IHm in H8 as [? HconvP] ; tea.
+      eapply prod_ty_inj in HconvP as [].
+      split.
+      + econstructor ; fold_algo ; tea.
+        now eapply IHt.
+      + eapply typing_subst1 ; tea.
+        eapply TermConv ; fold_decl.
+        1: now eapply IHt.
+        now symmetry.
+    - intros * ? IH ? ? ? ? ? * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      edestruct IH as [[? HconvA] ?] ; tea.
+      split.
+      1: now econstructor.
+      etransitivity ; [|etransitivity].
+      1: symmetry.
+      1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA. 
+      eassumption.
+    - intros * ? ? ? Ht IHt ? ? ? * ? HconvA Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      assert (t'0 = u') as ->.
+      {
+        eapply whred_det ; tea.
+        1: now eapply algo_conv_wh in H9 as [].
+        now eapply algo_conv_wh in Ht as [].
+      }
+      econstructor ; tea ; fold_algo.
+      eapply IHt ; tea. 
+      etransitivity ; [|etransitivity].
+      1: symmetry.
+      1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA.
+      eassumption.
+    - intros * ? [IHA HpostA] ? IHB ? ? ? * HΓ ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      2: now inversion H5 ; inversion H8.
+      2: now inversion H5.
+      econstructor ; fold_algo.
+      1: now eapply IHA.
+      eapply IHB.
+      3: eassumption.
+      + econstructor ; tea. now econstructor.
+      + do 3 econstructor ; fold_decl.
+        * now symmetry in HΓ ; eapply wf_conv_ctx in HΓ.
+        * econstructor ; fold_decl.
+          now eapply validity in HpostA as [].
+    - intros * ? ? ? IH ? ? ? * ? ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      1:{ unshelve eapply ty_conv_inj in H6. 1-2: econstructor. now cbn in *. }
+      2:{ unshelve eapply ty_conv_inj in H6. 1-2: now econstructor. now cbn in H6. }
+      eapply prod_ty_inj in H6 as [].
+      econstructor ; tea.
+      eapply IH ; tea.
+      now econstructor.
+    - intros * ? IH ? ? ? ? * ? ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      1-2: now unshelve eapply ty_conv_inj in H5 ; [now econstructor | now econstructor | cbn in *].
+      econstructor ; fold_algo ; tea.
+      now eapply IH.
+  Qed.
 
 End Transitivity.
 
