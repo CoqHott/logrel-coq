@@ -1,14 +1,8 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences McBrideDiscipline.
+  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
 
-Import AlgorithmicTypingData DeclarativeTypingProperties.
-
-Lemma infer_red_equiv Γ t A :
-  InferRedAlg Γ A t <~> [Γ |-[al] t ▹h A].
-Proof.
-  split ; intros [] ; now econstructor.
-Qed.
+Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
 Section AlgoConvConv.
 
@@ -48,7 +42,7 @@ Section AlgoConvConv.
     [|-[de] Γ' ≅ Γ] ->
     (∑ T, [Γ |-[de] t : T]) ->
     (∑ T, [Γ |-[de] u : T]) ->
-    ∑ A', [× [Γ' |- t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
+    ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
   Let PTmEq (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
     [Γ |-[de] t : A] -> [Γ |-[de] u : A ] ->
@@ -56,7 +50,7 @@ Section AlgoConvConv.
   Let PTmRedEq (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] -> isType A' ->
     [Γ |-[de] t : A] -> [Γ |-[de] u : A ] ->
-    [Γ' |- t ≅h u : A'].
+    [Γ' |-[al] t ≅h u : A'].
 
   Let PTyEq' (Γ : context) (A B : term) := True.
   Let PTyRedEq' (Γ : context) (A B : term) := True.
@@ -65,28 +59,31 @@ Section AlgoConvConv.
     ∑ A', [Γ' |-[al] t ~ u ▹ A'] × [Γ' |-[de] A' ≅ A].
   Let PNeRedEq' (Γ : context) (A t u : term) := forall Γ',
     [|-[de] Γ' ≅ Γ] ->
-    ∑ A', [× [Γ' |- t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
+    ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
   Let PTmEq' (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
     [Γ' |-[al] t ≅ u : A'].
   Let PTmRedEq' (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] -> isType A' ->
-    [Γ' |- t ≅h u : A'].
+    [Γ' |-[al] t ≅h u : A'].
 
   Theorem algo_conv_conv :
   AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
-    enough (AlgoConvDisciplineInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq') as Hind.
+    enough (BundledConvInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq') as Hind.
     all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
     {
-      unfold AlgoConvDisciplineInductionConcl, AlgoConvInductionConcl in *.
+      unfold BundledConvInductionConcl, AlgoConvInductionConcl in *.
       unshelve (repeat (split ; [destruct Hind as [Hind _] ; shelve | destruct Hind as [_ Hind]])).
       1-2: now constructor.
-      all: intros ; eapply Hind ; tea.
-      all: match goal with H : ConvCtx _ _ |- _ => symmetry in H ; now apply wf_conv_ctx in H end.
+      all: intros * Hconv ; intros ; eapply Hind ; tea.
+      all: match goal with H : ConvCtx _ _ |- _ => symmetry in H ; apply wf_conv_ctx in H end.
+      all: split ; tea.
+      all: try solve [now apply algo_conv_wh in Hconv as []].
+      all: now eapply validity in H2.
     }
-    apply AlgoConvDisciplineInduction ; cbn in *.
+    apply BundledConvInduction ; cbn in *.
     all: try solve [now constructor].
     - intros * HΓ ? _ _ ? ?.
       eapply in_ctx_conv in HΓ as [? []] ; tea.
@@ -101,7 +98,7 @@ Section AlgoConvConv.
       destruct IHt as [IHt IHt'].
       specialize (IHt _ _ HΓ HconvA).
       eexists ; split.
-      1: econstructor ; fold_algo ; tea.
+      1: now econstructor.
       eapply typing_subst1 ; tea.
       econstructor.
       eapply stability ; tea.
@@ -185,6 +182,37 @@ Section AlgoConvConv.
 
 End AlgoConvConv.
 
+Section Transitivity.
+
+  Let PTyEq (Γ : context) (A B : term) := forall Δ C,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] B ≅ C] ->
+    [Γ |-[al] A ≅ C].
+  Let PTyRedEq (Γ : context) (A B : term) := forall Δ C,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |- B ≅h C] ->
+    [Γ |- A ≅h C].
+  Let PNeEq (Γ : context) (A t u : term) := forall Δ v A',
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] u ~ v ▹ A'] ->
+    [Γ |-[al] t ~ v ▹ A].
+  Let PNeRedEq (Γ : context) (A t u : term) := forall Δ A' v,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |- u ~h v ▹ A'] ->
+    [Γ |- t ~h v ▹ A].
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ A' v,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[de] A ≅ A'] ->
+    [Δ |-[al] u ≅ v : A'] ->
+    [Γ |- t ≅ v : A].
+  Let PTmRedEq (Γ : context) (A t u : term) := forall Δ A' v,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[de] A ≅ A'] ->
+    [Δ |- u ≅h v : A'] ->
+    [Γ |- t ≅h v : A].
+
+End Transitivity.
+
 Module AlgorithmicTypingProperties.
   Include AlgorithmicTypingData.
 
@@ -202,15 +230,9 @@ Module AlgorithmicTypingProperties.
 
   #[export, refine] Instance InferringAlgProperties : InferringProperties (ta := al) := {}.
   Proof.
-    - intros.
-      now eapply algo_typing_wk.
-    - now econstructor.
-    - econstructor.
-      all: now eapply infer_red_equiv.
-    - now econstructor.
-    - econstructor.
-      1: now eapply infer_red_equiv.
-      eassumption. 
+    2-5: now econstructor.
+    intros.
+    now eapply algo_typing_wk.
   Qed.  
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := al) := {}.

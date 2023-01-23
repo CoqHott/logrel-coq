@@ -44,15 +44,6 @@ Proof.
   - now eapply TypeTrans.
 Qed.
 
-Lemma InfRedTy {Γ A t} :
-  [Γ |- t ▹h A] ->
-  [Γ |- t : A].
-Proof.
-  intros [].
-  econstructor ; tea.
-  now apply RedConvTyC.
-Qed.
-
 Lemma oredtm_meta_conv (Γ : context) (t u u' A A' : term) :
   [Γ |- t ⇒ u : A] ->
   A' = A ->

@@ -5,16 +5,9 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
 Section RedDefinitions.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!Typing ta}
+    `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!InferringRed ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!RedType ta} `{!RedTerm ta}.
-
-  Record InferRed (Γ : context) (A t : term) : Type :=
-    {
-      infty : term ;
-      inf_inf :> [Γ |- t ▹ infty] ;
-      inf_red :> [Γ |- infty ⇒* A] ;
-    }.
 
   Record TypeRedWhnf (Γ : context) (A B : term) : Type :=
     {
@@ -75,8 +68,6 @@ Section RedDefinitions.
 
 End RedDefinitions.
 
-Notation "[ Γ |- t ▹h A ]" := (InferRed Γ A t) (only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t ▹h A ]" := (InferRed (ta := ta) Γ A t) : typing_scope.
 Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ↘ B ]" := (TypeRedWhnf (ta := ta) Γ A B) : typing_scope.
 Notation "[ Γ |- t ↘ u : A ]" := (TermRedWhnf Γ A t u) (only parsing ): typing_scope.
@@ -97,7 +88,7 @@ Notation "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ) (only parsing) : typing_scope.
 Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 
 #[export] Hint Resolve
-  Build_InferRed Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
+  Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
   Build_TermConvWf Build_TypeRedWf Build_TermRedWf
   well_sempty well_scons conv_sempty conv_scons
   : gen_typing.
@@ -118,7 +109,7 @@ Section GenericTyping.
 
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Inferring ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+    `{!InferringRed ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=

@@ -3,7 +3,121 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
 
 Import DeclarativeTypingProperties AlgorithmicTypingData.
 
-Section DisciplineConv.
+Record WfTypeBun Γ A :=
+  {
+    bun_wf_ty_ctx : [|-[de] Γ] ;
+    bun_wf_ty : [Γ |-[al] A] ;
+  }.
+
+Record InferBun Γ A t :=
+{
+  bun_inf_ctx : [|-[de] Γ] ;
+  bun_inf : [Γ |-[al] t ▹ A]
+}.
+
+Record InferRedBun Γ A t :=
+{
+  bun_inf_red_ctx : [|-[de] Γ] ;
+  bun_inf_red : [Γ |-[al] t ▹h A]
+}.
+
+Record CheckBun Γ A t :=
+{
+  bun_chk_ctx : [|-[de] Γ] ;
+  bun_chk_ty : [Γ |-[de] A] ;
+  bun_chk : [Γ |-[al] t : A]
+}.
+
+Record ConvTypeBun Γ A B :=
+{
+  bun_conv_ty_ctx : [|-[de] Γ] ;
+  bun_conv_ty_l : [Γ |-[de] A] ;
+  bun_conv_ty_r : [Γ |-[de] B] ;
+  bun_conv_ty : [Γ |-[al] A ≅ B]
+}.
+
+Record ConvTypeRedBun Γ A B :=
+{
+  bun_conv_ty_red_ctx : [|-[de] Γ] ;
+  bun_conv_ty_red_l : [Γ |-[de] A] ;
+  bun_conv_ty_red_wh_l : isType A ;
+  bun_conv_ty_red_r : [Γ |-[de] B] ;
+  bun_conv_ty_red_wh_r : isType B ;
+  bun_conv_ty_red : [Γ |-[al] A ≅h B]
+}.
+
+Record ConvTermBun Γ A t u :=
+{
+  bun_conv_tm_ctx : [|-[de] Γ] ;
+  bun_conv_tm_ty : [Γ |-[de] A] ;
+  bun_conv_tm_l : [Γ |-[de] t : A] ;
+  bun_conv_tm_r : [Γ |-[de] u : A] ;
+  bun_conv_tm : [Γ |-[al] t ≅ u : A]
+}.
+
+Record ConvTermRedBun Γ A t u :=
+{
+  bun_conv_tm_red_ctx : [|-[de] Γ] ;
+  bun_conv_tm_red_ty : [Γ |-[de] A] ;
+  bun_conv_tm_red_wh_ty : isType A ;
+  bun_conv_tm_red_l : [Γ |-[de] t : A] ;
+  bun_conv_tm_red_wh_l : whnf t ;
+  bun_conv_tm_red_r : [Γ |-[de] u : A] ;
+  bun_conv_tm_red_wh_r : whnf u ;
+  bun_conv_tm_red : [Γ |-[al] t ≅h u : A]
+}.
+
+Record ConvNeuBun Γ A m n :=
+{
+  bun_conv_ne_ctx : [|-[de] Γ] ;
+  bun_conv_ne_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_wh_l : whne m ;
+  bun_conv_ne_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_wh_r : whne n ;
+  bun_conv_ne : [Γ |-[al] m ~ n ▹ A]
+}.
+
+Record ConvNeuRedBun Γ A m n :=
+{
+  bun_conv_ne_red_ctx : [|-[de] Γ] ;
+  bun_conv_ne_red_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_red_wh_l : whne m ;
+  bun_conv_ne_red_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_red_wh_r : whne n ;
+  bun_conv_ne_red : [Γ |-[al] m ~h n ▹ A]
+}.
+
+Module BundledTypingData.
+
+  #[export] Instance WfContext_Bundle : WfContext bn := fun _ => True.
+  #[export] Instance WfType_Bundle : WfType bn := WfTypeBun.
+  #[export] Instance Inferring_Bundle : Inferring bn := InferBun. 
+  #[export] Instance InferringRed_Bundle : InferringRed bn := InferRedBun.
+  #[export] Instance Checking_Bundle : Typing bn := CheckBun.
+  #[export] Instance ConvType_Bundle : ConvType bn := ConvTypeBun.
+  #[export] Instance ConvTypeRed_Bundle : ConvTypeRed bn :=  ConvTypeRedBun.
+  #[export] Instance ConvTerm_Bundle : ConvTerm bn := ConvTermBun.
+  #[export] Instance ConvTermRed_Bundle : ConvTermRed bn := ConvTermRedBun.
+  #[export] Instance ConvNeu_Bundle : ConvNeu bn := ConvNeuBun.
+  #[export] Instance ConvNeuRed_Bundle : ConvNeuRed bn := ConvNeuRedBun.
+
+  Ltac fold_bun :=
+    change WfTypeBun with (wf_type (ta := bn)) in *;
+    change InferBun with (inferring (ta := bn)) in * ;
+    change InferRedBun with (infer_red (ta := bn)) in * ;
+    change CheckBun with (typing (ta := bn)) in * ;
+    change ConvTypeBun with (conv_type (ta := bn)) in * ;
+    change ConvTermBun with (conv_term (ta := bn)) in * ;
+    change ConvNeuBun with (conv_neu (ta := bn)) in * ;
+    change ConvTypeRedBun with (conv_type_red (ta := bn)) in * ;
+    change ConvTermRedBun with (conv_term_red (ta := bn)) in * ;
+    change ConvNeuRedBun with (conv_neu_red (ta := bn)) in *.
+
+End BundledTypingData.
+
+Import BundledTypingData.
+
+Section BundledConv.
 
   Context (PTyEq PTyRedEq : context -> term -> term -> Type)
   (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type).
@@ -47,6 +161,17 @@ Section DisciplineConv.
     | ?Hyp' => Hyp'
     end.
 
+  #[local] Ltac bundle Hyp :=
+    lazymatch Hyp with
+      | [?Γ |-[al] ?A ≅ ?B] => constr:([Γ |-[bn] A ≅ B])
+      | [?Γ |-[al] ?A ≅h ?B] => constr:([Γ |-[bn] A ≅h B])
+      | [?Γ |-[al] ?t ≅ ?u : ?A] => constr:([Γ |-[bn] t ≅ u : A])
+      | [?Γ |-[al] ?t ≅h ?u : ?A] => constr:([Γ |-[bn] t ≅h u : A])
+      | [?Γ |-[al] ?m ~ ?n ▹ ?A] => constr:([Γ |-[bn] m ~ n ▹ A])
+      | [?Γ |-[al] ?m ~h ?n ▹ ?A] => constr:([Γ |-[bn] m ~h n ▹ A])
+      | ?Hyp' => constr:(Hyp')
+    end.
+
   #[local] Ltac strong_step step :=
     lazymatch step with
       | ?Hyp -> ?T => let Hyp' := (post_cond Hyp) with T' := (strong_step T) in constr:(Hyp' -> T')
@@ -55,11 +180,19 @@ Section DisciplineConv.
       | ?T => (pre_cond T)
     end.
 
+  (* Eval cbn beta in ltac:(let T := strong_step (forall (Γ : context) (na na' : aname) (A B A' B' : term),
+    [Γ |-[ al ] A ≅ A'] ->
+    PTyEq Γ A A' ->
+    [Γ,, vass na A |-[ al ] B ≅ B'] ->
+    PTyEq (Γ,, vass na A) B B' -> PTyRedEq Γ (tProd na A B) (tProd na' A' B')) in exact T).
+  *)
+
   #[local] Ltac weak_concl concl :=
     lazymatch concl with
+    | ?Hyp -> ?T => let T' := weak_concl T in let Hyp' := bundle Hyp in constr:(Hyp' -> T')
     | forall x : ?Hyp, @?T x => constr:(forall x : Hyp, ltac:(
       let T' := ltac:(eval hnf in (T x)) in let T'' := weak_concl T' in exact T''))
-    | ?T => (pre_cond T)
+    | ?T => constr:(T)
     end.
 
   #[local] Ltac strong_concl concl :=
@@ -250,11 +383,11 @@ Section DisciplineConv.
       now eapply Hm'.
   Qed.
 
-  Definition AlgoConvDisciplineInductionConcl : Type :=
+  Definition BundledConvInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in
       let t' := weak_statement t in exact t').
 
-  Corollary AlgoConvDisciplineInduction :
+  Corollary BundledConvInduction :
     ltac:(
       let t := (type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq)) in
       let ind := weak_statement t in
@@ -262,11 +395,11 @@ Section DisciplineConv.
   Proof.
     intros.
     repeat match goal with |- prod _ _ => split end.
-    all: intros.
+    all: intros * [].
     all: apply algo_conv_discipline ; assumption.
   Qed.
 
-End DisciplineConv.
+End BundledConv.
 
 Section ConvSoundness.
 
@@ -300,7 +433,7 @@ Section ConvSoundness.
 
 End ConvSoundness.
 
-Section DisciplineTyping.
+Section BundledTyping.
 
   Context (PTy : context -> term -> Type)
     (PInf PInfRed PCheck : context -> term -> term -> Type).
@@ -330,6 +463,15 @@ Section DisciplineTyping.
     | ?Hyp' => Hyp'
     end.
 
+  #[local] Ltac bundle Hyp :=
+    lazymatch Hyp with
+      | [?Γ |-[al] ?A] => constr:([Γ |-[bn] A])
+      | [?Γ |-[al] ?t ▹ ?A] => constr:([Γ |-[bn] t ▹ A])
+      | [?Γ |-[al] ?t ▹h ?A] => constr:([Γ |-[bn] t ▹h A])
+      | [?Γ |-[al] ?t : ?A] => constr:([Γ |-[bn] t : A])
+      | ?Hyp' => constr:(Hyp')
+    end.
+
   #[local] Ltac strong_step step :=
     lazymatch step with
       | ?Hyp -> ?T => let Hyp' := (post_cond Hyp) with T' := (strong_step T) in constr:(Hyp' -> T')
@@ -340,9 +482,10 @@ Section DisciplineTyping.
 
   #[local] Ltac weak_concl concl :=
     lazymatch concl with
+    | ?Hyp -> ?T => let T' := weak_concl T in let Hyp' := bundle Hyp in constr:(Hyp' -> T')
     | forall x : ?Hyp, @?T x => constr:(forall x : Hyp, ltac:(
       let T' := ltac:(eval hnf in (T x)) in let T'' := weak_concl T' in exact T''))
-    | ?T => (pre_cond T)
+    | ?T => constr:(T)
     end.
 
   #[local] Ltac strong_concl concl :=
@@ -375,7 +518,7 @@ Section DisciplineTyping.
     eapply AlgoTypingInduction.
     1-6: solve [intros ;
       repeat unshelve (
-        match goal with
+        match reverse goal with
           | IH : context [prod] |- _ => destruct IH ; [..|shelve] ; gen_typing
         end) ;
       now split ; [|econstructor] ; eauto].
@@ -400,11 +543,11 @@ Section DisciplineTyping.
       now eapply validity in IHt.
   Qed.
 
-  Definition AlgoTypingDisciplineInductionConcl : Type :=
+  Definition BundledTypingInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoTypingInductionConcl PTy PInf PInfRed PCheck) in
       let t' := weak_statement t in exact t').
 
-  Corollary AlgoTypingDisciplineInduction :
+  Corollary BundledTypingInduction :
     ltac:(
       let t := (type of (AlgoTypingInduction PTy PInf PInfRed PCheck)) in
       let ind := weak_statement t in
@@ -412,11 +555,11 @@ Section DisciplineTyping.
   Proof.
     intros.
     repeat match goal with |- prod _ _ => split end.
-    all: intros.
+    all: intros * [].
     all: apply algo_typing_discipline ; assumption.
   Qed.
 
-End DisciplineTyping.
+End BundledTyping.
 
 Section TypingSoundness.
 

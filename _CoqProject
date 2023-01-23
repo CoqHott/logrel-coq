@@ -28,7 +28,7 @@ theories/Reflexivity.v
 theories/Irrelevance.v
 
 theories/LogRelConsequences.v
-theories/McBrideDiscipline.v
+theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicTypingProperties.v
 
 theories/Positivity.v

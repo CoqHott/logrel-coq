@@ -1,11 +1,11 @@
 From LogRel Require Import Utils BasicAst Ast Context.
 
-(* We have two families of definitions: the declarative ones (tagged de), and the algorithmic ones (tagged al) *)
-(* All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input,
+(* We have three families of definitions: the declarative ones (tagged de), the algorithmic ones (tagged al), and the bundled ones, which package an algorithmic typing derivation with its preconditions (tagged bn) *)
+(* All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input only,
 ideally wisely in cases where there is only one instance at hand. The tagged one is used systematically in printing,
-and can be used in input when disambiguation is needed.*)
+and can be used in input when disambiguation is desired.*)
 
-Variant tag := | de | al.
+Variant tag := | de | al | bn.
 
 Declare Scope typing_scope.
 Delimit Scope typing_scope with ty.
@@ -17,9 +17,13 @@ Class WfContext (ta : tag) := wf_context : context -> Set.
 Class WfType (ta : tag) := wf_type : context -> term -> Set.
 Class Typing (ta : tag) := typing : context -> term -> term -> Set.
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
+Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
+Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
 Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
+Class ConvTermRed (ta : tag) := conv_term_red : context -> term -> term -> term -> Set.
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
+Class ConvNeuRed (ta : tag) := conv_neu_red : context -> term -> term -> term -> Set.
 
 (* The context Γ is well-formed *)
 Notation "[ |- Γ ]" := (wf_context Γ)
@@ -45,32 +49,32 @@ Notation "[ Γ |- t ▹ A ]" := (inferring Γ A t)
 Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
   (inferring (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (* The term t infers the reduced A in Γ *)
-Reserved Notation "[ Γ |- t ▹h A ]" (at level 0, Γ, t, A at level 50).
-Reserved Notation "[ Γ |-[ ta  ] t ▹h A ]" (at level 0, ta, Γ, t, A at level 50).
+Notation "[ Γ |- t ▹h A ]" := (infer_red Γ A t) (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ▹h A ]" := (infer_red (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (* Types A and B are convertible in Γ *)
 Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
   (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ≅ B ]" := (conv_type (ta := ta) Γ A B)
   (at level 0, ta, Γ, A, B at level 50) : typing_scope.
 (* Types in whnf A and B are convertible in Γ *)
-Reserved Notation "[ Γ |- A '≅h' B ]" (at level 0, Γ, A, B at level 50).
-Reserved Notation "[ Γ |-[ ta  ] A '≅h' B ]" (at level 0, ta, Γ, A, B at level 50).
+Notation "[ Γ |- A '≅h' B ]" := (conv_type_red Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A '≅h' B ]" := (conv_type_red (ta := ta) Γ A B) (at level 0, ta, Γ, A, B at level 50) : typing_scope.
 (* Terms t and t' are convertible in Γ *)
 Notation "[ Γ |- t ≅ t' : A ]" := (conv_term Γ A t t')
   (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ A t t')
   (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
 (* Whnfs t and t' are convertible in Γ *)
-Reserved Notation "[ Γ |- t '≅h' t' : A ]" (at level 0, Γ, t, t', A at level 50).
-Reserved Notation "[ Γ |-[ ta  ] t '≅h' t' : A ]" (at level 0, ta, Γ, t, t', A at level 50).
+Notation "[ Γ |- t '≅h' t' : A ]" := (conv_term_red Γ A t t') (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t '≅h' t' : A ]" := (conv_term_red (ta := ta) Γ A t t') (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
 (* Neutral n and n' are convertible in Γ *)
 Notation "[ Γ |- n ~ n' ▹ A ]" := (conv_neu Γ A n n')
   (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
 Notation "[ Γ |-[ ta  ] n ~ n' ▹ A ]" := (conv_neu (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 (* Neutral n and n' are convertible at the reduced type A in Γ *)
-Reserved Notation "[ Γ |- n '~h' n' ▹ A ]" (at level 0, Γ, n, n', A at level 50).
-Reserved Notation "[ Γ |-[ ta  ] n '~h' n' ▹ A ]" (at level 0, ta, Γ, n, n', A at level 50).
+Notation "[ Γ |- n '~h' n' ▹ A ]" := (conv_neu_red Γ A n n') (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] n '~h' n' ▹ A ]" := (conv_neu_red (ta := ta) Γ A n n') (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** Reductions *)
 Class RedType (ta : tag) := red_ty : context -> term -> term -> Set.

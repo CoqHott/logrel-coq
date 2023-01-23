@@ -125,10 +125,15 @@ Module AlgorithmicTypingData.
   #[export] Instance WfContext_Algo : WfContext al := fun _ => True.
   #[export] Instance WfType_Algo : WfType al := WfTypeAlg.
   #[export] Instance Inferring_Algo : Inferring al := InferAlg.
+  #[export] Instance InferringRed_Algo : InferringRed al :=
+  InferRedAlg.
   #[export] Instance Checking_Algo : Typing al := CheckAlg.
   #[export] Instance ConvType_Algo : ConvType al := ConvTypeAlg.
+  #[export] Instance ConvTypeRed_Algo : ConvTypeRed al :=  ConvTypeRedAlg.
   #[export] Instance ConvTerm_Algo : ConvTerm al := ConvTermAlg.
+  #[export] Instance ConvTermRed_Algo : ConvTermRed al := ConvTermRedAlg.
   #[export] Instance ConvNeu_Algo : ConvNeu al := ConvNeuAlg.
+  #[export] Instance ConvNeuRed_Algo : ConvNeuRed al := ConvNeuRedAlg.
   (* Reduction is untyped *)
   #[export] Instance RedType_Algo : RedType al := fun _ => RedClosureAlg.
   #[export] Instance RedTerm_Algo : RedTerm al :=
@@ -137,16 +142,16 @@ Module AlgorithmicTypingData.
   Ltac fold_algo :=
     change WfTypeAlg with (wf_type (ta := al)) in *;
     change InferAlg with (inferring (ta := al)) in * ;
+    change InferRedAlg with (infer_red (ta := al)) in * ;
     change CheckAlg with (typing (ta := al)) in * ;
     change ConvTypeAlg with (conv_type (ta := al)) in * ;
     change ConvTermAlg with (conv_term (ta := al)) in * ;
-    change ConvNeuAlg with (conv_neu (ta := al)) in *.
+    change ConvNeuAlg with (conv_neu (ta := al)) in * ;
+    change ConvTypeRedAlg with (conv_type_red (ta := al)) in * ;
+    change ConvTermRedAlg with (conv_term_red (ta := al)) in * ;
+    change ConvNeuRedAlg with (conv_neu_red (ta := al)) in *.
 
 End AlgorithmicTypingData.
-
-Notation "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B) : typing_scope.
-Notation "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n) : typing_scope.
-Notation "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u) : typing_scope.
 
 Section InductionPrinciples.
   Import AlgorithmicTypingData.
@@ -210,28 +215,6 @@ Definition AlgoTypingInduction :=
       fold_algo ;
       let ind_ty := type of ind in
       exact (ind : ind_ty)).
-    
-(* Definition WfAlgoInductionConcl
-  (PTy : context -> term -> Type)
-  (PInf PInfRed PCheck PTyEq PTyRedEq : context -> term -> term -> Type)
-  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type) :=
-  (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
-  × (forall (Γ : context) (A t : term), [Γ |- t ▹ A] -> PInf Γ A t)
-  × (forall (Γ : context) (A t : term), InferRedAlg Γ A t -> PInfRed Γ A t)
-  × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PCheck Γ A t)
-	× (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
-  × (forall (Γ : context) (A B : term), [Γ |- A ≅h B] -> PTyRedEq Γ A B)
-  × (forall (Γ : context) (A m n : term), [Γ |- m ~ n ▹ A] -> PNeEq Γ A m n)
-  × (forall (Γ : context) (A m n : term), [Γ |- m ~h n ▹ A] -> PNeRedEq Γ A m n)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅ u : A] -> PTmEq Γ A t u)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅h u : A] -> PTmRedEq Γ A t u).
-
-Definition WfAlgoInduction :=
-  ltac:(let ind := fresh "ind" in
-      pose (ind := _WfAlgoInduction);
-      fold_algo ;
-      let ind_ty := type of ind in
-      exact (ind : ind_ty)). *)
 
 End InductionPrinciples.
 
