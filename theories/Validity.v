@@ -251,5 +251,24 @@ Section Inductions.
     - apply hε.
     - intros *; apply hsnoc.
   Defined.
+
+  Lemma invValidity {Γ} (VΓ : [||-v Γ]) : 
+    match Γ as Γ return [||-v Γ] -> Type with
+    | nil => fun VΓ₀ => VΓ₀ = validEmpty
+    | ({| decl_name := na ; decl_type := A|} :: Γ)%list => fun VΓ₀ => 
+      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc na VΓ VA
+    end VΓ.
+  Proof.
+    pattern Γ, VΓ. apply validity_rect.
+    - reflexivity.
+    - intros; do 3 eexists; reflexivity.
+  Qed.
+  
+  Lemma invValidityEmpty (VΓ : [||-v ε]) : VΓ = validEmpty.
+  Proof. apply (invValidity VΓ). Qed.
+
+  Lemma invValiditySnoc {Γ na A} (VΓ₀ : [||-v Γ ,, vass na A ]) :
+      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc na VΓ VA.
+  Proof. apply (invValidity VΓ₀). Qed.
   
 End Inductions.

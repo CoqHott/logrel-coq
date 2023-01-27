@@ -32,3 +32,6 @@ theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicTypingProperties.v
 
 theories/Positivity.v
+
+theories/Validity.v
+theories/Substitution/Irrelevance.v
