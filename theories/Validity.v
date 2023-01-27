@@ -24,7 +24,7 @@ Ltac substitution := eauto with substitution.
     (eqSubst : forall (Δ : context) (σ σ' : nat -> term) (wfΔ : [|- Δ ]), validSubst Δ σ wfΔ -> Type@{i}) 
     , Type@{j}.
 
-(* An VPack contains the data corresponding to the codomain of VRel seen as a functional relation *)
+(* A VPack contains the data corresponding to the codomain of VRel seen as a functional relation *)
 
 Module VPack.
 
