@@ -180,7 +180,7 @@ Proof.
       all: econstructor ; cbn in *.
       all: try eauto.
       1,3: eapply wfredtm_conv ; eassumption.
-      all: eapply convneu_conv ; eassumption.
+      all: gen_typing.
     + intros ? ?.
       split.
       2: symmetry in convtAA.

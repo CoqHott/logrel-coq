@@ -45,10 +45,12 @@ Proof. intros f g Hfg x. rewrite /map_decl.
   now rewrite Hfg.
 Qed.
 
-Arguments map_decl _%fscope.
+Arguments map_decl _%fscope !_/.
 
 #[global] Instance Ren_decl : (Ren1 (nat -> nat) context_decl context_decl) :=
   fun ρ t => map_decl (ren_term ρ) t.
+
+Arguments Ren_decl /.
 
 Definition vass a A := {| decl_name := a ; decl_type := A |}.
 
@@ -61,3 +63,11 @@ Notation " Γ ,,, Δ " := (@app context_decl Δ Γ) (at level 25, Δ at next lev
 Inductive in_ctx : context -> nat -> context_decl -> Type :=
   | in_here Γ d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
   | in_there Γ d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (map_decl (ren_term shift) d).
+
+Lemma in_ctx_inj Γ n decl decl' :
+  in_ctx Γ n decl -> in_ctx Γ n decl' -> decl = decl'.
+Proof.
+  induction 1 in decl' |- * ; inversion 1 ; subst.
+  1: reflexivity.
+  now f_equal.
+Qed.

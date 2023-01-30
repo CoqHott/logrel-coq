@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped GenericTyping LogicalRelation Reduction LRInduction Reflexivity.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction GenericTyping LogicalRelation Reduction LRInduction Reflexivity.
 
 Set Universe Polymorphism.
 
@@ -40,19 +40,19 @@ Section ShapeViews.
         inversion neA.
         enough (ty = U) as -> by (now eapply neU).
         symmetry.
-        eapply mredty_whnf.
+        eapply red_whnf.
         all: gen_typing.
       + intros [->].
         inversion ΠA.
         enough (U = tProd na dom cod) by congruence.
-        eapply mredty_whnf.
+        eapply red_whnf.
         all: gen_typing.
     - destruct lrB.
       + intros [].
         inversion neA.
         enough (ty = U) as -> by (now eapply neU).
         symmetry.
-        eapply mredty_whnf.
+        eapply red_whnf.
         all: gen_typing.
       + econstructor.
       + intros [].
@@ -64,7 +64,7 @@ Section ShapeViews.
       + intros [].
         inversion ΠA.
         enough (U = tProd na dom cod) by congruence.
-        eapply mredty_whnf.
+        eapply red_whnf.
         all: gen_typing.
       + intros [].
         destruct neA.

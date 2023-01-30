@@ -4,8 +4,8 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
-    `{!OneRedType ta} `{!OneRedTerm ta}.
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta}.
 
   #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')
     {Γ A rEq rTe rTeEq} (lr : LogRel l Γ A rEq rTe rTeEq) {struct lr} : (LogRel l' Γ A rEq rTe rTeEq) :=

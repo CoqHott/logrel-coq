@@ -2,23 +2,33 @@
 
 theories/Utils.v
 theories/BasicAst.v
+
 theories/AutoSubst/core.v
 theories/AutoSubst/unscoped.v
 theories/AutoSubst/Ast.v
+
 theories/Context.v
 theories/Untyped.v
-
 theories/Notations.v
+theories/Weakening.v
+theories/UntypedReduction.v
+
 theories/GenericTyping.v
 theories/DeclarativeTyping.v
-theories/Weakening.v
 theories/Generation.v
 theories/Reduction.v
-theories/Escape.v
+
+theories/AlgorithmicTyping.v
+
 theories/LogicalRelation.v
 theories/LRInduction.v
-theories/Reflexivity.v
+theories/Escape.v
 theories/ShapeView.v
+theories/Reflexivity.v
 theories/Irrelevance.v
+
+theories/LogRelConsequences.v
+theories/BundledAlgorithmicTyping.v
+theories/AlgorithmicTypingProperties.v
 
 theories/Positivity.v
