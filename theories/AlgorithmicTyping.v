@@ -145,7 +145,9 @@ Module AlgorithmicTypingData.
     change InferRedAlg with (infer_red (ta := al)) in * ;
     change CheckAlg with (typing (ta := al)) in * ;
     change ConvTypeAlg with (conv_type (ta := al)) in * ;
+    change ConvTypeRedAlg with (conv_type_red (ta := al)) in * ;
     change ConvTermAlg with (conv_term (ta := al)) in * ;
+    change ConvTermRedAlg with (conv_term_red (ta := al)) in * ;
     change ConvNeuAlg with (conv_neu (ta := al)) in * ;
     change ConvTypeRedAlg with (conv_type_red (ta := al)) in * ;
     change ConvTermRedAlg with (conv_term_red (ta := al)) in * ;
@@ -221,24 +223,24 @@ End InductionPrinciples.
 Section TypingWk.
   Import AlgorithmicTypingData.
   
-  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
-  Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [Δ |- A⟨ρ⟩].
+  Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩].
-  Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
     InferRedAlg Δ (A⟨ρ⟩) t⟨ρ⟩.
-  Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
   [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
-  Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
-  Let PTyRedEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTyRedEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ),
       [Δ |- A⟨ρ⟩ ≅h B⟨ρ⟩].
-  Let PNeEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PNeEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ ▹ A⟨ρ⟩].
-  Let PNeRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PNeRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- t⟨ρ⟩ ~h u⟨ρ⟩ ▹ A⟨ρ⟩].
-  Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
-  Let PTmRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+  Let PTmRedEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ),
       [Δ |- t⟨ρ⟩ ≅h u⟨ρ⟩ : A⟨ρ⟩].
 
   Theorem algo_conv_wk :
@@ -260,11 +262,11 @@ Section TypingWk.
     - intros * ? IHM.
       econstructor.
       now apply IHM.
-    - intros * ? ? ? ?.
+    - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
       all: reflexivity.
-    - intros * ? IHm ? IHt ? ? ?.
+    - intros * ? IHm ? IHt ? ?.
       cbn.
       eapply convne_meta_conv.
       1:{
@@ -275,7 +277,7 @@ Section TypingWk.
       }
       1: asimpl.
       all: reflexivity.
-    - intros * ? IHm ? ?.
+    - intros * ? IHm ?.
       econstructor.
       + now apply IHm.
       + eauto using credalg_wk.
@@ -284,13 +286,13 @@ Section TypingWk.
       econstructor.
       1-3: eauto using credalg_wk.
       now eapply IHt.
-    - intros * ? IHA ? IHB ? ? ?.
+    - intros * ? IHA ? IHB ? ?.
       cbn.
       econstructor.
       1: now eapply IHA.
       eapply (IHB _ (wk_up _ _ ρ)).
       all: now econstructor.
-    - intros ? f f' * ? ? ? IH ? ? ?.
+    - intros ? f f' * ? ? ? IH ? ?.
       cbn.
       econstructor.
       1-2: asimpl ; gen_typing.
@@ -300,8 +302,7 @@ Section TypingWk.
       asimpl.
       repeat (erewrite compRenRen_term in IH ; [..|reflexivity]).
       apply IH.
-      now econstructor.
-    - intros * ? IH ?.
+    - intros * ? IH.
       econstructor.
       2: cbn ; asimpl ; now gen_typing.
       now eapply IH.
@@ -312,7 +313,7 @@ Section TypingWk.
   Proof.
     apply AlgoTypingInduction.
     - constructor.
-    - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
+    - intros Γ na A B HA IHA HB IHB Δ ρ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply (IHB _ (wk_up _ _ ρ)).
@@ -320,21 +321,21 @@ Section TypingWk.
     - intros * _ IHA.
       econstructor.
       now apply IHA.
-    - intros * ? Δ ? * ?.
+    - intros * ? Δ ? *.
       eapply typing_meta_conv.
       1: now econstructor ; eapply in_ctx_wk.
       reflexivity.
-    - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
+    - intros Γ na A B HA IHA HB IHB Δ ρ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply (IHB _ (wk_up _ _ ρ)).
       all: now constructor.
-    - intros * HA IHA Ht IHt Δ ρ HΔ.
+    - intros * HA IHA Ht IHt Δ ρ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply (IHt _ (wk_up _ _ ρ)).
       all: now constructor.
-    - intros * Hf IHf Ha IHa Δ ρ HΔ.
+    - intros * Hf IHf Ha IHa Δ ρ.
       cbn.
       eapply typing_meta_conv.
       red in IHf. cbn in IHf.

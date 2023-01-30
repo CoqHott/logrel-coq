@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   #[universes(polymorphic)]Fixpoint LR_embedding {l l'} (l_ : l << l')

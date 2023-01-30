@@ -177,7 +177,7 @@ Module DeclarativeTypingData.
   #[export] Instance InferringRed_Decl : InferringRed de := TypingDecl.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
-  #[export] Instance ConvNeu_Decl : ConvNeu de := ConvTermDecl.
+  #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvTermDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 

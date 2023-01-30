@@ -3,11 +3,16 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
 
 Import DeclarativeTypingProperties AlgorithmicTypingData.
 
+Record WfContextBun Γ :=
+{
+  bn_wf_ctx : [|-[de] Γ] ;
+}.
+
 Record WfTypeBun Γ A :=
-  {
-    bun_wf_ty_ctx : [|-[de] Γ] ;
-    bun_wf_ty : [Γ |-[al] A] ;
-  }.
+{
+  bun_wf_ty_ctx : [|-[de] Γ] ;
+  bun_wf_ty : [Γ |-[al] A] ;
+}.
 
 Record InferBun Γ A t :=
 {
@@ -87,9 +92,35 @@ Record ConvNeuRedBun Γ A m n :=
   bun_conv_ne_red : [Γ |-[al] m ~h n ▹ A]
 }.
 
+Record ConvNeuConvBun Γ A m n :=
+{
+  bun_conv_ne_conv_ctx : [|-[de] Γ] ;
+  bun_conv_ne_conv_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_conv_wh_l : whne m ;
+  bun_conv_ne_conv_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_conv_wh_r : whne n ;
+  bun_conv_ne_conv_ty : term ;
+  bun_conv_ne_conv : [Γ |-[al] m ~ n ▹ bun_conv_ne_conv_ty] ;
+  bun_conv_ne_conv_conv : [Γ |-[de] bun_conv_ne_conv_ty ≅ A]
+}.
+
+Record RedTypeBun Γ A B :=
+{
+  bun_red_ty_ctx : [|-[de] Γ] ;
+  bun_red_ty_ty : [Γ |-[de] A] ;
+  bun_red_ty : [A ⇒* B] ;
+}.
+
+Record RedTermBun Γ A t u :=
+{
+  bun_red_tm_ctx : [|-[de] Γ] ;
+  bun_red_tm_tm : [Γ |-[de] t : A] ;
+  bun_red_tm : [t ⇒* u] ;
+}.
+
 Module BundledTypingData.
 
-  #[export] Instance WfContext_Bundle : WfContext bn := fun _ => True.
+  #[export] Instance WfContext_Bundle : WfContext bn := WfContextBun.
   #[export] Instance WfType_Bundle : WfType bn := WfTypeBun.
   #[export] Instance Inferring_Bundle : Inferring bn := InferBun. 
   #[export] Instance InferringRed_Bundle : InferringRed bn := InferRedBun.
@@ -100,8 +131,12 @@ Module BundledTypingData.
   #[export] Instance ConvTermRed_Bundle : ConvTermRed bn := ConvTermRedBun.
   #[export] Instance ConvNeu_Bundle : ConvNeu bn := ConvNeuBun.
   #[export] Instance ConvNeuRed_Bundle : ConvNeuRed bn := ConvNeuRedBun.
+  #[export] Instance ConvNeuConv_Bundle : ConvNeuConv bn := ConvNeuConvBun.
+  #[export] Instance RedType_Bundle : RedType bn := RedTypeBun.
+  #[export] Instance RedTerm_Bundle : RedTerm bn := RedTermBun.
 
   Ltac fold_bun :=
+    change WfContextBun with (wf_context (ta := bn)) in *;
     change WfTypeBun with (wf_type (ta := bn)) in *;
     change InferBun with (inferring (ta := bn)) in * ;
     change InferRedBun with (infer_red (ta := bn)) in * ;
@@ -111,7 +146,10 @@ Module BundledTypingData.
     change ConvNeuBun with (conv_neu (ta := bn)) in * ;
     change ConvTypeRedBun with (conv_type_red (ta := bn)) in * ;
     change ConvTermRedBun with (conv_term_red (ta := bn)) in * ;
-    change ConvNeuRedBun with (conv_neu_red (ta := bn)) in *.
+    change ConvNeuRedBun with (conv_neu_red (ta := bn)) in *;
+    change ConvNeuConvBun with (conv_neu_conv (ta := bn)) in *;
+    change RedTypeBun with (red_ty (ta := bn)) in * ;
+    change RedTermBun with (red_tm (ta := bn)) in *.
 
 End BundledTypingData.
 

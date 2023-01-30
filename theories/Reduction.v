@@ -238,6 +238,15 @@ Module DeclarativeTypingProperties.
       now eapply typing_wk.
   Qed.  
 
+  #[export, refine] Instance InferringRedDeclProperties : InferringRedProperties (ta := de) := {}.
+  Proof.
+    - intros.
+      now eapply typing_wk.
+    - intros.
+      econstructor ; tea.
+      now eapply RedConvTyC. 
+  Qed.
+
   #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.
   Proof.
     - intros.
@@ -296,8 +305,8 @@ Module DeclarativeTypingProperties.
   Proof.
   - split ; red ; intros.
     all: now econstructor.
-  (* - intros.
-    now eapply TermConv. *)
+  - intros.
+    eapply TermConv ; tea.
   - intros.
     now eapply typing_wk.
   - intros.
@@ -334,6 +343,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

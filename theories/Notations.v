@@ -24,6 +24,7 @@ Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
 Class ConvTermRed (ta : tag) := conv_term_red : context -> term -> term -> term -> Set.
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
 Class ConvNeuRed (ta : tag) := conv_neu_red : context -> term -> term -> term -> Set.
+Class ConvNeuConv (ta : tag) := conv_neu_conv : context -> term -> term -> term -> Set.
 
 (* The context Γ is well-formed *)
 Notation "[ |- Γ ]" := (wf_context Γ)
@@ -67,14 +68,19 @@ Notation "[ Γ |-[ ta  ] t ≅ t' : A ]" := (conv_term (ta := ta) Γ A t t')
 (* Whnfs t and t' are convertible in Γ *)
 Notation "[ Γ |- t '≅h' t' : A ]" := (conv_term_red Γ A t t') (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t '≅h' t' : A ]" := (conv_term_red (ta := ta) Γ A t t') (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
-(* Neutral n and n' are convertible in Γ *)
+(* Neutral n and n' are convertible in Γ, inferring the type A *)
 Notation "[ Γ |- n ~ n' ▹ A ]" := (conv_neu Γ A n n')
   (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
 Notation "[ Γ |-[ ta  ] n ~ n' ▹ A ]" := (conv_neu (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
-(* Neutral n and n' are convertible at the reduced type A in Γ *)
+(* Neutral n and n' are convertible in Γ, inferring the reduced type A *)
 Notation "[ Γ |- n '~h' n' ▹ A ]" := (conv_neu_red Γ A n n') (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] n '~h' n' ▹ A ]" := (conv_neu_red (ta := ta) Γ A n n') (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
+(* Neutral n and n' are convertible in Γ at type A *)
+Notation "[ Γ |- n ~ n' : A ]" := (conv_neu_conv Γ A n n')
+  (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
+Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu_conv (ta := ta) Γ A n n')
+  (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** Reductions *)
 Class RedType (ta : tag) := red_ty : context -> term -> term -> Set.

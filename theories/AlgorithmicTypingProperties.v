@@ -182,6 +182,160 @@ Section AlgoConvConv.
 
 End AlgoConvConv.
 
+Section TermTypeConv.
+
+  Let PTyEq (Γ : context) (A B : term) := True.
+  Let PNeEq (Γ : context) (A t u : term) := True.
+  Let PTmEq (Γ : context) (A t u : term) :=
+      [A ⇒* U] ->
+      [Γ |-[al] t ≅ u].
+  Let PTmRedEq (Γ : context) (A t u : term) := 
+    A = U ->
+    [Γ |-[al] t ≅h u].
+
+  Theorem algo_conv_tm_ty :
+  AlgoConvInductionConcl PTyEq PTyEq PNeEq PNeEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PNeEq PTmEq PTmRedEq.
+    apply AlgoConvInduction.
+    all: try solve [now constructor].
+    - intros * ? ? ? Hconv IH ?.
+      econstructor ; tea.
+      eapply IH, whred_det ; tea.
+      2: gen_typing.
+      eapply algo_conv_wh in Hconv as [].
+      now gen_typing.
+    - intros * ? IHA ? IHB _.
+      now econstructor ; fold_algo.
+    - intros.
+      congruence.
+    - intros * ? ? Hne ->.
+      inversion Hne.
+  Qed.
+  
+End TermTypeConv.
+
+Section Symmetry.
+
+  Let PTyEq (Γ : context) (A B : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] B ≅ A].
+  Let PTyRedEq (Γ : context) (A B : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] B ≅h A].
+  Let PNeEq (Γ : context) (A t u : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    ∑ A', [Δ |-[al] u ~ t ▹ A'] × [Δ |-[de] A ≅ A'].
+  Let PNeRedEq (Γ : context) (A t u : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    ∑ A', [Δ |-[al] u ~h t ▹ A'] × [Δ |-[de] A ≅ A'].
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] u ≅ t : A].
+  Let PTmRedEq (Γ : context) (A t u : term) := forall Δ,
+    [|-[de] Γ ≅ Δ] ->
+    [Δ |-[al] u ≅h t : A].
+
+  Theorem algo_conv_sym :
+  BundledConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply BundledConvInduction.
+    - intros.
+      econstructor ; fold_algo.
+      all: intuition eauto.
+    - intros * ? IHA ? IHB ; intros.
+      econstructor ; fold_algo.
+      1: now intuition eauto.
+      eapply IHB.
+      econstructor ; tea.
+      eapply IHA.
+    - now econstructor.
+    - intros * ? IHM ; intros.
+      edestruct IHM as [[U' [IHM' HconvM]] []] ; tea.
+      assert (U' = U) as ->.
+      {
+        symmetry in HconvM.
+        eapply red_ty_compl_univ_r, redty_red in HconvM.
+        eapply whred_det ; tea.
+        + apply algo_conv_wh in IHM' as []. gen_typing.
+        + gen_typing.
+        + reflexivity.
+      }
+      now econstructor.
+    - intros * HΓ ; intros.
+      eapply in_ctx_conv in HΓ as [? []].
+      2: now symmetry.
+      eexists ; split.
+      1: now econstructor.
+      now symmetry.
+    - intros * ? IHm ? [IHt Hwft] ; intros.
+      edestruct IHm as [[? [IHm' Hconv]] []] ; tea ; clear IHm.
+      eapply red_ty_compl_prod_l in Hconv as (?&?&?&[Hred]).
+      eapply redty_red, whred_det in Hred.
+      4: reflexivity.
+      3: gen_typing.
+      2: now eapply algo_conv_wh in IHm' as [] ; gen_typing.
+      subst.
+      eexists ; split.
+      + econstructor ; fold_algo.
+        1: eassumption.
+        eapply algo_conv_conv.
+        * now eapply IHt.
+        * now eapply ctx_conv_refl, wf_conv_ctx ; symmetry.
+        * now symmetry.
+        * eapply stability.
+          2: now symmetry.
+          now eapply validity in Hwft as [].
+        * eapply stability.
+        2: now symmetry.
+        now eapply validity in Hwft as [].
+      + eapply typing_subst1 ; tea.
+        eapply TermConv ; fold_decl.
+        2: now symmetry.
+        eapply stability ; tea.
+        now symmetry.
+    - intros * ? IHm ; intros.
+      edestruct IHm as [[A'' [IHm' Hconv]] [Hwf]] ; tea ; clear IHm.
+      assert [Δ |-[de] A' ≅ A''] as Hconv'.
+      {
+        etransitivity ; tea.
+        symmetry.
+        eapply RedConvTyC, subject_reduction_type ; tea.
+        eapply stability.
+        2: now symmetry.
+        now eapply validity in Hwf as [].
+      }
+      pose proof Hconv' as Hconv''.
+      eapply red_ty_complete in Hconv'' as [? []]; tea.
+      eexists ; split.
+      + econstructor ; tea.
+        now eapply redty_red.
+      + etransitivity ; tea.
+        now eapply RedConvTyC.
+    - intros.
+      econstructor ; fold_algo.
+      all: intuition eauto.
+    - intros * ? IHA ? IHB ; intros.
+      econstructor ; fold_algo.
+      1: now eapply IHA.
+      eapply IHB.
+      econstructor ; tea.
+      now econstructor ; intuition eauto.
+    - intros * ? ? ? IH ? Hf ; intros.
+      econstructor ; fold_algo.
+      1-2: assumption.
+      eapply IH.
+      econstructor ; tea.
+      eapply validity, prod_ty_inv in Hf as [].
+      now econstructor.
+    - intros * ? IH ; intros.
+      edestruct IH as [[? []] []] ; tea.
+      now econstructor.
+  Qed.
+  
+End Symmetry.
+  
 Section Transitivity.
 
   Let PTyEq (Γ : context) (A B : term) := forall Δ C,
@@ -320,71 +474,275 @@ End Transitivity.
 Module AlgorithmicTypingProperties.
   Include AlgorithmicTypingData.
 
-  #[export, refine] Instance WfCtxAlgProperties : WfContextProperties (ta := al) := {}.
+  #[local] Ltac intros_bn :=
+    intros ;
+    repeat match goal with | H : context [bn] |- _ => destruct H end ;
+    econstructor ; try assumption.
+
+  #[export, refine] Instance WfCtxAlgProperties : WfContextProperties (ta := bn) := {}.
   Proof.
-    all: now constructor.
+    all: intros_bn.
+    - now do 2 constructor.
+    - constructor ; tea.
+      now apply typing_sound.
   Qed.
 
-  #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := al) := {}.
+  #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := bn) := {}.
   Proof.
+    all: intros_bn.
     2-4: now econstructor.
-    intros.
-    now eapply algo_typing_wk.
+    - now eapply algo_typing_wk.
   Qed.
 
-  #[export, refine] Instance InferringAlgProperties : InferringProperties (ta := al) := {}.
+  #[export, refine] Instance InferringAlgProperties : InferringProperties (ta := bn) := {}.
   Proof.
+    all: intros_bn.
     2-5: now econstructor.
-    intros.
-    now eapply algo_typing_wk.
-  Qed.  
+    - now eapply algo_typing_wk.
+  Qed.
 
-  #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := al) := {}.
+  #[export, refine] Instance InferringRedProperties :
+  InferringRedProperties (ta := bn) := {}.
   Proof.
-    - intros.
-      now eapply algo_typing_wk.
-    - intros.
-      now econstructor.
-    - intros * Hc ?.
-      destruct Hc as [? ? ? ? ? Hc].
+    all: intros_bn.
+    - now eapply algo_typing_wk.
+    - now econstructor.
+  Qed. 
+
+  #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
+  Proof.
+    1-2: intros_bn.
+    - gen_typing.
+    - now eapply algo_typing_wk.
+    - now econstructor.
+    - intros * [? ? [? ? ? ? ? Hc]] [].
       destruct Hc.
+      econstructor ; tea.
       econstructor ; fold_algo ; tea.
       econstructor ; fold_algo.
       2: etransitivity.
       all: eassumption.
-    - intros * Hc ?.
-      destruct Hc.
+    - intros * [? ? Hc] HA.
+      destruct Hc as [? ? ? ? Ht Hc] ; fold_algo.
+      econstructor ; tea.
+      1: now destruct HA.
       econstructor ; fold_algo ; tea.
-      red.
-      admit.
-  Admitted.
+      eapply algo_conv_trans.
+      + split ; tea.
+        now eapply typing_sound, validity in Ht.
+      + now eapply ctx_conv_refl.
+      + eapply HA.
+  Qed.
 
-  #[export, refine] Instance ConvTypeAlgProperties : ConvTypeProperties (ta := al) := {}.
+  #[export, refine] Instance ConvTypeAlgProperties : ConvTypeProperties (ta := bn) := {}.
   Proof.
-  Admitted.
+    2: split.
+    - intros_bn.
+      1-2: now constructor.
+      now eapply algo_conv_tm_ty.
+    - red ; intros_bn.
+      eapply algo_conv_sym.
+      + now econstructor.
+      + now eapply ctx_conv_refl. 
+    - red ; intros * Hconv [? ? ? Hconv'].
+      econstructor ; tea.
+      1: now apply Hconv.
+      eapply algo_conv_trans ; tea.
+      now eapply ctx_conv_refl.
+    - intros_bn.
+      1-2: now apply typing_wk.
+      now apply algo_conv_wk.
+    - intros_bn.
+      inversion bun_conv_ty ; subst ; clear bun_conv_ty.
+      econstructor ; fold_algo.
+      1-2: now etransitivity.
+      eassumption.
+    - intros_bn.
+      1-2: now econstructor.
+      do 2 econstructor.
+    - intros_bn.
+      + now econstructor.
+      + econstructor ; tea ; fold_decl.
+        eapply stability ; tea.
+        econstructor.
+        * now eapply ctx_conv_refl.
+        * symmetry.
+          now eapply conv_sound in bun_conv_ty0.
+      + now do 2 econstructor.
+  Qed.
 
-  #[export, refine] Instance ConvTermAlgProperties : ConvTermProperties (ta := al) := {}.
+  #[export, refine] Instance ConvTermAlgProperties : ConvTermProperties (ta := bn) := {}.
   Proof.
+    1: split.
+    - red ; intros_bn.
+      eapply algo_conv_sym.
+      + now econstructor.
+      + now eapply ctx_conv_refl. 
+    - red. intros * Hconv [? ? ? Hconv'].
+      split ; tea.
+      1: apply Hconv.
+      eapply algo_conv_trans ; tea.
+      + now apply ctx_conv_refl.
+      + now constructor.
+    - intros_bn.
+      all: eapply conv_sound in bun_conv_ty ; tea.
+      1-2: now econstructor.
+      eapply algo_conv_conv ; tea.
+      now apply ctx_conv_refl.
+    - intros_bn.
+      1-3: now apply typing_wk.
+      now apply algo_conv_wk.
+    - intros_bn.
+      + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
+        symmetry in bun_red_ty.
+        now gen_typing.
+      + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
+        symmetry in bun_red_ty.
+        now gen_typing.
+      + inversion bun_conv_tm ; subst ; clear bun_conv_tm.
+        econstructor.
+        1-3: now etransitivity.
+        eassumption.
+    - intros * [HΓ Hn Hwhn Hn' Hwhn' A' Hconv Hconvty].
+      admit. (* consequence of normalization of types, it seems*)
+    - intros_bn.
+      + now constructor.
+      + constructor ; tea.
+        eapply stability ; tea.
+        econstructor.
+        1: now apply ctx_conv_refl.
+        eapply conv_sound in bun_conv_tm0 ; tea.
+        symmetry.
+        now constructor.
+      + now do 2 econstructor.
+    - intros_bn.
+      + now eapply typing_sound in bun_chk0.
+      + now eapply typing_sound in bun_chk.
+      + econstructor.
+        1-3: reflexivity.
+        now econstructor.
   Admitted.
 
-  #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := al) := {}.
+  #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
-  Admitted.
+    1: split.
+    - intros ? ? [].
+      assert ([Γ |-[bn] x ~ y ▹ bun_conv_ne_conv_ty]) as Hconv.
+      {
+        now econstructor.
+      }
+      eapply algo_conv_sym in Hconv as [? []].
+      2: now eapply ctx_conv_refl.
+      econstructor ; tea.
+      etransitivity ; tea.
+      now symmetry.
+    - red. intros_bn.
+      + eapply algo_conv_trans ; tea.
+        * now constructor.
+        * now apply ctx_conv_refl.
+      + eassumption.
+    - intros_bn.
+      1: eassumption.
+      etransitivity ; tea.
+      now eapply conv_sound in bun_conv_ty.
+    - intros_bn.
+      + destruct bun_conv_ne_conv_l.
+        eexists.
+        gen_typing.
+      + now apply whne_ren.
+      + destruct bun_conv_ne_conv_r.
+        eexists.
+        gen_typing.
+      + now apply whne_ren.
+      + now apply algo_conv_wk.
+      + now apply typing_wk.
+    - intros * [? ? Hty].
+      inversion Hty ; subst ; clear Hty.
+      inversion H ; subst ; clear H  ; fold_algo.
+      econstructor.
+      + assumption.
+      + eexists. now econstructor.
+      + gen_typing.
+      + eexists. now econstructor.
+      + gen_typing.
+      + now econstructor ; fold_algo.
+      + eapply conv_sound in H0 ; tea.
+        enough [Γ |-[de] tRel n : decl_type decl] as Hty by
+          now apply validity in Hty.
+        now econstructor.
+  - intros *
+    [? ? ? ? ? ? Hf (?&?&?&[])%red_ty_compl_prod_r]
+    [? ? ? ? Ht].
+    econstructor ; tea.
+    + eapply conv_sound in Hf as [Hf] ; tea.
+      eapply validity in Hf as [_ Hf _].
+      eexists ; econstructor ; fold_decl.
+      * econstructor ; tea.
+        now eapply RedConvTyC.
+      * now econstructor.
+    + gen_typing.
+    + eapply conv_sound in Hf as [Hg] ; tea.
+      eapply validity in Hg as [_ _ Hg].
+      eexists ; econstructor ; fold_decl.
+      * econstructor ; tea.
+        now eapply RedConvTyC.
+      * now econstructor.
+    + gen_typing.
+    + econstructor ; fold_algo.
+      * econstructor ; tea.
+        2: econstructor.
+        now eapply redty_red.
+      * eapply algo_conv_conv ; tea.
+        now eapply ctx_conv_refl.
+    + eapply typing_subst1 ; tea.
+      econstructor.
+      eapply conv_sound, validity in Ht as [] ; tea.
+  Qed.
 
-  Lemma RedTermAlgProperties :
-    RedTermProperties (ta := al).
+  #[export, refine] Instance RedTermAlgProperties :
+    RedTermProperties (ta := bn) := {}.
   Proof.
-  Admitted.
+    - intros_bn.
+      1: now apply typing_wk.
+      now apply credalg_wk.
+    - now intros * [].
+    - intros_bn.
+      2: now do 2 econstructor.
+      econstructor ; [econstructor|..] ; fold_decl.
+      all: now eapply typing_sound.
+    - intros_bn.
+      + econstructor ; tea.
+        now eapply typing_sound.
+      + clear -bun_red_tm.
+        induction bun_red_tm ; econstructor.
+        2: eassumption.
+        now econstructor.
+    - intros_bn.
+      eapply conv_sound in bun_conv_ty ; tea.
+      now gen_typing.
+    - intros_bn.
+      1: now eapply typing_sound.
+      econstructor.
+    - red. intros_bn.
+      now etransitivity.
+  Qed.
 
-  #[export]Existing Instance RedTermAlgProperties.
-
-  Lemma RedTypeAlgProperties :
-    RedTypeProperties (ta := al).
+  #[export, refine] Instance RedTypeAlgProperties :
+    RedTypeProperties (ta := bn) := {}.
   Proof.
-  Admitted.
+    - intros_bn.
+      1: now apply typing_wk.
+      now apply credalg_wk.
+    - now intros * [].
+    - intros_bn.
+      now econstructor.
+    - intros_bn.
+      1: now eapply typing_sound.
+      econstructor.
+    - red. intros_bn.
+      now etransitivity.
+  Qed.
 
-  #[export] Existing Instance RedTypeAlgProperties.
-
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties al _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.

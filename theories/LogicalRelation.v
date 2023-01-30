@@ -107,13 +107,13 @@ Definition elim {l : TypeLevel} (h : l << zero) : False :=
 Module neRedTy.
 
   Record neRedTy `{ta : tag}
-    `{WfType ta} `{ConvNeu ta} `{RedType ta}
+    `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
     {Γ : context} {A : term}
   : Type := {
     ty : term;
     red : [ Γ |- A :⇒*: ty];
     ne : whne ty;
-    eq : [ Γ |- ty ~ ty ▹ U] ;
+    eq : [ Γ |- ty ~ ty : U] ;
   }.
 
   Arguments neRedTy {_ _ _ _}.
@@ -126,13 +126,13 @@ Notation "[ Γ ||-ne A ]" := (neRedTy Γ A).
 Module neRedTyEq.
 
   Record neRedTyEq `{ta : tag}
-    `{WfType ta} `{ConvNeu ta} `{RedType ta}
+    `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
     {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
   : Type := {
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
     ne : whne ty;
-    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty ▹ U];
+    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
   }.
 
   Arguments neRedTyEq {_ _ _ _}.
@@ -146,15 +146,13 @@ Module neRedTm.
 
   Record neRedTm `{ta : tag}
     `{WfType ta} `{RedType ta}
-    `{Typing ta} `{ConvNeu ta} `{ConvType ta} `{RedTerm ta}
+    `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta}
     {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
   : Type := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
     ne : whne te ;
-    infty : term ;
-    eq : [Γ |- te ~ te ▹ infty] ;
-    eqty : [Γ |- infty ≅ R.(neRedTy.ty)] ;
+    eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
   }.
 
   Arguments neRedTm {_ _ _ _ _ _ _}.
@@ -169,7 +167,7 @@ Module neRedTmEq.
 
   Record neRedTmEq `{ta : tag}
     `{WfType ta} `{RedType ta}
-    `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeu ta} `{RedTerm ta}
+    `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]}
   : Type := {
     termL     : term;
@@ -178,9 +176,7 @@ Module neRedTmEq.
     redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
     whneL : whne termL;
     whneR : whne termR;
-    infty : term ;
-    eq : [ Γ |- termL ~ termR ▹ infty];
-    eqty : [ Γ |- infty ≅ R.(neRedTy.ty)] ;
+    eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
   }.
 
   Arguments neRedTmEq {_ _ _ _ _ _ _ _}.
@@ -378,7 +374,7 @@ Unset Elimination Schemes.
 
 #[universes(polymorphic)]Inductive LR `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeu ta}
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
   `{RedType ta} `{RedTerm ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel)
 : RedRel :=
@@ -429,7 +425,7 @@ Definition RelTeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
 Section MoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   #[universes(polymorphic)]Definition rec0 (l' : TypeLevel) (h : l' << zero) : RedRel :=

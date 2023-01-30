@@ -6,7 +6,7 @@ Section RedDefinitions.
 
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!InferringRed ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Record TypeRedWhnf (Γ : context) (A B : term) : Type :=
@@ -109,7 +109,7 @@ Section GenericTyping.
 
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Inferring ta}
-    `{!InferringRed ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+    `{!InferringRed ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
@@ -130,7 +130,7 @@ Section GenericTyping.
     wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A] -> [Δ |- A⟨ρ⟩] ;
     wft_U {Γ} : 
-      [ |- Γ ] -> 
+      [ |- Γ ] ->
       [ Γ |- U ] ;
     wft_prod {Γ} {na : aname} {A B} : 
       [ Γ |- A ] -> 
@@ -161,6 +161,14 @@ Section GenericTyping.
         [ Γ |- f ▹h tProd na A B ] -> 
         [ Γ |- a : A ] -> 
         [ Γ |- tApp f a ▹ B[a ..] ]
+  }.
+
+  Class InferringRedProperties :=
+  {
+    inf_red_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ▹h A] -> [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩] ;
+    inf_red_red {Γ t A A'} :
+      [Γ |- t ▹ A] -> [Γ |- A ⇒* A'] -> [Γ |- t ▹h A']
   }.
 
   Class TypingProperties :=
@@ -199,7 +207,7 @@ Section GenericTyping.
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
-      [Γ |- n ~ n' ▹ A] -> [Γ |- n ≅ n' : A] ;
+      [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ na na' A A' B B'} :
       eq_binder_annot na na' -> [Γ |- A] ->
       [Γ |- A ≅ A' : U] -> [Γ,, vass na A |- B ≅ B' : U] ->
@@ -207,23 +215,25 @@ Section GenericTyping.
     convtm_eta {Γ na f g A B} :
       [ Γ |- A ] ->
       [ Γ |- f : tProd na A B ] ->
+      isFun f ->
       [ Γ |- g : tProd na A B ] ->
+      isFun g ->
       [ Γ ,, vass na A |- eta_expand f ≅ eta_expand g : B ] ->
       [ Γ |- f ≅ g : tProd na A B ] ;
   }.
 
   Class ConvNeuProperties :=
   {
-    convneu_equiv {Γ A} :> PER (conv_neu Γ A) ;
-    (* convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ; *)
+    convneu_equiv {Γ A} :> PER (conv_neu_conv Γ A) ;
+    convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ~ u ▹ A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ ▹ A⟨ρ⟩] ;
+      [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
     convneu_var {Γ n A} :
-      [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n ▹ A] ;
+      [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
     convneu_app {Γ f g t u na A B} :
-      [ Γ |- f ~ g ▹ tProd na A B ] ->
+      [ Γ |- f ~ g : tProd na A B ] ->
       [ Γ |- t ≅ u : A ] ->
-      [ Γ |- tApp f t ≅ tApp g u : B[t..] ]
+      [ Γ |- tApp f t ~ tApp g u : B[t..] ]
   }.
 
   Class RedTypeProperties :=
@@ -271,12 +281,15 @@ Section GenericTyping.
 End GenericTyping.
 
 Class GenericTypingProperties `(ta : tag)
-  `(WfContext ta) `(WfType ta) `(Typing ta) `(Inferring ta)
-  `(ConvType ta) `(ConvTerm ta) `(ConvNeu ta)
+  `(WfContext ta) `(WfType ta) `(Typing ta)
+  `(Inferring ta) `(InferringRed ta)
+  `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
   `(RedType ta) `(RedTerm ta) :=
 {
   wfc_prop :> WfContextProperties ;
   wfty_prop :> WfTypeProperties ;
+  inf_prop :> InferringProperties ;
+  inf_red_prop :> InferringRedProperties ;
   typ_prop :> TypingProperties ;
   convty_prop :> ConvTypeProperties ;
   convtm_prop :> ConvTermProperties ;
@@ -286,14 +299,14 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Immediate wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app inf_red_wk inf_red_red ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
-#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv redtm_conv | 6 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
   Context `{ta : tag}
   `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!Typing ta}
-  `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeu ta}
+  `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
   `{!RedType ta} `{!RedTerm ta}
   `{!WfContextProperties} `{!WfTypeProperties}
   `{!TypingProperties} `{!ConvTypeProperties}
