@@ -72,8 +72,8 @@ Coercion VAd.pack : VAdequate >-> VPack.
 Coercion VAd.adequate : VAdequate >-> VPackAdequate.
 
 Notation "[ R | ||-v Γ ]"                            := (VAdequate Γ R) (at level 0, R, Γ at level 50).
-Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"           := (RΓ.(VPack.validSubst) Δ σ wfΔ) (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
-Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" := (RΓ.(VPack.eqSubst) Δ σ σ' wfΔ vσ) (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
+Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"           := (RΓ.(@VAd.pack _ _ _ Γ R).(VPack.validSubst) Δ σ wfΔ) (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
+Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" := (RΓ.(@VAd.pack _ _ _ Γ R).(VPack.eqSubst) Δ σ σ' wfΔ vσ) (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
 
 Record typeValidity `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}

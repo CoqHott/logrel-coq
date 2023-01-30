@@ -205,3 +205,19 @@ Reserved Notation "[ Γ ||-< l >  A ≅ B | R ]" (at level 0, Γ, l, A, B, R at 
 Reserved Notation "[ Γ ||-< l >  t : A | R ]" (at level 0, Γ, l, t, A, R at level 50).
 (* The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is reducible *)
 Reserved Notation "[ Γ ||-< l > t ≅ u : A | R ]" (at level 0, Γ, l, t, u, A, R at level 50).
+
+
+
+
+(* Validity notations *)
+Reserved Notation "[||-v Γ ]" (at level 0, Γ at level 50).
+Reserved Notation "[ Δ ||-v σ : Γ | VΓ | wfΔ ]" (at level 0, Δ, σ, Γ, VΓ, wfΔ at level 50).
+Reserved Notation "[ Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | vσ ]" (at level 0, Δ, σ, σ', Γ, VΓ, wfΔ, vσ at level 50).
+Reserved Notation "[ Γ ||-v< l > A | VΓ ]" (at level 0, Γ, l , A, VΓ at level 50).
+Reserved Notation "[ P | Δ ||-v σ : Γ | wfΔ ]" (at level 0, P, Δ, σ, Γ, wfΔ at level 50).
+Reserved Notation "[ P | Δ ||-v σ ≅ σ' : Γ | wfΔ | vσ ]"  (at level 0, P, Δ, σ, σ', Γ, wfΔ, vσ at level 50).
+Reserved Notation "[ R | ||-v Γ ]"  (at level 0, R, Γ at level 50).
+Reserved Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"  (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
+Reserved Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
+Reserved Notation "[ P | Γ ||-v< l > A ]"  (at level 0, P, Γ, l, A at level 50).
+
