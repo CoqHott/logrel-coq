@@ -124,3 +124,5 @@ Proof.
   1: eassumption.
   eapply irrelevanceSubst; eassumption.
 Qed.
+
+End Irrelevances.
