@@ -38,6 +38,30 @@ Proof.
   apply (snd (VRirrelevant Γ VΓ.(VAd.adequate) VΓ'.(VAd.adequate))).
 Qed.
 
+Set Printing Primitive Projection Parameters.
+
+(* TODO: Universe problem below with the version derived in Irrelevance !!! *)
+Lemma LRTmEqSym' lA Γ A (lrA : [Γ ||-<lA> A]) : forall t u,
+  [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
+Proof. Admitted.
+
+Lemma symmetrySubstEq {Γ} (VΓ VΓ' : [||-v Γ]) : forall {σ σ' Δ} (wfΔ wfΔ' : [|- Δ])
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (Vσ' : [Δ ||-v σ' : Γ | VΓ' | wfΔ']),
+  [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] -> [Δ ||-v σ' ≅ σ : Γ | VΓ' | wfΔ' | Vσ'].
+Proof.
+  revert VΓ'; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  - intros VΓ'. rewrite (invValidityEmpty VΓ'). constructor.
+  - intros * ih VΓ'. pose proof (x := invValiditySnoc VΓ'). 
+    destruct x as [lA'[ VΓ'' [VA' ->]]].
+    intros ????? [tl hd] [tl' hd'] [tleq hdeq].
+    unshelve econstructor.
+    1: eapply ih; eassumption.
+    eapply LRTmEqSym'. cbn in *.
+    revert hdeq. apply LRTmEqRedConv. 
+    eapply validTyExt. 2:eassumption.
+    eapply irrelevanceSubst; eassumption.
+Qed.
+
 Lemma irrelevanceValidity {Γ} : forall (VΓ VΓ' : [||-v Γ]) {l A},
   [Γ ||-v<l> A | VΓ] -> [Γ ||-v<l> A | VΓ'].
 Proof.

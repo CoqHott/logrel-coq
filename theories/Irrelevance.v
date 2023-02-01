@@ -347,4 +347,24 @@ Proof.
   now eapply TmEqRedConv.
 Qed.
 
+Set Printing Primitive Projection Parameters.
+
+Lemma LRTmEqSym lA Γ A (lrA : [Γ ||-<lA> A]) : forall t u,
+  [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
+Proof.
+  pattern lA, Γ, A, lrA. apply LR_rect_TyUr.
+  - intros * []. unshelve econstructor; try eassumption.
+    1: symmetry; eassumption.
+    eapply LRTyEqSym. exact relEq.
+  - intros * []. unshelve econstructor.
+    3,4: eassumption.
+    1,2: eassumption.
+    symmetry; eassumption.
+  - intros * ihdom ihcod * []. unshelve econstructor.
+    1,2: eassumption.
+    1: symmetry; eassumption.
+    intros. apply ihcod. eapply eqApp.
+Qed.
+
+
 End Irrelevances.

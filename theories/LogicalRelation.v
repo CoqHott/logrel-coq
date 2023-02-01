@@ -75,10 +75,10 @@ Coercion LRAd.adequate : LRAdequate >-> LRPackAdequate.
 
 (* TODO : update these for LRAdequate *)
 
-Notation "[ R | Γ ||- A ]"               := (@LRAdequate Γ A R).
-Notation "[ R | Γ ||- A ≅ B | RA ]"       := (RA.(LRPack.eqTy) B).
-Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(LRPack.redTm) t).
-Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(LRPack.eqTm) t u).
+Notation "[ R | Γ ||- A ]"              := (@LRAdequate Γ A R).
+Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eqTy) B).
+Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.redTm) t).
+Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(@LRAd.pack Γ A R).(LRPack.eqTm) t u).
 
 (** Universe levels *)
 

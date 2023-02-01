@@ -35,3 +35,4 @@ theories/Positivity.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v
+theories/Substitution/Properties.v

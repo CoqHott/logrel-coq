@@ -37,6 +37,12 @@ Coercion wk_to_ren : weakening >-> Funclass.
 
 Arguments RenWk_term /.
 
+#[global] Instance RenWk_subst : (Ren1 weakening (nat -> term) (nat -> term)) :=
+  fun ρ σ i => (σ i) ⟨ ρ ⟩.
+
+Arguments RenWk_subst /.
+
+
 Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_empty : well_weakening _wk_empty ε ε
   | well_step {Γ Δ : context} (na : aname) (A : term) (ρ : weakening) :
@@ -124,6 +130,11 @@ Definition wk_id {Γ} : Γ ≤ Γ :=
 
 Arguments RenWlWk_term /.
 
+#[global] Instance RenWlWk_subst {Γ Δ : context }: (Ren1 (Γ ≤ Δ) (nat -> term) (nat -> term)) :=
+  fun ρ σ i => ren_term (wk_to_ren ρ.(wk)) (σ i).
+
+Arguments RenWlWk_subst /.
+
 Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
   {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
 Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
@@ -155,6 +166,14 @@ Proof.
     now intros [] ; reflexivity.
 Qed.
 
+
+Definition wk1 {Γ} nA A := wk_step nA A (@wk_id Γ).
+
+Lemma wk1_ren {Γ nA A} : @wk1 Γ nA A =1 ↑.
+Proof.
+  intros ?; cbv -[wk_to_ren _wk_id]. cbn. 
+  rewrite (id_ren Γ (@wk_id Γ)). reflexivity.
+Qed.
 
 Lemma map_decl_lift (ρ : weakening) d :
   map_decl (ren_term (up_ren ρ)) (map_decl (ren_term shift) d) =
