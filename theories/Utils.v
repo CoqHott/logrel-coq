@@ -2,6 +2,10 @@ From Coq Require Import Morphisms List CRelationClasses.
 From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped.
 
+Set Universe Polymorphism.
+Set Polymorphic Inductive Cumulativity.
+Set Primitive Projections.
+
 Notation "#| l |" := (List.length l) (at level 0, l at level 99, format "#| l |").
 Notation "`=1`" := (pointwise_relation _ Logic.eq) (at level 80).
 Infix "=1" := (pointwise_relation _ Logic.eq) (at level 70).
@@ -18,6 +22,15 @@ Export Set Warnings "notation-overriden".
 
 Ltac tea := try eassumption.
 Ltac easy ::= solve [intuition eauto 3 with core crelations].
+
+
+
+Inductive prod (A B : Type) : Type := | pair : A -> B -> prod A B.
+Arguments pair {_ _} _ _.
+
+Definition fst {A B} : prod A B -> A := fun '(pair a b) => a.
+Definition snd {A B} : prod A B -> B := fun '(pair a b) => b.
+
 
 Notation "x × y" := (prod x y) (at level 80, right associativity).
 Reserved Notation "[ × P1 & P2 ]" (at level 0).
@@ -47,7 +60,7 @@ Variant and8 (P1 P2 P3 P4 P5 P6 P7 P8 : Type) : Type := Times8 of P1 & P2 & P3 &
 Variant and9 (P1 P2 P3 P4 P5 P6 P7 P8 P9 : Type) : Type := Times9 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9.
 Variant and10 (P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 : Type) : Type := Times10 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10.
 
-#[global] Hint Constructors and3 and3 and5 and6 and7 and8 and9 : core.
+#[global] Hint Constructors prod and3 and3 and5 and6 and7 and8 and9 : core.
 
 Notation "[ × P1 & P2 ]" := (pair P1 P2) (only parsing) : type_scope.
 Notation "[ × P1 , P2 & P3 ]" := (and3 P1 P2 P3) : type_scope.
@@ -58,6 +71,13 @@ Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 & P7 ]" := (and7 P1 P2 P3 P4 P5 P6 P7
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 & P8 ]" := (and8 P1 P2 P3 P4 P5 P6 P7 P8) : type_scope.
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 & P9 ]" := (and9 P1 P2 P3 P4 P5 P6 P7 P8 P9) : type_scope.
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 , P9 & P10 ]" := (and10 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10) : type_scope.
+
+(* Redefine for universe poly + cumulativity *)
+Inductive sigT {A : Type} (P : A -> Type) : Type := 
+  | existT (projT1 : A) (projT2 : P projT1) : sigT P.
+
+Definition projT1 {A P} (x : @sigT A P) : A := let '(existT _ a _) := x in a.
+Definition projT2 {A P} (x : @sigT A P) : P (projT1 x) := let '(existT _ _ p) := x in p.
 
 Notation "'∑' x .. y , p" := (sigT (fun x => .. (sigT (fun y => p%type)) ..))
   (at level 200, x binder, right associativity,

@@ -247,7 +247,8 @@ Section TypingWk.
     AlgoConvInductionConcl PTyEq PTyRedEq
       PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    apply AlgoConvInduction.
+    destruct (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as [?[?[?[?[?]]]]].
+    12:{ repeat (split;[assumption|]); assumption. }
     - intros * ? ? ? IH.
       econstructor.
       1-2: eauto using credalg_wk.
@@ -311,7 +312,8 @@ Section TypingWk.
   Theorem algo_typing_wk :
     AlgoTypingInductionConcl PTy PInf PInfRed PCheck.
   Proof.
-    apply AlgoTypingInduction.
+    destruct (AlgoTypingInduction PTy PInf PInfRed PCheck) as [?[?[?]]].
+    10:{ repeat (split ; [assumption|]); assumption. }
     - constructor.
     - intros Γ na A B HA IHA HB IHB Δ ρ.
       econstructor ; fold ren_term.
@@ -371,8 +373,9 @@ Section AlgTypingWh.
   Theorem algo_conv_wh :
     AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
-    apply AlgoConvInduction.
+    destruct (AlgoConvInduction  PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as [?[?[?[?[??]]]]].
+    12:{ repeat (split;[assumption|]);assumption. }
+    all:subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
     all: try solve [now constructor].
     all: intros ;
       repeat match goal with

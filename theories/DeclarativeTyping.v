@@ -242,7 +242,8 @@ Section TypingWk.
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
-    apply WfDeclInduction.
+    destruct (WfDeclInduction PCon PTy PTm PTyEq PTmEq) as [?[?[?[?]]]].
+    24:{ repeat (split; [assumption|]); assumption.  }
     - red.
       trivial.
     - red. trivial.

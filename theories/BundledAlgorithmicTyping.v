@@ -155,10 +155,13 @@ End BundledTypingData.
 
 Import BundledTypingData.
 
-Section BundledConv.
+Set Universe Polymorphism.
 
-  Context (PTyEq PTyRedEq : context -> term -> term -> Type)
-  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type).
+Section BundledConv.
+  Universe u.
+
+  Context (PTyEq PTyRedEq : context -> term -> term -> Type@{u})
+  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type@{u}).
 
   #[local] Ltac pre_cond Hyp :=
     lazymatch Hyp with
@@ -243,24 +246,68 @@ Section BundledConv.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
+      (* | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl') *)
+      | (?Chd * ?Ctl)%type => let Chd' := strong_concl Chd in (* constr:(Chd') *) let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
 
   #[local] Ltac weak_statement T :=
   lazymatch T with
     | ?Step -> ?T => let Step' := strong_step Step in let T' := weak_statement T in constr:(Step' -> T')
-    | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
+    | (?Chd * ?Ctl)%type => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
 
-  Theorem algo_conv_discipline : ltac:(
-    let t := (type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq)) in
-    let ind := strong_statement t in
-    exact ind).
+  Definition t0 := ltac:(let t := type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in exact t).
+
+  Definition algo_conv_discipline_stmt := 
+    ltac:(
+      let t := (type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq)) in
+      let ind := strong_statement t in
+      exact ind).
+
+  Let PTyEq'  (c : context) (t t1 : term) :=
+    [ |-[ de ] c] ->
+    [c |-[ de ] t] -> [c |-[ de ] t1] -> PTyEq c t t1 × [c |-[ de ] t ≅ t1].
+
+  Let PTyRedEq' (c : context) (t t1 : term) :=
+    [ |-[ de ] c] ->
+    [c |-[ de ] t] -> [c |-[ de ] t1] -> PTyRedEq c t t1 × [c |-[ de ] t ≅ t1].
+ 
+ Let PNeEq' (c : context) (t t1 t2 : term) :=
+   [ |-[ de ] c] ->
+   (∑ T : term, [c |-[ de ] t1 : T]) ->
+   (∑ T : term, [c |-[ de ] t2 : T]) ->
+   PNeEq c t t1 t2
+   × [× [c |-[ de ] t1 ≅ t2 : t],
+        forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
+       & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
+
+  Let PNeRedEq' (c : context) (t t1 t2 : term) :=
+     [ |-[ de ] c] ->
+     (∑ T : term, [c |-[ de ] t1 : T]) ->
+     (∑ T : term, [c |-[ de ] t2 : T]) ->
+     PNeRedEq c t t1 t2
+     × [× [c |-[ de ] t1 ≅ t2 : t],
+          forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
+         & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
+
+  Let PTmEq' (c : context) (t t1 t2 : term) :=
+       [ |-[ de ] c] ->
+       [c |-[ de ] t1 : t] ->
+       [c |-[ de ] t2 : t] -> PTmEq c t t1 t2 × [c |-[ de ] t1 ≅ t2 : t].
+
+  Let PTmRedEq' (c : context) (t t1 t2 : term) :=
+         [ |-[ de ] c] ->
+         [c |-[ de ] t1 : t] ->
+         [c |-[ de ] t2 : t] -> PTmRedEq c t t1 t2 × [c |-[ de ] t1 ≅ t2 : t].
+
+  Theorem algo_conv_discipline : algo_conv_discipline_stmt.
   Proof.
-    intros.
-    eapply AlgoConvInduction.
+    unfold algo_conv_discipline_stmt; intros.
+    destruct (AlgoConvInduction PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq') as [?[?[?[?[?]]]]].
+    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'; cbn in *.
+    12:{ cbn in *. repeat (split; [assumption|]); assumption. }
     - intros * HA HB ? IHA' ? ? ?.
       pose proof (HA' := HA).
       pose proof (HB' := HB).
@@ -282,7 +329,7 @@ Section BundledConv.
         1: now eapply ctx_conv_refl.
         now eapply IHA.
       }
-      split ; [gen_typing|..].
+      split ; [|gen_typing|..].
       destruct IHB as [].
       1-3: gen_typing.
       now econstructor.
@@ -432,7 +479,7 @@ Section BundledConv.
       exact ind).
   Proof.
     intros.
-    repeat match goal with |- prod _ _ => split end.
+    repeat split.
     all: intros * [].
     all: apply algo_conv_discipline ; assumption.
   Qed.
