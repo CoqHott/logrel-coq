@@ -3,6 +3,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 
 Set Primitive Projections.
 Set Universe Polymorphism.
+Set Polymorphic Inductive Cumulativity.
 
 Create HintDb logrel.
 #[global] Hint Constants Opaque : logrel.
@@ -18,7 +19,7 @@ Ltac logrel := eauto with logrel.
   One should think of RedRel as a functional relation taking two arguments (Γ and A) and returning
   three outputs (eqTy, redTm and eqTm) *)
 
-  #[universes(polymorphic)]Definition RedRel@{i j | i < j +} :=
+  Definition RedRel@{i j} :=
   context               ->
   term                  ->
   (term -> Type@{i})         ->
@@ -30,7 +31,7 @@ Ltac logrel := eauto with logrel.
 
 Module LRPack.
 
-  #[universes(polymorphic)] Record LRPack@{i} {Γ : context} {A : term} :=
+  Record LRPack@{i} {Γ : context} {A : term} :=
   {
     eqTy : term -> Type@{i};
     redTm : term -> Type@{i};
@@ -48,18 +49,18 @@ Notation "[ P | Γ ||- t : A ]" := (@LRPack.redTm Γ A P t).
 Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
 
 (* An LRPack it adequate wrt. a RedRel when its three unpacked components are *)
-#[universes(polymorphic)] Definition LRPackAdequate@{i j} {Γ : context} {A : term}
+Definition LRPackAdequate@{i j} {Γ : context} {A : term}
   (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
   R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
 
 Arguments LRPackAdequate _ _ /.
 
 Module LRAd.
-
-  #[universes(polymorphic)] Record > LRAdequate {Γ : context} {A : term} {R : RedRel} :=
+  
+  Record > LRAdequate@{i j} {Γ : context} {A : term} {R : RedRel@{i j}} : Type@{j} :=
   {
-    pack :> LRPack Γ A ;
-    adequate :> LRPackAdequate R pack
+    pack :> LRPack@{i} Γ A ;
+    adequate :> LRPackAdequate@{i j} R pack
   }.
 
   Arguments LRAdequate : clear implicits.
@@ -109,7 +110,7 @@ Module neRedTy.
   Record neRedTy `{ta : tag}
     `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
     {Γ : context} {A : term}
-  : Type := {
+  : Set := {
     ty : term;
     red : [ Γ |- A :⇒*: ty];
     ne : whne ty;
@@ -128,7 +129,7 @@ Module neRedTyEq.
   Record neRedTyEq `{ta : tag}
     `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
     {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
-  : Type := {
+  : Set := {
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
     ne : whne ty;
@@ -148,7 +149,7 @@ Module neRedTm.
     `{WfType ta} `{RedType ta}
     `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta}
     {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
-  : Type := {
+  : Set := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
     ne : whne te ;
@@ -169,7 +170,7 @@ Module neRedTmEq.
     `{WfType ta} `{RedType ta}
     `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]}
-  : Type := {
+  : Set := {
     termL     : term;
     termR     : term;
     redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
@@ -190,7 +191,7 @@ Module URedTy.
 
   Record URedTy `{ta : tag} `{WfContext ta}
     {l} {Γ : context}
-  : Type := {
+  : Set := {
     level  : TypeLevel;
     lt  : level << l;
     wfCtx : [ |- Γ ]
@@ -198,7 +199,7 @@ Module URedTy.
 
   Arguments URedTy {_ _}.
 
-  Record URedTyEq {Γ : context} {B : term} : Type := {
+  Record URedTyEq {Γ : context} {B : term} : Set := {
     eq : B = U
   }.
 
@@ -213,11 +214,11 @@ Notation "[ Γ ||-U≅ B ]" := (URedTyEq Γ B).
 
 Module URedTm.
 
-  Record URedTm `{ta : tag} `{WfContext ta}
+  Record URedTm@{i j} `{ta : tag} `{WfContext ta}
     `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
-    {l} {rec : forall {l'}, l' << l -> RedRel}
+    {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
     {Γ : context} {t : term} {R : [Γ ||-U l]}
-  : Type := {
+  : Type@{j} := {
     te : term;
     red : [ Γ |- t :⇒*: te : U ];
     type : isType te;
@@ -228,11 +229,11 @@ Module URedTm.
   Arguments URedTm {_ _ _ _ _ _} rec.
 
   (*Universe term equality*)
-  Record URedTmEq `{ta : tag} `{WfContext ta}
+  Record URedTmEq@{i j} `{ta : tag} `{WfContext ta}
     `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
-    {l} {rec : forall {l'}, l' << l -> RedRel}
+    {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
     {Γ : context} {t u : term} {R : [Γ ||-U l]}
-  : Type := {
+  : Type@{j} := {
       redL : URedTm (@rec) Γ t R ;
       redR : URedTm (@rec) Γ u R ;
       eq   : [ Γ |- redL.(te) ≅ redR.(te) : U ];
@@ -251,10 +252,10 @@ Notation "[ R | Γ ||-U t ≅ u :U | l ]" := (URedTmEq R Γ t u l).
 
 Module PiRedTy.
 
-  #[universes(polymorphic)]Record PiRedTy@{i} `{ta : tag}
+  Record PiRedTy@{i} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {Γ : context} {A : term}
-  : Type := {
+  : Type (* @ max(Set, i+1) *) := {
     na : aname ;
     dom : term ;
     cod : term ;
@@ -278,13 +279,14 @@ Module PiRedTy.
 
   Arguments PiRedTy {_ _ _ _ _}.
 
-  #[universes(polymorphic)] Record PiRedTyAdequate `{ta : tag}
+
+  Record PiRedTyAdequate@{i j} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term} {R : RedRel} {ΠA : PiRedTy Γ A}
-  : Type := {
-    domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate R (ΠA.(domRed) ρ h);
+    {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy Γ A}
+  : Type@{j} := {
+    domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (ΠA.(domRed) ρ h);
     codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ])
-      : LRPackAdequate R (ΠA.(codRed) ρ h ha);
+      : LRPackAdequate@{i j} R (ΠA.(codRed) ρ h ha);
   }.
 
   Arguments PiRedTyAdequate {_ _ _ _ _ _ _}.
@@ -372,12 +374,12 @@ Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
 
 Unset Elimination Schemes.
 
-#[universes(polymorphic)]Inductive LR `{ta : tag}
+Inductive LR@{i j k} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
   `{RedType ta} `{RedTerm ta}
-  {l : TypeLevel} (rec : forall l', l' << l -> RedRel)
-: RedRel :=
+  {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
+: RedRel@{j k} :=
   | LRU {Γ} (H : [Γ ||-U l]) :
       LR rec Γ U
       (fun B   => [Γ ||-U≅ B ])
@@ -388,7 +390,7 @@ Unset Elimination Schemes.
       (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
       (fun t   =>  [ Γ ||-ne t     : A | neA])
       (fun t u =>  [ Γ ||-ne t ≅ u : A | neA])
-  | LRPi {Γ : context} {A : term} (ΠA : [ Γ ||-Πd A ]) (ΠAad : PiRedTyAdequate (LR rec) ΠA) :
+  | LRPi {Γ : context} {A : term} (ΠA : [ Γ ||-Πd A ]) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
     LR rec Γ A
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
@@ -428,17 +430,26 @@ Section MoreDefs.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
-  #[universes(polymorphic)]Definition rec0 (l' : TypeLevel) (h : l' << zero) : RedRel :=
-    match elim h with
-    end.
+  (* Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} := *)
+  (*   match elim h with *)
+  (*   end. *)
 
-  #[universes(polymorphic)]Definition LogRel0 :=
-    LR rec0.
+  Inductive rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=.
 
-  Definition LogRelRec (l : TypeLevel) : forall l', l' << l -> RedRel :=
+  (* The lowest universe level should not be very useful so hard-coding to Set *)
+  Definition LogRel0@{i j} :=
+    LR@{Set i j} rec0@{Set i}.
+
+  Definition LRbuild0@{i j} {Γ A rEq rTe rTeEq} :
+    LogRel0@{i j} Γ A rEq rTe rTeEq -> [ LogRel0@{i j} | Γ ||- A ] :=
+    fun H => {|
+      LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
+      LRAd.adequate := H |}.
+
+  Definition LogRelRec@{i j} (l : TypeLevel) : forall l', l' << l -> RedRel@{i j} :=
     match l with
-      | zero => rec0
-      | one => fun _ _ => LogRel0
+      | zero => rec0@{i j}
+      | one => fun _ _ => LogRel0@{i j}
     end.
 
   Arguments LogRelRec l l' l_ /.
@@ -446,8 +457,11 @@ Section MoreDefs.
   Definition rec1 :=
     LogRelRec one.
 
-  Definition LogRel (l : TypeLevel) :=
-    LR (LogRelRec l).
+  Definition LogRel1@{i j k} :=
+    LR@{i j k} rec1@{i j}.
+
+  Definition LogRel@{i j k} (l : TypeLevel) :=
+    LR@{i j k} (LogRelRec@{i j} l).
 
   Definition LRbuild {Γ l A rEq rTe rTeEq} :
     LR (LogRelRec l) Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ] :=
@@ -472,9 +486,17 @@ Section MoreDefs.
 
 End MoreDefs.
   
+(* To be explicit with universe levels use the rhs, e.g
+   [ logRel@{i j k} l | Γ ||- A] or [ logRel0@{i j} ||- Γ ||- A ≅ B | RA ]
+ *)
 Notation "[ Γ ||-< l > A ]" := [ LogRel l | Γ ||- A ].
 Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
 Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
+
+Notation "[ Γ ||-<0> A ]" := [ LogRel0 | Γ ||- A ].
+Notation "[ Γ ||-<0> A ≅ B | RA ]" := [ LogRel0 | Γ ||- A ≅ B | RA ].
+Notation "[ Γ ||-<0> t : A | RA ]" := [ LogRel0 | Γ ||- t : A | RA ].
+Notation "[ Γ ||-<0> t ≅ u : A | RA ]" := [ LogRel0 | Γ ||- t ≅ u : A | RA ].
 
 (* #[global] Hint Resolve LRbuild LRunbuild : logrel. *)

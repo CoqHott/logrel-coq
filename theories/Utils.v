@@ -101,3 +101,10 @@ Ltac gen_typing := typeclasses eauto bfs 6 with gen_typing typeclass_instances.
 
 (* Forcing some unfolding *)
 Arguments ren1 {_ _ _} _ _ !_/.
+
+#[universes(polymorphic)]
+Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P x -> P y :=
+    match e in _ = z return P x -> P z with
+    | eq_refl => fun w => w
+    end.
+

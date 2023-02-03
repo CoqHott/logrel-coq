@@ -8,7 +8,7 @@ Section ShapeViews.
 
   Definition ShapeView Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
-    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) (lrB : LogRel lB Γ B eqTyB redTmB redTyB) : Type :=
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) (lrB : LogRel lB Γ B eqTyB redTmB redTyB) : Set :=
     match lrA, lrB with
       | LRU _ _, LRU _ _ => True
       | LRne _ _, LRne _ _ => True
@@ -42,7 +42,9 @@ Section ShapeViews.
         symmetry.
         eapply red_whnf.
         all: gen_typing.
-      + intros [->].
+      + (* universe polymorphic variant of intros [->]. *)
+        intros [eq]; revert ΠA ΠAad; pattern A; set (P := fun _ => _);
+        apply (tr P (eq_sym eq)); subst P; cbn; intros ΠA ΠAad.
         inversion ΠA.
         enough (U = tProd na dom cod) by congruence.
         eapply red_whnf.

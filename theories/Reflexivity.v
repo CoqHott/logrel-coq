@@ -1,8 +1,17 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction LRInduction Escape.
 
+Set Universe Polymorphism.
+
 Section Reflexivities.
   Context `{GenericTypingProperties}.
+
+  Definition LRTyEqRefl0 {Γ A eqTy redTm eqTm}
+    (lr : LogRel0 Γ A eqTy redTm eqTm) : eqTy A.
+  Proof.
+    induction lr as [ ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
+    all: now econstructor.
+  Qed.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
@@ -23,12 +32,11 @@ Section Reflexivities.
   Proof.
     induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod].
     - intros t [? ? ? ? [[] rel]] ; cbn in *.
-      assert (eqTy t)
-        by now eapply (LRTyEqRefl (l := zero)).
+      assert (eqTy t) by now eapply LRTyEqRefl0.  
       unshelve econstructor.
       all : cbn.
       1-2: econstructor ; tea ; cbn.
-      1-3,5: now eapply (LRbuild (l := zero)).
+      1-3,5: now eapply LRbuild0.
       all: easy.
     - intros t [].
       econstructor ; cbn in *.
