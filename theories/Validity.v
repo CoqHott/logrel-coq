@@ -3,6 +3,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 
 Set Primitive Projections.
 Set Universe Polymorphism.
+Set Polymorphic Inductive Cumulativity.
 
 Create HintDb substitution.
 #[global] Hint Constants Opaque : substitution.
@@ -17,7 +18,7 @@ Ltac substitution := eauto with substitution.
   One should think of VRel as a functional relation taking one argument Γ and returning
   2 outputs validSubst and eqSubst *)
 
-  #[universes(polymorphic)]Definition VRel@{i j | i < j +} `{ta : tag} `{!WfContext ta} :=
+  Definition VRel@{i j | i < j +} `{ta : tag} `{!WfContext ta} :=
   forall 
     (Γ : context)
     (validSubst : forall (Δ : context) (σ : nat -> term) (wfΔ : [|- Δ]), Type@{i})
@@ -28,7 +29,7 @@ Ltac substitution := eauto with substitution.
 
 Module VPack.
 
-  #[universes(polymorphic)] Record VPack@{i} `{ta : tag} `{!WfContext ta} {Γ : context} :=
+  Record VPack@{i} `{ta : tag} `{!WfContext ta} {Γ : context} :=
   {
     validSubst : forall (Δ : context) (σ : nat -> term) (wfΔ : [|- Δ]), Type@{i} ;
     eqSubst : forall (Δ : context) (σ σ' : nat -> term) (wfΔ : [|- Δ ]), validSubst Δ σ wfΔ -> Type@{i} ;
@@ -53,7 +54,7 @@ Arguments VPackAdequate _ _ /.
 
 Module VAd.
 
-  #[universes(polymorphic)] Record > VAdequate `{ta : tag} `{!WfContext ta} {Γ : context} {R : VRel} :=
+  Record > VAdequate `{ta : tag} `{!WfContext ta} {Γ : context} {R : VRel} :=
   {
     pack :> VPack Γ ;
     adequate :> VPackAdequate R pack
@@ -75,22 +76,22 @@ Notation "[ R | ||-v Γ ]"                            := (VAdequate Γ R) (at le
 Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"           := (RΓ.(@VAd.pack _ _ Γ R).(VPack.validSubst) Δ σ wfΔ) (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
 Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" := (RΓ.(@VAd.pack _ _ Γ R).(VPack.eqSubst) Δ σ σ' wfΔ vσ) (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
 
-Record typeValidity `{ta : tag} `{!WfContext ta}
+Record typeValidity@{u i j k} `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
   `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
-  {Γ : context} {VΓ : VPack Γ}
+  {Γ : context} {VΓ : VPack@{u} Γ}
   {l : TypeLevel} {A : term} :=
   {
     validTy : forall {Δ : context} {σ : nat -> term}
       (wfΔ : [|- Δ ]) 
       (vσ : [ VΓ | Δ ||-v σ : Γ | wfΔ ])
-      , [ Δ ||-< l > A [ σ ] ] ;
+      , [LogRel@{i j k} l | Δ ||- A [ σ ] ] ;
     validTyExt : forall {Δ : context} {σ σ' : nat -> term}
       (wfΔ : [|- Δ ])
       (vσ  : [ VΓ | Δ ||-v σ  : Γ | wfΔ ])
       (vσ' : [ VΓ | Δ ||-v σ' : Γ | wfΔ ])
       (vσσ' : [ VΓ | Δ ||-v σ ≅ σ' : Γ | wfΔ | vσ ])
-      , [ Δ ||-< l > A [ σ ] ≅ A [ σ' ] | validTy wfΔ vσ ]
+      , [LogRel@{i j k} l | Δ ||- A [ σ ] ≅ A [ σ' ] | validTy wfΔ vσ ]
   }.
 
 Arguments typeValidity : clear implicits.
@@ -99,16 +100,17 @@ Arguments typeValidity {_ _ _ _ _ _ _ _ _}.
 Notation "[ P | Γ ||-v< l > A ]" := (typeValidity Γ P l A) (at level 0, P, Γ, l, A at level 50).
 
 Definition emptyValidSubst `{ta : tag} `{!WfContext ta} : forall (Δ : context) (σ : nat -> term) (wfΔ : [|- Δ]), Type := fun _ _ _ => unit.
-Definition emptyEqSubst `{ta : tag} `{!WfContext ta} : forall (Δ : context) (σ σ' : nat -> term) (wfΔ : [|- Δ]), emptyValidSubst Δ σ wfΔ -> Type := fun _ _ _ _ _ => unit.
+Definition emptyEqSubst@{u} `{ta : tag} `{!WfContext ta} : forall (Δ : context) (σ σ' : nat -> term) (wfΔ : [|- Δ]), emptyValidSubst@{u} Δ σ wfΔ -> Type@{u} := fun _ _ _ _ _ => unit.
 Definition emptyVPack `{ta : tag} `{!WfContext ta} : VPack ε := 
   Build_VPack _ emptyValidSubst emptyEqSubst.
 
 Section snocValid.
+  Universe u i j k.
   Context `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
   `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
-  {Γ : context} {VΓ : VPack Γ} {A : term} {l : TypeLevel}
-  {vA : [ VΓ | Γ ||-v< l > A ]}.
+  {Γ : context} {VΓ : VPack@{u} Γ} {A : term} {l : TypeLevel}
+  {vA : typeValidity@{u i j k} Γ VΓ l A (* [ VΓ | Γ ||-v< l > A ] *)}.
 
   Record snocValidSubst {Δ : context} {σ : nat -> term} {wfΔ : [|- Δ]} : Type := 
     {
@@ -124,7 +126,7 @@ Section snocValid.
       eqHead : [ Δ ||-< l > σ var_zero ≅ σ' var_zero : A[↑ >> σ] | validTy vA wfΔ (validTail vσ) ]
     }.
   
-  Definition snocVPack na := Build_VPack (Γ ,, vass na A) snocValidSubst (@snocEqSubst).
+  Definition snocVPack na := Build_VPack@{u (* max(u,j) *)} (Γ ,, vass na A) snocValidSubst (@snocEqSubst).
 End snocValid.
 
 Arguments snocValidSubst : clear implicits.
@@ -138,15 +140,15 @@ Arguments snocVPack {_ _ _ _ _ _ _ _ _}.
 
 Unset Elimination Schemes.
 
-Inductive VR `{ta : tag}
+Inductive VR@{i j k} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
-  `{RedType ta} `{RedTerm ta} : VRel :=
-  | VREmpty : VR ε emptyValidSubst emptyEqSubst
+  `{RedType ta} `{RedTerm ta} : VRel@{j k} :=
+  | VREmpty : VR ε emptyValidSubst@{j} emptyEqSubst@{j}
   | VRSnoc : forall {Γ na A l}
-    (VΓ : VPack Γ)
-    (VΓad : VPackAdequate VR VΓ)
-    (VA : [ VΓ | Γ ||-v< l > A ]),
+    (VΓ : VPack@{j} Γ)
+    (VΓad : VPackAdequate@{j k} VR VΓ)
+    (VA : typeValidity@{j i j k} Γ VΓ l A (*[ VΓ | Γ ||-v< l > A ]*)),
     VR (Γ ,, vass na A) (snocValidSubst Γ VΓ A l VA) (snocEqSubst Γ VΓ A l VA).
 
 
@@ -164,7 +166,8 @@ Section MoreDefs.
 
   Definition validEmpty : [||-v ε ] := Build_VAdequate emptyVPack VREmpty.
 
-  Definition validSnoc {Γ} na {A l} (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]) 
+  Definition validSnoc {Γ} na {A l}
+    (VΓ : [VR| ||-v Γ]) (VA : [Γ ||-v< l > A | VΓ])
     : [||-v Γ ,, vass na A ] :=
     Build_VAdequate (snocVPack Γ VΓ A l VA na) (VRSnoc VΓ VΓ VA).
 

@@ -2,6 +2,9 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Irrelevance Validity.
 
+
+Set Universe Polymorphism.
+
 Section Irrelevances.
 Context `{GenericTypingProperties}.
 
@@ -40,11 +43,6 @@ Qed.
 
 Set Printing Primitive Projection Parameters.
 
-(* TODO: Universe problem below with the version derived in Irrelevance !!! *)
-Lemma LRTmEqSym' lA Γ A (lrA : [Γ ||-<lA> A]) : forall t u,
-  [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
-Proof. Admitted.
-
 Lemma symmetrySubstEq {Γ} (VΓ VΓ' : [||-v Γ]) : forall {σ σ' Δ} (wfΔ wfΔ' : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (Vσ' : [Δ ||-v σ' : Γ | VΓ' | wfΔ']),
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] -> [Δ ||-v σ' ≅ σ : Γ | VΓ' | wfΔ' | Vσ'].
@@ -56,7 +54,7 @@ Proof.
     intros ????? [tl hd] [tl' hd'] [tleq hdeq].
     unshelve econstructor.
     1: eapply ih; eassumption.
-    eapply LRTmEqSym'. cbn in *.
+    eapply LRTmEqSym. cbn in *.
     revert hdeq. apply LRTmEqRedConv. 
     eapply validTyExt. 2:eassumption.
     eapply irrelevanceSubst; eassumption.
