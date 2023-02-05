@@ -134,14 +134,14 @@ Qed.
 End ΠIrrelevanceLemmas.
 
 Section LRIrrelevant.
-Universe i j k.
+Universe i j k l.
 
-Notation "A <≈> B" := (prod@{j j} (A -> B) (B -> A)) (at level 90).
+Notation "A <≈> B" := (prod@{k k} (A -> B) (B -> A)) (at level 90).
 
 Theorem LRIrrelevant Γ A A' {lA lA'}
-  {eqTyA redTmA eqTyA' redTmA' : term -> Type@{j}}
-  {eqTmA eqTmA' : term -> term -> Type@{j}}
-    (lrA : LogRel@{i j k} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i j k} lA' Γ A' eqTyA' redTmA' eqTmA') :
+  {eqTyA redTmA eqTyA' redTmA' : term -> Type@{k}}
+  {eqTmA eqTmA' : term -> term -> Type@{k}}
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i j k l} lA' Γ A' eqTyA' redTmA' eqTmA') :
     eqTyA A' ->
     [× forall B, eqTyA B <≈> eqTyA' B ,
     forall t, redTmA t <≈> redTmA' t &
@@ -262,134 +262,6 @@ Qed.
 
 End LRIrrelevant.
 
-Section LRIrrelevant0.
-Universe i j.
-
-Notation "A <≈> B" := (prod@{i i} (A -> B) (B -> A)) (at level 90).
-
-Theorem LRIrrelevant0 Γ A A'
-  {eqTyA redTmA eqTyA' redTmA' : term -> Type@{i}}
-  {eqTmA eqTmA' : term -> term -> Type@{i}}
-    (lrA : LogRel0@{i j} Γ A eqTyA redTmA eqTmA) (lrA' : LogRel0@{i j} Γ A' eqTyA' redTmA' eqTmA') :
-    eqTyA A' ->
-    [× forall B, eqTyA B <≈> eqTyA' B ,
-    forall t, redTmA t <≈> redTmA' t &
-    forall t u, eqTmA t u <≈> eqTmA' t u ].
-Proof.
-  intros he.
-  set (s := ShapeViewConv0 lrA lrA' he).
-  revert A' eqTyA' redTmA' eqTmA' lrA' he s.
-  pattern Γ, A, eqTyA, redTmA, eqTmA, lrA.
-  match goal with [|- ?X _ _ _ _ _ _] => pose (P := X) end.
-  eapply LR_rect0; clear Γ A eqTyA redTmA eqTmA lrA; subst P.
-  (* induction lrA as [? [? []] | ? ? [] | ? A [] [] IHdom IHcod] *)
-  (*   in A', eqTyA', eqTmA', redTmA', lrA', he, s |- *. *)
-  - intros Γ A neA A' eqTyA' redTmA' eqTmA' lrA'.
-    revert neA; pattern Γ, A', eqTyA', redTmA',  eqTmA', lrA'.
-    match goal with [|- ?X _ _ _ _ _ _] => pose (P := X) end.
-    eapply LR_rect0; clear Γ A' eqTyA' redTmA'  eqTmA' lrA'; subst P.
-    2: intros ???????? [].
-    intros Γ A' [AA' red1 ne1 eq1] [ty red0 ne0 eq0] [AA] _; cbn in *.
-    assert (AA' = AA) as eqAA'.
-    {
-      eapply whredty_det; econstructor ; [idtac |now econstructor| idtac |now econstructor].
-      all: gen_typing.
-    }
-    revert red1 ne1 eq1. pattern AA'.
-    set (P := fun _ => _). apply (tr P (eq_sym eqAA')). subst P; cbn.
-    intros red1 ne1 eq1.
-    assert [Γ |- ty ≅ AA] as convtAA by gen_typing.
-    split.
-    + intros ?.
-      split.
-      all: intros [].
-      all: econstructor.
-      all: cbn in *.
-      all: try eauto.
-      2: etransitivity ; eassumption.
-      clear eq1; etransitivity ; [symmetry|..]; eassumption.
-    + intros ?.
-      split.
-      2: symmetry in convtAA.
-      all: intros [].
-      all: econstructor ; cbn in *.
-      all: try eauto.
-      1,3: eapply wfredtm_conv ; eassumption.
-      all: gen_typing.
-    + intros ? ?.
-      split.
-      2: symmetry in convtAA.
-      all: intros [].
-      all: econstructor.
-      all: cbn in *.
-      1-2,6-7: eapply wfredtm_conv ; eassumption.
-      1-2,4-5: eassumption.
-      all: now gen_typing.
-  - intros Γ A ΠA ΠAad IHdom IHcod A' eqTyA' redTmA' eqTmA' lrA'.
-    revert ΠA ΠAad IHdom IHcod.
-    pattern Γ, A', eqTyA', redTmA',  eqTmA', lrA'.
-    match goal with [|- ?X _ _ _ _ _ _] => pose (P := X) end.
-    eapply LR_rect0; clear Γ A' eqTyA' redTmA'  eqTmA' lrA'; subst P.
-    1: intros ???????? [].
-    intros Γ A' [] [] _ _ [] [] IHdom IHcod [].
-    cbn -[subst1] in *.
-    assert (tProd na dom cod = tProd na1 dom1 cod1) as ePi
-      by (eapply whredty_det ; gen_typing).
-    inversion ePi ; subst ; clear ePi.
-    pose proof (IHdom_ := fun Δ ρ h => IHdom Δ ρ h _ _ _ _ (domAd Δ ρ h) (domRed1 Δ ρ h)).
-    assert (IHcod_ : forall Δ a (ρ : Δ ≤ Γ) (h : [|- Δ])
-      (ha : [domRed Δ ρ h | Δ ||- a : dom1⟨ρ⟩])
-      (ha' : [domRed0 Δ ρ h | Δ ||- a : dom0⟨ρ⟩]),
-      [×
-        (forall B,
-          [codRed0 Δ a ρ h ha' | Δ ||- cod0[a .: (ρ >> tRel)] ≅ B] <≈>
-          [codRed Δ a ρ h ha | Δ ||- cod1[a .: (ρ >> tRel)] ≅ B]),
-        (forall t,
-          [codRed0 Δ a ρ h ha' | Δ ||- t : cod0[a .: (ρ >> tRel)]] <≈>
-          [codRed Δ a ρ h ha | Δ ||- t : cod1[a .: (ρ >> tRel)]]) &
-      (forall t u,
-        [codRed0 Δ a ρ h ha' | Δ ||- t ≅ u : cod0[a .: (ρ >> tRel)]] <≈>
-        [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod1[a .: (ρ >> tRel)]])
-      ]).
-    {
-      intros.
-      eapply IHcod.
-      1: eapply codAd.
-      eauto.
-    }
-    split.
-    + split ; intros.
-      all: eapply ΠIrrelevanceTyEq.
-      4,8: eassumption. 
-      1,4: assumption + now symmetry.
-      1-2: now eauto.
-      * do 2 split ; intros.
-        all: now eapply IHdom_ ; eauto.
-      * do 2 split ; intros.
-        all: now eapply IHcod_ ; eauto.
-    + split ; intros.
-      all: eapply ΠIrrelevanceTm.
-      4,8: eassumption. 
-      1,4: assumption + now symmetry.
-      1-2: now eauto.
-      * do 2 split ; intros.
-        all: now eapply IHdom_ ; eauto.
-      * do 2 split ; intros.
-        all: now eapply IHcod_ ; eauto.
-    + split ; intros.
-      all: eapply ΠIrrelevanceTmEq.
-      4,8: eassumption. 
-      1,4: assumption + now symmetry.
-      1-2: now eauto.
-      * do 2 split ; intros.
-        all: now eapply IHdom_ ; eauto.
-      * do 2 split ; intros.
-        all: now eapply IHcod_ ; eauto.
-Qed.
-
-
-End LRIrrelevant0.
-
 
 Corollary TyEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
@@ -492,33 +364,16 @@ Proof.
   now eapply TmEqRedConv.
 Qed.
 
-Corollary TyEqSym0 Γ A A' {eqTyA redTmA eqTmA eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel0 Γ A eqTyA redTmA eqTmA) (lrA' : LogRel0 Γ A' eqTyA' redTmA' eqTmA') :
-  eqTyA A' -> eqTyA' A.
-Proof.
-  intros.
-  apply (LRIrrelevant0 _ _ _ lrA lrA').
-  1: eauto.
-  now eapply LRTyEqRefl0.
-Qed.
-
-Corollary LRTyEqSym0 Γ A A' (lrA : [Γ ||-<0> A]) (lrA' : [Γ ||-<0> A']) :
-  [Γ ||-<0> A ≅ A' | lrA] -> [Γ ||-<0> A' ≅ A | lrA'].
-Proof.
-  destruct lrA, lrA'.
-  cbn in *.
-  now eapply TyEqSym0.
-Qed.
-
 Set Printing Primitive Projection Parameters.
 
-Lemma LRTmEqSym@{i j k} lA Γ A (lrA : [LogRel@{i j k} lA | Γ ||- A]) : forall t u,
+Lemma LRTmEqSym@{h i j k l} lA Γ A (lrA : [LogRel@{i j k l} lA | Γ ||- A]) : forall t u,
   [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
 Proof.
   pattern lA, Γ, A, lrA. apply LR_rect_TyUr.
   - intros * []. unshelve econstructor; try eassumption.
     1: symmetry; eassumption.
-    eapply LRTyEqSym0. exact relEq.
+    (* Need an additional universe level h < i *)
+    eapply LRTyEqSym@{h i j k}. exact relEq.
   - intros * []. unshelve econstructor.
     3,4: eassumption.
     1,2: eassumption.

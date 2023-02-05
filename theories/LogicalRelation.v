@@ -57,7 +57,7 @@ Arguments LRPackAdequate _ _ /.
 
 Module LRAd.
   
-  Record > LRAdequate@{i j} {Γ : context} {A : term} {R : RedRel@{i j}} : Type@{j} :=
+  Record > LRAdequate@{i j} {Γ : context} {A : term} {R : RedRel@{i j}} : Type :=
   {
     pack :> LRPack@{i} Γ A ;
     adequate :> LRPackAdequate@{i j} R pack
@@ -430,26 +430,23 @@ Section MoreDefs.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
-  (* Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} := *)
-  (*   match elim h with *)
-  (*   end. *)
+  Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=
+    match elim h with
+    end.
 
-  Inductive rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=.
+  Definition LogRel0@{i j k} :=
+    LR@{i j k} rec0@{i j}.
 
-  (* The lowest universe level should not be very useful so hard-coding to Set *)
-  Definition LogRel0@{i j} :=
-    LR@{Set i j} rec0@{Set i}.
-
-  Definition LRbuild0@{i j} {Γ A rEq rTe rTeEq} :
-    LogRel0@{i j} Γ A rEq rTe rTeEq -> [ LogRel0@{i j} | Γ ||- A ] :=
+  Definition LRbuild0@{i j k} {Γ A rEq rTe rTeEq} :
+    LogRel0@{i j k} Γ A rEq rTe rTeEq -> [ LogRel0@{i j k} | Γ ||- A ] :=
     fun H => {|
       LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
       LRAd.adequate := H |}.
 
-  Definition LogRelRec@{i j} (l : TypeLevel) : forall l', l' << l -> RedRel@{i j} :=
+  Definition LogRelRec@{i j k} (l : TypeLevel) : forall l', l' << l -> RedRel@{j k} :=
     match l with
-      | zero => rec0@{i j}
-      | one => fun _ _ => LogRel0@{i j}
+      | zero => rec0@{j k}
+      | one => fun _ _ => LogRel0@{i j k}
     end.
 
   Arguments LogRelRec l l' l_ /.
@@ -457,14 +454,14 @@ Section MoreDefs.
   Definition rec1 :=
     LogRelRec one.
 
-  Definition LogRel1@{i j k} :=
-    LR@{i j k} rec1@{i j}.
+  Definition LogRel1@{i j k l} :=
+    LR@{j k l} rec1@{i j k}.
 
-  Definition LogRel@{i j k} (l : TypeLevel) :=
-    LR@{i j k} (LogRelRec@{i j} l).
+  Definition LogRel@{i j k l} (l : TypeLevel) :=
+    LR@{j k l} (LogRelRec@{i j k} l).
 
-  Definition LRbuild {Γ l A rEq rTe rTeEq} :
-    LR (LogRelRec l) Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ] :=
+  Definition LRbuild@{i j k l} {Γ l A rEq rTe rTeEq} :
+    LR@{j k l} (LogRelRec@{i j k} l) Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ] :=
     fun H => {|
       LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
       LRAd.adequate := H |}.
@@ -474,29 +471,27 @@ Section MoreDefs.
     ∑ rEq rTe rTeEq , LR (LogRelRec l) Γ A rEq rTe rTeEq :=
       fun H => (LRPack.eqTy H; LRPack.redTm H; LRPack.eqTm H; H.(LRAd.adequate)).
 
-  Definition LRU_ {l Γ} (H : [Γ ||-U l]) : [ LogRel l | Γ ||- U ] :=
+  Definition LRU_@{i j k l} {l Γ} (H : [Γ ||-U l])
+    : [ LogRel@{i j k l} l | Γ ||- U ] :=
     LRbuild (LRU (LogRelRec l) H).
 
-  Definition LRne_ l {Γ A} (neA : [Γ ||-ne A]) : [ LogRel l | Γ ||- A ] :=
+  Definition LRne_@{i j k l} l {Γ A} (neA : [Γ ||-ne A])
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRne (LogRelRec l) neA).
 
-  Definition LRPi_ l {Γ A} (ΠA : [Γ ||-Πd A]) (ΠAad : PiRedTyAdequate (LR (LogRelRec l)) ΠA)
-    : [ LogRel l | Γ ||- A ] :=
+  Definition LRPi_@{i j k l} l {Γ A} (ΠA : [Γ ||-Πd A])
+    (ΠAad : PiRedTyAdequate (LR (LogRelRec@{i j k} l)) ΠA)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRPi (LogRelRec l) ΠA ΠAad).
 
 End MoreDefs.
   
 (* To be explicit with universe levels use the rhs, e.g
-   [ logRel@{i j k} l | Γ ||- A] or [ logRel0@{i j} ||- Γ ||- A ≅ B | RA ]
+   [ LogRel@{i j k l} l | Γ ||- A] or [ LogRel0@{i j k} ||- Γ ||- A ≅ B | RA ]
  *)
 Notation "[ Γ ||-< l > A ]" := [ LogRel l | Γ ||- A ].
 Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
 Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
-
-Notation "[ Γ ||-<0> A ]" := [ LogRel0 | Γ ||- A ].
-Notation "[ Γ ||-<0> A ≅ B | RA ]" := [ LogRel0 | Γ ||- A ≅ B | RA ].
-Notation "[ Γ ||-<0> t : A | RA ]" := [ LogRel0 | Γ ||- t : A | RA ].
-Notation "[ Γ ||-<0> t ≅ u : A | RA ]" := [ LogRel0 | Γ ||- t ≅ u : A | RA ].
 
 (* #[global] Hint Resolve LRbuild LRunbuild : logrel. *)

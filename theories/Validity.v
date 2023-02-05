@@ -76,7 +76,7 @@ Notation "[ R | ||-v Γ ]"                            := (VAdequate Γ R) (at le
 Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"           := (RΓ.(@VAd.pack _ _ Γ R).(VPack.validSubst) Δ σ wfΔ) (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
 Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" := (RΓ.(@VAd.pack _ _ Γ R).(VPack.eqSubst) Δ σ σ' wfΔ vσ) (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
 
-Record typeValidity@{u i j k} `{ta : tag} `{!WfContext ta}
+Record typeValidity@{u i j k l} `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
   `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
   {Γ : context} {VΓ : VPack@{u} Γ}
@@ -85,13 +85,13 @@ Record typeValidity@{u i j k} `{ta : tag} `{!WfContext ta}
     validTy : forall {Δ : context} {σ : nat -> term}
       (wfΔ : [|- Δ ]) 
       (vσ : [ VΓ | Δ ||-v σ : Γ | wfΔ ])
-      , [LogRel@{i j k} l | Δ ||- A [ σ ] ] ;
+      , [LogRel@{i j k l} l | Δ ||- A [ σ ] ] ;
     validTyExt : forall {Δ : context} {σ σ' : nat -> term}
       (wfΔ : [|- Δ ])
       (vσ  : [ VΓ | Δ ||-v σ  : Γ | wfΔ ])
       (vσ' : [ VΓ | Δ ||-v σ' : Γ | wfΔ ])
       (vσσ' : [ VΓ | Δ ||-v σ ≅ σ' : Γ | wfΔ | vσ ])
-      , [LogRel@{i j k} l | Δ ||- A [ σ ] ≅ A [ σ' ] | validTy wfΔ vσ ]
+      , [LogRel@{i j k l} l | Δ ||- A [ σ ] ≅ A [ σ' ] | validTy wfΔ vσ ]
   }.
 
 Arguments typeValidity : clear implicits.
@@ -105,12 +105,12 @@ Definition emptyVPack `{ta : tag} `{!WfContext ta} : VPack ε :=
   Build_VPack _ emptyValidSubst emptyEqSubst.
 
 Section snocValid.
-  Universe u i j k.
+  Universe u i j k l.
   Context `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
   `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
   {Γ : context} {VΓ : VPack@{u} Γ} {A : term} {l : TypeLevel}
-  {vA : typeValidity@{u i j k} Γ VΓ l A (* [ VΓ | Γ ||-v< l > A ] *)}.
+  {vA : typeValidity@{u i j k l} Γ VΓ l A (* [ VΓ | Γ ||-v< l > A ] *)}.
 
   Record snocValidSubst {Δ : context} {σ : nat -> term} {wfΔ : [|- Δ]} : Type := 
     {
@@ -126,7 +126,7 @@ Section snocValid.
       eqHead : [ Δ ||-< l > σ var_zero ≅ σ' var_zero : A[↑ >> σ] | validTy vA wfΔ (validTail vσ) ]
     }.
   
-  Definition snocVPack na := Build_VPack@{u (* max(u,j) *)} (Γ ,, vass na A) snocValidSubst (@snocEqSubst).
+  Definition snocVPack na := Build_VPack@{u (* max(u,k) *)} (Γ ,, vass na A) snocValidSubst (@snocEqSubst).
 End snocValid.
 
 Arguments snocValidSubst : clear implicits.
@@ -140,15 +140,15 @@ Arguments snocVPack {_ _ _ _ _ _ _ _ _}.
 
 Unset Elimination Schemes.
 
-Inductive VR@{i j k} `{ta : tag}
+Inductive VR@{i j k l} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
-  `{RedType ta} `{RedTerm ta} : VRel@{j k} :=
-  | VREmpty : VR ε emptyValidSubst@{j} emptyEqSubst@{j}
+  `{RedType ta} `{RedTerm ta} : VRel@{k l} :=
+  | VREmpty : VR ε emptyValidSubst@{k} emptyEqSubst@{k}
   | VRSnoc : forall {Γ na A l}
-    (VΓ : VPack@{j} Γ)
-    (VΓad : VPackAdequate@{j k} VR VΓ)
-    (VA : typeValidity@{j i j k} Γ VΓ l A (*[ VΓ | Γ ||-v< l > A ]*)),
+    (VΓ : VPack@{k} Γ)
+    (VΓad : VPackAdequate@{k l} VR VΓ)
+    (VA : typeValidity@{k i j k l} Γ VΓ l A (*[ VΓ | Γ ||-v< l > A ]*)),
     VR (Γ ,, vass na A) (snocValidSubst Γ VΓ A l VA) (snocEqSubst Γ VΓ A l VA).
 
 
@@ -164,14 +164,16 @@ Section MoreDefs.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{Typing ta}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedType ta} `{RedTerm ta}.
 
-  Definition validEmpty : [||-v ε ] := Build_VAdequate emptyVPack VREmpty.
+  Definition validEmpty@{i j k l} : [VR@{i j k l}| ||-v ε ] := Build_VAdequate emptyVPack VREmpty.
 
-  Definition validSnoc {Γ} na {A l}
-    (VΓ : [VR| ||-v Γ]) (VA : [Γ ||-v< l > A | VΓ])
+  Definition validSnoc@{i j k l} {Γ} na {A l}
+    (VΓ : [VR@{i j k l}| ||-v Γ]) (VA : [Γ ||-v< l > A | VΓ])
     : [||-v Γ ,, vass na A ] :=
     Build_VAdequate (snocVPack Γ VΓ A l VA na) (VRSnoc VΓ VΓ VA).
 
-  Record termValidity {Γ l} {t A : term} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A |VΓ]} : Type :=
+  Record termValidity@{i j k l} {Γ l} {t A : term}
+    {VΓ : [VR@{i j k l}| ||-v Γ]}
+    {VA : typeValidity@{k i j k l} Γ VΓ l A (*[Γ ||-v<l> A |VΓ]*)} : Type :=
     {
       validTm : forall {Δ σ} 
         (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
@@ -184,14 +186,18 @@ Section MoreDefs.
         [Δ ||-<l> t[σ] ≅ t[σ'] : A[σ] | validTy VA wfΔ Vσ ]
     }.
     
-  Record typeEqValidity {Γ l} {A B : term} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A |VΓ]} : Type :=
+  Record typeEqValidity@{i j k l} {Γ l} {A B : term}
+    {VΓ : [VR@{i j k l}| ||-v Γ]}
+    {VA : typeValidity@{k i j k l} Γ VΓ l A (*[Γ ||-v<l> A |VΓ]*)} : Type :=
     {
       validTyEq : forall {Δ σ}
         (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
         [Δ ||-<l> A[σ] ≅ B[σ] | validTy VA wfΔ Vσ]
     }.
   
-  Record termEqValidity {Γ l} {t u A : term} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A |VΓ]} : Type :=
+  Record termEqValidity@{i j k l} {Γ l} {t u A : term}
+    {VΓ : [VR@{i j k l}| ||-v Γ]}
+    {VA : typeValidity@{k i j k l} Γ VΓ l A (*[Γ ||-v<l> A |VΓ]*)} : Type :=
     {
       validTmEq : forall {Δ σ}
         (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
@@ -205,7 +211,6 @@ Section MoreDefs.
       Vrhs : @termValidity Γ l u A VΓ Vty ; 
       Veq  : @termEqValidity Γ l t u A VΓ Vty
     }.
-
 End MoreDefs.
 
 Arguments termValidity : clear implicits.

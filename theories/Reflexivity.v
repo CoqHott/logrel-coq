@@ -27,16 +27,17 @@ Section Reflexivities.
     now eapply LRTyEqRefl.
   Qed.
 
-  Definition LRTmEqRefl {l Γ A eqTy redTm eqTm} (lr : LogRel l Γ A eqTy redTm eqTm) :
+  Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
     induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod].
     - intros t [? ? ? ? [[] rel]] ; cbn in *.
-      assert (eqTy t) by now eapply LRTyEqRefl0.  
+      (* Need an additional universe level h < i *)
+      assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.
       all : cbn.
       1-2: econstructor ; tea ; cbn.
-      1-3,5: now eapply LRbuild0.
+      1-3,5: apply (LRbuild@{h i j k} (l := zero) rel).
       all: easy.
     - intros t [].
       econstructor ; cbn in *.
