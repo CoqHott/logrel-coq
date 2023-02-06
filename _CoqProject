@@ -30,6 +30,7 @@ theories/Irrelevance.v
 theories/Validity.v
 theories/Substitution/Irrelevance.v
 theories/Substitution/Properties.v
+theories/Fundamental.v
 
 theories/LogRelConsequences.v
 #theories/BundledAlgorithmicTyping.v
