@@ -20,8 +20,8 @@ Section Definitions.
       [ Γ |- tProd na A B ≅h tProd na' A' B']
     | typeUnivConvAlg {Γ} :
       [Γ |- U ≅h U]
-    | typeNeuConvAlg {Γ M N} :
-      [ Γ |- M ~h N ▹ U ] -> 
+    | typeNeuConvAlg {Γ M N T} :
+      [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
   with ConvNeuAlg : context -> term -> term  -> term -> Type :=
     | neuVarConvAlg {Γ n decl} :
@@ -109,20 +109,20 @@ Section Definitions.
   and "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t)
   and "[ Γ |- t : T ]" := (CheckAlg Γ T t).
 
-  (* Inductive WfContextAlgo : context -> Type :=
+  Inductive WfContextAlg : context -> Type :=
   | conNilAlg : [|- ε]
   | conConsAlg {Γ na A} :
     [|- Γ] ->
     [ Γ |- A] ->
     [|- Γ,, vass na A]
-  where "[ |- Γ ]" := (WfContextAlgo Γ). *)
+  where "[ |- Γ ]" := (WfContextAlg Γ).
 
 End Definitions.
 
 Module AlgorithmicTypingData.
 
   (* In algorithmic typing, we never check contexts! *)
-  #[export] Instance WfContext_Algo : WfContext al := fun _ => True.
+  #[export] Instance WfContext_Algo : WfContext al := WfContextAlg.
   #[export] Instance WfType_Algo : WfType al := WfTypeAlg.
   #[export] Instance Inferring_Algo : Inferring al := InferAlg.
   #[export] Instance InferringRed_Algo : InferringRed al :=
@@ -134,12 +134,9 @@ Module AlgorithmicTypingData.
   #[export] Instance ConvTermRed_Algo : ConvTermRed al := ConvTermRedAlg.
   #[export] Instance ConvNeu_Algo : ConvNeu al := ConvNeuAlg.
   #[export] Instance ConvNeuRed_Algo : ConvNeuRed al := ConvNeuRedAlg.
-  (* Reduction is untyped *)
-  #[export] Instance RedType_Algo : RedType al := fun _ => RedClosureAlg.
-  #[export] Instance RedTerm_Algo : RedTerm al :=
-  fun _ _ => RedClosureAlg.
 
   Ltac fold_algo :=
+    change WfContextAlg with (wf_context (ta := al)) in * ;
     change WfTypeAlg with (wf_type (ta := al)) in *;
     change InferAlg with (inferring (ta := al)) in * ;
     change InferRedAlg with (infer_red (ta := al)) in * ;
@@ -201,7 +198,7 @@ Definition AlgoTypingInductionConcl
   (PInf PInfRed PCheck : context -> term -> term -> Type) :=
   (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
   × (forall (Γ : context) (A t : term), [Γ |- t ▹ A] -> PInf Γ A t)
-  × (forall (Γ : context) (A t : term), InferRedAlg Γ A t -> PInfRed Γ A t)
+  × (forall (Γ : context) (A t : term), [Γ |- t ▹h A] -> PInfRed Γ A t)
   × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PCheck Γ A t).
 
 Definition AlgoConvInduction :=
@@ -223,13 +220,6 @@ End InductionPrinciples.
 Section TypingWk.
   Import AlgorithmicTypingData.
   
-  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [Δ |- A⟨ρ⟩].
-  Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
-    [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩].
-  Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
-    InferRedAlg Δ (A⟨ρ⟩) t⟨ρ⟩.
-  Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
-  [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
   Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
   Let PTyRedEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ),
@@ -247,111 +237,110 @@ Section TypingWk.
     AlgoConvInductionConcl PTyEq PTyRedEq
       PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    destruct (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as [?[?[?[?[?]]]]].
+    pose proof (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    destruct H as [?[?[?[?[?]]]]].
     12:{ repeat (split;[assumption|]); assumption. }
-    - intros * ? ? ? IH.
-      econstructor.
-      1-2: eauto using credalg_wk.
-      now eapply IH.
-    - intros * ? IHA ? IHB ? *.
+    - intros.
+      econstructor ; fold_algo.
+      all: eauto using credalg_wk.
+    - intros * ? ? ? IHB ? *.
       cbn.
-      econstructor.
-      1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
-      all: now econstructor.
+      econstructor ; fold_algo.
+      1: now eauto.
+      now eapply (IHB _ (wk_up _ _ ρ)).
     - econstructor.
-    - intros * ? IHM.
-      econstructor.
-      now apply IHM.
+    - intros.
+      now econstructor ; fold_algo.
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
       all: reflexivity.
     - intros * ? IHm ? IHt ? ?.
-      cbn.
-      eapply convne_meta_conv.
-      1:{
-        econstructor.
-        2: now eapply IHt.
-        red in IHm ; cbn in IHm.
-        now eapply IHm.
-      }
-      1: asimpl.
-      all: reflexivity.
-    - intros * ? IHm ?.
-      econstructor.
-      + now apply IHm.
+      cbn in *.
+      eapply convne_meta_conv ; [econstructor|..] ; fold_algo.
+      + eauto.
+      + eauto.
+      + now asimpl.
+      + reflexivity.
+    - intros.
+      econstructor ; fold_algo.
+      + eauto.
       + eauto using credalg_wk.
       + now eapply isType_ren. 
-    - intros * ? ? ? ? IHt.
-      econstructor.
+    - intros.
+      econstructor ; fold_algo.
       1-3: eauto using credalg_wk.
-      now eapply IHt.
-    - intros * ? IHA ? IHB ? ?.
+      now eauto.
+    - intros * ? ? ? IHB ? ?.
+      cbn.
+      econstructor ; fold_algo.
+      1: now eauto.
+      now eapply (IHB _ (wk_up _ _ ρ)).
+    - intros * ? ? ? IH ? ?.
       cbn.
       econstructor.
-      1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
-      all: now econstructor.
-    - intros ? f f' * ? ? ? IH ? ?.
-      cbn.
-      econstructor.
-      1-2: asimpl ; gen_typing.
+      1-2: now eauto using isFun_ren.
       specialize (IH _ (wk_up _ _ ρ)).
-      red in IH.
       cbn in *.
       asimpl.
-      repeat (erewrite compRenRen_term in IH ; [..|reflexivity]).
+      repeat (rewrite renRen_term in IH).
       apply IH.
-    - intros * ? IH.
-      econstructor.
-      2: cbn ; asimpl ; now gen_typing.
-      now eapply IH.
+    - intros.
+      econstructor ; fold_algo.
+      + eauto.
+      + now eauto using whne_ren.
   Qed.
+
+  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [Δ |- A⟨ρ⟩].
+  Let PInf (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
+    [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩].
+  Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
+    [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩].
+  Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
+  [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
 
   Theorem algo_typing_wk :
     AlgoTypingInductionConcl PTy PInf PInfRed PCheck.
   Proof.
-    destruct (AlgoTypingInduction PTy PInf PInfRed PCheck) as [?[?[?]]].
+    pose proof (AlgoTypingInduction PTy PInf PInfRed PCheck) as H.
+    subst PTy PInf PInfRed PCheck.
+    destruct H as [?[?[?]]].
     10:{ repeat (split ; [assumption|]); assumption. }
     - constructor.
-    - intros Γ na A B HA IHA HB IHB Δ ρ.
-      econstructor ; fold ren_term.
-      1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
-      all: now constructor.
-    - intros * _ IHA.
-      econstructor.
-      now apply IHA.
-    - intros * ? Δ ? *.
-      eapply typing_meta_conv.
-      1: now econstructor ; eapply in_ctx_wk.
-      reflexivity.
-    - intros Γ na A B HA IHA HB IHB Δ ρ.
-      econstructor ; fold ren_term.
-      1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
-      all: now constructor.
-    - intros * HA IHA Ht IHt Δ ρ.
-      econstructor ; fold ren_term.
-      1: now eapply IHA.
-      eapply (IHt _ (wk_up _ _ ρ)).
-      all: now constructor.
-    - intros * Hf IHf Ha IHa Δ ρ.
+    - intros * ? ? ? IHB **.
       cbn.
+      econstructor ; fold_algo.
+      + now eauto.
+      + now eapply (IHB _ (wk_up _ _ ρ)).
+    - intros.
+      now econstructor ; fold_algo.
+    - intros.
       eapply typing_meta_conv.
-      red in IHf. cbn in IHf.
-      1: cbn ; econstructor.
-      1: now eapply IHf.
-      1: now eapply IHa.
-      now asimpl.
-    - intros * ? IHt ?.
-      econstructor.
-      + now eapply IHt.
+      + now econstructor ; eapply in_ctx_wk.
+      + reflexivity.
+    - intros * ? ? ? IHB.
+      cbn.
+      econstructor ; fold_algo.
+      + eauto.
+      + now eapply (IHB _ (wk_up _ _ ρ)).
+    - intros * ? ? ? IHt ? ?.
+      cbn.
+      econstructor ; fold_algo.
+      + now eauto.
+      + now eapply (IHt _ (wk_up _ _ ρ)).
+    - intros.
+      cbn in *.
+      eapply typing_meta_conv.
+      + now econstructor ; fold_algo.
+      + now asimpl.
+    - intros.
+      econstructor ; fold_algo.
+      + eauto.
       + eauto using credalg_wk.
-    - intros * ? IHt.
-      econstructor.
-      + now eapply IHt.
+    - intros.
+      econstructor ; fold_algo.
+      + eauto.
       + now eapply algo_conv_wk.
   Qed.
 
@@ -373,16 +362,17 @@ Section AlgTypingWh.
   Theorem algo_conv_wh :
     AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    destruct (AlgoConvInduction  PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as [?[?[?[?[??]]]]].
+    pose proof (AlgoConvInduction  PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
+    destruct H as [?[?[?[?[??]]]]].
     12:{ repeat (split;[assumption|]);assumption. }
-    all:subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
-    all: try solve [now constructor].
+    1,7-8: now constructor.
     all: intros ;
       repeat match goal with
       | H : [× _, _ & _] |- _ => destruct H
       | H : _ × _ |- _ => destruct H
       end.
-    all: try solve [now do 2 constructor].
+    1-6,8: now do 2 constructor.
     constructor.
     1-2: gen_typing.
     now constructor.

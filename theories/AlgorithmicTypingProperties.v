@@ -4,9 +4,18 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
+Lemma conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].
+Proof.
+  intros Hconv **.
+  etransitivity ; tea.
+  symmetry.
+  eapply RedConvTyC, subject_reduction_type ; tea.
+  now eapply validity in Hconv as [].
+Qed.
+
 Section AlgoConvConv.
 
-  Lemma in_ctx_conv Γ' Γ n decl :
+  Lemma in_ctx_conv_r Γ' Γ n decl :
   [|-[de] Γ' ≅ Γ] ->
   in_ctx Γ n decl ->
   ∑ decl', (in_ctx Γ' n decl') × ([Γ' |-[de] decl'.(decl_type) ≅ decl.(decl_type)]).
@@ -18,8 +27,7 @@ Section AlgoConvConv.
   - now econstructor.
   - cbn.
     eapply typing_shift ; tea.
-    all: eapply validity in H3 as [].
-    all: gen_typing.
+    all: eapply validity in H3 as []; gen_typing.
   - destruct d as [? d].
     edestruct IHHin as [[? d'] []].
     1: eassumption.
@@ -29,6 +37,114 @@ Section AlgoConvConv.
     cbn.
     eapply typing_shift ; tea.
     all: now eapply validity in H3 as [] ; gen_typing.
+  Qed.
+
+  Lemma in_ctx_conv_l Γ' Γ n decl' :
+  [|-[de] Γ' ≅ Γ] ->
+  in_ctx Γ' n decl' ->
+  ∑ decl, (in_ctx Γ n decl) × ([Γ' |-[de] decl'.(decl_type) ≅ decl.(decl_type)]).
+  Proof.
+    intros ? Hin.
+    eapply in_ctx_conv_r in Hin as [? []].
+    2: now symmetry.
+    eexists ; split ; tea.
+    symmetry.
+    now eapply stability.
+  Qed.
+
+  Let PTyEq' (Γ : context) (A B : term) := True.
+  Let PTyRedEq' (Γ : context) (A B : term) := True.
+  Let PNeEq' (Γ : context) (A t u : term) := forall Γ',
+    [|-[de] Γ' ≅ Γ] ->
+    ∑ A', [Γ' |-[al] t ~ u ▹ A'] × [Γ' |-[de] A' ≅ A].
+  Let PNeRedEq' (Γ : context) (A t u : term) := forall Γ',
+    [|-[de] Γ' ≅ Γ] ->
+    ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
+  Let PTmEq' (Γ : context) (A t u : term) := forall Γ' A',
+    [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
+    [Γ' |-[al] t ≅ u : A'].
+  Let PTmRedEq' (Γ : context) (A t u : term) := forall Γ' A',
+    [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] -> isType A' ->
+    [Γ' |-[al] t ≅h u : A'].
+
+  Theorem bundled_conv_conv :
+    BundledConvInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+  Proof.
+    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+    apply BundledConvInduction ; cbn in *.
+    1-4: now constructor.
+    - intros * HΓ **.
+      eapply in_ctx_conv_r in HΓ as [? []] ; tea.
+      eexists ; split.
+      1: now econstructor.
+      eassumption.
+    - intros * ? IHm Ht [IHt []%validity] **.
+      edestruct IHm as [[? [? (?&?&?&[HconvP HconvA])%red_ty_compl_prod_r]] ?] ; tea.
+      eapply redty_red, red_whnf in HconvP as ->.
+      2: gen_typing.
+      eexists ; split.
+      + econstructor ; fold_algo ; tea.
+        now eapply IHt.
+      + eapply typing_subst1 ; tea.
+        econstructor.
+        now eapply stability.
+    - intros * ? IHm **.
+      edestruct IHm as [[A'' []] []]; tea.
+      assert [Γ' |-[de] A' ≅ A''] as HconvA'.
+      {
+        eapply conv_red_l ; tea.
+        now symmetry.
+      }
+      pose proof HconvA' as [? []]%red_ty_complete ; tea.
+      eexists ; split.
+      + econstructor ; fold_algo.
+        all: eauto using redty_red.
+      + symmetry ; etransitivity ; tea.
+        now eapply RedConvTyC.
+      + eassumption.
+    - intros * ? ? ? []%algo_conv_wh IH ? ? ? ? A'' **.
+      assert [Γ' |-[de] A' ≅ A''] as HconvA'
+        by now eapply conv_red_l.
+      pose proof HconvA' as [? []]%red_ty_complete ; tea.
+      econstructor ; fold_algo ; tea.
+      1: now eapply redty_red.
+      eapply IH ; tea.
+      etransitivity ; tea.
+      now eapply RedConvTyC.
+    - intros * ? [IHA HconvA] ? IHB ? ? ? * ? HconvU ?.
+      eapply red_ty_compl_univ_l, redty_red, red_whnf in HconvU as ->.
+      2: gen_typing.
+      econstructor ; fold_algo.
+      + eapply IHA ; tea.
+        do 2 econstructor.
+        now eapply wf_conv_ctx.
+      + assert [Γ' |-[de] A].
+        {
+          eapply stability ; tea.
+          econstructor.
+          now eapply validity in HconvA as [].
+        }
+        eapply IHB ; tea.
+        all: econstructor ; tea.
+        all: econstructor ; tea.
+        econstructor ; fold_decl.
+        all: gen_typing.
+    - intros * ? ? ? IHf ? ? ? * ? (?&?&?&[HconvP])%red_ty_compl_prod_l ?.
+      eapply redty_red, red_whnf in HconvP as ->.
+      2: gen_typing.
+      econstructor ; fold_algo ; tea.
+      eapply IHf ; tea.
+      now econstructor. 
+    - intros * ? IHm ? ? ? ? * ? HconvN HtyA'.
+      edestruct IHm as [[? []] ?] ; tea.
+      unshelve eapply ty_conv_inj in HconvN.
+      1: now constructor.
+      1: assumption.
+      cbn in HconvN.
+      econstructor ; fold_algo ; tea.
+      destruct HtyA'.
+      1-2: easy.
+      assumption.
   Qed.
 
   Let PTyEq (Γ : context) (A B : term) := True.
@@ -52,132 +168,19 @@ Section AlgoConvConv.
     [Γ |-[de] t : A] -> [Γ |-[de] u : A ] ->
     [Γ' |-[al] t ≅h u : A'].
 
-  Let PTyEq' (Γ : context) (A B : term) := True.
-  Let PTyRedEq' (Γ : context) (A B : term) := True.
-  Let PNeEq' (Γ : context) (A t u : term) := forall Γ',
-    [|-[de] Γ' ≅ Γ] ->
-    ∑ A', [Γ' |-[al] t ~ u ▹ A'] × [Γ' |-[de] A' ≅ A].
-  Let PNeRedEq' (Γ : context) (A t u : term) := forall Γ',
-    [|-[de] Γ' ≅ Γ] ->
-    ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
-  Let PTmEq' (Γ : context) (A t u : term) := forall Γ' A',
-    [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
-    [Γ' |-[al] t ≅ u : A'].
-  Let PTmRedEq' (Γ : context) (A t u : term) := forall Γ' A',
-    [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] -> isType A' ->
-    [Γ' |-[al] t ≅h u : A'].
-
-  Theorem algo_conv_conv :
-  AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+  Corollary algo_conv_conv : AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
-    enough (BundledConvInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq') as Hind.
-    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
-    {
-      unfold BundledConvInductionConcl, AlgoConvInductionConcl in *.
-      unshelve (repeat (split ; [destruct Hind as [Hind _] ; shelve | destruct Hind as [_ Hind]])).
-      1-2: now constructor.
-      all: intros * Hconv ; intros ; eapply Hind ; tea.
-      all: match goal with H : ConvCtx _ _ |- _ => symmetry in H ; apply wf_conv_ctx in H end.
-      all: split ; tea.
-      all: try solve [now apply algo_conv_wh in Hconv as []].
-      all: now eapply validity in H2.
-    }
-    apply BundledConvInduction ; cbn in *.
-    all: try solve [now constructor].
-    - intros * HΓ ? _ _ ? ?.
-      eapply in_ctx_conv in HΓ as [? []] ; tea.
-      eexists ; split.
-      1: now econstructor.
-      eassumption.
-    - intros * ? IHm Ht IHt ? ? ? ? HΓ.
-      edestruct IHm as [[? [? HconvP]] ?]; tea.
-      eapply red_ty_compl_prod_r in HconvP as (?&?&?&[HconvP HconvA]).
-      eapply redty_red, red_whnf in HconvP as ->.
-      2: gen_typing.
-      destruct IHt as [IHt IHt'].
-      specialize (IHt _ _ HΓ HconvA).
-      eexists ; split.
-      1: now econstructor.
-      eapply typing_subst1 ; tea.
-      econstructor.
-      eapply stability ; tea.
-      now eapply validity in IHt' as [].
-    - intros * ? IHm ; intros.
-      edestruct IHm as [[A'' [IHm' ?]] [Hconvm]]; tea.
-      assert [Γ' |-[de] A' ≅ A''] as HconvA'.
-      {
-        symmetry.
-        etransitivity ; tea.
-        eapply RedConvTyC, subject_reduction_type ; tea.
-        eapply validity in Hconvm as [].
-        now eapply stability. 
-      }
-      pose proof (HconvA'' := HconvA').
-      eapply red_ty_complete in HconvA'' as [? []]; tea.
-      eexists ; split.
-      + econstructor ; tea.
-        now eapply redty_red.
-      + symmetry ; etransitivity ; tea.
-        now eapply RedConvTyC.
-      + gen_typing. 
-    - intros * ? ? ? Ht IH ? ? ? ? A'' ? HconvA; intros.
-      pose proof Ht as Ht'.
-      eapply algo_conv_wh in Ht' as [? ? HwhA].
-      assert [Γ' |-[de] A' ≅ A''] as HconvA'.
-      {
-        etransitivity ; tea.
-        symmetry.
-        eapply RedConvTyC, subject_reduction_type ; tea.
-        now apply validity in HconvA.
-      }
-      pose proof (HconvA'' := HconvA').
-      eapply red_ty_complete in HconvA'' as [? []]; tea.
-      econstructor ; tea.
-      1: now eapply redty_red.
-      eapply IH ; tea.
-      etransitivity ; tea.
-      now eapply RedConvTyC.
-    - intros * ? IHA ? IHB ? ? ? * ? HconvU ?.
-      symmetry in HconvU.
-      eapply red_ty_compl_univ_r, redty_red, red_whnf in HconvU as ->.
-      2: gen_typing.
-      destruct IHA as [IHA HconvA].
-      econstructor ; fold_algo.
-      + eapply IHA ; tea.
-        do 2 econstructor.
-        now eapply wf_conv_ctx.
-      + eapply IHB ; tea.
-        all: econstructor ; tea.
-        1: econstructor ; fold_decl.
-        2: do 2 econstructor ; fold_decl.
-        2: now eapply wf_conv_ctx.
-        all: eapply stability ; tea.
-        all: econstructor.
-        all: now eapply validity in HconvA as [].
-    - intros * ? ? ? IHf ? ? ? * ? HconvP ?.
-      symmetry in HconvP ; eapply red_ty_compl_prod_r in HconvP as (?&?&?&[HconvP]).
-      eapply redty_red, red_whnf in HconvP as ->.
-      2:gen_typing.
-      econstructor ; fold_algo ; tea.
-      eapply IHf.
-      + econstructor ; tea.
-        now symmetry.
-      + symmetry.
-        eapply stability ; tea.
-        econstructor.
-        2: now symmetry.
-        now eapply ctx_conv_refl, wf_conv_ctx.
-    - intros * ? IHm ? ? ? ? * ? HconvN HtyA'.
-      edestruct IHm as [[? []] ?] ; tea.
-      econstructor ; fold_algo ; tea.
-      unshelve eapply ty_conv_inj in HconvN.
-      1: now constructor.
-      1: assumption.
-      cbn in HconvN.
-      destruct HtyA'.
-      1-2: easy.
-      assumption.
+    pose proof bundled_conv_conv as Hind.
+    subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+    unfold BundledConvInductionConcl, AlgoConvInductionConcl in *.
+    unshelve (repeat (split ; [destruct Hind as [Hind _] ; shelve | destruct Hind as [_ Hind]])).
+    1-2: now constructor.
+    all: intros * Hconv ; intros ; eapply Hind ; tea.
+    all: match goal with H : ConvCtx _ _ |- _ => symmetry in H ; apply wf_conv_ctx in H end.
+    all: split ; tea.
+    all: try solve [now apply algo_conv_wh in Hconv as []].
+    all: now eapply validity in H2.
   Qed.
 
 End AlgoConvConv.
@@ -245,58 +248,45 @@ Section Symmetry.
     - intros.
       econstructor ; fold_algo.
       all: intuition eauto.
-    - intros * ? IHA ? IHB ; intros.
+    - intros * ? IHA ? IHB  **.
       econstructor ; fold_algo.
       1: now intuition eauto.
       eapply IHB.
       econstructor ; tea.
       eapply IHA.
     - now econstructor.
-    - intros * ? IHM ; intros.
+    - intros * ? IHM  **.
       edestruct IHM as [[U' [IHM' HconvM]] []] ; tea.
-      assert (U' = U) as ->.
-      {
-        symmetry in HconvM.
-        eapply red_ty_compl_univ_r, redty_red in HconvM.
-        eapply whred_det ; tea.
-        + apply algo_conv_wh in IHM' as []. gen_typing.
-        + gen_typing.
-        + reflexivity.
-      }
       now econstructor.
-    - intros * HΓ ; intros.
-      eapply in_ctx_conv in HΓ as [? []].
-      2: now symmetry.
+    - intros * HΓ **.
+      eapply in_ctx_conv_l in HΓ as [? []] ; tea.
       eexists ; split.
       1: now econstructor.
-      now symmetry.
-    - intros * ? IHm ? [IHt Hwft] ; intros.
+      now eapply stability.
+    - intros * ? IHm ? [IHt Hwft]  **.
       edestruct IHm as [[? [IHm' Hconv]] []] ; tea ; clear IHm.
       eapply red_ty_compl_prod_l in Hconv as (?&?&?&[Hred]).
-      eapply redty_red, whred_det in Hred.
-      4: reflexivity.
-      3: gen_typing.
+      eapply redty_red, red_whnf in Hred as ->.
       2: now eapply algo_conv_wh in IHm' as [] ; gen_typing.
-      subst.
       eexists ; split.
       + econstructor ; fold_algo.
         1: eassumption.
         eapply algo_conv_conv.
         * now eapply IHt.
-        * now eapply ctx_conv_refl, wf_conv_ctx ; symmetry.
+        * now eapply conv_ctx_refl_r.
         * now symmetry.
         * eapply stability.
           2: now symmetry.
           now eapply validity in Hwft as [].
         * eapply stability.
-        2: now symmetry.
-        now eapply validity in Hwft as [].
+          2: now symmetry.
+          now eapply validity in Hwft as [].
       + eapply typing_subst1 ; tea.
-        eapply TermConv ; fold_decl.
+        econstructor ; fold_decl.
         2: now symmetry.
         eapply stability ; tea.
         now symmetry.
-    - intros * ? IHm ; intros.
+    - intros * ? IHm  **.
       edestruct IHm as [[A'' [IHm' Hconv]] [Hwf]] ; tea ; clear IHm.
       assert [Δ |-[de] A' ≅ A''] as Hconv'.
       {
@@ -307,8 +297,7 @@ Section Symmetry.
         2: now symmetry.
         now eapply validity in Hwf as [].
       }
-      pose proof Hconv' as Hconv''.
-      eapply red_ty_complete in Hconv'' as [? []]; tea.
+      pose proof Hconv' as [? []]%red_ty_complete; tea.
       eexists ; split.
       + econstructor ; tea.
         now eapply redty_red.
@@ -317,20 +306,20 @@ Section Symmetry.
     - intros.
       econstructor ; fold_algo.
       all: intuition eauto.
-    - intros * ? IHA ? IHB ; intros.
+    - intros * ? IHA ? IHB **.
       econstructor ; fold_algo.
       1: now eapply IHA.
       eapply IHB.
       econstructor ; tea.
       now econstructor ; intuition eauto.
-    - intros * ? ? ? IH ? Hf ; intros.
+    - intros * ? ? ? IH ? Hf  **.
       econstructor ; fold_algo.
       1-2: assumption.
       eapply IH.
       econstructor ; tea.
       eapply validity, prod_ty_inv in Hf as [].
       now econstructor.
-    - intros * ? IH ; intros.
+    - intros * ? IH  **.
       edestruct IH as [[? []] []] ; tea.
       now econstructor.
   Qed.
@@ -381,7 +370,7 @@ Section Transitivity.
       }
       econstructor ; tea.
       eapply IH ; tea.
-    - intros * ? IHA ? IHB ? ? ? * ? Hconv.
+    - intros * ? [IHA ] ? IHB ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv.
       2:{
         apply algo_conv_wh in H5 as [e _].
@@ -390,9 +379,7 @@ Section Transitivity.
         econstructor ; fold_algo.
         + eapply IHA ; tea.
         + eapply IHB ; tea.
-          econstructor ; tea.
-          eapply conv_sound in H ; tea.
-          all: now eapply prod_ty_inv.
+          now econstructor.
     - intros * ? ? _ * ? Hconv.
       inversion Hconv ; subst ; clear Hconv.
       2:{ apply algo_conv_wh in H2 as [e _]. now inversion e. }
@@ -402,21 +389,22 @@ Section Transitivity.
       1-2: apply algo_conv_wh in H as [_ e] ; now inversion e.
       econstructor ; fold_algo.
       now eapply IH.
-    - intros * ? ? _ _ * ? Hconv.
+    - intros * Hin ? _ _ * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; fold_algo.
       split.
       + now econstructor.
-      + eapply in_ctx_conv in H5 as [? [Hin ]]; tea.
-        now eapply in_ctx_inj in Hin as ->.
-    - intros * ? IHm Ht IHt ? ? ? * ? Hconv.
+      + eapply in_ctx_conv_l in Hin as [? [Hin ]]; tea.
+        eapply in_ctx_inj in Hin.
+        2: clear Hin ; tea.
+        now subst.
+    - intros * ? IHm ? IHt ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; fold_algo.
-      eapply IHm in H8 as [? HconvP] ; tea.
-      eapply prod_ty_inj in HconvP as [].
+      eapply IHm in H9 as [? []%prod_ty_inj] ; tea.
       split.
       + econstructor ; fold_algo ; tea.
         now eapply IHt.
       + eapply typing_subst1 ; tea.
-        eapply TermConv ; fold_decl.
+        econstructor ; fold_decl.
         1: now eapply IHt.
         now symmetry.
     - intros * ? IH ? ? ? ? ? * ? Hconv.
@@ -426,18 +414,15 @@ Section Transitivity.
       1: now econstructor.
       etransitivity ; [|etransitivity].
       1: symmetry.
-      1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA. 
+      1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA.
       eassumption.
-    - intros * ? ? ? Ht IHt ? ? ? * ? HconvA Hconv.
+    - intros * ? ? Hu Ht' IHt ? ? ? * ? HconvA Hconv.
       inversion Hconv ; subst ; clear Hconv ; fold_algo.
-      assert (t'0 = u') as ->.
-      {
-        eapply whred_det ; tea.
-        1: now eapply algo_conv_wh in H9 as [].
-        now eapply algo_conv_wh in Ht as [].
-      }
+      eapply whred_det in Hu ; tea.
+      2,3: now eapply algo_conv_wh in H8 as [], Ht' as [].
+      subst.
       econstructor ; tea ; fold_algo.
-      eapply IHt ; tea. 
+      eapply IHt ; tea.
       etransitivity ; [|etransitivity].
       1: symmetry.
       1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA.
@@ -457,8 +442,7 @@ Section Transitivity.
           now eapply validity in HpostA as [].
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; fold_algo.
-      1:{ unshelve eapply ty_conv_inj in H6. 1-2: econstructor. now cbn in *. }
-      2:{ unshelve eapply ty_conv_inj in H6. 1-2: now econstructor. now cbn in H6. }
+      1,3: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.

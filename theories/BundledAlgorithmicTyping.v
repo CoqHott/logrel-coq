@@ -351,7 +351,8 @@ Section BundledConv.
       }
       split ; [now eauto|..].
       eapply convUniv ; fold_decl.
-      now eapply IH.
+      econstructor ; fold_decl.
+      all: now apply IH.
     - intros * Hin ? [] _.
       split ; [now eauto|..].
       split.
@@ -427,7 +428,7 @@ Section BundledConv.
       etransitivity ; [..|etransitivity].
       1: eassumption.
       2: now symmetry.
-      eapply TermConv ; fold_decl.
+      econstructor ; fold_decl.
       2: now symmetry.
       eapply IH.
       all: gen_typing.
@@ -462,7 +463,7 @@ Section BundledConv.
       1: easy.
       1-2: now eexists.
       split ; [now eauto|..].
-      eapply TermConv ; tea ; fold_decl.
+      econstructor ; tea ; fold_decl.
       now eapply Hm'.
   Qed.
 

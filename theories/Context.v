@@ -61,8 +61,8 @@ Notation " Γ ,, d " := (@cons context_decl d Γ) (at level 20, d at next level)
 Notation " Γ ,,, Δ " := (@app context_decl Δ Γ) (at level 25, Δ at next level, left associativity).
 
 Inductive in_ctx : context -> nat -> context_decl -> Type :=
-  | in_here Γ d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
-  | in_there Γ d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (map_decl (ren_term shift) d).
+  | in_here (Γ : context) d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
+  | in_there (Γ : context) d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (map_decl (ren_term shift) d).
 
 Lemma in_ctx_inj Γ n decl decl' :
   in_ctx Γ n decl -> in_ctx Γ n decl' -> decl = decl'.

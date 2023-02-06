@@ -284,11 +284,11 @@ Module DeclarativeTypingProperties.
     constructor ; red ; intros.
     all: now econstructor.
   - intros.
-    now eapply TermConv.
+    now econstructor.
   - intros.
     now eapply typing_wk.
   - intros.
-    eapply TermConv.
+    econstructor.
     2: now eapply TypeSym, RedConvTyC.
     eapply TermTrans ; [eapply TermTrans |..].
     2: eassumption.
@@ -306,7 +306,7 @@ Module DeclarativeTypingProperties.
   - split ; red ; intros.
     all: now econstructor.
   - intros.
-    eapply TermConv ; tea.
+    now econstructor.
   - intros.
     now eapply typing_wk.
   - intros.

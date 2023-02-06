@@ -59,6 +59,9 @@ Section Definitions.
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
+      | convUniv {Γ} {A B} :
+        [ Γ |- A ≅ B : U ] -> 
+        [ Γ |- A ≅ B ]
       | TypeSym {Γ} {A B} :
           [ Γ |- A ≅ B ] ->
           [ Γ |- B ≅ A ]
@@ -66,9 +69,6 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ |- B ≅ C] ->
           [ Γ |- A ≅ C]
-      | convUniv {Γ} {A B} :
-          [ Γ |- A ≅ B : U ] -> 
-          [ Γ |- A ≅ B ]
 
   with ConvTermDecl : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {na} {a t A B} :
@@ -94,6 +94,10 @@ Section Definitions.
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]
+      | TermConv {Γ} {t t' A B} :
+          [ Γ |- t ≅ t': A ] ->
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- t ≅ t': B ]
       | TermSym {Γ} {t t' A} :
           [ Γ |- t ≅ t' : A ] ->
           [ Γ |- t' ≅ t : A ]
@@ -101,10 +105,6 @@ Section Definitions.
           [ Γ |- t ≅ t' : A ] ->
           [ Γ |- t' ≅ t'' : A ] ->
           [ Γ |- t ≅ t'' : A ]
-      | TermConv {Γ} {t t' A B} :
-          [ Γ |- t ≅ t': A ] ->
-          [ Γ |- A ≅ B ] ->
-          [ Γ |- t ≅ t': B ]
       
   where "[   |- Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |- T ]" := (WfTypeDecl Γ T)
@@ -305,13 +305,12 @@ Section TypingWk.
     - intros * _ IH ? ρ ?.
       econstructor.
       now eapply IH.
+    - intros * _ IH ? ρ ?.
+      now econstructor ; eapply IH.
     - intros * _ IHA _ IHB ? ρ ?.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - intros * _ IH ? ρ ?.
-      eapply convUniv.
-      now eapply IH.
     - intros Γ ? u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
@@ -353,12 +352,12 @@ Section TypingWk.
       now eapply IHA.
     - intros * _ IHt ? ρ ?.
       now econstructor ; fold_decl.
+    - intros * _ IHt _ IHA ? ρ ?.
+      now econstructor ; fold_decl.
     - intros * _ IHt ? ρ ?.
       now econstructor ; fold_decl.
     - intros * _ IHt _ IHt' ? ρ ?.
-      now eapply TermTrans ; fold_decl.
-    - intros * _ IHt _ IHA ? ρ ?.
-      now eapply TermConv ; fold_decl.
+      now econstructor ; fold_decl.
   Qed.
 
   Corollary typing_shift : WfDeclInductionConcl

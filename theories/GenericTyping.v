@@ -298,7 +298,7 @@ Class GenericTypingProperties `(ta : tag)
   redtm_prop :> RedTermProperties ;
 }.
 
-#[export] Hint Immediate wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
+#[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 #[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app inf_red_wk inf_red_red ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.

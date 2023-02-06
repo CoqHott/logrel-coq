@@ -179,6 +179,14 @@ Section Stability.
     - now eapply validity in HA.
   Qed.
 
+  Corollary conv_ctx_refl_l (Γ Δ : context) :
+    [ |- Γ ≅ Δ] ->
+    [|- Γ ≅ Γ].
+  Proof.
+    intros.
+    now eapply ctx_conv_refl, wf_conv_ctx.
+  Qed.
+
   Lemma subst_refl (Γ Δ : context) σ :
     [Γ |-s σ : Δ] ->
     [Γ |-s σ ≅ σ : Δ].
@@ -280,6 +288,15 @@ Section Stability.
     all: constructor ; tea.
     eapply stability ; tea.
     now symmetry.
+  Qed.
+
+  Corollary conv_ctx_refl_r (Γ Δ : context) :
+    [ |- Γ ≅ Δ] ->
+    [|- Δ ≅ Δ].
+  Proof.
+    intros H.
+    symmetry in H.
+    now eapply ctx_conv_refl, wf_conv_ctx.
   Qed.
 
   #[global] Instance ConvCtxTrans : Transitive ConvCtx.

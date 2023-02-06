@@ -252,17 +252,17 @@ Section Fundamental.
   + apply FundTmConv.
   + apply FundTyEqPiCong.
   + apply FundTyEqRefl.
+  + apply FundTyEqUniv.
   + apply FundTyEqSym.
   + apply FundTyEqTrans.
-  + apply FundTyEqUniv.
   + apply FundTmEqBRed.
   + apply FundTmEqPiCong.
   + apply FundTmEqAppCong.
   + apply FundTmEqFunExt.
   + apply FundTmEqRefl.
+  + apply FundTmEqConv.
   + apply FundTmEqSym.
   + apply FundTmEqTrans.
-  + apply FundTmEqConv.
   Abort.
 
 End Fundamental.
