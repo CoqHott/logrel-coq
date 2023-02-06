@@ -282,7 +282,7 @@ Module PiRedTy.
 
   Record PiRedTyAdequate@{i j} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy Γ A}
+    {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} Γ A}
   : Type@{j} := {
     domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (ΠA.(domRed) ρ h);
     codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ])
@@ -390,7 +390,7 @@ Inductive LR@{i j k} `{ta : tag}
       (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
       (fun t   =>  [ Γ ||-ne t     : A | neA])
       (fun t u =>  [ Γ ||-ne t ≅ u : A | neA])
-  | LRPi {Γ : context} {A : term} (ΠA : [ Γ ||-Πd A ]) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
+  | LRPi {Γ : context} {A : term} (ΠA : PiRedTy@{j} Γ A) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
     LR rec Γ A
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
@@ -479,7 +479,7 @@ Section MoreDefs.
     : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRne (LogRelRec l) neA).
 
-  Definition LRPi_@{i j k l} l {Γ A} (ΠA : [Γ ||-Πd A])
+  Definition LRPi_@{i j k l} l {Γ A} (ΠA : PiRedTy@{k} Γ A)
     (ΠAad : PiRedTyAdequate (LR (LogRelRec@{i j k} l)) ΠA)
     : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRPi (LogRelRec l) ΠA ΠAad).

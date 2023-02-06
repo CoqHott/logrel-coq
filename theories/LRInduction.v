@@ -40,7 +40,7 @@ Section Inductions.
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne rec neA)) -> 
 
-    (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
+    (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -74,7 +74,7 @@ Section Inductions.
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne rec neA)) ->
 
-    (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LR rec) ΠA),
+    (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -100,7 +100,7 @@ Section Inductions.
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne (LogRelRec l) neA)) ->
 
-    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ])
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A)
       (HAad : PiRedTyAdequate (LogRel l) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
@@ -124,7 +124,7 @@ Section Inductions.
     - auto.
   Qed.
 
-  Theorem LR_rect_TyUr@{i j k l o }
+  Theorem LR_rect_TyUr@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
 
     (forall (Γ : context) (h : [Γ ||-U one]),
@@ -133,7 +133,7 @@ Section Inductions.
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne_ l neA)) ->
 
-    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LogRel l) ΠA),
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) (HAad : PiRedTyAdequate (LogRel l) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (LRbuild (HAad.(PiRedTy.domAd) ρ h))) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -158,7 +158,7 @@ Section Inductions.
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne rec0 neA)) -> 
 
-    (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate (LogRel0@{i j k}) ΠA),
+    (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LogRel0@{i j k}) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (HAad.(PiRedTy.domAd) ρ h)) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -186,7 +186,7 @@ Section Inductions.
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRbuild0@{i j k} (LRne@{i j k} rec0 neA))) ->
 
-    (forall (Γ : context) (A : term) (ΠA : [ Γ ||-Πd A ]) (HAad : PiRedTyAdequate LogRel0 ΠA),
+    (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate LogRel0 ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (LRbuild0@{i j k} (HAad.(PiRedTy.domAd) ρ h))) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
