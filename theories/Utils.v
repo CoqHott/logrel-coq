@@ -31,7 +31,6 @@ Arguments pair {_ _} _ _.
 Definition fst {A B} : prod A B -> A := fun '(pair a b) => a.
 Definition snd {A B} : prod A B -> B := fun '(pair a b) => b.
 
-
 Notation "x × y" := (prod x y) (at level 80, right associativity).
 Reserved Notation "[ × P1 & P2 ]" (at level 0).
 Reserved Notation "[ × P1 , P2 & P3 ]" (at level 0, format
@@ -61,7 +60,7 @@ Variant and9 (P1 P2 P3 P4 P5 P6 P7 P8 P9 : Type) : Type := Times9 of P1 & P2 & P
 Variant and10 (P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 : Type) : Type := Times10 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10.
 
 #[global] Hint Constructors prod and3 and3 and5 and6 and7 and8 and9 : core.
-
+Print HintDb core.
 Notation "[ × P1 & P2 ]" := (pair P1 P2) (only parsing) : type_scope.
 Notation "[ × P1 , P2 & P3 ]" := (and3 P1 P2 P3) : type_scope.
 Notation "[ × P1 , P2 , P3 & P4 ]" := (and4 P1 P2 P3 P4) : type_scope.
@@ -91,6 +90,8 @@ Notation "( x ; y ; z ; t ; u )" := (x ; ( y ; (z ; (t ; u)))).
 Notation "( x ; y ; z ; t ; u ; v )" := (x ; ( y ; (z ; (t ; (u ; v))))).
 Notation "x .π1" := (@projT1 _ _ x) (at level 3, format "x '.π1'").
 Notation "x .π2" := (@projT2 _ _ x) (at level 3, format "x '.π2'").
+
+#[global] Hint Constructors sigT : core.
 
 (* The database used for generic typing *)
 Create HintDb gen_typing.

@@ -246,7 +246,6 @@ Section BundledConv.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      (* | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl') *)
       | (?Chd * ?Ctl)%type => let Chd' := strong_concl Chd in (* constr:(Chd') *) let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
@@ -254,11 +253,10 @@ Section BundledConv.
   #[local] Ltac weak_statement T :=
   lazymatch T with
     | ?Step -> ?T => let Step' := strong_step Step in let T' := weak_statement T in constr:(Step' -> T')
+    | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | (?Chd * ?Ctl)%type => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
-
-  Definition t0 := ltac:(let t := type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in exact t).
 
   Definition algo_conv_discipline_stmt := 
     ltac:(
@@ -274,14 +272,14 @@ Section BundledConv.
     [ |-[ de ] c] ->
     [c |-[ de ] t] -> [c |-[ de ] t1] -> PTyRedEq c t t1 × [c |-[ de ] t ≅ t1].
  
- Let PNeEq' (c : context) (t t1 t2 : term) :=
-   [ |-[ de ] c] ->
-   (∑ T : term, [c |-[ de ] t1 : T]) ->
-   (∑ T : term, [c |-[ de ] t2 : T]) ->
-   PNeEq c t t1 t2
-   × [× [c |-[ de ] t1 ≅ t2 : t],
-        forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
-       & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
+  Let PNeEq' (c : context) (t t1 t2 : term) :=
+    [ |-[ de ] c] ->
+    (∑ T : term, [c |-[ de ] t1 : T]) ->
+    (∑ T : term, [c |-[ de ] t2 : T]) ->
+    PNeEq c t t1 t2
+    × [× [c |-[ de ] t1 ≅ t2 : t],
+          forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
+        & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
 
   Let PNeRedEq' (c : context) (t t1 t2 : term) :=
      [ |-[ de ] c] ->
@@ -329,7 +327,7 @@ Section BundledConv.
         1: now eapply ctx_conv_refl.
         now eapply IHA.
       }
-      split ; [|gen_typing|..].
+      split ; [gen_typing|..].
       destruct IHB as [].
       1-3: gen_typing.
       now econstructor.
@@ -583,7 +581,7 @@ Section BundledTyping.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
+      | (?Chd * ?Ctl)%type => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
 
@@ -591,8 +589,19 @@ Section BundledTyping.
   lazymatch T with
     | ?Step -> ?T => let Step' := strong_step Step in let T' := weak_statement T in constr:(Step' -> T')
     | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
+    | (?Chd * ?Ctl)%type => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
+
+  Let PTy' (c : context) (t : term) :=
+        [ |-[ de ] c] -> PTy c t × [c |-[ de ] t].
+  Let PInf' (c : context) (t t1 : term) :=
+     [ |-[ de ] c] -> PInf c t t1 × [c |-[ de ] t1 : t].
+  Let PInfRed' (c : context) (t t1 : term) :=
+       [ |-[ de ] c] -> PInfRed c t t1 × [c |-[ de ] t1 : t].
+  Let PCheck' (c : context) (t t1 : term) :=
+         [ |-[ de ] c] ->
+         [c |-[ de ] t] -> PCheck c t t1 × [c |-[ de ] t1 : t].
 
   Theorem algo_typing_discipline : ltac:(
     let t := (type of (AlgoTypingInduction PTy PInf PInfRed PCheck)) in
@@ -600,7 +609,9 @@ Section BundledTyping.
     exact ind).
   Proof.
     intros.
-    eapply AlgoTypingInduction.
+    destruct (AlgoTypingInduction PTy' PInf' PInfRed' PCheck') as [?[?[??]]].
+    all: subst PTy' PInf' PInfRed' PCheck'; cbn in *.
+    10: repeat (split; [assumption|]); assumption.
     1-6: solve [intros ;
       repeat unshelve (
         match reverse goal with

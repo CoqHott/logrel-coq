@@ -196,8 +196,9 @@ Section TermTypeConv.
   Theorem algo_conv_tm_ty :
   AlgoConvInductionConcl PTyEq PTyEq PNeEq PNeEq PTmEq PTmRedEq.
   Proof.
+    destruct (AlgoConvInduction PTyEq PTyEq PNeEq PNeEq PTmEq PTmRedEq) as [?[?[?[?[?]]]]].
+    12: repeat (split; [assumption|]); assumption. 
     subst PTyEq PNeEq PTmEq PTmRedEq.
-    apply AlgoConvInduction.
     all: try solve [now constructor].
     - intros * ? ? ? Hconv IH ?.
       econstructor ; tea.

@@ -33,7 +33,7 @@ theories/Substitution/Properties.v
 theories/Fundamental.v
 
 theories/LogRelConsequences.v
-#theories/BundledAlgorithmicTyping.v
-#theories/AlgorithmicTypingProperties.v
+theories/BundledAlgorithmicTyping.v
+theories/AlgorithmicTypingProperties.v
 
 theories/Positivity.v
