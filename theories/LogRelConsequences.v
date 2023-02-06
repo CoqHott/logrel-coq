@@ -1,7 +1,7 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation Reduction.
+  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
 
 Import DeclarativeTypingProperties.
 
@@ -19,11 +19,21 @@ Conjecture validity : WfDeclInductionConcl
   (fun Γ A B => [Γ |- A] × [Γ |- B])
   (fun Γ A t u => [× [Γ |- A], [Γ |- t : A] & [Γ |- u : A]]).
 
+Section NeutralConjecture.
+  Import AlgorithmicTypingData.
+
+  Conjecture ne_conv_conv : forall (Γ : context) (A m n : term),
+    [Γ |-[de] A] ->
+    [Γ |-[al] m ~ n ▹ A] ->
+    [Γ |-[al] m ≅ n : A].
+
+End NeutralConjecture.
+
 Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : isType T') : Type :=
   match nfT, nfT' with
     | @UnivType s, @UnivType s' => s = s'
     | @ProdType na A B, @ProdType na' A' B' => [Γ |- A' ≅ A] × [Γ,, vass na' A' |- B ≅ B']
-    | NeType _, NeType _ => [Γ |-[de] T ≅ T' : U]
+    | NeType _, NeType _ => [Γ |- T ≅ T' : U]
     | _, _ => False
   end.
 

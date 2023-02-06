@@ -603,8 +603,20 @@ Module AlgorithmicTypingProperties.
         econstructor.
         1-3: now etransitivity.
         eassumption.
-    - intros * [HΓ Hn Hwhn Hn' Hwhn' A' Hconv Hconvty].
-      admit. (* consequence of normalization of types, it seems*)
+    - intros Γ n n' A [? ? ? ? ? A' Hconvn HconvA].
+      assert [Γ |-[de] A]
+        by now eapply validity in HconvA as [].
+      assert [Γ |-[de] n : A'] by
+        (eapply conv_sound in Hconvn as [[]%validity] ; tea ; now gen_typing).
+      assert [Γ |-[de] n' : A'] by
+        (eapply conv_sound in Hconvn as [[]%validity] ; tea ; now gen_typing).
+      split ; tea.
+      1-2: now gen_typing.
+      eapply algo_conv_conv ; tea.
+      2: now eapply ctx_conv_refl.
+      apply ne_conv_conv.
+      2: eassumption.
+      now eapply validity in HconvA as [].
     - intros_bn.
       + now constructor.
       + constructor ; tea.
@@ -621,7 +633,7 @@ Module AlgorithmicTypingProperties.
       + econstructor.
         1-3: reflexivity.
         now econstructor.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
