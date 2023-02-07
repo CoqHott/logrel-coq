@@ -60,7 +60,31 @@ Section Inductions.
     - eapply Hne.
     - eapply HPi.
       all: intros ; eapply HRec.
-  Qed.
+  Defined.
+
+  Lemma LR_rect_Π_eq@{i j k o}
+    (l : TypeLevel)
+    (rec : forall l', l' << l -> RedRel@{i j})
+    (P : forall {c t rEq rTe rTeEq},
+      LR@{i j k} rec c t rEq rTe rTeEq  -> Type@{o})
+    (hU : forall (Γ : context) (h : [Γ ||-U l]), P (LRU rec h))
+    (hne : forall (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne rec neA))
+    (hΠ : forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
+      (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (HAad.(PiRedTy.domAd) ρ h)) ->
+      (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
+      P (HAad.(PiRedTy.codAd) ρ h ha)) ->
+      P (LRPi rec ΠA HAad)) :
+    forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
+    let ihdom {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]) : P (HAad.(PiRedTy.domAd) ρ h) :=
+      LR_rect l rec (@P) hU hne hΠ _ _ _ _ _ (HAad.(PiRedTy.domAd) ρ h)
+    in
+    let ihcod {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      : P (HAad.(PiRedTy.codAd) ρ h ha) :=
+      LR_rect l rec (@P) hU hne hΠ _ _ _ _ _ (HAad.(PiRedTy.codAd) ρ h ha)
+    in
+    LR_rect l rec (@P) hU hne hΠ Γ A _ _ _ (LRPi rec ΠA HAad) = hΠ Γ A ΠA HAad (@ihdom) (@ihcod).
+  Proof. intros; reflexivity. Qed.
+
 
   Theorem LR_rec@{i j k}
     (l : TypeLevel)
@@ -88,7 +112,7 @@ Section Inductions.
   Proof.
     intros.
     now apply LR_rect.
-  Qed.
+  Defined.
 
   Theorem LR_rect_LogRelRec@{i j k l o}
     (P : forall {l Γ t rEq rTe rTeEq},
@@ -114,15 +138,37 @@ Section Inductions.
       P lr.
   Proof.
     intros.
-    apply LR_rect@{j k l o}.
-    - intros.
-      destruct l.
+    eapply LR_rect@{j k l o}.
+    - intros. clear lr. (* this is important for unfold equations *) destruct l.
       2: auto.
-      destruct h as [? lt].
-      destruct (elim lt).
+      destruct (elim (URedTy.lt h)).
     - auto.
     - auto.
-  Qed.
+  Defined.
+
+  Lemma LR_rect_LogRelRecΠ_eq@{i j k l o}
+    (P : forall {l Γ t rEq rTe rTeEq}, LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o})
+    (hU : forall (Γ : context) (h : [Γ ||-U one]), P (LRU (rec1) h))
+    (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne (LogRelRec l) neA))
+
+    (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) 
+      (HAad : PiRedTyAdequate (LogRel l) ΠA)
+      (ihdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (HAad.(PiRedTy.domAd) ρ h))
+      (ihcod : forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
+        P (HAad.(PiRedTy.codAd) ρ h ha)),
+    P (LRPi (LogRelRec l) ΠA HAad)) :
+    forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) 
+      (HAad : PiRedTyAdequate (LogRel l) ΠA),
+      let ihdom {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]) : P (HAad.(PiRedTy.domAd) ρ h) :=
+        LR_rect_LogRelRec (@P) hU hne hΠ _ _ _ _ _ _ (HAad.(PiRedTy.domAd) ρ h)
+      in
+      let ihcod {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]) :
+        P (HAad.(PiRedTy.codAd) ρ h ha) :=
+        LR_rect_LogRelRec (@P) hU hne hΠ _ _ _ _ _ _ (HAad.(PiRedTy.codAd) ρ h ha)
+      in
+      LR_rect_LogRelRec (@P) hU hne hΠ _ _ _ _ _ _ (LRPi (LogRelRec l) ΠA HAad) =
+      hΠ l Γ A ΠA HAad (@ihdom) (@ihcod).
+  Proof. reflexivity. Qed. 
 
   Theorem LR_rect_TyUr@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
@@ -133,21 +179,53 @@ Section Inductions.
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne_ l neA)) ->
 
-    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) (HAad : PiRedTyAdequate (LogRel l) ΠA),
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l),
+      (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (ΠA.(PiRedTyPack.domRed) ρ h)) ->
+      (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+       (ha : [ ΠA.(PiRedTyPack.domRed) ρ h | Δ ||- a : ΠA.(PiRedTyPack.dom)⟨ρ⟩ ]),
+      P (ΠA.(PiRedTyPack.codRed) ρ h ha)) ->
+    P (LRPi' l ΠA)) ->
+    (* (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) (HAad : PiRedTyAdequate (LogRel l) ΠA),
     (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
       P (LRbuild (HAad.(PiRedTy.domAd) ρ h))) ->
     (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
       (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
     P (LRbuild (HAad.(PiRedTy.codAd) ρ h ha))) ->
-    P (LRPi_ l ΠA HAad)) ->
+    P (LRPi_ l ΠA HAad)) -> *)
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
   Proof.
     intros HU Hne HPi l Γ A lr.
     apply (LR_rect_LogRelRec@{i j k l o} (fun l Γ A _ _ _ lr => P l Γ A (LRbuild lr))).
-    all: auto.
-  Qed.
+    1,2: auto.
+    intros; eapply (HPi _ _ _ (PiRedTyPack.pack ΠA HAad)); eauto.    
+  Defined.
+
+  Theorem LR_rect_TyUr_Π_eq@{i j k l o}
+    (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o})
+    (hU : forall (Γ : context) (h : [Γ ||-U one]), P (LRU_ h))
+    (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne_ l neA))
+    (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l)
+      (ihdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (ΠA.(PiRedTyPack.domRed) ρ h))
+      (ihcod : forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+        (ha : [ ΠA.(PiRedTyPack.domRed) ρ h | Δ ||- a : ΠA.(PiRedTyPack.dom)⟨ρ⟩ ]),
+        P (ΠA.(PiRedTyPack.codRed) ρ h ha)),
+      P (LRPi' l ΠA)) :
+    forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l),
+      let ihdom {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]) : P (ΠA.(PiRedTyPack.domRed) ρ h) :=
+        LR_rect_TyUr (@P) hU hne hΠ _ _ _ (ΠA.(PiRedTyPack.domRed) ρ h)
+      in
+      let ihcod {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
+        (ha : [ ΠA.(PiRedTyPack.domRed) ρ h | Δ ||- a : ΠA.(PiRedTyPack.dom)⟨ρ⟩ ]) :
+        P (ΠA.(PiRedTyPack.codRed) ρ h ha) :=
+        LR_rect_TyUr (@P) hU hne hΠ _ _ _ (ΠA.(PiRedTyPack.codRed) ρ h ha)
+      in
+      LR_rect_TyUr (@P) hU hne hΠ _ _ _ (LRPi' l ΠA) = hΠ l Γ A ΠA (@ihdom) (@ihcod).
+    Proof.
+      reflexivity.
+    Qed. 
+
 
   (* Induction principle specialized at level 0 to minimize universe constraints *)
   (* Useful anywhere ? *)
@@ -178,7 +256,7 @@ Section Inductions.
     - eapply Hne.
     - eapply HPi.
       all: intros ; eapply HRec.
-  Qed.
+  Defined.
 
   Theorem LR_rect_TyUr0@{i j k o}
     (P : forall {Γ A}, [LogRel0@{i j k} | Γ ||- A] -> Type@{o}) :
@@ -200,6 +278,6 @@ Section Inductions.
     intros Hne HPi Γ A lr.
     apply (LR_rect0 (fun Γ A _ _ _ lr => P Γ A (LRbuild0 lr))).
     all: auto.
-  Qed.
+  Defined.
 
 End Inductions.

@@ -1,5 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction LRInduction ShapeView Reflexivity.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 
 Set Universe Polymorphism.
 
@@ -279,6 +280,12 @@ Proof.
   now eapply TyEqIrrelevant.
 Qed.
 
+Corollary LRTyEqIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+  forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
+Proof. 
+  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevant. 
+Qed.
+
 Corollary RedTmIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
@@ -295,6 +302,12 @@ Proof.
   now eapply RedTmIrrelevant.
 Qed.
 
+Corollary LRTmRedIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+  forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTmRedIrrelevant.
+Qed.
+
 Corollary TmEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t u, eqTmA t u -> eqTmA' t u.
@@ -309,6 +322,12 @@ Proof.
   destruct lrA, lrA'.
   cbn in *.
   now eapply TmEqIrrelevant.
+Qed.
+
+Corollary LRTmEqIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+  forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTmEqIrrelevant.
 Qed.
 
 
@@ -386,3 +405,16 @@ Qed.
 
 
 End Irrelevances.
+
+Ltac irrelevance0 :=
+  lazymatch goal with
+  | [|- [_ | _ ||- _ ≅ _ ] ] => eapply LRTyEqIrrelevant'
+  | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevant'
+  | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevant'
+  | [|- [_ ||-<_> _ : _ | _ ] ] => eapply LRTmRedIrrelevant'
+  | [|- [_ | _ ||- _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
+  | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
+  end.
+  
+Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
+

@@ -248,3 +248,63 @@ End RenWhnf.
 
 #[global] Hint Resolve whne_ren whnf_ren isType_ren isFun_ren : gen_typing.
 
+Section RenWlWhnf.
+
+  Context {Γ Δ} (ρ :Δ ≤ Γ).
+
+  Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
+  Proof.
+    apply whne_ren.
+  Qed.
+
+  Lemma whnf_ren_wl t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    apply whnf_ren.
+  Qed.
+  
+  Lemma isType_ren_wl A : isType A -> isType (A⟨ρ⟩).
+  Proof.
+    apply isType_ren.
+  Qed.
+  
+  Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
+  Proof.
+    apply isFun_ren.
+  Qed.
+
+End RenWlWhnf.
+
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl : gen_typing.
+
+(* Adaptation of Autosubst asimpl to well typed weakenings *)
+Ltac bsimpl' := repeat (first
+                 [ progress setoid_rewrite substSubst_term_pointwise
+                 | progress setoid_rewrite substSubst_term
+                 | progress setoid_rewrite substRen_term_pointwise
+                 | progress setoid_rewrite substRen_term
+                 | progress setoid_rewrite renSubst_term_pointwise
+                 | progress setoid_rewrite renSubst_term
+                 | progress setoid_rewrite renRen'_term_pointwise
+                 | progress setoid_rewrite renRen_term
+                 | progress setoid_rewrite varLRen'_term_pointwise
+                 | progress setoid_rewrite varLRen'_term
+                 | progress setoid_rewrite varL'_term_pointwise
+                 | progress setoid_rewrite varL'_term
+                 | progress setoid_rewrite rinstId'_term_pointwise
+                 | progress setoid_rewrite rinstId'_term
+                 | progress setoid_rewrite instId'_term_pointwise
+                 | progress setoid_rewrite instId'_term
+                 | progress setoid_rewrite wk_to_ren_id
+                 | progress setoid_rewrite wk_compose_compose
+                 | progress setoid_rewrite id_ren
+                 | progress unfold up_term_term, upRen_term_term, up_ren, wk_well_wk_compose, wk_id, wk_step, wk_up, wk_empty (**, _wk_up, _wk_step *)
+                 | progress cbn[subst_term ren_term wk wk_to_ren]
+                 | progress fsimpl ]).
+
+Ltac bsimpl := check_no_evars;
+                repeat
+                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
+                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
+                  RenWk_term, RenWk_subst, RenWlWk_term, RenWlWk_subst
+                  in *; bsimpl'; minimize.
+

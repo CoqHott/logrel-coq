@@ -495,3 +495,98 @@ Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
 
 (* #[global] Hint Resolve LRbuild LRunbuild : logrel. *)
+
+Module PiRedTyPack.
+Section PiRedTyPack.
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta}.
+
+
+  Record PiRedTyPack@{i j k l} {Γ : context} {A : term} {l : TypeLevel} 
+    : Type@{l} := {
+      na : aname ;
+      dom : term ;
+      cod : term ;
+      red : [Γ |- A :⇒*: tProd na dom cod];
+      domTy : [Γ |- dom];
+      codTy : [Γ ,, vass na dom |- cod];
+      eq : [Γ |- tProd na dom cod ≅ tProd na dom cod];
+      domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ] ;
+      codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+          [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
+          [ LogRel@{i j k l} l | Δ ||- cod[a .: (ρ >> tRel)]] ;
+      codExt
+        {Δ a b}
+        (ρ : Δ ≤ Γ)
+        (h :  [ |- Δ ])
+        (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
+        [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
+        [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
+        [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
+    }.
+
+  Arguments PiRedTyPack : clear implicits.
+
+  Definition pack@{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
+    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA) 
+    : PiRedTyPack@{i j k l} Γ A l.
+  Proof.
+    destruct ΠA as [na dom cod]; destruct ΠAad; cbn in *.
+    unshelve econstructor; [eassumption| exact dom| exact cod|..].
+    3-6: assumption.
+    * intros; econstructor; now unshelve apply domAd.
+    * intros; econstructor; now unshelve apply codAd.
+    * intros. cbn. eauto.
+  Defined.
+    
+  Definition toPiRedTy@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
+    PiRedTy@{k} Γ A.
+  Proof.
+    destruct ΠA as [na dom cod ???? domRed codRed codExt].
+    unshelve econstructor; [assumption|exact dom|exact cod|..].
+    3-6: assumption.
+    * intros; now eapply domRed.
+    * intros; now eapply codRed.
+    * intros; now eapply codExt.
+  Defined.
+  
+  Definition toPiRedTyAd@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
+    PiRedTyAdequate (LogRel@{i j k l} l) (toPiRedTy ΠA).
+  Proof.
+    destruct ΠA as [na dom cod ???? domRed codRed ?].
+    unshelve econstructor; cbn; intros; [eapply domRed|eapply codRed].
+  Defined.  
+
+  Lemma pack_eta @{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
+    pack _ (toPiRedTyAd ΠA) = ΠA.
+  Proof. destruct ΠA; reflexivity. Qed.
+
+  Lemma pack_beta @{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
+    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA)  :
+    toPiRedTy (pack _ ΠAad) = ΠA.
+  Proof. destruct ΠA; destruct ΠAad; reflexivity. Qed.
+
+  Lemma pack_beta_ad @{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
+    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA)  :
+    toPiRedTyAd (pack _ ΠAad) = ΠAad.
+  Proof. destruct ΠA; destruct ΠAad; reflexivity. Qed.
+
+  Definition LRPi'@{i j k l} l {Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRPi (LogRelRec l) _ (toPiRedTyAd ΠA)).
+
+  Definition prod@{i j k l} l {Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
+    tProd (na ΠA) (dom ΠA) (cod ΠA).
+End PiRedTyPack.
+
+Arguments PiRedTyPack : clear implicits.
+Arguments PiRedTyPack {_ _ _ _ _ _ _ _ _} _ _ _.
+
+End PiRedTyPack.
+
+
+Export PiRedTyPack(PiRedTyPack,Build_PiRedTyPack, LRPi').
+Notation "[ Γ ||-Π< l > A ]" := (PiRedTyPack Γ A l) (at level 0, Γ, l, A at level 50).
+
