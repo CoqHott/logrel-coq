@@ -385,6 +385,14 @@ Qed.
 
 Set Printing Primitive Projection Parameters.
 
+Lemma LogRelRec_unfold {Γ l t eqTy redTm eqTm} (h: [Γ ||-U l]) :
+  LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <~>
+  LogRel (URedTy.level h) Γ t eqTy redTm eqTm.
+Proof.
+  destruct l; [destruct (elim (URedTy.lt h))|].
+  destruct h; inversion lt; subst; cbn; now split.
+Qed.
+
 Lemma LRTmEqSym@{h i j k l} lA Γ A (lrA : [LogRel@{i j k l} lA | Γ ||- A]) : forall t u,
   [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
 Proof.
@@ -392,7 +400,8 @@ Proof.
   - intros * []. unshelve econstructor; try eassumption.
     1: symmetry; eassumption.
     (* Need an additional universe level h < i *)
-    eapply LRTyEqSym@{h i j k}. exact relEq.
+    eapply TyEqSym@{h i j k}. 3:exact relEq.
+    all: eapply LogRelRec_unfold; eapply LRAd.adequate; eassumption.
   - intros * []. unshelve econstructor.
     3,4: eassumption.
     1,2: eassumption.
@@ -412,7 +421,7 @@ Ltac irrelevance0 :=
   | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevant'
   | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevant'
   | [|- [_ ||-<_> _ : _ | _ ] ] => eapply LRTmRedIrrelevant'
-  | [|- [_ | _ ||- _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
+  | [|- [_ | _ ||- _ ≅ _ : _ ] ] => eapply LRTmEqIrrelevant'
   | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
   end.
   

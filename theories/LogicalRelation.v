@@ -333,7 +333,7 @@ Module PiRedTm.
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
+      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
     eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
       (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])

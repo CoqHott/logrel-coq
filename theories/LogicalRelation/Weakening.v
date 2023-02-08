@@ -4,53 +4,11 @@ From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
 
-Ltac bsimpl' := repeat (first
-                 [ progress setoid_rewrite substSubst_term_pointwise
-                 | progress setoid_rewrite substSubst_term
-                 | progress setoid_rewrite substRen_term_pointwise
-                 | progress setoid_rewrite substRen_term
-                 | progress setoid_rewrite renSubst_term_pointwise
-                 | progress setoid_rewrite renSubst_term
-                 | progress setoid_rewrite renRen'_term_pointwise
-                 | progress setoid_rewrite renRen_term
-                 | progress setoid_rewrite varLRen'_term_pointwise
-                 | progress setoid_rewrite varLRen'_term
-                 | progress setoid_rewrite varL'_term_pointwise
-                 | progress setoid_rewrite varL'_term
-                 | progress setoid_rewrite rinstId'_term_pointwise
-                 | progress setoid_rewrite rinstId'_term
-                 | progress setoid_rewrite instId'_term_pointwise
-                 | progress setoid_rewrite instId'_term
-                 | progress setoid_rewrite wk_to_ren_id
-                 | progress setoid_rewrite wk_compose_compose
-                 | progress setoid_rewrite id_ren
-                 | progress unfold up_term_term, upRen_term_term, up_ren, wk_well_wk_compose, wk_id, wk_step, wk_up, wk_empty (**, _wk_up, _wk_step *)
-                 | progress cbn[subst_term ren_term wk wk_to_ren]
-                 | progress fsimpl ]).
-
-Ltac bsimpl := check_no_evars;
-                repeat
-                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
-                  RenWk_term, RenWk_subst, RenWlWk_term, RenWlWk_subst
-                  in *; bsimpl'; minimize.
-
-Ltac irrelevance0 :=
-  lazymatch goal with
-  | [|- [_ | _ ||- _ ≅ _ ] ] => eapply LRTyEqIrrelevant'
-  | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevant'
-  | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevant'
-  | [|- [_ ||-<_> _ : _ | _ ] ] => eapply LRTmRedIrrelevant'
-  | [|- [_ | _ ||- _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
-  | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
-  end.
-  
-Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
-
-
 Section Weakenings.
   Context `{GenericTypingProperties}.
 
+  Lemma wkU {Γ Δ l} (wfΔ : [|-Δ]) (h : [Γ ||-U l]) : [Δ ||-U l].
+  Proof. destruct h; now econstructor. Defined.
 
   Lemma wkΠ  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A])
     (ihdom : forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] -> [Δ' ||-< l > ⟨ρ'⟩ (⟨ρ⟩ (PiRedTyPack.dom ΠA))])
@@ -85,41 +43,45 @@ Section Weakenings.
   Defined.
 
 
-  Lemma wk {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
-    [Γ ||-<l> A] -> [Δ ||-<l> A⟨ρ⟩].
+  Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
+    [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
   Proof.
     intros lrA. revert Δ ρ wfΔ . pattern l, Γ, A, lrA.
-    eapply LR_rect_TyUr; clear l Γ A lrA.
-    - intros **. cbn. apply LRU_. now econstructor.
+    eapply LR_rect_TyUr@{i j k l l}; clear l Γ A lrA.
+    - intros **. apply LRU_. now eapply wkU.
     - intros ???[ty]???. apply LRne_. 
       exists (⟨ρ⟩ ty); [|now apply whne_ren|change U with U⟨ρ⟩] ;gen_typing.
     - intros ??? ? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ρ wfΔ ΠA).
-      + intros; apply ihdom; assumption.
-      + intros; eapply ihcod; eassumption.
+      + intros; now apply ihdom.
+      + intros; now eapply ihcod.
   Defined.
 
-  Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
+  Definition wkΠ' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :=
     let ihdom Δ' (ρ' : Δ' ≤ Δ) (h : [ |- Δ']) := wk ρ' h (PiRedTyPack.domRed ΠA ρ wfΔ) in
     let ihcod a (ha : [PiRedTyPack.domRed ΠA ρ wfΔ | _ ||- a : _]) Δ' (ρ' : Δ' ≤ Δ) (h : [ |- Δ']) :=
       wk ρ' h (PiRedTyPack.codRed ΠA ρ wfΔ ha) 
     in
-    wk ρ wfΔ (LRPi' l ΠA) = LRPi' l (wkΠ ρ wfΔ ΠA ihdom ihcod).
+    wkΠ ρ wfΔ ΠA ihdom ihcod.
+
+  Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
+    wk ρ wfΔ (LRPi' l ΠA) = LRPi' l (wkΠ' ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
 
   Set Printing Primitive Projection Parameters.
 
-  Lemma wkEq {Γ Δ A B l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
-    [Γ ||-<l> A ≅ B | lrA] -> [Δ ||-<l> A⟨ρ⟩ ≅ B⟨ρ⟩ | wk ρ wfΔ lrA].
+  Lemma wkEq@{i j k l} {Γ Δ A B l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
+    [LogRel@{i j k l} l | Γ ||- A ≅ B | lrA] ->
+    [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩ ≅ B⟨ρ⟩ | wk ρ wfΔ lrA].
   Proof.
     revert B Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
-    - intros ? ????? [->]; now constructor.
+    - intros ?? ????? [->]; now constructor.
     - intros * [ty]. exists ty⟨ρ⟩.
       1,2: gen_typing. 
       cbn -[RenWlWk_term]; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
-    - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ _ _ _ _ _).
+    - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
       exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn -[RenWlWk_term] in *.
-      + abstract (change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing).
+      + change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
       + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
         replace (tProd _ _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩) by now bsimpl.
         eapply convty_wk; assumption.
@@ -131,5 +93,131 @@ Section Weakenings.
         2: unshelve eapply codRed; [eassumption|]; subst X; irrelevance.
         subst X; bsimpl; rewrite scons_comp'; reflexivity.
   Qed.
+    
+  Lemma RedTyRecFwd {l Γ t} (h : [Γ ||-U l]) : 
+    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t] ->
+    [LogRel (URedTy.level h) | Γ ||- t ].
+  Proof.
+    destruct h as [? lt]; inversion lt; now subst.
+  Qed.
 
+  Lemma RedTyRecBwd {l Γ t} (h : [Γ ||-U l]) : 
+    [LogRel (URedTy.level h) | Γ ||- t ] ->
+    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t].
+  Proof.
+    destruct h as [? lt]; inversion lt; now subst.
+  Qed.
+
+  (* TODO: use program or equivalent to have only the first field non-opaque *)
+  Lemma wkΠTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) 
+    (ΠA' := wkΠ' ρ wfΔ ΠA) : 
+    [Γ||-Π u : A | PiRedTyPack.toPiRedTy ΠA] -> 
+    [Δ ||-Π u⟨ρ⟩ : A⟨ρ⟩ | PiRedTyPack.toPiRedTy ΠA' ].
+  Proof.
+    intros [t].
+    exists (t⟨ρ⟩); try change (tProd ?na _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩).
+    + destruct red; unshelve econstructor.
+      eapply ty_wk; eassumption.
+      eapply ty_wk; eassumption.
+      eapply redtm_wk; eassumption.
+    + gen_typing.
+    + eapply convtm_wk; eassumption.
+    + intros ? a ρ' ??.
+      replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
+      irrelevance0.
+      2: unshelve apply app; [eassumption|]; subst ΠA'; irrelevance. 
+      subst ΠA'; bsimpl; rewrite scons_comp'; reflexivity.
+    + intros ??? ρ' ????.
+      replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
+      irrelevance0.
+      2: unshelve apply eq; [eassumption|..]; subst ΠA'; irrelevance.
+      subst ΠA'; bsimpl; rewrite scons_comp'; reflexivity.
+  Defined.
+
+  Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
+    [Γ ||-<l> t : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ : A⟨ρ⟩ | wk ρ wfΔ lrA].
+  Proof.
+    revert t Δ ρ wfΔ. pattern l, Γ, A, lrA.
+    eapply LR_rect_TyUr; clear l Γ A lrA.
+    - intros ????? ρ ? [te]. exists te⟨ρ⟩; try change U with U⟨ρ⟩.
+      1-3: gen_typing.
+      apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
+    - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn -[RenWlWk_term].
+      + destruct red; unshelve econstructor.
+        eapply ty_wk; eassumption.
+        eapply ty_wk; eassumption.
+        eapply redtm_wk; eassumption.
+      + gen_typing.
+      + eapply convneu_wk; eassumption.
+    - intros ???? ihdom ihcod ?? ρ ?; apply wkΠTerm. 
+  Qed.
+
+  Lemma wkUTerm {Γ Δ l t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U l]) :
+    [LogRelRec l| Γ ||-U t :U | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ :U | wkU wfΔ h].
+  Proof.
+    intros [te]. exists te⟨ρ⟩; change U with U⟨ρ⟩.
+    1-3: gen_typing.
+    destruct l; [destruct (elim (URedTy.lt h))|cbn].
+    eapply (wk (l:=zero)); eassumption.
+  Defined.
+
+  Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
+
+  Lemma TyEqRecFwd {l Γ t u} (h : [Γ ||-U l]) 
+    (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
+  Proof.
+    destruct (RedTyRecFwd h lr) as [? ad];  destruct lr as [? ad'].  
+    destruct h as [? lt]; inversion lt; subst; cbn in *.
+    split ; intros X ; eapply TyEqIrrelevant.
+    3,6: exact X. all: exact ad + exact ad'.
+  Qed.
+
+  Lemma TyEqRecBwd {l Γ t u} (h : [Γ ||-U l]) 
+    (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
+  Proof.
+    destruct (RedTyRecBwd h lr) as [? ad];  destruct lr as [? ad'].  
+    destruct h as [? lt]; inversion lt; subst; cbn in *.
+    split ; intros X ; eapply TyEqIrrelevant.
+    3,6: exact X. all: exact ad + exact ad'.
+  Qed.
+
+  Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
+    [Γ ||-<l> t ≅ u : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ ≅ u⟨ρ⟩: A⟨ρ⟩ | wk ρ wfΔ lrA].
+  Proof.
+    revert t u Δ ρ wfΔ. pattern l, Γ, A, lrA.
+    eapply LR_rect_TyUr; clear l Γ A lrA.
+    - intros ?????? ρ ? [rL rR].
+      unshelve econstructor.
+      + exact (wkUTerm ρ wfΔ h rL).
+      + exact (wkUTerm ρ wfΔ h rR).
+      + apply RedTyRecBwd; apply wk; [assumption|]; now apply (RedTyRecFwd h).
+      + cbn. change U with U⟨ρ⟩. 
+        now eapply convtm_wk.
+      + apply RedTyRecBwd; apply wk; [assumption|]; now apply (RedTyRecFwd h).
+      + apply TyEqRecBwd. eapply wkEq. now apply TyEqRecFwd.
+    - intros ??????? ρ ? [tL tR].
+      exists (tL⟨ρ⟩) (tR⟨ρ⟩); cbn -[RenWlWk_term].
+      + destruct redL; unshelve econstructor.
+        1,2: eapply ty_wk; eassumption.
+        eapply redtm_wk; eassumption.
+      + destruct redR; unshelve econstructor.
+        1,2: eapply ty_wk; eassumption.
+        eapply redtm_wk; eassumption.
+      + gen_typing.
+      + gen_typing.
+      + now eapply convneu_wk.
+    - intros ??? ΠA ihdom ihcod t u ? ρ ? [redL redR].
+      rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
+      unshelve econstructor; try change (tProd ?na _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩).
+      1,2: now eapply wkΠTerm.
+      + now eapply convtm_wk.
+      + intros ? a ρ' ? ?. 
+        replace (_ ⟨ ρ' ⟩) with (PiRedTm.nf redL) ⟨ρ' ∘w ρ⟩ by now bsimpl.
+        replace (_ ⟨ ρ' ⟩) with (PiRedTm.nf redR) ⟨ρ' ∘w ρ⟩ by now bsimpl.
+        irrelevance0.  2: unshelve eapply eqApp; [assumption|].
+        2: irrelevance; subst X; now bsimpl.
+        subst X; bsimpl; now rewrite scons_comp'.
+  Qed.
 End Weakenings.

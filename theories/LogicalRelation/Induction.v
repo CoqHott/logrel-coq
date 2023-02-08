@@ -118,8 +118,8 @@ Section Inductions.
     (P : forall {l Γ t rEq rTe rTeEq},
     LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o}) :
 
-    (forall (Γ : context) (h : [Γ ||-U one]),
-      P (LRU (rec1) h)) ->
+    (forall l (Γ : context) (h : [Γ ||-U l]),
+      P (LRU (LogRelRec l) h)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
       P (LRne (LogRelRec l) neA)) ->
@@ -138,17 +138,17 @@ Section Inductions.
       P lr.
   Proof.
     intros.
-    eapply LR_rect@{j k l o}.
-    - intros. clear lr. (* this is important for unfold equations *) destruct l.
+    eapply LR_rect@{j k l o}; auto.
+    (* - intros. clear lr. (* this is important for unfold equations *) destruct l.
       2: auto.
       destruct (elim (URedTy.lt h)).
     - auto.
-    - auto.
+    - auto. *)
   Defined.
 
   Lemma LR_rect_LogRelRecΠ_eq@{i j k l o}
     (P : forall {l Γ t rEq rTe rTeEq}, LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o})
-    (hU : forall (Γ : context) (h : [Γ ||-U one]), P (LRU (rec1) h))
+    (hU : forall l (Γ : context) (h : [Γ ||-U l]), P (LRU (LogRelRec l) h))
     (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne (LogRelRec l) neA))
 
     (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) 
@@ -173,7 +173,7 @@ Section Inductions.
   Theorem LR_rect_TyUr@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
 
-    (forall (Γ : context) (h : [Γ ||-U one]),
+    (forall l (Γ : context) (h : [Γ ||-U l]),
       P (LRU_ h)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
@@ -204,7 +204,7 @@ Section Inductions.
 
   Theorem LR_rect_TyUr_Π_eq@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o})
-    (hU : forall (Γ : context) (h : [Γ ||-U one]), P (LRU_ h))
+    (hU : forall l (Γ : context) (h : [Γ ||-U l]), P (LRU_ h))
     (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne_ l neA))
     (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l)
       (ihdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (ΠA.(PiRedTyPack.domRed) ρ h))
