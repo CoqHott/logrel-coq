@@ -91,7 +91,7 @@ Section Weakenings.
         replace (_[_ .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
         irrelevance0.
         2: unshelve eapply codRed; [eassumption|]; subst X; irrelevance.
-        subst X; bsimpl; rewrite scons_comp'; reflexivity.
+        subst X; bsimpl; try rewrite scons_comp'; reflexivity.
   Qed.
     
   Lemma RedTyRecFwd {l Γ t} (h : [Γ ||-U l]) : 
@@ -126,12 +126,12 @@ Section Weakenings.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
       irrelevance0.
       2: unshelve apply app; [eassumption|]; subst ΠA'; irrelevance. 
-      subst ΠA'; bsimpl; rewrite scons_comp'; reflexivity.
+      subst ΠA'; bsimpl; try rewrite scons_comp'; reflexivity.
     + intros ??? ρ' ????.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
       irrelevance0.
       2: unshelve apply eq; [eassumption|..]; subst ΠA'; irrelevance.
-      subst ΠA'; bsimpl; rewrite scons_comp'; reflexivity.
+      subst ΠA'; bsimpl; try rewrite scons_comp'; reflexivity.
   Defined.
 
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
@@ -218,6 +218,6 @@ Section Weakenings.
         replace (_ ⟨ ρ' ⟩) with (PiRedTm.nf redR) ⟨ρ' ∘w ρ⟩ by now bsimpl.
         irrelevance0.  2: unshelve eapply eqApp; [assumption|].
         2: irrelevance; subst X; now bsimpl.
-        subst X; bsimpl; now rewrite scons_comp'.
+        subst X; bsimpl; now try rewrite scons_comp'.
   Qed.
 End Weakenings.
