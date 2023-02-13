@@ -1,4 +1,4 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
 
@@ -83,7 +83,7 @@ Section AlgoConvConv.
       eapply redty_red, red_whnf in HconvP as ->.
       2: gen_typing.
       eexists ; split.
-      + econstructor ; fold_algo ; tea.
+      + econstructor ; refold ; tea.
         now eapply IHt.
       + eapply typing_subst1 ; tea.
         econstructor.
@@ -97,7 +97,7 @@ Section AlgoConvConv.
       }
       pose proof HconvA' as [? []]%red_ty_complete ; tea.
       eexists ; split.
-      + econstructor ; fold_algo.
+      + econstructor ; refold.
         all: eauto using redty_red.
       + symmetry ; etransitivity ; tea.
         now eapply RedConvTyC.
@@ -106,7 +106,7 @@ Section AlgoConvConv.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'
         by now eapply conv_red_l.
       pose proof HconvA' as [? []]%red_ty_complete ; tea.
-      econstructor ; fold_algo ; tea.
+      econstructor ; refold ; tea.
       1: now eapply redty_red.
       eapply IH ; tea.
       etransitivity ; tea.
@@ -114,7 +114,7 @@ Section AlgoConvConv.
     - intros * ? [IHA HconvA] ? IHB ? ? ? * ? HconvU ?.
       eapply red_ty_compl_univ_l, redty_red, red_whnf in HconvU as ->.
       2: gen_typing.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eapply IHA ; tea.
         do 2 econstructor.
         now eapply wf_conv_ctx.
@@ -127,12 +127,12 @@ Section AlgoConvConv.
         eapply IHB ; tea.
         all: econstructor ; tea.
         all: econstructor ; tea.
-        econstructor ; fold_decl.
+        econstructor ; refold.
         all: gen_typing.
     - intros * ? ? ? IHf ? ? ? * ? (?&?&?&[HconvP])%red_ty_compl_prod_l ?.
       eapply redty_red, red_whnf in HconvP as ->.
       2: gen_typing.
-      econstructor ; fold_algo ; tea.
+      econstructor ; refold ; tea.
       eapply IHf ; tea.
       now econstructor. 
     - intros * ? IHm ? ? ? ? * ? HconvN HtyA'.
@@ -141,7 +141,7 @@ Section AlgoConvConv.
       1: now constructor.
       1: assumption.
       cbn in HconvN.
-      econstructor ; fold_algo ; tea.
+      econstructor ; refold ; tea.
       destruct HtyA'.
       1-2: easy.
       assumption.
@@ -210,7 +210,7 @@ Section TermTypeConv.
       eapply algo_conv_wh in Hconv as [].
       now gen_typing.
     - intros * ? IHA ? IHB _.
-      now econstructor ; fold_algo.
+      now econstructor ; refold.
     - intros.
       congruence.
     - intros * ? ? Hne ->.
@@ -246,10 +246,10 @@ Section Symmetry.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
     apply BundledConvInduction.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       all: intuition eauto.
     - intros * ? IHA ? IHB  **.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: now intuition eauto.
       eapply IHB.
       econstructor ; tea.
@@ -269,7 +269,7 @@ Section Symmetry.
       eapply redty_red, red_whnf in Hred as ->.
       2: now eapply algo_conv_wh in IHm' as [] ; gen_typing.
       eexists ; split.
-      + econstructor ; fold_algo.
+      + econstructor ; refold.
         1: eassumption.
         eapply algo_conv_conv.
         * now eapply IHt.
@@ -282,7 +282,7 @@ Section Symmetry.
           2: now symmetry.
           now eapply validity in Hwft as [].
       + eapply typing_subst1 ; tea.
-        econstructor ; fold_decl.
+        econstructor ; refold.
         2: now symmetry.
         eapply stability ; tea.
         now symmetry.
@@ -304,16 +304,16 @@ Section Symmetry.
       + etransitivity ; tea.
         now eapply RedConvTyC.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       all: intuition eauto.
     - intros * ? IHA ? IHB **.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: now eapply IHA.
       eapply IHB.
       econstructor ; tea.
       now econstructor ; intuition eauto.
     - intros * ? ? ? IH ? Hf  **.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1-2: assumption.
       eapply IH.
       econstructor ; tea.
@@ -376,7 +376,7 @@ Section Transitivity.
         apply algo_conv_wh in H5 as [e _].
         now inversion e.
         }
-        econstructor ; fold_algo.
+        econstructor ; refold.
         + eapply IHA ; tea.
         + eapply IHB ; tea.
           now econstructor.
@@ -385,12 +385,12 @@ Section Transitivity.
       2:{ apply algo_conv_wh in H2 as [e _]. now inversion e. }
       now constructor.
     - intros * ? IH ? ? ? * ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       1-2: apply algo_conv_wh in H as [_ e] ; now inversion e.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       now eapply IH.
     - intros * Hin ? _ _ * ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       split.
       + now econstructor.
       + eapply in_ctx_conv_l in Hin as [? [Hin ]]; tea.
@@ -398,17 +398,17 @@ Section Transitivity.
         2: clear Hin ; tea.
         now subst.
     - intros * ? IHm ? IHt ? ? ? * ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       eapply IHm in H9 as [? []%prod_ty_inj] ; tea.
       split.
-      + econstructor ; fold_algo ; tea.
+      + econstructor ; refold ; tea.
         now eapply IHt.
       + eapply typing_subst1 ; tea.
-        econstructor ; fold_decl.
+        econstructor ; refold.
         1: now eapply IHt.
         now symmetry.
     - intros * ? IH ? ? ? ? ? * ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       edestruct IH as [[? HconvA] ?] ; tea.
       split.
       1: now econstructor.
@@ -417,40 +417,40 @@ Section Transitivity.
       1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA.
       eassumption.
     - intros * ? ? Hu Ht' IHt ? ? ? * ? HconvA Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       eapply whred_det in Hu ; tea.
       2,3: now eapply algo_conv_wh in H8 as [], Ht' as [].
       subst.
-      econstructor ; tea ; fold_algo.
+      econstructor ; tea ; refold.
       eapply IHt ; tea.
       etransitivity ; [|etransitivity].
       1: symmetry.
       1,3: eapply RedConvTyC, subject_reduction_type ; tea ; now eapply validity in HconvA.
       eassumption.
     - intros * ? [IHA HpostA] ? IHB ? ? ? * HΓ ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       2: now inversion H5 ; inversion H8.
       2: now inversion H5.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: now eapply IHA.
       eapply IHB.
       3: eassumption.
       + econstructor ; tea. now econstructor.
-      + do 3 econstructor ; fold_decl.
+      + do 3 econstructor ; refold.
         * now symmetry in HΓ ; eapply wf_conv_ctx in HΓ.
-        * econstructor ; fold_decl.
+        * econstructor ; refold.
           now eapply validity in HpostA as [].
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       1,3: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.
       now econstructor.
     - intros * ? IH ? ? ? ? * ? ? Hconv.
-      inversion Hconv ; subst ; clear Hconv ; fold_algo.
+      inversion Hconv ; subst ; clear Hconv ; refold.
       1-2: now unshelve eapply ty_conv_inj in H5 ; [now econstructor | now econstructor | cbn in *].
-      econstructor ; fold_algo ; tea.
+      econstructor ; refold ; tea.
       now eapply IH.
   Qed.
 
@@ -503,15 +503,15 @@ Module AlgorithmicTypingProperties.
     - intros * [? ? [? ? ? ? ? Hc]] [].
       destruct Hc.
       econstructor ; tea.
-      econstructor ; fold_algo ; tea.
-      econstructor ; fold_algo.
+      econstructor ; refold ; tea.
+      econstructor ; refold.
       2: etransitivity.
       all: eassumption.
     - intros * [? ? Hc] HA.
-      destruct Hc as [? ? ? ? Ht Hc] ; fold_algo.
+      destruct Hc as [? ? ? ? Ht Hc] ; refold.
       econstructor ; tea.
       1: now destruct HA.
-      econstructor ; fold_algo ; tea.
+      econstructor ; refold ; tea.
       eapply algo_conv_trans.
       + split ; tea.
         now eapply typing_sound, validity in Ht.
@@ -539,7 +539,7 @@ Module AlgorithmicTypingProperties.
       now apply algo_conv_wk.
     - intros_bn.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1-2: now etransitivity.
       eassumption.
     - intros_bn.
@@ -547,7 +547,7 @@ Module AlgorithmicTypingProperties.
       do 2 econstructor.
     - intros_bn.
       + now econstructor.
-      + econstructor ; tea ; fold_decl.
+      + econstructor ; tea ; refold.
         eapply stability ; tea.
         econstructor.
         * now eapply ctx_conv_refl.
@@ -655,14 +655,14 @@ Module AlgorithmicTypingProperties.
       + now apply typing_wk.
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
-      inversion H ; subst ; clear H  ; fold_algo.
+      inversion H ; subst ; clear H  ; refold.
       econstructor.
       + assumption.
       + eexists. now econstructor.
       + gen_typing.
       + eexists. now econstructor.
       + gen_typing.
-      + now econstructor ; fold_algo.
+      + now econstructor ; refold.
       + eapply conv_sound in H0 ; tea.
         enough [Γ |-[de] tRel n : decl_type decl] as Hty by
           now apply validity in Hty.
@@ -673,19 +673,19 @@ Module AlgorithmicTypingProperties.
     econstructor ; tea.
     + eapply conv_sound in Hf as [Hf] ; tea.
       eapply validity in Hf as [_ Hf _].
-      eexists ; econstructor ; fold_decl.
+      eexists ; econstructor ; refold.
       * econstructor ; tea.
         now eapply RedConvTyC.
       * now econstructor.
     + gen_typing.
     + eapply conv_sound in Hf as [Hg] ; tea.
       eapply validity in Hg as [_ _ Hg].
-      eexists ; econstructor ; fold_decl.
+      eexists ; econstructor ; refold.
       * econstructor ; tea.
         now eapply RedConvTyC.
       * now econstructor.
     + gen_typing.
-    + econstructor ; fold_algo.
+    + econstructor ; refold.
       * econstructor ; tea.
         2: econstructor.
         now eapply redty_red.
@@ -705,7 +705,7 @@ Module AlgorithmicTypingProperties.
     - now intros * [].
     - intros_bn.
       2: now do 2 econstructor.
-      econstructor ; [econstructor|..] ; fold_decl.
+      econstructor ; [econstructor|..] ; refold.
       all: now eapply typing_sound.
     - intros_bn.
       + econstructor ; tea.

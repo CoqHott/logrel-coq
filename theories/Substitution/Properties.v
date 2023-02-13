@@ -1,5 +1,5 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import Utils BasicAst Context Notations Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
 From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity.
 From LogRel.Substitution Require Import Irrelevance.
 

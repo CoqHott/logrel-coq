@@ -1,5 +1,5 @@
 From Coq Require Import CRelationClasses.
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening GenericTyping DeclarativeTyping Generation.
 
 Import DeclarativeTypingData.
@@ -59,10 +59,10 @@ Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
 [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
 Proof.
   intros ? red.
-  induction red as [? ? ? ? ? ? Ht Ha | |]; fold_decl.
+  induction red as [? ? ? ? ? ? Ht Ha | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
-    1: econstructor ; fold_decl.
+    1: econstructor ; refold.
     1,3: now eapply typing_wk.
     + unshelve eapply typing_wk in Ht.
       3: now eapply wk_up.
@@ -73,7 +73,7 @@ Proof.
     + now asimpl. 
   - cbn in *.
     eapply oredtm_meta_conv.
-    1: econstructor ; fold_decl.
+    1: econstructor ; refold.
     + now eauto.
     + now eapply typing_wk.
     + now asimpl.
@@ -99,7 +99,7 @@ Proof.
   intros ? red.
   destruct red.
   constructor.
-  fold_decl.
+  refold.
   change U with (U⟨ρ⟩).
   now apply oredtmdecl_wk.
 Qed.

@@ -1,5 +1,5 @@
 From Coq Require Import ssreflect Morphisms Setoid.
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst.
 
 Import UnscopedNotations.
@@ -50,7 +50,10 @@ Arguments map_decl _%fscope !_/.
 #[global] Instance Ren_decl : (Ren1 (nat -> nat) context_decl context_decl) :=
   fun ρ t => map_decl (ren_term ρ) t.
 
-Arguments Ren_decl /.
+Arguments Ren_decl _ !_/.
+
+Ltac fold_ren_decl := change Ren_decl with ren1 in *.
+Smpl Add fold_ren_decl : refold.
 
 Definition vass a A := {| decl_name := a ; decl_type := A |}.
 

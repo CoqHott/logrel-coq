@@ -1,6 +1,7 @@
 From Coq Require Import Morphisms List CRelationClasses.
 From Coq Require Import ssrbool.
-From LogRel.AutoSubst Require Import core unscoped.
+From smpl Require Import Smpl.
+From LogRel.AutoSubst Require Import core unscoped Ast.
 
 Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
@@ -100,8 +101,12 @@ Create HintDb gen_typing.
 
 Ltac gen_typing := typeclasses eauto bfs 6 with gen_typing typeclass_instances.
 
-(* Forcing some unfolding *)
-Arguments ren1 {_ _ _} _ _ !_/.
+(* A general refolding tactic to recover lost typeclasses
+  (due for instance to the cbn or constructor tactics).
+  Updated on the fly using the Smpl plugin. *)
+Smpl Create refold [progress].
+
+Ltac refold := repeat (smpl refold).
 
 #[universes(polymorphic)]
 Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P x -> P y :=

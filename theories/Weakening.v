@@ -1,5 +1,5 @@
 From Coq Require Import Lia.
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped.
 
 Inductive weakening : Set :=
@@ -31,17 +31,6 @@ Proof.
 Qed.
 
 Coercion wk_to_ren : weakening >-> Funclass.
-
-#[global] Instance RenWk_term : (Ren1 weakening term term) :=
-  fun ρ t => ren_term (wk_to_ren ρ) t.
-
-Arguments RenWk_term /.
-
-#[global] Instance RenWk_subst : (Ren1 weakening (nat -> term) (nat -> term)) :=
-  fun ρ σ i => (σ i) ⟨ ρ ⟩.
-
-Arguments RenWk_subst /.
-
 
 Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_empty : well_weakening _wk_empty ε ε
@@ -125,15 +114,22 @@ Definition wk_id {Γ} : Γ ≤ Γ :=
 
 #[global] Hint Resolve well_wk : core.
 
-#[global] Instance RenWlWk_term {Γ Δ : context }: (Ren1 (Γ ≤ Δ) term term) :=
-  fun ρ t => ren_term (wk_to_ren ρ.(wk)) t.
 
-Arguments RenWlWk_term /.
+#[global] Instance Ren1_wk {Y Z : Type} `(ren : Ren1 (nat -> nat) Y Z) :
+  (Ren1 weakening Y Z) := fun ρ t => t⟨wk_to_ren ρ⟩.
 
-#[global] Instance RenWlWk_subst {Γ Δ : context }: (Ren1 (Γ ≤ Δ) (nat -> term) (nat -> term)) :=
-  fun ρ σ i => ren_term (wk_to_ren ρ.(wk)) (σ i).
+#[global] Instance Ren1_well_wk {Y Z : Type} `{Ren1 (nat -> nat) Y Z} {Γ Δ : context} :
+  (Ren1 (Γ ≤ Δ) Y Z) :=
+  fun ρ t => t⟨wk_to_ren ρ.(wk)⟩.
 
-Arguments RenWlWk_subst /.
+Arguments Ren1_wk {_ _ _} _ _/.
+Arguments Ren1_well_wk {_ _ _ _ _} _ _/.
+
+Ltac fold_wk_ren :=
+  change ?t⟨wk_to_ren ?ρ⟩ with t⟨ρ⟩ in * ;
+  change ?t⟨wk_to_ren ?ρ.(wk)⟩ with t⟨ρ⟩ in *.
+
+Smpl Add fold_wk_ren : refold.
 
 Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
   {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
@@ -305,6 +301,6 @@ Ltac bsimpl := check_no_evars;
                 repeat
                  unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
                   Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
-                  RenWk_term, RenWk_subst, RenWlWk_term, RenWlWk_subst
+                  Ren1_subst, Ren1_wk, Ren1_well_wk
                   in *; bsimpl'; minimize.
 

@@ -205,7 +205,7 @@ Ltac fsimpl :=
          | [|- context[?f var_zero .: ?g]] => change (scons (f var_zero) g) with (scons (f var_zero) (funcomp f shift)); rewrite scons_eta'
          | [|- _ =  ?h (?f ?s)] => change (h (f s)) with ((f >> h) s)
          | [|-  ?h (?f ?s) = _] => change (h (f s)) with ((f >> h) s)
-         (* DONE had to put an underscore as the last argument to scons. This might be an argument against unfolding funcomp *)
+         (* DONE had to put an underscore as the lAst Extra.argument to scons. This might be an argument against unfolding funcomp *)
          | [|- context[funcomp _ (scons _ _)]] => setoid_rewrite scons_comp'; eta_reduce
          | [|- context[scons var_zero shift]] => setoid_rewrite scons_eta_id'; eta_reduce
                         end.

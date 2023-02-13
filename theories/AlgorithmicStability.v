@@ -1,4 +1,4 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences McBrideDiscipline.
 
@@ -88,7 +88,7 @@ Section AlgoStability.
      apply IHA ; tea.
      all: now symmetry. 
     }
-    econstructor ; fold_algo ; tea.
+    econstructor ; refold ; tea.
     eapply IHB.
     * econstructor ; tea.
       now symmetry.
@@ -139,13 +139,13 @@ Section AlgoStability.
     apply AlgoTypingInduction.
     - econstructor.
     - intros * ? IHA ? IHB.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: easy.
       eapply IHB.
       econstructor ; tea.
       now econstructor ; eapply typing_sound, wf_conv_ctx.
     - intros * ? IH ? ?.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       eapply IH ; tea.
       econstructor.
       econstructor.
@@ -188,20 +188,20 @@ Section AlgoStability.
       edestruct (IHt (Γ',, vass na A)) as [? [Ht ?]] ; tea.
       1: now econstructor ; tea ; econstructor.
       eexists ; split.
-      all: now econstructor ; fold_decl ; fold_algo.
+      all: now econstructor ; refold ; refold.
     - intros * ? IHf ? IHa ? ?.
       edestruct IHf as [? [Hf Hfconv]] ; tea.
       inversion Hf ; subst ; clear Hf.
       eapply prod_ty_red_compl_inj in Hfconv as (?&?&?&[? HA ]).
       eexists ; split.
-      1: econstructor ; fold_algo.
+      1: econstructor ; refold.
       + econstructor ; tea.
         etransitivity ; tea.
         now eapply redty_red.
       + eauto.
       + eapply validity in HA as [].
         eapply typing_subst1 ; tea.
-        econstructor ; fold_decl.
+        econstructor ; refold.
         eapply typing_sound ; tea.
         eapply IHa ; tea.
         now econstructor.
@@ -215,7 +215,7 @@ Section AlgoStability.
         now eapply validity in HA.
     - intros * ? IHt ? ? * ? ?.
       edestruct IHt as [? [IHt' Htconv]] ; tea.
-      now econstructor ; fold_algo.
+      now econstructor ; refold.
   Admitted.
 
 End AlgoStability.

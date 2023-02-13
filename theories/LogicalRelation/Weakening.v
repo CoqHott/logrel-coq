@@ -1,5 +1,5 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation Reduction.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
@@ -17,13 +17,13 @@ Section Weakenings.
       [Δ' ||-< l > ⟨ρ'⟩ (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]]) :
     [Δ ||-Π< l > ⟨ρ⟩ A].
   Proof.
-    destruct ΠA as[na dom cod];  cbn -[RenWlWk_term] in *.
+    destruct ΠA as[na dom cod];  cbn in *.
     assert (domRed' : forall Δ' (ρ' : Δ' ≤ Δ), [|- Δ'] -> [Δ' ||-< l > ⟨ρ'⟩ (⟨ρ⟩ dom)]).
     {
       intros ? ρ' ?; replace (⟨ _ ⟩ _) with (⟨ρ' ∘w ρ⟩ dom) by now bsimpl.
       econstructor; now unshelve eapply domRed.
     }
-    set (cod' := ⟨wk_up na dom ρ⟩cod).
+    set (cod' := cod⟨wk_up na dom ρ⟩).
     assert (codRed' : forall Δ' a (ρ' : Δ' ≤ Δ) (h : [|- Δ']),
       [domRed' Δ' ρ' h | _ ||- a : _] -> [Δ' ||-< l > cod'[a .: ρ' >> tRel]]).
     {
@@ -78,9 +78,9 @@ Section Weakenings.
     - intros ?? ????? [->]; now constructor.
     - intros * [ty]. exists ty⟨ρ⟩.
       1,2: gen_typing. 
-      cbn -[RenWlWk_term]; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
+      cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
-      exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn -[RenWlWk_term] in *.
+      exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.
       + change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
       + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
         replace (tProd _ _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩) by now bsimpl.

@@ -6,6 +6,7 @@ theories/BasicAst.v
 theories/AutoSubst/core.v
 theories/AutoSubst/unscoped.v
 theories/AutoSubst/Ast.v
+theories/AutoSubst/Extra.v
 theories/Notations.v
 theories/Untyped.v
 

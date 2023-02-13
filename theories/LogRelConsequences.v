@@ -1,5 +1,5 @@
 From Coq Require Import CRelationClasses.
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
 
@@ -148,10 +148,9 @@ Section Stability.
     unshelve eapply (wk_subst_compose _ _ (Δ,, vass na A)) in Hσ.
     - now eapply wk_step, wk_id.
     - eapply well_subst_ext ; [|eassumption].
-      asimpl ; cbn in * ; asimpl.
-      rewrite wk_to_ren_id.
+      asimpl ; cbn in * ; bsimpl.
       now reflexivity.
-    - econstructor ; fold_decl.
+    - econstructor ; refold.
       all: gen_typing.
   Qed.
 
@@ -174,7 +173,7 @@ Section Stability.
     [|- Γ].
   Proof.
     destruct 1 as [| ? ? ? ? ? ? ? HA].
-    all: econstructor ; fold_decl.
+    all: econstructor ; refold.
     - gen_typing.
     - now eapply validity in HA.
   Qed.
@@ -205,9 +204,9 @@ Section Stability.
     - assert [Γ |- A] by
         now eapply validity in HA as [].
       assert [|- Γ,, vass na A] by
-        (econstructor ; fold_decl ;
+        (econstructor ; refold ;
         eauto using wf_conv_ctx).
-      econstructor ; fold_decl ; tea.
+      econstructor ; refold ; tea.
       + eapply well_subst_ext, well_subst_up ; tea.
         reflexivity.
       + econstructor.
@@ -278,7 +277,7 @@ Section Stability.
     all: assert ([Γ |-s tRel : Γ]) as Hsubst by now eapply id_subst.
     3-4: apply subst_refl in Hsubst.
     all: eapply typing_subst ; tea.
-    all: econstructor ; cbn ; fold_decl ; now asimpl.
+    all: econstructor ; cbn ; refold ; now asimpl.
   Qed.
 
   #[global] Instance ConvCtxSym : Symmetric ConvCtx.
@@ -334,8 +333,8 @@ Theorem subject_reduction_one Γ t t' A :
     - apply termGen' in Hty as (?&((?&?&?&[-> Hty])&Heq)).
       apply termGen' in Hty as (?&((?&[->])&Heq')).
       eapply prod_ty_inj in Heq' as [? HeqB].
-      econstructor ; fold_decl.
-      1: econstructor ; fold_decl ; gen_typing.
+      econstructor ; refold.
+      1: econstructor ; refold ; gen_typing.
       etransitivity ; tea.
       eapply typing_subst1 ; tea.
       now econstructor.
@@ -343,7 +342,7 @@ Theorem subject_reduction_one Γ t t' A :
       econstructor ; tea.
       econstructor.
       1: easy.
-      fold_decl ; gen_typing.
+      refold ; gen_typing.
     Qed.
 
   Theorem subject_reduction Γ t t' A :

@@ -1,6 +1,8 @@
 From Coq Require Import ssreflect.
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From smpl Require Import Smpl.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
+
 Set Primitive Projections.
 
 Section Definitions.
@@ -190,6 +192,8 @@ Module DeclarativeTypingData.
     change TypeRedClosure with (red_ty (ta := de)) in *;
     change TermRedClosure with (red_tm (ta := de)) in *.
 
+  Smpl Add fold_decl : refold.
+
 End DeclarativeTypingData.
 
 Section InductionPrinciples.
@@ -253,7 +257,7 @@ Section TypingWk.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply (IHB _ (wk_up _ _ ρ)).
-      now constructor ; fold_decl.
+      now constructor ; refold.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -328,7 +332,7 @@ Section TypingWk.
       + now eapply IHA.
       + now eapply IHAA'.
       + eapply (IHBB' _ (wk_up _ _ ρ)).
-        all: now econstructor ; fold_decl.
+        all: now econstructor ; refold.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -341,23 +345,24 @@ Section TypingWk.
       + now asimpl.
     - intros Γ ? ? f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
       cbn.
-      econstructor ; fold_decl.
+      econstructor ; refold.
       1-3: easy.
       specialize (IHe _ (wk_up _ _ ρ)).
       cbn in *.
+      (*asimpl in IHe fails to do the job, because of universe issues… *)
+      unfold ren1, Ren_term in IHe ; repeat rewrite renRen_term in IHe |- *.
       asimpl.
-      repeat (erewrite compRenRen_term in IHe ; [..|reflexivity]).
       eapply IHe.
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHt ? ρ ?.
-      now econstructor ; fold_decl.
+      now econstructor ; refold.
     - intros * _ IHt _ IHA ? ρ ?.
-      now econstructor ; fold_decl.
+      now econstructor ; refold.
     - intros * _ IHt ? ρ ?.
-      now econstructor ; fold_decl.
+      now econstructor ; refold.
     - intros * _ IHt _ IHt' ? ρ ?.
-      now econstructor ; fold_decl.
+      now econstructor ; refold.
   Qed.
 
   Corollary typing_shift : WfDeclInductionConcl
@@ -391,7 +396,7 @@ Section TypingWk.
     intros ? ? ? Hf.
     eapply typing_shift in Hf ; tea.
     eapply typing_meta_conv.
-    1: econstructor ; fold_decl.
+    1: econstructor ; refold.
     - cbn in Hf.
       now eassumption.
     - eapply typing_meta_conv.

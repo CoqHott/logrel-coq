@@ -1,4 +1,4 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction GenericTyping.
 
 Section Definitions.
@@ -150,6 +150,8 @@ Module AlgorithmicTypingData.
     change ConvTermRedAlg with (conv_term_red (ta := al)) in * ;
     change ConvNeuRedAlg with (conv_neu_red (ta := al)) in *.
 
+  Smpl Add fold_algo : refold.
+
 End AlgorithmicTypingData.
 
 Section InductionPrinciples.
@@ -242,39 +244,39 @@ Section TypingWk.
     destruct H as [?[?[?[?[?]]]]].
     12:{ repeat (split;[assumption|]); assumption. }
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       all: eauto using credalg_wk.
     - intros * ? ? ? IHB ? *.
       cbn.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: now eauto.
       now eapply (IHB _ (wk_up _ _ ρ)).
     - econstructor.
     - intros.
-      now econstructor ; fold_algo.
+      now econstructor ; refold.
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
       all: reflexivity.
     - intros * ? IHm ? IHt ? ?.
       cbn in *.
-      eapply convne_meta_conv ; [econstructor|..] ; fold_algo.
+      eapply convne_meta_conv ; [econstructor|..] ; refold.
       + eauto.
       + eauto.
       + now asimpl.
       + reflexivity.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eauto.
       + eauto using credalg_wk.
       + now eapply isType_ren. 
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1-3: eauto using credalg_wk.
       now eauto.
     - intros * ? ? ? IHB ? ?.
       cbn.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       1: now eauto.
       now eapply (IHB _ (wk_up _ _ ρ)).
     - intros * ? ? ? IH ? ?.
@@ -287,7 +289,7 @@ Section TypingWk.
       repeat (rewrite renRen_term in IH).
       apply IH.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eauto.
       + now eauto using whne_ren.
   Qed.
@@ -310,36 +312,36 @@ Section TypingWk.
     - constructor.
     - intros * ? ? ? IHB **.
       cbn.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + now eauto.
       + now eapply (IHB _ (wk_up _ _ ρ)).
     - intros.
-      now econstructor ; fold_algo.
+      now econstructor ; refold.
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.
       + reflexivity.
     - intros * ? ? ? IHB.
       cbn.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eauto.
       + now eapply (IHB _ (wk_up _ _ ρ)).
     - intros * ? ? ? IHt ? ?.
       cbn.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + now eauto.
       + now eapply (IHt _ (wk_up _ _ ρ)).
     - intros.
       cbn in *.
       eapply typing_meta_conv.
-      + now econstructor ; fold_algo.
+      + now econstructor ; refold.
       + now asimpl.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eauto.
       + eauto using credalg_wk.
     - intros.
-      econstructor ; fold_algo.
+      econstructor ; refold.
       + eauto.
       + now eapply algo_conv_wk.
   Qed.

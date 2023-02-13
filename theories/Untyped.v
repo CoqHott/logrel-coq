@@ -1,8 +1,5 @@
-From LogRel.AutoSubst Require Import unscoped Ast.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
-
-Export UnscopedNotations.
-#[global] Open Scope subst_scope.
 
 Notation U := (tSort set).
 Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
