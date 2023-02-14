@@ -199,7 +199,7 @@ Section Fundamental.
     [Γ |-[ de ] A] -> FundTy Γ A ->
     [Γ |-[ de ] f : tProd na A B] -> FundTm Γ (tProd na A B) f ->
     [Γ |-[ de ] g : tProd nb A B] -> FundTm Γ (tProd nb A B) g ->
-    [Γ,, vass na A |-[ de ] tApp (⟨↑⟩ f) (tRel 0) ≅ tApp (⟨↑⟩ g) (tRel 0) : B] -> FundTmEq (Γ,, vass na A) B (tApp (⟨↑⟩ f) (tRel 0)) (tApp (⟨↑⟩ g) (tRel 0)) ->
+    [Γ,, vass na A |-[ de ] tApp (f⟨↑⟩) (tRel 0) ≅ tApp (g⟨↑⟩) (tRel 0) : B] -> FundTmEq (Γ,, vass na A) B (tApp (f⟨↑⟩) (tRel 0)) (tApp (g⟨↑⟩) (tRel 0)) ->
     FundTmEq Γ (tProd na A B) f g.
   Proof.
   Admitted.

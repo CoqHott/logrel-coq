@@ -11,16 +11,16 @@ Section Weakenings.
   Proof. destruct h; now econstructor. Defined.
 
   Lemma wkΠ  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A])
-    (ihdom : forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] -> [Δ' ||-< l > ⟨ρ'⟩ (⟨ρ⟩ (PiRedTyPack.dom ΠA))])
+    (ihdom : forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] -> [Δ' ||-< l > (PiRedTyPack.dom ΠA)⟨ρ⟩⟨ρ'⟩])
     (ihcod : forall (a : term), [PiRedTyPack.domRed ΠA ρ wfΔ | _ ||- a : _] ->
       forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] ->
-      [Δ' ||-< l > ⟨ρ'⟩ (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]]) :
-    [Δ ||-Π< l > ⟨ρ⟩ A].
+      [Δ' ||-< l > (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]⟨ρ'⟩]) :
+    [Δ ||-Π< l > A⟨ρ⟩].
   Proof.
     destruct ΠA as[na dom cod];  cbn in *.
-    assert (domRed' : forall Δ' (ρ' : Δ' ≤ Δ), [|- Δ'] -> [Δ' ||-< l > ⟨ρ'⟩ (⟨ρ⟩ dom)]).
+    assert (domRed' : forall Δ' (ρ' : Δ' ≤ Δ), [|- Δ'] -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]).
     {
-      intros ? ρ' ?; replace (⟨ _ ⟩ _) with (⟨ρ' ∘w ρ⟩ dom) by now bsimpl.
+      intros ? ρ' ?; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
       econstructor; now unshelve eapply domRed.
     }
     set (cod' := cod⟨wk_up na dom ρ⟩).
@@ -50,7 +50,7 @@ Section Weakenings.
     eapply LR_rect_TyUr@{i j k l l}; clear l Γ A lrA.
     - intros **. apply LRU_. now eapply wkU.
     - intros ???[ty]???. apply LRne_. 
-      exists (⟨ρ⟩ ty); [|now apply whne_ren|change U with U⟨ρ⟩] ;gen_typing.
+      exists (ty⟨ρ⟩); [|now apply whne_ren|change U with U⟨ρ⟩] ;gen_typing.
     - intros ??? ? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ρ wfΔ ΠA).
       + intros; now apply ihdom.
       + intros; now eapply ihcod.

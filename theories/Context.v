@@ -45,7 +45,7 @@ Proof. intros f g Hfg x. rewrite /map_decl.
   now rewrite Hfg.
 Qed.
 
-Arguments map_decl _%fscope !_/.
+Arguments map_decl _ !_/.
 
 #[global] Instance Ren_decl : (Ren1 (nat -> nat) context_decl context_decl) :=
   fun ρ t => map_decl (ren_term ρ) t.

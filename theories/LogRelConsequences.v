@@ -123,7 +123,7 @@ Section Stability.
   Lemma wk_subst_compose (Γ Δ Δ' : context) (ρ : Δ' ≤ Δ) σ :
     [|- Δ'] ->
     [Δ |-s σ : Γ] ->
-    [Δ' |-s σ >> ⟨ρ⟩ : Γ].
+    [Δ' |-s σ⟨ρ⟩ : Γ].
   Proof.
     intros ?.
     induction 1 as [|σ Γ na A].
@@ -142,7 +142,7 @@ Section Stability.
   Lemma well_subst_up (Γ Δ : context) na A σ :
     [Δ |- A] ->
     [Δ |-s σ : Γ] ->
-    [Δ ,, vass na A |-s σ >> ⟨↑⟩ : Γ].
+    [Δ ,, vass na A |-s σ⟨↑⟩ : Γ].
   Proof.
     intros HA Hσ.
     unshelve eapply (wk_subst_compose _ _ (Δ,, vass na A)) in Hσ.

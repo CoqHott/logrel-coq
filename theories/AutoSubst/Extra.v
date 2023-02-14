@@ -2,8 +2,28 @@ From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils.
 
-Export UnscopedNotations.
-#[global] Open Scope subst_scope.
+(* Export UnscopedNotations.
+#[global] Open Scope subst_scope. *)
+
+Declare Scope asubst_scope.
+Delimit Scope asubst_scope with asub.
+
+Arguments funcomp {X Y Z}%type_scope (g f)%function_scope.
+
+Notation "f >> g" := (funcomp g f) (at level 50) : function_scope.
+
+Notation "s .: sigma" := (scons s sigma) (at level 55, sigma at next level, right associativity) : asubst_scope.
+
+Notation "s ⟨ xi1 ⟩" := (ren1 xi1 s) (at level 7, left associativity, format "s ⟨ xi1 ⟩") : asubst_scope.
+(* Notation "⟨ xi ⟩" := (ren1 xi) (at level 1, left associativity, format "⟨ xi ⟩") : function_scope. *)
+
+Notation "s [ sigma ]" := (subst1 sigma s) (at level 7, left associativity, format "s '/' [ sigma ]") : asubst_scope.
+
+Notation "s '..'" := (scons s ids) (at level 1, format "s ..") : asubst_scope.
+
+Notation "↑" := (shift) : asubst_scope.
+
+#[global] Open Scope asubst_scope.
 
 #[global] Instance Ren1_subst {Y Z : Type} `{Ren1 (nat -> nat) Y Z} :
   (Ren1 (nat -> nat) (nat -> Y) (nat -> Z)) :=
