@@ -142,7 +142,7 @@ Section Weakenings.
     - intros ????? ρ ? [te]. exists te⟨ρ⟩; try change U with U⟨ρ⟩.
       1-3: gen_typing.
       apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
-    - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn -[RenWlWk_term].
+    - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn.
       + destruct red; unshelve econstructor.
         eapply ty_wk; eassumption.
         eapply ty_wk; eassumption.
@@ -198,7 +198,7 @@ Section Weakenings.
       + apply RedTyRecBwd; apply wk; [assumption|]; now apply (RedTyRecFwd h).
       + apply TyEqRecBwd. eapply wkEq. now apply TyEqRecFwd.
     - intros ??????? ρ ? [tL tR].
-      exists (tL⟨ρ⟩) (tR⟨ρ⟩); cbn -[RenWlWk_term].
+      exists (tL⟨ρ⟩) (tR⟨ρ⟩); cbn.
       + destruct redL; unshelve econstructor.
         1,2: eapply ty_wk; eassumption.
         eapply redtm_wk; eassumption.
