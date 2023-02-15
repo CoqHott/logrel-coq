@@ -163,7 +163,7 @@ Proof.
 Qed.
 
 
-Definition wk1 {Γ} nA A := wk_step nA A (@wk_id Γ).
+Definition wk1 {Γ} nA A : Γ,, vass nA A ≤ Γ := wk_step nA A (wk_id (Γ := Γ)).
 
 Lemma wk1_ren {Γ nA A} : @wk1 Γ nA A =1 ↑.
 Proof.
@@ -213,27 +213,27 @@ Section RenWhnf.
 
   Variable (ρ : nat -> nat).
 
-  Lemma whne_ren t : whne t -> whne (ren_term ρ t).
+  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: now econstructor.
   Qed.
 
-  Lemma whnf_ren t : whnf t -> whnf (ren_term ρ t).
+  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isType_ren A : isType A -> isType (ren_term ρ A).
+  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isFun_ren f : isFun f -> isFun (ren_term ρ f).
+  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -246,7 +246,7 @@ End RenWhnf.
 
 Section RenWlWhnf.
 
-  Context {Γ Δ} (ρ :Δ ≤ Γ).
+  Context {Γ Δ} (ρ : Δ ≤ Γ).
 
   Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
   Proof.
@@ -293,6 +293,7 @@ Ltac bsimpl' := repeat (first
                  | progress setoid_rewrite wk_to_ren_id
                  | progress setoid_rewrite wk_compose_compose
                  | progress setoid_rewrite id_ren
+                 | progress setoid_rewrite wk1_ren
                  | progress unfold up_term_term, upRen_term_term, up_ren, wk_well_wk_compose, wk_id, wk_step, wk_up, wk_empty (**, _wk_up, _wk_step *)
                  | progress cbn[subst_term ren_term wk wk_to_ren]
                  | progress fsimpl ]).
@@ -303,4 +304,3 @@ Ltac bsimpl := check_no_evars;
                   Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
                   Ren1_subst, Ren1_wk, Ren1_well_wk
                   in *; bsimpl'; minimize.
-

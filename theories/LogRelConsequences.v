@@ -12,12 +12,100 @@ Conjecture typing_subst : WfDeclInductionConcl
   (fun Γ A B => forall Δ σ σ', [|- Δ] -> [Δ |-s σ ≅ σ' : Γ] -> [Δ |- A[σ] ≅ B[σ']])
   (fun Γ A t u => forall Δ σ σ', [|- Δ] -> [Δ |-s σ ≅ σ' : Γ] -> [Δ |- t[σ] ≅ u[σ'] : A[σ]]).
 
-Conjecture validity : WfDeclInductionConcl
+Conjecture boundary : WfDeclInductionConcl
   (fun _ => True)
   (fun _ _ => True)
   (fun Γ A t => [Γ |- A])
   (fun Γ A B => [Γ |- A] × [Γ |- B])
   (fun Γ A t u => [× [Γ |- A], [Γ |- t : A] & [Γ |- u : A]]).
+
+Corollary boundary_tm Γ A t : [Γ |- t : A] -> [Γ |- A].
+Proof.
+  now intros ?%boundary.
+Qed.
+
+Corollary boundary_ty_conv_l Γ A B : [Γ |- A ≅ B] -> [Γ |- A].
+Proof.
+  now intros ?%boundary.
+Qed.
+
+Corollary boundary_ty_conv_r Γ A B : [Γ |- A ≅ B] -> [Γ |- B].
+Proof.
+  now intros ?%boundary.
+Qed.
+
+Corollary boundary_ored_ty_r Γ A B : [Γ |- A ⇒ B] -> [Γ |- B].
+Proof.
+  now intros ?%RedConvTy%boundary.
+Qed.
+
+Corollary boundary_red_ty_r Γ A B : [Γ |- A ⇒* B] -> [Γ |- B].
+Proof.
+  now intros ?%RedConvTyC%boundary.
+Qed.
+
+Corollary boundary_tm_conv_l Γ A t u : [Γ |- t ≅ u : A] -> [Γ |- t : A].
+Proof.
+  now intros []%boundary.
+Qed.
+
+Corollary boundary_tm_conv_r Γ A t u : [Γ |- t ≅ u : A] -> [Γ |- u : A].
+Proof.
+  now intros []%boundary.
+Qed.
+
+Corollary boundary_tm_conv_ty Γ A t u : [Γ |- t ≅ u : A] -> [Γ |- A].
+Proof.
+  now intros []%boundary.
+Qed.
+
+Corollary boundary_ored_tm_l Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- t : A].
+Proof.
+  now intros []%RedConvTe%boundary.
+Qed.
+
+Corollary boundary_ored_tm_r Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- u : A].
+Proof.
+  now intros []%RedConvTe%boundary.
+Qed.
+
+Corollary boundary_ored_tm_ty Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- A].
+Proof.
+  now intros []%RedConvTe%boundary.
+Qed.
+
+Corollary boundary_red_tm_l Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- t : A].
+Proof.
+  now intros []%RedConvTeC%boundary.
+Qed.
+
+Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- u : A].
+Proof.
+  now intros []%RedConvTeC%boundary.
+Qed.
+
+Corollary boundary_red_tm_ty Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- A].
+Proof.
+  now intros []%RedConvTeC%boundary.
+Qed.
+
+#[export] Hint Resolve
+  boundary_tm boundary_ty_conv_l boundary_ty_conv_r
+  boundary_tm_conv_l boundary_tm_conv_r boundary_tm_conv_ty
+  boundary_ored_tm_l boundary_ored_tm_r boundary_ored_tm_ty
+  boundary_red_tm_l boundary_red_tm_r boundary_red_tm_ty
+  boundary_ored_ty_r boundary_red_ty_r : boundary.
+
+
+Lemma boundary_ctx_conv_l (Γ Δ : context) :
+  [ |- Γ ≅ Δ] ->
+  [|- Γ].
+Proof.
+  destruct 1 as [| ? ? ? ? ? ? ? HA].
+  all: econstructor ; refold ; boundary.
+Qed.
+
+#[export] Hint Resolve boundary_ctx_conv_l : boundary.
 
 Section NeutralConjecture.
   Import AlgorithmicTypingData.
@@ -111,7 +199,7 @@ Qed.
 
 Section Stability.
 
-  Lemma ctx_conv_refl Γ :
+  Lemma ctx_refl Γ :
     [|- Γ] ->
     [|- Γ ≅ Γ].
   Proof.
@@ -120,7 +208,7 @@ Section Stability.
     now econstructor.
   Qed.
 
-  Lemma wk_subst_compose (Γ Δ Δ' : context) (ρ : Δ' ≤ Δ) σ :
+  Lemma subst_wk (Γ Δ Δ' : context) (ρ : Δ' ≤ Δ) σ :
     [|- Δ'] ->
     [Δ |-s σ : Γ] ->
     [Δ' |-s σ⟨ρ⟩ : Γ].
@@ -139,16 +227,15 @@ Section Stability.
       reflexivity.
   Qed.
 
-  Lemma well_subst_up (Γ Δ : context) na A σ :
+  Corollary well_subst_up (Γ Δ : context) na A σ :
     [Δ |- A] ->
     [Δ |-s σ : Γ] ->
     [Δ ,, vass na A |-s σ⟨↑⟩ : Γ].
   Proof.
     intros HA Hσ.
-    unshelve eapply (wk_subst_compose _ _ (Δ,, vass na A)) in Hσ.
-    - now eapply wk_step, wk_id.
+    eapply subst_wk with (ρ := wk_step na A wk_id) in Hσ.
     - eapply well_subst_ext ; [|eassumption].
-      asimpl ; cbn in * ; bsimpl.
+      bsimpl.
       now reflexivity.
     - econstructor ; refold.
       all: gen_typing.
@@ -168,22 +255,12 @@ Section Stability.
       cbn ; now renamify.
   Qed.
 
-  Lemma wf_conv_ctx (Γ Δ : context) :
-    [ |- Γ ≅ Δ] ->
-    [|- Γ].
-  Proof.
-    destruct 1 as [| ? ? ? ? ? ? ? HA].
-    all: econstructor ; refold.
-    - gen_typing.
-    - now eapply validity in HA.
-  Qed.
-
   Corollary conv_ctx_refl_l (Γ Δ : context) :
     [ |- Γ ≅ Δ] ->
     [|- Γ ≅ Γ].
   Proof.
     intros.
-    now eapply ctx_conv_refl, wf_conv_ctx.
+    eapply ctx_refl ; boundary.
   Qed.
 
   Lemma subst_refl (Γ Δ : context) σ :
@@ -201,23 +278,21 @@ Section Stability.
   Proof.
     induction 1 as [| * ? HA].
     - now econstructor.
-    - assert [Γ |- A] by
-        now eapply validity in HA as [].
+    - assert [Γ |- A] by boundary.
       assert [|- Γ,, vass na A] by
-        (econstructor ; refold ;
-        eauto using wf_conv_ctx).
+        (econstructor ; refold ; boundary).
       econstructor ; refold ; tea.
       + eapply well_subst_ext, well_subst_up ; tea.
         reflexivity.
-      + econstructor.
+      + econstructor ; refold.
         1: now econstructor ; [..|econstructor].
-        cbn ; renamify.
+        cbn ; renamify ; refold.
+        (* TODO: the following should work!
+          eapply typing_wk with (ρ := wk_step na A wk_id). *)
         unshelve eapply typing_wk in HA.
-        2: eapply wk_step, wk_id.
+        2: apply wk1.
         2: eassumption.
-        unshelve erewrite (extRen_term _ _ _ B), (extRen_term _ _ _ A).
-        5: eassumption.
-        all: now intros ; cbn ; rewrite wk_to_ren_id.
+        now setoid_rewrite (extRen_term _ _ wk1_ren) in HA.
   Qed.
 
   Let PCon (Γ : context) := True.
@@ -236,7 +311,7 @@ Section Stability.
     repeat match goal with |- _ × _ => split end.
     1: now unfold PCon.
     all: intros * Hty Δ HΔ.
-    all: pose proof (wf_conv_ctx _ _ HΔ).
+    all: pose proof (boundary_ctx_conv_l _ _ HΔ).
     all: eapply conv_well_subst in HΔ.
     all: pose proof (subst_refl _ _ _ HΔ).
     all: eapply typing_subst in Hty ; tea.
@@ -257,7 +332,7 @@ Section Stability.
     eapply stability in HB.
     eapply HB.
     econstructor.
-    - eapply ctx_conv_refl. eapply validity in HA. gen_typing.
+    - eapply ctx_refl ; boundary.
     - now symmetry.
   Qed.
 
@@ -295,7 +370,7 @@ Section Stability.
   Proof.
     intros H.
     symmetry in H.
-    now eapply ctx_conv_refl, wf_conv_ctx.
+    now eapply ctx_refl ; boundary.
   Qed.
 
   #[global] Instance ConvCtxTrans : Transitive ConvCtx.
@@ -309,7 +384,7 @@ Section Stability.
     now eapply stability.
   Qed.
 
-End Stability. 
+End Stability.
 
 Lemma termGen' Γ t A :
 [Γ |- t : A] ->
@@ -319,31 +394,31 @@ intros * H.
 destruct (termGen _ _ _ H) as [? [? [->|]]].
 2: now eexists.
 eexists ; split ; tea.
-econstructor.
-now eapply validity in H.
+econstructor ; refold.
+boundary.
 Qed.
 
 Theorem subject_reduction_one Γ t t' A :
     [Γ |- t : A] ->
     [t ⇒ t'] ->
     [Γ |- t ⇒ t' : A].
-  Proof.
-    intros Hty Hred.
-    induction Hred in Hty, A |- *.
-    - apply termGen' in Hty as (?&((?&?&?&[-> Hty])&Heq)).
-      apply termGen' in Hty as (?&((?&[->])&Heq')).
-      eapply prod_ty_inj in Heq' as [? HeqB].
-      econstructor ; refold.
-      1: econstructor ; refold ; gen_typing.
-      etransitivity ; tea.
-      eapply typing_subst1 ; tea.
-      now econstructor.
-    - apply termGen' in Hty as (?&((?&?&?&[->])&Heq)).
-      econstructor ; tea.
-      econstructor.
-      1: easy.
-      refold ; gen_typing.
-    Qed.
+Proof.
+  intros Hty Hred.
+  induction Hred in Hty, A |- *.
+  - apply termGen' in Hty as (?&((?&?&?&[-> Hty])&Heq)).
+    apply termGen' in Hty as (?&((?&[->])&Heq')).
+    eapply prod_ty_inj in Heq' as [? HeqB].
+    econstructor ; refold.
+    1: econstructor ; refold ; gen_typing.
+    etransitivity ; tea.
+    eapply typing_subst1 ; tea.
+    now econstructor.
+  - apply termGen' in Hty as (?&((?&?&?&[->])&Heq)).
+    econstructor ; tea.
+    econstructor.
+    1: easy.
+    refold ; gen_typing.
+  Qed.
 
   Theorem subject_reduction Γ t t' A :
     [Γ |- t : A] ->
@@ -357,7 +432,7 @@ Theorem subject_reduction_one Γ t t' A :
     etransitivity.
     2: eapply IHred.
     1: now constructor.
-    now eapply RedConvTe, validity in o as [].
+    boundary.
   Qed.
 
   Lemma subject_reduction_one_type Γ A A' :
@@ -384,7 +459,7 @@ Theorem subject_reduction_one Γ t t' A :
     etransitivity.
     2: eapply IHred.
     1: now constructor.
-    now eapply RedConvTy, validity in o as [].
+    boundary.
   Qed.
 
   Lemma typing_eta' (Γ : context) na A B f :
@@ -394,12 +469,8 @@ Theorem subject_reduction_one Γ t t' A :
     intros Hf.
     eapply typing_eta ; tea.
     - gen_typing.
-    - eapply validity in Hf.
-      inversion Hf ; subst ; tea.
-      eapply termGen' in H as [? [[-> ] ?]].
-      now econstructor.
-    - eapply validity in Hf.
-      inversion Hf ; subst ; tea.
-      eapply termGen' in H as [? [[-> ] ?]].
-      now econstructor.
+    - eapply prod_ty_inv.
+      boundary.
+    - eapply prod_ty_inv.
+      boundary.
   Qed.

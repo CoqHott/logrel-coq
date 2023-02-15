@@ -63,12 +63,11 @@ Proof.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor ; refold.
-    1,3: now eapply typing_wk.
-    + unshelve eapply typing_wk in Ht.
-      3: now eapply wk_up.
-      1: shelve.
-      2: now econstructor ; [eassumption | eapply typing_wk].
-      now apply Ht.
+    + now eapply typing_wk.
+    + eapply typing_wk with (ρ := wk_up _ _ ρ) ; tea.
+      econstructor ; tea.
+      now eapply typing_wk.
+    + now eapply typing_wk.
     + now asimpl.
     + now asimpl. 
   - cbn in *.
@@ -210,14 +209,7 @@ Module DeclarativeTypingProperties.
   #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
     1-2: now constructor.
-    all: intros.
-    - now eapply WFtype.
-    - now eapply WFterm.
-    - now eapply WFterm. 
-    - now eapply WFEqType.
-    - now eapply WFEqTerm.
-    - now eapply WFEqType, RedConvTyC.
-    - now eapply WFEqTerm, RedConvTeC. 
+    all: boundary. 
   Qed.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.

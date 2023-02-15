@@ -113,7 +113,7 @@ Proof.
   now eapply whred_red_det.
 Qed.
 
-Lemma oredalg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
+Lemma oredalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
 [t ⇒ u] ->
 [t⟨ρ⟩ ⇒ u⟨ρ⟩].
 Proof.
@@ -129,7 +129,7 @@ Proof.
     now econstructor.
 Qed.
 
-Lemma credalg_wk (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
+Lemma credalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
 [t ⇒* u] ->
 [t⟨ρ⟩ ⇒* u⟨ρ⟩].
 Proof.

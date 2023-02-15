@@ -108,6 +108,16 @@ Smpl Create refold [progress].
 
 Ltac refold := repeat (smpl refold).
 
+(* A tactic for presuppositions, ie deriving the well-formation of parts of a typing
+judgment from said typing judgement. For instance, [Γ |- A] from [Γ |- t : A].
+Made stronger over time, as we prove more of these properties. *)
+
+Create HintDb boundary.
+#[global] Hint Constants Opaque : boundary.
+#[global] Hint Variables Transparent : boundary.
+
+Ltac boundary := solve[eauto 3 with boundary].
+
 #[universes(polymorphic)]
 Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P x -> P y :=
     match e in _ = z return P x -> P z with

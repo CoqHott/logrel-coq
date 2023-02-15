@@ -310,11 +310,12 @@ Section BundledConv.
       pose proof (HA' := HA).
       pose proof (HB' := HB).
       eapply subject_reduction_type, RedConvTyC in HA', HB' ; tea.
-      pose proof (HA'' := HA').
+      (* pose proof (HA'' := HA').
       pose proof (HB'' := HB').
       eapply validity in HA'' as [].
-      eapply validity in HB'' as [].
-      destruct IHA' ; tea.
+      eapply validity in HB'' as []. *)
+      destruct IHA'.
+      1-3: boundary.
       split ; [now eauto|..].
       symmetry in HB'.
       do 2 etransitivity ; tea.
@@ -324,7 +325,7 @@ Section BundledConv.
       assert [Γ,, vass na A |-[de] B'].
       { eapply stability ; tea.
         econstructor.
-        1: now eapply ctx_conv_refl.
+        1: now eapply ctx_refl.
         now eapply IHA.
       }
       split ; [gen_typing|..].
@@ -403,7 +404,7 @@ Section BundledConv.
       1-2: now eexists.
       pose proof (HA' := HA).
       eapply subject_reduction_type, RedConvTyC in HA'.
-      2: now eapply validity in IHmc as [].
+      2: boundary.
       split ; [now eauto|..].
       split.
       + gen_typing.
@@ -418,12 +419,12 @@ Section BundledConv.
       pose proof (Ht' := Ht).
       pose proof (Hu' := Hu).
       eapply subject_reduction_type, RedConvTyC in HA'.
-      2: now eapply validity in Htyt.
+      2: boundary.
       eapply subject_reduction, RedConvTeC in Ht' ; tea.
       eapply subject_reduction, RedConvTeC in Hu' ; tea.
       pose proof (Ht'' := Ht').
       pose proof (Hu'' := Hu').
-      eapply validity in Ht'' as [], Hu'' as [].
+      eapply boundary in Ht'' as [], Hu'' as [].
       split ; [now gen_typing|..].
       etransitivity ; [..|etransitivity].
       1: eassumption.
@@ -440,7 +441,7 @@ Section BundledConv.
       assert [Γ,, vass na A |-[de] B' : U].
       { eapply stability ; tea.
         econstructor.
-        1: now eapply ctx_conv_refl.
+        1: now eapply ctx_refl.
         now econstructor.
       }
       split ; [now gen_typing|..].
@@ -449,8 +450,8 @@ Section BundledConv.
       + now eapply IHA.
       + now eapply IHB ; gen_typing.
     - intros * ? ? ? IH ? Hf Hg.
-      assert [Γ |-[de] A]
-        by (now eapply validity, prod_ty_inv in Hf).
+      assert [Γ |-[de] A] by
+        (now eapply boundary, prod_ty_inv in Hf).
       pose proof (Hf' := Hf).
       pose proof (Hg' := Hg).
       eapply typing_eta' in Hf'.
@@ -623,7 +624,7 @@ Section BundledTyping.
       destruct IHI as [? IHt].
       1: gen_typing.
       destruct IHC ; tea.
-      1: now eapply validity, prod_ty_inv in IHt as [].
+      1: now eapply boundary, prod_ty_inv in IHt as [].
       split ; [|econstructor] ; eauto.
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
@@ -631,13 +632,13 @@ Section BundledTyping.
       econstructor ; tea.
       eapply subject_reduction_type, RedConvTyC in HA.
       1: eassumption.
-      now eapply validity in IH.
+      now boundary.
     - intros * ? IHt HA ?.
       destruct IHt as [? IHt] ; eauto.
       split ; [eauto|].
       econstructor ; tea.
       eapply conv_sound in HA ; tea.
-      now eapply validity in IHt.
+      now boundary.
   Qed.
 
   Definition BundledTypingInductionConcl : Type :=

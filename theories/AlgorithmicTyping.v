@@ -250,7 +250,7 @@ Section TypingWk.
       cbn.
       econstructor ; refold.
       1: now eauto.
-      now eapply (IHB _ (wk_up _ _ ρ)).
+      now eapply IHB with(ρ := wk_up _ _ ρ).
     - econstructor.
     - intros.
       now econstructor ; refold.
@@ -278,12 +278,12 @@ Section TypingWk.
       cbn.
       econstructor ; refold.
       1: now eauto.
-      now eapply (IHB _ (wk_up _ _ ρ)).
+      now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros * ? ? ? IH ? ?.
       cbn.
       econstructor.
       1-2: now eauto using isFun_ren.
-      specialize (IH _ (wk_up _ _ ρ)).
+      specialize IH with(ρ := wk_up _ _ ρ).
       cbn in *.
       asimpl.
       repeat (rewrite renRen_term in IH).
@@ -314,7 +314,7 @@ Section TypingWk.
       cbn.
       econstructor ; refold.
       + now eauto.
-      + now eapply (IHB _ (wk_up _ _ ρ)).
+      + now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros.
       now econstructor ; refold.
     - intros.
@@ -325,12 +325,12 @@ Section TypingWk.
       cbn.
       econstructor ; refold.
       + eauto.
-      + now eapply (IHB _ (wk_up _ _ ρ)).
+      + now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros * ? ? ? IHt ? ?.
       cbn.
       econstructor ; refold.
       + now eauto.
-      + now eapply (IHt _ (wk_up _ _ ρ)).
+      + now eapply IHt with(ρ := wk_up _ _ ρ).
     - intros.
       cbn in *.
       eapply typing_meta_conv.

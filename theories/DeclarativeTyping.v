@@ -247,16 +247,16 @@ Section TypingWk.
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
     destruct (WfDeclInduction PCon PTy PTm PTyEq PTmEq) as [?[?[?[?]]]].
-    24:{ repeat (split; [assumption|]); assumption.  }
-    - red.
-      trivial.
-    - red. trivial.
+    24:{ repeat (split; [assumption|]); assumption. }
+    all: subst PCon PTy PTm PTyEq PTmEq ; cbn in *.
+    - trivial.
+    - trivial.
     - intros ? ? IH.
       now econstructor.
     - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
+      eapply IHB with (ρ := wk_up _ _ ρ).
       now constructor ; refold.
     - intros * _ IHA ? * ?.
       econstructor.
@@ -270,16 +270,14 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      eapply (IHB _ (wk_up _ _ ρ)).
+      eapply IHB with (ρ := wk_up _ _ ρ).
       econstructor ; tea.
       econstructor.
       now eapply IHA.
     - intros * _ IHA _ IHt ? ρ ?.
-      cbn.
       econstructor.
       1: now eapply IHA.
-      red in IHt.
-      eapply (IHt _ (wk_up _ _ ρ)).
+      eapply IHt with (ρ := wk_up _ _ ρ).
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHf _ IHu ? ρ ?.
@@ -300,7 +298,7 @@ Section TypingWk.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply (IHBB' _ (wk_up _ _ ρ)).
+      + eapply IHBB' with (ρ := wk_up _ _ ρ).
         econstructor ; tea.
         now eapply IHA.
     - intros * _ IHA ? ρ ?.
@@ -320,7 +318,7 @@ Section TypingWk.
       eapply convtm_meta_conv.
       1: econstructor.
       + now eapply IHA.
-      + eapply (IHt _ (wk_up _ _ ρ)).
+      + eapply IHt with (ρ := wk_up _ _ ρ).
         econstructor ; tea.
         now eapply IHA.
       + now eapply IHu.
@@ -331,7 +329,7 @@ Section TypingWk.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply (IHBB' _ (wk_up _ _ ρ)).
+      + eapply IHBB' with (ρ := wk_up _ _ ρ).
         all: now econstructor ; refold.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
@@ -348,10 +346,9 @@ Section TypingWk.
       econstructor ; refold.
       1-3: easy.
       specialize (IHe _ (wk_up _ _ ρ)).
-      cbn in *.
-      (*asimpl in IHe fails to do the job, because of universe issues… *)
-      unfold ren1, Ren_term in IHe ; repeat rewrite renRen_term in IHe |- *.
-      asimpl.
+      bsimpl.
+      repeat rewrite renRen_term in IHe |- *.
+      cbn in * ; refold.
       eapply IHe.
       econstructor ; tea.
       now eapply IHA.
@@ -377,11 +374,8 @@ Section TypingWk.
     1: now constructor.
     all: intros * Hty nt T HΓ HA.
     all: eapply typing_wk in Hty.
-    all: set (ρ := wk_step nt T (wk_id (Γ := Γ))).
-    all: specialize (Hty _ ρ).
-    all: assert (↑ =1 ρ) as Hshift by
-      (rewrite /ρ /shift /wk_step /= wk_to_ren_id //).
-    all: repeat rewrite -> (extRen_term _ _ Hshift).
+    all: specialize (Hty _ (@wk1 Γ nt T)).
+    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
     all: eapply Hty.
     all: now econstructor.
   Qed.
@@ -412,51 +406,45 @@ End TypingWk.
 Section WfContext.
   Import DeclarativeTypingData.
 
-  Definition concons_inv {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
+  Definition boundary_ctx_ctx {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
   Proof.
     now inversion 1.
   Qed.
 
-  Definition concons_inv' {Γ na A} : [|- Γ,, vass na A] -> [Γ |- A].
+  Definition boundary_ctx_tip {Γ na A} : [|- Γ,, vass na A] -> [Γ |- A].
   Proof.
     now inversion 1.
   Qed.
 
-  Definition WFterm {Γ} {t A} :
+  Definition boundary_tm_ctx {Γ} {t A} :
       [ Γ |- t : A ] -> 
       [ |- Γ ].
   Proof.
-    induction 1 ; tea.
-    now eapply concons_inv.
+    induction 1 ; now eauto using boundary_ctx_ctx.
   Qed.
 
-  Definition WFtype {Γ} {A} :
+  Definition boundary_ty_ctx {Γ} {A} :
       [ Γ |- A ] -> 
       [ |- Γ ].
   Proof.
-      induction 1; tea.
-      now eapply WFterm.
+    induction 1; now eauto using boundary_tm_ctx.
   Qed.
 
-
-  Definition WFEqTerm {Γ} {t u A} :
+  Definition boundary_tm_conv_ctx {Γ} {t u A} :
       [ Γ |- t ≅ u : A ] -> 
       [ |- Γ ].
   Proof.
-      induction 1 ; eauto.
-      all: eapply WFterm ; eassumption.
+      induction 1 ; now eauto using boundary_tm_ctx.
   Qed.
 
-  Definition WFEqType {Γ} {A B} :
+  Definition boundary_ty_conv_ctx {Γ} {A B} :
       [ Γ |- A ≅ B ] -> 
       [ |- Γ ].
   Proof.
-    induction 1 ; eauto.
-    1: now eapply WFtype.
-    now eapply WFEqTerm.
+    induction 1 ; now eauto using boundary_ty_ctx, boundary_tm_conv_ctx.
   Qed.
 
-  Definition redFirstTerm {Γ t u A} : 
+  Definition boundary_ored_tm_l {Γ t u A} : 
     [ Γ |- t ⇒ u : A] ->
     [ Γ |- t : A ].
   Proof.
@@ -465,27 +453,33 @@ Section WfContext.
     now econstructor.
   Qed.
 
-  Definition redFirst {Γ A B} : 
+  Definition boundary_ored_ty_l {Γ A B} : 
     [ Γ |- A ⇒ B ] ->
     [ Γ |- A ].
   Proof.
     destruct 1.
     econstructor.
-    now eapply redFirstTerm.
+    now eapply boundary_ored_tm_l.
   Qed.
 
-  Definition redFirstCTerm {Γ t u A} : 
+  Definition boundary_red_tm_l {Γ t u A} : 
     [ Γ |- t ⇒* u : A] ->
     [ Γ |- t : A ].
   Proof.
-    induction 1 ; eauto using redFirstTerm.
+    induction 1 ; eauto using boundary_ored_tm_l.
   Qed.
 
-  Definition redFirstC {Γ A B} : 
+  Definition boundary_red_ty_l {Γ A B} : 
     [ Γ |- A ⇒* B ] ->
     [ Γ |- A ].
   Proof.
-    induction 1 ; eauto using redFirst.
+    induction 1 ; eauto using boundary_ored_ty_l.
   Qed.
 
 End WfContext.
+
+#[export] Hint Resolve
+  boundary_ctx_ctx boundary_ctx_tip boundary_tm_ctx
+  boundary_ty_ctx boundary_tm_conv_ctx boundary_ty_conv_ctx
+  boundary_ored_tm_l boundary_ored_ty_l boundary_red_tm_l
+  boundary_red_ty_l : boundary.
