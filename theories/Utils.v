@@ -60,8 +60,6 @@ Variant and8 (P1 P2 P3 P4 P5 P6 P7 P8 : Type) : Type := Times8 of P1 & P2 & P3 &
 Variant and9 (P1 P2 P3 P4 P5 P6 P7 P8 P9 : Type) : Type := Times9 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9.
 Variant and10 (P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 : Type) : Type := Times10 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10.
 
-#[global] Hint Constructors prod and3 and3 and5 and6 and7 and8 and9 : core.
-
 Notation "[ × P1 & P2 ]" := (pair P1 P2) (only parsing) : type_scope.
 Notation "[ × P1 , P2 & P3 ]" := (and3 P1 P2 P3) : type_scope.
 Notation "[ × P1 , P2 , P3 & P4 ]" := (and4 P1 P2 P3 P4) : type_scope.
@@ -71,6 +69,20 @@ Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 & P7 ]" := (and7 P1 P2 P3 P4 P5 P6 P7
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 & P8 ]" := (and8 P1 P2 P3 P4 P5 P6 P7 P8) : type_scope.
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 & P9 ]" := (and9 P1 P2 P3 P4 P5 P6 P7 P8 P9) : type_scope.
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 , P9 & P10 ]" := (and10 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10) : type_scope.
+
+#[global] Hint Constructors prod and3 and3 and5 and6 and7 and8 and9 : core.
+(* #[global] Hint Extern 0 =>
+  repeat match goal with
+    | H : [× _ & _] |- _ => destruct H 
+    | H : [× _, _ & _] |- _ => destruct H 
+    | H : [× _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _, _, _ & _] |- _ => destruct H
+  end
+  : core. *)
 
 (* Redefine for universe poly + cumulativity *)
 Inductive sigT {A : Type} (P : A -> Type) : Type := 
@@ -84,11 +96,7 @@ Notation "'∑' x .. y , p" := (sigT (fun x => .. (sigT (fun y => p%type)) ..))
    format "'[' '∑'  '/  ' x  ..  y ,  '/  ' p ']'")
   : type_scope.
 
-Notation "( x ; y )" := (@existT _ _ x y).
-Notation "( x ; y ; z )" := (x ; ( y ; z)).
-Notation "( x ; y ; z ; t )" := (x ; ( y ; (z ; t))).
-Notation "( x ; y ; z ; t ; u )" := (x ; ( y ; (z ; (t ; u)))).
-Notation "( x ; y ; z ; t ; u ; v )" := (x ; ( y ; (z ; (t ; (u ; v))))).
+Notation "( x ; .. ; y ; z )" := (existT _ x .. (existT _ y z) ..) : core_scope.
 Notation "x .π1" := (@projT1 _ _ x) (at level 3, format "x '.π1'").
 Notation "x .π2" := (@projT2 _ _ x) (at level 3, format "x '.π2'").
 

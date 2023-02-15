@@ -310,10 +310,6 @@ Section BundledConv.
       pose proof (HA' := HA).
       pose proof (HB' := HB).
       eapply subject_reduction_type, RedConvTyC in HA', HB' ; tea.
-      (* pose proof (HA'' := HA').
-      pose proof (HB'' := HB').
-      eapply validity in HA'' as [].
-      eapply validity in HB'' as []. *)
       destruct IHA'.
       1-3: boundary.
       split ; [now eauto|..].
