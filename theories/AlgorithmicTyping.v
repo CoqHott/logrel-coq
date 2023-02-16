@@ -244,16 +244,16 @@ Section TypingWk.
     destruct H as [?[?[?[?[?]]]]].
     12:{ repeat (split;[assumption|]); assumption. }
     - intros.
-      econstructor ; refold.
+      econstructor.
       all: eauto using credalg_wk.
     - intros * ? ? ? IHB ? *.
       cbn.
-      econstructor ; refold.
+      econstructor.
       1: now eauto.
       now eapply IHB with(ρ := wk_up _ _ ρ).
     - econstructor.
     - intros.
-      now econstructor ; refold.
+      now econstructor.
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
@@ -266,17 +266,17 @@ Section TypingWk.
       + now asimpl.
       + reflexivity.
     - intros.
-      econstructor ; refold.
+      econstructor.
       + eauto.
       + eauto using credalg_wk.
       + now eapply isType_ren. 
     - intros.
-      econstructor ; refold.
+      econstructor.
       1-3: eauto using credalg_wk.
       now eauto.
     - intros * ? ? ? IHB ? ?.
       cbn.
-      econstructor ; refold.
+      econstructor.
       1: now eauto.
       now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros * ? ? ? IH ? ?.
@@ -289,7 +289,7 @@ Section TypingWk.
       repeat (rewrite renRen_term in IH).
       apply IH.
     - intros.
-      econstructor ; refold.
+      econstructor.
       + eauto.
       + now eauto using whne_ren.
   Qed.
@@ -312,36 +312,36 @@ Section TypingWk.
     - constructor.
     - intros * ? ? ? IHB **.
       cbn.
-      econstructor ; refold.
+      econstructor.
       + now eauto.
       + now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros.
-      now econstructor ; refold.
+      now econstructor.
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.
       + reflexivity.
     - intros * ? ? ? IHB.
       cbn.
-      econstructor ; refold.
+      econstructor.
       + eauto.
       + now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros * ? ? ? IHt ? ?.
       cbn.
-      econstructor ; refold.
+      econstructor.
       + now eauto.
       + now eapply IHt with(ρ := wk_up _ _ ρ).
     - intros.
       cbn in *.
       eapply typing_meta_conv.
-      + now econstructor ; refold.
+      + now econstructor.
       + now asimpl.
     - intros.
-      econstructor ; refold.
+      econstructor.
       + eauto.
       + eauto using credalg_wk.
     - intros.
-      econstructor ; refold.
+      econstructor.
       + eauto.
       + now eapply algo_conv_wk.
   Qed.

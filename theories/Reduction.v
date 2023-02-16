@@ -62,7 +62,7 @@ Proof.
   induction red as [? ? ? ? ? ? Ht Ha | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
-    1: econstructor ; refold.
+    1: econstructor.
     + now eapply typing_wk.
     + eapply typing_wk with (ρ := wk_up _ _ ρ) ; tea.
       econstructor ; tea.
@@ -72,7 +72,7 @@ Proof.
     + now asimpl. 
   - cbn in *.
     eapply oredtm_meta_conv.
-    1: econstructor ; refold.
+    1: econstructor.
     + now eauto.
     + now eapply typing_wk.
     + now asimpl.
@@ -98,7 +98,6 @@ Proof.
   intros ? red.
   destruct red.
   constructor.
-  refold.
   change U with (U⟨ρ⟩).
   now apply oredtmdecl_wk.
 Qed.

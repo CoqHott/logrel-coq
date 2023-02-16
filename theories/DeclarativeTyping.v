@@ -257,7 +257,7 @@ Section TypingWk.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply IHB with (ρ := wk_up _ _ ρ).
-      now constructor ; refold.
+      now constructor.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -330,7 +330,7 @@ Section TypingWk.
       + now eapply IHA.
       + now eapply IHAA'.
       + eapply IHBB' with (ρ := wk_up _ _ ρ).
-        all: now econstructor ; refold.
+        all: now econstructor.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -343,7 +343,7 @@ Section TypingWk.
       + now asimpl.
     - intros Γ ? ? f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
       cbn.
-      econstructor ; refold.
+      econstructor.
       1-3: easy.
       specialize (IHe _ (wk_up _ _ ρ)).
       bsimpl.
@@ -353,13 +353,13 @@ Section TypingWk.
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHt ? ρ ?.
-      now econstructor ; refold.
+      now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
-      now econstructor ; refold.
+      now econstructor.
     - intros * _ IHt ? ρ ?.
-      now econstructor ; refold.
+      now econstructor.
     - intros * _ IHt _ IHt' ? ρ ?.
-      now econstructor ; refold.
+      now econstructor.
   Qed.
 
   Corollary typing_shift : WfDeclInductionConcl
@@ -390,7 +390,7 @@ Section TypingWk.
     intros ? ? ? Hf.
     eapply typing_shift in Hf ; tea.
     eapply typing_meta_conv.
-    1: econstructor ; refold.
+    1: econstructor.
     - cbn in Hf.
       now eassumption.
     - eapply typing_meta_conv.

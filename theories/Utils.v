@@ -116,6 +116,12 @@ Smpl Create refold [progress].
 
 Ltac refold := repeat (smpl refold).
 
+Ltac core_constructor := constructor.
+Tactic Notation "constructor" := core_constructor ; refold.
+
+Ltac core_econstructor := econstructor.
+Tactic Notation "econstructor" := core_econstructor ; refold.
+
 (* A tactic for presuppositions, ie deriving the well-formation of parts of a typing
 judgment from said typing judgement. For instance, [Γ |- A] from [Γ |- t : A].
 Made stronger over time, as we prove more of these properties. *)

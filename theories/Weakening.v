@@ -302,5 +302,5 @@ Ltac bsimpl := check_no_evars;
                 repeat
                  unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
                   Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
-                  Ren1_subst, Ren1_wk, Ren1_well_wk
+                  Ren1_subst, Ren1_wk, Ren1_well_wk, Ren_decl
                   in *; bsimpl'; minimize.

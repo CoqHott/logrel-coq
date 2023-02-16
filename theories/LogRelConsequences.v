@@ -102,7 +102,7 @@ Lemma boundary_ctx_conv_l (Γ Δ : context) :
   [|- Γ].
 Proof.
   destruct 1 as [| ? ? ? ? ? ? ? HA].
-  all: econstructor ; refold ; boundary.
+  all: econstructor ; boundary.
 Qed.
 
 #[export] Hint Resolve boundary_ctx_conv_l : boundary.
@@ -237,7 +237,7 @@ Section Stability.
     - eapply well_subst_ext ; [|eassumption].
       bsimpl.
       now reflexivity.
-    - econstructor ; refold.
+    - econstructor.
       all: gen_typing.
   Qed.
 
@@ -280,11 +280,11 @@ Section Stability.
     - now econstructor.
     - assert [Γ |- A] by boundary.
       assert [|- Γ,, vass na A] by
-        (econstructor ; refold ; boundary).
-      econstructor ; refold ; tea.
+        (econstructor ; boundary).
+      econstructor ; tea.
       + eapply well_subst_ext, well_subst_up ; tea.
         reflexivity.
-      + econstructor ; refold.
+      + econstructor.
         1: now econstructor ; [..|econstructor].
         cbn ; renamify ; refold.
         (* TODO: the following should work!
@@ -394,7 +394,7 @@ intros * H.
 destruct (termGen _ _ _ H) as [? [? [->|]]].
 2: now eexists.
 eexists ; split ; tea.
-econstructor ; refold.
+econstructor.
 boundary.
 Qed.
 
@@ -408,8 +408,8 @@ Proof.
   - apply termGen' in Hty as (?&((?&?&?&[-> Hty])&Heq)).
     apply termGen' in Hty as (?&((?&[->])&Heq')).
     eapply prod_ty_inj in Heq' as [? HeqB].
-    econstructor ; refold.
-    1: econstructor ; refold ; gen_typing.
+    econstructor.
+    1: econstructor ; gen_typing.
     etransitivity ; tea.
     eapply typing_subst1 ; tea.
     now econstructor.

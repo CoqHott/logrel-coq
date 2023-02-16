@@ -347,13 +347,12 @@ Section BundledConv.
         assumption.
       }
       split ; [now eauto|..].
-      eapply convUniv ; refold.
-      econstructor ; refold.
+      do 2 econstructor.
       all: now apply IH.
     - intros * Hin ? [] _.
       split ; [now eauto|..].
       split.
-      + do 2 constructor ; refold ; gen_typing.
+      + do 2 constructor ; gen_typing.
       + intros T Hty.
         eapply termGen' in Hty as [? [[? [->]] ?]].
         eapply in_ctx_inj in Hin ; tea ; subst.
@@ -377,7 +376,7 @@ Section BundledConv.
       1-2: now gen_typing.
       split ; [now eauto|..].
       split.
-      + econstructor ; refold ; gen_typing.
+      + econstructor ; gen_typing.
       + intros ? Happ.
         eapply termGen' in Happ as [? [(?&?&?&[-> Htym']) ?]].
         eapply IHm', prod_ty_inj in Htym' as [].
@@ -425,7 +424,7 @@ Section BundledConv.
       etransitivity ; [..|etransitivity].
       1: eassumption.
       2: now symmetry.
-      econstructor ; refold.
+      econstructor.
       2: now symmetry.
       eapply IH.
       all: gen_typing.
@@ -441,7 +440,7 @@ Section BundledConv.
         now econstructor.
       }
       split ; [now gen_typing|..].
-      econstructor ; refold.
+      econstructor.
       + now econstructor.
       + now eapply IHA.
       + now eapply IHB ; gen_typing.
@@ -453,14 +452,14 @@ Section BundledConv.
       eapply typing_eta' in Hf'.
       eapply typing_eta' in Hg'.
       split ; [now gen_typing|..].
-      econstructor ; refold ; tea.
+      econstructor ; tea.
       now eapply IH ; gen_typing.
     - intros * ? IHm ? ? Htym Htyn.
       edestruct IHm as [? [? Hm']].
       1: easy.
       1-2: now eexists.
       split ; [now eauto|..].
-      econstructor ; tea ; refold.
+      econstructor ; tea.
       now eapply Hm'.
   Qed.
 
