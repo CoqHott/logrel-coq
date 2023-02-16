@@ -94,19 +94,6 @@ Section Weakenings.
         subst X; bsimpl; try rewrite scons_comp'; reflexivity.
   Qed.
     
-  Lemma RedTyRecFwd {l Γ t} (h : [Γ ||-U l]) : 
-    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t] ->
-    [LogRel (URedTy.level h) | Γ ||- t ].
-  Proof.
-    destruct h as [? lt]; inversion lt; now subst.
-  Qed.
-
-  Lemma RedTyRecBwd {l Γ t} (h : [Γ ||-U l]) : 
-    [LogRel (URedTy.level h) | Γ ||- t ] ->
-    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t].
-  Proof.
-    destruct h as [? lt]; inversion lt; now subst.
-  Qed.
 
   (* TODO: use program or equivalent to have only the first field non-opaque *)
   Lemma wkΠTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) 
@@ -160,28 +147,6 @@ Section Weakenings.
     destruct l; [destruct (elim (URedTy.lt h))|cbn].
     eapply (wk (l:=zero)); eassumption.
   Defined.
-
-  Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
-
-  Lemma TyEqRecFwd {l Γ t u} (h : [Γ ||-U l]) 
-    (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
-  Proof.
-    destruct (RedTyRecFwd h lr) as [? ad];  destruct lr as [? ad'].  
-    destruct h as [? lt]; inversion lt; subst; cbn in *.
-    split ; intros X ; eapply TyEqIrrelevant.
-    3,6: exact X. all: exact ad + exact ad'.
-  Qed.
-
-  Lemma TyEqRecBwd {l Γ t u} (h : [Γ ||-U l]) 
-    (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
-  Proof.
-    destruct (RedTyRecBwd h lr) as [? ad];  destruct lr as [? ad'].  
-    destruct h as [? lt]; inversion lt; subst; cbn in *.
-    split ; intros X ; eapply TyEqIrrelevant.
-    3,6: exact X. all: exact ad + exact ad'.
-  Qed.
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t ≅ u : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ ≅ u⟨ρ⟩: A⟨ρ⟩ | wk ρ wfΔ lrA].

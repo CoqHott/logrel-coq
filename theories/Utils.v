@@ -138,6 +138,18 @@ Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P 
     | eq_refl => fun w => w
     end.
 
+#[universes(polymorphic)]
+Lemma lrefl {A R} `{!PER R} {a b : A} : R a b -> R a a.
+Proof.
+  intros; etransitivity;[|symmetry]; eassumption.
+Qed.  
+
+#[universes(polymorphic)]
+Lemma urefl {A R} `{!PER R} {a b : A} : R a b -> R b b.
+Proof.
+  intros; etransitivity;[symmetry|]; eassumption.
+Qed.  
+
 (* Tactics used to create good induction principles using Scheme *)
 
 Ltac polymorphise t :=

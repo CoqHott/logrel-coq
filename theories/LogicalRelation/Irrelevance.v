@@ -413,6 +413,28 @@ Proof.
 Qed.
 
 
+  Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
+
+  Lemma TyEqRecFwd {l Γ t u} (h : [Γ ||-U l]) 
+    (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
+  Proof.
+    destruct (RedTyRecFwd h lr) as [? ad];  destruct lr as [? ad'].  
+    destruct h as [? lt]; inversion lt; subst; cbn in *.
+    split ; intros X ; eapply TyEqIrrelevant.
+    3,6: exact X. all: exact ad + exact ad'.
+  Qed.
+
+  Lemma TyEqRecBwd {l Γ t u} (h : [Γ ||-U l]) 
+    (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
+  Proof.
+    destruct (RedTyRecBwd h lr) as [? ad];  destruct lr as [? ad'].  
+    destruct h as [? lt]; inversion lt; subst; cbn in *.
+    split ; intros X ; eapply TyEqIrrelevant.
+    3,6: exact X. all: exact ad + exact ad'.
+  Qed.
+
 End Irrelevances.
 
 Ltac irrelevance0 :=

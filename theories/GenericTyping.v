@@ -317,6 +317,30 @@ Section GenericConsequences.
     all: gen_typing.
   Qed.
 
+  Lemma redtmwf_whne {Γ t u A} : [Γ |- t :⇒*: u : A] -> whne t -> t = u.
+  Proof.
+    intros [???] ?%whnf_whne; now eapply redtm_whnf.
+  Qed.
+
+  Lemma redtywf_whne {Γ A B} : [Γ |- A :⇒*: B] -> whne A -> A = B.
+  Proof.
+    intros [???] ?%whnf_whne; now eapply redty_whnf.
+  Qed.
+
+  Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
+  Proof.
+    constructor.
+    3: now apply redty_refl.
+    1,2: assumption.
+  Qed.
+
+  Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
+  Proof.
+    constructor.
+    3: now apply redtm_refl.
+    1,2: assumption.
+  Qed.
+
   Lemma whredtm_det Γ t u u' A A' :
     [Γ |- t ↘ u : A] -> [Γ |- t ↘ u' : A'] ->
     u = u'.

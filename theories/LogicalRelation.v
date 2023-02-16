@@ -579,6 +579,14 @@ Section PiRedTyPack.
 
   Definition prod@{i j k l} l {Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
     tProd (na ΠA) (dom ΠA) (cod ΠA).
+
+  Lemma whne_noΠ `{!RedTypeProperties} {Γ A} : [Γ ||-Πd A] -> whne A -> False.
+  Proof.
+    intros [??? [?? r]] h.
+    pose proof (UntypedReduction.red_whne _ _ (redty_red r) h).
+    subst; inversion h.
+  Qed.
+
 End PiRedTyPack.
 
 Arguments PiRedTyPack : clear implicits.
@@ -589,4 +597,26 @@ End PiRedTyPack.
 
 Export PiRedTyPack(PiRedTyPack,Build_PiRedTyPack, LRPi').
 Notation "[ Γ ||-Π< l > A ]" := (PiRedTyPack Γ A l) (at level 0, Γ, l, A at level 50).
+
+Section LogRelRecFoldLemmas.
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta}.
+  
+  Lemma RedTyRecFwd {l Γ t} (h : [Γ ||-U l]) : 
+    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t] ->
+    [LogRel (URedTy.level h) | Γ ||- t ].
+  Proof.
+    destruct h as [? lt]; inversion lt; now subst.
+  Qed.
+
+  Lemma RedTyRecBwd {l Γ t} (h : [Γ ||-U l]) : 
+    [LogRel (URedTy.level h) | Γ ||- t ] ->
+    [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t].
+  Proof.
+    destruct h as [? lt]; inversion lt; now subst.
+  Qed.
+
+End LogRelRecFoldLemmas.
 

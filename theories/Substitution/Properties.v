@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Notations Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
-From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
+From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening.
 From LogRel.Substitution Require Import Irrelevance.
 
 Section Properties.
@@ -46,21 +46,24 @@ Proof.
   eapply LRTmEqRefl; [apply (validTy VA wfΔ)| exact Vt].
 Qed.
 
+Set Printing Primitive Projection Parameters.
 
 Lemma wkSubstS {Γ} (VΓ : [||-v Γ]) : 
-  forall {σ  Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ ≤ Δ'),
+  forall {σ  Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ' ≤ Δ),
   [Δ ||-v σ : Γ | VΓ | wfΔ] -> [Δ' ||-v σ ⟨ ρ ⟩ : Γ | VΓ | wfΔ'].
 Proof.
   pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - constructor.
   - intros * ih * [tl hd]; unshelve econstructor.
     + eapply ih; eassumption.
-    + admit.
-Admitted.
+    + irrelevance0.
+      2: unshelve eapply wkTerm; [|assumption| |eassumption].
+      now asimpl.
+Qed.
 
 
 Lemma wkSubstSEq {Γ} (VΓ : [||-v Γ]) : 
-  forall {σ σ' Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ ≤ Δ')
+  forall {σ σ' Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ' ≤ Δ)
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
   [Δ  ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] -> 
   [Δ' ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ | VΓ | wfΔ' | wkSubstS VΓ wfΔ wfΔ' ρ Vσ].
@@ -68,48 +71,60 @@ Proof.
   pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - constructor.
   - intros * ih * [tl hd]; unshelve econstructor.
-    + admit. (* eapply ih; eassumption. *)
-    + admit.
-Admitted.
+    + unshelve eapply irrelevanceSubstEq.
+      4: unshelve eapply (ih _ _ _ _ _ _ ρ _ tl).
+      assumption.
+    + irrelevance0.
+      2: unshelve eapply wkTermEq ;[|assumption| | eassumption].
+      now asimpl.
+Qed.
 
 Lemma wk1SubstS {Γ σ Δ nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ]) (wfF : [Δ |- F]) :
   [Δ ||-v σ : Γ | VΓ | wfΔ ] ->
-  [Δ ,, vass nF F ||-v σ ⟨ @wk1 Γ nF F ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF].
-Proof.
-Admitted.
+  [Δ ,, vass nF F ||-v σ ⟨ @wk1 Δ nF F ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF].
+Proof.  eapply wkSubstS. Qed.
 
 Lemma wk1SubstSEq {Γ σ σ' Δ nF F} (VΓ : [||-v Γ])
   (wfΔ : [|- Δ]) (wfF : [Δ |- F])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
-  let ρ := @wk1 Γ nF F in
-  [Δ ,, vass nF F ||-v σ ⟨ ρ ⟩ ≅ σ ⟨ ρ ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF | wk1SubstS VΓ wfΔ wfF Vσ].
-Proof.
-Admitted.
+  let ρ := @wk1 Δ nF F in
+  [Δ ,, vass nF F ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF | wk1SubstS VΓ wfΔ wfF Vσ].
+Proof. 
+  intros; unshelve eapply irrelevanceSubstEq. 
+  4: eapply wkSubstSEq; eassumption.
+  gen_typing.
+Qed.
 
 Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in 
-  let ρ := wk_up nF F (@wk_id Γ) in
+  let ρ := @wk1 Δ nF F[σ] in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
-  [Δ ,, vass nF F[σ] ||-v σ ⟨ ρ ⟩ : Γ ,, vass nF F | VΓF | wfΔF ].
+  [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF ].
 Proof.
+  unshelve econstructor.
+  + replace (_ >> _) with (σ ⟨@wk1 Δ nF F[σ]⟩) by now bsimpl.
+    eapply wk1SubstS; eassumption.
+  + cbn. bsimpl.
 Admitted.
 
 Lemma liftSubstSEq {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in 
-  let ρ := wk_up nF F (@wk_id Γ) in
+  let ρ := @wk1 Δ nF F[σ] in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
   let Vliftσ := liftSubstS VΓ wfΔ VF Vσ in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
-  [Δ ,, vass nF F[σ] ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
+  [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) ≅ (tRel 0 .: σ' ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
 Proof.
+  unshelve econstructor.
+  + bsimpl. 
+  (* replace (_ >> _ .: _) with (σ ⟨@wk1 Δ nF F[σ]⟩). by now bsimpl. *)
 Admitted.
 
-Set Printing Primitive Projection Parameters.
 
 Lemma wk1ValidTy {Γ lA A lF nF F} (VΓ : [||-v Γ]) (VF : [Γ ||-v<lF> F | VΓ]) :
   [Γ ||-v<lA> A | VΓ] -> 

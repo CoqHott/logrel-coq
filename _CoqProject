@@ -26,6 +26,7 @@ theories/LogicalRelation/ShapeView.v
 theories/LogicalRelation/Reflexivity.v
 theories/LogicalRelation/Irrelevance.v
 theories/LogicalRelation/Weakening.v
+theories/LogicalRelation/Neutral.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v

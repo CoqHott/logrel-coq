@@ -80,6 +80,14 @@ Proof.
       eauto.
 Qed.
 
+Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
+Proof.
+  intros [] ?.
+  1: reflexivity.
+  exfalso.
+  eauto using whne_nored.
+Qed.
+
 Lemma red_whnf t u : [t ⇒* u] -> whnf t -> t = u.
 Proof.
   intros [] ?.
