@@ -213,22 +213,33 @@ Combined Scheme _WfDeclInduction from
     ConvTypeDecl_rect_nodep,
     ConvTermDecl_rect_nodep.
 
-Definition WfDeclInductionConcl
-  (PCon : context -> Type) (PTy : context -> term -> Type)
-  (PTm PTyEq : context -> term -> term -> Type)
-  (PTmEq : context -> term -> term -> term -> Type) :=
-  (forall Γ : context, [  |- Γ ] -> PCon Γ)
-  × (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
-  × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PTm Γ A t)
-	× (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅ u : A] -> PTmEq Γ A t u).
-
-Definition WfDeclInduction :=
+Let _WfDeclInductionType :=
   ltac:(let ind := fresh "ind" in
       pose (ind := _WfDeclInduction);
-      fold_decl ;
+      refold ;
       let ind_ty := type of ind in
-      exact (ind : ind_ty)).
+      exact ind_ty).
+
+Let WfDeclInductionType :=
+  ltac: (let ind := eval cbv delta [_WfDeclInductionType] zeta
+    in _WfDeclInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+Lemma WfDeclInduction : WfDeclInductionType.
+Proof.
+  intros PCon PTy PTm PTyEq PTmEq **.
+  pose proof (_WfDeclInduction PCon PTy PTm PTyEq PTmEq) as H.
+  destruct H as [?[?[? []]]].
+  1-23: assumption.
+  repeat (split;[assumption|]); assumption.
+Qed.
+
+Definition WfDeclInductionConcl :=
+  ltac:(
+    let t := eval cbv delta [WfDeclInductionType] beta in WfDeclInductionType in
+    let t' := remove_steps t in
+    exact t').
 
 End InductionPrinciples.
 
@@ -246,9 +257,8 @@ Section TypingWk.
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
-    destruct (WfDeclInduction PCon PTy PTm PTyEq PTmEq) as [?[?[?[?]]]].
-    24:{ repeat (split; [assumption|]); assumption. }
-    all: subst PCon PTy PTm PTyEq PTmEq ; cbn in *.
+    subst PCon PTy PTm PTyEq PTmEq.
+    apply WfDeclInduction.
     - trivial.
     - trivial.
     - intros ? ? IH.
@@ -346,6 +356,7 @@ Section TypingWk.
       econstructor.
       1-3: easy.
       specialize (IHe _ (wk_up _ _ ρ)).
+      cbn in IHe.
       bsimpl.
       repeat rewrite renRen_term in IHe |- *.
       cbn in * ; refold.
@@ -372,7 +383,7 @@ Section TypingWk.
     red.
     repeat match goal with |- _ × _ => split end.
     1: now constructor.
-    all: intros * Hty nt T HΓ HA.
+    all: intros Γ * Hty nt T HΓ HA.
     all: eapply typing_wk in Hty.
     all: specialize (Hty _ (@wk1 Γ nt T)).
     all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.

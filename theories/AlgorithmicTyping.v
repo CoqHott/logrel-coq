@@ -185,37 +185,61 @@ Combined Scheme _AlgoTypingInduction from
     InferRedAlg_rect_nodep,
     CheckAlg_rect_nodep.
 
-Definition AlgoConvInductionConcl
-  (PTyEq PTyRedEq : context -> term -> term -> Type)
-  (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type) :=
-  (forall (Γ : context) (A B : term), [Γ |- A ≅ B] -> PTyEq Γ A B)
-  × (forall (Γ : context) (A B : term), [Γ |- A ≅h B] -> PTyRedEq Γ A B)
-  × (forall (Γ : context) (A m n : term), [Γ |- m ~ n ▹ A] -> PNeEq Γ A m n)
-  × (forall (Γ : context) (A m n : term), [Γ |- m ~h n ▹ A] -> PNeRedEq Γ A m n)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅ u : A] -> PTmEq Γ A t u)
-  × (forall (Γ : context) (A t u : term), [Γ |- t ≅h u : A] -> PTmRedEq Γ A t u).
-
-Definition AlgoTypingInductionConcl
-  (PTy : context -> term -> Type)
-  (PInf PInfRed PCheck : context -> term -> term -> Type) :=
-  (forall (Γ : context) (A : term), [Γ |- A] -> PTy Γ A)
-  × (forall (Γ : context) (A t : term), [Γ |- t ▹ A] -> PInf Γ A t)
-  × (forall (Γ : context) (A t : term), [Γ |- t ▹h A] -> PInfRed Γ A t)
-  × (forall (Γ : context) (A t : term), [Γ |- t : A] -> PCheck Γ A t).
-
-Definition AlgoConvInduction :=
+Let _AlgoConvInductionType :=
   ltac:(let ind := fresh "ind" in
       pose (ind := _AlgoConvInduction);
-      fold_algo ;
+      refold ;
       let ind_ty := type of ind in
-      exact (ind : ind_ty)).
+      exact ind_ty).
 
-Definition AlgoTypingInduction :=
+Let AlgoConvInductionType :=
+  ltac: (let ind := eval cbv delta [_AlgoConvInductionType] zeta
+    in _AlgoConvInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+Lemma AlgoConvInduction : AlgoConvInductionType.
+Proof.
+  intros PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq **.
+  pose proof (_AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
+  destruct H as [?[?[?[?[?]]]]].
+  1-11: assumption.
+  repeat (split;[assumption|]); assumption.
+Qed.
+
+Let _AlgoTypingInductionType :=
   ltac:(let ind := fresh "ind" in
       pose (ind := _AlgoTypingInduction);
-      fold_algo ;
+      refold ;
       let ind_ty := type of ind in
-      exact (ind : ind_ty)).
+      exact ind_ty).
+
+Let AlgoTypingInductionType :=
+  ltac: (let ind := eval cbv delta [_AlgoTypingInductionType] zeta
+    in _AlgoTypingInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+Lemma AlgoTypingInduction : AlgoTypingInductionType.
+Proof.
+  intros PTy PInf PInfRed PCheck **.
+  pose proof (_AlgoTypingInduction PTy PInf PInfRed PCheck) as H.
+  destruct H as [?[?[?]]].
+  1-9: assumption.
+  repeat (split;[assumption|]); assumption.
+Qed.
+
+Definition AlgoConvInductionConcl :=
+  ltac:(
+    let t := eval cbv delta [AlgoConvInductionType] beta in AlgoConvInductionType in
+    let t' := remove_steps t in
+    exact t').
+
+Definition AlgoTypingInductionConcl :=
+  ltac:(
+    let t := eval cbv delta [AlgoTypingInductionType] beta in AlgoTypingInductionType in
+    let t' := remove_steps t in
+    exact t').
 
 End InductionPrinciples.
 
@@ -239,10 +263,8 @@ Section TypingWk.
     AlgoConvInductionConcl PTyEq PTyRedEq
       PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    pose proof (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
-    destruct H as [?[?[?[?[?]]]]].
-    12:{ repeat (split;[assumption|]); assumption. }
+    apply AlgoConvInduction.
     - intros.
       econstructor.
       all: eauto using credalg_wk.
@@ -305,10 +327,8 @@ Section TypingWk.
   Theorem algo_typing_wk :
     AlgoTypingInductionConcl PTy PInf PInfRed PCheck.
   Proof.
-    pose proof (AlgoTypingInduction PTy PInf PInfRed PCheck) as H.
     subst PTy PInf PInfRed PCheck.
-    destruct H as [?[?[?]]].
-    10:{ repeat (split ; [assumption|]); assumption. }
+    apply AlgoTypingInduction.
     - constructor.
     - intros * ? ? ? IHB **.
       cbn.
@@ -364,10 +384,8 @@ Section AlgTypingWh.
   Theorem algo_conv_wh :
     AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
   Proof.
-    pose proof (AlgoConvInduction  PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
-    destruct H as [?[?[?[?[??]]]]].
-    12:{ repeat (split;[assumption|]);assumption. }
+    apply AlgoConvInduction.
     1,7-8: now constructor.
     all: intros ;
       repeat match goal with

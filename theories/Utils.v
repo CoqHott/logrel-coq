@@ -138,3 +138,21 @@ Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P 
     | eq_refl => fun w => w
     end.
 
+(* Tactics used to create good induction principles using Scheme *)
+
+Ltac polymorphise t :=
+  lazymatch t with
+    | forall x : ?Hyp, @?T x => constr:(forall x : Hyp, ltac:(
+        let T' := ltac:(eval hnf in (T x)) in let T'' := polymorphise T' in exact T''))
+    | (?t1 * ?t2)%type => let t1' := polymorphise t1 in let t2' := polymorphise t2 in
+        constr:(t1' × t2')
+    | ?t' => t'
+  end.
+
+Ltac remove_steps t :=
+  lazymatch t with
+  | _ -> ?T => remove_steps T
+  | forall x : ?Hyp, @?T x => constr:(fun  x : Hyp => ltac:(
+      let T' := ltac:(eval hnf in (T x)) in let T'' := remove_steps T' in exact T''))
+  | ?t' => t'
+  end.

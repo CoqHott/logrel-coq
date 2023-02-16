@@ -246,7 +246,7 @@ Section BundledConv.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      | (?Chd * ?Ctl)%type => let Chd' := strong_concl Chd in (* constr:(Chd') *) let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
+      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in (* constr:(Chd') *) let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
 
@@ -254,7 +254,7 @@ Section BundledConv.
   lazymatch T with
     | ?Step -> ?T => let Step' := strong_step Step in let T' := weak_statement T in constr:(Step' -> T')
     | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
-    | (?Chd * ?Ctl)%type => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
+    | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
 
@@ -303,9 +303,8 @@ Section BundledConv.
   Theorem algo_conv_discipline : algo_conv_discipline_stmt.
   Proof.
     unfold algo_conv_discipline_stmt; intros.
-    destruct (AlgoConvInduction PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq') as [?[?[?[?[?]]]]].
-    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'; cbn in *.
-    12:{ cbn in *. repeat (split; [assumption|]); assumption. }
+    subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+    apply AlgoConvInduction.
     - intros * HA HB ? IHA' ? ? ?.
       pose proof (HA' := HA).
       pose proof (HB' := HB).
@@ -578,7 +577,7 @@ Section BundledTyping.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      | (?Chd * ?Ctl)%type => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
+      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
 
@@ -586,7 +585,7 @@ Section BundledTyping.
   lazymatch T with
     | ?Step -> ?T => let Step' := strong_step Step in let T' := weak_statement T in constr:(Step' -> T')
     | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
-    | (?Chd * ?Ctl)%type => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
+    | ?Chd × ?Ctl => let Chd' := weak_concl Chd in let Ctl' := weak_statement Ctl in constr:(Chd' × Ctl')
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
 
@@ -606,9 +605,8 @@ Section BundledTyping.
     exact ind).
   Proof.
     intros.
-    destruct (AlgoTypingInduction PTy' PInf' PInfRed' PCheck') as [?[?[??]]].
-    all: subst PTy' PInf' PInfRed' PCheck'; cbn in *.
-    10: repeat (split; [assumption|]); assumption.
+    subst PTy' PInf' PInfRed' PCheck'.
+    apply AlgoTypingInduction.
     1-6: solve [intros ;
       repeat unshelve (
         match reverse goal with
