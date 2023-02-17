@@ -243,6 +243,9 @@ Definition AlgoTypingInductionConcl :=
 
 End InductionPrinciples.
 
+Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
+Arguments AlgoTypingInductionConcl PTy PInf PInfRed PCheck : rename.
+
 Section TypingWk.
   Import AlgorithmicTypingData.
   

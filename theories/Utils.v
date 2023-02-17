@@ -21,11 +21,6 @@ Export Set Warnings "-notation-overridden".
 Notation "~ x" := (notT x) : type_scope.
 Export Set Warnings "notation-overriden".
 
-Ltac tea := try eassumption.
-Ltac easy ::= solve [intuition eauto 3 with core crelations].
-
-
-
 Inductive prod (A B : Type) : Type := | pair : A -> B -> prod A B.
 Arguments pair {_ _} _ _.
 
@@ -101,6 +96,11 @@ Notation "x .π1" := (@projT1 _ _ x) (at level 3, format "x '.π1'").
 Notation "x .π2" := (@projT2 _ _ x) (at level 3, format "x '.π2'").
 
 #[global] Hint Constructors sigT : core.
+
+(** Tactics *)
+
+Ltac tea := try eassumption.
+Ltac easy ::= solve [intuition eauto 3 with core crelations].
 
 (* The database used for generic typing *)
 Create HintDb gen_typing.

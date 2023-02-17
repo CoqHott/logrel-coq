@@ -243,6 +243,8 @@ Definition WfDeclInductionConcl :=
 
 End InductionPrinciples.
 
+Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
+
 Section TypingWk.
   Import DeclarativeTypingData.
   
