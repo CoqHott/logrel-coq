@@ -389,7 +389,7 @@ Section TypingWk.
   (fun (Γ : context) (A : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩])
   (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹ A⟨↑⟩])
   (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹h A⟨↑⟩])
-  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ : A⟨↑⟩]).
+  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ◃ A⟨↑⟩]).
   Proof.
   red.
   repeat match goal with |- _ × _ => split end.

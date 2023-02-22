@@ -36,5 +36,6 @@ theories/AlgorithmicTyping.v
 theories/LogRelConsequences.v
 theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicConvProperties.v
+theories/AlgorithmicTypingProperties.v
 
 theories/Positivity.v
