@@ -75,7 +75,7 @@ Section Definitions.
       [Γ,, vass na A |- B] ->
       [Γ |- tProd na A B]
     | wfTypeUniv {Γ A} :
-      [Γ |- A : U] ->
+      [Γ |- A ◃ U] ->
       [Γ |- A]
   with InferAlg : context -> term -> term -> Type :=
     | infVar {Γ n decl} :
@@ -91,7 +91,7 @@ Section Definitions.
       [ Γ |- tLambda na A t ▹ tProd na A B]
     | infApp {Γ} {na} {f a A B} :
       [ Γ |- f ▹h tProd na A B ] -> 
-      [ Γ |- a : A ] -> 
+      [ Γ |- a ◃ A ] -> 
       [ Γ |- tApp f a ▹ B[a..] ]
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -102,12 +102,12 @@ Section Definitions.
     | checkConv {Γ t A A'} :
       [ Γ |- t ▹ A ] -> 
       [ Γ |- A ≅ A'] -> 
-      [ Γ |- t : A' ]
+      [ Γ |- t ◃ A' ]
 
   where "[ Γ |- A ]" := (WfTypeAlg Γ A)
   and "[ Γ |- t ▹ T ]" := (InferAlg Γ T t)
   and "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t)
-  and "[ Γ |- t : T ]" := (CheckAlg Γ T t).
+  and "[ Γ |- t ◃ T ]" := (CheckAlg Γ T t).
 
   Inductive WfContextAlg : context -> Type :=
   | conNilAlg : [|- ε]
@@ -125,9 +125,8 @@ Module AlgorithmicTypingData.
   #[export] Instance WfContext_Algo : WfContext al := WfContextAlg.
   #[export] Instance WfType_Algo : WfType al := WfTypeAlg.
   #[export] Instance Inferring_Algo : Inferring al := InferAlg.
-  #[export] Instance InferringRed_Algo : InferringRed al :=
-  InferRedAlg.
-  #[export] Instance Checking_Algo : Typing al := CheckAlg.
+  #[export] Instance InferringRed_Algo : InferringRed al := InferRedAlg.
+  #[export] Instance Checking_Algo : Checking al := CheckAlg.
   #[export] Instance ConvType_Algo : ConvType al := ConvTypeAlg.
   #[export] Instance ConvTypeRed_Algo : ConvTypeRed al :=  ConvTypeRedAlg.
   #[export] Instance ConvTerm_Algo : ConvTerm al := ConvTermAlg.
@@ -140,7 +139,7 @@ Module AlgorithmicTypingData.
     change WfTypeAlg with (wf_type (ta := al)) in *;
     change InferAlg with (inferring (ta := al)) in * ;
     change InferRedAlg with (infer_red (ta := al)) in * ;
-    change CheckAlg with (typing (ta := al)) in * ;
+    change CheckAlg with (check (ta := al)) in * ;
     change ConvTypeAlg with (conv_type (ta := al)) in * ;
     change ConvTypeRedAlg with (conv_type_red (ta := al)) in * ;
     change ConvTermAlg with (conv_term (ta := al)) in * ;
@@ -325,7 +324,7 @@ Section TypingWk.
   Let PInfRed (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
     [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩].
   Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
-  [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
+  [Δ |- t⟨ρ⟩ ◃ A⟨ρ⟩].
 
   Theorem algo_typing_wk :
     AlgoTypingInductionConcl PTy PInf PInfRed PCheck.

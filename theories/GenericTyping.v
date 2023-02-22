@@ -5,7 +5,7 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
 Section RedDefinitions.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!InferringRed ta} `{!Typing ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
@@ -108,8 +108,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!Inferring ta}
-    `{!InferringRed ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
@@ -117,7 +116,6 @@ Section GenericTyping.
     wfc_nil : [|- ε ] ;
     wfc_cons {Γ} na {A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,vass na A];
     wfc_wft {Γ A} : [Γ |- A] -> [|- Γ];
-    wfc_inf {Γ A t} : [Γ |- t ▹ A] -> [|- Γ] ;
     wfc_ty {Γ A t} : [Γ |- t : A] -> [|- Γ];
     wfc_convty {Γ A B} : [Γ |- A ≅ B] -> [|- Γ];
     wfc_convtm {Γ A t u} : [Γ |- t ≅ u : A] -> [|- Γ];
@@ -141,41 +139,26 @@ Section GenericTyping.
       [ Γ |- A ] ;
   }.
 
-  Class InferringProperties :=
-  {
-    inf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ▹ A] -> [Δ |- t⟨ρ⟩ ▹ A⟨ρ⟩] ;
-    inf_var {Γ} {n decl} :
-      [   |- Γ ] ->
-      in_ctx Γ n decl ->
-      [ Γ |- tRel n ▹ decl.(decl_type) ] ;
-    inf_prod {Γ} {na} {A B} :
-        [ Γ |- A ▹h U] -> 
-        [Γ ,, (vass na A) |- B ▹h U ] ->
-        [ Γ |- tProd na A B ▹ U ] ;
-    inf_lam {Γ} {na} {A B t} :
-        [ Γ |- A ] ->
-        [ Γ ,, vass na A |- t ▹ B ] -> 
-        [ Γ |- tLambda na A t ▹ tProd na A B] ;
-    inf_app {Γ} {na} {f a A B} :
-        [ Γ |- f ▹h tProd na A B ] -> 
-        [ Γ |- a : A ] -> 
-        [ Γ |- tApp f a ▹ B[a ..] ]
-  }.
-
-  Class InferringRedProperties :=
-  {
-    inf_red_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ▹h A] -> [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩] ;
-    inf_red_red {Γ t A A'} :
-      [Γ |- t ▹ A] -> [Γ |- A ⇒* A'] -> [Γ |- t ▹h A']
-  }.
-
   Class TypingProperties :=
   {
     ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t : A] -> [Δ |- t⟨ρ⟩ : A⟨ρ⟩] ;
-    ty_inf {Γ t A A'} : [Γ |- t ▹ A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
+    ty_var {Γ} {n decl} :
+      [   |- Γ ] ->
+      in_ctx Γ n decl ->
+      [ Γ |- tRel n : decl.(decl_type) ] ;
+    ty_prod {Γ} {na} {A B} :
+        [ Γ |- A : U] -> 
+        [Γ ,, (vass na A) |- B : U ] ->
+        [ Γ |- tProd na A B : U ] ;
+    ty_lam {Γ} {na} {A B t} :
+        [ Γ |- A ] ->
+        [ Γ ,, vass na A |- t : B ] -> 
+        [ Γ |- tLambda na A t : tProd na A B] ;
+    ty_app {Γ} {na} {f a A B} :
+        [ Γ |- f : tProd na A B ] -> 
+        [ Γ |- a : A ] -> 
+        [ Γ |- tApp f a : B[a ..] ] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -282,14 +265,11 @@ End GenericTyping.
 
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
-  `(Inferring ta) `(InferringRed ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
   `(RedType ta) `(RedTerm ta) :=
 {
   wfc_prop :> WfContextProperties ;
   wfty_prop :> WfTypeProperties ;
-  inf_prop :> InferringProperties ;
-  inf_red_prop :> InferringRedProperties ;
   typ_prop :> TypingProperties ;
   convty_prop :> ConvTypeProperties ;
   convtm_prop :> ConvTermProperties ;
@@ -299,13 +279,13 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod inf_wk inf_var inf_prod inf_lam inf_app inf_red_wk inf_red_red ty_wk ty_inf convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
 Section GenericConsequences.
   Context `{ta : tag}
-  `{!WfContext ta} `{!WfType ta} `{!Inferring ta} `{!Typing ta}
+  `{!WfContext ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
   `{!RedType ta} `{!RedTerm ta}
   `{!WfContextProperties} `{!WfTypeProperties}
@@ -353,14 +333,6 @@ Section GenericConsequences.
     intros [] [].
     eapply whred_det.
     all: gen_typing.
-  Qed.
-
-  Lemma inf_meta_conv (Γ : context) (t A A' : term) :
-    [Γ |- t ▹ A] ->
-    A' = A ->
-    [Γ |- t ▹ A'].
-  Proof.
-    now intros ? ->.
   Qed.
 
   Lemma typing_meta_conv (Γ : context) (t A A' : term) :
@@ -414,26 +386,3 @@ Section GenericConsequences.
   Qed.
 
 End GenericConsequences.
-
-(*To be able to still use typing/conversion term-directe rules even when the type or the other member of the conversion are not of the right shape*)
-Ltac meta_constructor :=
-  intros ;
-  match goal with
-    | |- [_ |- _ ▹ _] => eapply inf_meta_conv
-    | |- [_ |- _ ≅ _ : _ ] => eapply convtm_meta_conv
-    | |- [_ |- _ ~ _ ▹ _] => eapply convne_meta_conv
-    | |- [_ |- _ ⇒* _ : _] => eapply redtm_meta_conv
-  end ;
-  [ match goal with
-    | |- [_ |- tRel _ ▹ _ ] => eapply inf_var 
-    | |- [_ |- tProd _ _ _ ▹ _ ] => eapply inf_prod
-    | |- [_ |- tLambda _ _ _ ▹ _] => eapply inf_lam
-    | |- [_ |- tApp _ _ ▹ _] => eapply inf_app
-    | |- [_ |- tProd _ _ _ ≅ _ : _] => eapply convtm_prod
-    | |- [_ |- tRel _ ≅ _ : _] => eapply convtm_convneu ; eapply convneu_var
-    | |- [_ |- tRel _ ~ _ ▹ _ ] => eapply convneu_var
-    | |- [_ |- tApp _ _ ≅ _ : _ ] => eapply convtm_convneu ; eapply convneu_app
-    | |- [_ |- tApp _ _ ~ _ ▹ _ ] => eapply convneu_app
-    | |- [_ |- tApp (tLambda _ _ _) ⇒* _ : _] => eapply redtm_beta
-    | |- [_ |- tApp _ ⇒* _ : _ ] => eapply redtm_app
-  end |..].

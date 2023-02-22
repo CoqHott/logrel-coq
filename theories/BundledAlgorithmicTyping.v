@@ -20,6 +20,14 @@ Record InferBun Γ A t :=
   bun_inf : [Γ |-[al] t ▹ A]
 }.
 
+Record InferConvBun Γ A t :=
+{
+  bun_inf_conv_ctx : [|-[de] Γ] ;
+  bun_inf_conv_ty : term ;
+  bun_inf_conv_inf : [Γ |-[al] t ▹ bun_inf_conv_ty] ;
+  bun_inf_conv_conv : [Γ |-[de] bun_inf_conv_ty ≅ A]
+}.
+
 Record InferRedBun Γ A t :=
 {
   bun_inf_red_ctx : [|-[de] Γ] ;
@@ -30,7 +38,7 @@ Record CheckBun Γ A t :=
 {
   bun_chk_ctx : [|-[de] Γ] ;
   bun_chk_ty : [Γ |-[de] A] ;
-  bun_chk : [Γ |-[al] t : A]
+  bun_chk : [Γ |-[al] t ◃ A]
 }.
 
 Record ConvTypeBun Γ A B :=
@@ -124,7 +132,8 @@ Module BundledTypingData.
   #[export] Instance WfType_Bundle : WfType bn := WfTypeBun.
   #[export] Instance Inferring_Bundle : Inferring bn := InferBun. 
   #[export] Instance InferringRed_Bundle : InferringRed bn := InferRedBun.
-  #[export] Instance Checking_Bundle : Typing bn := CheckBun.
+  #[export] Instance Typing_Bundle : Typing bn := InferConvBun.
+  #[export] Instance Checking_Bundle : Checking bn := CheckBun.
   #[export] Instance ConvType_Bundle : ConvType bn := ConvTypeBun.
   #[export] Instance ConvTypeRed_Bundle : ConvTypeRed bn :=  ConvTypeRedBun.
   #[export] Instance ConvTerm_Bundle : ConvTerm bn := ConvTermBun.
@@ -140,7 +149,8 @@ Module BundledTypingData.
     change WfTypeBun with (wf_type (ta := bn)) in *;
     change InferBun with (inferring (ta := bn)) in * ;
     change InferRedBun with (infer_red (ta := bn)) in * ;
-    change CheckBun with (typing (ta := bn)) in * ;
+    change InferConvBun with (typing (ta := bn)) in * ;
+    change CheckBun with (check (ta := bn)) in * ;
     change ConvTypeBun with (conv_type (ta := bn)) in * ;
     change ConvTermBun with (conv_term (ta := bn)) in * ;
     change ConvNeuBun with (conv_neu (ta := bn)) in * ;
@@ -154,6 +164,29 @@ Module BundledTypingData.
 End BundledTypingData.
 
 Import BundledTypingData.
+
+Module BundledIntermediateData.
+
+  #[export] Instance WfContext_BundleInt : WfContext bni := WfContextDecl.
+  #[export] Instance WfType_BundleInt : WfType bni := WfTypeDecl.
+  #[export] Instance Typing_BundleInt : Typing bni := TypingDecl.
+  #[export] Instance ConvType_BundleInt : ConvType bni := ConvTypeBun.
+  #[export] Instance ConvTerm_BundleInt : ConvTerm bni := ConvTermBun.
+  #[export] Instance ConvNeuConv_BundleInt : ConvNeuConv bni := ConvNeuConvBun.
+  #[export] Instance RedType_BundleInt : RedType bni := RedTypeBun.
+  #[export] Instance RedTerm_BundleInt : RedTerm bni := RedTermBun.
+
+  Ltac unfold_bni :=
+    change (wf_context (ta := bni)) with (wf_context (ta := de)) in *;
+    change (wf_type (ta := bni)) with (wf_type (ta := de)) in *;
+    change (typing (ta := bni)) with (typing (ta := de)) in * ;
+    change (conv_type (ta := bni)) with (conv_type (ta := bn)) in * ;
+    change (conv_term (ta := bni)) with (conv_term (ta := bn)) in * ;
+    change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in *;
+    change (red_ty (ta := bni)) with (red_ty (ta := bn)) in * ;
+    change (red_tm (ta := bni)) with (red_tm (ta := bn)) in *.
+
+End BundledIntermediateData.
 
 Set Universe Polymorphism.
 
@@ -547,7 +580,7 @@ Section BundledTyping.
       | [?Γ |-[al] ?A] => constr:([Γ |-[bn] A])
       | [?Γ |-[al] ?t ▹ ?A] => constr:([Γ |-[bn] t ▹ A])
       | [?Γ |-[al] ?t ▹h ?A] => constr:([Γ |-[bn] t ▹h A])
-      | [?Γ |-[al] ?t : ?A] => constr:([Γ |-[bn] t : A])
+      | [?Γ |-[al] ?t ◃ ?A] => constr:([Γ |-[bn] t ◃ A])
       | ?Hyp' => constr:(Hyp')
     end.
 
@@ -677,4 +710,3 @@ Section TypingSoundness.
   Qed.
 
 End TypingSoundness.
-

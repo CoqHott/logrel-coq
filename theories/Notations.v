@@ -1,11 +1,12 @@
 From LogRel Require Import Utils BasicAst Ast Context.
 
-(* We have three families of definitions: the declarative ones (tagged de), the algorithmic ones (tagged al), and the bundled ones, which package an algorithmic typing derivation with its preconditions (tagged bn) *)
+(* We have four families of definitions: the declarative ones (tagged de), the algorithmic ones (tagged al), and the bundled ones, which package an algorithmic typing derivation with its preconditions (tagged bn).
+The bundled intermediate (bni) family uses algorithmic conversion but declarative typing (somewhat similar to the original formalization), while bn uses algorithmic typing and conversion. *)
 (* All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input only,
 ideally wisely in cases where there is only one instance at hand. The tagged one is used systematically in printing,
 and can be used in input when disambiguation is desired.*)
 
-Variant tag := | de | al | bn.
+Variant tag := | de | al | bn | bni.
 
 Declare Scope typing_scope.
 Delimit Scope typing_scope with ty.
@@ -18,6 +19,7 @@ Class WfType (ta : tag) := wf_type : context -> term -> Set.
 Class Typing (ta : tag) := typing : context -> term -> term -> Set.
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
+Class Checking (ta : tag) := check : context -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
 Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
 Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
@@ -44,6 +46,11 @@ Notation "[ Γ |- t : A ]" := (typing Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t : A ]" :=
   (typing (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
+(* The term t checks against type A in Γ *)
+Notation "[ Γ |- t ◃ A ]" := (check Γ A t)
+  (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ◃ A ]" :=
+  (check (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (* The term t infers A in Γ *)
 Notation "[ Γ |- t ▹ A ]" := (inferring Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.

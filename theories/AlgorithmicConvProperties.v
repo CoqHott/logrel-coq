@@ -453,68 +453,24 @@ Section Transitivity.
 
 End Transitivity.
 
-Module AlgorithmicTypingProperties.
-  Include AlgorithmicTypingData.
+Lemma inf_conv_decl Γ t A A' :
+  [Γ |-[al] t ▹ A] ->
+  [Γ |-[de] A ≅ A'] ->
+  [Γ |-[de] t : A'].
+Proof.
+  intros Ht Hconv.
+  apply typing_sound in Ht.
+  2: boundary.
+  now econstructor.
+Qed.
+
+Module AlgorithmicConvProperties.
+  Export AlgorithmicTypingData.
 
   #[local] Ltac intros_bn :=
     intros ;
     repeat match goal with | H : context [bn] |- _ => destruct H end ;
     econstructor ; try assumption.
-
-  #[export, refine] Instance WfCtxAlgProperties : WfContextProperties (ta := bn) := {}.
-  Proof.
-    all: intros_bn.
-    - now do 2 constructor.
-    - constructor ; tea.
-      now apply typing_sound.
-  Qed.
-
-  #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := bn) := {}.
-  Proof.
-    all: intros_bn.
-    2-4: now econstructor.
-    - now eapply algo_typing_wk.
-  Qed.
-
-  #[export, refine] Instance InferringAlgProperties : InferringProperties (ta := bn) := {}.
-  Proof.
-    all: intros_bn.
-    2-5: now econstructor.
-    - now eapply algo_typing_wk.
-  Qed.
-
-  #[export, refine] Instance InferringRedProperties :
-  InferringRedProperties (ta := bn) := {}.
-  Proof.
-    all: intros_bn.
-    - now eapply algo_typing_wk.
-    - now econstructor.
-  Qed. 
-
-  #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
-  Proof.
-    1-2: intros_bn.
-    - gen_typing.
-    - now eapply algo_typing_wk.
-    - now econstructor.
-    - intros * [? ? [? ? ? ? ? Hc]] [].
-      destruct Hc.
-      econstructor ; tea.
-      econstructor ; tea.
-      econstructor.
-      2: etransitivity.
-      all: eassumption.
-    - intros * [? ? Hc] HA.
-      destruct Hc as [? ? ? ? Ht Hc] ; refold.
-      econstructor ; tea.
-      1: now destruct HA.
-      econstructor ; tea.
-      eapply algo_conv_trans.
-      + split ; tea.
-        now eapply typing_sound, boundary in Ht.
-      + now eapply ctx_refl.
-      + eapply HA.
-  Qed.
 
   #[export, refine] Instance ConvTypeAlgProperties : ConvTypeProperties (ta := bn) := {}.
   Proof.
@@ -609,8 +565,9 @@ Module AlgorithmicTypingProperties.
         now constructor.
       + now do 2 econstructor.
     - intros_bn.
-      + now eapply typing_sound in bun_chk0.
-      + now eapply typing_sound in bun_chk.
+      + boundary.
+      + eauto using inf_conv_decl.
+      + eauto using inf_conv_decl.
       + econstructor.
         1-3: reflexivity.
         now econstructor.
@@ -651,7 +608,6 @@ Module AlgorithmicTypingProperties.
       + now apply typing_wk.
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
-      inversion H ; subst ; clear H  ; refold.
       econstructor.
       + assumption.
       + eexists. now econstructor.
@@ -659,9 +615,7 @@ Module AlgorithmicTypingProperties.
       + eexists. now econstructor.
       + gen_typing.
       + now econstructor.
-      + eapply conv_sound in H0 ; tea.
-        enough [Γ |-[de] tRel n : decl_type decl] by boundary.
-        now econstructor.
+      + eassumption.
   - intros *
     [? ? ? ? ? ? Hf (?&?&?&[])%red_ty_compl_prod_r]
     [? ? ? ? Ht].
@@ -701,10 +655,12 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       2: now do 2 econstructor.
       econstructor ; [econstructor|..].
-      all: now eapply typing_sound.
+      + now eapply typing_sound.
+      + eauto using inf_conv_decl.
+      + eauto using inf_conv_decl.  
     - intros_bn.
       + econstructor ; tea.
-        now eapply typing_sound.
+        eauto using inf_conv_decl.
       + clear -bun_red_tm.
         induction bun_red_tm ; econstructor.
         2: eassumption.
@@ -713,8 +669,8 @@ Module AlgorithmicTypingProperties.
       eapply conv_sound in bun_conv_ty ; tea.
       now gen_typing.
     - intros_bn.
-      1: now eapply typing_sound.
-      econstructor.
+      2: econstructor.
+      eauto using inf_conv_decl.
     - red. intros_bn.
       now etransitivity.
   Qed.
@@ -735,6 +691,170 @@ Module AlgorithmicTypingProperties.
       now etransitivity.
   Qed.
 
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ := {}.
+End AlgorithmicConvProperties.
 
-End AlgorithmicTypingProperties.
+Module IntermediateTypingProperties.
+  Import BundledIntermediateData.
+  Import AlgorithmicConvProperties.
+
+  #[export, refine] Instance WfCtxIntProperties : WfContextProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    1-2: now econstructor.
+    1-2: gen_typing.
+    all: intros * [] ; gen_typing.
+  Qed.
+
+  #[export, refine] Instance WfTypeIntProperties : WfTypeProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni ; gen_typing.
+  Qed.
+
+  #[export, refine] Instance TypingIntProperties : TypingProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - gen_typing.
+    - gen_typing.
+    - gen_typing.
+    - gen_typing.
+    - gen_typing.
+    - intros * ? [].
+      econstructor ; tea.
+      symmetry.
+      now eapply RedConvTyC, subject_reduction_type.
+    - intros * ? [].
+      econstructor ; tea.
+      now eapply conv_sound in bun_conv_ty.
+  Qed.
+
+  #[export, refine] Instance ConvTypeIntProperties : ConvTypeProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - gen_typing.
+    - gen_typing.
+    - intros * ? ?.
+      apply convty_wk ; tea.
+      now split.
+    - gen_typing.
+    - intros ? ?.
+      split.
+      2-3: econstructor.
+      1-3: assumption.
+      do 2 econstructor.
+    - intros * ? ? [] [].
+      split ; tea.
+      + now econstructor.
+      + econstructor ; tea.
+        eapply stability ; tea.
+        econstructor.
+        1: now eapply ctx_refl.
+        symmetry.
+        now eapply conv_sound in bun_conv_ty.
+      + now do 2 econstructor.
+  Qed.
+
+  #[export, refine] Instance ConvTermIntProperties : ConvTermProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - gen_typing.
+    - gen_typing.
+    - intros.
+      apply convtm_wk ; tea.
+      now split.
+    - gen_typing.
+    - gen_typing.
+    - intros * ? ? [] [].
+      split ; tea.
+      + now econstructor.
+      + econstructor ; tea.
+        eapply stability ; tea.
+        econstructor.
+        1: now eapply ctx_refl.
+        symmetry.
+        econstructor.
+        now eapply conv_sound in bun_conv_tm.
+      + now do 2 econstructor.
+    - intros * ? ? ? ? ? [].
+      split ; tea.
+      + gen_typing.
+      + boundary.
+      + now do 2 econstructor.
+  Qed.
+
+  #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - gen_typing.
+    - gen_typing.
+    - intros.
+      apply convneu_wk ; tea.
+      now split.
+    - intros * [? [[? [-> ]]]]%termGen'.
+      econstructor.
+      + gen_typing.
+      + now eexists ; gen_typing.
+      + gen_typing.
+      + now eexists ; gen_typing.
+      + gen_typing.
+      + now econstructor.
+      + eassumption.
+    - gen_typing.
+  Qed.
+
+  #[export, refine] Instance RedTermIntProperties :
+    RedTermProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - intros.
+      apply redtm_wk ; tea.
+      now split.
+    - gen_typing.
+    - intros.
+      split.
+      + boundary.
+      + econstructor ; tea.
+        now econstructor.
+      + do 2 econstructor.
+    - intros * [] ?.
+      split.
+      + boundary.
+      + now econstructor.
+      + clear -bun_red_tm.
+        induction bun_red_tm.
+        1: econstructor.
+        econstructor.
+        1: now econstructor.
+        eassumption.
+    - gen_typing.
+    - intros.
+      split.
+      + boundary.
+      + assumption.
+      + reflexivity.
+    - gen_typing.
+  Qed.
+
+  #[export, refine] Instance RedTypeIntProperties :
+    RedTypeProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
+    - intros.
+      apply redty_wk ; tea.
+      now split.
+    - gen_typing.
+    - intros * [].
+      split.
+      + boundary.
+      + now econstructor.
+      + eassumption.
+    - intros.
+      split.
+      + boundary.
+      + eassumption.
+      + reflexivity.
+    - gen_typing.
+  Qed.
+
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ := {}.
+
+End IntermediateTypingProperties.

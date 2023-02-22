@@ -18,7 +18,7 @@ Module FundTy.
     VA : [ Γ ||-v< one > A | VΓ ]
   }.
   
-  Arguments FundTy {_ _ _ _ _ _ _ _ _ _ _ _}.
+  Arguments FundTy {_ _ _ _ _ _ _ _ _ _}.
 End FundTy.
 
 Export FundTy(FundTy,Build_FundTy).
@@ -32,7 +32,7 @@ Module FundTyEq.
     VB : [ Γ ||-v< one > B | VΓ ];
     VAB : [ Γ ||-v< one > A ≅ B | VΓ | VA ]
   }.
-  Arguments FundTyEq {_ _ _ _ _ _ _ _ _ _ _ _}.
+  Arguments FundTyEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTyEq.
 
 Export FundTyEq(FundTyEq,Build_FundTyEq).
@@ -45,7 +45,7 @@ Module FundTm.
     VA : [ Γ ||-v< one > A | VΓ ];
     Vt : [ Γ ||-v< one > t : A | VΓ | VA ];
   }.
-  Arguments FundTm {_ _ _ _ _ _ _ _ _ _ _ _}.
+  Arguments FundTm {_ _ _ _ _ _ _ _ _ _}.
 End FundTm.
 
 Export FundTm(FundTm,Build_FundTm).
@@ -60,7 +60,7 @@ Module FundTmEq.
     Vu : [ Γ ||-v< one > u : A | VΓ | VA ];
     Vtu : [ Γ ||-v< one > t ≅ u : A | VΓ | VA ];
   }.
-  Arguments FundTmEq {_ _ _ _ _ _ _ _ _ _ _ _}.
+  Arguments FundTmEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTmEq.
 
 Export FundTmEq(FundTmEq,Build_FundTmEq).

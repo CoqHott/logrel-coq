@@ -106,7 +106,7 @@ Algorithmic typing and its properties
 [AlgorithmicTyping] | Definition of the second notion of typing : algorithmic typing (and algorithmic conversion together with it).
 [LogRelConsequences] | Consequences of the logical relation on declarative typing necessary to establish properties of algorithmic typing.
 [BundledAlgorithmicTyping] | Algorithmic typing bundled with its pre-conditions, and a tailored induction principle showing invariant preservation in the "algorithm".
-[AlgorithmicTypingProperties] | Properties of algorithmic typing, in order to derive the second instance of generic typing. |
+[AlgorithmicConvProperties] | Properties of algorithmic conversion, in order to derive the second instance of generic typing, consisting of declarative typing and algorithmic conversion. |
 
 Miscellaneous
 -----------
@@ -139,7 +139,7 @@ Miscellaneous
 [Weakening]: ./theories/Weakening.v
 [Substitution]: ./theories/Substitution.v
 [AlgorithmicTyping]: ./theories/AlgorithmicTyping.v
-[AlgorithmicTypingProperties]: ./theories/AlgorithmicTypingProperties.v
+[AlgorithmicConvProperties]: ./theories/AlgorithmicConvProperties.v
 [LogRelConsequences]: ./theories/LogRelConsequences.v
 [BundledAlgorithmicTyping]: ./theories/BundledAlgorithmicTyping.v
 
