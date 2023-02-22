@@ -39,7 +39,7 @@ Section ShapeViews.
       + constructor.
       + intros [->].
         inversion neA.
-        enough (ty = U) as -> by (now eapply neU).
+        enough (ty = U) as -> by (now eapply neSort).
         symmetry.
         eapply red_whnf.
         all: gen_typing.
@@ -53,7 +53,7 @@ Section ShapeViews.
     - destruct lrB.
       + intros [].
         inversion neA.
-        enough (ty = U) as -> by (now eapply neU).
+        enough (ty = U) as -> by (now eapply neSort).
         symmetry.
         eapply red_whnf.
         all: gen_typing.

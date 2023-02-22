@@ -31,7 +31,7 @@ Notation "↑" := (shift) : asubst_scope.
 
 Ltac fold_autosubst :=
     change ren_term with (@ren1 _ _ _ Ren_term) in * ;
-    change subst_term with (@subst_term _ _ _ Subst_term) in *;
+    change subst_term with (@subst1 _ _ _ Subst_term) in *;
     change (fun i => (?σ i)⟨?ρ⟩) with (@ren1 _ _ _ Ren1_subst ρ σ) in *.
 
 Smpl Add fold_autosubst : refold.

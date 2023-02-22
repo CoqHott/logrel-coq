@@ -381,10 +381,10 @@ Section GenericConsequences.
   Qed.
 
   Lemma convne_meta_conv (Γ : context) (t u u' A A' : term) :
-    [Γ |- t ≅ u : A] ->
+    [Γ |- t ~ u : A] ->
     A' = A ->
     u' = u ->
-    [Γ |- t ≅ u' : A'].
+    [Γ |- t ~ u' : A'].
   Proof.
     now intros ? -> ->.
   Qed.

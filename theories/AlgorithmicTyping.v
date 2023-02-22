@@ -54,10 +54,10 @@ Section Definitions.
       isFun g ->
       [ Γ,, vass na A |- eta_expand f ≅ eta_expand g : B] -> 
       [ Γ |- f ≅h g : tProd na A B]
-    | termNeuConvAlg {Γ m n T N} :
+    | termNeuConvAlg {Γ m n T P} :
       [Γ |- m ~ n ▹ T] ->
-      whne N ->
-      [Γ |- m ≅h n : N]
+      isPosType P ->
+      [Γ |- m ≅h n : P]
 
   where "[ Γ |- A ≅ B ]" := (ConvTypeAlg Γ A B)
   and "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B)
@@ -316,7 +316,7 @@ Section TypingWk.
     - intros.
       econstructor.
       + eauto.
-      + now eauto using whne_ren.
+      + eauto using isPosType_ren.
   Qed.
 
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [Δ |- A⟨ρ⟩].
@@ -369,6 +369,38 @@ Section TypingWk.
       + now eapply algo_conv_wk.
   Qed.
 
+  Corollary algo_conv_shift : AlgoConvInductionConcl
+      (fun (Γ : context) (A B : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩ ≅ B⟨↑⟩])
+      (fun (Γ : context) (A B : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩ ≅h B⟨↑⟩])
+      (fun (Γ : context) (A m n : term) => forall nt T, [Γ,, vass nt T |- m⟨↑⟩ ~ n⟨↑⟩ ▹ A⟨↑⟩])
+      (fun (Γ : context) (A m n : term) => forall nt T, [Γ,, vass nt T |- m⟨↑⟩ ~h n⟨↑⟩ ▹ A⟨↑⟩])
+      (fun (Γ : context) (A t u : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩])
+      (fun (Γ : context) (A t u : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ≅h u⟨↑⟩ : A⟨↑⟩]).
+  Proof.
+    red.
+    repeat match goal with |- _ × _ => split end.
+    all: intros Γ * Hty nt T.
+    all: eapply algo_conv_wk in Hty.
+    all: specialize (Hty _ (@wk1 Γ nt T)).
+    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
+    all: now eapply Hty.
+  Qed.
+
+  Corollary algo_typing_shift : AlgoTypingInductionConcl
+  (fun (Γ : context) (A : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹ A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹h A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ : A⟨↑⟩]).
+  Proof.
+  red.
+  repeat match goal with |- _ × _ => split end.
+  all: intros Γ * Hty nt T.
+  all: eapply algo_typing_wk in Hty.
+  all: specialize (Hty _ (@wk1 Γ nt T)).
+  all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
+  all: now eapply Hty.
+  Qed.
+
 End TypingWk.
 
 Section AlgTypingWh.
@@ -395,9 +427,11 @@ Section AlgTypingWh.
       | H : [× _, _ & _] |- _ => destruct H
       | H : _ × _ |- _ => destruct H
       end.
-    1-6,8: now do 2 constructor.
-    constructor.
-    1-2: gen_typing.
-    now constructor.
+    1-6: now do 2 constructor.
+    - split.
+      1-2: gen_typing.
+      now constructor.
+    - split.
+      all: gen_typing. 
   Qed.
 End AlgTypingWh.

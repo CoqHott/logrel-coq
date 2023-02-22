@@ -20,9 +20,21 @@ Inductive isType : term -> Type :=
   | ProdType {na A B} : isType (tProd na A B)
   | NeType {A}  : whne A -> isType A.
 
+Inductive isPosType : term -> Type :=
+  | UnivPos {s} : isPosType (tSort s)
+  | NePos {A}  : whne A -> isPosType A.
+
 Inductive isFun : term -> Type :=
   | LamFun {na A t} : isFun (tLambda na A t)
   | NeFun  {f} : whne f -> isFun f.
+
+Definition isPosType_isType t (i : isPosType t) : isType t :=
+  match i with
+    | UnivPos => UnivType
+    | NePos ne => NeType ne
+  end.
+
+Coercion isPosType_isType : isPosType >-> isType.
 
 Definition isType_whnf t (i : isType t) : whnf t :=
   match i with
@@ -41,10 +53,11 @@ Definition isFun_whnf t (i : isFun t) : whnf t :=
 
 Coercion isFun_whnf : isFun >-> whnf.
 
-Lemma neU : whne U -> False.
+Lemma neSort s : whne (tSort s) -> False.
 Proof.
   inversion 1.
 Qed.
+
 
 Lemma nePi na A B : whne (tProd na A B) -> False.
 Proof.
@@ -56,4 +69,4 @@ Proof.
   inversion 1.
 Qed.
 
-#[global] Hint Resolve isType_whnf isFun_whnf neU nePi neLambda : gen_typing.
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf neSort nePi neLambda : gen_typing.

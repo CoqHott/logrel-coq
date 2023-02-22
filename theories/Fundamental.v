@@ -260,6 +260,6 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqConv.
   + apply FundTmEqSym.
   + apply FundTmEqTrans.
-  Abort.
+  Qed.
 
 End Fundamental.

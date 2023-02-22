@@ -133,16 +133,15 @@ Section AlgoConvConv.
       econstructor ; tea.
       eapply IHf ; tea.
       now econstructor. 
-    - intros * ? IHm ? ? ? ? * ? HconvN HtyA'.
+    - intros * ? IHm HtyP ? ? ? * ? HconvN HtyA'.
       edestruct IHm as [[? []] ?] ; tea.
       unshelve eapply ty_conv_inj in HconvN.
-      1: now constructor.
+      1: now gen_typing.
       1: assumption.
-      cbn in HconvN.
       econstructor ; tea.
-      destruct HtyA'.
-      1-2: easy.
-      assumption.
+      destruct HtyP, HtyA'.
+      all: cbn in HconvN ; try now exfalso.
+      all: now constructor.
   Qed.
 
   Let PTyEq (Γ : context) (A B : term) := True.
@@ -437,14 +436,17 @@ Section Transitivity.
           boundary.
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
-      1,3: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
+      3: destruct H8.
+      1,3-4: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.
       now econstructor.
-    - intros * ? IH ? ? ? ? * ? ? Hconv.
+    - intros * Hnconv IH ? ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
-      1-2: now unshelve eapply ty_conv_inj in H5 ; [now econstructor | now econstructor | cbn in *].
+      1: inversion Hnconv.
+      1: destruct H ;
+          now unshelve eapply ty_conv_inj in H4 ; [now econstructor | now econstructor | cbn in *].
       econstructor ; tea.
       now eapply IH.
   Qed.

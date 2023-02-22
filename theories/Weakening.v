@@ -232,6 +232,13 @@ Section RenWhnf.
     all: econstructor.
     now eapply whne_ren.
   Qed.
+
+  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    destruct 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
   
   Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
   Proof.
@@ -242,7 +249,7 @@ Section RenWhnf.
 
 End RenWhnf.
 
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isFun_ren : gen_typing.
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
 
 Section RenWlWhnf.
 
