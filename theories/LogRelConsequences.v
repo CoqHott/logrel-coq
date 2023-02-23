@@ -3,7 +3,7 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
-From LogRel.LogicalRelation Require Import Induction Escape.
+From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral.
 From LogRel.Substitution Require Import Properties.
 
 Import DeclarativeTypingProperties.
@@ -27,16 +27,13 @@ Section NeutralConjecture.
     pose proof (Hty' := Hty).
     eapply Fundamental in Hty' as [HΓ [Hfund _]].
     pose proof (soundCtxId HΓ) as [? Hsubst].
-    edestruct Hfund as [[] lr].
-    1: apply Hsubst.
-    cbn in lr.
-    unfold LogRel in lr.
-    rewrite instId'_term in lr.
+    specialize (Hfund _ _ _ Hsubst).
+    rewrite instId'_term in Hfund.
     revert m n.
     pose (P := (fun Γ A _ _ _ _ => 
       forall m n, [Γ |-[ al ] m ~ n ▹ A] -> [Γ |-[ al ] m ≅ n : A]) :
       forall Γ A rEq rTe rTeEq, LR (LogRelRec one) Γ A rEq rTe rTeEq  -> Type).
-    change (P Γ A eqTy redTm eqTm lr).
+    change (P Γ A Hfund.(LRPack.eqTy) Hfund.(LRPack.redTm) Hfund.(LRPack.eqTm) Hfund.(LRAd.adequate)).
     apply LR_rect.
     all: subst P ; cbn.
     - intros.
@@ -52,7 +49,11 @@ Section NeutralConjecture.
       econstructor.
       1: eassumption.
       now econstructor.
-    - intros ? ? [? dom cod []] _ IHdom IHcod m n Hconv ; cbn in *.
+    - intros ? ? ΠAd ΠAad IHdom IHcod m n Hconv ; cbn in *.
+      rewrite <- (PiRedTyPack.pack_beta ΠAd ΠAad) in *.
+      remember (PiRedTyPack.pack ΠAd ΠAad) as ΠA in *.
+      clear ΠAd ΠAad HeqΠA.
+      destruct ΠA ; cbn in *.
       econstructor.
       1: gen_typing.
       1-2: reflexivity.
@@ -64,7 +65,12 @@ Section NeutralConjecture.
       + exact (tRel var_zero).
       + apply wk1.
       + gen_typing.
-      + admit. (*a variable is reducible*)
+      + eapply neuTerm.
+        1: now constructor.
+        2: constructor.
+        all: eapply typing_meta_conv.
+        1,3: now do 2 econstructor ; tea ; boundary.
+        all: now bsimpl.
       + eapply convne_meta_conv.
         3: reflexivity.
         1: econstructor.
@@ -72,7 +78,7 @@ Section NeutralConjecture.
           eapply algo_conv_shift.
           2: cbn ; reflexivity.
           econstructor ; tea.
-          1: now eapply redty_red.
+          1: now gen_typing.
           econstructor.
         * eapply convtm_meta_conv.
           1: unshelve eapply IHdom.
@@ -88,7 +94,7 @@ Section NeutralConjecture.
       + bsimpl.
         rewrite scons_eta'.
         now bsimpl.
-  Admitted.
+  Qed.
 
 End NeutralConjecture.
 
@@ -160,7 +166,10 @@ Proof.
     1,2: exfalso ; gen_typing.
     cbn.
     eassumption.
-  - destruct ΠA as [na dom cod red], Hconv as [na' dom' cod' red'] ; cbn in *.
+  - rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
+    remember (PiRedTyPack.pack ΠA ΠAad) as ΠA' eqn:Heq in *.
+    clear ΠA ΠAad Heq.
+    destruct ΠA' as [na dom cod red], Hconv as [na' dom' cod' red'] ; cbn in *.
     assert (T = tProd na dom cod) as HeqT by (apply red_whnf ; gen_typing). 
     assert (T' = tProd na' dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
     destruct nfT.
@@ -170,39 +179,35 @@ Proof.
     1: congruence.
     2: subst ; exfalso ; gen_typing.
     inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
-    destruct ΠAad ; cbn in *.
-    split.
-    + symmetry.
+    cbn.
+    assert [Γ |-[ de ] dom' ≅ dom].
+    {
+      symmetry.
       replace dom with (dom⟨wk_id (Γ := Γ)⟩) by now bsimpl.
       replace dom' with (dom'⟨wk_id (Γ := Γ)⟩) by now bsimpl.
-      eapply (escapeEq (l := one)).
-      1: unshelve eapply domAd.
-      1: eassumption.
-      apply domRed0.
-    + replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
-        by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-      replace cod' with (cod'[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
-        by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-      eapply (escapeEq (l := one)).
-      1: unshelve eapply codAd.
-      * econstructor ; tea.
-        eapply prod_ty_inv.
-        eapply red'.
-      * cbn.
-        admit. (* reducible variable *)
-      * cbn.
-        apply codRed0.
-  Admitted.
-    
-
-(* Conjecture app_neu_inj : forall Γ m t n u T,
-  whne m ->
-  whne n ->
-  [Γ |- tApp m t ≅ tApp n u : T] ->
-  ∑ na A B, [×
-    [Γ |- m ≅ n : tProd na A B],
-    [Γ |- t ≅ u : A] &
-    [Γ |- B[t..] ≅ T]]. *)
+      now unshelve now eapply escapeEq_.
+    }
+    split ; tea.
+    replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
+      by (bsimpl ; rewrite scons_eta' ; now bsimpl).
+    replace cod' with (cod'[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
+      by (bsimpl ; rewrite scons_eta' ; now bsimpl).
+    assert [ |-[ de ] Γ,, vass na' dom'].
+    {
+      econstructor ; tea.
+      eapply prod_ty_inv.
+      now gen_typing.
+    }
+    (unshelve now eapply escapeEq_) ; tea.
+    apply neuTerm.
+    1: econstructor.
+    2: econstructor.
+    all: econstructor.
+    1,3: econstructor ; [eassumption | now econstructor].
+    all: replace dom⟨_⟩ with dom⟨↑⟩ by now bsimpl.
+    all: apply typing_shift ; tea.
+    all: boundary.
+  Qed.
 
 Corollary red_ty_compl_univ_l Γ T :
   [Γ |- U ≅ T] ->
