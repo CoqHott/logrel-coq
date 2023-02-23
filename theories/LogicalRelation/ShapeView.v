@@ -84,4 +84,34 @@ Section ShapeViews.
     now eapply ShapeViewConv, LRTyEqRefl.
   Qed.
 
+
+  Definition ShapeView3 Γ
+    A {lA eqTyA redTmA redTyA} 
+    B {lB eqTyB redTmB redTyB}
+    C {lC eqTyC redTmC redTyC}
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) 
+    (lrB : LogRel lB Γ B eqTyB redTmB redTyB) 
+    (lrC : LogRel lC Γ C eqTyC redTmC redTyC) 
+    : Set :=
+    match lrA, lrB, lrC with
+      | LRU _ _, LRU _ _, LRU _ _ => True
+      | LRne _ _, LRne _ _, LRne _ _ => True
+      | LRPi _ _ _, LRPi _ _ _, LRPi _ _ _ => True
+      | _, _, _ => False
+    end.
+    
+
+  Arguments ShapeView3 Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB} C {lC eqTyC redTmC redTyC}
+  !lrA !lrB !lrC.
+
+  Lemma combine Γ
+    A {lA eqTyA redTmA redTyA} 
+    B {lB eqTyB redTmB redTyB}
+    C {lC eqTyC redTmC redTyC}
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) 
+    (lrB : LogRel lB Γ B eqTyB redTmB redTyB) 
+    (lrC : LogRel lC Γ C eqTyC redTmC redTyC) :
+    ShapeView Γ A B lrA lrB -> ShapeView Γ B C lrB lrC -> ShapeView3 Γ A B C lrA lrB lrC.
+  Proof.  destruct lrA, lrB, lrC; easy. Qed.
+  
 End ShapeViews.

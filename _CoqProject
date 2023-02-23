@@ -27,6 +27,8 @@ theories/LogicalRelation/Reflexivity.v
 theories/LogicalRelation/Irrelevance.v
 theories/LogicalRelation/Weakening.v
 theories/LogicalRelation/Neutral.v
+theories/LogicalRelation/Universe.v
+theories/LogicalRelation/Transitivity.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v

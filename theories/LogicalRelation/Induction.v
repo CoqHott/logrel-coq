@@ -281,3 +281,44 @@ Section Inductions.
   Defined.
 
 End Inductions.
+
+Section Inversions.
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}.
+
+  Lemma invLR {Γ l A} (lr : [Γ ||-<l> A]) : 
+    whnf A ->
+    match A return Type with
+    | tSort set => [Γ ||-U l]
+    | tProd _ _ _ => [Γ ||-Π<l> A]
+    | _ => [Γ ||-ne A]
+    end.
+  Proof.
+    pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr.
+    + trivial.
+    + intros * h whA. pose (h' := h); destruct h' as [ty [?? r] ne].
+      pose proof (redty_whnf _ _ _ r whA); subst.
+      destruct ty; inversion ne; eassumption.
+    + intros ??? h _ _ whA. pose (h' := h); destruct h' as [??? [?? r]].
+      pose proof (redty_whnf _ _ _ r whA); subst. eassumption.
+  Qed.
+
+  Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U l].
+  Proof.
+    intros h;  eapply (invLR h); constructor.
+  Qed.
+
+  Lemma invLRne {Γ l A} : whne A -> [Γ ||-<l> A] -> [Γ ||-ne A].
+  Proof.
+    intros ne h. epose proof (invLR h (whnf_whne ne)).
+    destruct A; inversion ne; assumption.
+  Qed.
+
+  Lemma invLRΠ {Γ l na dom cod} : [Γ ||-<l> tProd na dom cod] -> [Γ ||-Π<l> tProd na dom cod].
+  Proof.
+    intros h; eapply (invLR h); constructor.
+  Qed.
+
+End Inversions.

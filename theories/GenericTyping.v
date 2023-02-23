@@ -341,6 +341,26 @@ Section GenericConsequences.
     1,2: assumption.
   Qed.
 
+  Lemma redtmwf_det Γ t u u' A A' :
+    whnf u -> whnf u' ->
+    [Γ |- t :⇒*: u : A] -> [Γ |- t :⇒*: u' : A'] ->
+    u = u'.
+  Proof.
+    intros ?? [] [].
+    eapply whred_det.
+    all: gen_typing.
+  Qed.
+
+  Lemma redtywf_det Γ A B B' :
+    whnf B -> whnf B' ->
+    [Γ |- A :⇒*: B] -> [Γ |- A :⇒*: B'] ->
+    B = B'.
+  Proof.
+    intros ?? [] [].
+    eapply whred_det.
+    all: gen_typing.
+  Qed.
+
   Lemma whredtm_det Γ t u u' A A' :
     [Γ |- t ↘ u : A] -> [Γ |- t ↘ u' : A'] ->
     u = u'.
