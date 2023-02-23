@@ -2,6 +2,8 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening 
   DeclarativeTyping GenericTyping LogicalRelation
   Validity.
+From LogRel.LogicalRelation Require Import Irrelevance Escape.
+From LogRel.Substitution Require Import Properties Irrelevance.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -64,6 +66,31 @@ Module FundTmEq.
 End FundTmEq.
 
 Export FundTmEq(FundTmEq,Build_FundTmEq).
+
+Module FundSubst.
+  Record FundSubst `{GenericTypingProperties}
+    {Γ Δ : context} {wfΓ : [|- Γ]} {σ : nat -> term}
+  : Type := {
+    VΔ : [||-v Δ ] ;
+    Vσ : [VΔ | Γ ||-v σ : Δ | wfΓ] ;
+  }.
+  Arguments FundSubst {_ _ _ _ _ _ _ _ _ _}.
+End FundSubst.
+
+Export FundSubst(FundSubst,Build_FundSubst).
+
+Module FundSubstConv.
+  Record FundSubstConv `{GenericTypingProperties}
+    {Γ Δ : context} {wfΓ : [|- Γ]} {σ σ' : nat -> term}
+  : Type := {
+    VΔ : [||-v Δ ] ;
+    Vσ : [VΔ | Γ ||-v σ : Δ | wfΓ] ;
+    Veq : [VΔ | Γ ||-v σ ≅ σ' : Δ | wfΓ | Vσ] ;
+  }.
+  Arguments FundSubstConv {_ _ _ _ _ _ _ _ _ _}.
+End FundSubstConv.
+
+Export FundSubstConv(FundSubstConv,Build_FundSubstConv).
 
 Section Fundamental.
   (* Fundamental is parameterized by a tag that satisfies the generic typing 
@@ -261,5 +288,57 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqSym.
   + apply FundTmEqTrans.
   Qed.
+
+  Corollary wf_ctx_complete Γ :
+    [|-[de] Γ] -> [|-[ta] Γ].
+  Proof.
+    induction 1 as [| ???? IH HA] ; refold.
+    - apply wfc_nil.
+    - apply wfc_cons ; tea.
+      apply Fundamental in HA as [? [HA _]].
+      pose proof (soundCtxId VΓ) as [? Hsubst].
+      specialize (HA _ _ _ Hsubst).
+      rewrite instId'_term in HA ; tea.
+      now eapply escape_ in HA.
+  Qed.
+
+  Corollary Fundamental_subst Γ Δ σ (wfΓ : [|-[ta] Γ ]) :
+    [|-[de] Δ] ->
+    [Γ |-[de]s σ : Δ] ->
+    FundSubst Γ Δ wfΓ σ.
+  Proof.
+    intros HΔ.
+    induction 1 as [|σ Δ na A Hσ IH Hσ0].
+    - exists validEmpty.
+      now constructor.
+    - inversion HΔ as [|??? HΔ' HA] ; subst ; clear HΔ ; refold.
+      destruct IH ; tea.
+      apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0]].
+      cbn in *.
+      clear validTyExt validTmExt.
+      specialize (redσ0 _ _ _ (projT2 (soundCtxId redΓ))).
+      set (redA'' := (redA' _ _ _ (projT2 (soundCtxId redΓ)))) in *.
+      clearbody redA''.
+      clear redA'.
+      repeat rewrite instId'_term in *.
+      eapply Fundamental in HA as [VΔ' VA].
+      unshelve econstructor.
+      1: now eapply validSnoc.
+      unshelve econstructor.
+      + now eapply irrelevanceSubst.
+      + cbn.
+        eapply RedTmIrrelevant.
+        3: now eapply redσ0.
+        * now unshelve eapply redA''.
+        * rewrite instId'_term.
+          unshelve eapply validTy.
+  Qed.
+
+  Corollary Fundamental_subst_conv Γ Δ σ σ' (wfΓ : [|-[ta] Γ ]) :
+    [|-[de] Δ] ->
+    [Γ |-[de]s σ ≅ σ' : Δ] ->
+    FundSubstConv Γ Δ wfΓ σ σ'.
+  Proof.
+  Admitted.
 
 End Fundamental.

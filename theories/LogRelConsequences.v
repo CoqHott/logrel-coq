@@ -4,16 +4,43 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Un
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral.
-From LogRel.Substitution Require Import Properties.
+From LogRel.Substitution Require Import Properties Irrelevance.
 
 Import DeclarativeTypingProperties.
 
-Conjecture typing_subst : WfDeclInductionConcl
+Lemma typing_subst : WfDeclInductionConcl
   (fun _ => True)
   (fun Γ A => forall Δ σ, [|- Δ] -> [Δ |-s σ : Γ] -> [Δ |- A[σ]])
   (fun Γ A t => forall Δ σ, [|- Δ] -> [Δ |-s σ : Γ] -> [Δ |- t[σ] : A[σ]])
   (fun Γ A B => forall Δ σ σ', [|- Δ] -> [Δ |-s σ ≅ σ' : Γ] -> [Δ |- A[σ] ≅ B[σ']])
   (fun Γ A t u => forall Δ σ σ', [|- Δ] -> [Δ |-s σ ≅ σ' : Γ] -> [Δ |- t[σ] ≅ u[σ'] : A[σ]]).
+Proof.
+  unshelve (repeat split ; [shelve|..]).
+  - intros * Ht * HΔ Hσ.
+    unshelve eapply Fundamental_subst in Hσ as [].
+    1,3: boundary.
+    apply Fundamental in Ht as [VΓ [VA _]].
+    unshelve eapply escape_, VA ; tea.
+    unshelve eapply irrelevanceSubst ; eassumption.
+  - intros * Ht * HΔ Hσ.
+    unshelve eapply Fundamental_subst in Hσ as [].
+    1,3: boundary.
+    apply Fundamental in Ht as [VΓ [VA] [Vt]].
+    unshelve eapply escapeTerm_, Vt ; tea.
+    unshelve eapply irrelevanceSubst ; eassumption.
+  - intros * Ht * HΔ Hσ.
+    unshelve eapply Fundamental_subst_conv in Hσ as [].
+    1,3: boundary.
+    apply Fundamental in Ht as [VΓ [VA] [] [Vconv]] ; cbn in *.
+    unshelve eapply escapeEq_.
+    2: unshelve eapply VA, irrelevanceSubst ; eassumption.
+    admit. (*transitivity…*)
+  - intros * Ht * HΔ Hσ.
+    unshelve eapply Fundamental_subst_conv in Hσ as [].
+    1,3: boundary.
+    apply Fundamental in Ht as [VΓ [VA] [] [Vconv]] ; cbn in *.
+    admit.
+Admitted.
 
 Section NeutralConjecture.
   Import AlgorithmicTypingData.
