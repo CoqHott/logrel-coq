@@ -8,12 +8,14 @@ The definition of the logical relation (**LR**) ressembles Loïc's in many ways,
 - Because of universe constraints and the fact that functors cannot be indexed by terms in Coq whereas it is possible in Agda, the relevant structures had to be parametrized by a type level and a recursor, and the module system had to be dropped out entirely.
 - Since Coq and Agda's positivity checking for inductive types is different, it turns out that **LR**'s definition, even though it does not use any induction-induction or induction-recursion in Agda, is not accepted in Coq. As such, the predicate over Π-types for **LR** has been modified compared to Agda. You can find a MWE of the difference in positivity checking in the two systems in [Positivity.v] and [Positivity.agda].
 
-In order to avoid some work on the syntax, this project uses the [Autosubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate.
+In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate.
 
 Building
 ===========
 
 The project builds with Coq version `8.15.2`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
+
+The syntax has been generated using AutoSubst OCaml with the options `-s ucoq -v ge813 -allfv` (see the [AutoSubst OCaml documentation](https://github.com/uds-psl/autosubst-ocaml) for installation instructions for it). Currently, this implementation builds only with older version of Coq, so we cannot add a recipe to the MakeFile for re-generating the syntax.
 
 Getting Started
 =================
