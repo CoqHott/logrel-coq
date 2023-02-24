@@ -7,23 +7,26 @@ Set Universe Polymorphism.
 Section Universe.
   Context `{GenericTypingProperties}.
 
-  Lemma univTmTy' {Γ l A} (h : [Γ ||-U l]) :
-    [Γ ||-<l> A : U | LRU_ h] -> [Γ ||-<URedTy.level h> A].
+  Set Printing Universes.
+  Lemma univTmTy'@{h i j k l} {Γ l A} (h : [Γ ||-U l]) :
+    [LogRel@{i j k l} l | Γ ||- A : U | LRU_ h] -> [LogRel@{h i j k} (URedTy.level h) | Γ ||- A].
   Proof.  intros []; now eapply RedTyRecFwd. Qed.
 
-  Lemma univTmTy {Γ l A} (RU : [Γ ||-<l> U]) :
-    [Γ ||-<l> A : U | RU] -> [Γ ||-<URedTy.level (invLRU RU)> A].
+  Lemma univTmTy@{h i j k l} {Γ l A} (RU : [Γ ||-<l> U]) :
+    [LogRel@{i j k l} l | Γ ||- A : U | RU] -> [LogRel@{h i j k} (URedTy.level (invLRU RU)) | Γ ||- A].
   Proof. 
     intros h; apply univTmTy'.
     irrelevance.
   Qed.
 
-  Lemma univEqTmEqTy' {Γ l l' A B} (h : [Γ ||-U l]) (RA : [Γ ||-<l'> A]) :
-    [Γ ||-<l> A ≅ B : U | LRU_ h] -> [Γ ||-<l'> A ≅ B | RA].
+  Lemma univEqTmEqTy'@{h i j k l} {Γ l l' A B} (h : [Γ ||-U l]) (RA : [Γ ||-<l'> A]) :
+    [LogRel@{i j k l} l | Γ ||- A ≅ B : U | LRU_ h] ->
+    [LogRel@{h i j k} l' | Γ ||- A ≅ B | RA].
   Proof. intros [????? RA']. apply TyEqRecFwd in RA'. irrelevance. Qed.
 
-  Lemma univEqTmEqTy {Γ l l' A B} (RU : [Γ ||-<l> U]) (RA : [Γ ||-<l'> A]) :
-    [Γ ||-<l> A ≅ B : U | RU] -> [Γ ||-<l'> A ≅ B | RA].
+  Lemma univEqTmEqTy@{h i j k l} {Γ l l' A B} (RU : [Γ ||-<l> U]) (RA : [Γ ||-<l'> A]) :
+    [LogRel@{i j k l} l | Γ ||- A ≅ B : U | RU] ->
+    [LogRel@{h i j k} l' | Γ ||- A ≅ B | RA].
   Proof. intros h; eapply (univEqTmEqTy' (invLRU RU)); irrelevance. Qed.
 
 End Universe.
