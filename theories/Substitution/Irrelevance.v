@@ -1,7 +1,7 @@
 
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
-From LogRel.LogicalRelation Require Import Irrelevance.
+From LogRel.LogicalRelation Require Import Irrelevance Reflexivity Transitivity.
 
 Set Universe Polymorphism.
 
@@ -43,6 +43,17 @@ Qed.
 
 Set Printing Primitive Projection Parameters.
 
+Lemma reflSubst {Γ} (VΓ : [||-v Γ]) : forall {σ Δ} (wfΔ : [|- Δ]) 
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
+  [Δ ||-v σ ≅ σ : Γ | VΓ | wfΔ | Vσ].
+Proof.
+  pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  - constructor.
+  - intros * ih. unshelve econstructor.
+    1: apply ih.
+    apply LREqTermRefl_. exact (validHead Vσ).
+Qed.
+
 Lemma symmetrySubstEq {Γ} (VΓ VΓ' : [||-v Γ]) : forall {σ σ' Δ} (wfΔ wfΔ' : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (Vσ' : [Δ ||-v σ' : Γ | VΓ' | wfΔ']),
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] -> [Δ ||-v σ' ≅ σ : Γ | VΓ' | wfΔ' | Vσ'].
@@ -53,11 +64,32 @@ Proof.
     destruct x as [lA'[ VΓ'' [VA' ->]]].
     intros ????? [tl hd] [tl' hd'] [tleq hdeq].
     unshelve econstructor.
-    1: eapply ih; eassumption.
+    1: now eapply ih.
     eapply LRTmEqSym. cbn in *.
     revert hdeq. apply LRTmEqRedConv. 
     eapply validTyExt. 2:eassumption.
     eapply irrelevanceSubst; eassumption.
+Qed.
+
+Lemma transSubstEq {Γ} (VΓ : [||-v Γ]) :
+  forall {σ σ' σ'' Δ} (wfΔ : [|- Δ]) 
+    (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
+    (Vσ' : [Δ ||-v σ' : Γ | VΓ | wfΔ]),
+    [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
+    [Δ ||-v σ' ≅ σ'' : Γ | VΓ | wfΔ | Vσ'] ->
+    [Δ ||-v σ ≅ σ'' : Γ | VΓ | wfΔ | Vσ].
+Proof.
+  pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  - constructor.
+  - intros * ih * [] []; unshelve econstructor.
+    1: now eapply ih.
+    eapply transEqTerm; tea.
+    eapply LRTmEqRedConv; tea.
+    unshelve eapply LRTyEqSym; tea.
+    2: unshelve eapply validTyExt.
+    7: eassumption.
+    1: tea.
+    now eapply validTail. 
 Qed.
 
 Lemma irrelevanceValidity {Γ} : forall (VΓ VΓ' : [||-v Γ]) {l A},
@@ -146,5 +178,18 @@ Proof.
   1: eassumption.
   eapply irrelevanceSubst; eassumption.
 Qed.
+
+Lemma irrelevanceSubstExt {Γ} (VΓ : [||-v Γ]) {σ σ' Δ} (wfΔ : [|- Δ]) :
+  σ =1 σ' -> [Δ ||-v σ : Γ | VΓ | wfΔ] -> [Δ ||-v σ' : Γ | VΓ | wfΔ].
+Proof.
+  revert σ σ'; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  - constructor.
+  - intros ?????? ih ?? eq.  unshelve econstructor.
+    + eapply ih. 2: now eapply validTail.
+      now rewrite eq.
+    + rewrite <- (eq var_zero). 
+      pose proof (validHead X).
+      irrelevance. now rewrite eq.
+Qed.  
 
 End Irrelevances.

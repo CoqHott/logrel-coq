@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
-From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening.
+From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral.
 From LogRel.Substitution Require Import Irrelevance.
 
 Section Properties.
@@ -104,11 +104,12 @@ Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF ].
 Proof.
-  unshelve econstructor.
-  + replace (_ >> _) with (σ ⟨@wk1 Δ nF F[σ]⟩) by now bsimpl.
-    eapply wk1SubstS; eassumption.
-  + cbn. bsimpl.
-Admitted.
+  intros; unshelve econstructor.
+  + now eapply wk1SubstS.
+  + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ⟨ρ⟩)]].
+    1: replace F[_ >> _] with F[σ]⟨S⟩ by (unfold ρ; now bsimpl); apply (ty_var wfΔF (in_here _ _)).  
+    apply neuTerm; tea; constructor + apply convneu_var; tea.
+Defined.
 
 Lemma liftSubstSEq {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
@@ -120,11 +121,10 @@ Lemma liftSubstSEq {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) ≅ (tRel 0 .: σ' ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
 Proof.
-  unshelve econstructor.
-  + bsimpl. 
-  (* replace (_ >> _ .: _) with (σ ⟨@wk1 Δ nF F[σ]⟩). by now bsimpl. *)
-Admitted.
-
+  intros; unshelve econstructor.
+  + now apply wk1SubstSEq.
+  + apply LREqTermRefl_; exact (validHead Vliftσ).
+Qed.
 
 Lemma wk1ValidTy {Γ lA A lF nF F} (VΓ : [||-v Γ]) (VF : [Γ ||-v<lF> F | VΓ]) :
   [Γ ||-v<lA> A | VΓ] -> 
@@ -144,19 +144,28 @@ Qed.
 Lemma soundCtxId {Γ} (VΓ : [||-v Γ]) :
   ∑ wfΓ : [|- Γ], [Γ ||-v tRel : Γ | VΓ | wfΓ].
 Proof.
+  enough (G : ∑ Δ (e : Δ = Γ) (wfΔ : [|-Δ]), [VΓ |Δ ||-v tRel : Γ | wfΔ]).
+  1: now destruct G as [? [-> ?]].
   pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
-  - unshelve econstructor. 1: apply wfc_nil. constructor.
-  - intros * [wfΓ idΓ]. unshelve econstructor.
-    + apply wfc_cons. 1: assumption. eapply escape.  
-      assert (A[tRel] = A) as <- by now asimpl.  
-      apply (validTy VA wfΓ idΓ).
-    + admit.
-    (* unshelve eapply consSubstS.
-      5:{ unshelve econstructor. }
-    replace tRel with (tRel 0 .: S >> tRel). *)
-Admitted.
- 
+  - exists ε, eq_refl, wfc_nil; constructor.
+  - intros * [Δ [e [wfΔ Vid]]].
+    exists (Δ,, vass na A[tRel]); unshelve eexists. 
+    1: asimpl; now rewrite e.
+    unshelve eexists.
+    + apply wfc_cons; tea.
+      eapply escape.
+      apply (validTy VA wfΔ Vid).
+    + eapply irrelevanceSubstExt.
+      2: eapply irrelevanceSubst; now unshelve eapply liftSubstS.
+      intros []; [| bsimpl]; reflexivity.
+Qed.
 
+Definition soundCtx {Γ} (VΓ : [||-v Γ]) : [|-Γ] := (soundCtxId VΓ).π1.
+
+Definition idSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel : Γ | VΓ | _] := (soundCtxId VΓ).π2.
+
+Lemma reflIdSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel ≅ tRel : Γ | VΓ | _ | idSubstS VΓ].
+Proof.  apply reflSubst. Qed.
 
 End Properties.
 
