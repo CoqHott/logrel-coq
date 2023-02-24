@@ -341,6 +341,21 @@ Section GenericConsequences.
     1,2: assumption.
   Qed.
 
+  #[global]
+  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ) (* fun A B => [Γ |- A :⇒*: B] *).
+  Proof.
+    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+  Qed.
+
+
+  #[global]
+  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A) (*fun t u => [Γ |- t :⇒*: u : A]*).
+  Proof.
+    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+  Qed.
+
+
+
   Lemma redtmwf_det Γ t u u' A A' :
     whnf u -> whnf u' ->
     [Γ |- t :⇒*: u : A] -> [Γ |- t :⇒*: u' : A'] ->
