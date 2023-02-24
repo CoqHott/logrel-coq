@@ -34,6 +34,7 @@ theories/LogicalRelation/Reduction.v
 theories/Validity.v
 theories/Substitution/Irrelevance.v
 theories/Substitution/Properties.v
+theories/Substitution/Escape.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v
