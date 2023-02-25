@@ -29,7 +29,7 @@ Admitted.
 Lemma redSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
   [Γ |- t :⇒*: u : A ] ->
-  ∑ (Rt : [Γ ||-<l> t : A | RA]), [Γ ||-<l> t ≅ u : A | RA].
+  [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
   revert t u; pattern l, Γ, A, RA; apply LR_rect_TyUr; clear l Γ A RA; intros l Γ.
   - intros h ?? ru' ?; pose (ru := ru'); destruct ru' as [T].
@@ -38,7 +38,7 @@ Proof.
     destruct x as [rTyt0]; pose proof (rTyt := RedTyRecBwd h rTyt0).
     unshelve refine (let rt : [LRU_ h | Γ ||- t : U]:= _ in _).
     1: exists T; tea; etransitivity; tea.
-    exists rt. exists rt ru rTyt; tea.
+    split; tea; exists rt ru rTyt; tea.
     apply TyEqRecFwd; irrelevance.
   - intros ???? ru' ?; pose (ru := ru'); destruct ru' as [n].
     assert [Γ |-[ ta ] t :⇒*: u : neRedTy.ty neA]. {
@@ -51,7 +51,7 @@ Proof.
     }
     unshelve refine (let rt : [LRne_ l neA | Γ ||- t : A] := _ in _).
     1: exists n; tea; etransitivity; tea.
-    exists rt. exists n n; tea; etransitivity; tea. 
+    split; tea; exists n n; tea; etransitivity; tea. 
   - intros ? ΠA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [f].
     assert [Γ |-[ ta ] t :⇒*: u : PiRedTyPack.prod _ ΠA].
     1: {
@@ -62,7 +62,7 @@ Proof.
     }
     unshelve refine (let rt : [LRPi' l ΠA | Γ ||- t : A] := _ in _).
     1: exists f; tea; etransitivity; tea.
-    exists rt. exists rt ru; tea.
+    split; tea; exists rt ru; tea.
     intros; cbn. apply eq; tea.
     now apply LREqTermRefl_.
 Qed.

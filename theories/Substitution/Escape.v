@@ -4,6 +4,8 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral.
 From LogRel.Substitution Require Import Irrelevance Properties.
 
+Set Universe Polymorphism.
+
 Section Escape.
 Context `{GenericTypingProperties}.
 

@@ -3,6 +3,8 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening Ge
 From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral.
 From LogRel.Substitution Require Import Irrelevance.
 
+Set Universe Polymorphism.
+
 Section Properties.
 Context `{GenericTypingProperties}.
 
@@ -140,6 +142,18 @@ Proof.
     eapply VAext. 1: exact (validTail vσ).
     eapply symmetrySubstEq. eassumption.
 Qed.    
+
+Lemma wk1ValidTyEq {Γ lA A B lF nF F} (VΓ : [||-v Γ]) (VF : [Γ ||-v<lF> F | VΓ]) 
+  (VA : [Γ ||-v<lA> A | VΓ]) :
+  [Γ ||-v<lA> A ≅ B | VΓ | VA] -> 
+  [Γ ,, vass nF F ||-v<lA> A ⟨ @wk1 Γ nF F ⟩ ≅ B ⟨ @wk1 Γ nF F ⟩ | validSnoc nF VΓ VF | wk1ValidTy VΓ VF VA].
+Proof.
+  assert (forall A σ, (A ⟨@wk1 Γ nF F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  intros []; constructor; intros.
+  rewrite h. irrelevance0.
+  1: symmetry; apply h.
+  unshelve intuition; tea; now eapply validTail.
+Qed.
 
 Lemma soundCtxId {Γ} (VΓ : [||-v Γ]) :
   ∑ wfΓ : [|- Γ], [Γ ||-v tRel : Γ | VΓ | wfΓ].

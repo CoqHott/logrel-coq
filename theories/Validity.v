@@ -211,6 +211,13 @@ Section MoreDefs.
       Vrhs : @termValidity Γ l u A VΓ Vty ; 
       Veq  : @termEqValidity Γ l t u A VΓ Vty
     }.
+
+  Record redValidity {Γ} {t u A : term} {VΓ : [||-v Γ]} : Type :=
+    { 
+      validRed : forall {Δ σ}
+        (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
+        [Δ |- t[σ] :⇒*: u[σ] : A[σ]]
+    }.
 End MoreDefs.
 
 Arguments termValidity : clear implicits.
@@ -229,10 +236,15 @@ Arguments tmEqValidity : clear implicits.
 Arguments tmEqValidity {_ _ _ _ _ _ _ _ _}.
 Arguments Build_tmEqValidity {_ _ _ _ _ _ _ _ _}.
 
+Arguments redValidity : clear implicits.
+Arguments redValidity {_ _ _ _ _ _ _ _ _}.
+Arguments Build_redValidity {_ _ _ _ _ _ _ _ _}.
+
 Notation "[ Γ ||-v< l > t : A | VΓ | VA ]"     := (termValidity Γ l t A VΓ VA) (at level 0, Γ, l, t, A, VΓ, VA at level 50).
 Notation "[ Γ ||-v< l > A ≅ B | VΓ | VA ]"     := (typeEqValidity Γ l A B VΓ VA) (at level 0, Γ, l, A, B, VΓ, VA at level 50).
 Notation "[ Γ ||-v< l > t ≅ u : A | VΓ | VA ]" := (termEqValidity Γ l t u A VΓ VA) (at level 0, Γ, l, t, u, A, VΓ, VA at level 50).
 Notation "[ Γ ||-v< l > t ≅ u : A | VΓ ]"      := (tmEqValidity Γ l t u A VΓ) (at level 0, Γ, l, t, u, A, VΓ at level 50).
+Notation "[ Γ ||-v t :⇒*: u : A | VΓ ]"      := (redValidity Γ t u A VΓ) (at level 0, Γ, t, u, A, VΓ at level 50).
 
 Section Inductions.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{Typing ta}
