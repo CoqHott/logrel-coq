@@ -299,10 +299,10 @@ Section Inversions.
     pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr.
     + trivial.
     + intros * h whA. pose (h' := h); destruct h' as [ty [?? r] ne].
-      pose proof (redty_whnf _ _ _ r whA); subst.
+      pose proof (redty_whnf r whA); subst.
       destruct ty; inversion ne; eassumption.
     + intros ??? h _ _ whA. pose (h' := h); destruct h' as [??? [?? r]].
-      pose proof (redty_whnf _ _ _ r whA); subst. eassumption.
+      pose proof (redty_whnf r whA); subst. eassumption.
   Qed.
 
   Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U l].

@@ -303,28 +303,38 @@ Section GenericConsequences.
     all: gen_typing.
   Qed.
 
-  Lemma redtm_whnf Γ t u A : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
+  Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
   Proof.
     intros.
     apply red_whnf.
     all: gen_typing.
   Qed.
 
-  Lemma redty_whnf Γ A B : [Γ |- A ⇒* B] -> whnf A -> A = B.
+  Lemma redtmwf_whnf {Γ t u A} : [Γ |- t :⇒*: u : A] -> whnf t -> t = u.
   Proof.
-    intros.
-    apply red_whnf.
-    all: gen_typing.
+    intros []; now eapply redtm_whnf.
   Qed.
 
   Lemma redtmwf_whne {Γ t u A} : [Γ |- t :⇒*: u : A] -> whne t -> t = u.
   Proof.
-    intros [???] ?%whnf_whne; now eapply redtm_whnf.
+    intros ? ?%whnf_whne; now eapply redtmwf_whnf.
+  Qed.
+
+  Lemma redty_whnf {Γ A B} : [Γ |- A ⇒* B] -> whnf A -> A = B.
+  Proof.
+    intros.
+    apply red_whnf.
+    all: gen_typing.
+  Qed.
+
+  Lemma redtywf_whnf {Γ A B} : [Γ |- A :⇒*: B] -> whnf A -> A = B.
+  Proof.
+    intros []; now eapply redty_whnf.
   Qed.
 
   Lemma redtywf_whne {Γ A B} : [Γ |- A :⇒*: B] -> whne A -> A = B.
   Proof.
-    intros [???] ?%whnf_whne; now eapply redty_whnf.
+    intros ? ?%whnf_whne; now eapply redtywf_whnf.
   Qed.
 
   Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
