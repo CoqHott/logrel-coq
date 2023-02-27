@@ -38,6 +38,7 @@ theories/Substitution/Escape.v
 theories/Substitution/Conversion.v
 theories/Substitution/Reflexivity.v
 theories/Substitution/Reduction.v
+theories/Substitution/SingleSubst.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v
