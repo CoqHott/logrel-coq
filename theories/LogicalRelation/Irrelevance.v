@@ -193,7 +193,7 @@ Proof.
       all: intros [].
       all: econstructor ; cbn in *.
       all: try eauto.
-      1,3: eapply wfredtm_conv ; eassumption.
+      1,3: eapply redtmwf_conv ; eassumption.
       all: gen_typing.
     + intros ? ?.
       split.
@@ -201,7 +201,7 @@ Proof.
       all: intros [].
       all: econstructor.
       all: cbn in *.
-      1-2,6-7: eapply wfredtm_conv ; eassumption.
+      1-2,6-7: eapply redtmwf_conv ; eassumption.
       1-2,4-5: eassumption.
       all: now gen_typing.
   - destruct lrA' as [| | ? A' [] []] ; try solve [destruct s] ; clear s.

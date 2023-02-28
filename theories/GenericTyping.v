@@ -293,7 +293,42 @@ Section GenericConsequences.
   `{!ConvTermProperties} `{!ConvNeuProperties}
   `{!RedTypeProperties} `{!RedTermProperties}.
 
-  Definition wfredtm_conv {Γ} {t u A B} :
+  Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
+  Proof.  constructor; gen_typing.  Qed.
+
+  #[global]
+  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ) (* fun A B => [Γ |- A :⇒*: B] *).
+  Proof.
+    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+  Qed.
+
+  (* All properties of type reduction also hold for 
+    well-typed type reduction 
+    (But we probably don't want to export the instance or the notations will get very puzzling) *)
+  Definition redtywf_props : 
+    @RedTypeProperties _ _ _ TypeRedWf TermRedWf.
+  Proof.
+    constructor.
+    - intros ?????? []; constructor; gen_typing.
+    - intros ??? []; gen_typing.
+    - intros ??? []; constructor; gen_typing.
+    - intros; now apply redtywf_refl.
+    - intros; apply redtywf_trans.
+  Qed.
+
+  (* Almost all of the RedTermProperties can be derived 
+    for the well-formed reduction [Γ |- t :⇒*: u : A]
+    but for application (which requires stability of typing under substitution) *)
+    
+  Definition redtmwf_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t :⇒*: u : A] -> [Δ |- t⟨ρ⟩ :⇒*: u⟨ρ⟩ : A⟨ρ⟩].
+  Proof.  intros ? []; constructor; gen_typing. Qed.
+
+  Definition redtmwf_red {Γ t u A} :
+    [Γ |- t :⇒*: u : A] -> [t ⇒* u].
+  Proof. intros []; now eapply redtm_red. Qed.
+
+  Definition redtmwf_conv {Γ} {t u A B} :
       [Γ |- t :⇒*: u : A] ->
       [Γ |- A ≅ B ] ->
       [Γ |- t :⇒*: u : B].
@@ -302,6 +337,29 @@ Section GenericConsequences.
     constructor.
     all: gen_typing.
   Qed.
+
+  Lemma redtmwf_app {Γ na A B f f' t} :
+    [ Γ |- f :⇒*: f' : tProd na A B ] ->
+    [ Γ |- t : A ] ->
+    [ Γ |- tApp f t :⇒*: tApp f' t : B[t..] ].
+  Proof.
+    intros [] ?; constructor; gen_typing.
+  Qed.
+
+  Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
+  Proof.
+    constructor.
+    3: now apply redtm_refl.
+    1,2: assumption.
+  Qed.
+
+  #[global]
+  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A) (*fun t u => [Γ |- t :⇒*: u : A]*).
+  Proof.
+    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+  Qed.
+
+  (** Reductions, whnf and whne *)
 
   Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
   Proof.
@@ -336,35 +394,6 @@ Section GenericConsequences.
   Proof.
     intros ? ?%whnf_whne; now eapply redtywf_whnf.
   Qed.
-
-  Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
-  Proof.
-    constructor.
-    3: now apply redty_refl.
-    1,2: assumption.
-  Qed.
-
-  Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
-  Proof.
-    constructor.
-    3: now apply redtm_refl.
-    1,2: assumption.
-  Qed.
-
-  #[global]
-  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ) (* fun A B => [Γ |- A :⇒*: B] *).
-  Proof.
-    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
-  Qed.
-
-
-  #[global]
-  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A) (*fun t u => [Γ |- t :⇒*: u : A]*).
-  Proof.
-    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
-  Qed.
-
-
 
   Lemma redtmwf_det Γ t u u' A A' :
     whnf u -> whnf u' ->

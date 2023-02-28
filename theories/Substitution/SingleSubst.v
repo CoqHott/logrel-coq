@@ -17,19 +17,14 @@ Lemma substS {Γ F G t l} (VΓ : [||-v Γ]) nF
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
   assert (eq : forall σ, G[t..][σ] = G[t[σ] .: σ]) by (intros; now asimpl).
-  assert (h : forall (Δ : context) (σ : nat -> term) (wfΔ : [ |-[ ta ] Δ]),
-    [VΓ | Δ ||-v σ : _ | wfΔ] -> [Δ ||-< l > G[t..][σ]]).
-  { 
-    intros; rewrite eq.
-    unshelve eapply validTy. 3,4:  tea.
+  opector; intros; rewrite eq.
+  - unshelve eapply validTy. 3,4:  tea.
     now eapply consSubstSvalid.
-  }
-  exists h; intros; rewrite eq.
-  irrelevance0. 1: symmetry; apply eq.
-  eapply validTyExt.
-  1: eapply consSubstS; now  eapply validTm.
-  now eapply consSubstSEqvalid.
-  Unshelve. all: eassumption.
+  - irrelevance0. 1: symmetry; apply eq.
+    eapply validTyExt.
+    1: eapply consSubstS; now  eapply validTm.
+    now eapply consSubstSEqvalid.
+    Unshelve. all: eassumption.
 Qed.
 
 Lemma substSEq {Γ F F' G G' t t' l} (VΓ : [||-v Γ]) nF 
@@ -198,11 +193,7 @@ Lemma substSΠ {Γ nF F G t l}
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) :
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
-  (* assert (h : forall (Δ : context) (σ : nat -> term) (wfΔ : [ |-[ ta ] Δ]),
-    [VΓ | Δ ||-v σ : Γ | wfΔ] -> [Δ ||-< l > G[up_term_term σ][t[σ]..]]).
-  {
-    intros;   }  *)
-  refine ((fun h' => {| validTy := h' ; validTyExt := _ |}) _); cycle 1; intros.
+  opector; intros.
   - replace G[t..][σ] with G[up_term_term σ][t[σ]..] by now bsimpl.
     now eapply substSΠaux.
   - replace G[_][_] with G[up_term_term σ'][t[σ']..] by now bsimpl.

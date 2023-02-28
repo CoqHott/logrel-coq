@@ -168,3 +168,32 @@ Ltac remove_steps t :=
       let T' := ltac:(eval hnf in (T x)) in let T'' := remove_steps T' in exact T''))
   | ?t' => t'
   end.
+
+Definition NotShelved (A:Type) := A.
+Definition Shelved (A:Type) := A.
+
+(* opaque econstructor:
+  similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals
+  Provided by Gaetan Gilbert
+*)
+Ltac opector :=
+  unshelve (econstructor;match goal with |- ?g => change (NotShelved g) end);
+  match goal with |- NotShelved ?g => idtac | |- ?g => change (Shelved g) end;
+  match goal with
+    |- NotShelved ?g =>
+      change g;
+      repeat match goal with
+          |- context [ ?x ] =>
+            is_evar x;
+            let t := type of x in
+            match t with
+              Shelved ?t' =>
+                (* cast to t' so that we get a name based on the real type in intro
+                    instead of "s" based on "Shelved" *)
+                generalize (x:t');
+                intro
+            end
+        end
+  | _ => idtac
+  end;
+  match goal with |- Shelved ?g => change g | _ => idtac end.

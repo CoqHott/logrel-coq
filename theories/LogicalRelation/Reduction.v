@@ -42,7 +42,7 @@ Proof.
     apply TyEqRecFwd; irrelevance.
   - intros ???? ru' ?; pose (ru := ru'); destruct ru' as [n].
     assert [Γ |-[ ta ] t :⇒*: u : neRedTy.ty neA]. {
-      eapply wfredtm_conv; tea. 
+      eapply redtmwf_conv; tea. 
       destruct neA; cbn in *.
       eapply convty_exp.
        2: apply redtywf_refl; gen_typing.
@@ -55,7 +55,7 @@ Proof.
   - intros ? ΠA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [f].
     assert [Γ |-[ ta ] t :⇒*: u : PiRedTyPack.prod _ ΠA].
     1: {
-      eapply wfredtm_conv; tea. 
+      eapply redtmwf_conv; tea. 
       destruct ΠA as [??? []]. cbn in *.
       eapply convty_exp; tea.
       now apply redtywf_refl.
