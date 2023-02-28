@@ -3,7 +3,7 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
-From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral.
+From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral Transitivity.
 From LogRel.Substitution Require Import Properties Irrelevance.
 
 Import DeclarativeTypingProperties.
@@ -34,13 +34,34 @@ Proof.
     apply Fundamental in Ht as [VΓ [VA] [] [Vconv]] ; cbn in *.
     unshelve eapply escapeEq_.
     2: unshelve eapply VA, irrelevanceSubst ; eassumption.
-    admit. (*transitivity…*)
+    unshelve eapply transEq.
+    6: now apply Vconv.
+    1-2: shelve.
+    + unshelve eapply validTy ; tea.
+      now eapply irrelevanceSubst.
+    + unshelve eapply validTy ; tea.
+      now eapply irrelevanceSubst.  
+    + eapply validTyExt0 ; tea.
+      1: now eapply irrelevanceSubst.
+      now eapply irrelevanceSubstEq.
   - intros * Ht * HΔ Hσ.
     unshelve eapply Fundamental_subst_conv in Hσ as [].
     1,3: boundary.
-    apply Fundamental in Ht as [VΓ [VA] [] [Vconv]] ; cbn in *.
-    admit.
-Admitted.
+    apply Fundamental in Ht as [VΓ [VA] [] [Vconv] [Vtu]] ; cbn in *.
+    unshelve eapply escapeEqTerm_.
+    2: unshelve eapply VA, irrelevanceSubst ; eassumption.
+    eapply transEqTerm.
+    + unshelve eapply validTmExt ; tea.
+      * now eapply irrelevanceSubst.
+      * now eapply irrelevanceSubstEq.
+    + eapply LRTmEqRedConv.
+      2: unshelve eapply Vtu ; tea.
+      1: unshelve eapply LRTyEqIrrelevant, validTyExt ; tea.
+      * now eapply irrelevanceSubst. 
+      * now eapply irrelevanceSubst.
+      * now unshelve eapply symmetrySubstEq.
+      * now eapply irrelevanceSubst.
+Qed.
 
 Section NeutralConjecture.
   Import AlgorithmicTypingData.

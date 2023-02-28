@@ -85,6 +85,7 @@ Module FundSubstConv.
   : Type := {
     VΔ : [||-v Δ ] ;
     Vσ : [VΔ | Γ ||-v σ : Δ | wfΓ] ;
+    Vσ' : [VΔ | Γ ||-v σ' : Δ | wfΓ ] ;
     Veq : [VΔ | Γ ||-v σ ≅ σ' : Δ | wfΓ | Vσ] ;
   }.
   Arguments FundSubstConv {_ _ _ _ _ _ _ _ _ _}.
@@ -339,6 +340,49 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
     [Γ |-[de]s σ ≅ σ' : Δ] ->
     FundSubstConv Γ Δ wfΓ σ σ'.
   Proof.
-  Admitted.
+    intros HΔ.
+    induction 1 as [|σ τ Δ na A Hσ IH Hσ0].
+    - unshelve econstructor.
+      1: eapply validEmpty.
+      all: now econstructor.
+    - inversion HΔ as [|??? HΔ' HA] ; subst ; clear HΔ ; refold.
+      destruct IH ; tea.
+      apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0] [redτ0] [redστ0]] ; cbn in *.
+      clear validTyExt validTmExt validTmExt0.
+      specialize (redσ0 _ _ _ (projT2 (soundCtxId redΓ))).
+      specialize (redτ0 _ _ _ (projT2 (soundCtxId redΓ))).
+      specialize (redστ0 _ _ _ (projT2 (soundCtxId redΓ))).
+      set (redA'' := (redA' _ _ _ (projT2 (soundCtxId redΓ)))) in *.
+      clearbody redA''.
+      clear redA'.
+      repeat rewrite instId'_term in *.
+      eapply Fundamental in HA as [VΔ' VA].
+      unshelve econstructor.
+      1: now eapply validSnoc.
+      + unshelve econstructor.
+        * now eapply irrelevanceSubst.
+        * cbn.
+          eapply RedTmIrrelevant.
+          3: now eapply redσ0.
+          -- now unshelve eapply redA''.
+          -- rewrite instId'_term.
+             now eapply validTy.
+      + unshelve econstructor.
+        * now eapply irrelevanceSubst.
+        * cbn.
+          eapply RedTmConv.
+          4: now eapply redτ0.
+          -- now unshelve eapply redA''.
+          -- now eapply validTy.
+          -- unshelve eapply LRTyEqIrrelevant'.
+             4: rewrite instId'_term ; reflexivity.
+             2,3: unshelve eapply VA ; tea.
+             1-2: now eapply irrelevanceSubst.
+             now eapply irrelevanceSubstEq.
+      + unshelve econstructor ; cbn in *.
+        * now eapply irrelevanceSubstEq.
+        * eapply LRTmEqIrrelevant' ; tea.
+          now bsimpl.
+  Qed.
 
 End Fundamental.
