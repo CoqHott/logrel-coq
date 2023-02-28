@@ -14,10 +14,10 @@ Lemma VRirrelevant Γ {vsubst vsubst' veqsubst veqsubst'}
   (forall Δ σ wfΔ wfΔ', vsubst Δ σ wfΔ <~> vsubst' Δ σ wfΔ') ×
   (forall Δ σ σ' wfΔ wfΔ' vs vs', veqsubst Δ σ σ' wfΔ vs <~> veqsubst' Δ σ σ' wfΔ' vs').
 Proof.
-  revert vsubst' veqsubst' vr'.  pattern Γ, vsubst, veqsubst, vr. 
+  revert vsubst' veqsubst' vr'.  pattern Γ, vsubst, veqsubst, vr.
   apply VR_rect; clear Γ vsubst veqsubst vr.
   - intros ?? h. inversion h. split; reflexivity.
-  - intros ??????? ih ?? h. inversion h. 
+  - intros ??????? ih ?? h. inversion h.
     specialize (ih _ _ VΓad0); destruct ih as [ih1 ih2].
     split.
     + intros. split; intros []; unshelve econstructor.
@@ -32,7 +32,7 @@ Lemma irrelevanceSubst {Γ} (VΓ VΓ' : [||-v Γ]) {σ Δ} (wfΔ wfΔ' : [|- Δ]
   [Δ ||-v σ : Γ | VΓ | wfΔ] -> [Δ ||-v σ : Γ | VΓ' | wfΔ'].
 Proof.
   apply (fst (VRirrelevant Γ VΓ.(VAd.adequate) VΓ'.(VAd.adequate))).
-Qed.  
+Qed.
 
 Lemma irrelevanceSubstEq {Γ} (VΓ VΓ' : [||-v Γ]) {σ σ' Δ} (wfΔ wfΔ' : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (Vσ' : [Δ ||-v σ : Γ | VΓ' | wfΔ']) :
@@ -43,7 +43,7 @@ Qed.
 
 Set Printing Primitive Projection Parameters.
 
-Lemma reflSubst {Γ} (VΓ : [||-v Γ]) : forall {σ Δ} (wfΔ : [|- Δ]) 
+Lemma reflSubst {Γ} (VΓ : [||-v Γ]) : forall {σ Δ} (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
   [Δ ||-v σ ≅ σ : Γ | VΓ | wfΔ | Vσ].
 Proof.
@@ -60,19 +60,19 @@ Lemma symmetrySubstEq {Γ} (VΓ VΓ' : [||-v Γ]) : forall {σ σ' Δ} (wfΔ wf�
 Proof.
   revert VΓ'; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - intros VΓ'. rewrite (invValidityEmpty VΓ'). constructor.
-  - intros * ih VΓ'. pose proof (x := invValiditySnoc VΓ'). 
+  - intros * ih VΓ'. pose proof (x := invValiditySnoc VΓ').
     destruct x as [lA'[ VΓ'' [VA' ->]]].
     intros ????? [tl hd] [tl' hd'] [tleq hdeq].
     unshelve econstructor.
     1: now eapply ih.
     eapply LRTmEqSym. cbn in *.
-    revert hdeq. apply LRTmEqRedConv. 
+    revert hdeq. apply LRTmEqRedConv.
     eapply validTyExt. 2:eassumption.
     eapply irrelevanceSubst; eassumption.
 Qed.
 
 Lemma transSubstEq {Γ} (VΓ : [||-v Γ]) :
-  forall {σ σ' σ'' Δ} (wfΔ : [|- Δ]) 
+  forall {σ σ' σ'' Δ} (wfΔ : [|- Δ])
     (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
     (Vσ' : [Δ ||-v σ' : Γ | VΓ | wfΔ]),
     [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
@@ -89,7 +89,7 @@ Proof.
     2: unshelve eapply validTyExt.
     7: eassumption.
     1: tea.
-    now eapply validTail. 
+    now eapply validTail.
 Qed.
 
 Lemma irrelevanceValidity {Γ} : forall (VΓ VΓ' : [||-v Γ]) {l A},
@@ -98,13 +98,13 @@ Proof.
   intros VΓ VΓ' l A [VA VAext]; unshelve econstructor; intros.
   - unshelve eapply VA. 2: eapply irrelevanceSubst. all:eassumption.
   - eapply VAext; [eapply irrelevanceSubst| eapply irrelevanceSubstEq]; eassumption.
-Qed.  
+Qed.
 
 
-Lemma irrelevanceLift {l A nF F nG G Γ} (VΓ : [||-v Γ]) 
+Lemma irrelevanceLift {l A nF F nG G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])
   (VFeqG : [Γ ||-v<l> F ≅ G | VΓ | VF]) :
-  [Γ ,, vass nF F ||-v<l> A | validSnoc nF VΓ VF] -> 
+  [Γ ,, vass nF F ||-v<l> A | validSnoc nF VΓ VF] ->
   [Γ ,, vass nG G ||-v<l> A | validSnoc nG VΓ VG].
 Proof.
   intros [VA VAext]; unshelve econstructor.
@@ -124,18 +124,18 @@ Qed.
 Lemma irrelevanceEq {Γ l A B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
   [Γ ||-v< l > A ≅ B | VΓ | VA] -> [Γ ||-v< l > A ≅ B | VΓ' | VA'].
 Proof.
-  intros [h]; constructor; intros. 
-  eapply LRTyEqIrrelevant. 
+  intros [h]; constructor; intros.
+  eapply LRTyEqIrrelevant.
   unshelve apply h. 1:eassumption.
   eapply irrelevanceSubst; eassumption.
-Qed.  
+Qed.
 
 Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
   [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A | VΓ' | VA'].
 Proof.
   intros [h1 h2]; unshelve econstructor.
-  - intros. eapply LRTmRedIrrelevant. 
-    unshelve apply h1. 1:eassumption. 
+  - intros. eapply LRTmRedIrrelevant.
+    unshelve apply h1. 1:eassumption.
     eapply irrelevanceSubst; eassumption.
   - intros. eapply LRTmEqIrrelevant.
     unshelve eapply h2. 1: eassumption.
@@ -143,16 +143,16 @@ Proof.
     eapply irrelevanceSubstEq; eassumption.
 Qed.
 
-Lemma irrelevanceTmLift {l t A nF F nG G Γ} (VΓ : [||-v Γ]) 
+Lemma irrelevanceTmLift {l t A nF F nG G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])
-  (VFeqG : [Γ ||-v<l> F ≅ G | VΓ | VF]) 
+  (VFeqG : [Γ ||-v<l> F ≅ G | VΓ | VF])
   (VA : [Γ ,, vass nF F ||-v<l> A | validSnoc nF VΓ VF])
   (VA' : [Γ ,, vass nG G ||-v<l> A | validSnoc nG VΓ VG])  :
-  [Γ ,, vass nF F ||-v<l> t : A | validSnoc nF VΓ VF | VA] -> 
+  [Γ ,, vass nF F ||-v<l> t : A | validSnoc nF VΓ VF | VA] ->
   [Γ ,, vass nG G ||-v<l> t : A | validSnoc nG VΓ VG | VA'].
 Proof.
   intros [Vt Vtext]; unshelve econstructor.
-  - intros ??? [hd tl]. eapply LRTmRedIrrelevant. 
+  - intros ??? [hd tl]. eapply LRTmRedIrrelevant.
     unshelve eapply Vt. 1: eassumption.
     unshelve econstructor. 1: eassumption.
     eapply LRTmRedConv. 2: eassumption.
@@ -187,9 +187,28 @@ Proof.
   - intros ?????? ih ?? eq.  unshelve econstructor.
     + eapply ih. 2: now eapply validTail.
       now rewrite eq.
-    + rewrite <- (eq var_zero). 
+    + rewrite <- (eq var_zero).
       pose proof (validHead X).
       irrelevance. now rewrite eq.
-Qed.  
+Qed.
+
+Lemma irrelevanceSubstEqExt {Γ} (VΓ : [||-v Γ]) {σ1 σ1' σ2 σ2' Δ}
+  (wfΔ : [|- Δ]) (eq1 : σ1 =1 σ1') (eq2 : σ2 =1 σ2')
+  (Vσ1 : [Δ ||-v σ1 : Γ | VΓ | wfΔ]) :
+  [Δ ||-v σ1 ≅ σ2 : Γ | VΓ | wfΔ | Vσ1] ->
+  [Δ ||-v σ1' ≅ σ2' : Γ | VΓ | wfΔ | irrelevanceSubstExt VΓ wfΔ eq1 Vσ1].
+Proof.
+  revert σ1 σ1' σ2 σ2' eq1 eq2 Vσ1; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  - constructor.
+  - intros ?????? ih ???? eq1 eq2 ? X. unshelve econstructor.
+    + eapply irrelevanceSubstEq.
+      unshelve eapply ih.
+      6: now eapply eqTail.
+      all: now (rewrite eq1 + rewrite eq2).
+    + rewrite <- (eq1 var_zero); rewrite <- (eq2 var_zero).
+      pose proof (eqHead X).
+      irrelevance.
+      rewrite eq1; reflexivity.
+Qed.
 
 End Irrelevances.

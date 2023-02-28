@@ -14,7 +14,7 @@ Lemma wellformedSubst {Γ σ Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ]) :
 Proof.
   revert σ; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - intros. apply well_sempty.
-  - intros * ih σ [tl hd]. 
+  - intros * ih σ [tl hd].
     eapply well_scons.
     + now apply ih.
     + eapply escapeTerm; [apply (validTy VA wfΔ tl) | exact hd].
@@ -38,13 +38,13 @@ Proof.  unshelve econstructor; eassumption. Defined.
 
 
 Lemma consSubstSEq {Γ σ σ' t l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
-  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) 
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
   (Vσσ' : [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ])
   (VA : [Γ ||-v<l> A | VΓ])
   (Vt : [Δ ||-<l> t : A[σ] | validTy VA wfΔ Vσ]) :
   [Δ ||-v (t .: σ) ≅  (t .: σ') : Γ ,, vass nA A | validSnoc nA VΓ VA | wfΔ | consSubstS VΓ wfΔ Vσ VA Vt].
 Proof.
-  unshelve econstructor. 
+  unshelve econstructor.
   1: eassumption.
   eapply LRTmEqRefl; [apply (validTy VA wfΔ)| exact Vt].
 Qed.
@@ -69,43 +69,39 @@ Proof.
   now apply validTmExt.
 Qed.
 
-
-
 Lemma wkSubstS {Γ} (VΓ : [||-v Γ]) : 
   forall {σ  Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ' ≤ Δ),
   [Δ ||-v σ : Γ | VΓ | wfΔ] -> [Δ' ||-v σ ⟨ ρ ⟩ : Γ | VΓ | wfΔ'].
 Proof.
-  pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
+  pattern Γ, VΓ ; apply validity_rect; clear Γ VΓ.
   - constructor.
-  - intros * ih * [tl hd]; unshelve econstructor.
+  - intros * ih * [tl hd]. unshelve econstructor.
     + eapply ih; eassumption.
-    + irrelevance0.
-      2: unshelve eapply wkTerm; [|assumption| |eassumption].
+    + eapply LRTmRedIrrelevant'.
+      2: eapply (wkTerm _ wfΔ') ; exact hd.
       now asimpl.
-Qed.
+Defined.
 
 
-Lemma wkSubstSEq {Γ} (VΓ : [||-v Γ]) : 
+Lemma wkSubstSEq {Γ} (VΓ : [||-v Γ]) :
   forall {σ σ' Δ Δ'}  (wfΔ : [|- Δ]) (wfΔ' : [|- Δ']) (ρ : Δ' ≤ Δ)
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
-  [Δ  ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] -> 
+  [Δ  ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ' ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ | VΓ | wfΔ' | wkSubstS VΓ wfΔ wfΔ' ρ Vσ].
 Proof.
   pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - constructor.
   - intros * ih * [tl hd]; unshelve econstructor.
-    + unshelve eapply irrelevanceSubstEq.
-      4: unshelve eapply (ih _ _ _ _ _ _ ρ _ tl).
-      assumption.
-    + irrelevance0.
-      2: unshelve eapply wkTermEq ;[|assumption| | eassumption].
+    + eapply ih ; eassumption.
+    + eapply LRTmEqIrrelevant'.
+      2: eapply (wkTermEq _ wfΔ') ; exact hd.
       now asimpl.
 Qed.
 
 Lemma wk1SubstS {Γ σ Δ nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ]) (wfF : [Δ |- F]) :
   [Δ ||-v σ : Γ | VΓ | wfΔ ] ->
   [Δ ,, vass nF F ||-v σ ⟨ @wk1 Δ nF F ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF].
-Proof.  eapply wkSubstS. Qed.
+Proof. eapply wkSubstS. Defined.
 
 Lemma wk1SubstSEq {Γ σ σ' Δ nF F} (VΓ : [||-v Γ])
   (wfΔ : [|- Δ]) (wfF : [Δ |- F])
@@ -113,16 +109,15 @@ Lemma wk1SubstSEq {Γ σ σ' Δ nF F} (VΓ : [||-v Γ])
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   let ρ := @wk1 Δ nF F in
   [Δ ,, vass nF F ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ | VΓ | wfc_cons nF wfΔ wfF | wk1SubstS VΓ wfΔ wfF Vσ].
-Proof. 
-  intros; unshelve eapply irrelevanceSubstEq. 
-  4: eapply wkSubstSEq; eassumption.
-  gen_typing.
+Proof.
+  intro vσσ'. eapply wkSubstSEq ; eassumption.
 Qed.
+
 
 Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
-  let VΓF := validSnoc nF VΓ VF in 
+  let VΓF := validSnoc nF VΓ VF in
   let ρ := @wk1 Δ nF F[σ] in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF ].
@@ -130,14 +125,26 @@ Proof.
   intros; unshelve econstructor.
   + now eapply wk1SubstS.
   + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ⟨ρ⟩)]].
-    1: replace F[_ >> _] with F[σ]⟨S⟩ by (unfold ρ; now bsimpl); apply (ty_var wfΔF (in_here _ _)).  
+    1: replace F[_ >> _] with F[σ]⟨S⟩ by (unfold ρ; now bsimpl); apply (ty_var wfΔF (in_here _ _)).
     apply neuTerm; tea; constructor + apply convneu_var; tea.
 Defined.
+
+Lemma liftSubstS' {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
+  (VF : [Γ ||-v<lF> F | VΓ])
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
+  let VΓF := validSnoc nF VΓ VF in
+  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  [Δ ,, vass nF F[σ] ||-v up_term_term σ : Γ ,, vass nF F | VΓF | wfΔF ].
+Proof.
+  eapply irrelevanceSubstExt.
+  2: eapply liftSubstS.
+  intros ?; now bsimpl.
+Qed.
 
 Lemma liftSubstSEq {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
-  let VΓF := validSnoc nF VΓ VF in 
+  let VΓF := validSnoc nF VΓ VF in
   let ρ := @wk1 Δ nF F[σ] in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
   let Vliftσ := liftSubstS VΓ wfΔ VF Vσ in
@@ -147,6 +154,24 @@ Proof.
   intros; unshelve econstructor.
   + now apply wk1SubstSEq.
   + apply LREqTermRefl_; exact (validHead Vliftσ).
+Qed.
+
+Lemma liftSubstSEq' {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
+  (VF : [Γ ||-v<lF> F | VΓ])
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
+  let VΓF := validSnoc nF VΓ VF in
+  let ρ := wk_up nF F (@wk_id Γ) in
+  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let Vliftσ := liftSubstS' VΓ wfΔ VF Vσ in
+  [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
+  [Δ ,, vass nF F[σ] ||-v up_term_term σ ≅ up_term_term σ' : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
+Proof.
+  intros.
+  eapply irrelevanceSubstEq.
+  unshelve eapply irrelevanceSubstEqExt.
+  6: now eapply liftSubstSEq.
+  all: intros ?; now bsimpl.
+  Unshelve. all: tea.
 Qed.
 
 Lemma wk1ValidTy {Γ lA A lF F} (VΓ : [||-v Γ]) nF (VF : [Γ ||-v<lF> F | VΓ]) :
@@ -162,7 +187,7 @@ Proof.
     rewrite (h σ).
     eapply VAext. 1: exact (validTail vσ).
     eapply symmetrySubstEq. eassumption.
-Qed.    
+Qed.
 
 Lemma wk1ValidTyEq {Γ lA A B lF F} (VΓ : [||-v Γ]) nF (VF : [Γ ||-v<lF> F | VΓ]) 
   (VA : [Γ ||-v<lA> A | VΓ]) :
@@ -205,8 +230,3 @@ Proof.  apply reflSubst. Qed.
 
 
 End Properties.
-
-
- 
-
-
