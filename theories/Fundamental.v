@@ -1,8 +1,9 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
-From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Universe Weakening.
+From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Universe Weakening.
 From LogRel.Substitution Require Import Irrelevance Properties.
+From LogRel.Substitution.Introductions Require Import Pi.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -98,64 +99,13 @@ Section Fundamental.
     properties *)
   Context `{GenericTypingProperties}.
 
-  Lemma TypeRedWf_refl {Γ} {A} : [ Γ |-[ ta ] A ] -> [ Γ |-[ ta ] A :⇒*: A ].
-  Proof.
-    intro h. econstructor.
-    - assumption.
-    - assumption.
-    - now apply redty_refl.
-  Defined.
-
-  Lemma ughhh {a σ ρ} : (tRel 1)[a .: σ⟨ρ⟩] = (tRel 1)[up_term_term σ][a .: ρ >> tRel].
-  Proof.
-    asimpl. Fail reflexivity.
-  Abort.
-
   Lemma FundPi {l Γ na F G} (vΓ : [||-v Γ])
     (vF : [Γ ||-v< l > F | vΓ])
     (vG : [Γ ,, vass na F ||-v< l > G | validSnoc na vΓ vF])
     : [Γ ||-v< l > tProd na F G | vΓ].
   Proof.
-    pose proof (rF := fun Δ σ => validTy (Δ := Δ) (σ := σ) vF).
-    pose proof (tF := fun Δ σ tΔ vσ => escape_ (rF Δ σ tΔ vσ)).
-    pose proof (tFrefl := fun Δ σ tΔ vσ => escapeEq_ _ (LRTyEqRefl_ (rF Δ σ tΔ vσ))).
-    pose proof (rG := fun Δ σ tΔ vσ => validTy (Δ := Δ ,, vass na F[σ])
-                                         (σ := up_term_term σ) vG _ (liftSubstS' vΓ tΔ vF vσ)).
-    pose proof (tG := fun Δ σ tΔ vσ => escape_ (rG Δ σ tΔ vσ)).
-    pose proof (tGrefl := fun Δ σ tΔ vσ => escapeEq_ _ (LRTyEqRefl_ (rG Δ σ tΔ vσ))).
-    pose proof (rGa := fun Δ Δ' σ a (tΔ : [ |-[ ta ] Δ ]) (tΔ' : [ |-[ ta ] Δ' ]) ρ vσ ra =>
-                         validTy (Δ := Δ') (σ := a .: (σ ⟨ ρ ⟩)) vG _
-                           (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF ra)).
-    unshelve econstructor.
-    - intros Δ σ tΔ vσ. cbn.
-      unshelve eapply LRPi_.
-      + econstructor.
-        * apply TypeRedWf_refl.
-          exact (wft_prod (tF _ _ tΔ vσ) (tG _ _ tΔ vσ)).
-        * exact (tF _ _ tΔ vσ).
-        * exact (tG _ _ tΔ vσ).
-        * exact (convty_prod I (tF _ _ tΔ vσ) (tFrefl _ _ tΔ vσ) (tGrefl _ _ tΔ vσ)).
-
-          Unshelve.
-          ++ intros Δ' ρ tΔ'.
-             exact (wk ρ tΔ' (rF Δ σ tΔ vσ)).
-          ++ intros Δ' a ρ tΔ' ra.
-            admit.
-
-        * intros Δ' a b ρ tΔ' ra rb rab.
-          admit.
-
-      + econstructor.
-        * fold subst_term. admit.
-        * admit.
-    - intros Δ σ σ' tΔ vσ vσ' vσσ'. simpl. fold subst_term.
-      econstructor.
-      + apply TypeRedWf_refl.
-        exact (wft_prod (tF _ _ tΔ vσ') (tG _ _ tΔ vσ')).
-      + fold subst_term. simpl. admit.
-      + fold subst_term. simpl. admit.
-      + fold subst_term. simpl. admit.
-  Admitted.
+    eapply PiValid. eassumption.
+  Qed.
 
   Import DeclarativeTypingData.
 
@@ -373,7 +323,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
     - apply wfc_nil.
     - apply wfc_cons ; tea.
       apply Fundamental in HA as [? [HA _]].
-      pose proof (soundCtxId VΓ) as [? Hsubst].
+      pose proof (soundCtxId vΓ) as [? Hsubst].
       specialize (HA _ _ _ Hsubst).
       rewrite instId'_term in HA ; tea.
       now eapply escape_ in HA.
