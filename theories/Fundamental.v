@@ -17,8 +17,8 @@ Definition FundCon `{GenericTypingProperties}
 Module FundTy.
   Record FundTy `{GenericTypingProperties} {Γ : context} {A : term}
   : Type := {
-    vΓ : [||-v Γ ];
-    vA : [ Γ ||-v< one > A | vΓ ]
+    VΓ : [||-v Γ ];
+    VA : [ Γ ||-v< one > A | VΓ ]
   }.
 
   Arguments FundTy {_ _ _ _ _ _ _ _ _ _}.
@@ -30,10 +30,10 @@ Module FundTyEq.
   Record FundTyEq `{GenericTypingProperties}
     {Γ : context} {A B : term}
   : Type := {
-    vΓ : [||-v Γ ];
-    vA : [ Γ ||-v< one > A | vΓ ];
-    vB : [ Γ ||-v< one > B | vΓ ];
-    vAB : [ Γ ||-v< one > A ≅ B | vΓ | vA ]
+    VΓ : [||-v Γ ];
+    VA : [ Γ ||-v< one > A | VΓ ];
+    VB : [ Γ ||-v< one > B | VΓ ];
+    VAB : [ Γ ||-v< one > A ≅ B | VΓ | VA ]
   }.
   Arguments FundTyEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTyEq.
@@ -44,9 +44,9 @@ Module FundTm.
   Record FundTm `{GenericTypingProperties}
     {Γ : context} {A t : term}
   : Type := {
-    vΓ : [||-v Γ ];
-    vA : [ Γ ||-v< one > A | vΓ ];
-    vt : [ Γ ||-v< one > t : A | vΓ | vA ];
+    VΓ : [||-v Γ ];
+    VA : [ Γ ||-v< one > A | VΓ ];
+    Vt : [ Γ ||-v< one > t : A | VΓ | VA ];
   }.
   Arguments FundTm {_ _ _ _ _ _ _ _ _ _}.
 End FundTm.
@@ -57,11 +57,11 @@ Module FundTmEq.
   Record FundTmEq `{GenericTypingProperties}
     {Γ : context} {A t u : term}
   : Type := {
-    vΓ : [||-v Γ ];
-    vA : [ Γ ||-v< one > A | vΓ ];
-    vt : [ Γ ||-v< one > t : A | vΓ | vA ];
-    vu : [ Γ ||-v< one > u : A | vΓ | vA ];
-    vtu : [ Γ ||-v< one > t ≅ u : A | vΓ | vA ];
+    VΓ : [||-v Γ ];
+    VA : [ Γ ||-v< one > A | VΓ ];
+    Vt : [ Γ ||-v< one > t : A | VΓ | VA ];
+    Vu : [ Γ ||-v< one > u : A | VΓ | VA ];
+    Vtu : [ Γ ||-v< one > t ≅ u : A | VΓ | VA ];
   }.
   Arguments FundTmEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTmEq.
@@ -98,15 +98,6 @@ Section Fundamental.
   (* Fundamental is parameterized by a tag that satisfies the generic typing
     properties *)
   Context `{GenericTypingProperties}.
-
-  Lemma FundPi {l Γ na F G} (vΓ : [||-v Γ])
-    (vF : [Γ ||-v< l > F | vΓ])
-    (vG : [Γ ,, vass na F ||-v< l > G | validSnoc na vΓ vF])
-    : [Γ ||-v< l > tProd na F G | vΓ].
-  Proof.
-    eapply PiValid. eassumption.
-  Qed.
-
   Import DeclarativeTypingData.
 
   Lemma FundConNil : FundCon ε.
@@ -119,10 +110,10 @@ Section Fundamental.
   Qed.
 
   Lemma FundConCons (Γ : context) (na : aname) (A : term)
-  (tΓ : [ |-[ de ] Γ]) (fΓ : FundCon Γ) (tA : [Γ |-[ de ] A]) (fA : FundTy Γ A) : FundCon (Γ,, vass na A).
+  (wfΓ : [ |-[ de ] Γ]) (fΓ : FundCon Γ) (tA : [Γ |-[ de ] A]) (fA : FundTy Γ A) : FundCon (Γ,, vass na A).
   Proof.
-    destruct fA as [ vΓ vA ].
-    eapply validSnoc. exact vA.
+    destruct fA as [ VΓ VA ].
+    eapply validSnoc. exact VA.
   Qed.
 
   Lemma FundTyU (Γ : context) (tΓ : [ |-[ de ] Γ]) (fΓ : FundCon Γ) : FundTy Γ U.
@@ -139,9 +130,9 @@ Section Fundamental.
     (tG : [Γ,, vass na F |-[ de ] G]) (fG : FundTy (Γ,, vass na F) G)
     : FundTy Γ (tProd na F G).
   Proof.
-    destruct fF as [ vΓ vF ]. destruct fG as [ vΓF vG ].
+    destruct fF as [ VΓ VF ]. destruct fG as [ VΓF VG ].
     econstructor.
-    unshelve eapply (FundPi vΓ).
+    unshelve eapply (PiValid VΓ).
     - assumption.
     - now eapply irrelevanceValidity.
   Qed.
@@ -150,12 +141,12 @@ Section Fundamental.
     (tA : [Γ |-[ de ] A : U]) (fA : FundTm Γ U A)
     : FundTy Γ A.
   Proof.
-    destruct fA as [ vΓ vU [ rA rAext ] ]. econstructor.
+    destruct fA as [ VΓ VU [ RA RAext ] ]. econstructor.
     unshelve econstructor.
     - intros * vσ.
-      eapply UnivEq. exact (rA _ _ wfΔ vσ).
+      eapply UnivEq. exact (RA _ _ wfΔ vσ).
     - intros * vσ' vσσ'.
-      eapply UnivEqEq. exact (rAext _ _ _ wfΔ vσ vσ' vσσ').
+      eapply UnivEqEq. exact (RAext _ _ _ wfΔ vσ vσ' vσσ').
   Qed.
 
   Lemma FundTmVar : forall (Γ : context) (n : nat) (decl : context_decl),
@@ -323,7 +314,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
     - apply wfc_nil.
     - apply wfc_cons ; tea.
       apply Fundamental in HA as [? [HA _]].
-      pose proof (soundCtxId vΓ) as [? Hsubst].
+      pose proof (soundCtxId VΓ) as [? Hsubst].
       specialize (HA _ _ _ Hsubst).
       rewrite instId'_term in HA ; tea.
       now eapply escape_ in HA.
