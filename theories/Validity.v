@@ -292,3 +292,37 @@ Section Inductions.
   Proof. apply (invValidity VΓ₀). Qed.
   
 End Inductions.
+
+(* Tactics to instantiate validity proofs in the context with 
+  valid substitions *)
+
+Definition Block (A : Type) := A.
+
+Ltac block H :=
+  let T := type of H in (change T with (Block T) in H).
+
+Ltac unblock := unfold Block in *.
+
+Ltac instValid wfΔ vσ :=
+  repeat lazymatch goal with
+  | [H : typeValidity _ _ _ _ |- _] => 
+    let X := fresh "R" H in
+    pose (X := validTy H wfΔ vσ) ;
+    block H
+  | [H : termValidity _ _ _ _ _ _ |- _] => 
+    let X := fresh "R" H in
+    pose (X := validTm H wfΔ vσ) ;
+    block H
+  end; unblock.
+
+Ltac instValidExt vσ' vσσ' :=
+  repeat lazymatch goal with
+  | [H : typeValidity _ _ _ _ |- _] => 
+    let X := fresh "RE" H in
+    pose (X := validTyExt H _ _ vσ' vσσ') ;
+    block H
+  | [H : termValidity _ _ _ _ _ _ |- _] => 
+    let X := fresh "RE" H in
+    pose (X := validTmExt H _ _ vσ' vσσ') ;
+    block H
+  end; unblock.

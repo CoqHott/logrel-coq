@@ -40,6 +40,7 @@ theories/Substitution/Conversion.v
 theories/Substitution/Reflexivity.v
 theories/Substitution/Reduction.v
 theories/Substitution/SingleSubst.v
+theories/Substitution/Introductions/Application.v
 
 theories/Substitution/Introductions/Pi.v
 theories/Fundamental.v
