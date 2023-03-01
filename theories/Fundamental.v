@@ -16,10 +16,10 @@ Definition FundCon `{GenericTypingProperties}
 Module FundTy.
   Record FundTy `{GenericTypingProperties} {Γ : context} {A : term}
   : Type := {
-    VΓ : [||-v Γ ];
-    VA : [ Γ ||-v< one > A | VΓ ]
+    vΓ : [||-v Γ ];
+    vA : [ Γ ||-v< one > A | vΓ ]
   }.
-  
+
   Arguments FundTy {_ _ _ _ _ _ _ _ _ _}.
 End FundTy.
 
@@ -29,10 +29,10 @@ Module FundTyEq.
   Record FundTyEq `{GenericTypingProperties}
     {Γ : context} {A B : term}
   : Type := {
-    VΓ : [||-v Γ ];
-    VA : [ Γ ||-v< one > A | VΓ ];
-    VB : [ Γ ||-v< one > B | VΓ ];
-    VAB : [ Γ ||-v< one > A ≅ B | VΓ | VA ]
+    vΓ : [||-v Γ ];
+    vA : [ Γ ||-v< one > A | vΓ ];
+    vB : [ Γ ||-v< one > B | vΓ ];
+    vAB : [ Γ ||-v< one > A ≅ B | vΓ | vA ]
   }.
   Arguments FundTyEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTyEq.
@@ -43,9 +43,9 @@ Module FundTm.
   Record FundTm `{GenericTypingProperties}
     {Γ : context} {A t : term}
   : Type := {
-    VΓ : [||-v Γ ];
-    VA : [ Γ ||-v< one > A | VΓ ];
-    Vt : [ Γ ||-v< one > t : A | VΓ | VA ];
+    vΓ : [||-v Γ ];
+    vA : [ Γ ||-v< one > A | vΓ ];
+    vt : [ Γ ||-v< one > t : A | vΓ | vA ];
   }.
   Arguments FundTm {_ _ _ _ _ _ _ _ _ _}.
 End FundTm.
@@ -56,11 +56,11 @@ Module FundTmEq.
   Record FundTmEq `{GenericTypingProperties}
     {Γ : context} {A t u : term}
   : Type := {
-    VΓ : [||-v Γ ];
-    VA : [ Γ ||-v< one > A | VΓ ];
-    Vt : [ Γ ||-v< one > t : A | VΓ | VA ];
-    Vu : [ Γ ||-v< one > u : A | VΓ | VA ];
-    Vtu : [ Γ ||-v< one > t ≅ u : A | VΓ | VA ];
+    vΓ : [||-v Γ ];
+    vA : [ Γ ||-v< one > A | vΓ ];
+    vt : [ Γ ||-v< one > t : A | vΓ | vA ];
+    vu : [ Γ ||-v< one > u : A | vΓ | vA ];
+    vtu : [ Γ ||-v< one > t ≅ u : A | vΓ | vA ];
   }.
   Arguments FundTmEq {_ _ _ _ _ _ _ _ _ _}.
 End FundTmEq.
