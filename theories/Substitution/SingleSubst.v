@@ -10,44 +10,47 @@ Context `{GenericTypingProperties}.
 
 Set Printing Primitive Projection Parameters.
 
-Lemma substS {Γ F G t l} (VΓ : [||-v Γ]) nF
-  (VF : [Γ ||-v<l> F | VΓ])
+Lemma singleSubstComm G t σ : G[t..][σ] = G[t[σ] .: σ].
+Proof. now asimpl. Qed.
+
+
+Lemma substS {Γ F G t l} {VΓ : [||-v Γ]} nF
+  {VF : [Γ ||-v<l> F | VΓ]}
   (VG : [Γ,, vass nF F ||-v<l> G | validSnoc nF VΓ VF])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) :
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
-  assert (eq : forall σ, G[t..][σ] = G[t[σ] .: σ]) by (intros; now asimpl).
-  opector; intros; rewrite eq.
+  opector; intros; rewrite singleSubstComm.
   - unshelve eapply validTy. 3,4:  tea.
     now eapply consSubstSvalid.
-  - irrelevance0. 1: symmetry; apply eq.
+  - irrelevance0. 1: symmetry; apply singleSubstComm.
     eapply validTyExt.
     1: eapply consSubstS; now  eapply validTm.
     now eapply consSubstSEqvalid.
     Unshelve. all: eassumption.
 Qed.
 
-Lemma substSEq {Γ F F' G G' t t' l} (VΓ : [||-v Γ]) nF 
-  (VF : [Γ ||-v<l> F | VΓ])
-  (VF' : [Γ ||-v<l> F' | VΓ])
+Lemma substSEq {Γ F F' G G' t t' l} {VΓ : [||-v Γ]} nF 
+  {VF : [Γ ||-v<l> F | VΓ]}
+  {VF' : [Γ ||-v<l> F' | VΓ]}
   (VFF' : [Γ ||-v<l> F ≅ F' | VΓ | VF])
   (VΓF := validSnoc nF VΓ VF)
   (VΓF' := validSnoc nF VΓ VF')
-  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
+  {VG : [Γ,, vass nF F ||-v<l> G | VΓF]}
   (VG' : [Γ,, vass nF F' ||-v<l> G' | VΓF'])
   (VGG' : [Γ ,, vass nF F ||-v<l> G ≅ G' | VΓF | VG])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF])
   (Vt' : [Γ ||-v<l> t' : F' | VΓ | VF'])
-  (Vtt' : [Γ ||-v<l> t ≅ t' : F | VΓ | VF]) :
-  [Γ ||-v<l> G[t..] ≅ G'[t'..] | VΓ | substS VΓ nF VF VG Vt].
+  (Vtt' : [Γ ||-v<l> t ≅ t' : F | VΓ | VF])
+  (VGt := substS nF VG Vt) :
+  [Γ ||-v<l> G[t..] ≅ G'[t'..] | VΓ | VGt].
 Proof.
-  assert (eq : forall G t σ, G[t..][σ] = G[t[σ] .: σ]) by (intros; now asimpl).
   constructor; intros.
   assert (VtF' : [Γ ||-v<l> t : F' | VΓ | VF']) by now eapply conv.
   pose proof (consSubstSvalid (nA:=nF) _ _ Vσ _ Vt').
   pose proof (consSubstSvalid (nA:=nF) _ _ Vσ _ VtF').
-  rewrite eq; irrelevance0.
-  1: symmetry; apply eq.
+  rewrite singleSubstComm; irrelevance0.
+  1: symmetry; apply singleSubstComm.
   eapply transEq.
   - unshelve now eapply validTyEq.
     2: now eapply consSubstSvalid.
@@ -61,17 +64,19 @@ Proof.
 Qed.
 
 
-Lemma substSTm {Γ F G t f l} (VΓ : [||-v Γ]) nF
-  (VF : [Γ ||-v<l> F | VΓ])
+
+
+Lemma substSTm {Γ F G t f l} {VΓ : [||-v Γ]} nF
+  {VF : [Γ ||-v<l> F | VΓ]}
   (VΓF := validSnoc nF VΓ VF)
-  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
+  {VG : [Γ,, vass nF F ||-v<l> G | VΓF]}
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) 
-  (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG]):
-  [Γ ||-v<l> f[t..] : G[t..] | VΓ | substS VΓ nF VF VG Vt].
+  (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG])
+  (VGt := substS nF VG Vt) :
+  [Γ ||-v<l> f[t..] : G[t..] | VΓ | VGt].
 Proof.
-  assert (eq : forall G t σ, G[t..][σ] = G[t[σ] .: σ]) by (intros; now asimpl).
-  constructor; intros; rewrite !eq; irrelevance0. 
-  1,3: symmetry; apply eq.
+  constructor; intros; rewrite !singleSubstComm; irrelevance0. 
+  1,3: symmetry; apply singleSubstComm.
   - now eapply validTm.
   - eapply validTmExt; tea.
     1: now apply consSubstSvalid.
@@ -95,11 +100,10 @@ Lemma substSTmEq {Γ F F' G G' t t' f f' l} (VΓ : [||-v Γ]) nF
   (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG])
   (Vf' : [Γ ,, vass nF F' ||-v<l> f' : G' | VΓF' | VG'])
   (Vff' : [Γ ,, vass nF F ||-v<l> f ≅ f' : G | VΓF | VG]) :
-  [Γ ||-v<l> f[t..] ≅ f'[t..] : G[t..] | VΓ | substS VΓ nF VF VG Vt].
+  [Γ ||-v<l> f[t..] ≅ f'[t..] : G[t..] | VΓ | substS nF VG Vt].
 Proof.
-  assert (eq : forall G t σ, G[t..][σ] = G[t[σ] .: σ]) by (intros; now asimpl).
-  constructor; intros; rewrite !eq; irrelevance0. 
-  1: symmetry; apply eq.
+  constructor; intros; rewrite !singleSubstComm; irrelevance0. 
+  1: symmetry; apply singleSubstComm.
   unshelve now eapply validTmEq.
   2: now eapply consSubstSvalid.
 Qed.
@@ -118,7 +122,7 @@ Proof. *)
 
 Lemma singleSubstΠ1 {Γ nF F G t l lF}
   (ΠFG : [Γ ||-<l> tProd nF F G])
-  (RF : [Γ ||-<lF> F])
+  {RF : [Γ ||-<lF> F]}
   (Rt : [Γ ||-<lF> t : F | RF]) :
   [Γ ||-<l> G[t..]].
 Proof.
@@ -134,10 +138,10 @@ Proof.
 Qed.
 
 Lemma singleSubstΠ2 {Γ nF nF' F F' G G' t t' l lF lF'}
-  (ΠFG : [Γ ||-<l> tProd nF F G])
+  {ΠFG : [Γ ||-<l> tProd nF F G]}
   (ΠFGeq : [Γ ||-<l> tProd nF F G ≅ tProd nF' F' G' | ΠFG])
-  (RF : [Γ ||-<lF> F])
-  (RF' : [Γ ||-<lF'> F'])
+  {RF : [Γ ||-<lF> F]}
+  {RF' : [Γ ||-<lF'> F']}
   (Rt : [Γ ||-<lF> t : F | RF]) 
   (Rt' : [Γ ||-<lF'> t' : F' | RF']) 
   (Rteq : [Γ ||-<lF> t ≅ t' : F | RF])
@@ -172,8 +176,8 @@ Proof.
 Qed.
 
 Lemma substSΠaux {Γ nF F G t l} 
-  (VΓ : [||-v Γ])
-  (VF : [Γ ||-v<l> F | VΓ])
+  {VΓ : [||-v Γ]}
+  {VF : [Γ ||-v<l> F | VΓ]}
   (VΠFG : [Γ ||-v<l> tProd nF F G | VΓ])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF])
   (Δ : context) (σ : nat -> term) 
@@ -186,50 +190,51 @@ Proof.
   Unshelve. all: eassumption.
 Qed.
 
+Lemma singleSubstComm' G t σ : G[t..][σ] = G[up_term_term σ][t[σ]..].
+Proof. now asimpl. Qed.
+
 Lemma substSΠ {Γ nF F G t l} 
-  (VΓ : [||-v Γ])
-  (VF : [Γ ||-v<l> F | VΓ])
+  {VΓ : [||-v Γ]}
+  {VF : [Γ ||-v<l> F | VΓ]}
   (VΠFG : [Γ ||-v<l> tProd nF F G | VΓ])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) :
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
   opector; intros.
-  - replace G[t..][σ] with G[up_term_term σ][t[σ]..] by now bsimpl.
-    now eapply substSΠaux.
-  - replace G[_][_] with G[up_term_term σ'][t[σ']..] by now bsimpl.
-    irrelevance0.
-    2: eapply singleSubstΠ2.
-    2: eapply (validTyExt VΠFG).
-    2,3: tea.
-    2, 3: now eapply validTm.
-    2: now eapply validTmExt.
-    1: fold subst_term; now bsimpl.
+  - rewrite singleSubstComm'; now eapply substSΠaux.
+  - rewrite singleSubstComm'.
+    irrelevance0. 1: symmetry; apply singleSubstComm'.
+    eapply singleSubstΠ2.
+    1: eapply (validTyExt VΠFG).
+    1, 2: tea.
+    1, 2: now eapply validTm.
+    1: now eapply validTmExt.
     now eapply substSΠaux.
     Unshelve. all: tea.
     now eapply substSΠaux.
 Qed.
 
 Lemma substSΠeq {Γ nF nF' F F' G G' t u l} 
-  (VΓ : [||-v Γ])
-  (VF : [Γ ||-v<l> F | VΓ])
-  (VF' : [Γ ||-v<l> F' | VΓ])
-  (VΠFG : [Γ ||-v<l> tProd nF F G | VΓ])
+  {VΓ : [||-v Γ]}
+  {VF : [Γ ||-v<l> F | VΓ]}
+  {VF' : [Γ ||-v<l> F' | VΓ]}
+  {VΠFG : [Γ ||-v<l> tProd nF F G | VΓ]}
   (VΠFG' : [Γ ||-v<l> tProd nF' F' G' | VΓ])
   (VΠFGeq : [Γ ||-v<l> tProd nF F G ≅ tProd nF' F' G' | VΓ | VΠFG])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) 
   (Vu : [Γ ||-v<l> u : F' | VΓ | VF']) 
   (Vtu : [Γ ||-v<l> t ≅ u : F | VΓ | VF]) 
-  (VGt := substSΠ VΓ VF VΠFG Vt) :
+  (VGt := substSΠ VΠFG Vt) :
   [Γ ||-v<l> G[t..] ≅ G'[u..] | VΓ | VGt].
 Proof.
   constructor; intros.
-  replace G'[_][_] with G'[up_term_term σ][u[σ]..] by now bsimpl.
+  rewrite singleSubstComm'.
   irrelevance0.
-  2: eapply singleSubstΠ2.
-  2: now eapply (validTyEq VΠFGeq).
-  4: now eapply validTmEq.
-  2,3: now eapply validTm.
-  1: fold subst_term; now bsimpl.
+  1: symmetry; apply singleSubstComm'.
+  eapply singleSubstΠ2.
+  1: now eapply (validTyEq VΠFGeq).
+  3: now eapply validTmEq.
+  1,2: now eapply validTm.
   now eapply substSΠaux.
   Unshelve. all: tea.
   now eapply substSΠaux.

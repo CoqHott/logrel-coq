@@ -7,14 +7,7 @@ Set Universe Polymorphism.
 Section Neutral.
 Context `{GenericTypingProperties}.
 
-Lemma typeredwf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
-Proof.
-  constructor.
-  3: now apply redty_refl.
-  1,2: assumption.
-Qed.  
-
-Lemma termredwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
+Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
 Proof.
   constructor.
   3: now apply redtm_refl.
@@ -34,7 +27,7 @@ Lemma neU {l Γ n} (h : [Γ ||-U l]) :
   [LogRelRec l | Γ ||-U n :U | h].
 Proof.
   intros; exists n.
-  * now eapply termredwf_refl.
+  * now eapply redtmwf_refl.
   * now apply NeType.
   * gen_typing.
   * eapply RedTyRecBwd; apply neu; try assumption; gen_typing.
@@ -65,7 +58,7 @@ Proof.
   unshelve irrelevance0. 1: assumption. 3: reflexivity.
   1: apply neu; try assumption; now eapply lrefl.
   econstructor. 
-  1: now apply typeredwf_refl.
+  1: now apply redtywf_refl.
   all: cbn; assumption. 
 Qed.
 
@@ -115,11 +108,11 @@ Proof.
     + eapply TyEqRecBwd. eapply neuEq; try assumption; gen_typing.
   - intros ??? [B []] ** ; assert ([Γ |- A ≅ B]) by gen_typing ; split.
     + exists n; cbn.
-      * eapply termredwf_refl ; gen_typing.
+      * eapply redtmwf_refl ; gen_typing.
       * assumption.
       * eapply lrefl; eapply convneu_conv; eassumption.
     + exists n n'; cbn.
-      1,2: eapply termredwf_refl ; eapply ty_conv; gen_typing.
+      1,2: eapply redtmwf_refl ; eapply ty_conv; gen_typing.
       1,2: assumption.
       gen_typing. 
   - intros ??? ΠA0 * ihdom ihcod. set (ΠA := ΠA0); destruct ΠA0 as [na dom cod []].
@@ -127,7 +120,7 @@ Proof.
     unshelve refine ( let funred : forall n, whne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
     {
       intros; exists n; cbn.
-      * eapply termredwf_refl ; gen_typing.
+      * eapply redtmwf_refl ; gen_typing.
       * now eapply NeFun.
       * gen_typing.
       * intros; apply helper; [apply ihcod| constructor; now apply whne_ren|..].
