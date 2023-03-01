@@ -7,29 +7,23 @@ Set Universe Polymorphism.
 Section Neutral.
 Context `{GenericTypingProperties}.
 
-Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
-Proof.
-  constructor.
-  3: now apply redtm_refl.
-  1,2: assumption.
-Qed.  
-
 Definition neu {l Γ A} : whne A -> [Γ |- A] -> [ Γ |- A ~ A : U] -> [Γ ||-<l> A].
 Proof.
   intros neA wtyA reflA. apply LRne_. 
   exists A; [gen_typing|..]; assumption.
 Defined.
 
-Lemma neU {l Γ n} (h : [Γ ||-U l]) : 
+Lemma neU {l Γ A n} (h : [Γ ||-U<l> A]) : 
   whne n ->
-  [Γ |- n : U] ->
-  [Γ |- n ~ n : U] ->
-  [LogRelRec l | Γ ||-U n :U | h].
+  [Γ |- n : A] ->
+  [Γ |- n ~ n : A] ->
+  [LogRelRec l | Γ ||-U n : A | h].
 Proof.
+  assert [Γ |- A ≅ U] by (destruct h; gen_typing).
   intros; exists n.
-  * now eapply redtmwf_refl.
+  * eapply redtmwf_conv; tea; now eapply redtmwf_refl.
   * now apply NeType.
-  * gen_typing.
+  * eapply convtm_conv; tea; gen_typing.
   * eapply RedTyRecBwd; apply neu; try assumption; gen_typing.
 Defined.
 
@@ -37,7 +31,7 @@ Lemma neElim {Γ l K} : [Γ ||-<l> K] -> whne K -> [Γ ||-ne K].
 Proof.
   intros h; pattern l,Γ,K,h; set (P := fun _ => _); eapply LR_rect_TyUr;
   clear l Γ K h.
-  - intros ** ne; inversion ne.
+  - intros ??? [??? r] ne; pose proof (redtywf_whne r  ne); subst; inversion ne.
   - intros ** ne; assumption.
   - intros ??? [??? [?? red]] ** ne ; cbn in *.
     apply redty_red in red. 
@@ -99,10 +93,11 @@ Proof.
   assert (helper : forall l Γ A RA, P l Γ A RA -> forall n, whne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-<l> n : A | RA]).
   { intros ???? ih **; subst P; eapply ih. 5: eassumption. all: assumption. }
   eapply LR_rect_TyUr; clear l Γ A RA; subst P; cbn.
-  - intros * ???? h; pose proof (lrefl h); pose proof (urefl h); split.
+  - intros ??? h0 ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
+    assert [Γ |- A ≅ U] by (destruct h0; gen_typing); split.
     2: unshelve econstructor. 
     1-3: now apply neU.
-    + eapply RedTyRecBwd; apply neu; try assumption; gen_typing.
+    + eapply RedTyRecBwd; apply neu ; try assumption; gen_typing.
     + cbn. gen_typing.
     + eapply RedTyRecBwd; apply neu; try assumption; gen_typing.
     + eapply TyEqRecBwd. eapply neuEq; try assumption; gen_typing.

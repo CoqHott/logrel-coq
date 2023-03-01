@@ -189,35 +189,46 @@ Notation "[ Γ ||-ne t ≅ u : A | R ] " := (neRedTmEq Γ t u A R).
 
 Module URedTy.
 
-  Record URedTy `{ta : tag} `{WfContext ta}
-    {l} {Γ : context}
+  Record URedTy `{ta : tag} `{!WfType ta} `{!RedType ta} `{WfContext ta}
+    {l} {Γ : context} {A : term}
   : Set := {
     level  : TypeLevel;
     lt  : level << l;
-    wfCtx : [ |- Γ ]
+    wfCtx : [|- Γ] ;
+    red : [ Γ |- A  :⇒*: U ]
   }.
 
-  Arguments URedTy {_ _}.
-
-  Record URedTyEq {Γ : context} {B : term} : Set := {
-    eq : B = U
-  }.
-
-  Arguments URedTyEq : clear implicits.
+  Arguments URedTy {_ _ _ _}.
 
 End URedTy.
 
-Export URedTy(URedTy,Build_URedTy,URedTyEq,Build_URedTyEq).
+Export URedTy(URedTy,Build_URedTy).
 
-Notation "[ Γ ||-U l ]" := (URedTy l Γ).
+
+Notation "[ Γ ||-U< l > A ]" := (URedTy l Γ A) (at level 0, Γ, l, A at level 50).
+
+Module URedTyEq.
+
+  Record URedTyEq `{ta : tag} `{!WfType ta} `{!RedType ta} 
+    {Γ : context} {B : term} : Set := {
+    red : [Γ |- B :⇒*: U]
+  }.
+
+  Arguments URedTyEq : clear implicits.
+  Arguments URedTyEq {_ _ _}.
+
+End URedTyEq.
+
+Export URedTyEq(URedTyEq,Build_URedTyEq).
+
 Notation "[ Γ ||-U≅ B ]" := (URedTyEq Γ B).
 
 Module URedTm.
 
-  Record URedTm@{i j} `{ta : tag} `{WfContext ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+  Record URedTm@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
+    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} 
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
-    {Γ : context} {t : term} {R : [Γ ||-U l]}
+    {Γ : context} {t A : term} {R : [Γ ||-U<l> A]}
   : Type@{j} := {
     te : term;
     red : [ Γ |- t :⇒*: te : U ];
@@ -226,29 +237,29 @@ Module URedTm.
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
   }.
 
-  Arguments URedTm {_ _ _ _ _ _} rec.
+  Arguments URedTm {_ _ _ _ _ _ _ _} rec.
 
   (*Universe term equality*)
-  Record URedTmEq@{i j} `{ta : tag} `{WfContext ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+  Record URedTmEq@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
+    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
-    {Γ : context} {t u : term} {R : [Γ ||-U l]}
+    {Γ : context} {t u A : term} {R : [Γ ||-U<l> A]}
   : Type@{j} := {
-      redL : URedTm (@rec) Γ t R ;
-      redR : URedTm (@rec) Γ u R ;
+      redL : URedTm (@rec) Γ t A R ;
+      redR : URedTm (@rec) Γ u A R ;
       eq   : [ Γ |- redL.(te) ≅ redR.(te) : U ];
       relL    : [ rec R.(URedTy.lt) | Γ ||- t ] ;
       relR    : [ rec R.(URedTy.lt) | Γ ||- u ] ;
       relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ] ;
   }.
 
-  Arguments URedTmEq {_ _ _ _ _ _ } rec.
+  Arguments URedTmEq {_ _ _ _ _ _  _ _} rec.
 
 End URedTm.
 
 Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
-Notation "[ R | Γ ||-U t :U | l ]" := (URedTm R Γ t l).
-Notation "[ R | Γ ||-U t ≅ u :U | l ]" := (URedTmEq R Γ t u l).
+Notation "[ R | Γ ||-U t : A | l ]" := (URedTm R Γ t A l) (at level 0, R, Γ, t, A, l at level 50).
+Notation "[ R | Γ ||-U t ≅ u : A | l ]" := (URedTmEq R Γ t u A l) (at level 0, R, Γ, t, u, A, l at level 50).
 
 Module PiRedTy.
 
@@ -380,11 +391,11 @@ Inductive LR@{i j k} `{ta : tag}
   `{RedType ta} `{RedTerm ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
-  | LRU {Γ} (H : [Γ ||-U l]) :
-      LR rec Γ U
+  | LRU {Γ A} (H : [Γ ||-U<l> A]) :
+      LR rec Γ A
       (fun B   => [Γ ||-U≅ B ])
-      (fun t   => [ rec | Γ ||-U t     :U | H ])
-      (fun t u => [ rec | Γ ||-U t ≅ u :U | H ])
+      (fun t   => [ rec | Γ ||-U t     : A | H ])
+      (fun t u => [ rec | Γ ||-U t ≅ u : A | H ])
   | LRne {Γ A} (neA : [ Γ ||-ne A ]) :
       LR rec Γ A
       (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
@@ -471,8 +482,8 @@ Section MoreDefs.
     ∑ rEq rTe rTeEq , LR (LogRelRec l) Γ A rEq rTe rTeEq :=
       fun H => (LRPack.eqTy H; LRPack.redTm H; LRPack.eqTm H; H.(LRAd.adequate)).
 
-  Definition LRU_@{i j k l} {l Γ} (H : [Γ ||-U l])
-    : [ LogRel@{i j k l} l | Γ ||- U ] :=
+  Definition LRU_@{i j k l} {l Γ A} (H : [Γ ||-U<l> A])
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRU (LogRelRec l) H).
 
   Definition LRne_@{i j k l} l {Γ A} (neA : [Γ ||-ne A])
@@ -604,18 +615,52 @@ Section LogRelRecFoldLemmas.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
   
-  Lemma RedTyRecFwd {l Γ t} (h : [Γ ||-U l]) : 
+  Lemma RedTyRecFwd {l Γ A t} (h : [Γ ||-U<l> A]) : 
     [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t] ->
     [LogRel (URedTy.level h) | Γ ||- t ].
   Proof.
-    destruct h as [? lt]; inversion lt; now subst.
-  Qed.
+    destruct h as [? lt]; cbn. 
+    pattern level, l , lt; induction lt.
+    cbn. easy. 
+  Defined.
 
-  Lemma RedTyRecBwd {l Γ t} (h : [Γ ||-U l]) : 
+  Lemma RedTyRecBwd {l Γ A t} (h : [Γ ||-U<l> A]) : 
     [LogRel (URedTy.level h) | Γ ||- t ] ->
     [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t].
   Proof.
-    destruct h as [? lt]; inversion lt; now subst.
+    destruct h as [? lt]; cbn. 
+    pattern level, l , lt; induction lt.
+    cbn. easy. 
+  Defined.
+
+  Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
+
+  (* This is a duplicate of the above, no ? *)
+  Lemma LogRelRec_unfold {Γ l A t eqTy redTm eqTm} (h: [Γ ||-U<l> A]) :
+    LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <≈>
+    LogRel (URedTy.level h) Γ t eqTy redTm eqTm.
+  Proof.
+    destruct l; [destruct (elim (URedTy.lt h))|].
+    destruct h; inversion lt; subst; cbn; now split.
+  Qed.
+
+
+  Lemma TyEqRecFwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
+    (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
+  Proof.
+    unfold RedTyRecFwd.
+    destruct h as [? lt]; cbn in *.
+    induction lt; cbn; split; easy.
+  Qed.
+
+  Lemma TyEqRecBwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
+    (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
+    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
+  Proof.
+    unfold RedTyRecBwd.
+    destruct h as [? lt]; cbn in *.
+    induction lt; cbn; split; easy.
   Qed.
 
 End LogRelRecFoldLemmas.

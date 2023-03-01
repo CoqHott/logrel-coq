@@ -12,7 +12,7 @@ Section Escapes.
     LogRel l Γ A eqTy redTm eqTm ->
     [Γ |- A].
   Proof.
-    induction 1 as [? [] | ? ? [] | ? ? [] ].
+    induction 1 as [? ? [] | ? ? [] | ? ? [] ].
     all: gen_typing.
   Qed.
 
@@ -29,8 +29,8 @@ Section Escapes.
     eqTy B ->
     [Γ |- A ≅ B].
   Proof.
-    induction lr as [ ? [] | ? ? [] | ? ? [] IHdom IHcod].
-    + intros [->].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] IHdom IHcod].
+    + intros []. 
       gen_typing.
     + intros [].
       cbn in *.
@@ -55,7 +55,7 @@ Section Escapes.
     redTm t ->
     [Γ |- t : A].
   Proof.
-    induction lr as [ ? [] | ? ? [] | ? ? [] IHdom IHcod].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] IHdom IHcod].
     all: intros [] ; cbn in *.
     all: gen_typing.
   Qed. 
@@ -74,7 +74,7 @@ Section Escapes.
     eqTm t u ->
     [Γ |- t ≅ u : A].
   Proof.
-    induction lr as [ ? [] | ? ? [] | ? ? [] IHdom IHcod].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] IHdom IHcod].
     - intros [[termL] [termR]] ; cbn in *.
       eapply convtm_exp ; tea.
       all: gen_typing.

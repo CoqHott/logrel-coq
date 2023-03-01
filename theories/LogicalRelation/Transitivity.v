@@ -71,10 +71,10 @@ Proof.
 Qed.
 
 
-Lemma transEqTermU@{h i j k} {Γ l t u v} {h : [Γ ||-U l]} :
-  [LogRelRec@{i j k} l | Γ ||-U t ≅ u :U| h] ->
-  [LogRelRec@{i j k} l | Γ ||-U u ≅ v :U| h] ->
-  [LogRelRec@{i j k} l | Γ ||-U t ≅ v :U| h].
+Lemma transEqTermU@{h i j k} {Γ l UU t u v} {h : [Γ ||-U<l> UU]} :
+  [LogRelRec@{i j k} l | Γ ||-U t ≅ u : UU| h] ->
+  [LogRelRec@{i j k} l | Γ ||-U u ≅ v : UU| h] ->
+  [LogRelRec@{i j k} l | Γ ||-U t ≅ v : UU| h].
 Proof.
   intros [rL ?? redL] [? rR] ; exists rL rR redL; tea.
   + etransitivity; tea.

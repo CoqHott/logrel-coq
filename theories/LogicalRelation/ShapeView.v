@@ -37,25 +37,18 @@ Section ShapeViews.
     destruct lrA.
     - destruct lrB.
       + constructor.
-      + intros [->].
-        inversion neA.
-        enough (ty = U) as -> by (now eapply neSort).
-        symmetry.
-        eapply red_whnf.
+      + intros [red]; destruct neA as [? red' ne ?] .
+        unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
+        3: inversion ne.
         all: gen_typing.
-      + (* universe polymorphic variant of intros [->]. *)
-        intros [eq]; revert ΠA ΠAad; pattern A; set (P := fun _ => _);
-        apply (tr P (eq_sym eq)); subst P; cbn; intros ΠA ΠAad.
-        inversion ΠA.
-        enough (U = tProd na dom cod) by congruence.
-        eapply red_whnf.
-        all: gen_typing.
-    - destruct lrB.
-      + intros [].
-        inversion neA.
-        enough (ty = U) as -> by (now eapply neSort).
-        symmetry.
-        eapply red_whnf.
+      + intros [red]. destruct ΠA as [??? red'].
+        unshelve epose proof (e:= redtywf_det _ _ _ _ _ _ red red').
+        1,2: gen_typing.
+        discriminate e.
+    - destruct lrB as [?? [??? red]| |].
+      + intros [? red' ne].
+        unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
+        3: inversion ne.
         all: gen_typing.
       + econstructor.
       + intros [].
@@ -63,12 +56,11 @@ Section ShapeViews.
         enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
-    - destruct lrB.
-      + intros [].
-        inversion ΠA.
-        enough (U = tProd na dom cod) by congruence.
-        eapply red_whnf.
-        all: gen_typing.
+    - destruct lrB as [?? [??? red]| |].
+      + intros [??? red'].
+        unshelve epose proof (e:= redtywf_det _ _ _ _ _ _ red red').
+        1,2: gen_typing.
+        discriminate e.
       + intros [].
         destruct neA.
         enough (ty = tProd na dom cod) as -> by (now eapply nePi).

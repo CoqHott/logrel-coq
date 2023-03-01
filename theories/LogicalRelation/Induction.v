@@ -34,7 +34,7 @@ Section Inductions.
     (P : forall {c t rEq rTe rTeEq},
       LR@{i j k} rec c t rEq rTe rTeEq  -> Type@{o}) :
 
-    (forall (Γ : context) (h : [Γ ||-U l]),
+    (forall (Γ : context) A (h : [Γ ||-U<l> A]),
       P (LRU rec h)) ->
 
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
@@ -67,7 +67,7 @@ Section Inductions.
     (rec : forall l', l' << l -> RedRel@{i j})
     (P : forall {c t rEq rTe rTeEq},
       LR@{i j k} rec c t rEq rTe rTeEq  -> Type@{o})
-    (hU : forall (Γ : context) (h : [Γ ||-U l]), P (LRU rec h))
+    (hU : forall (Γ : context) A (h : [Γ ||-U<l> A]), P (LRU rec h))
     (hne : forall (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne rec neA))
     (hΠ : forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
       (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (HAad.(PiRedTy.domAd) ρ h)) ->
@@ -92,7 +92,7 @@ Section Inductions.
     (P : forall {c t rEq rTe rTeEq},
       LR@{i j k} rec c t rEq rTe rTeEq  -> Set) :
 
-    (forall (Γ : context) (h : [Γ ||-U l]),
+    (forall (Γ : context) A (h : [Γ ||-U<l> A]),
       P (LRU rec h)) ->
 
     (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
@@ -118,7 +118,7 @@ Section Inductions.
     (P : forall {l Γ t rEq rTe rTeEq},
     LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o}) :
 
-    (forall l (Γ : context) (h : [Γ ||-U l]),
+    (forall l (Γ : context) A (h : [Γ ||-U<l> A]),
       P (LRU (LogRelRec l) h)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
@@ -148,7 +148,7 @@ Section Inductions.
 
   Lemma LR_rect_LogRelRecΠ_eq@{i j k l o}
     (P : forall {l Γ t rEq rTe rTeEq}, LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o})
-    (hU : forall l (Γ : context) (h : [Γ ||-U l]), P (LRU (LogRelRec l) h))
+    (hU : forall l (Γ : context) A (h : [Γ ||-U<l> A]), P (LRU (LogRelRec l) h))
     (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne (LogRelRec l) neA))
 
     (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTy@{k} Γ A) 
@@ -173,7 +173,7 @@ Section Inductions.
   Theorem LR_rect_TyUr@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
 
-    (forall l (Γ : context) (h : [Γ ||-U l]),
+    (forall l (Γ : context) A (h : [Γ ||-U<l> A]),
       P (LRU_ h)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
@@ -204,7 +204,7 @@ Section Inductions.
 
   Theorem LR_rect_TyUr_Π_eq@{i j k l o}
     (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o})
-    (hU : forall l (Γ : context) (h : [Γ ||-U l]), P (LRU_ h))
+    (hU : forall l (Γ : context) A (h : [Γ ||-U<l> A]), P (LRU_ h))
     (hne : forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne_ l neA))
     (hΠ : forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l)
       (ihdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]), P (ΠA.(PiRedTyPack.domRed) ρ h))
@@ -291,13 +291,14 @@ Section Inversions.
   Lemma invLR {Γ l A} (lr : [Γ ||-<l> A]) : 
     whnf A ->
     match A return Type with
-    | tSort set => [Γ ||-U l]
+    | tSort _ => [Γ ||-U<l> A]
     | tProd _ _ _ => [Γ ||-Π<l> A]
     | _ => [Γ ||-ne A]
     end.
   Proof.
     pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr.
-    + trivial.
+    + intros * h whA.
+      epose proof (redtywf_whnf (URedTy.red h) whA); subst; assumption.
     + intros * h whA. pose (h' := h); destruct h' as [ty [?? r] ne].
       pose proof (redty_whnf r whA); subst.
       destruct ty; inversion ne; eassumption.
@@ -305,7 +306,7 @@ Section Inversions.
       pose proof (redty_whnf r whA); subst. eassumption.
   Qed.
 
-  Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U l].
+  Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U<l> U].
   Proof.
     intros h;  eapply (invLR h); constructor.
   Qed.

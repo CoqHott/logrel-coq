@@ -16,7 +16,9 @@ Lemma redSubst {Γ A B l} :
   ∑ (RA : [Γ ||-<l> A]), [Γ ||-<l> A ≅ B | RA].
 Proof.
   intros RB; revert A; pattern l, Γ, B, RB; apply LR_rect_TyUr; clear l Γ B RB; intros l Γ.
-  - intros h ??. admit.
+  - intros ? [] ? redA. unshelve eexists.
+    + apply LRU_; econstructor; tea; etransitivity; tea.
+    + now constructor.
   - intros B [t] A ?. unshelve eexists.
     + apply LRne_; exists t; tea; etransitivity; tea.
     + exists t; tea.
@@ -24,7 +26,7 @@ Proof.
     + apply LRPi'; unshelve eexists na dom cod _ _; tea; etransitivity; tea.
     + unshelve eexists na dom cod; tea; cbn.
       1,2: intros; apply LRTyEqRefl_.
-Admitted.
+Qed.
 
 Lemma redSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
@@ -32,12 +34,13 @@ Lemma redSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
   revert t u; pattern l, Γ, A, RA; apply LR_rect_TyUr; clear l Γ A RA; intros l Γ.
-  - intros h ?? ru' ?; pose (ru := ru'); destruct ru' as [T].
-    unshelve epose proof (x := redSubst (A:=t) (RedTyRecFwd h rel) _).
-    1: gen_typing.
-    destruct x as [rTyt0]; pose proof (rTyt := RedTyRecBwd h rTyt0).
-    unshelve refine (let rt : [LRU_ h | Γ ||- t : U]:= _ in _).
-    1: exists T; tea; etransitivity; tea.
+  - intros ? h ?? ru' redtu; pose (ru := ru'); destruct ru' as [T].
+    assert [Γ |- A ≅ U] by (destruct h; gen_typing).
+    assert (redtu' : [Γ |-[ ta ] t :⇒*: u]) by gen_typing.
+    destruct (redSubst (A:=t) (RedTyRecFwd h rel) redtu') as [rTyt0].
+    pose proof (rTyt := RedTyRecBwd h rTyt0).
+    unshelve refine (let rt : [LRU_ h | Γ ||- t : A]:= _ in _).
+    1: exists T; tea; etransitivity; gen_typing.
     split; tea; exists rt ru rTyt; tea.
     apply TyEqRecFwd; irrelevance.
   - intros ???? ru' ?; pose (ru := ru'); destruct ru' as [n].

@@ -121,8 +121,11 @@ Section Fundamental.
     unshelve econstructor.
     - assumption.
     - unshelve econstructor.
-      + intros * _. apply LRU_. now econstructor.
-      + intros * _ _. simpl. now econstructor.
+      + intros * _. apply LRU_.  
+        econstructor; tea; [constructor|]. 
+        cbn; eapply redtywf_refl; gen_typing.
+      + intros * _ _. simpl. constructor.
+        cbn; eapply redtywf_refl; gen_typing.
   Qed.
 
   Lemma FundTyPi (Γ : context) (na : aname) (F G : term)

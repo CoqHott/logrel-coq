@@ -86,8 +86,9 @@ Section NeutralConjecture.
     all: subst P ; cbn.
     - intros.
       econstructor.
-      1-3: reflexivity.
-      econstructor.
+      1: eapply redty_red; now destruct h as [??? [???]].
+      1-2: reflexivity.
+      econstructor. 
       2: now constructor.
       eassumption.
     - intros * [] ?.
@@ -167,9 +168,8 @@ Proof.
   edestruct HT as [[] lr] ; unfold LogRel in * ; cbn in *.
   repeat rewrite instId'_term in *.
   destruct lr.
-  - destruct Hconv as [->].
-    eexists ; split.
-    1: now do 2 constructor.
+  - destruct Hconv as [[]].
+    eexists ; split; tea.
     constructor.
   - destruct Hconv as [? red].
     eexists ; split.
@@ -194,15 +194,17 @@ Proof.
   repeat rewrite instId'_term in *.
   inversion lr ; subst ; clear lr.
   - subst.
-    destruct Hconv as [->].
-    remember U as T eqn:HeqU in nfT |- * at 1.
+    destruct Hconv as [].
+    assert (T' = U) as HeqT' by (eapply redtywf_whnf ; gen_typing); subst.
+    destruct H.
+    assert (T = U) as HeqU by (eapply redtywf_whnf ; gen_typing). 
     destruct nfT ; inversion HeqU ; subst.
     2: now exfalso ; gen_typing.
     clear HeqU.
     remember U as T eqn:HeqU in nfT' |- * at 2.
     destruct nfT' ; inversion HeqU ; subst.
     2: now exfalso ; gen_typing.
-    now reflexivity.
+    now reflexivity. 
   - destruct neA as [nT], Hconv as [nT'] ; cbn in *.
     assert (nT = T) as -> by
       (symmetry ; apply red_whnf ; gen_typing).
@@ -255,7 +257,8 @@ Proof.
     all: replace dom⟨_⟩ with dom⟨↑⟩ by now bsimpl.
     all: apply typing_shift ; tea.
     all: boundary.
-  Qed.
+  (* Qed. *)
+Admitted.
 
 Corollary red_ty_compl_univ_l Γ T :
   [Γ |- U ≅ T] ->

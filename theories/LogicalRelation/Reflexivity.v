@@ -10,14 +10,14 @@ Section Reflexivities.
   Definition LRTyEqRefl0 {Γ A eqTy redTm eqTm}
     (lr : LogRel0 Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
+    induction lr as [ ?? [] | ? ? [] | ? ? [] ? IHdom IHcod].
     all: now econstructor.
   Qed.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
     all: now econstructor.
   Qed.
 
@@ -31,15 +31,16 @@ Section Reflexivities.
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    induction lr as [ ? [? []] | ? ? [] | ? ? [] IHdom IHcod].
-    - intros t [? ? ? ? [[] rel]] ; cbn in *.
+    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod].
+    - intros t [? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.
       all : cbn.
       1-2: econstructor ; tea ; cbn.
-      1-3,5: apply (LRbuild@{h i j k} (l := zero) rel).
-      all: easy.
+      1-3,5: eapply RedTyRecBwd; apply (LRbuild@{h i j k} rel).
+      1: cbn; easy.
+      now eapply TyEqRecBwd.
     - intros t [].
       econstructor ; cbn in *.
       all: eassumption.

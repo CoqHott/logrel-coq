@@ -150,9 +150,9 @@ Theorem LRIrrelevant Γ A A' {lA lA'}
 Proof.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? [? []] | ? ? [] | ? A [] [] IHdom IHcod]
+  induction lrA as [? ? [? []] | ? ? [] | ? A [] [] IHdom IHcod]
     in lA', A', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
-  - destruct lrA' as [? [? []] | | ]; try solve [destruct s] ; clear s.
+  - destruct lrA' as [? ? [? []] | | ]; try solve [destruct s] ; clear s.
     split.
     + intros ?.
       split.
@@ -385,14 +385,6 @@ Qed.
 
 Set Printing Primitive Projection Parameters.
 
-Lemma LogRelRec_unfold {Γ l t eqTy redTm eqTm} (h: [Γ ||-U l]) :
-  LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <~>
-  LogRel (URedTy.level h) Γ t eqTy redTm eqTm.
-Proof.
-  destruct l; [destruct (elim (URedTy.lt h))|].
-  destruct h; inversion lt; subst; cbn; now split.
-Qed.
-
 Lemma LRTmEqSym@{h i j k l} lA Γ A (lrA : [LogRel@{i j k l} lA | Γ ||- A]) : forall t u,
   [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
 Proof.
@@ -410,29 +402,6 @@ Proof.
     1,2: eassumption.
     1: symmetry; eassumption.
     intros. apply ihcod. eapply eqApp.
-Qed.
-
-
-Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
-
-Lemma TyEqRecFwd {l Γ t u} (h : [Γ ||-U l]) 
-  (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
-  [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
-Proof.
-  destruct (RedTyRecFwd h lr) as [? ad];  destruct lr as [? ad'].  
-  destruct h as [? lt]; inversion lt; subst; cbn in *.
-  split ; intros X ; eapply TyEqIrrelevant.
-  3,6: exact X. all: exact ad + exact ad'.
-Qed.
-
-Lemma TyEqRecBwd {l Γ t u} (h : [Γ ||-U l]) 
-  (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
-  [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
-Proof.
-  destruct (RedTyRecBwd h lr) as [? ad];  destruct lr as [? ad'].  
-  destruct h as [? lt]; inversion lt; subst; cbn in *.
-  split ; intros X ; eapply TyEqIrrelevant.
-  3,6: exact X. all: exact ad + exact ad'.
 Qed.
 
 End Irrelevances.

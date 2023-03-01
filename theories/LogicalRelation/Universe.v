@@ -18,12 +18,10 @@ Section UniverseReducibility.
   Definition LogRel0_Cumulative@{i j k l} {Γ A} {EqTy RedTm : term -> Type@{j}} {EqTm : term -> term -> Type@{j}}
     (lr : LogRel0@{i j k} Γ A EqTy RedTm EqTm) : LogRel0@{j k l} Γ A EqTy RedTm EqTm.
   Proof.
-    induction lr as [ ? HU | ? ? neA | ? ? ? ? domAd codAd ].
+    induction lr as [ ?? HU | ? ? neA | ? ? ? ? domAd codAd ].
     - exact (match elim HU.(URedTy.lt) with end).
     - exact (LRne _ neA).
-    - eapply LRPi@{j k l}. unshelve econstructor.
-      + exact domAd.
-      + exact codAd.
+    - eapply LRPi@{j k l}; now unshelve econstructor.
   Defined.
 
   Definition TyRed_Cumulative@{i j k l} {Γ} {A} (rA : [ LogRel0@{i j k} | Γ ||- A ])
@@ -35,9 +33,9 @@ Section UniverseReducibility.
     - exact (LogRel0_Cumulative@{i j k l} PackAd).
   Defined.
 
-  Lemma redUOne {Γ l A} : [Γ ||-<l> A] -> [Γ ||-U one].
+  Lemma redUOne {Γ l A} : [Γ ||-<l> A] -> [Γ ||-U<one> U].
   Proof.
-    intros ?%escape_; econstructor; [easy| gen_typing].
+    intros ?%escape_; econstructor; [easy| gen_typing|eapply redtywf_refl; gen_typing].
   Qed.
 
   Lemma UnivEq'@{i j k l} {Γ A l} (rU : [ LogRel@{i j k l} l | Γ ||- U ]) (rA : [ LogRel@{i j k l} l | Γ ||- A : U | rU])
@@ -71,8 +69,8 @@ Section UniverseReducibility.
      at the right levels for fundamental lemma ! *)
 
   Set Printing Universes.
-  Lemma univTmTy'@{h i j k l} {Γ l A} (h : [Γ ||-U l]) :
-    [LogRel@{i j k l} l | Γ ||- A : U | LRU_ h] -> [LogRel@{h i j k} (URedTy.level h) | Γ ||- A].
+  Lemma univTmTy'@{h i j k l} {Γ l UU A} (h : [Γ ||-U<l> UU ]) :
+    [LogRel@{i j k l} l | Γ ||- A : UU | LRU_ h] -> [LogRel@{h i j k} (URedTy.level h) | Γ ||- A].
   Proof.  intros []; now eapply RedTyRecFwd. Qed.
 
   Lemma univTmTy@{h i j k l} {Γ l A} (RU : [Γ ||-<l> U]) :
@@ -82,8 +80,8 @@ Section UniverseReducibility.
     irrelevance.
   Qed.
 
-  Lemma univEqTmEqTy'@{h i j k l} {Γ l l' A B} (h : [Γ ||-U l]) (RA : [Γ ||-<l'> A]) :
-    [LogRel@{i j k l} l | Γ ||- A ≅ B : U | LRU_ h] ->
+  Lemma univEqTmEqTy'@{h i j k l} {Γ l l' UU A B} (h : [Γ ||-U<l> UU]) (RA : [Γ ||-<l'> A]) :
+    [LogRel@{i j k l} l | Γ ||- A ≅ B : UU | LRU_ h] ->
     [LogRel@{h i j k} l' | Γ ||- A ≅ B | RA].
   Proof. intros [????? RA']. apply TyEqRecFwd in RA'. irrelevance. Qed.
 

@@ -7,8 +7,8 @@ Set Universe Polymorphism.
 Section Weakenings.
   Context `{GenericTypingProperties}.
 
-  Lemma wkU {Γ Δ l} (wfΔ : [|-Δ]) (h : [Γ ||-U l]) : [Δ ||-U l].
-  Proof. destruct h; now econstructor. Defined.
+  Lemma wkU {Γ Δ l A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) : [Δ ||-U<l> A⟨ρ⟩].
+  Proof. destruct h; econstructor; tea; change U with U⟨ρ⟩; gen_typing. Defined.
 
   Lemma wkΠ  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A])
     (ihdom : forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] -> [Δ' ||-< l > (PiRedTyPack.dom ΠA)⟨ρ⟩⟨ρ'⟩])
@@ -75,7 +75,7 @@ Section Weakenings.
   Proof.
     revert B Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
-    - intros ?? ????? [->]; now constructor.
+    - intros ?? ????? ? [] ; constructor; change U with U⟨ρ⟩; gen_typing.
     - intros * [ty]. exists ty⟨ρ⟩.
       1,2: gen_typing. 
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
@@ -126,7 +126,7 @@ Section Weakenings.
   Proof.
     revert t Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
-    - intros ????? ρ ? [te]. exists te⟨ρ⟩; try change U with U⟨ρ⟩.
+    - intros ?????? ρ ? [te]; exists te⟨ρ⟩;  try change U with U⟨ρ⟩.
       1-3: gen_typing.
       apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
     - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn.
@@ -139,8 +139,8 @@ Section Weakenings.
     - intros ???? ihdom ihcod ?? ρ ?; apply wkΠTerm. 
   Qed.
 
-  Lemma wkUTerm {Γ Δ l t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U l]) :
-    [LogRelRec l| Γ ||-U t :U | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ :U | wkU wfΔ h].
+  Lemma wkUTerm {Γ Δ l A t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) :
+    [LogRelRec l| Γ ||-U t : A | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ : A⟨ρ⟩ | wkU ρ wfΔ h].
   Proof.
     intros [te]. exists te⟨ρ⟩; change U with U⟨ρ⟩.
     1-3: gen_typing.
@@ -153,7 +153,7 @@ Section Weakenings.
   Proof.
     revert t u Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
-    - intros ?????? ρ ? [rL rR].
+    - intros ??????? ρ ? [rL rR].
       unshelve econstructor.
       + exact (wkUTerm ρ wfΔ h rL).
       + exact (wkUTerm ρ wfΔ h rR).
