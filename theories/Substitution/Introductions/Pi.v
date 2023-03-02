@@ -3,13 +3,10 @@ From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
+From LogRel.Substitution.Introductions Require Import Universe.
 
-Section PiValidity.
+Section PiTyValidity.
   Context `{GenericTypingProperties}.
-
-  Lemma convTerm {Γ A B t l l'} (rA : [ Γ ||-< l > A ]) (rB : [ Γ ||-< l' > B ])
-    : [ Γ ||-< l >  A ≅ B | rA ] -> [ Γ ||-< l >  t : A | rA ] -> [ Γ ||-< l' > t : B | rB ].
-  Admitted.
 
   Context {l Γ na F G} (vΓ : [||-v Γ])
     (vF : [Γ ||-v< l > F | vΓ])
@@ -113,7 +110,7 @@ Section PiValidity.
         unshelve eapply (validTyExt vG tΔ' _ _ _).
         + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
         + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ') vF _).
-          refine (convTerm _ _ _ ra).
+          refine (LRTmRedConv _ _ _ _ _ _ _ _ _ ra).
           replace (F[σ'⟨ρ⟩]) with (F[σ']⟨ρ⟩).
           refine (wkEq ρ tΔ' _ (validTyExt vF tΔ vσ vσ' vσσ')).
           now asimpl.
@@ -187,4 +184,103 @@ Section PiValidity.
         refine (codomainSubstRedEq2 _ _ _ vσ vσ' vσσ' ra).
   Qed.
 
-End PiValidity.
+End PiTyValidity.
+
+
+Section PiTyCongruence.
+
+  Context `{GenericTypingProperties}.
+
+  Lemma PiCong {Γ F nF G F' nF' G' l}
+    (vΓ : [||-v Γ])
+    (vF : [ Γ ||-v< l > F | vΓ ])
+    (vG : [ Γ ,, vass nF F ||-v< l > G | validSnoc nF vΓ vF ])
+    (vF' : [ Γ ||-v< l > F' | vΓ ])
+    (vG' : [ Γ ,, vass nF' F' ||-v< l > G' | validSnoc nF' vΓ vF' ])
+    (vFF' : [ Γ ||-v< l > F ≅ F' | vΓ | vF ])
+    (vGG' : [ Γ ,, vass nF F ||-v< l > G ≅ G' | validSnoc nF vΓ vF | vG ])
+    : [ Γ ||-v< l > tProd nF F G ≅ tProd nF' F' G' | vΓ | PiValid vΓ vF vG ].
+  Proof.
+  Admitted.
+
+End PiTyCongruence.
+
+
+Section PiTmValidity.
+
+  Context `{GenericTypingProperties}.
+
+  Lemma PiValidTm {Γ F nF G}
+    (vΓ : [||-v Γ])
+    (vF : [ Γ ||-v< one > F | vΓ ])
+    (vU : [ Γ ,, vass nF F ||-v< one > U | validSnoc nF vΓ vF ])
+    (vFU : [ Γ ||-v< one > F : U | vΓ | UValid vΓ ])
+    (vGU : [ Γ ,, vass nF F ||-v< one > G : U | validSnoc nF vΓ vF | vU ])
+    : [ Γ ||-v< one > tProd nF F G : U | vΓ | UValid vΓ ].
+  Proof.
+  Admitted.
+
+End PiTmValidity.
+
+
+Section PiTmCongruence.
+
+  Context `{GenericTypingProperties}.
+
+  Lemma PiCongTm {Γ F nF G F' nF' G'}
+    (vΓ : [||-v Γ])
+    (vF : [ Γ ||-v< one > F | vΓ ])
+    (vU : [ Γ ,, vass nF F ||-v< one > U | validSnoc nF vΓ vF ])
+    (vFU : [ Γ ||-v< one > F : U | vΓ | UValid vΓ ])
+    (vGU : [ Γ ,, vass nF F ||-v< one > G : U | validSnoc nF vΓ vF | vU ])
+    (vF' : [ Γ ||-v< one > F' | vΓ ])
+    (vU' : [ Γ ,, vass nF' F' ||-v< one > U | validSnoc nF' vΓ vF' ])
+    (vF'U : [ Γ ||-v< one > F' : U | vΓ | UValid vΓ ])
+    (vG'U : [ Γ ,, vass nF' F' ||-v< one > G' : U | validSnoc nF' vΓ vF' | vU' ])
+    (vFF' : [ Γ ||-v< one > F ≅ F' : U | vΓ | UValid vΓ ])
+    (vGG' : [ Γ ,, vass nF F ||-v< one > G ≅ G' : U | validSnoc nF vΓ vF | vU ])
+    : [ Γ ||-v< one > tProd nF F G ≅ tProd nF' F' G' : U | vΓ | UValid vΓ ].
+  Proof.
+  Admitted.
+
+End PiTmCongruence.
+
+
+Section FuncTyValidity.
+
+  Context `{GenericTypingProperties}.
+
+  Lemma FunValid {Γ F nF G l}
+      (vΓ : [||-v Γ])
+      (vF : [ Γ ||-v< l > F | vΓ ])
+      (vG : [ Γ ||-v< l > G | vΓ ])
+    : [ Γ ||-v< l > tProd nF F (G⟨@wk1 Γ nF F⟩) | vΓ ].
+  Proof.
+    unshelve eapply PiValid ; tea.
+    eapply wk1ValidTy. eassumption.
+  Defined.
+
+End FuncTyValidity.
+
+
+Section FuncTyCongruence.
+
+  Context `{GenericTypingProperties}.
+
+  Lemma FunCong {Γ F nF G F' nF' G' l}
+      (vΓ : [||-v Γ])
+      (vF : [ Γ ||-v< l > F | vΓ ])
+      (vG : [ Γ ||-v< l > G | vΓ ])
+      (vF' : [ Γ ||-v< l > F' | vΓ ])
+      (vG' : [ Γ ||-v< l > G' | vΓ ])
+      (vFF' : [ Γ ||-v< l > F ≅ F' | vΓ | vF ])
+      (vGG' : [ Γ ||-v< l > G ≅ G' | vΓ | vG ])
+    : [ Γ ||-v< l > tProd nF F (G⟨@wk1 Γ nF F⟩) ≅ tProd nF' F' (G'⟨@wk1 Γ nF' F'⟩) | vΓ | FunValid vΓ vF vG ].
+  Proof.
+    unshelve eapply PiCong ; tea.
+    - eapply wk1ValidTy. eassumption.
+    - replace (G'⟨@wk1 Γ nF' F'⟩) with (G'⟨@wk1 Γ nF F⟩) by (now bsimpl).
+      eapply wk1ValidTyEq. eassumption.
+  Qed.
+
+End FuncTyCongruence.
