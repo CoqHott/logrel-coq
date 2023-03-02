@@ -152,26 +152,15 @@ Section PiTyValidity.
   Lemma PiValid : [Γ ||-v< l > tProd na F G | vΓ].
   Proof.
     unshelve econstructor.
-    - intros Δ σ tΔ vσ. cbn.
-      unshelve eapply LRPi_.
-      + econstructor.
-        * apply redtywf_refl.
-          exact (wft_prod (domainTy tΔ vσ) (codomainTy tΔ vσ)).
-        * exact (domainTy tΔ vσ).
-        * exact (codomainTy tΔ vσ).
-        * exact (convty_prod I (domainTy tΔ vσ) (domainTyRefl tΔ vσ) (codomainTyRefl tΔ vσ)).
-        Unshelve.
-        ** intros Δ' ρ tΔ'.
-           exact (wk ρ tΔ' (domainRed tΔ vσ)).
-        ** intros Δ' a ρ tΔ' ra.
-           eapply codomainSubstRed. exact ra.
-        * intros Δ' a b ρ tΔ' ra rb rab.
-          eapply codomainSubstRedEq1. exact rb. exact rab.
-      + econstructor.
-        * cbn. intros Δ' ρ tΔ'.
-          eapply (wk ρ tΔ' (domainRed tΔ vσ)).
-        * cbn. intros Δ' a ρ tΔ' ra.
-          eapply codomainSubstRed.
+    - intros Δ σ tΔ vσ. cbn. eapply LRPi'.
+      econstructor.
+      + apply redtywf_refl.
+        exact (wft_prod (domainTy tΔ vσ) (codomainTy tΔ vσ)).
+      + exact (domainTy tΔ vσ).
+      + exact (codomainTy tΔ vσ).
+      + exact (convty_prod I (domainTy tΔ vσ) (domainTyRefl tΔ vσ) (codomainTyRefl tΔ vσ)).
+      + intros Δ' a b ρ tΔ'.
+        refine (codomainSubstRedEq1 tΔ tΔ' ρ vσ).
     - intros Δ σ σ' tΔ vσ vσ' vσσ'. cbn.
       econstructor.
       + apply redtywf_refl.
