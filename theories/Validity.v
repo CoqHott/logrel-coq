@@ -334,3 +334,8 @@ Ltac instValidExt vσ' vσσ' :=
     pose (X := validTmExt H _ _ vσ' vσσ') ;
     block H
   end; unblock.
+
+Ltac instAllValid wfΔ vσ vσ' vσσ' :=
+  instValid wfΔ vσ ;
+  instValid wfΔ vσ' ;
+  instValidExt vσ' vσσ'.

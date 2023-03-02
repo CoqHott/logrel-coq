@@ -21,9 +21,9 @@ Lemma appValid {Γ nF F G t u l}
 Proof.
   opector; intros.
   - instValid wfΔ Vσ.
-    epose (appTerm RVΠFG RVt RVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)); refold.
+    epose (appTerm RVΠFG RVt RVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
     irrelevance.
-  - instValid wfΔ Vσ; instValid wfΔ Vσ'; instValidExt Vσ' Vσσ'.
+  - instAllValid wfΔ Vσ Vσ' Vσσ'. 
     unshelve epose (appcongTerm _ REVt RVu _ REVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
     2: irrelevance.
     eapply LRTmRedConv; tea.
