@@ -30,6 +30,7 @@ theories/LogicalRelation/Universe.v
 theories/LogicalRelation/Neutral.v
 theories/LogicalRelation/Transitivity.v
 theories/LogicalRelation/Reduction.v
+theories/LogicalRelation/NormalRed.v
 theories/LogicalRelation/Application.v
 
 theories/Validity.v

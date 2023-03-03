@@ -168,9 +168,9 @@ Proof.
   + apply LREqTermRefl_; exact (validHead Vliftσ).
 Qed.
 
-Lemma liftSubstSEq' {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
+Lemma liftSubstSEq' {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
-  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
+  {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := wk_up nF F (@wk_id Γ) in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
