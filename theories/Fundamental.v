@@ -1,13 +1,14 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
-From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Universe Weakening.
+From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Universe Weakening Neutral.
 From LogRel.Substitution Require Import Irrelevance Properties.
-From LogRel.Substitution.Introductions Require Import Pi.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
+Set Printing Primitive Projection Parameters.
 
 (* FundCon, FundTy, ... are parameterized by a tag with a bunch of typing
   judgment predicates *)
@@ -152,11 +153,25 @@ Section Fundamental.
       eapply UnivEqEq. exact (RAext _ _ _ wfΔ vσ vσ' vσσ').
   Qed.
 
+
   Lemma FundTmVar : forall (Γ : context) (n : nat) (decl : context_decl),
     [ |-[ de ] Γ] -> FundCon Γ ->
     in_ctx Γ n decl -> FundTm Γ (decl_type decl) (tRel n).
   Proof.
-  Admitted.
+    intros Γ n d wfΓ FΓ hin; induction hin;
+      destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ;
+      destruct d as [nA A]; cbn.
+    - renToWk; rewrite <- (wk1_ren_on Γ nA A A).
+      exists (validSnoc nA VΓ VA) (embValidTyOne (wk1ValidTy nA VA VA)).
+      constructor; intros; cbn.
+      + epose (validHead Vσ); irrelevance.
+      + epose (eqHead Vσσ'); irrelevance.
+    - renToWk; rewrite <- (wk1_ren_on Γ d'.(decl_name) d'.(decl_type) A).
+      destruct (IHhin (boundary_ctx_ctx wfΓ) VΓ); cbn in *.
+      econstructor. set (ρ := wk1 _ _).
+      replace (tRel _) with (tRel n)⟨ρ⟩ by (unfold ρ; now bsimpl).
+      unshelve eapply wk1ValidTm; cycle 1; tea; now eapply irrelevanceValidity.
+  Qed.
 
   Lemma FundTmProd : forall (Γ : context) (na : aname) (A B : term),
     [Γ |-[ de ] A : U] -> FundTm Γ U A ->

@@ -4,6 +4,7 @@ From LogRel Require Import Utils BasicAst.
 
 Import UnscopedNotations.
 #[local] Open Scope subst_scope.
+Set Primitive Projections.
 
 (** *** The context of De Bruijn indices *)
 

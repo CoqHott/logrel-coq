@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation Reduction Validity.
-From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral.
+From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral Induction.
 From LogRel.Substitution Require Import Irrelevance.
 
 Set Universe Polymorphism.
@@ -231,7 +231,7 @@ Proof.
   intros ?; now bsimpl.
 Qed.
 
-Lemma wk1ValidTy {Γ lA A lF F} (VΓ : [||-v Γ]) nF (VF : [Γ ||-v<lF> F | VΓ]) :
+Lemma wk1ValidTy {Γ lA A lF F} {VΓ : [||-v Γ]} nF (VF : [Γ ||-v<lF> F | VΓ]) :
   [Γ ||-v<lA> A | VΓ] -> 
   [Γ ,, vass nF F ||-v<lA> A ⟨ @wk1 Γ nF F ⟩ | validSnoc nF VΓ VF ].
 Proof.
@@ -246,10 +246,10 @@ Proof.
     eapply symmetrySubstEq. eassumption.
 Qed.
 
-Lemma wk1ValidTyEq {Γ lA A B lF F} (VΓ : [||-v Γ]) nF (VF : [Γ ||-v<lF> F | VΓ]) 
-  (VA : [Γ ||-v<lA> A | VΓ]) :
+Lemma wk1ValidTyEq {Γ lA A B lF F} {VΓ : [||-v Γ]} nF (VF : [Γ ||-v<lF> F | VΓ]) 
+  {VA : [Γ ||-v<lA> A | VΓ]} :
   [Γ ||-v<lA> A ≅ B | VΓ | VA] -> 
-  [Γ ,, vass nF F ||-v<lA> A ⟨ @wk1 Γ nF F ⟩ ≅ B ⟨ @wk1 Γ nF F ⟩ | validSnoc nF VΓ VF | wk1ValidTy VΓ _ VF VA].
+  [Γ ,, vass nF F ||-v<lA> A ⟨ @wk1 Γ nF F ⟩ ≅ B ⟨ @wk1 Γ nF F ⟩ | validSnoc nF VΓ VF | wk1ValidTy nF VF VA].
 Proof.
   assert (forall A σ, (A ⟨@wk1 Γ nF F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
   intros []; constructor; intros.
@@ -257,6 +257,49 @@ Proof.
   1: symmetry; apply h.
   unshelve intuition; tea; now eapply validTail.
 Qed.
+
+Lemma wk1ValidTm {Γ lA t A lF F} {VΓ : [||-v Γ]}
+  nF (VF : [Γ ||-v<lF> F | VΓ])
+  (VA : [Γ ||-v<lA> A | VΓ])
+  (Vt : [Γ ||-v<lA> t : A | VΓ | VA]) (ρ := @wk1 Γ nF F):
+  [Γ,, vass nF F ||-v<lA> t⟨ρ⟩ : A⟨ρ⟩ | validSnoc nF VΓ VF | wk1ValidTy nF VF VA].
+Proof.
+  assert (forall A σ, (A ⟨@wk1 Γ nF F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  constructor; intros; repeat rewrite h.
+  - instValid (validTail Vσ); irrelevance.
+  - instValidExt (validTail Vσ') (eqTail Vσσ'); irrelevance.
+Qed.
+
+Lemma wk1ValidTmEq {Γ lA t u A lF F} {VΓ : [||-v Γ]}
+  nF (VF : [Γ ||-v<lF> F | VΓ])
+  (VA : [Γ ||-v<lA> A | VΓ])
+  (Vtu : [Γ ||-v<lA> t ≅ u : A | VΓ | VA]) (ρ := @wk1 Γ nF F):
+  [Γ,, vass nF F ||-v<lA> t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩ | validSnoc nF VΓ VF | wk1ValidTy nF VF VA].
+Proof.
+  assert (forall A σ, (A ⟨@wk1 Γ nF F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  constructor; intros; repeat rewrite h.
+  instValid (validTail Vσ); irrelevance.
+Qed.
+
+
+Lemma embValidTy@{u i j k l} {Γ l l' A}
+    {VΓ : [VR@{i j k l}| ||-v Γ]} (h : l << l')
+    (VA : typeValidity@{u i j k l} Γ VΓ l A (*[Γ ||-v<l> A |VΓ]*)) :
+    typeValidity@{u i j k l} Γ VΓ l' A (*[Γ ||-v<l'> A |VΓ]*).
+Proof.
+  unshelve econstructor.
+  - intros ??? Vσ; destruct (validTy VA _  Vσ) as [pack]; exists pack.
+    eapply LR_embedding; tea.
+  - intros; now eapply validTyExt.
+Defined.
+
+Lemma embValidTyOne @{u i j k l} {Γ l A}
+    {VΓ : [VR@{i j k l}| ||-v Γ]}
+    (VA : typeValidity@{u i j k l} Γ VΓ l A (*[Γ ||-v<l> A |VΓ]*)) :
+    typeValidity@{u i j k l} Γ VΓ one A (*[Γ ||-v<one> A |VΓ]*).
+Proof.
+  destruct l; tea; now eapply (embValidTy Oi).
+Defined.
 
 Lemma soundCtxId {Γ} (VΓ : [||-v Γ]) :
   ∑ wfΓ : [|- Γ], [Γ ||-v tRel : Γ | VΓ | wfΓ].
