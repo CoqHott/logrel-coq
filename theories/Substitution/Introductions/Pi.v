@@ -5,11 +5,29 @@ From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening 
 From LogRel.Substitution Require Import Irrelevance Properties.
 From LogRel.Substitution.Introductions Require Import Universe.
 
-Section PiTyValidity.
-  Context `{GenericTypingProperties}.
+(* Set Universe Polymorphism. *)
 
-  Context {l Γ na F G} (vΓ : [||-v Γ])
-    (vF : [Γ ||-v< l > F | vΓ])
+Lemma eq_subst_1 F na G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ @wk1 Δ na F[σ] ⟩].
+Proof.
+  now bsimpl.
+Qed.
+
+Lemma eq_subst_2 G a ρ σ : G[up_term_term σ][a .: ρ >> tRel] = G[a .: σ⟨ρ⟩].
+Proof.
+  bsimpl ; now substify.
+Qed.
+
+Section PiTyValidity.
+
+  Context `{GenericTypingProperties}.
+  Universe i j k l m n o p.
+  (* i j k l are the universe levels of the hypotheses *)
+  (* m n o p are the universe levels of the conclusions *)
+  Context {l Γ na F G} (vΓ : [VR@{i j k l} | ||-v Γ])
+    (* (vF : typeValidity@{k m n o p} Γ vΓ l F) *)
+    (* (vF' : typeValidity@{k i j k l} Γ vΓ l F) *)
+    (vF : [Γ ||-v< l > F | vΓ ])
+    (* (vG : typeValidity@{k m n o p} *)
     (vG : [Γ ,, vass na F ||-v< l > G | validSnoc na vΓ vF]).
 
   Lemma domainRed {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
@@ -39,7 +57,7 @@ Section PiTyValidity.
     : [Δ,, vass na F[σ] |-[ ta ] F[σ⟨@wk1 Δ na F[σ]⟩] ≅ F[σ'⟨@wk1 Δ na F[σ]⟩]].
   Proof.
     eapply escapeEq_.
-    refine (validTyExt vF _ _ _ _).
+    eapply (validTyExt vF).
     refine (wk1SubstS _ _ (domainTy tΔ vσ) vσ').
     refine (wk1SubstSEq _ _ (domainTy tΔ vσ) vσ vσσ').
   Qed.
@@ -48,7 +66,7 @@ Section PiTyValidity.
   Lemma codomainRed {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass na F[σ] ||-< l > G[ up_term_term σ ] ].
   Proof.
-    replace (G[up_term_term σ]) with (G[tRel 0 .: σ⟨ @wk1 Δ na F[σ] ⟩]) by (now bsimpl).
+    rewrite (eq_subst_1 F na G Δ σ).
     refine (validTy vG _ (liftSubstS vΓ tΔ vF vσ)).
   Qed.
 
@@ -71,10 +89,10 @@ Section PiTyValidity.
     (ra : [ Δ' ||-< l > a : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
     : [Δ' ||-< l > G[up_term_term σ][a .: ρ >> tRel]].
   Proof.
-    replace (G[_][_]) with (G[a .: σ⟨ρ⟩]) by (bsimpl ; now substify).
-    eapply (validTy vG).
-    refine (consSubstS _ _ (wkSubstS vΓ tΔ tΔ' ρ vσ) _ _).
-    irrelevance.
+    rewrite eq_subst_2.
+    unshelve eapply (validTy vG) ; tea.
+    unshelve eapply consSubstS.
+    eapply wkSubstS ; tea. irrelevance.
   Qed.
 
   Lemma codomainSubstRedEq1 {Δ Δ' σ a b} (tΔ : [ |-[ ta ] Δ]) (tΔ' : [ |-[ ta ] Δ'])
@@ -86,14 +104,14 @@ Section PiTyValidity.
                      ≅ G[up_term_term σ][b .: ρ >> tRel] | codomainSubstRed tΔ tΔ' ρ vσ ra].
   Proof.
     eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]).
-    - bsimpl ; now substify.
-    - replace (G[_][_]) with (G[b .: σ⟨ρ⟩]) by (bsimpl ; now substify).
+    - symmetry. eapply eq_subst_2.
+    - rewrite eq_subst_2.
       unshelve eapply (validTyExt vG tΔ' _ _ _).
       + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
       + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
       + unshelve econstructor.
         * eapply reflSubst.
-        * cbn. irrelevance.
+        * irrelevance.
   Qed.
 
   Lemma codomainSubstRedEq2 {Δ Δ' σ σ' a} (tΔ : [ |-[ ta ] Δ]) (tΔ' : [ |-[ ta ] Δ']) (ρ : Δ' ≤ Δ)
@@ -105,15 +123,13 @@ Section PiTyValidity.
                      ≅ G[up_term_term σ'][a .: ρ >> tRel] | codomainSubstRed tΔ tΔ' ρ vσ ra].
     Proof.
       eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]).
-      - bsimpl ; now substify.
-      - replace (G[_][_]) with (G[a .: σ'⟨ρ⟩]) by (bsimpl ; now substify).
-        unshelve eapply (validTyExt vG tΔ' _ _ _).
+      - symmetry. apply eq_subst_2.
+      - rewrite eq_subst_2. unshelve eapply (validTyExt vG tΔ' _ _ _).
         + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
         + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ') vF _).
           refine (LRTmRedConv _ _ _ _ _ _ _ _ _ ra).
-          replace (F[σ'⟨ρ⟩]) with (F[σ']⟨ρ⟩).
+          replace (F[σ'⟨ρ⟩]) with (F[σ']⟨ρ⟩) by (now asimpl).
           refine (wkEq ρ tΔ' _ (validTyExt vF tΔ vσ vσ' vσσ')).
-          now asimpl.
         + unshelve econstructor.
           * cbn. now eapply wkSubstSEq.
           * cbn. eapply LRTmEqIrrelevant'.
@@ -128,8 +144,7 @@ Section PiTyValidity.
   Proof.
     refine (convty_prod I (domainTy tΔ vσ) _ _).
     - eapply escapeEq_. eapply (validTyExt vF tΔ vσ vσ' vσσ').
-    - replace (G[up_term_term σ]) with (G[tRel 0 .: σ⟨ @wk1 Δ na F[σ] ⟩]) by (now bsimpl).
-      replace (G[up_term_term σ']) with (G[tRel 0 .: σ'⟨ @wk1 Δ na F[σ] ⟩]) by (now bsimpl).
+    - rewrite (eq_subst_1 F na G Δ σ). rewrite (eq_subst_1 F na G Δ σ').
       eapply escapeEq_. unshelve refine (validTyExt vG _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
@@ -149,18 +164,24 @@ Section PiTyValidity.
           all: refine (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _)).
   Qed.
 
+  Lemma PiRed {Δ σ} (tΔ : [ |-[ ta ] Δ])
+    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ||-< l > (tProd na F G)[σ] ].
+  Proof.
+    cbn. eapply LRPi'. econstructor.
+    - apply redtywf_refl.
+      exact (wft_prod (domainTy tΔ vσ) (codomainTy tΔ vσ)).
+    - exact (domainTy tΔ vσ).
+    - exact (codomainTy tΔ vσ).
+    - exact (convty_prod I (domainTy tΔ vσ) (domainTyRefl tΔ vσ) (codomainTyRefl tΔ vσ)).
+    - intros Δ' a b ρ tΔ'.
+      refine (codomainSubstRedEq1 tΔ tΔ' ρ vσ).
+  Defined.
+
   Lemma PiValid : [Γ ||-v< l > tProd na F G | vΓ].
   Proof.
     unshelve econstructor.
-    - intros Δ σ tΔ vσ. cbn. eapply LRPi'.
-      econstructor.
-      + apply redtywf_refl.
-        exact (wft_prod (domainTy tΔ vσ) (codomainTy tΔ vσ)).
-      + exact (domainTy tΔ vσ).
-      + exact (codomainTy tΔ vσ).
-      + exact (convty_prod I (domainTy tΔ vσ) (domainTyRefl tΔ vσ) (codomainTyRefl tΔ vσ)).
-      + intros Δ' a b ρ tΔ'.
-        refine (codomainSubstRedEq1 tΔ tΔ' ρ vσ).
+    - intros Δ σ tΔ vσ. eapply PiRed ; tea.
     - intros Δ σ σ' tΔ vσ vσ' vσσ'. cbn.
       econstructor.
       + apply redtywf_refl.
@@ -171,7 +192,7 @@ Section PiTyValidity.
         refine (validTyExt vF tΔ vσ vσ' vσσ').
       + cbn. intros Δ' a ρ tΔ' ra.
         refine (codomainSubstRedEq2 _ _ _ vσ vσ' vσσ' ra).
-  Qed.
+  Defined.
 
 End PiTyValidity.
 
@@ -190,7 +211,23 @@ Section PiTyCongruence.
     (vGG' : [ Γ ,, vass nF F ||-v< l > G ≅ G' | validSnoc nF vΓ vF | vG ])
     : [ Γ ||-v< l > tProd nF F G ≅ tProd nF' F' G' | vΓ | PiValid vΓ vF vG ].
   Proof.
-  Admitted.
+    econstructor. intros Δ σ tΔ vσ. econstructor.
+    - apply redtywf_refl.
+      exact (wft_prod (domainTy vΓ vF' tΔ vσ) (codomainTy vΓ vF' vG' tΔ vσ)).
+    - cbn. fold subst_term.
+      refine (convty_prod I (domainTy vΓ vF tΔ vσ) _ _).
+      + eapply escapeEq_. eapply (validTyEq vFF' tΔ vσ).
+      + eapply escapeEq_. unshelve eapply (validTyEq vGG').
+        2: unshelve eapply liftSubstS' ; tea.
+    - intros Δ' ρ tΔ'. cbn. fold subst_term.
+      eapply wkEq. eapply (validTyEq vFF').
+    - intros Δ' a ρ tΔ' ra. cbn. fold subst_term.
+      eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]) ; tea.
+      + symmetry. eapply eq_subst_2.
+      + rewrite eq_subst_2. unshelve eapply (validTyEq vGG') ; tea.
+        refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _).
+        irrelevance.
+  Qed.
 
 End PiTyCongruence.
 
@@ -207,6 +244,12 @@ Section PiTmValidity.
     (vGU : [ Γ ,, vass nF F ||-v< one > G : U | validSnoc nF vΓ vF | vU ])
     : [ Γ ||-v< one > tProd nF F G : U | vΓ | UValid vΓ ].
   Proof.
+    (* unshelve econstructor. *)
+    (* - intros Δ σ tΔ vσ. econstructor. *)
+    (*   + apply redtmwf_refl. admit. *)
+    (*   + constructor. *)
+    (*   + admit. *)
+    (*   + cbn. Set Printing Universes. Check PiRed. refine (PiRed _ _ _ tΔ vσ). *)
   Admitted.
 
 End PiTmValidity.
