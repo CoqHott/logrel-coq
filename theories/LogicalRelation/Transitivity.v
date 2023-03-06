@@ -134,4 +134,26 @@ Proof.
   - intros * ?????. apply transEqTermΠ; tea.
 Qed.
 
+Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :
+  [Γ ||-<l> t ≅ u : G | RG] -> 
+  [Γ ||-<l> G' ≅ G | RG'] ->
+  [Γ ||-<l> u ≅ t : G' | RG'].
+Proof.
+  intros Rtu RGG'.
+  eapply LRTmEqSym; eapply LRTmEqRedConv; tea.
+  now eapply LRTyEqSym.
+Qed.  
+
+Lemma LREqTermHelper {Γ t t' u u' G G' l RG RG'} :
+  [Γ ||-<l> t ≅ u : G | RG] -> 
+  [Γ ||-<l> t' ≅ u' : G' | RG'] -> 
+  [Γ ||-<l> G ≅ G' | RG] ->
+  [Γ ||-<l> u ≅ u' : G | RG] -> 
+  [Γ ||-<l> t ≅ t' : G | RG].
+Proof.
+  intros Rtu Rtu' RGG' Ruu'.
+  do 2  (eapply transEqTerm; tea).
+  now eapply LREqTermSymConv.
+Qed.  
+
 End Transitivity.

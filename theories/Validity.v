@@ -296,13 +296,6 @@ End Inductions.
 (* Tactics to instantiate validity proofs in the context with
   valid substitions *)
 
-Definition Block (A : Type) := A.
-
-Ltac block H :=
-  let T := type of H in (change T with (Block T) in H).
-
-Ltac unblock := unfold Block in *.
-
 Definition wfCtxOfsubstS `{GenericTypingProperties} {Γ Δ σ} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]} :
   [Δ ||-v σ : Γ | VΓ | wfΔ] -> [|- Δ] := fun _ => wfΔ.
 

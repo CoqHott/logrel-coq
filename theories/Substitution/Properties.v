@@ -125,6 +125,16 @@ Proof.
   intro vσσ'. eapply wkSubstSEq ; eassumption.
 Qed.
 
+Lemma consWkSubstS {Γ F Δ Ξ σ a l VΓ wfΔ } nF VF
+  (ρ : Ξ ≤ Δ) wfΞ {RF}:
+  [Δ ||-v σ : Γ | VΓ | wfΔ] ->
+  [Ξ ||-<l> a : F[σ]⟨ρ⟩ | RF] ->
+  [Ξ ||-v (a .: σ⟨ρ⟩) : Γ,, vass nF F | validSnoc (l:=l) nF VΓ VF | wfΞ].
+Proof.
+  intros. unshelve eapply consSubstS.  2: irrelevance.
+  now eapply wkSubstS.
+Qed.
+
 
 Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
@@ -135,11 +145,30 @@ Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF ].
 Proof.
   intros; unshelve econstructor.
-  + now eapply wk1SubstS.
-  + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ⟨ρ⟩)]].
-    1: replace F[_ >> _] with F[σ]⟨S⟩ by (unfold ρ; now bsimpl); apply (ty_var wfΔF (in_here _ _)).
-    apply neuTerm; tea; constructor + apply convneu_var; tea.
+  - now eapply wk1SubstS.
+  - eapply var0; unfold ρ;  now bsimpl.
 Defined.
+
+
+Lemma liftSubstSrealign {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (VF : [Γ ||-v<lF> F | VΓ])
+  {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
+  let VΓF := validSnoc nF VΓ VF in
+  let ρ := @wk1 Δ nF F[σ]  in
+  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
+  [Δ ||-v σ' : Γ | VΓ | wfΔ ] ->
+  [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ'⟨ρ⟩) : Γ ,, vass nF F | VΓF | wfΔF].
+Proof.
+  intros; unshelve econstructor.
+  + now eapply wk1SubstS.
+  + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ'⟨ρ⟩)]].
+    2: apply neuTerm; tea; constructor + apply convneu_var; tea.
+    eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
+    replace F[_ >> _] with F[σ']⟨S⟩ by (unfold ρ; now bsimpl).
+    cbn; renToWk. eapply convty_wk; tea.
+    eapply escapeEq_;  unshelve eapply validTyExt; cycle 3; tea.
+Qed.
 
 Lemma liftSubstS' {Γ σ Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
@@ -184,6 +213,22 @@ Proof.
   6: now eapply liftSubstSEq.
   all: intros ?; now bsimpl.
   Unshelve. all: tea.
+Qed.
+
+Lemma liftSubstSrealign' {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (VF : [Γ ||-v<lF> F | VΓ])
+  {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
+  let VΓF := validSnoc nF VΓ VF in
+  let ρ := wk_up nF F (@wk_id Γ) in
+  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
+  [Δ ||-v σ' : Γ | VΓ | wfΔ ] ->
+  [Δ ,, vass nF F[σ] ||-v up_term_term σ' : Γ ,, vass nF F | VΓF | wfΔF].
+Proof.
+  intros.
+  eapply irrelevanceSubstExt.
+  2: eapply liftSubstSrealign; tea.
+  intros ?; now bsimpl.
 Qed.
 
 Lemma wk1ValidTy {Γ lA A lF F} (VΓ : [||-v Γ]) nF (VF : [Γ ||-v<lF> F | VΓ]) :

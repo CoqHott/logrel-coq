@@ -197,3 +197,13 @@ Ltac opector :=
   | _ => idtac
   end;
   match goal with |- Shelved ?g => change g | _ => idtac end.
+
+(* To block and unblock hypotheses from the context 
+  (see the tactic escape in LogicalRelations/Escape.v for example)*)
+Definition Block (A : Type) := A.
+
+Ltac block H :=
+  let T := type of H in (change T with (Block T) in H).
+
+Ltac unblock := unfold Block in *.
+

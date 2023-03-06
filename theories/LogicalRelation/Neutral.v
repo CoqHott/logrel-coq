@@ -165,4 +165,14 @@ Proof.
   intros; now eapply neuTerm_aux.
 Qed.
 
+Lemma var0 {l Γ A A'} nA (RA : [Γ ,, vass nA A ||-<l> A']) :
+  A⟨↑⟩ = A' ->
+  [Γ ,, vass nA A ||-<l> tRel 0 : A' | RA].
+Proof.
+  intros <-.
+  assert [Γ ,, vass nA A |- tRel 0 : A⟨↑⟩]
+  by (escape; eapply (ty_var (wfc_wft EscRA) (in_here _ _))).
+  eapply neuTerm; tea ; constructor + eapply convneu_var; tea.
+Qed.
+
 End Neutral.

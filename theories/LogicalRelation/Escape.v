@@ -95,3 +95,23 @@ Section Escapes.
   Qed.
   
 End Escapes.
+
+Ltac escape :=
+  repeat lazymatch goal with
+  | [H : [_ ||-< _ > _] |- _] => 
+    let X := fresh "Esc" H in
+    try pose proof (X := escape_ H) ;
+    block H
+  | [H : [_ ||-<_> _ ≅ _ | ?RA ] |- _] =>
+    let X := fresh "Esc" H in
+    try pose proof (X := escapeEq_ RA H) ;
+    block H
+  | [H : [_ ||-<_> _ : _ | ?RA] |- _] =>
+    let X := fresh "R" H in
+    try pose proof (X := escapeTerm_ RA H) ;
+    block H
+  | [H : [_ ||-<_> _ ≅ _ : _ | ?RA] |- _] =>
+    let X := fresh "R" H in
+    try pose proof (X := escapeEqTerm_ RA H) ;
+    block H
+  end; unblock.
