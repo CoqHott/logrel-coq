@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation Reduction.
+From LogRel Require Import Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Reflexivity.
 
 Set Universe Polymorphism.

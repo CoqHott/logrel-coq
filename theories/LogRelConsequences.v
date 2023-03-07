@@ -1,10 +1,12 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping.
+  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral Transitivity.
 From LogRel.Substitution Require Import Properties Irrelevance.
+
+Set Printing Primitive Projection Parameters.
 
 Import DeclarativeTypingProperties.
 
@@ -16,7 +18,7 @@ Lemma typing_subst : WfDeclInductionConcl
   (fun Γ A t u => forall Δ σ σ', [|- Δ] -> [Δ |-s σ ≅ σ' : Γ] -> [Δ |- t[σ] ≅ u[σ'] : A[σ]]).
 Proof.
   unshelve (repeat split ; [shelve|..]).
-  - intros * Ht * HΔ Hσ.
+  - intros Γ ? Ht * HΔ Hσ.
     unshelve eapply Fundamental_subst in Hσ as [].
     1,3: boundary.
     apply Fundamental in Ht as [VΓ [VA _]].
@@ -63,7 +65,7 @@ Proof.
       * now eapply irrelevanceSubst.
 Qed.
 
-Section NeutralConjecture.
+Section NeutralConversion.
   Import AlgorithmicTypingData.
 
   Lemma ne_conv_conv : forall (Γ : context) (A m n : term),
@@ -145,7 +147,7 @@ Section NeutralConjecture.
         now bsimpl.
   Qed.
 
-End NeutralConjecture.
+End NeutralConversion.
 
 Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : isType T') : Type :=
   match nfT, nfT' with
@@ -756,59 +758,59 @@ Proof.
     econstructor.
     1: easy.
     refold ; gen_typing.
-  Qed.
+Qed.
 
-  Theorem subject_reduction Γ t t' A :
-    [Γ |- t : A] ->
-    [t ⇒* t'] ->
-    [Γ |- t ⇒* t' : A].
-  Proof.
-    intros Hty.
-    induction 1 as [| ? ? ? o red] in A, Hty |- *.
-    1: now econstructor.
-    eapply subject_reduction_one in o ; tea.
-    etransitivity.
-    2: eapply IHred.
-    1: now constructor.
-    boundary.
-  Qed.
+Theorem subject_reduction Γ t t' A :
+  [Γ |- t : A] ->
+  [t ⇒* t'] ->
+  [Γ |- t ⇒* t' : A].
+Proof.
+  intros Hty.
+  induction 1 as [| ? ? ? o red] in A, Hty |- *.
+  1: now econstructor.
+  eapply subject_reduction_one in o ; tea.
+  etransitivity.
+  2: eapply IHred.
+  1: now constructor.
+  boundary.
+Qed.
 
-  Lemma subject_reduction_one_type Γ A A' :
-    [Γ |- A] ->
-    [A ⇒ A'] ->
-    [Γ |- A ⇒ A'].
-  Proof.
-    intros Hty.
-    inversion 1 ; subst.
-    all: inversion Hty ; subst ; clear Hty.
-    all: econstructor.
-    all: now eapply subject_reduction_one.
-  Qed.
-
-  Theorem subject_reduction_type Γ A A' :
+Lemma subject_reduction_one_type Γ A A' :
   [Γ |- A] ->
-  [A ⇒* A'] ->
-  [Γ |- A ⇒* A'].
-  Proof.
-    intros Hty.
-    induction 1 as [| ? ? ? o red] in Hty |- *.
-    1: now econstructor.
-    eapply subject_reduction_one_type in o ; tea.
-    etransitivity.
-    2: eapply IHred.
-    1: now constructor.
-    boundary.
-  Qed.
+  [A ⇒ A'] ->
+  [Γ |- A ⇒ A'].
+Proof.
+  intros Hty.
+  inversion 1 ; subst.
+  all: inversion Hty ; subst ; clear Hty.
+  all: econstructor.
+  all: now eapply subject_reduction_one.
+Qed.
 
-  Lemma typing_eta' (Γ : context) na A B f :
-    [Γ |- f : tProd na A B] ->
-    [Γ,, vass na A |- eta_expand f : B].
-  Proof.
-    intros Hf.
-    eapply typing_eta ; tea.
-    - gen_typing.
-    - eapply prod_ty_inv.
-      boundary.
-    - eapply prod_ty_inv.
-      boundary.
-  Qed.
+Theorem subject_reduction_type Γ A A' :
+[Γ |- A] ->
+[A ⇒* A'] ->
+[Γ |- A ⇒* A'].
+Proof.
+  intros Hty.
+  induction 1 as [| ? ? ? o red] in Hty |- *.
+  1: now econstructor.
+  eapply subject_reduction_one_type in o ; tea.
+  etransitivity.
+  2: eapply IHred.
+  1: now constructor.
+  boundary.
+Qed.
+
+Lemma typing_eta' (Γ : context) na A B f :
+  [Γ |- f : tProd na A B] ->
+  [Γ,, vass na A |- eta_expand f : B].
+Proof.
+  intros Hf.
+  eapply typing_eta ; tea.
+  - gen_typing.
+  - eapply prod_ty_inv.
+    boundary.
+  - eapply prod_ty_inv.
+    boundary.
+Qed.

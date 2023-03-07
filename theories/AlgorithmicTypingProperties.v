@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
+  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape.
 From LogRel.Substitution Require Import Properties.
@@ -35,30 +35,38 @@ Module AlgorithmicTypingProperties.
 
   #[export, refine] Instance WfCtxAlgProperties : WfContextProperties (ta := bn) := {}.
   Proof.
-    all: intros_bn.
+    1-8: intros_bn.
     - now do 2 constructor.
     - constructor ; tea.
       now apply typing_sound.
+    - now intros ? []. 
   Qed.
 
   #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := bn) := {}.
   Proof.
-    all: intros_bn.
-    - now eapply algo_typing_wk.
-    - now econstructor.
-    - now econstructor.
-    - do 2 econstructor ; tea.
+    - intros_bn.
+      now eapply algo_typing_wk.
+    - now intros * [? ?%typing_sound]. 
+    - intros_bn.
+      now econstructor.
+    - intros_bn.
+      now econstructor.
+    - intros_bn.
+      do 2 econstructor ; tea.
       now apply algo_conv_complete.
   Qed.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
   Proof.
-    1-2: intros_bn.
-    - now eapply algo_typing_wk.
-    - gen_typing.
-    - now econstructor.
-    - constructor.
-      now eapply in_ctx_wf.
+    - intros_bn.
+      + now eapply algo_typing_wk.
+      + gen_typing.
+    - intros * [?? ?%typing_sound] ; tea.
+      now econstructor.
+    - intros_bn.
+      + now econstructor.
+      + constructor.
+        now eapply in_ctx_wf.
     - intros_bn.
       + do 2 econstructor ; tea.
         all: now eapply (redty_red (ta := de)), red_ty_compl_univ_r.

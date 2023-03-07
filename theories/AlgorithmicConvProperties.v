@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation Reduction AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
+  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
@@ -490,6 +490,7 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1-2: now apply typing_wk.
       now apply algo_conv_wk.
+    - now intros * [??? ?%conv_sound].
     - intros_bn.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty.
       econstructor.
@@ -515,7 +516,7 @@ Module AlgorithmicConvProperties.
     - red ; intros_bn.
       eapply algo_conv_sym.
       + now econstructor.
-      + now eapply ctx_refl. 
+      + now eapply ctx_refl.  
     - red. intros * Hconv [? ? ? Hconv'].
       split ; tea.
       1: apply Hconv.
@@ -530,6 +531,7 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1-3: now apply typing_wk.
       now apply algo_conv_wk.
+    - now intros * [???? ?%conv_sound]. 
     - intros_bn.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
@@ -606,6 +608,8 @@ Module AlgorithmicConvProperties.
       + now apply whne_ren.
       + now apply algo_conv_wk.
       + now apply typing_wk.
+    - intros * [?????? []%conv_sound] ; tea.
+      now econstructor. 
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
       econstructor.
@@ -651,6 +655,8 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1: now apply typing_wk.
       now apply credalg_wk.
+    - intros * [].
+      now eapply subject_reduction. 
     - now intros * [].
     - intros_bn.
       2: now do 2 econstructor.
@@ -681,6 +687,8 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1: now apply typing_wk.
       now apply credalg_wk.
+    - intros * [].
+      now eapply subject_reduction_type. 
     - now intros * [].
     - intros_bn.
       now econstructor.
@@ -702,7 +710,8 @@ Module IntermediateTypingProperties.
     all: unfold_bni.
     1-2: now econstructor.
     1-2: gen_typing.
-    all: intros * [] ; gen_typing.
+    1-4: intros * [] ; gen_typing.
+    easy.
   Qed.
 
   #[export, refine] Instance WfTypeIntProperties : WfTypeProperties (ta := bni) := {}.
@@ -713,6 +722,7 @@ Module IntermediateTypingProperties.
   #[export, refine] Instance TypingIntProperties : TypingProperties (ta := bni) := {}.
   Proof.
     all: unfold_bni.
+    - gen_typing.
     - gen_typing.
     - gen_typing.
     - gen_typing.
@@ -735,6 +745,7 @@ Module IntermediateTypingProperties.
     - intros * ? ?.
       apply convty_wk ; tea.
       now split.
+    - eauto using (convty_sound (ta := bn)).
     - gen_typing.
     - intros ? ?.
       split.
@@ -761,6 +772,7 @@ Module IntermediateTypingProperties.
     - intros.
       apply convtm_wk ; tea.
       now split.
+    - eauto using (convtm_sound (ta := bn)).
     - gen_typing.
     - gen_typing.
     - intros * ? ? [] [].
@@ -789,6 +801,7 @@ Module IntermediateTypingProperties.
     - intros.
       apply convneu_wk ; tea.
       now split.
+    - eauto using (convneu_sound (ta := bn)).
     - intros * [? [[? [-> ]]]]%termGen'.
       econstructor.
       + gen_typing.
@@ -808,6 +821,7 @@ Module IntermediateTypingProperties.
     - intros.
       apply redtm_wk ; tea.
       now split.
+    - eauto using (redtm_sound (ta := bn)).
     - gen_typing.
     - intros.
       split.
@@ -841,6 +855,7 @@ Module IntermediateTypingProperties.
     - intros.
       apply redty_wk ; tea.
       now split.
+    - eauto using (redty_sound (ta := bn)).
     - gen_typing.
     - intros * [].
       split.
