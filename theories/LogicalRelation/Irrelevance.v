@@ -381,6 +381,12 @@ Proof.
   exact (LRIrrelevantTy@{i j k l i' j' k' l'} IrrRec Γ A).
 Qed.
 
+Corollary LRCumulative' @{i j k l i' j' k' l'} {lA}
+  {Γ : context} {A A' : term}
+  : A = A' -> [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A' ].
+Proof.
+  intros ->; apply LRCumulative.
+Qed.
 End LRIrrelevant.
 
 
@@ -534,6 +540,7 @@ End Irrelevances.
 
 Ltac irrelevance0 :=
   lazymatch goal with
+  | [|- [_ ||-<_> _]] => (now eapply LRCumulative) + eapply LRCumulative'
   | [|- [_ | _ ||- _ ≅ _ ] ] => eapply LRTyEqIrrelevant'
   | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevant'
   | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevant'

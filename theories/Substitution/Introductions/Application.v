@@ -10,6 +10,8 @@ Context `{GenericTypingProperties}.
 
 Set Printing Primitive Projection Parameters.
 
+Set Printing Universes.
+
 Lemma appValid {Γ nF F G t u l}
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
@@ -23,11 +25,15 @@ Proof.
   - instValid wfΔ Vσ.
     epose (appTerm RVΠFG RVt RVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
     irrelevance.
-  - instAllValid wfΔ Vσ Vσ' Vσσ'. 
-    unshelve epose (appcongTerm _ REVt RVu _ REVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
-    2: irrelevance.
-    eapply LRTmRedConv; tea.
-    unshelve eapply LRTyEqSym. 2,3: tea.
+  - instAllValid wfΔ Vσ Vσ' Vσσ'.
+    unshelve epose proof (appcongTerm _ REVt _ _ _ (substSΠaux VΠFG Vu _ _ wfΔ Vσ)); fold subst_term in *.
+    2: irrelevance0; [reflexivity|]; eassumption.
+    4: irrelevance.
+    1,3: irrelevance.
+    unshelve eapply LRTmRedConv. 5: irrelevance.
+    3: unshelve eapply LRTyEqSym.
+    2,5: irrelevance.
+    2: irrelevance0; [reflexivity|]; eassumption.
 Qed.
 
 Lemma appcongValid {Γ nF F G t u a b l}
@@ -42,8 +48,8 @@ Lemma appcongValid {Γ nF F G t u a b l}
   [Γ ||-v<l> tApp t a ≅ tApp u b : G[a..] | VΓ | VGa].
 Proof.
   constructor; intros; instValid wfΔ Vσ.
-  pose proof (appcongTerm _ RVtu RVa RVb RVab (substSΠaux VΠFG Va _ _ wfΔ Vσ)).
-  irrelevance.
+  unshelve epose proof (appcongTerm _ RVtu _ _ _ (substSΠaux VΠFG Va _ _ wfΔ Vσ)); fold subst_term; cycle 5.
+  all: try irrelevance.
 Qed.
 
 End Application.
