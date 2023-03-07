@@ -375,7 +375,7 @@ Proof.
 Qed.
 
 Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
-  (Γ : context) (A : term)
+  {Γ : context} {A : term}
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
   exact (LRIrrelevantTy@{i j k l i' j' k' l'} IrrRec Γ A).
