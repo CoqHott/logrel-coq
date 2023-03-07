@@ -135,7 +135,7 @@ Qed.
 End ΠIrrelevanceLemmas.
 
 Section LRIrrelevant.
-Universe u v.
+Universe u v. (* u is a small universe level that may be instanciated to Set. v is a large universe level *)
 
 Notation "A <≈> B" := (prod@{v v} (A -> B) (B -> A)) (at level 90).
 
@@ -392,7 +392,8 @@ Proof.
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTyEqIrrelevant lA lA' Γ A (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A]) :
+Corollary LRTyEqIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A ≅ B | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -400,7 +401,8 @@ Proof.
   now eapply TyEqIrrelevant.
 Qed.
 
-Corollary LRTyEqIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+Corollary LRTyEqIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTyEqIrrelevant.
@@ -414,7 +416,8 @@ Proof.
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmRedIrrelevant lA lA' Γ A (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A]) :
+Corollary LRTmRedIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -422,7 +425,8 @@ Proof.
   now eapply RedTmIrrelevant.
 Qed.
 
-Corollary LRTmRedIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+Corollary LRTmRedIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmRedIrrelevant.
@@ -436,7 +440,8 @@ Proof.
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmEqIrrelevant lA lA' Γ A (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A]) :
+Corollary LRTmEqIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -444,7 +449,8 @@ Proof.
   now eapply TmEqIrrelevant.
 Qed.
 
-Corollary LRTmEqIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+Corollary LRTmEqIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmEqIrrelevant.
@@ -512,7 +518,7 @@ Proof.
   - intros * []. unshelve econstructor; try eassumption.
     1: symmetry; eassumption.
     (* Need an additional universe level h < i *)
-    eapply TyEqSym@{h i j k}. 3:exact relEq.
+    eapply TyEqSym@{h i j k h i j k}. 3:exact relEq.
     all: eapply LogRelRec_unfold; eapply LRAd.adequate; eassumption.
   - intros * []. unshelve econstructor.
     3,4: eassumption.
