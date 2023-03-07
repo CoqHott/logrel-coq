@@ -102,7 +102,8 @@ Section TypingWk.
       + now eapply IHA.
       + now eapply IHAA'.
       + eapply IHBB' with (ρ := wk_up _ _ ρ).
-        all: now econstructor.
+        pose (IHA _ ρ H).
+        econstructor; tea; now econstructor.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.

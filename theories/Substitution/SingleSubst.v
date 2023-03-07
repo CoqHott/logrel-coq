@@ -100,12 +100,27 @@ Lemma substSTmEq {Γ F F' G G' t t' f f' l} (VΓ : [||-v Γ]) nF
   (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG])
   (Vf' : [Γ ,, vass nF F' ||-v<l> f' : G' | VΓF' | VG'])
   (Vff' : [Γ ,, vass nF F ||-v<l> f ≅ f' : G | VΓF | VG]) :
-  [Γ ||-v<l> f[t..] ≅ f'[t..] : G[t..] | VΓ | substS nF VG Vt].
+  [Γ ||-v<l> f[t..] ≅ f'[t'..] : G[t..] | VΓ | substS nF VG Vt].
 Proof.
   constructor; intros; rewrite !singleSubstComm; irrelevance0. 
   1: symmetry; apply singleSubstComm.
-  unshelve now eapply validTmEq.
-  2: now eapply consSubstSvalid.
+  eapply transEqTerm.
+  + unshelve now eapply validTmEq.
+    2: now eapply consSubstSvalid.
+  + assert (Vσt : [Δ ||-v (t[σ] .: σ) : _ | VΓF' | wfΔ])
+     by (eapply consValid; tea; now eapply conv).
+    assert (Vσt' : [Δ ||-v (t'[σ] .: σ) : _ | VΓF' | wfΔ])
+     by (eapply consValid; tea; now eapply conv).
+    assert (Vσtσt' : [Δ ||-v (t[σ] .: σ) ≅ (t'[σ] .: σ) : _ | VΓF' | wfΔ | Vσt]).
+    1:{
+      constructor.
+      - bsimpl; epose (reflSubst _  _ Vσ); now eapply irrelevanceSubstEq.
+      - bsimpl; eapply validTmEq. now eapply convEq.
+    }
+    eapply LRTmEqRedConv.
+    2: eapply (validTmExt Vf' _ Vσt Vσt' Vσtσt').
+    eapply LRTyEqSym. now eapply validTyEq.
+    Unshelve. 2: now eapply consValid.
 Qed.
 
 (* Skipping a series of lemmas on single substitution of a weakened term *)

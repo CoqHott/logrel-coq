@@ -36,6 +36,16 @@ Lemma consSubstS {Γ σ t l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   [Δ ||-v (t .: σ) : Γ ,, vass nA A | validSnoc nA VΓ VA | wfΔ].
 Proof.  unshelve econstructor; eassumption. Defined.
 
+Lemma consValid {Γ Δ σ a A l} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
+  nA {VA : [Γ ||-v<l> A| VΓ]}
+  (Va : [Γ ||-v<l> a : A | VΓ | VA])
+  (VΓA := validSnoc nA VΓ VA) :
+  [Δ ||-v (a[σ] .: σ) : Γ,, vass nA A | VΓA | wfΔ].
+Proof.
+  unshelve eapply consSubstS; tea; now eapply validTm.
+Qed.
+
 
 Lemma consSubstSEq {Γ σ σ' t l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])

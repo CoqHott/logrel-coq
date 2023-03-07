@@ -2,7 +2,7 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance Application Reduction Transitivity NormalRed.
-From LogRel.Substitution Require Import Irrelevance Properties.
+From LogRel.Substitution Require Import Irrelevance Properties SingleSubst.
 From LogRel.Substitution.Introductions Require Import Pi.
 
 Set Universe Polymorphism.
@@ -37,9 +37,7 @@ Lemma lamBetaRed {t} (Vt : [Γ ,, vass nF F ||-v<l> t : G | VΓF | VG])
     [_ ||-<l> tApp (tLambda nF F t)[σ]⟨ρ⟩ a : _ | RGσ] × 
     [_ ||-<l> tApp (tLambda nF F t)[σ]⟨ρ⟩ a ≅ t[a .: σ⟨ρ⟩] : _ | RGσ].
 Proof.
-  pose proof (Vσa := consWkSubstS nF VF ρ wfΔ0 Vσ ha).
-  assert [_ ||-<l> t[a .: σ⟨ρ⟩] : _ | validTy VG wfΔ0 Vσa]
-  by (irrelevance0; [reflexivity|]; unshelve eapply validTm; cycle 3; tea).
+  pose proof (Vσa := consWkSubstS nF VF ρ wfΔ0 Vσ ha); instValid Vσa.
   pose proof (VσUp :=  liftSubstS' nF VF Vσ).
   instValid Vσ. instValid VσUp.  escape.
   irrelevance0. 1: now rewrite consWkEq'.
@@ -52,6 +50,26 @@ Proof.
     eapply redtm_beta; tea.
     fold subst_term; renToWk;  eapply ty_wk; tea.
     eapply wfc_cons; tea; eapply wft_wk; tea.
+Qed.
+
+Lemma betaValid {t a} (Vt : [Γ ,, vass nF F ||-v<l> t : G | VΓF | VG]) 
+  (Va : [Γ ||-v<l> a : F | VΓ | VF]) :
+  [Γ ||-v<l> tApp (tLambda nF F t) a ≅ t[a..] : G[a..] | VΓ | substS nF VG Va].
+Proof.
+  constructor; intros. instValid Vσ.
+  pose (Vσa := consSubstS (nA := nF) _ _ Vσ _ RVa). instValid Vσa.
+  pose proof (VσUp :=  liftSubstS' nF VF Vσ).
+  instValid Vσ. instValid VσUp.  escape.
+  assert (eq : forall t, t[a..][σ] = t[up_term_term σ][a[σ]..]) by (intros; now bsimpl).
+  assert (eq' : forall t, t[a..][σ] = t[a[σ].: σ]) by (intros; now bsimpl).
+  irrelevance0. 1: symmetry; apply eq.
+  rewrite eq;  eapply redSubstTerm; tea.
+  1: rewrite <- eq; rewrite eq'; irrelevance.
+  constructor; tea.
+  * eapply (ty_app (na:= nF)); tea. refold. gen_typing.
+  * do 2 (rewrite <- eq; rewrite eq'); tea.
+  * eapply redtm_beta; tea.
+    Unshelve. 2:rewrite <- eq; now rewrite eq'.
 Qed.
 
 Lemma lamValid0 {t} (Vt : [Γ ,, vass nF F ||-v<l> t : G | VΓF | VG]) 

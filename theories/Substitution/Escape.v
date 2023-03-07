@@ -47,6 +47,9 @@ Proof.
   irrelevance.
 Qed.
 
+Lemma escapeTy {Γ l A} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : [Γ |- A].
+Proof. eapply escape_; now eapply reducibleTy. Qed.
+
 
 Lemma escapeEq {Γ l A B} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : 
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ |- A ≅ B].

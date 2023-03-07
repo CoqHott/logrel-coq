@@ -473,7 +473,7 @@ Section BundledConv.
       }
       split ; [now gen_typing|..].
       econstructor.
-      + now econstructor.
+      + assumption.
       + now eapply IHA.
       + now eapply IHB ; gen_typing.
     - intros * ? ? ? IH ? Hf Hg.

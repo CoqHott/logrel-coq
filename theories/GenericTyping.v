@@ -199,7 +199,7 @@ Section GenericTyping.
     convtm_convneu {Γ n n' A} :
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ na na' A A' B B'} :
-      eq_binder_annot na na' -> [Γ |- A] ->
+      eq_binder_annot na na' -> [Γ |- A : U] ->
       [Γ |- A ≅ A' : U] -> [Γ,, vass na A |- B ≅ B' : U] ->
       [Γ |- tProd na A B ≅ tProd na' A' B' : U] ;
     convtm_eta {Γ na f g A B} :
@@ -519,6 +519,8 @@ Section GenericConsequences.
 End GenericConsequences.
 
 
+Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
+Proof. now bsimpl. Qed.
 
 Lemma wk1_ren_on Γ nF F (H : term) : H⟨@wk1 Γ nF F⟩ = H⟨↑⟩.
 Proof. now bsimpl. Qed.

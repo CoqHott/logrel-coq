@@ -79,7 +79,7 @@ Section Definitions.
               [ Γ |- a : A ] ->
               [ Γ |- tApp (tLambda na A t) a ≅ t[a..] : B[a..] ]
       | TermPiCong {Γ} {na nb } {A B C D} :
-          [ Γ |- A ] ->
+          [ Γ |- A : U] ->
           [ Γ |- A ≅ B : U ] ->
           [ Γ ,, vass na A |- C ≅ D : U ] ->
           [ Γ |- tProd na A C ≅ tProd nb B D : U ]

@@ -130,6 +130,22 @@ Proof.
   eapply irrelevanceSubst; eassumption.
 Qed.
 
+Lemma symValidEq {Γ l A B} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} (VB : [Γ ||-v<l> B | VΓ]) :
+  [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ A | VΓ | VB].
+Proof.
+  intros; constructor; intros.
+  eapply LRTyEqSym; now eapply validTyEq.
+  Unshelve. all: tea.
+Qed.
+
+Lemma transValidEq {Γ l A B C} {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<l> A | VΓ]} {VB : [Γ ||-v<l> B | VΓ]} (VC : [Γ ||-v<l> C | VΓ]):
+  [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ C | VΓ | VB] -> [Γ ||-v<l> A ≅ C | VΓ | VA].
+Proof.
+  constructor; intros; eapply transEq; now eapply validTyEq.
+  Unshelve. all: tea. now eapply validTy.
+Qed.
+
 Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
   [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A | VΓ' | VA'].
 Proof.
@@ -176,6 +192,22 @@ Proof.
   intros [h]; constructor; intros; irrelevanceRefl.
   unshelve apply h; tea.
   eapply irrelevanceSubst; eassumption.
+Qed.
+
+Lemma symValidTmEq {Γ l t u A} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} :
+  [Γ ||-v<l> t ≅ u : A| VΓ | VA] -> [Γ ||-v<l> u ≅ t : A | VΓ | VA].
+Proof.
+  intros; constructor; intros.
+  eapply LRTmEqSym; now eapply validTmEq.
+Qed.
+
+Lemma transValidTmEq {Γ l t u v A} {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<l> A | VΓ]} :
+  [Γ ||-v<l> t ≅ u : A | VΓ | VA] -> 
+  [Γ ||-v<l> u ≅ v : A | VΓ | VA] -> 
+  [Γ ||-v<l> t ≅ v : A | VΓ | VA].
+Proof.
+  constructor; intros; eapply transEqTerm; now eapply validTmEq.
 Qed.
 
 Lemma irrelevanceSubstExt {Γ} (VΓ : [||-v Γ]) {σ σ' Δ} (wfΔ : [|- Δ]) :
