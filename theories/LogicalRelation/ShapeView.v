@@ -7,16 +7,16 @@ Set Universe Polymorphism.
 Section ShapeViews.
   Context `{GenericTypingProperties}.
 
-  Definition ShapeView Γ
+  Definition ShapeView@{i j k l i' j' k' l'} Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
-    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) (lrB : LogRel lB Γ B eqTyB redTmB redTyB) : Set :=
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA redTyA) (lrB : LogRel@{i' j' k' l'} lB Γ B eqTyB redTmB redTyB) : Set :=
     match lrA, lrB with
       | LRU _ _, LRU _ _ => True
       | LRne _ _, LRne _ _ => True
       | LRPi _ _ _, LRPi _ _ _ => True
       | _, _ => False
     end.
-    
+
     (* | SVU (UredA UredB : [ Γ ||-U l]):
           ShapeView l Γ U U (LRU (LogRelRec l) UredA) (LRU (LogRelRec l) UredB)
 
@@ -29,10 +29,10 @@ Section ShapeViews.
   Arguments ShapeView Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
   !lrA !lrB.
 
-  Lemma ShapeViewConv {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
-    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel lB Γ B eqTyB redTmB eqTmB) :
+  Lemma ShapeViewConv@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel@{i' j' k' l'} lB Γ B eqTyB redTmB eqTmB) :
     eqTyA B ->
-    ShapeView Γ A B lrA lrB.
+    ShapeView@{i j k l i' j' k' l'} Γ A B lrA lrB.
   Proof.
     destruct lrA.
     - destruct lrB.
@@ -69,21 +69,21 @@ Section ShapeViews.
       + now econstructor.
   Qed.
 
-  Corollary ShapeViewRefl {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-    (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
-    ShapeView Γ A A lrA lrA'.
+  Corollary ShapeViewRefl@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i' j' k' l'} lA' Γ A eqTyA' redTmA' eqTmA') :
+    ShapeView@{i j k l i' j' k' l'} Γ A A lrA lrA'.
   Proof.
     now eapply ShapeViewConv, LRTyEqRefl.
   Qed.
 
 
   Definition ShapeView3 Γ
-    A {lA eqTyA redTmA redTyA} 
+    A {lA eqTyA redTmA redTyA}
     B {lB eqTyB redTmB redTyB}
     C {lC eqTyC redTmC redTyC}
-    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) 
-    (lrB : LogRel lB Γ B eqTyB redTmB redTyB) 
-    (lrC : LogRel lC Γ C eqTyC redTmC redTyC) 
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA)
+    (lrB : LogRel lB Γ B eqTyB redTmB redTyB)
+    (lrC : LogRel lC Γ C eqTyC redTmC redTyC)
     : Set :=
     match lrA, lrB, lrC with
       | LRU _ _, LRU _ _, LRU _ _ => True
@@ -91,19 +91,19 @@ Section ShapeViews.
       | LRPi _ _ _, LRPi _ _ _, LRPi _ _ _ => True
       | _, _, _ => False
     end.
-    
+
 
   Arguments ShapeView3 Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB} C {lC eqTyC redTmC redTyC}
   !lrA !lrB !lrC.
 
   Lemma combine Γ
-    A {lA eqTyA redTmA redTyA} 
+    A {lA eqTyA redTmA redTyA}
     B {lB eqTyB redTmB redTyB}
     C {lC eqTyC redTmC redTyC}
-    (lrA : LogRel lA Γ A eqTyA redTmA redTyA) 
-    (lrB : LogRel lB Γ B eqTyB redTmB redTyB) 
+    (lrA : LogRel lA Γ A eqTyA redTmA redTyA)
+    (lrB : LogRel lB Γ B eqTyB redTmB redTyB)
     (lrC : LogRel lC Γ C eqTyC redTmC redTyC) :
     ShapeView Γ A B lrA lrB -> ShapeView Γ B C lrB lrC -> ShapeView3 Γ A B C lrA lrB lrC.
   Proof.  destruct lrA, lrB, lrC; easy. Qed.
-  
+
 End ShapeViews.

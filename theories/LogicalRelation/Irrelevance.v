@@ -8,8 +8,8 @@ Section Irrelevances.
 Context `{GenericTypingProperties}.
 
 Section ΠIrrelevanceLemmas.
-Universe u.
-Context Γ A A' (ΠA : PiRedTy@{u} Γ A) (ΠA' : PiRedTy@{u} Γ A') 
+Universe u u' v.
+Context Γ A A' (ΠA : PiRedTy@{u} Γ A) (ΠA' : PiRedTy@{u'} Γ A')
   (dom := PiRedTy.dom ΠA)
   (dom' := PiRedTy.dom ΠA')
   (domRed := (@PiRedTy.domRed _ _ _ _ _ _ _ ΠA))
@@ -20,28 +20,28 @@ Context Γ A A' (ΠA : PiRedTy@{u} Γ A) (ΠA' : PiRedTy@{u} Γ A')
   (codRed' := (@PiRedTy.codRed _ _ _ _ _ _ _ ΠA'))
   (eqPi : [Γ |- tProd (PiRedTy.na ΠA) dom cod ≅ tProd (PiRedTy.na ΠA') dom' cod']).
 
-Notation "A <≈> B" := (prod@{u u} (A -> B) (B -> A)) (at level 90).
+Notation "A <≈> B" := (prod@{v v} (A -> B) (B -> A)) (at level 90).
 
 Lemma ΠIrrelevanceTyEq  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-  [× (forall B : term,
-      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
+  (and3@{v v v} (forall B : term,
+      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B])
     (forall t : term,
-      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩]) &
+      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩])
     (forall t u : term,
-      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩])]) ->
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩]))) ->
   (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
       (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩])
       (ha' : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-  [× (forall B : term,
+  (and3@{v v v} (forall B : term,
       [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ B] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B]),
+      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B])
     (forall t : term,
       [codRed Δ a ρ h ha | Δ ||- t : cod[a .: (ρ >> tRel)] ] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]]) &
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]])
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ]))) ->
   forall B, [Γ ||-Π A ≅ B | ΠA] -> [Γ ||-Π A' ≅ B | ΠA'].
 Proof.
   intros IHdom IHcod B [] ; cbn in *.
@@ -61,24 +61,24 @@ Qed.
 
 Lemma ΠIrrelevanceTm  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-  [× (forall B : term,
-      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
+  (and3@{v v v} (forall B : term,
+      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B])
     (forall t : term,
-      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩]) &
+      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩])
     (forall t u : term,
-      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩])]) ->
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩]))) ->
   (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
       (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩])
       (ha' : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-  [× (forall B : term,
+  (and3@{v v v} (forall B : term,
       [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ B] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B]),
+      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B])
     (forall t : term,
       [codRed Δ a ρ h ha | Δ ||- t : cod[a .: (ρ >> tRel)] ] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]]) &
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]])
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ]))) ->
   forall t, [Γ ||-Π t : A | ΠA] -> [Γ ||-Π t : A' | ΠA'].
 Proof.
   intros IHdom IHcod B [] ; cbn in *.
@@ -100,24 +100,24 @@ Defined.
 
 Lemma ΠIrrelevanceTmEq  :
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [  |- Δ]),
-  [× (forall B : term,
-      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B]),
+  (and3@{v v v} (forall B : term,
+      [domRed Δ ρ h | Δ ||- dom⟨ρ⟩ ≅ B] <≈> [domRed' Δ ρ h | Δ ||- dom'⟨ρ⟩ ≅ B])
     (forall t : term,
-      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩]) &
+      [domRed Δ ρ h | Δ ||- t : dom⟨ρ⟩] <≈> [domRed' Δ ρ h | Δ ||- t : dom'⟨ρ⟩])
     (forall t u : term,
-      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩])]) ->
+      [domRed Δ ρ h | Δ ||- t ≅ u : dom⟨ρ⟩ ] <≈> [domRed' Δ ρ h | Δ ||- t ≅ u : dom'⟨ρ⟩]))) ->
   (forall (Δ : context) (ρ : Δ ≤ Γ) (a : term) (h : [  |- Δ])
       (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩])
       (ha' : [domRed' Δ ρ h | Δ ||- a : dom'⟨ρ⟩]),
-  [× (forall B : term,
+  (and3@{v v v} (forall B : term,
       [codRed Δ a ρ h ha | Δ ||- cod[a .: (ρ >> tRel)] ≅ B] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B]),
+      [codRed' Δ a ρ h ha' | Δ ||- cod'[a .: (ρ >> tRel)] ≅ B])
     (forall t : term,
       [codRed Δ a ρ h ha | Δ ||- t : cod[a .: (ρ >> tRel)] ] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]]) &
+      [codRed' Δ a ρ h ha' | Δ ||- t : cod'[a .: (ρ >> tRel)]])
     (forall t u : term,
       [codRed Δ a ρ h ha | Δ ||- t ≅ u : cod[a .: (ρ >> tRel)]] <≈>
-      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ])]) ->
+      [codRed' Δ a ρ h ha' | Δ ||- t ≅ u : cod'[a .: (ρ >> tRel)] ]))) ->
   forall t u, [Γ ||-Π t ≅ u : A | ΠA] -> [Γ ||-Π t ≅ u : A' | ΠA'].
 Proof.
   intros IHdom IHcod t u [] ; cbn in *.
@@ -135,38 +135,67 @@ Qed.
 End ΠIrrelevanceLemmas.
 
 Section LRIrrelevant.
-Universe i j k l.
+Universe u v.
 
-Notation "A <≈> B" := (prod@{k k} (A -> B) (B -> A)) (at level 90).
+Notation "A <≈> B" := (prod@{v v} (A -> B) (B -> A)) (at level 90).
 
-Theorem LRIrrelevant Γ A A' {lA lA'}
-  {eqTyA redTmA eqTyA' redTmA' : term -> Type@{k}}
-  {eqTmA eqTmA' : term -> term -> Type@{k}}
-    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i j k l} lA' Γ A' eqTyA' redTmA' eqTmA') :
-    eqTyA A' ->
-    [× forall B, eqTyA B <≈> eqTyA' B ,
-    forall t, redTmA t <≈> redTmA' t &
-    forall t u, eqTmA t u <≈> eqTmA' t u ].
+Lemma LRIrrelevantPreds@{i j k l i' j' k' l'} {lA lA'}
+  (IH : forall l0 (ltA : l0 << lA) (ltA' : l0 << lA')
+    , prod@{v v}
+        (forall Γ t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ])
+        (forall Γ t (lr1 : [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ])
+                (lr2 : [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ]) u
+          , [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ≅ u | lr2 ]))
+  (Γ : context) (A A' : term)
+  {eqTyA redTmA : term -> Type@{k}}
+  {eqTyA' redTmA' : term -> Type@{k'}}
+  {eqTmA : term -> term -> Type@{k}}
+  {eqTmA' : term -> term -> Type@{k'}}
+  (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA)
+  (lrA' : LogRel@{i' j' k' l'} lA' Γ A' eqTyA' redTmA' eqTmA') :
+  eqTyA A' ->
+  @and3@{v v v} (forall B, eqTyA B <≈> eqTyA' B)
+    (forall t, redTmA t <≈> redTmA' t)
+    (forall t u, eqTmA t u <≈> eqTmA' t u).
 Proof.
+  pose proof (fun Γ l0 ltA ltA' => fst (IH l0 ltA ltA') Γ) as IHty.
+  pose proof (fun Γ l0 ltA ltA' => snd (IH l0 ltA ltA') Γ) as IHeq.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? [? []] | ? ? [] | ? A [] [] IHdom IHcod]
-    in lA', A', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
-  - destruct lrA' as [? ? [? []] | | ]; try solve [destruct s] ; clear s.
-    split.
+  induction lrA as [? ? [l1 lt1] | ? ? [] | ? A [] [] IHdom IHcod]
+    in A', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
+  - destruct lrA' as [? ? [l2 lt2] | | ]; try solve [destruct s] ; clear s.
+    destruct lt2 ; destruct lt1. split.
     + intros ?.
       split.
       all: eauto.
     + intros ?.
       split.
       all: intros [].
-      all: now econstructor.
-    + intros ? ?.
+      all: econstructor.
+      1, 2, 3, 5, 6, 7: tea.
+      * apply (fst (IHty Γ zero Oi Oi t)). exact rel.
+      * apply (snd (IHty Γ zero Oi Oi t)). exact rel.
+    + cbn ; intros ? ?.
       split.
-      all: intros [[] []].
-      all: unshelve econstructor ; tea.
-      1-4: now econstructor.
-      all: eassumption.
+      all: intros [[] []] ; cbn in *.
+      all: unshelve econstructor.
+      * econstructor. 1, 2, 3: tea.
+        apply (fst (IHty Γ zero Oi Oi t)). exact relL.
+      * econstructor. 1, 2, 3: tea.
+        apply (fst (IHty Γ zero Oi Oi u)). exact relR.
+      * apply (fst (IHty Γ zero Oi Oi t)). exact relL.
+      * econstructor. 1, 2, 3: tea.
+        apply (snd (IHty Γ zero Oi Oi t)). exact relL.
+      * econstructor. 1, 2, 3: tea.
+        apply (snd (IHty Γ zero Oi Oi u)). exact relR.
+      * apply (snd (IHty Γ zero Oi Oi t)). exact relL.
+      * cbn. eassumption.
+      * apply (fst (IHty Γ zero Oi Oi u)). exact relR.
+      * apply (fst (IHeq Γ zero Oi Oi t relL (fst (IHty Γ zero Oi Oi t) relL) u)). exact relEq.
+      * cbn. eassumption.
+      * apply (snd (IHty Γ zero Oi Oi u)). exact relR.
+      * apply (snd (IHeq Γ zero Oi Oi t (snd (IHty Γ zero Oi Oi t) relL) relL u)). exact relEq.
   - destruct lrA' as [|? A' neA'|] ; try solve [destruct s] ; clear s.
     destruct he as [AA], neA' as [AA'] ; cbn in *.
     assert (AA' = AA) as eqAA'.
@@ -209,7 +238,7 @@ Proof.
     assert (tProd na0 dom0 cod0 = tProd na1 dom1 cod1) as ePi
       by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
-    pose proof (IHdom_ := fun Δ ρ h => IHdom Δ ρ h _ _ _ _ _ (domAd0 Δ ρ h) (domRed1 Δ ρ h)).
+    pose proof (IHdom_ := fun Δ ρ h => IHdom Δ ρ h _ _ _ _ (domAd0 Δ ρ h) (domRed1 Δ ρ h)).
     assert (IHcod_ : forall Δ a (ρ : Δ ≤ Γ) (h : [|- Δ])
       (ha : [domRed Δ ρ h | Δ ||- a : dom⟨ρ⟩])
       (ha' : [domRed0 Δ ρ h | Δ ||- a : dom1⟨ρ⟩]),
@@ -233,7 +262,7 @@ Proof.
     split.
     + split ; intros.
       all: eapply ΠIrrelevanceTyEq.
-      4,8: eassumption. 
+      4,8: eassumption.
       1,4: assumption + now symmetry.
       1-2: now eauto.
       * do 2 split ; intros.
@@ -242,7 +271,7 @@ Proof.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTm.
-      4,8: eassumption. 
+      4,8: eassumption.
       1,4: assumption + now symmetry.
       1-2: now eauto.
       * do 2 split ; intros.
@@ -251,7 +280,7 @@ Proof.
         all: now eapply IHcod_ ; eauto.
     + split ; intros.
       all: eapply ΠIrrelevanceTmEq.
-      4,8: eassumption. 
+      4,8: eassumption.
       1,4: assumption + now symmetry.
       1-2: now eauto.
       * do 2 split ; intros.
@@ -260,6 +289,97 @@ Proof.
         all: now eapply IHcod_ ; eauto.
 Qed.
 
+Lemma LRIrrelevantTy@{i j k l i' j' k' l'} {lA}
+  (IH : forall l0 (ltA : l0 << lA) (ltA' : l0 << lA)
+    , prod@{v v}
+        (forall Γ t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} lA l0 ltA' | Γ ||- t ])
+        (forall Γ t (lr1 : [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ])
+                (lr2 : [ LogRelRec@{i' j' k'} lA l0 ltA' | Γ ||- t ]) u
+          , [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈> [ LogRelRec@{i' j' k'} lA l0 ltA' | Γ ||- t ≅ u | lr2 ]))
+  (Γ : context) (A : term)
+  : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
+Proof.
+  intros [ [] lrA ] ; cbn in lrA.
+  induction lrA as [? ? [l1 lt1] | ? | ? A [] [] IHdom IHcod].
+  - eapply LRU_. econstructor ; tea.
+  - eapply LRne_. exact neA.
+  - cbn in *. eapply LRPi'. unshelve econstructor.
+    6: eassumption.
+    3,4,5: tea.
+    + exact IHdom.
+    + intros Δ a ρ tΔ ra. eapply IHcod.
+      destruct (LRIrrelevantPreds@{i j k l i' j' k' l'} IH Δ (dom⟨ρ⟩) (dom⟨ρ⟩)
+                  (domAd Δ ρ tΔ) (IHdom Δ ρ tΔ : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHdom Δ ρ tΔ))
+                  (LRTyEqRefl (domAd Δ ρ tΔ))) as [_ irrTmRed _].
+      eapply (snd (irrTmRed a)). exact ra.
+    + cbn. intros Δ a b ρ tΔ ra rb rab.
+      destruct (LRIrrelevantPreds@{i j k l i' j' k' l'} IH Δ (dom⟨ρ⟩) (dom⟨ρ⟩)
+                  (domAd Δ ρ tΔ) (IHdom Δ ρ tΔ : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHdom Δ ρ tΔ))
+                  (LRTyEqRefl (domAd Δ ρ tΔ))) as [_ irrTmRed irrTmEq].
+      destruct (LRIrrelevantPreds@{i j k l i' j' k' l'} IH Δ (cod[a .: ρ >> tRel]) (cod[a .: ρ >> tRel])
+                  (codAd Δ a ρ tΔ (snd (irrTmRed a) ra))
+                  (IHcod Δ a ρ tΔ (snd (irrTmRed a) ra)
+                    : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHcod Δ a ρ tΔ (snd (irrTmRed a) ra)))
+                  (LRTyEqRefl (codAd Δ a ρ tΔ (snd (irrTmRed a) ra))))
+        as [irrTyEq _ _].
+      eapply (fst (irrTyEq (cod[b .: ρ >> tRel]))).
+      eapply codExt.
+      exact (snd (irrTmRed b) rb).
+      exact (snd (irrTmEq a b) rab).
+Qed.
+
+Lemma IrrRec0@{i j k i' j' k'} l0 (ltA : l0 << zero) (ltA' : l0 << zero)
+  : prod@{v v}
+      (forall Γ t, [ LogRelRec@{i j k} zero l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} zero l0 ltA' | Γ ||- t ])
+      (forall Γ t (lr1 : [ LogRelRec@{i j k} zero l0 ltA | Γ ||- t ])
+              (lr2 : [ LogRelRec@{i' j' k'} zero l0 ltA' | Γ ||- t ]) u
+        , [ LogRelRec@{i j k} zero l0 ltA | Γ ||- t ≅ u | lr1 ] <≈> [ LogRelRec@{i' j' k'} zero l0 ltA' | Γ ||- t ≅ u | lr2 ]).
+Proof.
+  inversion ltA.
+Qed.
+
+Theorem IrrRec@{i j k i' j' k'} {lA} {lA'} l0 (ltA : l0 << lA) (ltA' : l0 << lA')
+  : prod@{v v}
+      (forall Γ t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ])
+      (forall Γ t (lr1 : [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ])
+              (lr2 : [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ]) u
+        , [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ≅ u | lr2 ]).
+Proof.
+  destruct ltA. destruct ltA'. cbn in *.
+  split.
+  - intros Γ t. split.
+    + eapply (LRIrrelevantTy@{u i j k u i' j' k'} IrrRec0@{u i j u i' j'}).
+    + eapply (LRIrrelevantTy@{u i' j' k' u i j k} IrrRec0@{u i' j' u i j}).
+  - intros Γ t lr1 lr2 u.
+    destruct (LRIrrelevantPreds@{u i j k u i' j' k'} IrrRec0@{u i j u i' j'} Γ t t
+                (lr1 : LRPackAdequate (LogRel@{u i j k} zero) lr1)
+                (lr2 : LRPackAdequate (LogRel@{u i' j' k'} zero) lr2)
+                (LRTyEqRefl_ lr1)) as [tyEq _ _].
+    exact (tyEq u).
+Qed.
+
+Theorem LRIrrelevant@{i j k l i' j' k' l'}
+  (Γ : context) (A A' : term) {lA lA'}
+  {eqTyA redTmA : term -> Type@{k}}
+  {eqTyA' redTmA' : term -> Type@{k'}}
+  {eqTmA : term -> term -> Type@{k}}
+  {eqTmA' : term -> term -> Type@{k'}}
+  (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA)
+  (lrA' : LogRel@{i' j' k' l'} lA' Γ A' eqTyA' redTmA' eqTmA') :
+  eqTyA A' ->
+  @and3@{v v v} (forall B, eqTyA B <≈> eqTyA' B)
+    (forall t, redTmA t <≈> redTmA' t)
+    (forall t u, eqTmA t u <≈> eqTmA' t u).
+Proof.
+  exact (LRIrrelevantPreds@{i j k l i' j' k' l'} IrrRec Γ A A' lrA lrA').
+Qed.
+
+Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
+  (Γ : context) (A : term)
+  : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
+Proof.
+  exact (LRIrrelevantTy@{i j k l i' j' k' l'} IrrRec Γ A).
+Qed.
 
 End LRIrrelevant.
 
@@ -282,8 +402,8 @@ Qed.
 
 Corollary LRTyEqIrrelevant' lA lA' Γ A A' (e : A = A') (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
-Proof. 
-  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevant. 
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevant.
 Qed.
 
 Corollary RedTmIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
@@ -415,6 +535,5 @@ Ltac irrelevance0 :=
   | [|- [_ | _ ||- _ ≅ _ : _ ] ] => eapply LRTmEqIrrelevant'
   | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
   end.
-  
-Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
 
+Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
