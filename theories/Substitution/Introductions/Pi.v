@@ -20,14 +20,8 @@ Qed.
 Section PiTyValidity.
 
   Context `{GenericTypingProperties}.
-  Universe i j k l m n o p.
-  (* i j k l are the universe levels of the hypotheses *)
-  (* m n o p are the universe levels of the conclusions *)
-  Context {l Γ na F G} (vΓ : [VR@{i j k l} | ||-v Γ])
-    (* (vF : typeValidity@{k m n o p} Γ vΓ l F) *)
-    (* (vF' : typeValidity@{k i j k l} Γ vΓ l F) *)
+  Context {l Γ na F G} (vΓ : [||-v Γ])
     (vF : [Γ ||-v< l > F | vΓ ])
-    (* (vG : typeValidity@{k m n o p} *)
     (vG : [Γ ,, vass na F ||-v< l > G | validSnoc na vΓ vF]).
 
   Lemma domainRed {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
@@ -178,20 +172,28 @@ Section PiTyValidity.
       refine (codomainSubstRedEq1 tΔ tΔ' ρ vσ).
   Defined.
 
+  Lemma PiEqRed1 {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
+    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
+    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ])
+    : [ Δ ||-< l > (tProd na F G)[σ] ≅ (tProd na F G)[σ'] | PiRed tΔ vσ ].
+  Proof.
+    cbn. econstructor.
+    - apply redtywf_refl.
+      exact (wft_prod (domainTy tΔ vσ') (codomainTy tΔ vσ')).
+    - cbn. eapply (prodTyEq tΔ vσ vσ' vσσ').
+    - cbn. intros Δ' ρ tΔ'.
+      eapply wkEq.
+      refine (validTyExt vF tΔ vσ vσ' vσσ').
+    - cbn. intros Δ' a ρ tΔ' ra.
+      refine (codomainSubstRedEq2 _ _ _ vσ vσ' vσσ' ra).
+  Defined.
+
   Lemma PiValid : [Γ ||-v< l > tProd na F G | vΓ].
   Proof.
     unshelve econstructor.
-    - intros Δ σ tΔ vσ. eapply PiRed ; tea.
-    - intros Δ σ σ' tΔ vσ vσ' vσσ'. cbn.
-      econstructor.
-      + apply redtywf_refl.
-        exact (wft_prod (domainTy tΔ vσ') (codomainTy tΔ vσ')).
-      + cbn. eapply (prodTyEq tΔ vσ vσ' vσσ').
-      + cbn. intros Δ' ρ tΔ'.
-        eapply wkEq.
-        refine (validTyExt vF tΔ vσ vσ' vσσ').
-      + cbn. intros Δ' a ρ tΔ' ra.
-        refine (codomainSubstRedEq2 _ _ _ vσ vσ' vσσ' ra).
+    - intros Δ σ. eapply PiRed.
+    - intros Δ σ σ'. eapply PiEqRed1.
   Defined.
 
 End PiTyValidity.
@@ -200,18 +202,19 @@ End PiTyValidity.
 Section PiTyCongruence.
 
   Context `{GenericTypingProperties}.
-
-  Lemma PiCong {Γ F nF G F' nF' G' l}
+  Context {Γ F nF G F' nF' G' l}
     (vΓ : [||-v Γ])
     (vF : [ Γ ||-v< l > F | vΓ ])
     (vG : [ Γ ,, vass nF F ||-v< l > G | validSnoc nF vΓ vF ])
     (vF' : [ Γ ||-v< l > F' | vΓ ])
     (vG' : [ Γ ,, vass nF' F' ||-v< l > G' | validSnoc nF' vΓ vF' ])
     (vFF' : [ Γ ||-v< l > F ≅ F' | vΓ | vF ])
-    (vGG' : [ Γ ,, vass nF F ||-v< l > G ≅ G' | validSnoc nF vΓ vF | vG ])
-    : [ Γ ||-v< l > tProd nF F G ≅ tProd nF' F' G' | vΓ | PiValid vΓ vF vG ].
+    (vGG' : [ Γ ,, vass nF F ||-v< l > G ≅ G' | validSnoc nF vΓ vF | vG ]).
+
+  Lemma PiEqRed2 {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ||-< l > (tProd nF F G)[σ] ≅ (tProd nF' F' G')[σ] | validTy (PiValid vΓ vF vG) tΔ vσ ].
   Proof.
-    econstructor. intros Δ σ tΔ vσ. econstructor.
+    econstructor.
     - apply redtywf_refl.
       exact (wft_prod (domainTy vΓ vF' tΔ vσ) (codomainTy vΓ vF' vG' tΔ vσ)).
     - cbn. fold subst_term.
@@ -229,28 +232,127 @@ Section PiTyCongruence.
         irrelevance.
   Qed.
 
+  Lemma PiCong : [ Γ ||-v< l > tProd nF F G ≅ tProd nF' F' G' | vΓ | PiValid vΓ vF vG ].
+  Proof.
+    econstructor. intros Δ σ. eapply PiEqRed2.
+  Qed.
+
 End PiTyCongruence.
 
 
 Section PiTmValidity.
 
   Context `{GenericTypingProperties}.
-
-  Lemma PiValidTm {Γ F nF G}
-    (vΓ : [||-v Γ])
+  Context {Γ F nF G} (vΓ : [||-v Γ])
     (vF : [ Γ ||-v< one > F | vΓ ])
     (vU : [ Γ ,, vass nF F ||-v< one > U | validSnoc nF vΓ vF ])
     (vFU : [ Γ ||-v< one > F : U | vΓ | UValid vΓ ])
-    (vGU : [ Γ ,, vass nF F ||-v< one > G : U | validSnoc nF vΓ vF | vU ])
-    : [ Γ ||-v< one > tProd nF F G : U | vΓ | UValid vΓ ].
+    (vGU : [ Γ ,, vass nF F ||-v< one > G : U | validSnoc nF vΓ vF | vU ]).
+
+  Lemma domainRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ||-< one > F[σ] : U | validTy (UValid vΓ) tΔ vσ ].
   Proof.
-    (* unshelve econstructor. *)
-    (* - intros Δ σ tΔ vσ. econstructor. *)
-    (*   + apply redtmwf_refl. admit. *)
-    (*   + constructor. *)
-    (*   + admit. *)
-    (*   + cbn. Set Printing Universes. Check PiRed. refine (PiRed _ _ _ tΔ vσ). *)
-  Admitted.
+    exact (validTm vFU tΔ vσ).
+  Defined.
+
+  Lemma domainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ |-[ ta ] F[σ] : U ].
+  Proof.
+    eapply escapeTerm_.
+    now eapply domainRedU.
+    Unshelve. all: tea.
+  Defined.
+
+  Lemma domainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ |-[ ta ] F[σ] ≅ F[σ] : U ].
+  Proof.
+    refine (escapeEqTerm_ (validTy (UValid vΓ) tΔ vσ) _).
+    eapply LREqTermRefl_. now eapply domainRedU.
+  Qed.
+
+  Lemma codomainRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ,, vass nF F[σ] ||-< one > G[ up_term_term σ ] : U | validTy vU _ (liftSubstS' vΓ tΔ vF vσ) ].
+  Proof.
+    refine (validTm vGU _ (liftSubstS' vΓ tΔ vF vσ)).
+  Qed.
+
+  Lemma codomainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ,, vass nF F[σ] |-[ ta ] G[ up_term_term σ ] : U ].
+  Proof.
+    eapply escapeTerm_.
+    now eapply codomainRedU.
+    Unshelve. all: tea.
+  Qed.
+
+  Lemma codomainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ,, vass nF F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ] : U].
+  Proof.
+    refine (escapeEqTerm_ (validTy vU _ (liftSubstS' vΓ tΔ vF vσ)) _).
+    eapply LREqTermRefl_. now eapply codomainRedU.
+  Qed.
+
+  Lemma prodTyEqU {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
+    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
+    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
+    : [Δ |-[ ta ] tProd nF F[σ] G[up_term_term σ] ≅ tProd nF F[σ'] G[up_term_term σ'] : U].
+  Proof.
+    refine (convtm_prod I (domainTy vΓ vF tΔ vσ) _ _).
+    - eapply escapeEqTerm_. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
+    - rewrite (eq_subst_1 F nF G Δ σ). rewrite (eq_subst_1 F nF G Δ σ').
+      eapply escapeEqTerm_. unshelve refine (validTmExt vGU _ _ _ _).
+      + eapply wfc_cons. easy. refine (domainTy vΓ vF tΔ vσ).
+      + refine (liftSubstS vΓ tΔ vF vσ).
+      + unshelve econstructor.
+        * refine (wk1SubstS vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ').
+        * cbn. eapply neuTerm. constructor.
+          2: refine (convneu_var _).
+          all: eapply (ty_conv (A' := F[σ]⟨S⟩) (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _))).
+          all: replace (F[σ]⟨S⟩) with (F[σ⟨@wk1 Δ nF F[σ]⟩]) by (now bsimpl).
+          all: eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ').
+      + unshelve econstructor.
+        * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
+        * cbn. eapply neuTermEq.
+          1, 2: constructor.
+          3: refine (convneu_var _).
+          all: replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
+          all: refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)).
+  Qed.
+
+  Lemma PiRedU {Δ σ}
+    (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ||-< one > (tProd nF F G)[σ] : U | validTy (UValid vΓ) tΔ vσ ].
+  Proof.
+    econstructor.
+    - apply redtmwf_refl ; cbn.
+      refine (ty_prod (domainTmU tΔ vσ) (codomainTmU tΔ vσ)).
+    - constructor.
+    - cbn. eapply (convtm_prod I (domainTy vΓ vF tΔ vσ) (domainTmReflU tΔ vσ) (codomainTmReflU tΔ vσ)).
+    - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ vσ)).
+      refine (univValid _ _ vFU).
+      eapply (irrelevanceValidity (validSnoc nF vΓ vF) _).
+      refine (univValid _ _ vGU).
+  Defined.
+
+  Lemma PiValidU : [ Γ ||-v< one > tProd nF F G : U | vΓ | UValid vΓ ].
+  Proof.
+    econstructor.
+    - intros Δ σ tΔ vσ.
+      exact (PiRedU tΔ vσ).
+    - intros Δ σ σ' tΔ vσ vσ' vσσ'.
+      pose proof (univValid (l' := zero) _ _ vFU) as VF0.
+      pose proof (irrelevanceValidity (validSnoc nF vΓ vF)
+                    (validSnoc (l := zero) nF vΓ VF0)
+                    (univValid (l' := zero) _ _ vGU)) as VG0.
+      unshelve econstructor ; cbn.
+      + exact (PiRedU tΔ vσ).
+      + exact (PiRedU tΔ vσ').
+      + exact (LRCumulative (PiRed vΓ VF0 VG0 tΔ vσ)).
+      + exact (prodTyEqU tΔ vσ vσ' vσσ').
+      + exact (LRCumulative (PiRed vΓ VF0 VG0 tΔ vσ')).
+      + pose proof (PiEqRed1 vΓ VF0 VG0 tΔ vσ vσ' vσσ').
+        irrelevance.
+  Qed.
 
 End PiTmValidity.
 
@@ -258,8 +360,7 @@ End PiTmValidity.
 Section PiTmCongruence.
 
   Context `{GenericTypingProperties}.
-
-  Lemma PiCongTm {Γ F nF G F' nF' G'}
+  Context {Γ F nF G F' nF' G'}
     (vΓ : [||-v Γ])
     (vF : [ Γ ||-v< one > F | vΓ ])
     (vU : [ Γ ,, vass nF F ||-v< one > U | validSnoc nF vΓ vF ])
@@ -270,10 +371,35 @@ Section PiTmCongruence.
     (vF'U : [ Γ ||-v< one > F' : U | vΓ | UValid vΓ ])
     (vG'U : [ Γ ,, vass nF' F' ||-v< one > G' : U | validSnoc nF' vΓ vF' | vU' ])
     (vFF' : [ Γ ||-v< one > F ≅ F' : U | vΓ | UValid vΓ ])
-    (vGG' : [ Γ ,, vass nF F ||-v< one > G ≅ G' : U | validSnoc nF vΓ vF | vU ])
-    : [ Γ ||-v< one > tProd nF F G ≅ tProd nF' F' G' : U | vΓ | UValid vΓ ].
+    (vGG' : [ Γ ,, vass nF F ||-v< one > G ≅ G' : U | validSnoc nF vΓ vF | vU ]).
+
+  Lemma PiCongTm : [ Γ ||-v< one > tProd nF F G ≅ tProd nF' F' G' : U | vΓ | UValid vΓ ].
   Proof.
-  Admitted.
+    econstructor.
+    intros Δ σ tΔ vσ.
+    pose proof (univValid (l' := zero) _ _ vFU) as vF0.
+    pose proof (irrelevanceValidity (validSnoc nF vΓ vF)
+                  (validSnoc (l := zero) nF vΓ vF0)
+                  (univValid (l' := zero) _ _ vGU)) as vG0.
+    pose proof (univValid (l' := zero) _ _ vF'U) as vF'0.
+    pose proof (irrelevanceValidity (validSnoc nF' vΓ vF')
+                  (validSnoc (l := zero) nF' vΓ vF'0)
+                  (univValid (l' := zero) _ _ vG'U)) as vG'0.
+    unshelve econstructor ; cbn.
+    - exact (PiRedU vΓ vF vU vFU vGU tΔ vσ).
+    - exact (PiRedU vΓ vF' vU' vF'U vG'U tΔ vσ).
+    - exact (LRCumulative (PiRed vΓ vF0 vG0 tΔ vσ)).
+    - cbn. refine (convtm_prod I (domainTy vΓ vF tΔ vσ) _ _).
+      + eapply escapeEqTerm_. eapply (validTmEq vFF' tΔ vσ).
+      + eapply escapeEqTerm_. unshelve eapply (validTmEq vGG').
+        2: unshelve eapply liftSubstS' ; tea.
+    - exact (LRCumulative (PiRed vΓ vF'0 vG'0 tΔ vσ)).
+    - enough ([ Δ ||-< zero > (tProd nF F G)[σ] ≅ (tProd nF' F' G')[σ] | PiRed vΓ vF0 vG0 tΔ vσ]) by irrelevance.
+      refine (PiEqRed2 vΓ vF0 vG0 vF'0 vG'0 _ _ tΔ vσ).
+      + exact (univEqValid vΓ (UValid vΓ) vF0 vFF').
+      + pose proof (univEqValid (validSnoc nF vΓ vF) vU (univValid (l' := zero) _ _ vGU) vGG') as vGG'0.
+        refine (irrelevanceEq _ _ _ _ vGG'0).
+  Qed.
 
 End PiTmCongruence.
 
