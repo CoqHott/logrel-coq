@@ -1,0 +1,25 @@
+#Taken from https://github.com/coq-community/reglang
+
+GLOBFILES = $(VFILES:.v=.glob)
+COQDOCJS_DIR ?= coqdocjs
+EXTRA_DIR = $(COQDOCJS_DIR)/extra
+HEADER = $(EXTRA_DIR)/header.html
+FOOTER = $(EXTRA_DIR)/footer.html
+RESOURCES = $(EXTRA_DIR)/resources
+
+DOCDIR = docs
+COQDOCDIR = $(DOCDIR)/coqdoc
+
+COQDOCHTMLFLAGS = --toc -s --html \
+  --with-header $(HEADER) --with-footer $(FOOTER) --index indexpage --parse-comments
+
+coqdoc: $(GLOBFILES) $(VFILES) $(HEADER) $(FOOTER) $(RESOURCES) $(FRONTPAGE)
+	$(SHOW)'COQDOC -d $(COQDOCDIR)'
+	$(HIDE)mkdir -p $(COQDOCDIR)
+	$(HIDE)$(COQDOC) $(COQDOCHTMLFLAGS) $(COQDOCLIBS) -d $(COQDOCDIR) $(VFILES)
+	$(SHOW)'COPY extra'
+	$(HIDE)cp -r $(RESOURCES) $(COQDOCDIR)
+.PHONY: coqdoc
+
+clean::
+	$(HIDE)rm -rf $(DOCDIR)
