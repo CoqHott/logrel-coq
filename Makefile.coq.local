@@ -10,7 +10,7 @@ RESOURCES = $(EXTRA_DIR)/resources
 DOCDIR = docs
 COQDOCDIR = $(DOCDIR)/coqdoc
 
-COQDOCHTMLFLAGS = --toc -s --html \
+COQDOCHTMLFLAGS = -toc --no-lib-name --lib-subtitles --html \
   --with-header $(HEADER) --with-footer $(FOOTER) --index indexpage --parse-comments
 
 coqdoc: $(GLOBFILES) $(VFILES) $(HEADER) $(FOOTER) $(RESOURCES) $(FRONTPAGE)
