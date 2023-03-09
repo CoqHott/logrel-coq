@@ -271,9 +271,9 @@ Section PiTmValidity.
   Qed.
 
   Lemma codomainRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, vass nF F[σ] ||-< one > G[ up_term_term σ ] : U | validTy vU _ (liftSubstS' vΓ tΔ vF vσ) ].
+    : [ Δ ,, vass nF F[σ] ||-< one > G[ up_term_term σ ] : U | validTy vU _ (liftSubstS' nF vF vσ) ].
   Proof.
-    refine (validTm vGU _ (liftSubstS' vΓ tΔ vF vσ)).
+    refine (validTm vGU _ (liftSubstS' _ vF vσ)).
   Qed.
 
   Lemma codomainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
@@ -287,7 +287,7 @@ Section PiTmValidity.
   Lemma codomainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass nF F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ] : U].
   Proof.
-    refine (escapeEqTerm_ (validTy vU _ (liftSubstS' vΓ tΔ vF vσ)) _).
+    refine (escapeEqTerm_ (validTy vU _ (liftSubstS' _ vF vσ)) _).
     eapply LREqTermRefl_. now eapply codomainRedU.
   Qed.
 
@@ -297,7 +297,7 @@ Section PiTmValidity.
     (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
     : [Δ |-[ ta ] tProd nF F[σ] G[up_term_term σ] ≅ tProd nF F[σ'] G[up_term_term σ'] : U].
   Proof.
-    refine (convtm_prod I (domainTy vΓ vF tΔ vσ) _ _).
+    refine (convtm_prod I (domainTmU tΔ vσ) _ _).
     - eapply escapeEqTerm_. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F nF G Δ σ). rewrite (eq_subst_1 F nF G Δ σ').
       eapply escapeEqTerm_. unshelve refine (validTmExt vGU _ _ _ _).
@@ -327,7 +327,7 @@ Section PiTmValidity.
     - apply redtmwf_refl ; cbn.
       refine (ty_prod (domainTmU tΔ vσ) (codomainTmU tΔ vσ)).
     - constructor.
-    - cbn. eapply (convtm_prod I (domainTy vΓ vF tΔ vσ) (domainTmReflU tΔ vσ) (codomainTmReflU tΔ vσ)).
+    - cbn. eapply (convtm_prod I (domainTmU tΔ vσ) (domainTmReflU tΔ vσ) (codomainTmReflU tΔ vσ)).
     - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ vσ)).
       refine (univValid _ _ vFU).
       eapply (irrelevanceValidity (validSnoc nF vΓ vF) _).
@@ -389,7 +389,7 @@ Section PiTmCongruence.
     - exact (PiRedU vΓ vF vU vFU vGU tΔ vσ).
     - exact (PiRedU vΓ vF' vU' vF'U vG'U tΔ vσ).
     - exact (LRCumulative (PiRed vΓ vF0 vG0 tΔ vσ)).
-    - cbn. refine (convtm_prod I (domainTy vΓ vF tΔ vσ) _ _).
+    - cbn. refine (convtm_prod I (domainTmU vΓ vFU tΔ vσ) _ _).
       + eapply escapeEqTerm_. eapply (validTmEq vFF' tΔ vσ).
       + eapply escapeEqTerm_. unshelve eapply (validTmEq vGG').
         2: unshelve eapply liftSubstS' ; tea.

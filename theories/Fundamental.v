@@ -190,7 +190,7 @@ Section Fundamental.
     FundTm (Γ,, vass na A) U B -> FundTm Γ U (tProd na A B).
   Proof.
     intros * ? [] ? []; econstructor.
-    eapply PiValidTm; irrValid.
+    eapply PiValidU; irrValid.
     Unshelve. 
     3: eapply UValid. 
     2: eapply univValid. 

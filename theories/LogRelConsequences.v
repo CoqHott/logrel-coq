@@ -259,8 +259,7 @@ Proof.
     all: replace dom⟨_⟩ with dom⟨↑⟩ by now bsimpl.
     all: apply typing_shift ; tea.
     all: boundary.
-  (* Qed. *)
-Admitted.
+  Qed.
 
 Corollary red_ty_compl_univ_l Γ T :
   [Γ |- U ≅ T] ->
