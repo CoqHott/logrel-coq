@@ -85,8 +85,8 @@ Section Weakenings.
       + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
         replace (tProd _ _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩) by now bsimpl.
         eapply convty_wk; assumption.
-      + intros. unshelve eapply LRTyEqIrrelevant.
-        3: unshelve eapply ihdom; try eassumption; eapply domRed.
+      + intros; irrelevanceRefl.
+        unshelve eapply ihdom; try eassumption; eapply domRed.
       + intros ? a ρ' ??.
         replace (_[_ .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
         irrelevance0.

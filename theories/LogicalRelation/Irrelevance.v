@@ -289,7 +289,7 @@ Proof.
         all: now eapply IHcod_ ; eauto.
 Qed.
 
-Lemma LRIrrelevantTy@{i j k l i' j' k' l'} {lA}
+Lemma LRIrrelevantCumTy@{i j k l i' j' k' l'} {lA}
   (IH : forall l0 (ltA : l0 << lA) (ltA' : l0 << lA)
     , prod@{v v}
         (forall Γ t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} lA l0 ltA' | Γ ||- t ])
@@ -348,8 +348,8 @@ Proof.
   destruct ltA. destruct ltA'. cbn in *.
   split.
   - intros Γ t. split.
-    + eapply (LRIrrelevantTy@{u i j k u i' j' k'} IrrRec0@{u i j u i' j'}).
-    + eapply (LRIrrelevantTy@{u i' j' k' u i j k} IrrRec0@{u i' j' u i j}).
+    + eapply (LRIrrelevantCumTy@{u i j k u i' j' k'} IrrRec0@{u i j u i' j'}).
+    + eapply (LRIrrelevantCumTy@{u i' j' k' u i j k} IrrRec0@{u i' j' u i j}).
   - intros Γ t lr1 lr2 u.
     destruct (LRIrrelevantPreds@{u i j k u i' j' k'} IrrRec0@{u i j u i' j'} Γ t t
                 (lr1 : LRPackAdequate (LogRel@{u i j k} zero) lr1)
@@ -358,7 +358,7 @@ Proof.
     exact (tyEq u).
 Qed.
 
-Theorem LRIrrelevant@{i j k l i' j' k' l'}
+Theorem LRIrrelevantCum@{i j k l i' j' k' l'}
   (Γ : context) (A A' : term) {lA lA'}
   {eqTyA redTmA : term -> Type@{k}}
   {eqTyA' redTmA' : term -> Type@{k'}}
@@ -378,7 +378,7 @@ Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
   {Γ : context} {A : term}
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
-  exact (LRIrrelevantTy@{i j k l i' j' k' l'} IrrRec Γ A).
+  exact (LRIrrelevantCumTy@{i j k l i' j' k' l'} IrrRec Γ A).
 Qed.
 
 Corollary LRCumulative' @{i j k l i' j' k' l'} {lA}
@@ -390,77 +390,100 @@ Qed.
 End LRIrrelevant.
 
 
-Corollary TyEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+Corollary TyEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall B, eqTyA B -> eqTyA' B.
 Proof.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTyEqIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+Corollary LRTyEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A ≅ B | lrA'].
 Proof.
   destruct lrA, lrA'.
   cbn in *.
-  now eapply TyEqIrrelevant.
+  now eapply TyEqIrrelevantCum.
 Qed.
 
-Corollary LRTyEqIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+Corollary LRTyEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
 Proof.
-  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevant.
+  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
 Qed.
 
-Corollary RedTmIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+Corollary LRTyEqIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+  forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
+Qed.
+
+Corollary RedTmIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
 Proof.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmRedIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+Corollary LRTmRedIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A | lrA'].
 Proof.
   destruct lrA, lrA'.
   cbn in *.
-  now eapply RedTmIrrelevant.
+  now eapply RedTmIrrelevantCum.
 Qed.
 
-Corollary LRTmRedIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+Corollary LRTmRedIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
 Proof.
-  revert lrA'; rewrite <- e; now apply LRTmRedIrrelevant.
+  revert lrA'; rewrite <- e; now apply LRTmRedIrrelevantCum.
 Qed.
 
-Corollary TmEqIrrelevant Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+Corollary LRTmRedIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+  forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTmRedIrrelevantCum.
+Qed.
+
+
+Corollary TmEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t u, eqTmA t u -> eqTmA' t u.
 Proof.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmEqIrrelevant@{i j k l i' j' k' l'} lA lA' Γ A
+Corollary LRTmEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A | lrA'].
 Proof.
   destruct lrA, lrA'.
   cbn in *.
-  now eapply TmEqIrrelevant.
+  now eapply TmEqIrrelevantCum.
 Qed.
 
-Corollary LRTmEqIrrelevant'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
+Corollary LRTmEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
   (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
 Proof.
-  revert lrA'; rewrite <- e; now apply LRTmEqIrrelevant.
+  revert lrA'; rewrite <- e; now apply LRTmEqIrrelevantCum.
 Qed.
+
+Corollary LRTmEqIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+  forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
+Proof.
+  revert lrA'; rewrite <- e; now apply LRTmEqIrrelevantCum.
+Qed.
+
 
 
 Corollary TyEqSym Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
@@ -468,7 +491,7 @@ Corollary TyEqSym Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   eqTyA A' -> eqTyA' A.
 Proof.
   intros.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
   1: eauto.
   now eapply LRTyEqRefl.
 Qed.
@@ -486,7 +509,7 @@ Corollary RedTmConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   eqTyA A' ->
   forall t, redTmA t -> redTmA' t.
 Proof.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
 Qed.
 
 Corollary LRTmRedConv lA lA' Γ A A' (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A' ]) :
@@ -503,7 +526,7 @@ Corollary TmEqRedConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   eqTyA A' ->
   forall t u, eqTmA t u -> eqTmA' t u.
 Proof.
-  apply (LRIrrelevant _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ lrA lrA').
 Qed.
 
 Corollary LRTmEqRedConv lA lA' Γ A A' (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
@@ -538,9 +561,23 @@ Qed.
 
 End Irrelevances.
 
-Ltac irrelevance0 :=
+Ltac irrelevanceCum0 :=
   lazymatch goal with
   | [|- [_ ||-<_> _]] => (now eapply LRCumulative) + eapply LRCumulative'
+  | [|- [_ | _ ||- _ ≅ _ ] ] => eapply LRTyEqIrrelevantCum'
+  | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevantCum'
+  | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevantCum'
+  | [|- [_ ||-<_> _ : _ | _ ] ] => eapply LRTmRedIrrelevantCum'
+  | [|- [_ | _ ||- _ ≅ _ : _ ] ] => eapply LRTmEqIrrelevantCum'
+  | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevantCum'
+  end.
+
+Ltac irrelevanceCum := irrelevanceCum0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
+
+Ltac irrelevanceCumRefl := irrelevanceCum0 ; [reflexivity|].
+
+Ltac irrelevance0 :=
+  lazymatch goal with
   | [|- [_ | _ ||- _ ≅ _ ] ] => eapply LRTyEqIrrelevant'
   | [|- [_ ||-<_> _ ≅ _ | _ ] ] => eapply LRTyEqIrrelevant'
   | [|- [_ | _ ||- _ : _ ] ] => eapply LRTmRedIrrelevant'
@@ -550,3 +587,5 @@ Ltac irrelevance0 :=
   end.
 
 Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].
+
+Ltac irrelevanceRefl := irrelevance0 ; [reflexivity|].

@@ -56,7 +56,7 @@ Proof.
       * now eapply irrelevanceSubstEq.
     + eapply LRTmEqRedConv.
       2: unshelve eapply Vtu ; tea.
-      1: unshelve eapply LRTyEqIrrelevant, validTyExt ; tea.
+      1: irrelevanceRefl; unshelve eapply  validTyExt ; tea.
       * now eapply irrelevanceSubst. 
       * now eapply irrelevanceSubst.
       * now unshelve eapply symmetrySubstEq.

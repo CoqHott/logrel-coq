@@ -347,12 +347,9 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
       1: now eapply validSnoc.
       unshelve econstructor.
       + now eapply irrelevanceSubst.
-      + cbn.
-        eapply RedTmIrrelevant.
-        3: now eapply redσ0.
-        * now unshelve eapply redA''.
-        * rewrite instId'_term.
-          unshelve eapply validTy.
+      + cbn; irrelevance0.
+        2: now eapply redσ0.
+        now rewrite instId'_term.
   Qed.
 
   Corollary Fundamental_subst_conv Γ Δ σ σ' (wfΓ : [|-[ta] Γ ]) :
@@ -381,12 +378,9 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
       1: now eapply validSnoc.
       + unshelve econstructor.
         * now eapply irrelevanceSubst.
-        * cbn.
-          eapply RedTmIrrelevant.
-          3: now eapply redσ0.
-          -- now unshelve eapply redA''.
-          -- rewrite instId'_term.
-             now eapply validTy.
+        * cbn; irrelevance0.
+          2: now eapply redσ0.
+          now rewrite instId'_term.
       + unshelve econstructor.
         * now eapply irrelevanceSubst.
         * cbn.

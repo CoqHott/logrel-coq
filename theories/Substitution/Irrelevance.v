@@ -22,10 +22,10 @@ Proof.
     split.
     + intros. split; intros []; unshelve econstructor.
       1,2: eapply ih1; eassumption.
-      1,2: eapply LRTmRedIrrelevant; eassumption.
+      1,2: irrelevance.
     + intros; split; intros []; unshelve econstructor.
       1,3: eapply ih2; eassumption.
-      1,2: eapply LRTmEqIrrelevant; eassumption.
+      1,2: irrelevance.
 Qed.
 
 Lemma irrelevanceSubst {Γ} (VΓ VΓ' : [||-v Γ]) {σ Δ} (wfΔ wfΔ' : [|- Δ]) :
@@ -125,7 +125,7 @@ Lemma irrelevanceEq {Γ l A B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]
   [Γ ||-v< l > A ≅ B | VΓ | VA] -> [Γ ||-v< l > A ≅ B | VΓ' | VA'].
 Proof.
   intros [h]; constructor; intros.
-  eapply LRTyEqIrrelevant.
+  irrelevanceRefl.
   unshelve apply h. 1:eassumption.
   eapply irrelevanceSubst; eassumption.
 Qed.
@@ -134,10 +134,10 @@ Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]
   [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A | VΓ' | VA'].
 Proof.
   intros [h1 h2]; unshelve econstructor.
-  - intros. eapply LRTmRedIrrelevant.
+  - intros. irrelevanceRefl.
     unshelve apply h1. 1:eassumption.
     eapply irrelevanceSubst; eassumption.
-  - intros. eapply LRTmEqIrrelevant.
+  - intros. irrelevanceRefl.
     unshelve eapply h2. 1: eassumption.
     1,2: eapply irrelevanceSubst; eassumption.
     eapply irrelevanceSubstEq; eassumption.
@@ -152,30 +152,29 @@ Lemma irrelevanceTmLift {l t A nF F nG G Γ} (VΓ : [||-v Γ])
   [Γ ,, vass nG G ||-v<l> t : A | validSnoc nG VΓ VG | VA'].
 Proof.
   intros [Vt Vtext]; unshelve econstructor.
-  - intros ??? [hd tl]. eapply LRTmRedIrrelevant.
-    unshelve eapply Vt. 1: eassumption.
-    unshelve econstructor. 1: eassumption.
-    eapply LRTmRedConv. 2: eassumption.
+  - intros ??? [hd tl]. irrelevanceRefl. 
+    unshelve eapply Vt; tea.
+    unshelve econstructor; tea.
+    eapply LRTmRedConv; tea.
     eapply LRTyEqSym; unshelve eapply VFeqG; eassumption.
-  - intros ???? [??] [??] [??]. eapply LRTmEqIrrelevant.
-    unshelve eapply Vtext. 1: eassumption.
-    + unshelve econstructor. 1: eassumption.
-      eapply LRTmRedConv. 2: eassumption.
+  - intros ???? [??] [??] [??]. irrelevanceRefl. 
+    unshelve eapply Vtext; tea.
+    + unshelve econstructor; tea.
+      eapply LRTmRedConv; tea.
       eapply LRTyEqSym; unshelve eapply VFeqG; eassumption.
-    + unshelve econstructor. 1: eassumption.
-      eapply LRTmRedConv. 2: eassumption.
+    + unshelve econstructor; tea.
+      eapply LRTmRedConv; tea.
       eapply LRTyEqSym; unshelve eapply VFeqG; eassumption.
-    + unshelve econstructor. 1: eassumption.
-      eapply LRTmEqRedConv. 2: eassumption.
+    + unshelve econstructor; tea.
+      eapply LRTmEqRedConv; tea.
       eapply LRTyEqSym; unshelve eapply VFeqG; eassumption.
 Qed.
 
 Lemma irrelevanceTmEq {Γ l t u A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
   [Γ ||-v<l> t ≅ u : A | VΓ | VA] -> [Γ ||-v<l> t ≅ u : A | VΓ' | VA'].
 Proof.
-  intros [h]; constructor; intros.
-  eapply LRTmEqIrrelevant; unshelve apply h.
-  1: eassumption.
+  intros [h]; constructor; intros; irrelevanceRefl.
+  unshelve apply h; tea.
   eapply irrelevanceSubst; eassumption.
 Qed.
 

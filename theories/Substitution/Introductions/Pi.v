@@ -351,7 +351,7 @@ Section PiTmValidity.
       + exact (prodTyEqU tΔ vσ vσ' vσσ').
       + exact (LRCumulative (PiRed vΓ VF0 VG0 tΔ vσ')).
       + pose proof (PiEqRed1 vΓ VF0 VG0 tΔ vσ vσ' vσσ').
-        irrelevance.
+        irrelevanceCum.
   Qed.
 
 End PiTmValidity.
@@ -394,7 +394,7 @@ Section PiTmCongruence.
       + eapply escapeEqTerm_. unshelve eapply (validTmEq vGG').
         2: unshelve eapply liftSubstS' ; tea.
     - exact (LRCumulative (PiRed vΓ vF'0 vG'0 tΔ vσ)).
-    - enough ([ Δ ||-< zero > (tProd nF F G)[σ] ≅ (tProd nF' F' G')[σ] | PiRed vΓ vF0 vG0 tΔ vσ]) by irrelevance.
+    - enough ([ Δ ||-< zero > (tProd nF F G)[σ] ≅ (tProd nF' F' G')[σ] | PiRed vΓ vF0 vG0 tΔ vσ]) by irrelevanceCum.
       refine (PiEqRed2 vΓ vF0 vG0 vF'0 vG'0 _ _ tΔ vσ).
       + exact (univEqValid vΓ (UValid vΓ) vF0 vFF').
       + pose proof (univEqValid (validSnoc nF vΓ vF) vU (univValid (l' := zero) _ _ vGU) vGG') as vGG'0.

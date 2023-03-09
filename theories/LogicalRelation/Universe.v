@@ -35,7 +35,7 @@ Section UniverseReducibility.
     : [ LogRel@{i j k l} l' | Γ ||- A ≅ B | rA ].
   Proof.
     assert [ LogRel@{i j k l} one | Γ ||- A ≅ B : U | LRU_@{i j k l} (redUOne rU) ] as [ _ _ _ hA _ hAB ] by irrelevance.
-    eapply LRTyEqIrrelevant. exact hAB.
+    eapply LRTyEqIrrelevantCum. exact hAB.
   Qed.
 
 
