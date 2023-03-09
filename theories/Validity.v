@@ -303,23 +303,27 @@ Ltac block H :=
 
 Ltac unblock := unfold Block in *.
 
-Ltac instValid wfΔ vσ :=
+Definition wfCtxOfsubstS `{GenericTypingProperties} {Γ Δ σ} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]} :
+  [Δ ||-v σ : Γ | VΓ | wfΔ] -> [|- Δ] := fun _ => wfΔ.
+
+Ltac instValid vσ :=
+  let wfΔ := (eval unfold wfCtxOfsubstS in (wfCtxOfsubstS vσ)) in
   repeat lazymatch goal with
   | [H : typeValidity _ _ _ _ |- _] =>
     let X := fresh "R" H in
-    pose (X := validTy H wfΔ vσ) ;
+    try pose (X := validTy H wfΔ vσ) ;
     block H
   | [H : termValidity _ _ _ _ _ _ |- _] =>
     let X := fresh "R" H in
-    pose (X := validTm H wfΔ vσ) ;
+    try pose (X := validTm H wfΔ vσ) ;
     block H
   | [H : typeEqValidity _ _ _ _ _ |- _] =>
     let X := fresh "R" H in
-    pose (X := validTyEq H wfΔ vσ) ;
+    try pose (X := validTyEq H wfΔ vσ) ;
     block H
   | [H : termEqValidity _ _ _ _ _ _ _ |- _] =>
     let X := fresh "R" H in
-    pose (X := validTmEq H wfΔ vσ) ;
+    try pose (X := validTmEq H wfΔ vσ) ;
     block H
   end; unblock.
 
@@ -327,15 +331,15 @@ Ltac instValidExt vσ' vσσ' :=
   repeat lazymatch goal with
   | [H : typeValidity _ _ _ _ |- _] =>
     let X := fresh "RE" H in
-    pose (X := validTyExt H _ _ vσ' vσσ') ;
+    try pose (X := validTyExt H _ _ vσ' vσσ') ;
     block H
   | [H : termValidity _ _ _ _ _ _ |- _] =>
     let X := fresh "RE" H in
-    pose (X := validTmExt H _ _ vσ' vσσ') ;
+    try pose (X := validTmExt H _ _ vσ' vσσ') ;
     block H
   end; unblock.
 
-Ltac instAllValid wfΔ vσ vσ' vσσ' :=
-  instValid wfΔ vσ ;
-  instValid wfΔ vσ' ;
+Ltac instAllValid vσ vσ' vσσ' :=
+  instValid vσ ;
+  instValid vσ' ;
   instValidExt vσ' vσσ'.

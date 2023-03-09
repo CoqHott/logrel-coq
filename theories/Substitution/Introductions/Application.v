@@ -22,10 +22,10 @@ Lemma appValid {Γ nF F G t u l}
   [Γ ||-v<l> tApp t u : G[u..] | VΓ | VGu].
 Proof.
   opector; intros.
-  - instValid wfΔ Vσ.
+  - instValid Vσ.
     epose (appTerm RVΠFG RVt RVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
     irrelevance.
-  - instAllValid wfΔ Vσ Vσ' Vσσ'. 
+  - instAllValid Vσ Vσ' Vσσ'. 
     unshelve epose (appcongTerm _ REVt RVu _ REVu (substSΠaux VΠFG Vu _ _ wfΔ Vσ)).
     2: irrelevance.
     eapply LRTmRedConv; tea.
@@ -43,7 +43,7 @@ Lemma appcongValid {Γ nF F G t u a b l}
   (VGa := substSΠ VΠFG Va) :
   [Γ ||-v<l> tApp t a ≅ tApp u b : G[a..] | VΓ | VGa].
 Proof.
-  constructor; intros; instValid wfΔ Vσ.
+  constructor; intros; instValid Vσ.
   unshelve epose proof (appcongTerm _ RVtu _ _ _ (substSΠaux VΠFG Va _ _ wfΔ Vσ)); fold subst_term; cycle 5.
   all: try irrelevance.
   now eapply LRCumulative.

@@ -22,9 +22,8 @@ Lemma univValid {A l l'} (VΓ : [||-v Γ])
   [Γ ||-v<l'> A| VΓ].
 Proof.
   unshelve econstructor; intros.
-  - instValid wfΔ vσ. now eapply UnivEq.
-  - instValid wfΔ vσ; instValid wfΔ vσ' ; instValidExt vσ' vσσ'.
-    now eapply UnivEqEq.
+  - instValid vσ. now eapply UnivEq.
+  - instAllValid vσ vσ' vσσ'; now eapply UnivEqEq.
 Qed.
 
 Lemma univEqValid {A B l l'} (VΓ : [||-v Γ])
@@ -33,7 +32,7 @@ Lemma univEqValid {A B l l'} (VΓ : [||-v Γ])
   (VAB : [Γ ||-v<l'> A ≅ B : U | VΓ | VU]) :
   [Γ ||-v<l> A ≅ B | VΓ | VA].
 Proof.
-  constructor; intros; instValid wfΔ Vσ.
+  constructor; intros; instValid Vσ.
   now eapply UnivEqEq.
 Qed.
 

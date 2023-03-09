@@ -171,6 +171,12 @@ Proof.
   rewrite (id_ren Γ (@wk_id Γ)). reflexivity.
 Qed.
 
+Lemma wk_up_ren {Γ Δ nA A} (ρ : Δ ≤ Γ) : 
+  wk_up nA A ρ =1 upRen_term_term  ρ.
+Proof.
+  intros; cbn; now asimpl.
+Qed.
+
 Lemma map_decl_lift (ρ : weakening) d :
   map_decl (ren_term (up_ren ρ)) (map_decl (ren_term shift) d) =
   map_decl (ren_term shift) (map_decl (ren_term ρ) d).

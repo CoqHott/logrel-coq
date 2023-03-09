@@ -484,3 +484,55 @@ Section GenericConsequences.
   Qed.
 
 End GenericConsequences.
+
+
+
+Lemma wk1_ren_on Γ nF F (H : term) : H⟨@wk1 Γ nF F⟩ = H⟨↑⟩.
+Proof. now bsimpl. Qed.
+  
+Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) nF F (H : term) : H⟨wk_up nF F ρ⟩ = H⟨upRen_term_term ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_wk1_ren_on Γ nF F nG G (H : term) : H⟨wk_up nF F (@wk1 Γ nG G)⟩ = H⟨upRen_term_term ↑⟩.
+Proof. now bsimpl. Qed.
+
+
+Ltac renToWk0 judg :=
+  lazymatch judg with
+  (** Type judgement, weakening *)
+  | [?X ,, vass ?nY ?Y |- ?T⟨↑⟩ ] =>
+    replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply (wk1_ren_on X nY Y T)
+  (** Type judgement, lifting of weakening *)
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ ] =>
+    replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z |- ?T⟨upRen_term_term ↑⟩ ] =>
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
+  (** Term judgement, weakening *)
+  | [?X ,, vass ?nY ?Y |- _ : ?T⟨↑⟩ ] =>
+    replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply wk1_ren_on
+  | [?X ,, vass ?nY ?Y |- ?t⟨↑⟩ : _ ] =>
+    replace t⟨↑⟩ with t⟨@wk1 X nY Y⟩ by apply wk1_ren_on
+  (** Term judgement, lifting of weakening *)
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ : _ ] =>
+    replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- _ : ?T⟨upRen_term_term ↑⟩ ] =>
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- ?t⟨upRen_term_term ↑⟩ : _ ] =>
+    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
+  (** Term judgement, lifting *)
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- _ : ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- ?t⟨upRen_term_term _⟩ : _ ] =>
+    replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  end.
+
+Ltac renToWk :=
+  fold ren_term;
+  repeat change (ren_term ?x ?y) with y⟨x⟩;
+  repeat change S with ↑;
+  repeat lazymatch goal with 
+  | [ _ : _ |- ?G] => renToWk0 G 
+  end.
+
+
+  

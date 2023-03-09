@@ -538,6 +538,16 @@ Proof.
   now eapply TmEqRedConv.
 Qed.
 
+
+Corollary LRTmTmEqIrrelevant' lA lA' Γ A A' (e : A = A')
+  (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+  forall t u, 
+  [Γ ||-<lA> t : A | lrA] × [Γ ||-< lA > t ≅ u : A | lrA] -> 
+  [Γ ||-<lA'> t : A' | lrA'] × [Γ ||-< lA' > t ≅ u : A' | lrA'].
+Proof.
+  intros ?? []; split; [eapply LRTmRedIrrelevant'| eapply LRTmEqIrrelevant']; tea.
+Qed.
+
 Set Printing Primitive Projection Parameters.
 
 Lemma LRTmEqSym@{h i j k l} lA Γ A (lrA : [LogRel@{i j k l} lA | Γ ||- A]) : forall t u,
@@ -584,6 +594,7 @@ Ltac irrelevance0 :=
   | [|- [_ ||-<_> _ : _ | _ ] ] => eapply LRTmRedIrrelevant'
   | [|- [_ | _ ||- _ ≅ _ : _ ] ] => eapply LRTmEqIrrelevant'
   | [|- [_ ||-<_> _ ≅ _ : _ | _ ] ] => eapply LRTmEqIrrelevant'
+  | [|- [_ ||-<_> _ : _ | _] × [_ ||-<_> _≅ _ : _ | _]] => eapply LRTmTmEqIrrelevant'
   end.
 
 Ltac irrelevance := irrelevance0 ; [|eassumption] ; try first [reflexivity| now bsimpl].

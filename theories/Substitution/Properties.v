@@ -49,6 +49,18 @@ Proof.
   eapply LRTmEqRefl; [apply (validTy VA wfΔ)| exact Vt].
 Qed.
 
+Lemma consSubstSEq' {Γ σ σ' t u l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
+  (Vσσ' : [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ])
+  (VA : [Γ ||-v<l> A | VΓ])
+  (Vt : [Δ ||-<l> t : A[σ] | validTy VA wfΔ Vσ])
+  (Vtu : [Δ ||-<l> t ≅ u : A[σ] | validTy VA wfΔ Vσ]) :
+  [Δ ||-v (t .: σ) ≅  (u .: σ') : Γ ,, vass nA A | validSnoc nA VΓ VA | wfΔ | consSubstS VΓ wfΔ Vσ VA Vt].
+Proof.
+  unshelve econstructor; tea.
+Qed.  
+
+
 Lemma consSubstSvalid {Γ σ t l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (VA : [Γ ||-v<l> A | VΓ])
   (Vt : [ Γ ||-v<l> t : A | VΓ | VA]) :
@@ -129,7 +141,7 @@ Proof.
     apply neuTerm; tea; constructor + apply convneu_var; tea.
 Defined.
 
-Lemma liftSubstS' {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
+Lemma liftSubstS' {Γ σ Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in
@@ -162,7 +174,7 @@ Lemma liftSubstSEq' {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   let VΓF := validSnoc nF VΓ VF in
   let ρ := wk_up nF F (@wk_id Γ) in
   let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
-  let Vliftσ := liftSubstS' VΓ wfΔ VF Vσ in
+  let Vliftσ := liftSubstS' nF VF Vσ in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ,, vass nF F[σ] ||-v up_term_term σ ≅ up_term_term σ' : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
 Proof.
@@ -226,7 +238,6 @@ Definition idSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel : Γ | VΓ | _] := (s
 
 Lemma reflIdSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel ≅ tRel : Γ | VΓ | _ | idSubstS VΓ].
 Proof.  apply reflSubst. Qed.
-
 
 
 End Properties.
