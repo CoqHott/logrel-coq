@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedValues Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -113,7 +113,7 @@ Module neRedTy.
   : Set := {
     ty : term;
     red : [ Γ |- A :⇒*: ty];
-    ne : whne ty;
+    ne : sne ty;
     eq : [ Γ |- ty ~ ty : U] ;
   }.
 
@@ -132,7 +132,7 @@ Module neRedTyEq.
   : Set := {
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
-    ne : whne ty;
+    ne : sne ty;
     eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
   }.
 
@@ -152,7 +152,7 @@ Module neRedTm.
   : Set := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
-    ne : whne te ;
+    ne : sne te ;
     eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
   }.
 
@@ -175,8 +175,8 @@ Module neRedTmEq.
     termR     : term;
     redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
     redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
-    whneL : whne termL;
-    whneR : whne termR;
+    whneL : sne termL;
+    whneR : sne termR;
     eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
   }.
 
@@ -232,7 +232,7 @@ Module URedTm.
   : Type@{j} := {
     te : term;
     red : [ Γ |- t :⇒*: te : U ];
-    type : isType te;
+    type : isSNType te;
     eqr : [Γ |- te ≅ te : U];
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
   }.
@@ -340,7 +340,7 @@ Module PiRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isFun nf;
+    isfun : isSNFun nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])

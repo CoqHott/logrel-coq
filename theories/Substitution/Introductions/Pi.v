@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedValues Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
@@ -144,7 +144,7 @@ Section PiTyValidity.
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy tΔ vσ) vσ').
-        * cbn. eapply neuTerm. constructor.
+        * cbn. eapply neuTerm. econstructor; reflexivity.
           2: refine (convneu_var _).
           all: eapply (ty_conv (A' := F[σ]⟨S⟩) (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _))).
           all: replace (F[σ]⟨S⟩) with (F[σ⟨@wk1 Δ na F[σ]⟩]) by (now bsimpl).
@@ -152,7 +152,7 @@ Section PiTyValidity.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy tΔ vσ) vσ vσσ').
         * cbn. eapply neuTermEq.
-          1, 2: constructor.
+          1, 2: econstructor; reflexivity.
           3: refine (convneu_var _).
           all: replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
           all: refine (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _)).
@@ -305,7 +305,7 @@ Section PiTmValidity.
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ').
-        * cbn. eapply neuTerm. constructor.
+        * cbn. eapply neuTerm. econstructor; reflexivity.
           2: refine (convneu_var _).
           all: eapply (ty_conv (A' := F[σ]⟨S⟩) (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _))).
           all: replace (F[σ]⟨S⟩) with (F[σ⟨@wk1 Δ nF F[σ]⟩]) by (now bsimpl).
@@ -313,7 +313,7 @@ Section PiTmValidity.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
         * cbn. eapply neuTermEq.
-          1, 2: constructor.
+          1, 2: econstructor; reflexivity.
           3: refine (convneu_var _).
           all: replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
           all: refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)).
@@ -326,7 +326,12 @@ Section PiTmValidity.
     econstructor.
     - apply redtmwf_refl ; cbn.
       refine (ty_prod (domainTmU tΔ vσ) (codomainTmU tΔ vσ)).
-    - constructor.
+    - cbn; constructor.
+      + assert (HF := validTm vFU tΔ vσ); now apply reifyTerm in HF.
+      + assert (vρ := liftSubstS (nF := nF) vΓ tΔ vF vσ).
+        assert (HG := validTm vGU _ vρ).
+        apply reifyTerm in HG.
+        erewrite eq_subst_1; apply HG.
     - cbn. eapply (convtm_prod I (domainTmU tΔ vσ) (domainTmReflU tΔ vσ) (codomainTmReflU tΔ vσ)).
     - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ vσ)).
       refine (univValid _ _ vFU).

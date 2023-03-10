@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst Context Untyped UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 
 Set Universe Polymorphism.
@@ -200,7 +200,7 @@ Proof.
     destruct he as [AA], neA' as [AA'] ; cbn in *.
     assert (AA' = AA) as eqAA'.
     {
-      all: eapply whredty_det ; econstructor ; [idtac |now econstructor| idtac |now econstructor].
+      all: eapply whredty_det ; econstructor; [idtac | constructor; apply sne_whne; assumption | idtac | constructor; apply sne_whne; assumption ].
       all: gen_typing.
     }
     revert red1 ne1 eq1. pattern AA'.

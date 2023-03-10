@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance Escape.
 
 Set Universe Polymorphism.
@@ -7,14 +7,14 @@ Set Universe Polymorphism.
 Section Neutral.
 Context `{GenericTypingProperties}.
 
-Definition neu {l Γ A} : whne A -> [Γ |- A] -> [ Γ |- A ~ A : U] -> [Γ ||-<l> A].
+Definition neu {l Γ A} : sne A -> [Γ |- A] -> [ Γ |- A ~ A : U] -> [Γ ||-<l> A].
 Proof.
   intros neA wtyA reflA. apply LRne_. 
   exists A; [gen_typing|..]; assumption.
 Defined.
 
 Lemma neU {l Γ A n} (h : [Γ ||-U<l> A]) : 
-  whne n ->
+  sne n ->
   [Γ |- n : A] ->
   [Γ |- n ~ n : A] ->
   [LogRelRec l | Γ ||-U n : A | h].
@@ -43,7 +43,7 @@ Set Printing Primitive Projection Parameters.
 
 
 Lemma neuEq {l Γ A B} (RA : [Γ ||-<l> A]) :
-  whne A -> whne B ->
+  sne A -> sne B ->
   [Γ |- A] -> [Γ |- B] ->
   [Γ |- A ~ B : U] ->
   [Γ ||-<l> A ≅ B | RA].
@@ -79,21 +79,22 @@ Proof.
   gen_typing.
 Qed.
 
-
 Lemma neuTerm_aux {l Γ A} (RA : [Γ ||-<l> A]) :
-  forall n n',
-  whne n ->
-  whne n' ->
+  (forall n n',
+  sne n ->
+  sne n' ->
   [Γ |- n : A] ->
   [Γ |- n' : A] ->
   [Γ |- n ~ n' : A] ->
-  [Γ ||-<l> n : A | RA] × [Γ ||-<l> n ≅ n' : A| RA].
+  [Γ ||-<l> n : A | RA] × [Γ ||-<l> n ≅ n' : A| RA])
+  ×
+  (forall a, [Γ ||-<l> a : A | RA] -> snf a).
 Proof.
   pattern l, Γ, A, RA; set (P := fun _ => _).
-  assert (helper : forall l Γ A RA, P l Γ A RA -> forall n, whne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-<l> n : A | RA]).
+  assert (helper : forall l Γ A RA, P l Γ A RA -> forall n, sne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-<l> n : A | RA]).
   { intros ???? ih **; subst P; eapply ih. 5: eassumption. all: assumption. }
-  eapply LR_rect_TyUr; clear l Γ A RA; subst P; cbn.
-  - intros ??? h0 ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
+  eapply LR_rect_TyUr; clear l Γ A RA; subst P; cbn; intros ??? h0; split.
+  - intros ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
     assert [Γ |- A ≅ U] by (destruct h0; gen_typing); split.
     2: unshelve econstructor. 
     1-3: now apply neU.
@@ -101,7 +102,9 @@ Proof.
     + cbn. gen_typing.
     + eapply RedTyRecBwd; apply neu; try assumption; gen_typing.
     + eapply TyEqRecBwd. eapply neuEq; try assumption; gen_typing.
-  - intros ??? [B []] ** ; assert ([Γ |- A ≅ B]) by gen_typing ; split.
+  - intros a [a' Hr Ha].
+    apply snf_red with a'; [now eapply redtmwf_red|now apply isSNType_snf].
+  - destruct h0 as [B []]; intros ** ; assert ([Γ |- A ≅ B]) by gen_typing ; split.
     + exists n; cbn.
       * eapply redtmwf_refl ; gen_typing.
       * assumption.
@@ -110,25 +113,34 @@ Proof.
       1,2: eapply redtmwf_refl ; eapply ty_conv; gen_typing.
       1,2: assumption.
       gen_typing. 
-  - intros ??? ΠA0 * ihdom ihcod. set (ΠA := ΠA0); destruct ΠA0 as [na dom cod []].
+  - intros a [a' Hr Hne]; apply snf_sne with a'; [|assumption].
+    eapply redtmwf_red; eassumption.
+  - do 2 match goal with [ H : _ |- _ ] => revert H end.
+    rename h0 into ΠA0; intros ihdom ihcod. set (ΠA := ΠA0); destruct ΠA0 as [na dom cod []].
     assert [Γ |- A ≅ tProd na dom cod] by gen_typing.
-    unshelve refine ( let funred : forall n, whne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
+    unshelve refine ( let funred : forall n, sne n -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
     {
-      intros; exists n; cbn.
+      intros. exists n; cbn.
       * eapply redtmwf_refl ; gen_typing.
       * now eapply NeFun.
       * gen_typing.
-      * intros; apply helper; [apply ihcod| constructor; now apply whne_ren|..].
+      * intros; apply helper; [apply ihcod| |..].
+        { eapply sne_tApp; [reflexivity|now apply sne_ren|].
+          destruct (ihdom _ ρ h) as [_ Hnf].
+          apply Hnf, ha. }
         1: apply escapeTerm_ in ha; now eapply ty_app_ren. 
         eapply convneu_app_ren. 1,2: eassumption.
         eapply escapeEqTerm_; eapply LREqTermRefl_; eassumption.
-      * intros. apply ihcod. 
-        1,2: constructor; now apply whne_ren.
-        1: apply escapeTerm_ in ha; now eapply ty_app_ren. 
-        2: apply escapeEqTerm_ in eq0; now eapply convneu_app_ren.
-        pose proof (cv := escapeEq_ _ (codExt _ _ _ ρ _ ha hb eq0)).
-        symmetry in cv; unshelve eapply (ty_conv _ cv).
-        apply escapeTerm_ in hb; now eapply ty_app_ren.
+      * intros. apply ihcod.
+        + eapply sne_tApp; [reflexivity|now apply sne_ren|].
+          destruct (ihdom _ ρ h) as [_ Hnf]; apply Hnf, ha.
+        + eapply sne_tApp; [reflexivity|now apply sne_ren|].
+          destruct (ihdom _ ρ h) as [_ Hnf]; apply Hnf, hb.
+        + apply escapeTerm_ in ha; now eapply ty_app_ren.
+        + pose proof (cv := escapeEq_ _ (codExt _ _ _ ρ _ ha hb eq0)).
+          symmetry in cv; unshelve eapply (ty_conv _ cv).
+          apply escapeTerm_ in hb; now eapply ty_app_ren.
+        + apply escapeEqTerm_ in eq0; now eapply convneu_app_ren.
     }
     intros ?????? h.
     pose proof (lrefl h); pose proof (urefl h).
@@ -138,15 +150,22 @@ Proof.
     all: cbn; clear funred.
     * gen_typing.
     * intros. apply ihcod; cbn.
-      1,2: constructor; now apply whne_ren.
-      1,2: apply escapeTerm_ in ha; now eapply ty_app_ren.
-      eapply convneu_app_ren. 1,2: eassumption.
+      + eapply sne_tApp; [reflexivity|now apply sne_ren|].
+        destruct (ihdom _ ρ h0) as [_ Hnf]; apply Hnf, ha.
+      + eapply sne_tApp; [reflexivity|now apply sne_ren|].
+        destruct (ihdom _ ρ h0) as [_ Hnf]; apply Hnf, ha.
+      + apply escapeTerm_ in ha; now eapply ty_app_ren.
+      + apply escapeTerm_ in ha; now eapply ty_app_ren.
+      + eapply convneu_app_ren. 1,2: eassumption.
       eapply escapeEqTerm_; eapply LREqTermRefl_; eassumption.
+  - do 2 match goal with [ H : _ |- _ ] => revert H end.
+    intros ihdom ihcodom a [a' Hr Ha].
+    apply snf_red with a'; [|now apply isSNFun_snf].
+    now eapply redtmwf_red.
 Qed.
 
-
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :
-  whne n ->
+  sne n ->
   [Γ |- n : A] ->
   [Γ |- n ~ n : A] ->
   [Γ ||-<l> n : A | RA].
@@ -155,8 +174,8 @@ Proof.
 Qed.
 
 Lemma neuTermEq {l Γ A} (RA : [Γ ||-<l> A]) {n n'} :
-  whne n ->
-  whne n' ->
+  sne n ->
+  sne n' ->
   [Γ |- n : A] ->
   [Γ |- n' : A] ->
   [Γ |- n ~ n' : A] ->
@@ -172,7 +191,37 @@ Proof.
   intros <-.
   assert [Γ ,, vass nA A |- tRel 0 : A⟨↑⟩]
   by (escape; eapply (ty_var (wfc_wft EscRA) (in_here _ _))).
-  eapply neuTerm; tea ; constructor + eapply convneu_var; tea.
+  eapply neuTerm; tea.
+  - eapply sne_tRel; reflexivity.
+  - eapply convneu_var; tea.
 Qed.
+
+Lemma reifyTerm {l Γ A} (RA : [Γ ||-<l> A]) {t} : [Γ ||-<l> t : A | RA] -> snf t.
+Proof.
+intros; now eapply neuTerm_aux.
+Qed.
+
+Lemma reifyType {l Γ A} (RA : [Γ ||-<l> A]) : snf A.
+Proof.
+assert (tΓ : wf_context Γ).
+{ eapply wfc_wft, escape; apply RA. }
+destruct RA as [RA HRA].
+induction HRA.
++ apply snf_tSort with set.
+  eapply redty_red, h.
++ destruct neA; eapply snf_sne; [|eassumption].
+  eapply redty_red, red.
++ do 3 match goal with [ H : _ |- _ ] => revert H end.
+  intros IHdom IHcodom tΓ.
+  eapply snf_tProd.
+  - eapply redty_red, ΠA.
+  - specialize (IHdom _ wk_id tΓ (PiRedTy.domRed _ _ tΓ) tΓ).
+    rewrite wk_id_ren_on in IHdom; apply IHdom.
+  - pose (Δ := Γ ,, vass (PiRedTy.na ΠA) (PiRedTy.dom ΠA)).
+    assert (tΔ : wf_context Δ).
+    { apply wfc_cons; [assumption|apply ΠA]. }
+    specialize (IHcodom _ (tRel 0) (wk1 ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom)) tΔ).
+    admit. (* FIXME *)
+Admitted.
 
 End Neutral.

@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst Context Untyped UntypedReduction UntypedValues GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Reflexivity.
 
 Set Universe Polymorphism.
@@ -39,8 +39,8 @@ Section ShapeViews.
       + constructor.
       + intros [red]; destruct neA as [? red' ne ?] .
         unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
-        3: inversion ne.
-        all: gen_typing.
+        3: exfalso; inversion ne; subst; congruence.
+        all: apply sne_whne in ne; gen_typing.
       + intros [red]. destruct ΠA as [??? red'].
         unshelve epose proof (e:= redtywf_det _ _ _ _ _ _ red red').
         1,2: gen_typing.
@@ -48,11 +48,12 @@ Section ShapeViews.
     - destruct lrB as [?? [??? red]| |].
       + intros [? red' ne].
         unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
-        3: inversion ne.
-        all: gen_typing.
+        3: exfalso; inversion ne; subst; congruence.
+        all: apply sne_whne in ne; gen_typing.
       + econstructor.
       + intros [].
         destruct ΠA ; cbn in *.
+        apply sne_whne in ne.
         enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
@@ -63,6 +64,7 @@ Section ShapeViews.
         discriminate e.
       + intros [].
         destruct neA.
+        simpl; apply sne_whne in ne.
         enough (ty = tProd na dom cod) as -> by (now eapply nePi).
         eapply whredty_det.
         all: gen_typing.
