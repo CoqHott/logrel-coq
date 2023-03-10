@@ -12,6 +12,7 @@ theories/Untyped.v
 
 theories/Context.v
 theories/UntypedReduction.v
+theories/UntypedValues.v
 theories/Weakening.v
 theories/GenericTyping.v
 
