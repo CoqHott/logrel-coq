@@ -1,8 +1,8 @@
+(** * LogRel.NormalForms: definition of normal and neutral forms, and properties. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
 
-Notation U := (tSort set).
-Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
+(** ** Weak-head normal forms and neutrals. *)
 
 Inductive whnf : term -> Type :=
   | whnf_tSort {s} : whnf (tSort s)
@@ -14,6 +14,25 @@ with whne : term -> Type :=
   | whne_tApp {n t} : whne n -> whne (tApp n t).
 
 #[global] Hint Constructors whne whnf : gen_typing.
+
+Lemma neSort s : whne (tSort s) -> False.
+Proof.
+  inversion 1.
+Qed.
+
+Lemma nePi na A B : whne (tProd na A B) -> False.
+Proof.
+  inversion 1.
+Qed.
+
+Lemma neLambda na A t : whne (tLambda na A t) -> False.
+Proof.
+  inversion 1.
+Qed.
+
+#[global] Hint Resolve neSort nePi neLambda : gen_typing.
+
+(** ** Restricted classes of normal forms *)
 
 Inductive isType : term -> Type :=
   | UnivType {s} : isType (tSort s)
@@ -53,20 +72,4 @@ Definition isFun_whnf t (i : isFun t) : whnf t :=
 
 Coercion isFun_whnf : isFun >-> whnf.
 
-Lemma neSort s : whne (tSort s) -> False.
-Proof.
-  inversion 1.
-Qed.
-
-
-Lemma nePi na A B : whne (tProd na A B) -> False.
-Proof.
-  inversion 1.
-Qed.
-
-Lemma neLambda na A t : whne (tLambda na A t) -> False.
-Proof.
-  inversion 1.
-Qed.
-
-#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf neSort nePi neLambda : gen_typing.
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf : gen_typing.

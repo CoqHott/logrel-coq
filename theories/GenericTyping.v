@@ -1,6 +1,30 @@
+(** * LogRel.GenericTyping: the generic interface of typing used to build the logical relation. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction DeclarativeTyping.
+
+(** In order to factor the work, the logical relation is defined over a generic
+notion of typing (and conversion),
+and its properties are established given abstract properties
+of this generic notion. This way, we can instantiate the logical relation multiple
+times with different instances of this abstract notion of typing, gathering more
+and more properties. *)
+
+(**
+More precisely, an instance consists of giving notions of 
+- context well-formation [|- Γ]
+- type well-formation [Γ |- A]
+- term well-formation [Γ |- t : A]
+- convertibility of types [Γ |- A ≅ B]
+- convertibility of terms [Γ |- t ≅ u : A]
+- neutral convertibility of terms [Γ |- m ~ n : A]
+- (multi-step, weak-head) reduction of types [Γ |- A ⇒* B]
+- (multi-step, weak-head) reduction of terms [Γ |- t ⇒* u : A]
+*)
+
+(** ** Generic definitions *)
+
+(** These can be defined over typing and conversion in a generic way. *)
 
 Section RedDefinitions.
 
@@ -8,6 +32,8 @@ Section RedDefinitions.
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
+
+  (** *** Bundling of a predicate with side-conditions *)
 
   Record TypeRedWhnf (Γ : context) (A B : term) : Type :=
     {
@@ -46,6 +72,8 @@ Section RedDefinitions.
     tmr_wf_r : [Γ |- u : A];
     tmr_wf_red :> [Γ |- t ⇒* u : A]
   }.
+
+  (** *** Lifting of typing and conversion to contexts and substitutions *)
 
   Inductive WellSubst (Γ : context) : context -> (nat -> term) -> Type :=
     | well_sempty (σ : nat -> term) : [Γ |-s σ : ε ]
@@ -105,6 +133,8 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
     |  H : [ _ |- _ :⇒*: _ : _ ] |- _ => destruct H
   end
   : gen_typing. *)
+
+(** ** Properties of the abstract interface *)
 
 Section GenericTyping.
 
@@ -284,6 +314,10 @@ Section GenericTyping.
 
 End GenericTyping.
 
+(** This class bundles together the various predicate and relations, and their
+properties all together. Most of the logical relation is constructed over an
+abstract instance of this class. *)
+
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
@@ -405,6 +439,8 @@ Ltac renToWk :=
   end.
 
 
+(** ** Easy consequences of the previous properties. *)
+
 Section GenericConsequences.
   Context `{ta : tag}
   `{!WfContext ta} `{!WfType ta} `{!Typing ta}
@@ -415,6 +451,8 @@ Section GenericConsequences.
   `{!ConvTermProperties} `{!ConvNeuProperties}
   `{!RedTypeProperties} `{!OneStepRedTermProperties}
   `{!RedTermProperties}.
+
+  (** *** Properties of well-typed reduction *)
 
   #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl | 2 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
@@ -472,14 +510,14 @@ Section GenericConsequences.
   Proof.  constructor; gen_typing.  Qed.
 
   #[global]
-  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ) (* fun A B => [Γ |- A :⇒*: B] *).
+  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ). (* fun A B => [Γ |- A :⇒*: B] *)
   Proof.
     intros ??? [] []; unshelve econstructor; try etransitivity; tea.
   Qed.
 
-  (* All properties of type reduction also hold for 
+  (** All properties of type reduction also hold for 
     well-typed type reduction 
-    (But we probably don't want to export the instance or the notations will get very puzzling) *)
+    (but we probably don't want to export the instance or the notations will get very puzzling). *)
   Definition redtywf_props : 
     @RedTypeProperties _ _ _ TypeRedWf TermRedWf.
   Proof.
@@ -491,9 +529,9 @@ Section GenericConsequences.
     - intros; apply redtywf_trans.
   Qed.
 
-  (* Almost all of the RedTermProperties can be derived 
+  (** Almost all of the RedTermProperties can be derived 
     for the well-formed reduction [Γ |- t :⇒*: u : A]
-    but for application (which requires stability of typing under substitution) *)
+    but for application (which requires stability of typing under substitution). *)
     
   Definition redtmwf_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t :⇒*: u : A] -> [Δ |- t⟨ρ⟩ :⇒*: u⟨ρ⟩ : A⟨ρ⟩].
@@ -655,12 +693,12 @@ Section GenericConsequences.
   Qed.
 
   #[global]
-  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A) (*fun t u => [Γ |- t :⇒*: u : A]*).
+  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A). (*fun t u => [Γ |- t :⇒*: u : A]*)
   Proof.
     intros ??? [] []; unshelve econstructor; try etransitivity; tea.
   Qed.
 
-  (** Reductions, whnf and whne *)
+  (** *** Lifting properties of untyped reduction to typed reduction. *)
 
   Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
   Proof.
@@ -734,6 +772,10 @@ Section GenericConsequences.
     all: gen_typing.
   Qed.
 
+  (** *** Meta-conversion *)
+  (** Similar to conversion, but using a meta-level equality rather
+  than a conversion *)
+
   Lemma typing_meta_conv (Γ : context) (t A A' : term) :
     [Γ |- t : A] ->
     A' = A ->
@@ -769,6 +811,16 @@ Section GenericConsequences.
     now intros ? -> ->.
   Qed.
 
+  Lemma redtmwf_meta_conv_ty (Γ : context) (t u A A' : term) :
+    [Γ |- t :⇒*: u : A] ->
+    A' = A ->
+    [Γ |- t :⇒*: u : A'].
+  Proof.
+    now intros ? ->. 
+  Qed.
+
+  (*** More properties *)
+
   Lemma well_subst_ext Γ Δ (σ σ' : nat -> term) :
     σ =1 σ' ->
     [Γ |-s σ : Δ] ->
@@ -784,14 +836,6 @@ Section GenericConsequences.
         by (now rewrite Heq).
   Qed.
 
-  Lemma redtmwf_meta_conv_ty (Γ : context) (t u A A' : term) :
-    [Γ |- t :⇒*: u : A] ->
-    A' = A ->
-    [Γ |- t :⇒*: u : A'].
-  Proof.
-    now intros ? ->. 
-  Qed.
-
   Lemma redtmwf_appwk {Γ Δ nA A B B' t u a} (ρ : Δ ≤ Γ) :
     [Γ |- t :⇒*: u : tProd nA A B] ->
     [Δ |- a : A⟨ρ⟩] ->
@@ -805,9 +849,9 @@ Section GenericConsequences.
     gen_typing.
   Qed.
 
-
 End GenericConsequences.
 
+(** TODODOC what is this for?*)
 
 #[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red | 2 : gen_typing.
 #[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.

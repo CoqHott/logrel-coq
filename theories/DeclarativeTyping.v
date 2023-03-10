@@ -1,7 +1,8 @@
 From Coq Require Import ssreflect.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
 
 Set Primitive Projections.
 

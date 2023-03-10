@@ -1,6 +1,6 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
   GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral Transitivity.

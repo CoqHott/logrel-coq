@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping.
 
 Section Definitions.
 

@@ -1,12 +1,13 @@
+(** * LogRel.Context: definition of contexts and operations on them.*)
 From Coq Require Import ssreflect Morphisms Setoid.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst.
 
-Import UnscopedNotations.
-#[local] Open Scope subst_scope.
 Set Primitive Projections.
 
-(** *** The context of De Bruijn indices *)
+(** ** Context declaration *)
+
+(** The name is just a printing annotation: terms use de Bruijn indices to refer to context entries.*)
 
 Record context_decl := mkdecl {
   decl_name : aname ;
@@ -58,12 +59,15 @@ Smpl Add fold_ren_decl : refold.
 
 Definition vass a A := {| decl_name := a ; decl_type := A |}.
 
+(** ** Context: list of declarations *)
+
 Definition context := list context_decl.
 
 Notation "'ε'" := (@nil context_decl).
 Notation " Γ ,, d " := (@cons context_decl d Γ) (at level 20, d at next level).
 Notation " Γ ,,, Δ " := (@app context_decl Δ Γ) (at level 25, Δ at next level, left associativity).
 
+(** States that a definition, correctly weakened, is in a context. *)
 Inductive in_ctx : context -> nat -> context_decl -> Type :=
   | in_here (Γ : context) d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
   | in_there (Γ : context) d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (map_decl (ren_term shift) d).
