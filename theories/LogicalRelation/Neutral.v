@@ -9,11 +9,11 @@ Context `{GenericTypingProperties}.
 
 Definition neu {l Γ A} : sne A -> [Γ |- A] -> [ Γ |- A ~ A : U] -> [Γ ||-<l> A].
 Proof.
-  intros neA wtyA reflA. apply LRne_. 
+  intros neA wtyA reflA. apply LRne_.
   exists A; [gen_typing|..]; assumption.
 Defined.
 
-Lemma neU {l Γ A n} (h : [Γ ||-U<l> A]) : 
+Lemma neU {l Γ A n} (h : [Γ ||-U<l> A]) :
   sne n ->
   [Γ |- n : A] ->
   [Γ |- n ~ n : A] ->
@@ -34,7 +34,7 @@ Proof.
   - intros ??? [??? r] ne; pose proof (redtywf_whne r  ne); subst; inversion ne.
   - intros ** ne; assumption.
   - intros ??? [??? [?? red]] ** ne ; cbn in *.
-    apply redty_red in red. 
+    apply redty_red in red.
     rewrite (red_whne _ _ red ne) in ne.
     inversion ne.
 Qed.
@@ -51,12 +51,12 @@ Proof.
   intros neA neB wtyA wtyB eqAB.
   unshelve irrelevance0. 1: assumption. 3: reflexivity.
   1: apply neu; try assumption; now eapply lrefl.
-  econstructor. 
+  econstructor.
   1: now apply redtywf_refl.
-  all: cbn; assumption. 
+  all: cbn; assumption.
 Qed.
 
-Lemma ty_app_ren {Γ Δ A f a na dom cod} (ρ : Δ ≤ Γ) : 
+Lemma ty_app_ren {Γ Δ A f a na dom cod} (ρ : Δ ≤ Γ) :
   [Γ |- f : A] -> [Γ |- A ≅ tProd na dom cod] -> [Δ |- a : dom⟨ρ⟩] -> [Δ |- tApp f⟨ρ⟩ a : cod[a .: ρ >> tRel]].
 Proof.
   intros.
@@ -66,9 +66,9 @@ Proof.
   gen_typing.
 Qed.
 
-Lemma convneu_app_ren {Γ Δ A f g a b na dom cod} (ρ : Δ ≤ Γ) : 
+Lemma convneu_app_ren {Γ Δ A f g a b na dom cod} (ρ : Δ ≤ Γ) :
   [Γ |- f ~ g : A] ->
-  [Γ |- A ≅ tProd na dom cod] -> 
+  [Γ |- A ≅ tProd na dom cod] ->
   [Δ |- a ≅ b : dom⟨ρ⟩] ->
   [Δ |- tApp f⟨ρ⟩ a ~ tApp g⟨ρ⟩ b : cod[a .: ρ >> tRel]].
 Proof.
@@ -96,7 +96,7 @@ Proof.
   eapply LR_rect_TyUr; clear l Γ A RA; subst P; cbn; intros ??? h0; split.
   - intros ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
     assert [Γ |- A ≅ U] by (destruct h0; gen_typing); split.
-    2: unshelve econstructor. 
+    2: unshelve econstructor.
     1-3: now apply neU.
     + eapply RedTyRecBwd; apply neu ; try assumption; gen_typing.
     + cbn. gen_typing.
@@ -112,7 +112,7 @@ Proof.
     + exists n n'; cbn.
       1,2: eapply redtmwf_refl ; eapply ty_conv; gen_typing.
       1,2: assumption.
-      gen_typing. 
+      gen_typing.
   - intros a [a' Hr Hne]; apply snf_sne with a'; [|assumption].
     eapply redtmwf_red; eassumption.
   - do 2 match goal with [ H : _ |- _ ] => revert H end.
@@ -128,7 +128,7 @@ Proof.
         { eapply sne_tApp; [reflexivity|now apply sne_ren|].
           destruct (ihdom _ ρ h) as [_ Hnf].
           apply Hnf, ha. }
-        1: apply escapeTerm_ in ha; now eapply ty_app_ren. 
+        1: apply escapeTerm_ in ha; now eapply ty_app_ren.
         eapply convneu_app_ren. 1,2: eassumption.
         eapply escapeEqTerm_; eapply LREqTermRefl_; eassumption.
       * intros. apply ihcod.
@@ -217,11 +217,21 @@ induction HRA.
   - eapply redty_red, ΠA.
   - specialize (IHdom _ wk_id tΓ (PiRedTy.domRed _ _ tΓ) tΓ).
     rewrite wk_id_ren_on in IHdom; apply IHdom.
-  - pose (Δ := Γ ,, vass (PiRedTy.na ΠA) (PiRedTy.dom ΠA)).
-    assert (tΔ : wf_context Δ).
-    { apply wfc_cons; [assumption|apply ΠA]. }
-    specialize (IHcodom _ (tRel 0) (wk1 ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom)) tΔ).
-    admit. (* FIXME *)
-Admitted.
+  - destruct ΠA ; destruct HAad ; cbn in *.
+    pose (Δ := Γ ,, vass na dom).
+    assert (tΔ : wf_context Δ) by (now apply wfc_cons).
+    unshelve epose (rdom := _ : [ Γ ,, vass na dom ||-< l > dom⟨@wk1 Γ na dom⟩ ]).
+    { econstructor. exact (domAd (Γ,, vass na dom) (@wk1 Γ na dom) tΔ). }
+    specialize (IHcodom _ (tRel 0) (wk1 na dom) tΔ).
+    replace cod with (cod[tRel 0 .: @wk1 Γ na dom >> tRel]).
+    eapply IHcodom.
+    * change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
+      eapply var0. now bsimpl.
+    * unshelve eapply codRed. eassumption.
+      change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
+      eapply var0. now bsimpl.
+    * eassumption.
+    * bsimpl ; rewrite scons_eta' ; now bsimpl.
+Qed.
 
 End Neutral.
