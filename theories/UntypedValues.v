@@ -1,6 +1,8 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction.
 
+Unset Elimination Schemes.
+
 Inductive snf (r : term) : Type :=
   | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
   | snf_tProd {na A B} : [ r ⇒* tProd na A B ] -> snf A -> snf B -> snf r
@@ -10,9 +12,62 @@ with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r.
 
+Set Elimination Schemes.
+
+Section rect.
+
+Variable 
+  (P : forall r, snf r -> Type)
+  (Q : forall n, sne n -> Type)
+  (ptSort : forall r s (e : [ r ⇒* tSort s ]), P _ (snf_tSort r e))
+  (ptProd : forall r na A B (e : [ r ⇒* tProd na A B ])
+    (s1 : snf A), P A s1 -> forall (s2 : snf B), P B s2 ->  P _ (snf_tProd _ e s1 s2))
+  (ptLambda : forall r na A t (e : [ r ⇒* tLambda na A t ])
+    (s1 : snf A), P _ s1 -> forall (s2 : snf t), P _ s2 -> P _ (snf_tLambda _ e s1 s2))
+  (ptne : forall r n (e : [ r ⇒* n ]) (s : sne n), Q _ s -> P _ (snf_sne _ e s))
+  (ptRel : forall r v (e : r = tRel v), Q _ (sne_tRel _ e))
+  (ptApp : forall r n t (e : r = tApp n t),
+    forall (s1 : sne n), Q _ s1 -> forall (s2 : snf t), P _ s2 ->  Q _ (sne_tApp _ e s1 s2))
+.
+
+Fixpoint snf_rect (r : term) (s : snf r) : P r s :=
+match s with
+ | snf_tSort _ e => ptSort _ _ e
+ | snf_tProd _ e s1 s2 => ptProd _ _ _ _ e s1 (snf_rect _ s1) s2 (snf_rect _ s2)
+ | snf_tLambda _ e s1 s2 => ptLambda _ _ _ _ e s1 (snf_rect _ s1) s2 (snf_rect _ s2)
+ | snf_sne _ e s => ptne _ _ e s (sne_rect _ s)
+end
+
+with sne_rect (n : term) (s : sne n) : Q n s :=
+match s with
+ | sne_tRel _ e => ptRel _ _ e
+ | sne_tApp _ e s1 s2 => ptApp _ _ _ e s1 (sne_rect _ s1) s2 (snf_rect _ s2)
+end.
+
+End rect.
+
+Definition snf_rec
+  (P : forall r : term, snf r -> Set)
+  (Q : forall r : term, sne r -> Set) := snf_rect P Q.
+
+Definition snf_ind
+  (P : forall r : term, snf r -> Prop)
+  (Q : forall r : term, sne r -> Prop) := snf_rect P Q.
+
+Definition sne_rec
+  (P : forall r : term, snf r -> Set)
+  (Q : forall r : term, sne r -> Set) := sne_rect P Q.
+
+Definition sne_ind
+  (P : forall r : term, snf r -> Prop)
+  (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
+
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 :=
+  pair (snf_rect P Q p1 p2 p3 p4 p5 p6) (sne_rect P Q p1 p2 p3 p4 p5 p6).
+
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
-intros t Ht; induction Ht; subst; constructor; assumption.
+apply sne_rect with (P := fun _ _ => True); intros; subst; constructor; assumption.
 Qed.
 
 Lemma snf_red : forall t u, [ t ⇒* u ] -> snf u -> snf t.
@@ -81,15 +136,38 @@ Qed.
 
 Section RenSnf.
 
-  Variable (ρ : nat -> nat).
+  Notation credalg_wk := (credalg_wk nil nil).
 
-  Lemma sne_ren t : sne t -> sne (t⟨ρ⟩).
+  Lemma snf_sne_ren :
+    prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩)) (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)).
   Proof.
-  Admitted. (* FIXME *)
+  apply snf_sne_rect.
+  + intros r s Hr ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tSort; eassumption.
+  + intros r na A B Hr HA IHA HB IHB ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tProd; eauto.
+  + intros r na A t Hr HA IHA Ht IHt ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tLambda; eauto.
+  + intros r n Hr Hn IHn ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_sne; eauto.
+  + intros r v -> ρ; econstructor; reflexivity.
+  + intros r n t -> Hn IHn Ht IHt ρ.
+    cbn; eapply sne_tApp; eauto.
+  Qed.
 
-  Lemma snf_ren t : snf t -> snf (t⟨ρ⟩).
+  Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
   Proof.
-  Admitted. (* FIXME *)
+  intros; apply snf_sne_ren; assumption.
+  Qed.
+
+  Lemma snf_ren ρ t : snf t -> snf (t⟨ρ⟩).
+  Proof.
+  intros; apply snf_sne_ren; assumption.
+  Qed.
 
 End RenSnf.
 
