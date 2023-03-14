@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
@@ -26,7 +26,10 @@ Section AlgoConvConv.
   1: eexists ; split.
   - now econstructor.
   - cbn.
-    eapply typing_shift ; boundary.
+    renToWk.
+    eapply typing_wk ; tea.
+    econstructor.
+    all: now boundary.
   - destruct d as [? d].
     edestruct IHHin as [[? d'] []].
     1: eassumption.
@@ -34,7 +37,10 @@ Section AlgoConvConv.
     econstructor ; split.
     1: now econstructor.
     cbn.
-    eapply typing_shift ; boundary.
+    renToWk.
+    eapply typing_wk ; tea.
+    econstructor.
+    all: now boundary.
   Qed.
 
   Lemma in_ctx_conv_l Γ' Γ n decl' :

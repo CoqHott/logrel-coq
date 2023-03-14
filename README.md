@@ -77,8 +77,7 @@ Common typing-related definitions
 [Context] | Definition of contexts and operations on them.
 [Weakening] | Definition of a well-formed weakening, and some properties.
 [UntypedReduction] | Definiton and basic properties of untyped reduction, used to define algorithmic typing.
-[GenericTyping] | A generic notion of typing, used to define the logical relation, to be instantiated three times: once with the fully declarative version,
-once with the mixed declarative and algorithmic one, and once with the fully algorithmic one.
+[GenericTyping] | A generic notion of typing, used to define the logical relation, to be instantiated three times: once with the fully declarative version, once with the mixed declarative and algorithmic one, and once with the fully algorithmic one.
 
 Declarative typing and its properties
 --------------
@@ -86,8 +85,7 @@ Declarative typing and its properties
 | File | Description |
 |---|----|
 [DeclarativeTyping] | Defines the theory's typing rules in a declarative fashion, the current definition has a single universe as well as product types and eta-conversion for functions. |
-[Generation] | Contains generation theorems, giving a good inversion on term typing/reduction with a direct structural premise
-[Reduction] | Basic properties of reduction, enough to derive that declarative typing is an instance of generic typing. |
+[DeclarativeInstance] | Proof that declarative typing is an instance of generic typing. |
 
 Logical relation and its properties
 -----------
@@ -125,13 +123,12 @@ Miscellaneous
 [AutoSubst/Extra]: ./theories/AutoSubst/Extra.v
 [Notations]: ./theories/Notations.v
 [Automation]: ./theories/Automation.v
-[Untyped]: ./theories/Untyped.v
+[NormalForms]: ./theories/NormalForms.v
 [UntypedReduction]: ./theories/UntypedReduction.v
 [GenericTyping]: ./theories/GenericTyping.v
 [DeclarativeTyping]: ./theories/DeclarativeTyping.v
 [Properties]: ./theories/Properties.v
-[Reduction]: ./theories/Reduction.v
-[Generation]: ./theories/Generation.v
+[DeclarativeInstance]: ./theories/DeclarativeInstance.v
 [LogicalRelation]: ./theories/LogicalRelation.v
 [LRInduction]: ./theories/LRInduction.v
 [Escape]: ./theories/Escape.v

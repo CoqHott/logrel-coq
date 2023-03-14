@@ -16,7 +16,6 @@ theories/UntypedReduction.v
 theories/GenericTyping.v
 
 theories/DeclarativeTyping.v
-theories/Generation.v
 theories/DeclarativeInstance.v
 
 theories/LogicalRelation.v

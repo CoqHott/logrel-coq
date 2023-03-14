@@ -25,8 +25,14 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">LogRel.DeclarativeTyping</h1>
+<h1 class="libtitle">LogRel.DeclarativeTyping: specification of conversion and typing, in a declarative fashion.</h1>
 
+<div class="code">
+</div>
+
+<div class="doc">
+
+</div>
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.ssr.ssreflect.html#"><span class="id" title="library">ssreflect</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">smpl</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Smpl</span>.<br/>
@@ -37,21 +43,50 @@
 <span class="id" title="keyword">Set</span> <span class="id" title="var">Primitive</span> <span class="id" title="var">Projections</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Definitions in this file should be understood as the <i>specification</i> of conversion
+or typing, done in a declarative fashion. For instance, we <i>demand</i> that conversion
+be transitive by adding a corresponding rule. 
+<div class="paragraph"> </div>
+
+<a id="lab50"></a><h2 class="section">Definitions</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Section</span> <a id="Definitions" class="idref" href="#Definitions"><span class="id" title="section">Definitions</span></a>.<br/>
 
 <br/>
-&nbsp;&nbsp;<span class="comment">(*&nbsp;We&nbsp;locally&nbsp;disable&nbsp;typing&nbsp;notations&nbsp;to&nbsp;be&nbsp;able&nbsp;to&nbsp;use&nbsp;them&nbsp;in&nbsp;the&nbsp;definition&nbsp;here&nbsp;before&nbsp;declaring&nbsp;the&nbsp;right<br/>
-&nbsp;&nbsp;instance&nbsp;*)</span><br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;We&nbsp;locally&nbsp;disable&nbsp;typing&nbsp;notations&nbsp;to&nbsp;be&nbsp;able&nbsp;to&nbsp;use&nbsp;them&nbsp;in&nbsp;the&nbsp;definition<br/>
+&nbsp;&nbsp;here&nbsp;before&nbsp;declaring&nbsp;the&nbsp;instance&nbsp;to&nbsp;which&nbsp;abstract&nbsp;notations&nbsp;are&nbsp;bound.&nbsp;*)</span><br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Close</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">typing_scope</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Typing and conversion are mutually defined inductive relations. To avoid having
+  to bother with elimination of propositions, we put them in the Type sort. 
+<div class="paragraph"> </div>
+
+<a id="lab51"></a><h4 class="section">Context well-formation</h4>
+
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">Inductive</span> <a id="WfContextDecl" class="idref" href="#WfContextDecl"><span class="id" title="inductive">WfContextDecl</span></a> : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="connil" class="idref" href="#connil"><span class="id" title="constructor">connil</span></a> : <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.Context.html#bfa9fae25f9bf698daae93f61b5313af"><span class="id" title="notation">ε</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">]</span></a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="concons" class="idref" href="#concons"><span class="id" title="constructor">concons</span></a> {<a id="8a5fb5e1be55058be9aa6b31d1a8bfab" class="idref" href="#8a5fb5e1be55058be9aa6b31d1a8bfab"><span class="id" title="binder">Γ</span></a> <a id="na:12" class="idref" href="#na:12"><span class="id" title="binder">na</span></a> <a id="A:13" class="idref" href="#A:13"><span class="id" title="binder">A</span></a>} : <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#8a5fb5e1be55058be9aa6b31d1a8bfab"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#8a5fb5e1be55058be9aa6b31d1a8bfab"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:13"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">|-</span></a>  <a class="idref" href="LogRel.DeclarativeTyping.html#8a5fb5e1be55058be9aa6b31d1a8bfab"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.Context.html#b66601545ff7e22c5dcb7c86aa0cca21"><span class="id" title="notation">,,</span></a> <a class="idref" href="LogRel.Context.html#vass"><span class="id" title="definition">vass</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#na:12"><span class="id" title="variable">na</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:13"><span class="id" title="variable">A</span></a><a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">]</span></a><br/>
-&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;</div>
+
+<div class="doc">
+<a id="lab52"></a><h4 class="section">Type well-formation</h4>
+
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">with</span> <a id="WfTypeDecl" class="idref" href="#WfTypeDecl"><span class="id" title="inductive">WfTypeDecl</span></a>  : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="wfTypeU" class="idref" href="#wfTypeU"><span class="id" title="constructor">wfTypeU</span></a> {<a id="6f77cad99d2eda9ef19109858c066b07" class="idref" href="#6f77cad99d2eda9ef19109858c066b07"><span class="id" title="binder">Γ</span></a>} : <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#6f77cad99d2eda9ef19109858c066b07"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
@@ -63,7 +98,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="wfTypeUniv" class="idref" href="#wfTypeUniv"><span class="id" title="constructor">wfTypeUniv</span></a> {<a id="d2f974a479ebcd81c5829843a3f7c760" class="idref" href="#d2f974a479ebcd81c5829843a3f7c760"><span class="id" title="binder">Γ</span></a>} {<a id="A:20" class="idref" href="#A:20"><span class="id" title="binder">A</span></a>} :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#d2f974a479ebcd81c5829843a3f7c760"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:20"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">:</span></a> <a class="idref" href="LogRel.AutoSubst.Extra.html#U"><span class="id" title="abbreviation">U</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#d2f974a479ebcd81c5829843a3f7c760"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:20"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">]</span></a><br/>
-<br/>
+&nbsp;&nbsp;</div>
+
+<div class="doc">
+<a id="lab53"></a><h4 class="section">Typing</h4>
+
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">with</span> <a id="TypingDecl" class="idref" href="#TypingDecl"><span class="id" title="inductive">TypingDecl</span></a> : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="wfVar" class="idref" href="#wfVar"><span class="id" title="constructor">wfVar</span></a> {<a id="57d703d05664bc6befa1a1f25e729927" class="idref" href="#57d703d05664bc6befa1a1f25e729927"><span class="id" title="binder">Γ</span></a>} {<a id="n:22" class="idref" href="#n:22"><span class="id" title="binder">n</span></a> <a id="decl:23" class="idref" href="#decl:23"><span class="id" title="binder">decl</span></a>} :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">[</span></a>   <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#57d703d05664bc6befa1a1f25e729927"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#9e0413dafa103089c0ddc40f3feef084"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a><br/>
@@ -85,7 +126,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#c2ce69567f90e13bb44c9a8e8f267036"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#t:40"><span class="id" title="variable">t</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">:</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:41"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#c2ce69567f90e13bb44c9a8e8f267036"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:41"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">≅</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#B:42"><span class="id" title="variable">B</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#c2ce69567f90e13bb44c9a8e8f267036"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#t:40"><span class="id" title="variable">t</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">:</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#B:42"><span class="id" title="variable">B</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#2fcc4a1e4f38bd3ec30f47de4c47bd03"><span class="id" title="notation">]</span></a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;</div>
+
+<div class="doc">
+<a id="lab54"></a><h4 class="section">Conversion of types</h4>
+
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">with</span> <a id="ConvTypeDecl" class="idref" href="#ConvTypeDecl"><span class="id" title="inductive">ConvTypeDecl</span></a> : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a>  <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=  <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="TypePiCong" class="idref" href="#TypePiCong"><span class="id" title="constructor">TypePiCong</span></a> {<a id="e9496c2a50f70ac86950787b66328346" class="idref" href="#e9496c2a50f70ac86950787b66328346"><span class="id" title="binder">Γ</span></a>} {<a id="na:44" class="idref" href="#na:44"><span class="id" title="binder">na</span></a> <a id="nb:45" class="idref" href="#nb:45"><span class="id" title="binder">nb</span></a>} {<a id="A:46" class="idref" href="#A:46"><span class="id" title="binder">A</span></a> <a id="B:47" class="idref" href="#B:47"><span class="id" title="binder">B</span></a> <a id="C:48" class="idref" href="#C:48"><span class="id" title="binder">C</span></a> <a id="D:49" class="idref" href="#D:49"><span class="id" title="binder">D</span></a>} :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#e9496c2a50f70ac86950787b66328346"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:46"><span class="id" title="variable">A</span></a><a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a><br/>
@@ -105,7 +152,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#5eea4560b18f98a58cb3519774a6b1ed"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:59"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">≅</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#B:60"><span class="id" title="variable">B</span></a><a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#5eea4560b18f98a58cb3519774a6b1ed"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#B:60"><span class="id" title="variable">B</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">≅</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#C:61"><span class="id" title="variable">C</span></a><a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#5eea4560b18f98a58cb3519774a6b1ed"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:59"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">≅</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#C:61"><span class="id" title="variable">C</span></a><a class="idref" href="LogRel.DeclarativeTyping.html#b16e59fa4a64ff0a3d46dac585608dc3"><span class="id" title="notation">]</span></a><br/>
-<br/>
+&nbsp;&nbsp;</div>
+
+<div class="doc">
+<a id="lab55"></a><h4 class="section">Conversion of terms</h4>
+
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">with</span> <a id="ConvTermDecl" class="idref" href="#ConvTermDecl"><span class="id" title="inductive">ConvTermDecl</span></a> : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a id="TermBRed" class="idref" href="#TermBRed"><span class="id" title="constructor">TermBRed</span></a> {<a id="ad797e72248915d9212fa4589483d7f6" class="idref" href="#ad797e72248915d9212fa4589483d7f6"><span class="id" title="binder">Γ</span></a>} {<a id="na:63" class="idref" href="#na:63"><span class="id" title="binder">na</span></a>} {<a id="a:64" class="idref" href="#a:64"><span class="id" title="binder">a</span></a> <a id="t:65" class="idref" href="#t:65"><span class="id" title="binder">t</span></a> <a id="A:66" class="idref" href="#A:66"><span class="id" title="binder">A</span></a> <a id="B:67" class="idref" href="#B:67"><span class="id" title="binder">B</span></a>} :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#ad797e72248915d9212fa4589483d7f6"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:66"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a><br/>
@@ -149,6 +202,13 @@
 &nbsp;&nbsp;<span class="id" title="var">and</span>   "[ Γ |- t ≅ t' : T ]" := (<a class="idref" href="LogRel.DeclarativeTyping.html#ConvTermDecl:10"><span class="id" title="inductive">ConvTermDecl</span></a> <span class="id" title="var">Γ</span> <span class="id" title="var">T</span> <span class="id" title="var">t</span> <span class="id" title="var">t'</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+(Typed) reduction is defined afterwards,
+  rather than mutually with the other relations. 
+</div>
+<div class="code">
 &nbsp;&nbsp;<span class="id" title="keyword">Inductive</span> <a id="OneRedTermDecl" class="idref" href="#OneRedTermDecl"><span class="id" title="inductive">OneRedTermDecl</span></a> (<a id="367e0b75814c690d9518e83afce12d6f" class="idref" href="#367e0b75814c690d9518e83afce12d6f"><span class="id" title="binder">Γ</span></a> : <a class="idref" href="LogRel.Context.html#context"><span class="id" title="definition">context</span></a>) : <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#Core.term"><span class="id" title="inductive">term</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Type</span> :=<br/>
 &nbsp;&nbsp;| <a id="BRed" class="idref" href="#BRed"><span class="id" title="constructor">BRed</span></a> {<a id="na:110" class="idref" href="#na:110"><span class="id" title="binder">na</span></a>} {<a id="A:111" class="idref" href="#A:111"><span class="id" title="binder">A</span></a> <a id="B:112" class="idref" href="#B:112"><span class="id" title="binder">B</span></a> <a id="a:113" class="idref" href="#a:113"><span class="id" title="binder">a</span></a> <a id="t:114" class="idref" href="#t:114"><span class="id" title="binder">t</span></a>} :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">[</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#367e0b75814c690d9518e83afce12d6f"><span class="id" title="variable">Γ</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">|-</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#A:111"><span class="id" title="variable">A</span></a> <a class="idref" href="LogRel.DeclarativeTyping.html#a0bb2256a257ec3fa690e4341eb1ec20"><span class="id" title="notation">]</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <br/>
@@ -211,6 +271,14 @@
 <span class="id" title="keyword">Notation</span> <a id="c4335a22e72e419223f45cbae10f813e" class="idref" href="#c4335a22e72e419223f45cbae10f813e"><span class="id" title="notation">&quot;</span></a>[ Γ |- A ⇒ B ]" := (<a class="idref" href="LogRel.DeclarativeTyping.html#OneRedTypeDecl"><span class="id" title="inductive">OneRedTypeDecl</span></a> <span class="id" title="var">Γ</span> <span class="id" title="var">A</span> <span class="id" title="var">B</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab56"></a><h2 class="section">Instances</h2>
+ Used for printing (see Notations) and as a support for the generic typing
+properties used for the logical relation (see GenericTyping). 
+</div>
+<div class="code">
 <span class="id" title="keyword">Module</span> <a id="DeclarativeTypingData" class="idref" href="#DeclarativeTypingData"><span class="id" title="module">DeclarativeTypingData</span></a>.<br/>
 
 <br/>
@@ -242,6 +310,22 @@
 <span class="id" title="keyword">End</span> <a class="idref" href="LogRel.DeclarativeTyping.html#DeclarativeTypingData"><span class="id" title="module">DeclarativeTypingData</span></a>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab57"></a><h2 class="section">Induction principles</h2>
+
+<div class="paragraph"> </div>
+
+ We use Scheme to generate mutual induction principle. Sadly, Scheme uses
+the product of the standard library, which is not universe polymorphic, which
+causes universe issues, typically in the fundamental lemma. So
+we use some Ltac code to generate properly polymorphic versions of the inductive
+principle. We also use Ltac to generate the conclusion of the mutual induction
+proof, to alleviate the user from the need to write it down every time: they
+only need write the predicates to be proven. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Section</span> <a id="InductionPrinciples" class="idref" href="#InductionPrinciples"><span class="id" title="section">InductionPrinciples</span></a>.<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Import</span> <a class="idref" href="LogRel.DeclarativeTyping.html#DeclarativeTypingData"><span class="id" title="module">DeclarativeTypingData</span></a>.<br/>
 

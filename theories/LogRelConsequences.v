@@ -1,7 +1,7 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping.
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral Transitivity.
 From LogRel.Substitution Require Import Properties Irrelevance.
@@ -256,9 +256,7 @@ Proof.
     2: econstructor.
     all: econstructor.
     1,3: econstructor ; [eassumption | now econstructor].
-    all: replace dom⟨_⟩ with dom⟨↑⟩ by now bsimpl.
-    all: apply typing_shift ; tea.
-    all: boundary.
+    all: cbn ; renToWk ; now eapply typing_wk.
   Qed.
 
 Corollary red_ty_compl_univ_l Γ T :
@@ -416,7 +414,9 @@ Section MoreSubst.
       econstructor.
       + now do 2 econstructor ; gen_typing.
       + cbn ; refold.
-        now eapply typing_shift ; gen_typing.
+        renToWk.
+        eapply typing_wk.
+        all: gen_typing.
   Qed.
 
   Theorem stability1 (Γ : context) na na' A A' :
@@ -453,9 +453,12 @@ Section Boundary.
     intros HΓ Hin.
     induction Hin.
     - inversion HΓ ; subst ; cbn in * ; refold.
-      now eapply typing_shift.
+      renToWk.
+      now apply typing_wk.
     - inversion HΓ ; subst ; cbn in * ; refold.
-      now eapply typing_shift.
+      destruct d ; cbn in *.
+      renToWk.
+      now eapply typing_wk.
   Qed.
 
   Let PCon (Γ : context) := True.
@@ -585,11 +588,6 @@ Qed.
 Corollary boundary_ored_tm_ty Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- A].
 Proof.
   now intros []%RedConvTe%boundary.
-Qed.
-
-Corollary boundary_red_tm_l Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- t : A].
-Proof.
-  now intros []%RedConvTeC%boundary.
 Qed.
 
 Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- u : A].
@@ -807,7 +805,6 @@ Lemma typing_eta' (Γ : context) na A B f :
 Proof.
   intros Hf.
   eapply typing_eta ; tea.
-  - gen_typing.
   - eapply prod_ty_inv.
     boundary.
   - eapply prod_ty_inv.
