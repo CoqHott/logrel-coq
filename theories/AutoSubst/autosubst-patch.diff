@@ -1,0 +1,371 @@
+diff --git a/theories/AutoSubst/Ast.v b/theories/AutoSubst/Ast.v
+index 5fe9a09..5d261de 100644
+--- a/theories/AutoSubst/Ast.v
++++ b/theories/AutoSubst/Ast.v
+@@ -1,12 +1,12 @@
+-From LogRel.AutoSubst Require Import core unscoped.
+-From LogRel Require Import BasicAst.
++Require Import core unscoped.
++
+ Require Import Setoid Morphisms Relation_Definitions.
+ 
+ 
+ Module Core.
+ 
+ Inductive term : Type :=
+-  | tRel : nat -> term
++  | var_term : nat -> term
+   | tSort : sort -> term
+   | tProd : aname -> term -> term -> term
+   | tLambda : aname -> term -> term -> term
+@@ -52,7 +52,7 @@ Defined.
+ 
+ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
+   match s with
+-  | tRel s0 => tRel (xi_term s0)
++  | var_term s0 => var_term (xi_term s0)
+   | tSort s0 => tSort s0
+   | tProd s0 s1 s2 =>
+       tProd s0 (ren_term xi_term s1) (ren_term (upRen_term_term xi_term) s2)
+@@ -64,13 +64,13 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
+ 
+ Lemma up_term_term (sigma : nat -> term) : nat -> term.
+ Proof.
+-exact (scons (tRel var_zero) (funcomp (ren_term shift) sigma)).
++exact (scons (var_term var_zero) (funcomp (ren_term shift) sigma)).
+ Defined.
+ 
+ Fixpoint subst_term (sigma_term : nat -> term) (s : term) {struct s} : 
+ term :=
+   match s with
+-  | tRel s0 => sigma_term s0
++  | var_term s0 => sigma_term s0
+   | tSort s0 => tSort s0
+   | tProd s0 s1 s2 =>
+       tProd s0 (subst_term sigma_term s1)
+@@ -82,8 +82,8 @@ term :=
+   end.
+ 
+ Lemma upId_term_term (sigma : nat -> term)
+-  (Eq : forall x, sigma x = tRel x) :
+-  forall x, up_term_term sigma x = tRel x.
++  (Eq : forall x, sigma x = var_term x) :
++  forall x, up_term_term sigma x = var_term x.
+ Proof.
+ exact (fun n =>
+        match n with
+@@ -93,10 +93,10 @@ exact (fun n =>
+ Qed.
+ 
+ Fixpoint idSubst_term (sigma_term : nat -> term)
+-(Eq_term : forall x, sigma_term x = tRel x) (s : term) {struct s} :
++(Eq_term : forall x, sigma_term x = var_term x) (s : term) {struct s} :
+ subst_term sigma_term s = s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0) (idSubst_term sigma_term Eq_term s1)
+@@ -123,7 +123,7 @@ Fixpoint extRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
+ (Eq_term : forall x, xi_term x = zeta_term x) (s : term) {struct s} :
+ ren_term xi_term s = ren_term zeta_term s :=
+   match s with
+-  | tRel s0 => ap (tRel) (Eq_term s0)
++  | var_term s0 => ap (var_term) (Eq_term s0)
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0) (extRen_term xi_term zeta_term Eq_term s1)
+@@ -153,7 +153,7 @@ Fixpoint ext_term (sigma_term : nat -> term) (tau_term : nat -> term)
+ (Eq_term : forall x, sigma_term x = tau_term x) (s : term) {struct s} :
+ subst_term sigma_term s = subst_term tau_term s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0) (ext_term sigma_term tau_term Eq_term s1)
+@@ -182,7 +182,7 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
+ (Eq_term : forall x, funcomp zeta_term xi_term x = rho_term x) (s : term)
+ {struct s} : ren_term zeta_term (ren_term xi_term s) = ren_term rho_term s :=
+   match s with
+-  | tRel s0 => ap (tRel) (Eq_term s0)
++  | var_term s0 => ap (var_term) (Eq_term s0)
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0)
+@@ -219,7 +219,7 @@ Fixpoint compRenSubst_term (xi_term : nat -> nat) (tau_term : nat -> term)
+ {struct s} :
+ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0)
+@@ -266,7 +266,7 @@ Fixpoint compSubstRen_term (sigma_term : nat -> term)
+ (s : term) {struct s} :
+ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0)
+@@ -316,7 +316,7 @@ Fixpoint compSubstSubst_term (sigma_term : nat -> term)
+ (s : term) {struct s} :
+ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0)
+@@ -404,8 +404,8 @@ exact (fun s =>
+ Qed.
+ 
+ Lemma rinstInst_up_term_term (xi : nat -> nat) (sigma : nat -> term)
+-  (Eq : forall x, funcomp (tRel) xi x = sigma x) :
+-  forall x, funcomp (tRel) (upRen_term_term xi) x = up_term_term sigma x.
++  (Eq : forall x, funcomp (var_term) xi x = sigma x) :
++  forall x, funcomp (var_term) (upRen_term_term xi) x = up_term_term sigma x.
+ Proof.
+ exact (fun n =>
+        match n with
+@@ -415,10 +415,10 @@ exact (fun n =>
+ Qed.
+ 
+ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
+-(Eq_term : forall x, funcomp (tRel) xi_term x = sigma_term x) (s : term)
++(Eq_term : forall x, funcomp (var_term) xi_term x = sigma_term x) (s : term)
+ {struct s} : ren_term xi_term s = subst_term sigma_term s :=
+   match s with
+-  | tRel s0 => Eq_term s0
++  | var_term s0 => Eq_term s0
+   | tSort s0 => congr_tSort (eq_refl s0)
+   | tProd s0 s1 s2 =>
+       congr_tProd (eq_refl s0)
+@@ -436,27 +436,27 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
+   end.
+ 
+ Lemma rinstInst'_term (xi_term : nat -> nat) (s : term) :
+-  ren_term xi_term s = subst_term (funcomp (tRel) xi_term) s.
++  ren_term xi_term s = subst_term (funcomp (var_term) xi_term) s.
+ Proof.
+ exact (rinst_inst_term xi_term _ (fun n => eq_refl) s).
+ Qed.
+ 
+ Lemma rinstInst'_term_pointwise (xi_term : nat -> nat) :
+   pointwise_relation _ eq (ren_term xi_term)
+-    (subst_term (funcomp (tRel) xi_term)).
++    (subst_term (funcomp (var_term) xi_term)).
+ Proof.
+ exact (fun s => rinst_inst_term xi_term _ (fun n => eq_refl) s).
+ Qed.
+ 
+-Lemma instId'_term (s : term) : subst_term (tRel) s = s.
++Lemma instId'_term (s : term) : subst_term (var_term) s = s.
+ Proof.
+-exact (idSubst_term (tRel) (fun n => eq_refl) s).
++exact (idSubst_term (var_term) (fun n => eq_refl) s).
+ Qed.
+ 
+ Lemma instId'_term_pointwise :
+-  pointwise_relation _ eq (subst_term (tRel)) id.
++  pointwise_relation _ eq (subst_term (var_term)) id.
+ Proof.
+-exact (fun s => idSubst_term (tRel) (fun n => eq_refl) s).
++exact (fun s => idSubst_term (var_term) (fun n => eq_refl) s).
+ Qed.
+ 
+ Lemma rinstId'_term (s : term) : ren_term id s = s.
+@@ -471,27 +471,27 @@ exact (fun s =>
+ Qed.
+ 
+ Lemma varL'_term (sigma_term : nat -> term) (x : nat) :
+-  subst_term sigma_term (tRel x) = sigma_term x.
++  subst_term sigma_term (var_term x) = sigma_term x.
+ Proof.
+ exact (eq_refl).
+ Qed.
+ 
+ Lemma varL'_term_pointwise (sigma_term : nat -> term) :
+-  pointwise_relation _ eq (funcomp (subst_term sigma_term) (tRel))
++  pointwise_relation _ eq (funcomp (subst_term sigma_term) (var_term))
+     sigma_term.
+ Proof.
+ exact (fun x => eq_refl).
+ Qed.
+ 
+ Lemma varLRen'_term (xi_term : nat -> nat) (x : nat) :
+-  ren_term xi_term (tRel x) = tRel (xi_term x).
++  ren_term xi_term (var_term x) = var_term (xi_term x).
+ Proof.
+ exact (eq_refl).
+ Qed.
+ 
+ Lemma varLRen'_term_pointwise (xi_term : nat -> nat) :
+-  pointwise_relation _ eq (funcomp (ren_term xi_term) (tRel))
+-    (funcomp (tRel) xi_term).
++  pointwise_relation _ eq (funcomp (ren_term xi_term) (var_term))
++    (funcomp (var_term) xi_term).
+ Proof.
+ exact (fun x => eq_refl).
+ Qed.
+@@ -499,13 +499,13 @@ Qed.
+ Class Up_term X Y :=
+     up_term : X -> Y.
+ 
+-#[global] Instance Subst_term : (Subst1 _ _ _) := @subst_term.
++Instance Subst_term : (Subst1 _ _ _) := @subst_term.
+ 
+-#[global] Instance Up_term_term : (Up_term _ _) := @up_term_term.
++Instance Up_term_term : (Up_term _ _) := @up_term_term.
+ 
+-#[global] Instance Ren_term : (Ren1 _ _ _) := @ren_term.
++Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+ 
+-#[global] Instance VarInstance_term : (Var _ _) := @tRel.
++Instance VarInstance_term : (Var _ _) := @var_term.
+ 
+ Notation "[ sigma_term ]" := (subst_term sigma_term)
+   ( at level 1, left associativity, only printing) : fscope.
+@@ -523,15 +523,15 @@ Notation "⟨ xi_term ⟩" := (ren_term xi_term)
+ Notation "s ⟨ xi_term ⟩" := (ren_term xi_term s)
+   ( at level 7, left associativity, only printing) : subst_scope.
+ 
+-Notation "'var'" := tRel ( at level 1, only printing) : subst_scope.
++Notation "'var'" := var_term ( at level 1, only printing) : subst_scope.
+ 
+ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
+   ( at level 5, format "x __term", only printing) : subst_scope.
+ 
+-Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
++Notation "x '__term'" := (var_term x) ( at level 5, format "x __term") :
+   subst_scope.
+ 
+-#[global] Instance subst_term_morphism :
++Instance subst_term_morphism :
+  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+     (@subst_term)).
+ Proof.
+@@ -540,14 +540,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+          (ext_term f_term g_term Eq_term s) t Eq_st).
+ Qed.
+ 
+-#[global] Instance subst_term_morphism2 :
++Instance subst_term_morphism2 :
+  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+     (@subst_term)).
+ Proof.
+ exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
+ Qed.
+ 
+-#[global] Instance ren_term_morphism :
++Instance ren_term_morphism :
+  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+     (@ren_term)).
+ Proof.
+@@ -556,7 +556,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+          (extRen_term f_term g_term Eq_term s) t Eq_st).
+ Qed.
+ 
+-#[global] Instance ren_term_morphism2 :
++Instance ren_term_morphism2 :
+  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+     (@ren_term)).
+ Proof.
+@@ -627,7 +627,7 @@ Defined.
+ 
+ Fixpoint allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
+   match s with
+-  | tRel s0 => p_term s0
++  | var_term s0 => p_term s0
+   | tSort s0 => and True True
+   | tProd s0 s1 s2 =>
+       and True
+@@ -653,7 +653,7 @@ Qed.
+ Fixpoint allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
+ (s : term) {struct s} : allfv_term p_term s :=
+   match s with
+-  | tRel s0 => H_term s0
++  | var_term s0 => H_term s0
+   | tSort s0 => conj I I
+   | tProd s0 s1 s2 =>
+       conj I
+@@ -686,7 +686,7 @@ Fixpoint allfvImpl_term (p_term : nat -> Prop) (q_term : nat -> Prop)
+ (H_term : forall x, p_term x -> q_term x) (s : term) {struct s} :
+ allfv_term p_term s -> allfv_term q_term s :=
+   match s with
+-  | tRel s0 => fun HP => H_term s0 HP
++  | var_term s0 => fun HP => H_term s0 HP
+   | tSort s0 => fun HP => conj I I
+   | tProd s0 s1 s2 =>
+       fun HP =>
+@@ -762,7 +762,7 @@ Fixpoint allfvRenL_term (p_term : nat -> Prop) (xi_term : nat -> nat)
+ allfv_term p_term (ren_term xi_term s) ->
+ allfv_term (funcomp p_term xi_term) s :=
+   match s with
+-  | tRel s0 => fun H => H
++  | var_term s0 => fun H => H
+   | tSort s0 => fun H => conj I I
+   | tProd s0 s1 s2 =>
+       fun H =>
+@@ -839,7 +839,7 @@ Fixpoint allfvRenR_term (p_term : nat -> Prop) (xi_term : nat -> nat)
+ allfv_term (funcomp p_term xi_term) s ->
+ allfv_term p_term (ren_term xi_term s) :=
+   match s with
+-  | tRel s0 => fun H => H
++  | var_term s0 => fun H => H
+   | tSort s0 => fun H => conj I I
+   | tProd s0 s1 s2 =>
+       fun H =>
+diff --git a/theories/AutoSubst/unscoped.v b/theories/AutoSubst/unscoped.v
+index 65ae16b..27cb4e7 100644
+--- a/theories/AutoSubst/unscoped.v
++++ b/theories/AutoSubst/unscoped.v
+@@ -7,7 +7,7 @@ Version: December 11, 2019.
+  I changed this library a bit to work better with my generated code.
+  1. I use nat directly instead of defining fin to be nat and using Some/None as S/O
+  2. I removed the "s, sigma" notation for scons because it interacts with dependent function types "forall x, A"*)
+-From LogRel.AutoSubst Require Import core.
++Require Import core.
+ Require Import Setoid Morphisms Relation_Definitions.
+ 
+ Definition ap {X Y} (f : X -> Y) {x y : X} (p : x = y) : f x = f y :=
+@@ -97,7 +97,7 @@ End SubstNotations.
+ Class Var X Y :=
+   ids : X -> Y.
+ 
+-#[global] Instance idsRen : Var nat nat := id.
++Instance idsRen : Var nat nat := id.
+ 
+ (** ** Proofs for the substitution primitives. *)
+ 
+@@ -144,7 +144,7 @@ Lemma scons_comp' (T: Type) {U} (s: T) (sigma: nat -> T) (tau: T -> U) :
+ Proof. intros x. destruct x; reflexivity. Qed.
+ 
+ (* Morphism for Setoid Rewriting. The only morphism that can be defined statically. *)
+-#[global] Instance scons_morphism {X: Type} :
++Instance scons_morphism {X: Type} :
+   Proper (eq ==> pointwise_relation _ eq ==> pointwise_relation _ eq) (@scons X).
+ Proof.
+   intros ? t -> sigma tau H.
+@@ -153,7 +153,7 @@ Proof.
+   apply H.
+ Qed.
+ 
+-#[global] Instance scons_morphism2 {X: Type} :
++Instance scons_morphism2 {X: Type} :
+   Proper (eq ==> pointwise_relation _ eq ==> eq ==> eq) (@scons X).
+ Proof.
+   intros ? t -> sigma tau H ? x ->.
+@@ -177,6 +177,8 @@ Module UnscopedNotations.
+ 
+   Notation "↑" := (shift) : subst_scope.
+ 
++  #[ global ]
++  Open Scope fscope.
+   #[ global ]
+   Open Scope subst_scope.
+ End UnscopedNotations.
