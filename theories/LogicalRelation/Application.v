@@ -18,7 +18,7 @@ Section AppTerm.
   Context {Γ t u nF F G l l' l''}
     (hΠ : [Γ ||-Π<l> tProd nF F G])
     {RF : [Γ ||-<l'> F]}
-    (Rt : [Γ ||-<l> t : tProd nF F G | LRPi' _ (normRedΠ0 hΠ)])
+    (Rt : [Γ ||-<l> t : tProd nF F G | LRPi' (normRedΠ0 hΠ)])
     (Ru : [Γ ||-<l'> u : F | RF])
     (RGu : [Γ ||-<l''> G[u..]]).
 
@@ -69,7 +69,7 @@ Lemma appcongTerm {Γ t t' u u' nF F G l l'}
    :
     [Γ ||-<l'> tApp t u ≅ tApp t' u' : G[u..] | RGu].
 Proof.
-  set (hΠ := invLRΠ RΠ); pose (RΠ' := LRPi' _ (normRedΠ0 hΠ)).
+  set (hΠ := invLRΠ RΠ); pose (RΠ' := LRPi' (normRedΠ0 hΠ)).
   assert [Γ ||-<l> t ≅ t' : tProd nF F G | RΠ'] as [Rt Rt' ? eqApp] by irrelevance.
   set (h := invLRΠ _) in hΠ.
   epose proof (e := redtywf_whnf (PiRedTyPack.red h) whnf_tProd); 

@@ -165,7 +165,7 @@ Lemma singleSubstΠ2 {Γ nF nF' F F' G G' t t' l lF lF'}
   [Γ ||-<lF> G[t..] ≅ G'[t'..] | RGt ].
 Proof.
   pose (hΠ := invLRΠ ΠFG).
-  assert (heq : [Γ ||-<l> tProd nF F G ≅ tProd nF' F' G' | LRPi' _ hΠ]) by irrelevance.
+  assert (heq : [Γ ||-<l> tProd nF F G ≅ tProd nF' F' G' | LRPi' hΠ]) by irrelevance.
   destruct hΠ as [??? red ??? domRed codRed codExt]; clear ΠFG ΠFGeq.
   assert (wfΓ : [|-Γ]) by gen_typing.
   destruct heq as [??? red' ? domRedEq codRedEq]; cbn in *.

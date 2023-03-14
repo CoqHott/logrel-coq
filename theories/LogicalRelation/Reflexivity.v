@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
-From LogRel.LogicalRelation Require Import Induction Escape.
+From LogRel Require Import Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation.
+From LogRel.LogicalRelation Require Import Induction.
 
 Set Universe Polymorphism.
 
@@ -26,6 +26,11 @@ Section Reflexivities.
     destruct lr as [[] lr].
     cbn in *.
     now eapply LRTyEqRefl.
+  Qed.
+
+  Lemma NeNfEqRefl {Γ k A} : [Γ ||-NeNf k : A] -> [Γ ||-NeNf k ≅ k : A].
+  Proof.
+    intros []; now econstructor.
   Qed.
 
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :

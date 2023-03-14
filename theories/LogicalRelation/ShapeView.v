@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Reflexivity.
 
 Set Universe Polymorphism.
@@ -29,44 +29,36 @@ Section ShapeViews.
   Arguments ShapeView Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
   !lrA !lrB.
 
+
+  Lemma red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA}
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
+    ∑ nf, [Γ |- A :⇒*: nf] × whnf nf.
+  Proof.
+    destruct lrA as [?? []| ??[] | ??[]]; eexists; split; tea; constructor; tea.
+  Defined.
+  
+  Lemma eqTy_red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA B}
+    (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
+    eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf] × whnf nf.
+  Proof.
+    destruct lrA as [?? []| ??[] | ??[]] ; intros []; eexists; split; tea; constructor; tea.
+  Defined.
+
+
+
   Lemma ShapeViewConv@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel@{i' j' k' l'} lB Γ B eqTyB redTmB eqTmB) :
     eqTyA B ->
     ShapeView@{i j k l i' j' k' l'} Γ A B lrA lrB.
   Proof.
-    destruct lrA.
-    - destruct lrB.
-      + constructor.
-      + intros [red]; destruct neA as [? red' ne ?] .
-        unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
-        3: inversion ne.
-        all: gen_typing.
-      + intros [red]. destruct ΠA as [??? red'].
-        unshelve epose proof (e:= redtywf_det _ _ _ _ _ _ red red').
-        1,2: gen_typing.
-        discriminate e.
-    - destruct lrB as [?? [??? red]| |].
-      + intros [? red' ne].
-        unshelve epose proof (redtywf_det _ _ _ _ _ _ red red'); subst.
-        3: inversion ne.
-        all: gen_typing.
-      + econstructor.
-      + intros [].
-        destruct ΠA ; cbn in *.
-        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
-        eapply whredty_det.
-        all: gen_typing.
-    - destruct lrB as [?? [??? red]| |].
-      + intros [??? red'].
-        unshelve epose proof (e:= redtywf_det _ _ _ _ _ _ red red').
-        1,2: gen_typing.
-        discriminate e.
-      + intros [].
-        destruct neA.
-        enough (ty = tProd na dom cod) as -> by (now eapply nePi).
-        eapply whredty_det.
-        all: gen_typing.
-      + now econstructor.
+    intros eqAB.
+    pose (x := eqTy_red_whnf lrA eqAB).
+    pose (y:= red_whnf lrB).
+    pose proof (h := redtywf_det _ _ _ _ (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
+    revert eqAB x y h. 
+    destruct lrA; destruct lrB; intros []; cbn; try easy; try discriminate.
+    2-3: intros e; rewrite e in ne; inversion ne.
+    all: intros e; destruct neA as [? ? ne]; rewrite <- e in ne; inversion ne.
   Qed.
 
   Corollary ShapeViewRefl@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}

@@ -29,26 +29,28 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
       [Γ |- a : A] ->
       termGenData Γ (tApp f a) (B[a..]). *)
 
+Ltac prod_splitter :=
+  solve [now repeat match goal with
+  | |- sigT _ => eexists
+  | |- prod _ _ => split 
+  | |- and3 _ _ _ => split
+  | |- and4 _ _ _ _ => split
+  end].
+
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
   ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
 Proof.
   induction 1.
-  1-4: eexists ; split ; [..|left ; reflexivity] ; cbn ;
-    solve [now repeat match goal with
-    | |- sigT _ => eexists
-    | |- prod _ _ => split 
-    | |- and3 _ _ _ => split
-    | |- and4 _ _ _ _ => split
-    end].
-  destruct IHTypingDecl as [A' [? [-> | ]]].
-  - eexists. split.
-    1: eassumption.
-    now right.
-  - eexists. split.
-    1: eassumption.
-    right.
-    now eapply TypeTrans.
+  1-4: eexists ; split ; [..|left ; reflexivity] ; cbn ; prod_splitter.
+  + destruct IHTypingDecl as [A' [? [-> | ]]].
+    - eexists. split.
+      1: eassumption.
+      now right.
+    - eexists. split.
+      1: eassumption.
+      right.
+      now eapply TypeTrans.
 Qed.
 
 Lemma prod_ty_inv Γ na A B :

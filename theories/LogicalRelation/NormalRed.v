@@ -27,7 +27,7 @@ Solve All Obligations with
 
 Definition normRedΠ {Γ nF F G l} (h : [Γ ||-<l> tProd nF F G])
   : [Γ ||-<l> tProd nF F G] :=
-  LRPi' _ (normRedΠ0 (invLRΠ h)).
+  LRPi' (normRedΠ0 (invLRΠ h)).
 
 
 #[program]

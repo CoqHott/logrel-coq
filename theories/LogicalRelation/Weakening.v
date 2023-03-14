@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import UntypedReduction Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
@@ -64,7 +64,7 @@ Section Weakenings.
     wkΠ ρ wfΔ ΠA ihdom ihcod.
 
   Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
-    wk ρ wfΔ (LRPi' l ΠA) = LRPi' l (wkΠ' ρ wfΔ ΠA).
+    wk ρ wfΔ (LRPi' ΠA) = LRPi' (wkΠ' ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
 
   Set Printing Primitive Projection Parameters.
@@ -83,7 +83,7 @@ Section Weakenings.
       exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.
       + change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
       + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
-        replace (tProd _ _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩) by now bsimpl.
+        replace (tProd _ _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩) by now bsimpl.
         eapply convty_wk; assumption.
       + intros; irrelevanceRefl.
         unshelve eapply ihdom; try eassumption; eapply domRed.
@@ -102,7 +102,7 @@ Section Weakenings.
     [Δ ||-Π u⟨ρ⟩ : A⟨ρ⟩ | PiRedTyPack.toPiRedTy ΠA' ].
   Proof.
     intros [t].
-    exists (t⟨ρ⟩); try change (tProd ?na _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩).
+    exists (t⟨ρ⟩); try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
     + destruct red; unshelve econstructor.
       eapply ty_wk; eassumption.
       eapply ty_wk; eassumption.
@@ -175,7 +175,7 @@ Section Weakenings.
       + now eapply convneu_wk.
     - intros ??? ΠA ihdom ihcod t u ? ρ ? [redL redR].
       rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
-      unshelve econstructor; try change (tProd ?na _ _) with ((PiRedTyPack.prod _ ΠA)⟨ρ⟩).
+      unshelve econstructor; try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
       1,2: now eapply wkΠTerm.
       + now eapply convtm_wk.
       + intros ? a ρ' ? ?. 

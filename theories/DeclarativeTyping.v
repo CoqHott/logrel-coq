@@ -231,7 +231,7 @@ Proof.
   intros PCon PTy PTm PTyEq PTmEq **.
   pose proof (_WfDeclInduction PCon PTy PTm PTyEq PTmEq) as H.
   destruct H as [?[?[? []]]].
-  1-23: assumption.
+  all: try (assumption ; fail).
   repeat (split;[assumption|]); assumption.
 Qed.
 

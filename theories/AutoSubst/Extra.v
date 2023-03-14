@@ -1,6 +1,6 @@
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils.
+From LogRel Require Import Utils BasicAst.
 
 (* Export UnscopedNotations.
 #[global] Open Scope subst_scope. *)
@@ -40,3 +40,12 @@ Arguments ren1 {_ _ _}%type_scope {Ren1} _ !_/.
 (* Ideally, we'd like Ren_term to not be there, and ren_term to be directly the Ren1 instance…*)
 Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.
+
+Notation arr A B := (tProd anDummy A B⟨↑⟩).
+Notation comp A f g := (tLambda anDummy A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
+Notation idterm A  := (tLambda anDummy A (tRel 0)).
+
+Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
+Proof.
+  now asimpl.
+Qed.

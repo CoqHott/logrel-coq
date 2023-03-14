@@ -56,14 +56,14 @@ Proof.
     1: exists n; tea; etransitivity; tea.
     split; tea; exists n n; tea; etransitivity; tea. 
   - intros ? ΠA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [f].
-    assert [Γ |-[ ta ] t :⇒*: u : PiRedTyPack.prod _ ΠA].
+    assert [Γ |-[ ta ] t :⇒*: u : PiRedTyPack.prod ΠA].
     1: {
       eapply redtmwf_conv; tea. 
       destruct ΠA as [??? []]. cbn in *.
       eapply convty_exp; tea.
       now apply redtywf_refl.
     }
-    unshelve refine (let rt : [LRPi' l ΠA | Γ ||- t : A] := _ in _).
+    unshelve refine (let rt : [LRPi' ΠA | Γ ||- t : A] := _ in _).
     1: exists f; tea; etransitivity; tea.
     split; tea; exists rt ru; tea.
     intros; cbn. apply eq; tea.

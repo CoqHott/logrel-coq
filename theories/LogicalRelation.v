@@ -383,6 +383,28 @@ Export PiRedTmEq(PiRedTmEq,Build_PiRedTmEq).
 
 Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
 
+Module NeNf.
+  Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} {Γ k A} : Set :=
+    {
+      ne : whne k ;
+      ty : [Γ |- k : A] ;
+      refl : [Γ |- k ~ k : A]
+    }.
+  Arguments RedTm {_ _ _}.
+
+  Record RedTmEq `{ta : tag} `{ConvNeuConv ta} {Γ k l A} : Set :=
+    {
+      neL : whne k;
+      neR : whne l;
+      conv : [Γ |- k ~ l : A]
+    }.
+
+  Arguments RedTmEq {_ _}.
+End NeNf.
+
+Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
+Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
+
 Unset Elimination Schemes.
 
 Inductive LR@{i j k} `{ta : tag}
@@ -406,34 +428,9 @@ Inductive LR@{i j k} `{ta : tag}
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
       (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
-  (* Removed, as it is provable (!), cf LR_embedding in LRInduction *)
-  (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
-      LR rec Γ A
-      (fun B   => [ rec l' l_ | Γ ||- A ≅ B     | H ])
-      (fun t   => [ rec l' l_ | Γ ||- t     : A | H ])
-      (fun t u => [ rec l' l_ | Γ ||- t ≅ u : A | H ]) *)
   .
 
 Set Elimination Schemes.
-
-(* Definition RelTy
-{l : TypeLevel} (R : forall l', l' << l -> LogRelKit)
-(Γ : context) (A : term) :=
-  LRAdequate Γ A (LR R).
-
-Notation "[ R | Γ ||-p A ]" := (RelTy R Γ A) (at level 0). *)
-(* 
-Definition RelTyEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
-(Γ : context) (A B : term) (H : RelTy R Γ A) :=
-  [ Γ ||-p A ≅ B | H ].
-
-Definition RelTe {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
-(Γ : context) (t A : term) (H : RelTy R Γ A) :=
-  [ Γ ||-p t : A | H ].
-
-Definition RelTeEq {l : TypeLevel} {R : forall l' ,l' << l -> LogRelKit}
-(Γ : context) (t u A : term) (H : RelTy R Γ A) :=
-  [ Γ ||-p t ≅ u : A | H ]. *)
 
 Section MoreDefs.
   Context `{ta : tag}
@@ -584,11 +581,11 @@ Section PiRedTyPack.
     toPiRedTyAd (pack _ ΠAad) = ΠAad.
   Proof. destruct ΠA; destruct ΠAad; reflexivity. Qed.
 
-  Definition LRPi'@{i j k l} l {Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l)
+  Definition LRPi'@{i j k l} {l Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l)
     : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRPi (LogRelRec l) _ (toPiRedTyAd ΠA)).
 
-  Definition prod@{i j k l} l {Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
+  Definition prod@{i j k l} {l Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
     tProd (na ΠA) (dom ΠA) (cod ΠA).
 
   Lemma whne_noΠ `{!RedTypeProperties} {Γ A} : [Γ ||-Πd A] -> whne A -> False.

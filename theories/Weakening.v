@@ -1,6 +1,6 @@
 From Coq Require Import Lia.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction.
 
 Inductive weakening : Set :=
   | _wk_empty : weakening
@@ -214,48 +214,6 @@ Proof.
       rewrite map_decl_lift.
       now econstructor.
   Qed.
-
-Section RenWhnf.
-
-  Variable (ρ : nat -> nat).
-
-  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: now econstructor.
-  Qed.
-
-  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-  
-  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-
-  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
-  Proof.
-    destruct 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-  
-  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-
-End RenWhnf.
-
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
 
 Section RenWlWhnf.
 

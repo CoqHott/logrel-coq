@@ -1,6 +1,6 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening.
+From LogRel Require Import Utils BasicAst Notations Context Untyped.
 
 Inductive OneRedAlg : term -> term -> Type :=
     | termBetaAlg {na A t u} :
@@ -36,10 +36,9 @@ Lemma whne_nored n u :
 Proof.
   intros ne red.
   induction red in ne |- *.
-  - inversion ne ; subst ; clear ne.
-    eapply neLambda.
-    eassumption.
-  - now inversion ne.
+  all: inversion ne ; subst ; clear ne.
+  - eapply neLambda. eassumption.
+  - auto.
 Qed.
 
 Lemma whnf_nored n u :
@@ -120,6 +119,50 @@ Proof.
   eapply red_whnf ; tea.
   now eapply whred_red_det.
 Qed.
+
+
+Section RenWhnf.
+
+  Variable (ρ : nat -> nat).
+
+  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: now econstructor.
+  Qed.
+
+  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    all: now eapply whne_ren.
+  Qed.
+  
+  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: try now econstructor.
+    econstructor; now eapply whne_ren.
+  Qed.
+
+  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    destruct 1 ; cbn.
+    all: try now econstructor.
+    econstructor; now eapply whne_ren.
+  Qed.
+  
+  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+End RenWhnf.
+
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
+
 
 Lemma oredalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
 [t ⇒ u] ->
