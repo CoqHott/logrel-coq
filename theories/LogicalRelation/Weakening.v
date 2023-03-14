@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import UntypedReduction Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import UntypedReduction Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance Weakening.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
@@ -33,10 +33,10 @@ Section Weakenings.
       irrelevance.
     }
     exists na (dom ⟨ρ⟩) cod' domRed' codRed'.
-    + unfold cod'; change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
+    + unfold cod'. rewrite prod_wk ; gen_typing.
     + gen_typing.
     + unfold cod'; set (ρ1 := wk_up na (dom) ρ); eapply wft_wk; gen_typing.
-    + unfold cod'; change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
+    + unfold cod'; rewrite prod_wk ;  gen_typing.
     + intros Δ' a b ρ' wfΔ' ???. 
       replace (cod'[b .: ρ' >> tRel]) with (cod[ b .: (ρ' ∘w ρ) >> tRel]) by (unfold cod'; now bsimpl).
       subst cod'; unshelve epose (codExt Δ' a b (ρ' ∘w ρ) wfΔ' _ _ _); irrelevance.
@@ -81,9 +81,9 @@ Section Weakenings.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
       exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.
-      + change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
-      + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
-        replace (tProd _ _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩) by now bsimpl.
+      + rewrite prod_wk;  gen_typing.
+      + rewrite prod_wk.
+        replace (tProd _ _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩) by (cbn; now rewrite prod_wk).
         eapply convty_wk; assumption.
       + intros; irrelevanceRefl.
         unshelve eapply ihdom; try eassumption; eapply domRed.
@@ -91,7 +91,7 @@ Section Weakenings.
         replace (_[_ .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
         irrelevance0.
         2: unshelve eapply codRed; [eassumption|]; subst X; irrelevance.
-        subst X; bsimpl; try rewrite scons_comp'; reflexivity.
+        subst X. bsimpl; tea; reflexivity.
   Qed.
     
 

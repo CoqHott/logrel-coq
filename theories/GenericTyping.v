@@ -294,94 +294,96 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
 
-Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
-Proof. now bsimpl. Qed.
-
-Lemma wk1_ren_on Γ nF F (H : term) : H⟨@wk1 Γ nF F⟩ = H⟨↑⟩.
-Proof. now bsimpl. Qed.
-  
-Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) nF F (H : term) : H⟨wk_up nF F ρ⟩ = H⟨upRen_term_term ρ⟩.
-Proof. now bsimpl. Qed.
-
-Lemma wk_up_wk1_ren_on Γ nF F nG G (H : term) : H⟨wk_up nF F (@wk1 Γ nG G)⟩ = H⟨upRen_term_term ↑⟩.
-Proof. now bsimpl. Qed.
-
 
 Ltac renToWk0 judg :=
   lazymatch judg with
   (** Type judgement, weakening *)
-  | [?X ,, vass ?nY ?Y |- ?T⟨↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] ?T⟨↑⟩ ] =>
     replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply (wk1_ren_on X nY Y T)
   (** Type judgement, lifting of weakening *)
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |-[_] _ ] =>
     replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] ?T⟨upRen_term_term ↑⟩ ] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
   (* Type judgement, lifting *)
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ] =>
-    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_wk1_ren_on
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |-[_] ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩  |-[_] ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
 
   (** Type conversion judgement, weakening *)
-  | [?X ,, vass ?nY ?Y |- ?T⟨↑⟩ ≅ _ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] ?T⟨↑⟩ ≅ _ ] =>
     replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply (wk1_ren_on X nY Y T)
-  | [?X ,, vass ?nY ?Y |- _ ≅ ?T⟨↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] _ ≅ ?T⟨↑⟩ ] =>
     replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply (wk1_ren_on X nY Y T)
   (** Type conversion judgement, lifting of weakening *)
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ ≅ _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |-[_] _ ≅ _ ] =>
     replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ≅ _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] ?T⟨upRen_term_term ↑⟩ ≅ _ ] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- _ ≅ ?T⟨upRen_term_term ↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] _ ≅ ?T⟨upRen_term_term ↑⟩ ] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
   (* Type conversion judgement, lifting *)
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ≅ _ ] =>
-    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |- _ ≅ ?T⟨upRen_term_term _⟩ ] =>
-    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_wk1_ren_on
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |-[_] ?T⟨upRen_term_term _⟩ ≅ _ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩  |-[_] _ ≅ ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩  |-[_] ?T⟨upRen_term_term _⟩ ≅ _ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩  |-[_] _ ≅ ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
 
   (** Term judgement, weakening *)
-  | [?X ,, vass ?nY ?Y |- _ : ?T⟨↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] _ : ?T⟨↑⟩ ] =>
     replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y |- ?t⟨↑⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] ?t⟨↑⟩ : _ ] =>
     replace t⟨↑⟩ with t⟨@wk1 X nY Y⟩ by apply wk1_ren_on
   (** Term judgement, lifting of weakening *)
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ : _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |-[_] _ : _ ] =>
     replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- _ : ?T⟨upRen_term_term ↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] _ : ?T⟨upRen_term_term ↑⟩ ] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- ?t⟨upRen_term_term ↑⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] ?t⟨upRen_term_term ↑⟩ : _ ] =>
     replace t⟨upRen_term_term ↑⟩ with t⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
   (** Term judgement, lifting *)
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- _ : ?T⟨upRen_term_term _⟩ ] =>
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |-[_] _ : ?T⟨upRen_term_term _⟩ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- ?t⟨upRen_term_term _⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |-[_] ?t⟨upRen_term_term _⟩ : _ ] =>
+    replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩ |-[_] _ : ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩ |-[_] ?t⟨upRen_term_term _⟩ : _ ] =>
     replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
 
   (** Term conversion judgement, weakening *)
-  | [?X ,, vass ?nY ?Y |- _ ≅ _ : ?T⟨↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] _ ≅ _ : ?T⟨↑⟩ ] =>
     replace T⟨↑⟩ with T⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y |- ?t⟨↑⟩ ≅ _ : _ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] ?t⟨↑⟩ ≅ _ : _ ] =>
     replace t⟨↑⟩ with t⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y |- _ ≅ ?t⟨↑⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y |-[_] _ ≅ ?t⟨↑⟩ : _ ] =>
     replace t⟨↑⟩ with t⟨@wk1 X nY Y⟩ by apply wk1_ren_on
   (** Term conversion judgement, lifting of weakening *)
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |- _ ≅ _ : _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨↑⟩ |-[_] _ ≅ _ : _ ] =>
     replace Z⟨↑⟩ with Z⟨@wk1 X nY Y⟩ by apply wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- _ ≅ _ : ?T⟨upRen_term_term ↑⟩ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] _ ≅ _ : ?T⟨upRen_term_term ↑⟩ ] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- ?t⟨upRen_term_term ↑⟩ ≅ _ : _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] ?t⟨upRen_term_term ↑⟩ ≅ _ : _ ] =>
     replace t⟨upRen_term_term ↑⟩ with t⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |- _ ≅ ?t⟨upRen_term_term ↑⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y ,, vass ?nZ ?Z⟨_⟩ |-[_] _ ≅ ?t⟨upRen_term_term ↑⟩ : _ ] =>
     replace t⟨upRen_term_term ↑⟩ with t⟨wk_up nZ Z (@wk1 X nY Y)⟩ by apply wk_up_wk1_ren_on
   (** Term conversion judgement, lifting *)
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- _ ≅ _ : ?T⟨upRen_term_term _⟩ ] =>
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |-[_] _ ≅ _ : ?T⟨upRen_term_term _⟩ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- ?t⟨upRen_term_term _⟩ ≅ _ : _ ] =>
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |-[_] ?t⟨upRen_term_term _⟩ ≅ _ : _ ] =>
     replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
-  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |- _ ≅ ?t⟨upRen_term_term _⟩ : _ ] =>
+  | [?X ,, vass ?nY ?Y⟨wk_to_ren ?r⟩ |-[_] _ ≅ ?t⟨upRen_term_term _⟩ : _ ] =>
     replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
-
-
+  | [?X ,, vass ?nY ?Y⟨?r⟩ |-[_] _ ≅ _ : ?T⟨upRen_term_term _⟩ ] =>
+    replace T⟨upRen_term_term r⟩ with T⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩ |-[_] ?t⟨upRen_term_term _⟩ ≅ _ : _ ] =>
+    replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
+  | [?X ,, vass ?nY ?Y⟨?r⟩ |-[_] _ ≅ ?t⟨upRen_term_term _⟩ : _ ] =>
+    replace t⟨upRen_term_term r⟩ with t⟨wk_up nY Y r⟩ by apply wk_up_ren_on
   end.
 
 Ltac renToWk :=
@@ -553,7 +555,6 @@ Section GenericConsequences.
     - cbn. eapply convtm_convneu. eapply convneu_var.
       now refine (ty_var _ (in_here _ _)).
   Qed.
-  
 
   Lemma ty_comp {Γ A B C f g} :
     [Γ |- A] ->
@@ -567,15 +568,15 @@ Section GenericConsequences.
     eapply ty_lam; tea.
     assert [|- Γ,, vass anDummy A] by gen_typing.
     pose (r := @wk1 Γ anDummy A).
-    eapply ty_simple_app; renToWk.
+    eapply ty_simple_app; renToWk; fold r.
     - unshelve eapply (wft_wk _ _ tyB) ; tea. 
     - now eapply wft_wk.
-    - replace (arr _ _) with (arr B C)⟨r⟩ by (unfold r; now bsimpl).
+    - replace (arr _ _) with (arr B C)⟨r⟩ by now rewrite <- arr_wk.
       now eapply ty_wk.
     - eapply ty_simple_app; renToWk.
       + unshelve eapply (wft_wk _ _ tyA) ; tea. 
       + now eapply wft_wk.
-      + replace (arr _ _) with (arr A B)⟨r⟩ by (unfold r; now bsimpl).
+      + replace (arr _ _) with (arr A B)⟨r⟩ by now rewrite arr_wk.
         now eapply ty_wk.
       + unfold r; rewrite wk1_ren_on; now refine (ty_var _ (in_here _ _)).
   Qed.

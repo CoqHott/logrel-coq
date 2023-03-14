@@ -28,7 +28,7 @@ Section TypingWk.
     - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      eapply IHB with (ρ := wk_up _ _ ρ).
+      renToWk. eapply IHB.
       now constructor.
     - intros * _ IHA ? * ?.
       econstructor.
@@ -42,14 +42,14 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      eapply IHB with (ρ := wk_up _ _ ρ).
+      renToWk; eapply IHB.
       econstructor ; tea.
       econstructor.
       now eapply IHA.
     - intros * _ IHA _ IHt ? ρ ?.
       econstructor.
       1: now eapply IHA.
-      eapply IHt with (ρ := wk_up _ _ ρ).
+      renToWk. eapply IHt.
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHf _ IHu ? ρ ?.
@@ -70,7 +70,7 @@ Section TypingWk.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply IHBB' with (ρ := wk_up _ _ ρ).
+      + renToWk. eapply IHBB'. 
         econstructor ; tea.
         now eapply IHA.
     - intros * _ IHA ? ρ ?.
@@ -90,18 +90,18 @@ Section TypingWk.
       eapply convtm_meta_conv.
       1: econstructor.
       + now eapply IHA.
-      + eapply IHt with (ρ := wk_up _ _ ρ).
+      + renToWk; eapply IHt.
         econstructor ; tea.
         now eapply IHA.
       + now eapply IHu.
-      + now asimpl.
+      + now bsimpl.
       + now asimpl. 
     - intros Γ ? ? A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply IHBB' with (ρ := wk_up _ _ ρ).
+      + renToWk. eapply IHBB'.
         pose (IHA _ ρ H).
         econstructor; tea; now econstructor.
     - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
@@ -118,12 +118,8 @@ Section TypingWk.
       cbn.
       econstructor.
       1-3: easy.
-      specialize (IHe _ (wk_up _ _ ρ)).
-      cbn in IHe.
-      bsimpl.
-      repeat rewrite renRen_term in IHe.
-      cbn in * ; refold.
-      eapply IHe.
+      do 2 erewrite app_eta_wk.
+      renToWk. eapply IHe.
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHt ? ρ ?.
@@ -319,11 +315,11 @@ Proof.
     eapply oredtm_meta_conv.
     1: econstructor.
     + now eapply typing_wk.
-    + eapply typing_wk with (ρ := wk_up _ _ ρ) ; tea.
+    + renToWk. eapply typing_wk; tea.
       econstructor ; tea.
       now eapply typing_wk.
     + now eapply typing_wk.
-    + now asimpl.
+    + now bsimpl.
     + now asimpl. 
   - cbn in *.
     eapply oredtm_meta_conv.
