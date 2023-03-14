@@ -851,7 +851,8 @@ Section GenericConsequences.
 
 End GenericConsequences.
 
-(** TODODOC what is this for?*)
+(** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
+so that we can use stability by weakening. *)
 
 #[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red | 2 : gen_typing.
 #[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.

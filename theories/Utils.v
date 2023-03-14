@@ -15,7 +15,7 @@ Notation "`=1`" := (pointwise_relation _ Logic.eq) (at level 80).
 Infix "=1" := (pointwise_relation _ Logic.eq) (at level 70).
 Notation "`=2`" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 80).
 Infix "=2" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 70).
-Infix "<~>" := iffT (at level 90).
+Infix "<≈>" := iffT (at level 90).
 
 (** Since we work a lot with type-level propositions,
 we override the notation for negation from the
