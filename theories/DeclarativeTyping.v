@@ -1,7 +1,7 @@
 From Coq Require Import ssreflect.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening.
 
 Set Primitive Projections.
 
@@ -167,7 +167,8 @@ Section Definitions.
 
 End Definitions.
 
-Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u).
+
+Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u) : declarative_scope.
 Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
 Module DeclarativeTypingData.
@@ -181,6 +182,7 @@ Module DeclarativeTypingData.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvTermDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
+  #[export] Instance OneStepRedTerm_Decl : OneStepRedTerm de := OneRedTermDecl.
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 
   Ltac fold_decl :=
@@ -244,3 +246,50 @@ Definition WfDeclInductionConcl :=
 End InductionPrinciples.
 
 Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
+
+(* Type erasure *)
+Section TypeErasure.
+  Import DeclarativeTypingData.
+
+
+Lemma oredtmdecl_ored Γ t u A : 
+  [Γ |- t ⇒ u : A] ->
+  [t ⇒ u].
+Proof.
+  induction 1.
+  1-2: now econstructor.
+  eassumption.
+Qed.
+
+Lemma redtmdecl_red Γ t u A : 
+  [Γ |- t ⇒* u : A] ->
+  [t ⇒* u].
+Proof.
+  induction 1.
+  - now econstructor.
+  - econstructor ; eauto using oredtmdecl_ored.
+    reflexivity.
+  - now etransitivity.
+Qed.
+
+Lemma oredtydecl_ored Γ A B : 
+  [Γ |- A ⇒ B] ->
+  [A ⇒ B].
+Proof.
+  induction 1.
+  now eapply oredtmdecl_ored.
+Qed.
+
+Lemma redtydecl_red Γ A B : 
+  [Γ |- A ⇒* B] ->
+  [A ⇒* B].
+Proof.
+  induction 1.
+  - now econstructor.
+  - econstructor ; eauto using oredtydecl_ored.
+    reflexivity.
+  - now etransitivity.
+Qed.
+
+End TypeErasure.
+ 

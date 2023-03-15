@@ -119,6 +119,13 @@ Record RedTypeBun Γ A B :=
   bun_red_ty : [A ⇒* B] ;
 }.
 
+Record OneStepRedTermBun Γ A t u :=
+{
+  bun_osred_tm_ctx : [|-[de] Γ] ;
+  bun_osred_tm_tm : [Γ |-[de] t : A] ;
+  bun_osred_tm : [t ⇒ u]
+}.
+
 Record RedTermBun Γ A t u :=
 {
   bun_red_tm_ctx : [|-[de] Γ] ;
@@ -142,6 +149,7 @@ Module BundledTypingData.
   #[export] Instance ConvNeuRed_Bundle : ConvNeuRed bn := ConvNeuRedBun.
   #[export] Instance ConvNeuConv_Bundle : ConvNeuConv bn := ConvNeuConvBun.
   #[export] Instance RedType_Bundle : RedType bn := RedTypeBun.
+  #[export] Instance OneStepRedTerm_Bundle : OneStepRedTerm bn := OneStepRedTermBun.
   #[export] Instance RedTerm_Bundle : RedTerm bn := RedTermBun.
 
   Ltac fold_bun :=
@@ -159,6 +167,7 @@ Module BundledTypingData.
     change ConvNeuRedBun with (conv_neu_red (ta := bn)) in *;
     change ConvNeuConvBun with (conv_neu_conv (ta := bn)) in *;
     change RedTypeBun with (red_ty (ta := bn)) in * ;
+    change OneStepRedTermBun with (osred_tm (ta := bn)) in * ;
     change RedTermBun with (red_tm (ta := bn)) in *.
 
 End BundledTypingData.
@@ -174,6 +183,7 @@ Module BundledIntermediateData.
   #[export] Instance ConvTerm_BundleInt : ConvTerm bni := ConvTermBun.
   #[export] Instance ConvNeuConv_BundleInt : ConvNeuConv bni := ConvNeuConvBun.
   #[export] Instance RedType_BundleInt : RedType bni := RedTypeBun.
+  #[export] Instance OneStepRedTerm_BundleInt : OneStepRedTerm bni := OneStepRedTermBun.
   #[export] Instance RedTerm_BundleInt : RedTerm bni := RedTermBun.
 
   Ltac unfold_bni :=
@@ -184,6 +194,7 @@ Module BundledIntermediateData.
     change (conv_term (ta := bni)) with (conv_term (ta := bn)) in * ;
     change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in *;
     change (red_ty (ta := bni)) with (red_ty (ta := bn)) in * ;
+    change (osred_tm (ta := bni)) with (osred_tm (ta := bn)) in *;
     change (red_tm (ta := bni)) with (red_tm (ta := bn)) in *.
 
 End BundledIntermediateData.

@@ -367,47 +367,6 @@ Proof.
   - now econstructor.
 Qed.
 
-(* Type erasure *)
-
-Lemma oredtmdecl_ored Γ t u A : 
-  [Γ |- t ⇒ u : A] ->
-  [t ⇒ u].
-Proof.
-  induction 1.
-  1-2: now econstructor.
-  eassumption.
-Qed.
-
-Lemma redtmdecl_red Γ t u A : 
-  [Γ |- t ⇒* u : A] ->
-  [t ⇒* u].
-Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor ; eauto using oredtmdecl_ored.
-    reflexivity.
-  - now etransitivity.
-Qed.
-
-Lemma oredtydecl_ored Γ A B : 
-  [Γ |- A ⇒ B] ->
-  [A ⇒ B].
-Proof.
-  induction 1.
-  now eapply oredtmdecl_ored.
-Qed.
-
-Lemma redtydecl_red Γ A B : 
-  [Γ |- A ⇒* B] ->
-  [A ⇒* B].
-Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor ; eauto using oredtydecl_ored.
-    reflexivity.
-  - now etransitivity.
-Qed.
-
 (* Lifting rules from ⇒ to ⇒* *)
 
 Lemma redtmdecl_app Γ na A B f f' t :
@@ -551,16 +510,18 @@ Module DeclarativeTypingProperties.
   - intros.
     now econstructor.
   Qed.
+
+  #[export, refine] Instance OneStepRedTermDeclProperties : OneStepRedTermProperties (ta := de) := {}.
+  Proof.
+    intros. now constructor.
+  Qed.
   
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
   Proof.
   - intros.
     now eapply redtmdecl_wk.
   - easy. 
-  - intros.
-    now eapply redtmdecl_red.
-  - intros.
-    now do 2 econstructor.
+  - intros. now constructor.
   - intros.
     now eapply redtmdecl_app.
   - intros.
@@ -575,13 +536,11 @@ Module DeclarativeTypingProperties.
     now eapply redtydecl_wk.
   - easy.
   - intros.
-    now eapply redtydecl_red.
-  - intros.
     now eapply redtydecl_term.
   - intros.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

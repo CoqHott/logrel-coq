@@ -649,6 +649,15 @@ Module AlgorithmicConvProperties.
       eassumption.
   Qed.
 
+  #[export, refine] Instance OneStepRedTermAlgProperties :
+    OneStepRedTermProperties (ta := bn) := {}.
+  Proof.
+    intros_bn; econstructor.
+    1: econstructor. 
+    2,3: now eapply inf_conv_decl. 
+    now eapply typing_sound.
+  Qed.
+
   #[export, refine] Instance RedTermAlgProperties :
     RedTermProperties (ta := bn) := {}.
   Proof.
@@ -657,13 +666,7 @@ Module AlgorithmicConvProperties.
       now apply credalg_wk.
     - intros * [].
       now eapply subject_reduction. 
-    - now intros * [].
-    - intros_bn.
-      2: now do 2 econstructor.
-      econstructor ; [econstructor|..].
-      + now eapply typing_sound.
-      + eauto using inf_conv_decl.
-      + eauto using inf_conv_decl.  
+    - intros * [] ; constructor; tea; now econstructor. 
     - intros_bn.
       + econstructor ; tea.
         eauto using inf_conv_decl.
@@ -689,7 +692,6 @@ Module AlgorithmicConvProperties.
       now apply credalg_wk.
     - intros * [].
       now eapply subject_reduction_type. 
-    - now intros * [].
     - intros_bn.
       now econstructor.
     - intros_bn.
@@ -814,6 +816,16 @@ Module IntermediateTypingProperties.
     - gen_typing.
   Qed.
 
+  #[export, refine] Instance OneStepRedTermIntProperties :
+    OneStepRedTermProperties (ta := bni) := {}.
+  Proof.
+    intros; split.
+    + boundary.
+    + econstructor ; tea.
+      now econstructor.
+    + do 2 econstructor.
+  Qed.
+
   #[export, refine] Instance RedTermIntProperties :
     RedTermProperties (ta := bni) := {}.
   Proof.
@@ -822,13 +834,7 @@ Module IntermediateTypingProperties.
       apply redtm_wk ; tea.
       now split.
     - eauto using (redtm_sound (ta := bn)).
-    - gen_typing.
-    - intros.
-      split.
-      + boundary.
-      + econstructor ; tea.
-        now econstructor.
-      + do 2 econstructor.
+    - intros * []; constructor; tea; now econstructor.
     - intros * [] ?.
       split.
       + boundary.
@@ -856,7 +862,6 @@ Module IntermediateTypingProperties.
       apply redty_wk ; tea.
       now split.
     - eauto using (redty_sound (ta := bn)).
-    - gen_typing.
     - intros * [].
       split.
       + boundary.
@@ -870,6 +875,6 @@ Module IntermediateTypingProperties.
     - gen_typing.
   Qed.
 
-  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.

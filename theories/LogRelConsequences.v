@@ -755,7 +755,7 @@ Proof.
   - apply termGen' in Hty as (?&((?&?&?&[->])&Heq)).
     econstructor ; tea.
     econstructor.
-    1: easy.
+    1: now eapply IHHred.
     refold ; gen_typing.
 Qed.
 

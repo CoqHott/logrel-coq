@@ -24,13 +24,14 @@ Section Escapes.
     now eapply escape.
   Qed.
 
+
   Definition escapeEq {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) {B} :
     eqTy B ->
     [Γ |- A ≅ B].
   Proof.
     induction lr as [ ? ? [] | ? ? [] | ? ? [] IHdom IHcod].
-    + intros []. 
+    + intros [].
       gen_typing.
     + intros [].
       cbn in *.

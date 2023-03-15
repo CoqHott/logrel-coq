@@ -11,6 +11,10 @@ Variant tag := | de | al | bn | bni.
 Declare Scope typing_scope.
 Delimit Scope typing_scope with ty.
 
+Declare Scope declarative_scope.
+Delimit Scope declarative_scope with de.
+Close Scope declarative_scope.
+
 Open Scope typing_scope.
 
 (** Typing *)
@@ -91,6 +95,7 @@ Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu_conv (ta := ta) Γ A n n')
 
 (** Reductions *)
 Class RedType (ta : tag) := red_ty : context -> term -> term -> Set.
+Class OneStepRedTerm (ta : tag) := osred_tm : context -> term -> term -> term -> Set.
 Class RedTerm (ta : tag) := red_tm : context -> term -> term -> term -> Set.
 
 (* Term t untyped one-step weak-head reduces to term t' *)
@@ -101,7 +106,8 @@ Reserved Notation "[ t ⇒* t' ]" (at level 0, t, t' at level 50).
 (* Type A one-step weak-head reduces to type B in Γ *)
 Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0, Γ, A, B at level 50).
 (* Term t one-step weak-head reduces to term u at type A in Γ *)
-Reserved Notation "[ Γ |- t ⇒ u : A ]" (at level 0, Γ, t, u, A at level 50).
+Notation "[ Γ |- t ⇒ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta ] t ⇒ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
 (* Set A multi-step weak-head reduces to type B in Γ *)
 Notation "[ Γ |- A ⇒* B ]" := (red_ty Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ⇒* B ]" := (red_ty (ta := ta) Γ A B)

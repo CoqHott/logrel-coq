@@ -91,9 +91,10 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
   Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
   Build_TermConvWf Build_TypeRedWf Build_TermRedWf
   well_sempty well_scons conv_sempty conv_scons
+  tyr_wf_l tyr_wf_r tyr_wf_red tmr_wf_l tmr_wf_r tmr_wf_red
   : gen_typing.
 
-#[export] Hint Extern 1 =>
+(* #[export] Hint Extern 1 =>
   match goal with
     | H : [ _ |- _ ▹h _ ] |- _ => destruct H
     |  H : [ _ |- _ ↘ _ ] |- _ => destruct H
@@ -103,7 +104,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
     |  H : [ _ |- _ :⇒*: _ ] |- _ => destruct H
     |  H : [ _ |- _ :⇒*: _ : _ ] |- _ => destruct H
   end
-  : gen_typing.
+  : gen_typing. *)
 
 Section GenericTyping.
 
@@ -111,7 +112,7 @@ Section GenericTyping.
 
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta}.
+    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
   {
@@ -232,8 +233,6 @@ Section GenericTyping.
     redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩] ;
     redty_sound {Γ A B} : [Γ |- A ⇒* B] -> [Γ |-[de] A ⇒* B] ;
-    redty_red {Γ A B} :
-      [Γ |- A ⇒* B] -> [ A ⇒* B ] ;
     redty_term {Γ A B} :
       [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ] ;
     redty_refl {Γ A} :
@@ -243,19 +242,31 @@ Section GenericTyping.
       Transitive (red_ty Γ) ;
   }.
 
+  Class OneStepRedTermProperties :=
+  {
+    (* osredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] ;
+    osredtm_sound {Γ A t u} : [Γ |- t ⇒ u : A] -> [Γ |-[de] t ⇒ u : A] ; *)
+    osredtm_beta {Γ na A B t u} :
+      [ Γ |- A ] ->
+      [ Γ ,, vass na A |- t : B ] ->
+      [ Γ |- u : A ] ->
+      [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] : B[u..] ] ;
+    (* osredtm_conv {Γ t u A A'} : 
+      [Γ |- t ⇒* u : A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- t ⇒* u : A'] ; *)
+  }.
+
+
   Class RedTermProperties :=
   {
     redtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩] ;
     redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |-[de] t ⇒* u : A] ;
-    redtm_red {Γ t u A} : 
-      [Γ |- t ⇒* u : A] ->
-      [t ⇒* u] ;
-    redtm_beta {Γ na A B t u} :
-      [ Γ |- A ] ->
-      [ Γ ,, vass na A |- t : B ] ->
-      [ Γ |- u : A ] ->
-      [ Γ |- tApp (tLambda na A t) u ⇒* t[u..] : B[u..] ] ;
+    redtm_one_step {Γ A t u} :
+      [ Γ |- t ⇒ u : A ] ->
+      [ Γ |- t ⇒* u : A ] ;
     redtm_app {Γ na A B f f' t} :
       [ Γ |- f ⇒* f' : tProd na A B ] ->
       [ Γ |- t : A ] ->
@@ -276,7 +287,7 @@ End GenericTyping.
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
-  `(RedType ta) `(RedTerm ta) :=
+  `(RedType ta) `(OneStepRedTerm ta) `(RedTerm ta) :=
 {
   wfc_prop :> WfContextProperties ;
   wfty_prop :> WfTypeProperties ;
@@ -285,11 +296,12 @@ Class GenericTypingProperties `(ta : tag)
   convtm_prop :> ConvTermProperties ;
   convne_prop :> ConvNeuProperties ;
   redty_prop :> RedTypeProperties ;
+  osredtm_prop :> OneStepRedTermProperties ;
   redtm_prop :> RedTermProperties ;
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app redty_wk redty_red redty_term redty_refl redtm_wk redtm_red redtm_beta redtm_app redtm_refl | 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app| 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
@@ -393,17 +405,68 @@ Ltac renToWk :=
   end.
 
 
-
-
 Section GenericConsequences.
   Context `{ta : tag}
   `{!WfContext ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-  `{!RedType ta} `{!RedTerm ta}
+  `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta}
   `{!WfContextProperties} `{!WfTypeProperties}
   `{!TypingProperties} `{!ConvTypeProperties}
   `{!ConvTermProperties} `{!ConvNeuProperties}
-  `{!RedTypeProperties} `{!RedTermProperties}.
+  `{!RedTypeProperties} `{!OneStepRedTermProperties}
+  `{!RedTermProperties}.
+
+  #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl | 2 : gen_typing.
+  #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
+
+  Lemma redty_red {Γ A B} :
+      [Γ |- A ⇒* B] -> [ A ⇒* B ].
+  Proof.
+    intros ?%redty_sound. 
+    now eapply redtydecl_red. 
+  Qed.
+
+  Lemma redtm_red {Γ t u A} : 
+      [Γ |- t ⇒* u : A] ->
+      [t ⇒* u].
+  Proof.
+    intros ?%redtm_sound.
+    now eapply redtmdecl_red.
+  Qed.
+
+  Lemma redtm_beta {Γ na A B t u} :
+      [ Γ |- A ] ->
+      [ Γ ,, vass na A |- t : B ] ->
+      [ Γ |- u : A ] ->
+      [ Γ |- tApp (tLambda na A t) u ⇒* t[u..] : B[u..] ].
+  Proof.
+    intros; eapply redtm_one_step; 
+    now eapply osredtm_beta.
+  Qed.
+
+  #[local] Hint Resolve redty_red  redtm_red redtm_beta | 2 : gen_typing.
+
+  Lemma redtywf_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A :⇒*: B] -> [Δ |- A⟨ρ⟩ :⇒*: B⟨ρ⟩].
+  Proof.
+    intros ? []; constructor; gen_typing.
+  Qed.
+
+  Lemma redtywf_sound {Γ A B} : [Γ |- A :⇒*: B] -> TypeRedClosure Γ A B.
+  Proof.
+    intros []; now eapply redty_sound.
+  Qed.
+
+  Lemma redtywf_red {Γ A B} : [Γ |- A :⇒*: B] -> [A ⇒* B].
+  Proof.
+    intros []; now eapply redty_red.
+  Qed.
+  
+  Lemma redtywf_term {Γ A B} :
+      [ Γ |- A :⇒*: B : U] -> [Γ |- A :⇒*: B ].
+  Proof.
+    intros []; constructor; gen_typing.
+  Qed.
 
   Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⇒*: A].
   Proof.  constructor; gen_typing.  Qed.
@@ -421,10 +484,9 @@ Section GenericConsequences.
     @RedTypeProperties _ _ _ TypeRedWf TermRedWf.
   Proof.
     constructor.
-    - intros ?????? []; constructor; gen_typing.
-    - intros ??? []. now apply redty_sound.
-    - intros ??? []; gen_typing.
-    - intros ??? []; constructor; gen_typing.
+    - intros; now eapply redtywf_wk.
+    - intros; now eapply redtywf_sound.
+    - intros; now eapply redtywf_term.
     - intros; now apply redtywf_refl.
     - intros; apply redtywf_trans.
   Qed.
@@ -436,6 +498,10 @@ Section GenericConsequences.
   Definition redtmwf_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t :⇒*: u : A] -> [Δ |- t⟨ρ⟩ :⇒*: u⟨ρ⟩ : A⟨ρ⟩].
   Proof.  intros ? []; constructor; gen_typing. Qed.
+
+  Definition redtmwf_sound {Γ t u A} :
+    [Γ |- t :⇒*: u : A] ->  TermRedClosure Γ A t u.
+  Proof. intros []; now eapply redtm_sound. Qed.
 
   Definition redtmwf_red {Γ t u A} :
     [Γ |- t :⇒*: u : A] -> [t ⇒* u].
@@ -743,5 +809,7 @@ Section GenericConsequences.
 End GenericConsequences.
 
 
+#[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red | 2 : gen_typing.
+#[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.
 
   

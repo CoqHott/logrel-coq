@@ -96,6 +96,6 @@ Module AlgorithmicTypingProperties.
       now eapply conv_sound in bun_conv_ty.
   Qed.
 
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
