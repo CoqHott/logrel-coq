@@ -1,18 +1,15 @@
+(** * LogRel.AlgorithmicConvProperties: properties of algorithmic conversion. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping.
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
-Lemma conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].
-Proof.
-  intros Hconv **.
-  etransitivity ; tea.
-  symmetry.
-  eapply RedConvTyC, subject_reduction_type ; tea.
-  boundary.
-Qed.
+(** ** Stability of algorithmic conversion by context and type change *)
 
+(** If the input context and input type (when there is one) are changed to convertible
+ones, algorithmic conversion still holds, possibly with a different output type
+(when there is one). *)
 Section AlgoConvConv.
 
   Lemma in_ctx_conv_r Γ' Γ n decl :
@@ -26,7 +23,10 @@ Section AlgoConvConv.
   1: eexists ; split.
   - now econstructor.
   - cbn.
-    eapply typing_shift ; boundary.
+    renToWk.
+    eapply typing_wk ; tea.
+    econstructor.
+    all: now boundary.
   - destruct d as [? d].
     edestruct IHHin as [[? d'] []].
     1: eassumption.
@@ -34,7 +34,10 @@ Section AlgoConvConv.
     econstructor ; split.
     1: now econstructor.
     cbn.
-    eapply typing_shift ; boundary.
+    renToWk.
+    eapply typing_wk ; tea.
+    econstructor.
+    all: now boundary.
   Qed.
 
   Lemma in_ctx_conv_l Γ' Γ n decl' :
@@ -182,6 +185,8 @@ Section AlgoConvConv.
 
 End AlgoConvConv.
 
+(** ** Lifting of algorithmic conversion from terms at the universe to types *)
+
 Section TermTypeConv.
 
   Let PTyEq (Γ : context) (A B : term) := True.
@@ -212,6 +217,8 @@ Section TermTypeConv.
   Qed.
   
 End TermTypeConv.
+
+(** ** Symmetry *)
 
 Section Symmetry.
 
@@ -319,7 +326,9 @@ Section Symmetry.
   Qed.
   
 End Symmetry.
-  
+
+(** ** Transitivity *)
+
 Section Transitivity.
 
   Let PTyEq (Γ : context) (A B : term) := forall Δ C,
@@ -453,16 +462,7 @@ Section Transitivity.
 
 End Transitivity.
 
-Lemma inf_conv_decl Γ t A A' :
-  [Γ |-[al] t ▹ A] ->
-  [Γ |-[de] A ≅ A'] ->
-  [Γ |-[de] t : A'].
-Proof.
-  intros Ht Hconv.
-  apply typing_sound in Ht.
-  2: boundary.
-  now econstructor.
-Qed.
+(** ** Instances *)
 
 Module AlgorithmicConvProperties.
   Export AlgorithmicTypingData.

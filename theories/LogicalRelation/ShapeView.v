@@ -1,11 +1,17 @@
+(** * LogRel.LogicalRelation.ShapeView: relating reducibility witnesses of reducibly convertible types.*)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context Untyped UntypedReduction GenericTyping LogicalRelation.
+From LogRel Require Import Utils BasicAst Context Notations NormalForms UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Reflexivity.
 
 Set Universe Polymorphism.
 
 Section ShapeViews.
   Context `{GenericTypingProperties}.
+
+(** ** Definition *)
+
+(** A shape view is inhabited exactly on the diagonal, ie when the two types are reducible
+  in the same way. *)
 
   Definition ShapeView@{i j k l i' j' k' l'} Γ
     A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
@@ -17,14 +23,15 @@ Section ShapeViews.
       | _, _ => False
     end.
 
-    (* | SVU (UredA UredB : [ Γ ||-U l]):
-          ShapeView l Γ U U (LRU (LogRelRec l) UredA) (LRU (LogRelRec l) UredB)
+  Arguments ShapeView Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
+  !lrA !lrB.
 
-      | SVne {A B} neA neB :
-          ShapeView l Γ A B (LRne (LogRelRec l) neA) (LRne (LogRelRec l) neB)
+(** ** The main property *)
 
-      | SVPi {A B} ΠA ΠB ΠAad ΠBad:
-          ShapeView l Γ A B (LRPi (LogRelRec l) ΠA ΠAad) (LRPi (LogRelRec l) ΠB ΠBad). *)
+(** We show that two reducibly convertible types must have the same shape view. Said otherwise,
+if two reducible types are reducibly convertible, then they must be reducible in the same way.
+This lets us relate different reducibility proofs when we have multiple such proofs, typically
+when showing symmetry or transitivity of the logical relation. *)
 
   Arguments ShapeView Γ A {lA eqTyA redTmA redTyA} B {lB eqTyB redTmB redTyB}
   !lrA !lrB.
@@ -60,6 +67,8 @@ Section ShapeViews.
     2-3: intros e; rewrite e in ne; inversion ne.
     all: intros e; destruct neA as [? ? ne]; rewrite <- e in ne; inversion ne.
   Qed.
+
+(** ** More properties *)
 
   Corollary ShapeViewRefl@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i' j' k' l'} lA' Γ A eqTyA' redTmA' eqTmA') :

@@ -1,5 +1,6 @@
+(** * LogRel.LogicalRelation: definition of the logical relation *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -10,14 +11,18 @@ Create HintDb logrel.
 #[global] Hint Variables Transparent : logrel.
 Ltac logrel := eauto with logrel.
 
-(* Note: modules are used as a hackish solution to provide a form of namespaces for record projections *)
+(** Note: modules are used as a hackish solution to provide a form of namespaces for record projections. *)
 
-(* The type of our inductively defined reducibility relation:
+(** ** Preliminaries *)
+
+(** Instead of using induction-recursion, we encode simultaneously the fact that a type is reducible,
+  and the graph of its decoding, as a single inductive relation.
+  Concretely, the type of our reducibility relation is the following RedRel:
   for some R : RedRel, R Γ A eqTy redTm eqTm says
   that according to R, A is reducible in Γ and the associated reducible type equality
-  (resp. term reducibility, term reducible equality) is eqTy (resp. redTm eqTm).
+  (resp. term reducibility, term reducible equality) are eqTy (resp. redTm eqTm).
   One should think of RedRel as a functional relation taking two arguments (Γ and A) and returning
-  three outputs (eqTy, redTm and eqTm) *)
+  three outputs (eqTy, redTm and eqTm). *)
 
   Definition RedRel@{i j} :=
   context               ->
@@ -27,7 +32,7 @@ Ltac logrel := eauto with logrel.
   (term -> term -> Type@{i}) ->
   Type@{j}.
 
-(* An LRPack contains the data corresponding to the codomain of RedRel seen as a functional relation *)
+(** An LRPack contains the data corresponding to the codomain of RedRel seen as a functional relation. *)
 
 Module LRPack.
 
@@ -48,7 +53,7 @@ Notation "[ P | Γ ||- A ≅ B ]" := (@LRPack.eqTy Γ A P B).
 Notation "[ P | Γ ||- t : A ]" := (@LRPack.redTm Γ A P t).
 Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
 
-(* An LRPack it adequate wrt. a RedRel when its three unpacked components are *)
+(** An LRPack is adequate wrt. a RedRel when its three unpacked components are. *)
 Definition LRPackAdequate@{i j} {Γ : context} {A : term}
   (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
   R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
@@ -81,7 +86,7 @@ Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eq
 Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.redTm) t).
 Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(@LRAd.pack Γ A R).(LRPack.eqTm) t u).
 
-(** Universe levels *)
+(** ** Universe levels *)
 
 Inductive TypeLevel : Set :=
   | zero : TypeLevel
@@ -103,7 +108,7 @@ Definition elim {l : TypeLevel} (h : l << zero) : False :=
     | Oi => I
   end.
 
-(** Reducibility of neutrals *)
+(** ** Reducibility of neutral types *)
 
 Module neRedTy.
 
@@ -187,6 +192,8 @@ End neRedTmEq.
 Export neRedTmEq(neRedTmEq, Build_neRedTmEq).
 Notation "[ Γ ||-ne t ≅ u : A | R ] " := (neRedTmEq Γ t u A R).
 
+(** ** Reducibility of the universe *)
+
 Module URedTy.
 
   Record URedTy `{ta : tag} `{!WfType ta} `{!RedType ta} `{WfContext ta}
@@ -239,7 +246,6 @@ Module URedTm.
 
   Arguments URedTm {_ _ _ _ _ _ _ _} rec.
 
-  (*Universe term equality*)
   Record URedTmEq@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
     `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
@@ -260,6 +266,8 @@ End URedTm.
 Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
 Notation "[ R | Γ ||-U t : A | l ]" := (URedTm R Γ t A l) (at level 0, R, Γ, t, A, l at level 50).
 Notation "[ R | Γ ||-U t ≅ u : A | l ]" := (URedTmEq R Γ t u A l) (at level 0, R, Γ, t, u, A, l at level 50).
+
+(** ** Reducibility of product types *)
 
 Module PiRedTy.
 
@@ -290,7 +298,11 @@ Module PiRedTy.
 
   Arguments PiRedTy {_ _ _ _ _}.
 
-
+  (** We separate the recursive "data", ie the fact that we have reducibility data (an LRPack)
+  for the domain and codomain, and the fact that these are in the graph of the logical relation.
+  This is crucial for Coq to accept the definition, because it makes the nesting simple enough
+  to be accepted. We later on show an induction principle that does not have this separation to
+  make reasoning easier. *)
   Record PiRedTyAdequate@{i j} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} Γ A}
@@ -313,12 +325,13 @@ Module PiRedTyEq.
     `{WfType ta} `{ConvType ta} `{RedType ta}
     {Γ : context} {A B : term} {ΠA : PiRedTy Γ A}
   : Type := {
-    na                        : aname ;
-    dom                       : term;
-    cod                       : term;
-    red                       : [Γ |- B :⇒*: tProd na dom cod];
-    eq                        : [Γ |- tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd na dom cod ];
-    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
+    na : aname ;
+    dom : term;
+    cod : term;
+    red : [Γ |- B :⇒*: tProd na dom cod];
+    eq  : [Γ |- tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd na dom cod ];
+    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
     codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]) :
       [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ];
@@ -405,6 +418,10 @@ End NeNf.
 Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
 Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
 
+(** ** Definition of the logical relation *)
+
+(** This simply bundles the different cases for reducibility already defined. *)
+
 Unset Elimination Schemes.
 
 Inductive LR@{i j k} `{ta : tag}
@@ -427,10 +444,20 @@ Inductive LR@{i j k} `{ta : tag}
     LR rec Γ A
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
-      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
-  .
+      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ]).
+  
+  (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
+  (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
+      LR rec Γ A
+      (fun B   => [ rec l' l_ | Γ ||- A ≅ B     | H ])
+      (fun t   => [ rec l' l_ | Γ ||- t     : A | H ])
+      (fun t u => [ rec l' l_ | Γ ||- t ≅ u : A | H ]) *)
 
 Set Elimination Schemes.
+
+(** ** Bundling of the logical relation *)
+
+(** Boilerplate to make the relation look a bit better. *)
 
 Section MoreDefs.
   Context `{ta : tag}
@@ -494,7 +521,7 @@ Section MoreDefs.
 
 End MoreDefs.
   
-(* To be explicit with universe levels use the rhs, e.g
+(** To be explicit with universe levels use the rhs, e.g
    [ LogRel@{i j k l} l | Γ ||- A] or [ LogRel0@{i j k} ||- Γ ||- A ≅ B | RA ]
  *)
 Notation "[ Γ ||-< l > A ]" := [ LogRel l | Γ ||- A ].
@@ -502,7 +529,11 @@ Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
 Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
 
-(* #[global] Hint Resolve LRbuild LRunbuild : logrel. *)
+(** ** Rebundling reducibility of product types *)
+
+(** The definition of reducibility of product types in the logical relation, which separates
+the "adequacy" part is not nice to work with. Here we relate it to the more natural one,
+which lets us later on define an induction principle that does not show the separation at all. *)
 
 Module PiRedTyPack.
 Section PiRedTyPack.
@@ -602,7 +633,6 @@ Arguments PiRedTyPack {_ _ _ _ _ _ _ _ _} _ _ _.
 
 End PiRedTyPack.
 
-
 Export PiRedTyPack(PiRedTyPack,Build_PiRedTyPack, LRPi').
 Notation "[ Γ ||-Π< l > A ]" := (PiRedTyPack Γ A l) (at level 0, Γ, l, A at level 50).
 
@@ -625,16 +655,14 @@ Section LogRelRecFoldLemmas.
     [LogRel (URedTy.level h) | Γ ||- t ] ->
     [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t].
   Proof.
-    destruct h as [? lt]; cbn. 
+    destruct h as [? lt]; cbn.
     pattern level, l , lt; induction lt.
     cbn. easy. 
   Defined.
 
-  Notation "A <≈> B" := (prod (A -> B) (B -> A)) (at level 90).
-
   (* This is a duplicate of the above, no ? *)
   Lemma LogRelRec_unfold {Γ l A t eqTy redTm eqTm} (h: [Γ ||-U<l> A]) :
-    LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <≈>
+    LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <~>
     LogRel (URedTy.level h) Γ t eqTy redTm eqTm.
   Proof.
     destruct l; [destruct (elim (URedTy.lt h))|].
@@ -644,7 +672,7 @@ Section LogRelRecFoldLemmas.
 
   Lemma TyEqRecFwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
     (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
+    [lr | Γ ||- t ≅ u] <~> [RedTyRecFwd h lr | Γ ||- t ≅ u].
   Proof.
     unfold RedTyRecFwd.
     destruct h as [? lt]; cbn in *.
@@ -653,7 +681,7 @@ Section LogRelRecFoldLemmas.
 
   Lemma TyEqRecBwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
     (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
+    [lr | Γ ||- t ≅ u] <~> [RedTyRecBwd h lr | Γ ||- t ≅ u].
   Proof.
     unfold RedTyRecBwd.
     destruct h as [? lt]; cbn in *.

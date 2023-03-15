@@ -7,16 +7,15 @@ theories/AutoSubst/core.v
 theories/AutoSubst/unscoped.v
 theories/AutoSubst/Ast.v
 theories/AutoSubst/Extra.v
-theories/Notations.v
-theories/Untyped.v
-
 theories/Context.v
-theories/UntypedReduction.v
+theories/Notations.v
+
+theories/NormalForms.v
 theories/Weakening.v
+theories/UntypedReduction.v
 theories/GenericTyping.v
 
 theories/DeclarativeTyping.v
-theories/Generation.v
 theories/DeclarativeInstance.v
 
 theories/LogicalRelation.v

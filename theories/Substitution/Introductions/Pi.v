@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
@@ -33,14 +33,14 @@ Section PiTyValidity.
   Lemma domainTy {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ |-[ ta ] F[σ] ].
   Proof.
-    eapply escape_.
+    eapply escape.
     now eapply domainRed.
   Defined.
 
   Lemma domainTyRefl {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ |-[ ta ] F[σ] ≅ F[σ] ].
   Proof.
-    refine (escapeEq_ (domainRed tΔ vσ) _).
+    refine (escapeEq (domainRed tΔ vσ) _).
     now eapply LRTyEqRefl_.
   Qed.
 
@@ -50,7 +50,7 @@ Section PiTyValidity.
     (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
     : [Δ,, vass na F[σ] |-[ ta ] F[σ⟨@wk1 Δ na F[σ]⟩] ≅ F[σ'⟨@wk1 Δ na F[σ]⟩]].
   Proof.
-    eapply escapeEq_.
+    eapply escapeEq.
     eapply (validTyExt vF).
     refine (wk1SubstS _ _ (domainTy tΔ vσ) vσ').
     refine (wk1SubstSEq _ _ (domainTy tΔ vσ) vσ vσσ').
@@ -67,14 +67,14 @@ Section PiTyValidity.
   Lemma codomainTy {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass na F[σ] |-[ ta ] G[ up_term_term σ ] ].
   Proof.
-    eapply escape_.
+    eapply escape.
     now eapply codomainRed.
   Qed.
 
   Lemma codomainTyRefl {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass na F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ]].
   Proof.
-    refine (escapeEq_ (codomainRed tΔ vσ) _).
+    refine (escapeEq (codomainRed tΔ vσ) _).
     now eapply LRTyEqRefl_.
   Qed.
 
@@ -137,9 +137,9 @@ Section PiTyValidity.
     : [Δ |-[ ta ] tProd na F[σ] G[up_term_term σ] ≅ tProd na F[σ'] G[up_term_term σ']].
   Proof.
     refine (convty_prod I (domainTy tΔ vσ) _ _).
-    - eapply escapeEq_. eapply (validTyExt vF tΔ vσ vσ' vσσ').
+    - eapply escapeEq. eapply (validTyExt vF tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F na G Δ σ). rewrite (eq_subst_1 F na G Δ σ').
-      eapply escapeEq_. unshelve refine (validTyExt vG _ _ _ _).
+      eapply escapeEq. unshelve refine (validTyExt vG _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
@@ -219,8 +219,8 @@ Section PiTyCongruence.
       exact (wft_prod (domainTy vΓ vF' tΔ vσ) (codomainTy vΓ vF' vG' tΔ vσ)).
     - cbn. fold subst_term.
       refine (convty_prod I (domainTy vΓ vF tΔ vσ) _ _).
-      + eapply escapeEq_. eapply (validTyEq vFF' tΔ vσ).
-      + eapply escapeEq_. unshelve eapply (validTyEq vGG').
+      + eapply escapeEq. eapply (validTyEq vFF' tΔ vσ).
+      + eapply escapeEq. unshelve eapply (validTyEq vGG').
         2: unshelve eapply liftSubstS' ; tea.
     - intros Δ' ρ tΔ'. cbn. fold subst_term.
       eapply wkEq. eapply (validTyEq vFF').
@@ -258,7 +258,7 @@ Section PiTmValidity.
   Lemma domainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ |-[ ta ] F[σ] : U ].
   Proof.
-    eapply escapeTerm_.
+    eapply escapeTerm.
     now eapply domainRedU.
     Unshelve. all: tea.
   Defined.
@@ -266,7 +266,7 @@ Section PiTmValidity.
   Lemma domainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ |-[ ta ] F[σ] ≅ F[σ] : U ].
   Proof.
-    refine (escapeEqTerm_ (validTy (UValid vΓ) tΔ vσ) _).
+    refine (escapeEqTerm (validTy (UValid vΓ) tΔ vσ) _).
     eapply LREqTermRefl_. now eapply domainRedU.
   Qed.
 
@@ -279,7 +279,7 @@ Section PiTmValidity.
   Lemma codomainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass nF F[σ] |-[ ta ] G[ up_term_term σ ] : U ].
   Proof.
-    eapply escapeTerm_.
+    eapply escapeTerm.
     now eapply codomainRedU.
     Unshelve. all: tea.
   Qed.
@@ -287,7 +287,7 @@ Section PiTmValidity.
   Lemma codomainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ,, vass nF F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ] : U].
   Proof.
-    refine (escapeEqTerm_ (validTy vU _ (liftSubstS' _ vF vσ)) _).
+    refine (escapeEqTerm (validTy vU _ (liftSubstS' _ vF vσ)) _).
     eapply LREqTermRefl_. now eapply codomainRedU.
   Qed.
 
@@ -298,9 +298,9 @@ Section PiTmValidity.
     : [Δ |-[ ta ] tProd nF F[σ] G[up_term_term σ] ≅ tProd nF F[σ'] G[up_term_term σ'] : U].
   Proof.
     refine (convtm_prod I (domainTmU tΔ vσ) _ _).
-    - eapply escapeEqTerm_. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
+    - eapply escapeEqTerm. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F nF G Δ σ). rewrite (eq_subst_1 F nF G Δ σ').
-      eapply escapeEqTerm_. unshelve refine (validTmExt vGU _ _ _ _).
+      eapply escapeEqTerm. unshelve refine (validTmExt vGU _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy vΓ vF tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
@@ -390,8 +390,8 @@ Section PiTmCongruence.
     - exact (PiRedU vΓ vF' vU' vF'U vG'U tΔ vσ).
     - exact (LRCumulative (PiRed vΓ vF0 vG0 tΔ vσ)).
     - cbn. refine (convtm_prod I (domainTmU vΓ vFU tΔ vσ) _ _).
-      + eapply escapeEqTerm_. eapply (validTmEq vFF' tΔ vσ).
-      + eapply escapeEqTerm_. unshelve eapply (validTmEq vGG').
+      + eapply escapeEqTerm. eapply (validTmEq vFF' tΔ vσ).
+      + eapply escapeEqTerm. unshelve eapply (validTmEq vGG').
         2: unshelve eapply liftSubstS' ; tea.
     - exact (LRCumulative (PiRed vΓ vF'0 vG'0 tΔ vσ)).
     - enough ([ Δ ||-< zero > (tProd nF F G)[σ] ≅ (tProd nF' F' G')[σ] | PiRed vΓ vF0 vG0 tΔ vσ]) by irrelevanceCum.

@@ -1,3 +1,4 @@
+(** * LogRel.Utils: basic generically useful definitions, notations, tactics… *)
 From Coq Require Import Morphisms List CRelationClasses.
 From Coq Require Import ssrbool.
 From smpl Require Import Smpl.
@@ -7,6 +8,8 @@ Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Primitive Projections.
 
+(** ** General Notations *)
+
 Notation "#| l |" := (List.length l) (at level 0, l at level 99, format "#| l |").
 Notation "`=1`" := (pointwise_relation _ Logic.eq) (at level 80).
 Infix "=1" := (pointwise_relation _ Logic.eq) (at level 70).
@@ -14,12 +17,32 @@ Notation "`=2`" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at le
 Infix "=2" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 70).
 Infix "<~>" := iffT (at level 90).
 
-(* Since we work a lot with type-level propositions,
+(** Since we work a lot with type-level propositions,
 we override the notation for negation from the
-standard library *)
+standard library. **)
 Export Set Warnings "-notation-overridden".
 Notation "~ x" := (notT x) : type_scope.
 Export Set Warnings "notation-overriden".
+
+(** ** Polymorphic and cumulative redefinitions from the standard library. *)
+
+#[universes(polymorphic)]
+Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P x -> P y :=
+    match e in _ = z return P x -> P z with
+    | eq_refl => fun w => w
+    end.
+
+#[universes(polymorphic)]
+Lemma lrefl {A R} `{!PER R} {a b : A} : R a b -> R a a.
+Proof.
+  intros; etransitivity;[|symmetry]; eassumption.
+Qed.  
+
+#[universes(polymorphic)]
+Lemma urefl {A R} `{!PER R} {a b : A} : R a b -> R b b.
+Proof.
+  intros; etransitivity;[symmetry|]; eassumption.
+Qed.
 
 Inductive prod (A B : Type) : Type := | pair : A -> B -> prod A B.
 Arguments pair {_ _} _ _.
@@ -79,7 +102,6 @@ Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 , P9 & P10 ]" := (and10 P1 
   end
   : core. *)
 
-(* Redefine for universe poly + cumulativity *)
 Inductive sigT {A : Type} (P : A -> Type) : Type := 
   | existT (projT1 : A) (projT2 : P projT1) : sigT P.
 
@@ -97,19 +119,19 @@ Notation "x .π2" := (@projT2 _ _ x) (at level 3, format "x '.π2'").
 
 #[global] Hint Constructors sigT : core.
 
-(** Tactics *)
+(** ** Tactics *)
 
 Ltac tea := try eassumption.
 Ltac easy ::= solve [intuition eauto 3 with core crelations].
 
-(* The database used for generic typing *)
+(** The database used for generic typing *)
 Create HintDb gen_typing.
 #[global] Hint Constants Opaque : gen_typing.
 #[global] Hint Variables Transparent : gen_typing.
 
 Ltac gen_typing := typeclasses eauto bfs 6 with gen_typing typeclass_instances.
 
-(* A general refolding tactic to recover lost typeclasses
+(** A general refolding tactic to recover lost typeclasses
   (due for instance to the cbn or constructor tactics).
   Updated on the fly using the Smpl plugin. *)
 Smpl Create refold [progress].
@@ -122,7 +144,7 @@ Tactic Notation "constructor" := core_constructor ; refold.
 Ltac core_econstructor := econstructor.
 Tactic Notation "econstructor" := core_econstructor ; refold.
 
-(* A tactic for presuppositions, ie deriving the well-formation of parts of a typing
+(** A tactic for presuppositions, ie deriving the well-formation of parts of a typing
 judgment from said typing judgement. For instance, [Γ |- A] from [Γ |- t : A].
 Made stronger over time, as we prove more of these properties. *)
 
@@ -132,25 +154,7 @@ Create HintDb boundary.
 
 Ltac boundary := solve[eauto 3 with boundary].
 
-#[universes(polymorphic)]
-Definition tr@{u v} {A : Type@{u}} (P : A -> Type@{v}) {x y : A} (e: x = y) : P x -> P y :=
-    match e in _ = z return P x -> P z with
-    | eq_refl => fun w => w
-    end.
-
-#[universes(polymorphic)]
-Lemma lrefl {A R} `{!PER R} {a b : A} : R a b -> R a a.
-Proof.
-  intros; etransitivity;[|symmetry]; eassumption.
-Qed.  
-
-#[universes(polymorphic)]
-Lemma urefl {A R} `{!PER R} {a b : A} : R a b -> R b b.
-Proof.
-  intros; etransitivity;[symmetry|]; eassumption.
-Qed.  
-
-(* Tactics used to create good induction principles using Scheme *)
+(** Tactics used to create good induction principles using Scheme *)
 
 Ltac polymorphise t :=
   lazymatch t with
@@ -172,9 +176,9 @@ Ltac remove_steps t :=
 Definition NotShelved (A:Type) := A.
 Definition Shelved (A:Type) := A.
 
-(* opaque econstructor:
-  similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals
-  Provided by Gaetan Gilbert
+(** Opaque econstructor:
+  similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals.
+  Provided by Gaetan Gilbert.
 *)
 Ltac opector :=
   unshelve (econstructor;match goal with |- ?g => change (NotShelved g) end);
@@ -198,7 +202,7 @@ Ltac opector :=
   end;
   match goal with |- Shelved ?g => change g | _ => idtac end.
 
-(* To block and unblock hypotheses from the context 
+(** To block and unblock hypotheses from the context 
   (see the tactic escape in LogicalRelations/Escape.v for example)*)
 Definition Block (A : Type) := A.
 
@@ -206,4 +210,3 @@ Ltac block H :=
   let T := type of H in (change T with (Block T) in H).
 
 Ltac unblock := unfold Block in *.
-

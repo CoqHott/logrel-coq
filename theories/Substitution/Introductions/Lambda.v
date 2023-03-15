@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance Application Reduction Transitivity NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties SingleSubst.
@@ -98,7 +98,7 @@ Proof.
     }
     eapply convtm_exp; tea.
     1: now eapply redty_refl.
-    rewrite <- (eqσ t); eapply escapeEqTerm_; now eapply LREqTermRefl_.
+    rewrite <- (eqσ t); eapply escapeEqTerm; now eapply LREqTermRefl_.
   + eapply lamBetaRed; tea. 
   + pose proof (Vσa := consWkSubstS nF VF ρ h Vσ ha).
     pose proof (Vσb := consWkSubstS nF VF ρ h Vσ hb).
@@ -168,7 +168,7 @@ Proof.
       * fold ren_term. 
         set (x := ren_term _ _); change x with (t[up_term_term σ]⟨upRen_term_term S⟩); clear x.
         set (x := ren_term _ _); change x with (t[up_term_term σ']⟨upRen_term_term S⟩); clear x.
-        do 2 rewrite <- eqσ ; eapply escapeEqTerm_; now eapply validTmExt.
+        do 2 rewrite <- eqσ ; eapply escapeEqTerm; now eapply validTmExt.
   - refold; cbn; intros.
     pose proof (Vσa := consWkSubstS nF VF ρ h Vσ ha).
     assert (ha' : [ _||-<l> a : _| wk ρ h RVF0]).
@@ -213,7 +213,7 @@ Proof.
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
   1: now eapply redty_refl.
-  3: rewrite eqσ; eapply escapeEqTerm_; eapply LREqTermRefl_; irrelevance.
+  3: rewrite eqσ; eapply escapeEqTerm; eapply LREqTermRefl_; irrelevance.
   * eapply redtm_meta_conv. 3: reflexivity.
     1: eapply redtm_app.
     2: eapply (ty_var wfΔF (in_here _ _)).
@@ -225,7 +225,7 @@ Proof.
     }
     fold ren_term. rewrite eqσ; now bsimpl. 
   * rewrite <- (wk1_ren_on Δ nF F[σ]); unshelve eapply redtmwf_refl.
-    rewrite eqσ; eapply escapeTerm_ ; irrelevance.
+    rewrite eqσ; eapply escapeTerm ; irrelevance.
     Unshelve. 2,4: rewrite <- eqσ; tea.
 Qed.
 

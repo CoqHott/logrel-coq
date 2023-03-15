@@ -1,6 +1,6 @@
 
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction NormalRed.
 
 Set Universe Polymorphism.
@@ -24,7 +24,7 @@ Section AppTerm.
 
   Lemma app_id : [Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu].
   Proof.
-    assert (wfΓ := wfc_wft (escape_ RF)).
+    assert (wfΓ := wfc_wft (escape RF)).
     replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
     irrelevance0.  2: eapply (PiRedTm.app Rt).
     cbn; now bsimpl.
@@ -38,7 +38,10 @@ Section AppTerm.
   Proof.
     eapply redSubstTerm.
     1: unshelve eapply app_id; tea.
-    eapply redtmwf_app; [exact (PiRedTm.red Rt) | now eapply escapeTerm_].
+    escape.
+    eapply redtmwf_app.
+    1: apply Rt.
+    easy.
   Qed.
 
 End AppTerm.

@@ -1,7 +1,8 @@
+(** * LogRel.LogRelConsequences: consequences of the fundamental lemma needed to work with algorithmic typing. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance Neutral Transitivity.
 From LogRel.Substitution Require Import Properties Irrelevance.
@@ -22,19 +23,19 @@ Proof.
     unshelve eapply Fundamental_subst in Hσ as [].
     1,3: boundary.
     apply Fundamental in Ht as [VΓ [VA _]].
-    unshelve eapply escape_, VA ; tea.
+    unshelve eapply escape, VA ; tea.
     unshelve eapply irrelevanceSubst ; eassumption.
   - intros * Ht * HΔ Hσ.
     unshelve eapply Fundamental_subst in Hσ as [].
     1,3: boundary.
     apply Fundamental in Ht as [VΓ [VA] [Vt]].
-    unshelve eapply escapeTerm_, Vt ; tea.
+    unshelve eapply escapeTerm, Vt ; tea.
     unshelve eapply irrelevanceSubst ; eassumption.
   - intros * Ht * HΔ Hσ.
     unshelve eapply Fundamental_subst_conv in Hσ as [].
     1,3: boundary.
     apply Fundamental in Ht as [VΓ [VA] [] [Vconv]] ; cbn in *.
-    unshelve eapply escapeEq_.
+    unshelve eapply escapeEq.
     2: unshelve eapply VA, irrelevanceSubst ; eassumption.
     unshelve eapply transEq.
     6: now apply Vconv.
@@ -50,7 +51,7 @@ Proof.
     unshelve eapply Fundamental_subst_conv in Hσ as [].
     1,3: boundary.
     apply Fundamental in Ht as [VΓ [VA] [] [Vconv] [Vtu]] ; cbn in *.
-    unshelve eapply escapeEqTerm_.
+    unshelve eapply escapeEqTerm.
     2: unshelve eapply VA, irrelevanceSubst ; eassumption.
     eapply transEqTerm.
     + unshelve eapply validTmExt ; tea.
@@ -125,9 +126,9 @@ Section NeutralConversion.
       + eapply convne_meta_conv.
         3: reflexivity.
         1: econstructor.
-        * replace (tProd _ _ _) with ((tProd na dom cod)⟨↑⟩).
+        * replace (tProd _ _ _) with ((tProd na dom cod)⟨↑⟩) by
+            (cbn ; reflexivity).
           eapply algo_conv_shift.
-          2: cbn ; reflexivity.
           econstructor ; tea.
           1: now gen_typing.
           econstructor.
@@ -237,7 +238,7 @@ Proof.
       symmetry.
       replace dom with (dom⟨wk_id (Γ := Γ)⟩) by now bsimpl.
       replace dom' with (dom'⟨wk_id (Γ := Γ)⟩) by now bsimpl.
-      now unshelve now eapply escapeEq_.
+      now unshelve now eapply escapeEq.
     }
     split ; tea.
     replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
@@ -250,15 +251,13 @@ Proof.
       eapply prod_ty_inv.
       now gen_typing.
     }
-    (unshelve now eapply escapeEq_) ; tea.
+    (unshelve now eapply escapeEq) ; tea.
     apply neuTerm.
     1: econstructor.
     2: econstructor.
     all: econstructor.
     1,3: econstructor ; [eassumption | now econstructor].
-    all: replace dom⟨_⟩ with dom⟨↑⟩ by now bsimpl.
-    all: apply typing_shift ; tea.
-    all: boundary.
+    all: cbn ; renToWk ; now eapply typing_wk.
   Qed.
 
 Corollary red_ty_compl_univ_l Γ T :
@@ -416,7 +415,9 @@ Section MoreSubst.
       econstructor.
       + now do 2 econstructor ; gen_typing.
       + cbn ; refold.
-        now eapply typing_shift ; gen_typing.
+        renToWk.
+        eapply typing_wk.
+        all: gen_typing.
   Qed.
 
   Theorem stability1 (Γ : context) na na' A A' :
@@ -453,9 +454,12 @@ Section Boundary.
     intros HΓ Hin.
     induction Hin.
     - inversion HΓ ; subst ; cbn in * ; refold.
-      now eapply typing_shift.
+      renToWk.
+      now apply typing_wk.
     - inversion HΓ ; subst ; cbn in * ; refold.
-      now eapply typing_shift.
+      destruct d ; cbn in *.
+      renToWk.
+      now eapply typing_wk.
   Qed.
 
   Let PCon (Γ : context) := True.
@@ -587,11 +591,6 @@ Proof.
   now intros []%RedConvTe%boundary.
 Qed.
 
-Corollary boundary_red_tm_l Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- t : A].
-Proof.
-  now intros []%RedConvTeC%boundary.
-Qed.
-
 Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- u : A].
 Proof.
   now intros []%RedConvTeC%boundary.
@@ -626,6 +625,18 @@ Corollary conv_ctx_refl_l (Γ Δ : context) :
 Proof.
   intros.
   eapply ctx_refl ; boundary.
+Qed.
+
+Lemma typing_eta' (Γ : context) na A B f :
+  [Γ |- f : tProd na A B] ->
+  [Γ,, vass na A |- eta_expand f : B].
+Proof.
+  intros Hf.
+  eapply typing_eta ; tea.
+  - eapply prod_ty_inv.
+    boundary.
+  - eapply prod_ty_inv.
+    boundary.
 Qed.
 
 Section Stability.
@@ -801,15 +812,11 @@ Proof.
   boundary.
 Qed.
 
-Lemma typing_eta' (Γ : context) na A B f :
-  [Γ |- f : tProd na A B] ->
-  [Γ,, vass na A |- eta_expand f : B].
+Corollary conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].
 Proof.
-  intros Hf.
-  eapply typing_eta ; tea.
-  - gen_typing.
-  - eapply prod_ty_inv.
-    boundary.
-  - eapply prod_ty_inv.
-    boundary.
+  intros Hconv **.
+  etransitivity ; tea.
+  symmetry.
+  eapply RedConvTyC, subject_reduction_type ; tea.
+  boundary.
 Qed.

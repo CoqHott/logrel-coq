@@ -1,18 +1,23 @@
+(** * LogRel.AlgorithmicTyping: definition of algorithmic conversion and typing. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping.
 
 Section Definitions.
 
-  (* We locally disable typing notations to be able to use them in the definition here before declaring the right
-  instance *)
+  (** We locally disable typing notations to be able to use them in the definition
+  here before declaring the right instance. *)
   Close Scope typing_scope.
 
+(** ** Conversion *)
+
+  (** **** Conversion of types *)
   Inductive ConvTypeAlg : context -> term -> term  -> Type :=
     | typeConvRed {Γ A A' B B'} :
       [A ⇒* A'] ->
       [B ⇒* B'] ->
       [Γ |- A' ≅h B'] ->
       [Γ |- A ≅ B]
+  (** **** Conversion of types reduced to weak-head normal forms *)
   with ConvTypeRedAlg : context -> term -> term -> Type :=
     | typePiCongAlg {Γ na na' A B A' B'} :
       [ Γ |- A ≅ A'] ->
@@ -23,6 +28,7 @@ Section Definitions.
     | typeNeuConvAlg {Γ M N T} :
       [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
+  (** **** Conversion of neutral terms *)
   with ConvNeuAlg : context -> term -> term  -> term -> Type :=
     | neuVarConvAlg {Γ n decl} :
       in_ctx Γ n decl ->
@@ -31,12 +37,14 @@ Section Definitions.
       [ Γ |- m ~h n ▹ tProd na A B ] ->
       [ Γ |- t ≅ u : A ] ->
       [ Γ |- tApp m t ~ tApp n u ▹ B[t..] ]
+  (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
       [Γ |- m ~ n ▹ A] ->
       [A ⇒* A'] ->
       isType A' ->
       [Γ |- m ~h n ▹ A']
+  (** **** Conversion of terms *)
   with ConvTermAlg : context -> term -> term -> term -> Type :=
     | termConvRed {Γ t t' u u' A A'} :
       [A ⇒* A'] ->
@@ -44,6 +52,7 @@ Section Definitions.
       [u ⇒* u' ] ->
       [Γ |- t' ≅h u' : A'] ->
       [Γ |- t ≅ u : A]
+  (** **** Conversion of terms reduced to a weak-head normal form at a reduced type *)
   with ConvTermRedAlg : context -> term -> term -> term -> Type :=
     | termPiCongAlg {Γ na na' A B A' B'} :
       [ Γ |- A ≅ A' : U] ->
@@ -68,6 +77,9 @@ Section Definitions.
   and "[ t ⇒ t' ]" := (OneRedAlg t t')
   and "[ t ⇒* t' ]" := (RedClosureAlg t t').
 
+(** ** Typing *)
+
+  (** **** Type well-formation *)
   Inductive WfTypeAlg : context -> term -> Type :=
     | wfTypeU Γ : [ Γ |- U ]
     | wfTypeProd {Γ na A B} :
@@ -77,6 +89,7 @@ Section Definitions.
     | wfTypeUniv {Γ A} :
       [Γ |- A ◃ U] ->
       [Γ |- A]
+  (** **** Type inference *)
   with InferAlg : context -> term -> term -> Type :=
     | infVar {Γ n decl} :
       in_ctx Γ n decl ->
@@ -93,11 +106,13 @@ Section Definitions.
       [ Γ |- f ▹h tProd na A B ] -> 
       [ Γ |- a ◃ A ] -> 
       [ Γ |- tApp f a ▹ B[a..] ]
+  (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
       [Γ |- t ▹ A ] ->
       [ A ⇒* A'] ->
       [Γ |- t ▹h A']
+  (** **** Type-checking *)
   with CheckAlg : context -> term -> term -> Type :=
     | checkConv {Γ t A A'} :
       [ Γ |- t ▹ A ] -> 
@@ -109,6 +124,7 @@ Section Definitions.
   and "[ Γ |- t ▹h T ]" := (InferRedAlg Γ T t)
   and "[ Γ |- t ◃ T ]" := (CheckAlg Γ T t).
 
+  (** Context well-formation *)
   Inductive WfContextAlg : context -> Type :=
   | conNilAlg : [|- ε]
   | conConsAlg {Γ na A} :
@@ -119,9 +135,9 @@ Section Definitions.
 
 End Definitions.
 
+(** ** Instances *)
 Module AlgorithmicTypingData.
 
-  (* In algorithmic typing, we never check contexts! *)
   #[export] Instance WfContext_Algo : WfContext al := WfContextAlg.
   #[export] Instance WfType_Algo : WfType al := WfTypeAlg.
   #[export] Instance Inferring_Algo : Inferring al := InferAlg.
@@ -153,6 +169,11 @@ Module AlgorithmicTypingData.
 
 End AlgorithmicTypingData.
 
+(** ** Induction principles *)
+
+(** Similarly to declarative typing, we need some massaging to turn the output of 
+Scheme to something that fits our purpose, and we also define a function that computes
+the conclusion of a proof by induction. *)
 Section InductionPrinciples.
   Import AlgorithmicTypingData.
 
@@ -244,6 +265,8 @@ End InductionPrinciples.
 
 Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
 Arguments AlgoTypingInductionConcl PTy PInf PInfRed PCheck : rename.
+
+(** ** Stability by weakening *)
 
 Section TypingWk.
   Import AlgorithmicTypingData.
@@ -402,6 +425,10 @@ Section TypingWk.
 
 End TypingWk.
 
+(** ** Relation to weak-head normal forms *)
+
+(** We show that the predicates that should apply only to weak-head normal forms/neutrals
+indeed imply that the relevant arguments are such weak-head normal forms/neutrals. *)
 Section AlgTypingWh.
 
   Let PTyEq (Γ : context) (A B : term) := True.

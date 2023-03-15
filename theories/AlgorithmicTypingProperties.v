@@ -1,11 +1,16 @@
+(** * LogRel.AlgorithmicTypingProperties: properties of algorithmic typing. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening UntypedReduction
-  GenericTyping DeclarativeTyping Generation DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape.
 From LogRel.Substitution Require Import Properties.
 
 Import DeclarativeTypingProperties AlgorithmicTypingData BundledTypingData BundledIntermediateData IntermediateTypingProperties.
+
+(** ** Completeness of algorithmic conversion *)
+(** We use the intermediate instance derived in AlgorithmicConvProperties to get this result,
+using the fundamental lemma. *)
 
 Lemma algo_conv_complete Γ A B :
   [Γ |-[de] A ≅ B] ->
@@ -17,13 +22,13 @@ Proof.
   cbn in *.
   clear HAext.
   pose proof (soundCtxId HΓ) as [? Hsubst].
-  set (HA' := HA _ _ _ Hsubst).
   specialize (Hconv _ _ _ Hsubst).
-  fold HA' in Hconv.
-  destruct HA' as [[] HA'] ; cbn in *.
-  repeat rewrite instId'_term in *.
-  now eapply escapeEq.
+  escape.
+  now repeat rewrite instId'_term in *.
 Qed.
+
+(** ** Instance *)
+(** Equipped with this equivalence, we easily derive our third instance. *)
 
 Module AlgorithmicTypingProperties.
   Export BundledTypingData AlgorithmicConvProperties.

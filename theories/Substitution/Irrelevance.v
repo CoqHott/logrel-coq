@@ -1,6 +1,6 @@
 
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance Validity.
 From LogRel.LogicalRelation Require Import Irrelevance Reflexivity Transitivity.
 
 Set Universe Polymorphism.
@@ -243,3 +243,14 @@ Proof.
 Qed.
 
 End Irrelevances.
+
+Ltac irrValid :=
+  match goal with
+  | [_ : _ |- [||-v _]] => idtac
+  | [_ : _ |- [ _ ||-v _ : _ | _ | _]] => eapply irrelevanceSubst
+  | [_ : _ |- [ _ ||-v _ ≅ _ : _ | _ | _ | _]] => eapply irrelevanceSubstEq
+  | [_ : _ |- [_ ||-v<_> _ | _]] => eapply irrelevanceValidity
+  | [_ : _ |- [_ ||-v<_> _ ≅ _ | _ | _]] => eapply irrelevanceEq
+  | [_ : _ |- [_ ||-v<_> _ : _ | _ | _]] => eapply irrelevanceTm
+  | [_ : _ |- [_ ||-v<_> _ ≅ _ : _ | _ | _]] => eapply irrelevanceTmEq
+  end; eassumption.

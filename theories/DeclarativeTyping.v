@@ -1,23 +1,33 @@
+(** * LogRel.DeclarativeTyping: specification of conversion and typing, in a declarative fashion. *)
 From Coq Require Import ssreflect.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction.
 
 Set Primitive Projections.
 
+(** Definitions in this file should be understood as the _specification_ of conversion
+or typing, done in a declarative fashion. For instance, we _demand_ that conversion
+be transitive by adding a corresponding rule. *)
+
+(** ** Definitions *)
 Section Definitions.
 
-  (* We locally disable typing notations to be able to use them in the definition here before declaring the right
-  instance *)
+  (* We locally disable typing notations to be able to use them in the definition
+  here before declaring the instance to which abstract notations are bound. *)
   Close Scope typing_scope.
 
+  (** Typing and conversion are mutually defined inductive relations. To avoid having
+  to bother with elimination of propositions, we put them in the Type sort. *)
+
+  (** **** Context well-formation *)
   Inductive WfContextDecl : context -> Type :=
       | connil : [ |- ε ]
       | concons {Γ na A} : 
           [ |- Γ ] -> 
           [ Γ |- A ] -> 
           [ |-  Γ ,, vass na A]
-  
+  (** **** Type well-formation *)
   with WfTypeDecl  : context -> term -> Type :=
       | wfTypeU {Γ} : 
           [ |- Γ ] -> 
@@ -29,7 +39,7 @@ Section Definitions.
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
-
+  (** **** Typing *)
   with TypingDecl : context -> term -> term -> Type :=
       | wfVar {Γ} {n decl} :
           [   |- Γ ] ->
@@ -51,7 +61,7 @@ Section Definitions.
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
           [ Γ |- t : B ]
-      
+  (** **** Conversion of types *)
   with ConvTypeDecl : context -> term -> term  -> Type :=  
       | TypePiCong {Γ} {na nb} {A B C D} :
           [ Γ |- A] ->
@@ -71,7 +81,7 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ |- B ≅ C] ->
           [ Γ |- A ≅ C]
-
+  (** **** Conversion of terms *)
   with ConvTermDecl : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {na} {a t A B} :
               [ Γ |- A ] ->
@@ -114,6 +124,8 @@ Section Definitions.
   and   "[ Γ |- A ≅ B ]" := (ConvTypeDecl Γ A B)
   and   "[ Γ |- t ≅ t' : T ]" := (ConvTermDecl Γ T t t').
 
+  (** (Typed) reduction is defined afterwards,
+  rather than mutually with the other relations. *)
   Inductive OneRedTermDecl (Γ : context) : term -> term -> term -> Type :=
   | BRed {na} {A B a t} :
       [ Γ |- A ] -> 
@@ -171,6 +183,9 @@ End Definitions.
 Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u) : declarative_scope.
 Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
+(** ** Instances *)
+(** Used for printing (see Notations) and as a support for the generic typing
+properties used for the logical relation (see GenericTyping). *)
 Module DeclarativeTypingData.
 
   #[export] Instance WfContext_Decl : WfContext de := WfContextDecl.
@@ -198,6 +213,15 @@ Module DeclarativeTypingData.
 
 End DeclarativeTypingData.
 
+(** ** Induction principles *)
+
+(** We use Scheme to generate mutual induction principle. Sadly, Scheme uses
+the product of the standard library, which is not universe polymorphic, which
+causes universe issues, typically in the fundamental lemma. So
+we use some Ltac code to generate properly polymorphic versions of the inductive
+principle. We also use Ltac to generate the conclusion of the mutual induction
+proof, to alleviate the user from the need to write it down every time: they
+only need write the predicates to be proven. *)
 Section InductionPrinciples.
   Import DeclarativeTypingData.
 
@@ -247,7 +271,7 @@ End InductionPrinciples.
 
 Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 
-(* Type erasure *)
+(** Typed reduction implies untyped reduction *)
 Section TypeErasure.
   Import DeclarativeTypingData.
 

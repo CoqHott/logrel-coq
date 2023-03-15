@@ -1,9 +1,65 @@
+(** * LogRel.DeclarativeInstance: proof that declarative typing is an instance of generic typing. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening GenericTyping DeclarativeTyping Generation.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction Weakening GenericTyping DeclarativeTyping.
 
 Import DeclarativeTypingData.
 
+(** ** Generation *)
+
+(** The generation lemma (the name comes from the PTS literature), gives a 
+stronger inversion principle on typing derivations, that give direct access
+to the last non-conversion rule, and bundle together all conversions.
+
+Note that because we do not yet know that [Γ |- t : T] implies [Γ |- T],
+we cannot use reflexivity in the case where the last rule was not a conversion
+one, and we get the slightly clumsy disjunction of either an equality or a
+conversion proof. We get a better version of generation later on, once we have
+this implication. *)
+
+Definition termGenData (Γ : context) (t T : term) : Type :=
+  match t with
+    | tRel n => ∑ decl, [× T = decl.(decl_type), [|- Γ]& in_ctx Γ n decl]
+    | tProd na A B =>  [× T = U, [Γ |- A : U] & [Γ,, vass na A |- B : U]]
+    | tLambda na A t => ∑ B, [× T = tProd na A B, [Γ |- A] & [Γ,, vass na A |- t : B]]
+    | tApp f a => ∑ na A B, [× T = B[a..], [Γ |- f : tProd na A B] & [Γ |- a : A]]
+    | tSort _ => False
+  end.
+
+Lemma termGen Γ t A :
+  [Γ |- t : A] ->
+  ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
+Proof.
+  induction 1.
+  1-4: eexists ; split ; [..|left ; reflexivity] ; cbn ;
+    solve [now repeat match goal with
+    | |- sigT _ => eexists
+    | |- prod _ _ => split 
+    | |- and3 _ _ _ => split
+    | |- and4 _ _ _ _ => split
+    end].
+  destruct IHTypingDecl as [A' [? [-> | ]]].
+  - eexists. split.
+    1: eassumption.
+    now right.
+  - eexists. split.
+    1: eassumption.
+    right.
+    now eapply TypeTrans.
+Qed.
+
+Lemma prod_ty_inv Γ na A B :
+  [Γ |- tProd na A B] ->
+  [Γ |- A] × [Γ,, vass na A |- B].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as (?&[-> ]&_).
+  split ; now econstructor.
+Qed.
+
+(** ** Stability by weakening *)
 
 Section TypingWk.
   Import DeclarativeTypingData.
@@ -136,48 +192,18 @@ Section TypingWk.
       now econstructor.
   Qed.
 
-  Corollary typing_shift : WfDeclInductionConcl
-    (fun _ => True)
-    (fun (Γ : context) (A : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- A⟨↑⟩])
-    (fun (Γ : context) (A t : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- t⟨↑⟩ : A⟨↑⟩])
-    (fun (Γ : context) (A B : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- A⟨↑⟩ ≅ B⟨↑⟩])
-    (fun (Γ : context) (A t u : term) => forall nt T, [|- Γ] -> [Γ |- T] -> [Γ,, vass nt T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩]).
-  Proof.
-    red.
-    repeat match goal with |- _ × _ => split end.
-    1: now constructor.
-    all: intros Γ * Hty nt T HΓ HA.
-    all: eapply typing_wk in Hty.
-    all: specialize (Hty _ (@wk1 Γ nt T)).
-    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
-    all: eapply Hty.
-    all: now econstructor.
-  Qed.
-
-  Corollary typing_eta (Γ : context) na A B f :
-    [|- Γ] ->
-    [Γ |- A] ->
-    [Γ,, vass na A |- B] ->
-    [Γ |- f : tProd na A B] ->
-    [Γ,, vass na A |- eta_expand f : B].
-  Proof.
-    intros ? ? ? Hf.
-    eapply typing_shift in Hf ; tea.
-    eapply typing_meta_conv.
-    1: econstructor.
-    - cbn in Hf.
-      now eassumption.
-    - eapply typing_meta_conv.
-      1: now do 2 econstructor.
-      now reflexivity.
-    - asimpl.
-      rewrite scons_eta'.
-      now asimpl.
-    Qed.
-
 End TypingWk.
 
-Section WfContext.
+(** ** A first set of boundary conditions *)
+
+(** These lemmas assert that various boundary conditions, ie that if a certain typing-like relation
+holds, some of its components are themselves well-formed. For instance, if [Γ |- t ⇒* u : A] then
+[Γ |- t : A ]. The tactic boundary automates usage of these lemmas. *)
+
+(** We cannot prove yet that all boundaries are well-typed: this needs stability of typing
+by substitution and injectivity of type constructors, which we get from the logical relation.*)
+
+Section Boundaries.
   Import DeclarativeTypingData.
 
   Definition boundary_ctx_ctx {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
@@ -250,7 +276,7 @@ Section WfContext.
     induction 1 ; eauto using boundary_ored_ty_l.
   Qed.
 
-End WfContext.
+End Boundaries.
 
 #[export] Hint Resolve
   boundary_ctx_ctx boundary_ctx_tip boundary_tm_ctx
@@ -259,7 +285,7 @@ End WfContext.
   boundary_red_ty_l : boundary.
 
 
-(** Inclusion of the various reduction-like *)
+(** ** Inclusion of the various reductions in conversion *)
 
 Definition RedConvTe {Γ} {t u A : term} :
     [Γ |- t ⇒ u : A] -> 
@@ -308,7 +334,7 @@ Proof.
   now intros ? -> ->.
 Qed.
 
-(* Weakenings *)
+(** ** Weakenings of reduction *)
 
 Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
 [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
@@ -367,7 +393,7 @@ Proof.
   - now econstructor.
 Qed.
 
-(* Lifting rules from ⇒ to ⇒* *)
+(** ** Derived rules for multi-step reduction *)
 
 Lemma redtmdecl_app Γ na A B f f' t :
   [ Γ |- f ⇒* f' : tProd na A B ] ->
@@ -415,6 +441,8 @@ Qed.
 Proof.
   now econstructor.
 Qed.
+
+(** ** Bundling the properties together in an instance *)
 
 Module DeclarativeTypingProperties.
   Export DeclarativeTypingData.

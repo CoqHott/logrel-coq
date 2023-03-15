@@ -1,5 +1,5 @@
-From LogRel.AutoSubst Require Import core unscoped Ast.
-From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation.
+From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Escape Irrelevance.
 
 Set Universe Polymorphism.
@@ -10,7 +10,7 @@ Section UniverseReducibility.
 
   Lemma redUOne {Γ l A} : [Γ ||-<l> A] -> [Γ ||-U<one> U].
   Proof.
-    intros ?%escape_; econstructor; [easy| gen_typing|eapply redtywf_refl; gen_typing].
+    intros ?%escape; econstructor; [easy| gen_typing|eapply redtywf_refl; gen_typing].
   Qed.
 
   Lemma UnivEq'@{i j k l} {Γ A l} (rU : [ LogRel@{i j k l} l | Γ ||- U ]) (rA : [ LogRel@{i j k l} l | Γ ||- A : U | rU])

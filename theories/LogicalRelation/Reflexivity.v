@@ -1,18 +1,12 @@
+(** * LogRel.LogicalRelation.Reflexivity: reflexivity of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction.
+From LogRel Require Import Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel.LogicalRelation Require Import Induction Escape.
 
 Set Universe Polymorphism.
 
 Section Reflexivities.
   Context `{GenericTypingProperties}.
-
-  Definition LRTyEqRefl0 {Γ A eqTy redTm eqTm}
-    (lr : LogRel0 Γ A eqTy redTm eqTm) : eqTy A.
-  Proof.
-    induction lr as [ ?? [] | ? ? [] | ? ? [] ? IHdom IHcod].
-    all: now econstructor.
-  Qed.
 
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.

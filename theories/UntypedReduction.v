@@ -1,6 +1,11 @@
+(** * LogRel.UntypedReduction: untyped reduction, used to define algorithmic typing.*)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
+
+(** ** Reductions *)
+
+(** *** One-step reduction *)
 
 Inductive OneRedAlg : term -> term -> Type :=
     | termBetaAlg {na A t u} :
@@ -9,6 +14,8 @@ Inductive OneRedAlg : term -> term -> Type :=
       [ t ⇒ t' ] ->
       [ tApp t u ⇒ tApp t' u ]
   where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
+
+(** *** Multi-step reduction *)
 
 Inductive RedClosureAlg : term -> term -> Type :=
   | redIdAlg {t} :
@@ -29,7 +36,9 @@ Inductive RedClosureAlg : term -> term -> Type :=
       now econstructor.
   Qed.
 
-(** Whnf do not reduce *)
+(** ** Properties *)
+
+(** *** Weak-head normal forms do not reduce *)
 
 Lemma whne_nored n u :
   whne n -> [n ⇒ u] -> False.
@@ -56,7 +65,7 @@ Proof.
     now constructor.
 Qed.
 
-(** Determinism of reduction *)
+(** *** Determinism of reduction *)
 
 Lemma ored_det {t u v} :
   [t ⇒ u] -> [t ⇒ v] ->
@@ -120,49 +129,7 @@ Proof.
   now eapply whred_red_det.
 Qed.
 
-
-Section RenWhnf.
-
-  Variable (ρ : nat -> nat).
-
-  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: now econstructor.
-  Qed.
-
-  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    all: now eapply whne_ren.
-  Qed.
-  
-  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: try now econstructor.
-    econstructor; now eapply whne_ren.
-  Qed.
-
-  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
-  Proof.
-    destruct 1 ; cbn.
-    all: try now econstructor.
-    econstructor; now eapply whne_ren.
-  Qed.
-  
-  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-
-End RenWhnf.
-
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
-
+(** *** Stability by weakening *)
 
 Lemma oredalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
 [t ⇒ u] ->
