@@ -10,7 +10,7 @@ Section UniverseReducibility.
 
   Lemma redUOne {Γ l A} : [Γ ||-<l> A] -> [Γ ||-U<one> U].
   Proof.
-    intros ?%escape_; econstructor; [easy| gen_typing|eapply redtywf_refl; gen_typing].
+    intros ?%escape; econstructor; [easy| gen_typing|eapply redtywf_refl; gen_typing].
   Qed.
 
   Lemma UnivEq'@{i j k l} {Γ A l} (rU : [ LogRel@{i j k l} l | Γ ||- U ]) (rA : [ LogRel@{i j k l} l | Γ ||- A : U | rU])

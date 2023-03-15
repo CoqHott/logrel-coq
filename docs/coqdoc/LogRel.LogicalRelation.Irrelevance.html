@@ -25,8 +25,14 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">LogRel.LogicalRelation.Irrelevance</h1>
+<h1 class="libtitle">LogRel.LogicalRelation.Irrelevance: symmetry and irrelevance of the logical relation.</h1>
 
+<div class="code">
+</div>
+
+<div class="doc">
+
+</div>
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">LogRel.AutoSubst</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="LogRel.AutoSubst.core.html#"><span class="id" title="library">core</span></a> <a class="idref" href="LogRel.AutoSubst.unscoped.html#"><span class="id" title="library">unscoped</span></a> <a class="idref" href="LogRel.AutoSubst.Ast.html#"><span class="id" title="library">Ast</span></a> <a class="idref" href="LogRel.AutoSubst.Extra.html#"><span class="id" title="library">Extra</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">LogRel</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="LogRel.Notations.html#"><span class="id" title="library">Notations</span></a> <a class="idref" href="LogRel.Utils.html#"><span class="id" title="library">Utils</span></a> <a class="idref" href="LogRel.BasicAst.html#"><span class="id" title="library">BasicAst</span></a> <a class="idref" href="LogRel.Context.html#"><span class="id" title="library">Context</span></a> <a class="idref" href="LogRel.NormalForms.html#"><span class="id" title="library">NormalForms</span></a> <a class="idref" href="LogRel.Weakening.html#"><span class="id" title="library">Weakening</span></a> <a class="idref" href="LogRel.GenericTyping.html#"><span class="id" title="library">GenericTyping</span></a> <a class="idref" href="LogRel.LogicalRelation.html#"><span class="id" title="library">LogicalRelation</span></a> <a class="idref" href="LogRel.DeclarativeInstance.html#"><span class="id" title="library">DeclarativeInstance</span></a>.<br/>
@@ -36,8 +42,38 @@
 <span class="id" title="keyword">Set</span> <span class="id" title="var">Universe</span> <span class="id" title="var">Polymorphism</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+We show a general version of irrelevance, saying that if A and A' are reducible
+and A' is reducibly convertible to A, then the reducibility predicates they decode to are equivalent.
+From this, both a simpler version of irrelevance and symmetry follow, by using reflexivity
+in the right places.  Interestingly, we also show irrelevance with respect to universe levels, which is crucial
+in later parts of the development, where this avoids creating spurious constraints on universe levels.
+<div class="paragraph"> </div>
+
+<a id="lab79"></a><h2 class="section">The main theorem</h2>
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Section</span> <a id="Irrelevances" class="idref" href="#Irrelevances"><span class="id" title="section">Irrelevances</span></a>.<br/>
 <span class="id" title="keyword">Context</span> `{<a id="H7:10" class="idref" href="#H7:10"><span class="id" title="binder">GenericTypingProperties</span></a>}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab80"></a><h3 class="section">Lemmas for product types</h3>
+
+<div class="paragraph"> </div>
+
+ A difficulty is that we need to show the equivalence right away, rather than only an implication,
+because of contravariance in the case of Π types. To save up work, we factor out some lemmas to
+avoid having to basically duplicate their proofs. 
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Section</span> <a id="407aedd4114357eb12e4e854fbd68f84" class="idref" href="#407aedd4114357eb12e4e854fbd68f84"><span class="id" title="section">ΠIrrelevanceLemmas</span></a>.<br/>
@@ -173,8 +209,22 @@
 <span class="id" title="keyword">End</span> <a class="idref" href="LogRel.LogicalRelation.Irrelevance.html#407aedd4114357eb12e4e854fbd68f84"><span class="id" title="section">ΠIrrelevanceLemmas</span></a>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+The main proof 
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Section</span> <a id="Irrelevances.LRIrrelevant" class="idref" href="#Irrelevances.LRIrrelevant"><span class="id" title="section">LRIrrelevant</span></a>.<br/>
-<span class="id" title="keyword">Universe</span> <span class="id" title="var">u</span> <span class="id" title="var">v</span>. <span class="comment">(*&nbsp;u&nbsp;is&nbsp;a&nbsp;small&nbsp;universe&nbsp;level&nbsp;that&nbsp;may&nbsp;be&nbsp;instanciated&nbsp;to&nbsp;Set.&nbsp;v&nbsp;is&nbsp;a&nbsp;large&nbsp;universe&nbsp;level&nbsp;*)</span><br/>
+<span class="id" title="keyword">Universe</span> <span class="id" title="var">u</span> <span class="id" title="var">v</span>.<br/>
+</div>
+
+<div class="doc">
+u is a small universe level that may be instanciated to Set. v is a large universe level 
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Notation</span> <a id="75725f778c18444fbd2a6f78b2ac8830" class="idref" href="#75725f778c18444fbd2a6f78b2ac8830"><span class="id" title="notation">&quot;</span></a>A &lt;≈&gt; B" := (<a class="idref" href="LogRel.Utils.html#prod"><span class="id" title="inductive">prod@</span></a><a class="idref" href="LogRel.Utils.html#prod"><span class="id" title="inductive">{</span></a><a class="idref" href="LogRel.Utils.html#prod"><span class="id" title="inductive">v</span></a> <a class="idref" href="LogRel.Utils.html#prod"><span class="id" title="inductive">v</span></a><a class="idref" href="LogRel.Utils.html#prod"><span class="id" title="inductive">}</span></a> (<span class="id" title="var">A</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="var">B</span>) (<span class="id" title="var">B</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.15.2/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="var">A</span>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 90).<br/>

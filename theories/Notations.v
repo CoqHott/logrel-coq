@@ -160,7 +160,7 @@ Reserved Notation "ρ ∘w ρ'" (at level 50).
 (** ** Logical relation *)
 (** The universe is reducible in Γ, according to the kit K *)
 Reserved Notation "[ K | Γ ||-U ]" (at level 0, K, Γ at level 50).
-(** The type A is reducible as a product type in Γ according to the kit K *)
+(** The type A is reducible as a Π type in Γ according to the kit K *)
 Reserved Notation "[ K | Γ ||-Π A ]" (at level 0, K, Γ, A at level 50).
 (** The type A is reducible in Γ, according to the kit K *)
 Reserved Notation "[ K | Γ ||- A ]"  (at level 0, K, Γ, A at level 50).
@@ -200,7 +200,7 @@ Reserved Notation "[ rec | Γ ||-U t :U | R ]" (at level 0, rec, Γ, t, R at lev
 Reserved Notation "[ rec | Γ ||-U t ≅ u :U | R ]" (at level 0, rec, Γ, t, u, R at level 50).
 
 
-(** The type A has the packs of a reducible product type in Γ *)
+(** The type A has the packs of a reducible Π type in Γ *)
 Reserved Notation "[ Γ ||-Πd A ]" (at level 0, Γ, A at level 50).
 (** The type B is reducibly convertible to A in Γ, given the reducibility pack ΠA *)
 Reserved Notation "[ Γ ||-Π A ≅ B | ΠA ]" (at level 0, Γ, A, B, ΠA at level 50).
@@ -211,7 +211,7 @@ Reserved Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" (at level 0, Γ, t, u, A, ΠA
 
 (** The universe is reducible in Γ at level l *)
 Reserved Notation "[ Γ ||-< l >U]" (at level 0, Γ, l at level 50).
-(** The type A is reducible as a product type in Γ at level l *)
+(** The type A is reducible as a Π type in Γ at level l *)
 Reserved Notation "[ Γ ||-< l >Π  A ]" (at level 0, Γ, l, A at level 50).
 (** The type A is reducible in Γ at level l *)
 Reserved Notation "[ Γ ||-< l >  A ]" (at level 0, Γ, l, A at level 50).

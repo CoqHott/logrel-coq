@@ -17,7 +17,7 @@ Proof.
   - intros * ih σ [tl hd].
     eapply well_scons.
     + now apply ih.
-    + eapply escapeTerm; [apply (validTy VA wfΔ tl) | exact hd].
+    + now escape.
 Qed.
 
 Lemma wellformedSubstEq {Γ σ σ' Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) :
@@ -27,7 +27,7 @@ Proof.
   - intros. apply conv_sempty.
   - intros * ih ??? [tl hd]. apply conv_scons.
     + now eapply ih.
-    + eapply escapeEqTerm; [eapply (validTy VA wfΔ) | exact hd].
+    + now escape.
 Qed.
 
 Lemma consSubstS {Γ σ t l nA A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
@@ -151,7 +151,7 @@ Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := @wk1 Δ nF F[σ] in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF ].
 Proof.
   intros; unshelve econstructor.
@@ -165,7 +165,7 @@ Lemma liftSubstSrealign {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]
   {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := @wk1 Δ nF F[σ]  in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ||-v σ' : Γ | VΓ | wfΔ ] ->
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ'⟨ρ⟩) : Γ ,, vass nF F | VΓF | wfΔF].
@@ -177,14 +177,14 @@ Proof.
     eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
     replace F[_ >> _] with F[σ']⟨S⟩ by (unfold ρ; now bsimpl).
     cbn; renToWk. eapply convty_wk; tea.
-    eapply escapeEq_;  unshelve eapply validTyExt; cycle 3; tea.
+    eapply escapeEq; unshelve eapply validTyExt; cycle 3; tea.
 Qed.
 
 Lemma liftSubstS' {Γ σ Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ,, vass nF F[σ] ||-v up_term_term σ : Γ ,, vass nF F | VΓF | wfΔF ].
 Proof.
   eapply irrelevanceSubstExt.
@@ -197,7 +197,7 @@ Lemma liftSubstSEq {Γ σ σ' Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := @wk1 Δ nF F[σ] in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   let Vliftσ := liftSubstS VΓ wfΔ VF Vσ in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ,, vass nF F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) ≅ (tRel 0 .: σ' ⟨ ρ ⟩) : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
@@ -212,7 +212,7 @@ Lemma liftSubstSEq' {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := wk_up nF F (@wk_id Γ) in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   let Vliftσ := liftSubstS' nF VF Vσ in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ,, vass nF F[σ] ||-v up_term_term σ ≅ up_term_term σ' : Γ ,, vass nF F | VΓF | wfΔF | Vliftσ].
@@ -230,7 +230,7 @@ Lemma liftSubstSrealign' {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ
   {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
   let VΓF := validSnoc nF VΓ VF in
   let ρ := wk_up nF F (@wk_id Γ) in
-  let wfΔF := wfc_cons nF wfΔ (escape_ (validTy VF wfΔ Vσ)) in
+  let wfΔF := wfc_cons nF wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ||-v σ' : Γ | VΓ | wfΔ ] ->
   [Δ ,, vass nF F[σ] ||-v up_term_term σ' : Γ ,, vass nF F | VΓF | wfΔF].

@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction Weakening GenericTyping LogicalRelation DeclarativeInstance.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance Escape.
+From LogRel.LogicalRelation Require Import Induction Reflexivity Irrelevance Escape.
 
 Set Universe Polymorphism.
 
@@ -119,16 +119,20 @@ Proof.
       * now eapply NeFun.
       * gen_typing.
       * intros; apply helper; [apply ihcod| constructor; now apply whne_ren|..].
-        1: apply escapeTerm_ in ha; now eapply ty_app_ren. 
+        1: escape ; now eapply ty_app_ren. 
         eapply convneu_app_ren. 1,2: eassumption.
-        eapply escapeEqTerm_; eapply LREqTermRefl_; eassumption.
+        eapply LREqTermRefl_ in ha.
+        now escape.
       * intros. apply ihcod. 
         1,2: constructor; now apply whne_ren.
-        1: apply escapeTerm_ in ha; now eapply ty_app_ren. 
-        2: apply escapeEqTerm_ in eq0; now eapply convneu_app_ren.
-        pose proof (cv := escapeEq_ _ (codExt _ _ _ ρ _ ha hb eq0)).
-        symmetry in cv; unshelve eapply (ty_conv _ cv).
-        apply escapeTerm_ in hb; now eapply ty_app_ren.
+        1: escape ; now eapply ty_app_ren. 
+        2: escape ; now eapply convneu_app_ren.
+        cbn.
+        pose proof (cv := (codExt _ _ _ ρ _ ha hb eq0)).
+        escape.
+        symmetry in Esccv.
+        eapply ty_conv ; tea.
+        now eapply ty_app_ren.
     }
     intros ?????? h.
     pose proof (lrefl h); pose proof (urefl h).
@@ -139,9 +143,10 @@ Proof.
     * gen_typing.
     * intros. apply ihcod; cbn.
       1,2: constructor; now apply whne_ren.
-      1,2: apply escapeTerm_ in ha; now eapply ty_app_ren.
+      1,2: escape ; now eapply ty_app_ren.
       eapply convneu_app_ren. 1,2: eassumption.
-      eapply escapeEqTerm_; eapply LREqTermRefl_; eassumption.
+      eapply LREqTermRefl_ in ha.
+      now escape.
 Qed.
 
 

@@ -1,8 +1,25 @@
+(** * LogRel.BundledAlgorithmicTyping: algorithmic typing bundled with its pre-conditions, and a tailored induction principle. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences.
 
 Import DeclarativeTypingProperties AlgorithmicTypingData.
 
+(** ** Definition of bundled algorithmic typing *)
+
+(** The idea of these definitions is to put together an algorithmic derivation with the
+pre-conditions that ensure it is sensible. Indeed, for instance [Γ |-[al] A] does not
+re-check that Γ is well-typed: in the algorithm, this information is instead maintained as
+an invariant. But this means that algorithmic variants, do not unconditionally
+imply its declarative counterpart, they only do so if their pre-conditions are fulfilled,
+eg if the context or type are well-formed. *)
+
+(** Also note that in the case of judgements that “output” a type, ie type inference and
+neutral conversion, we allow for an arbitrary conversion to “rectify” the output type.
+This makes it easier to handle these in the logical relation, because it means the interface
+is stable by arbitrary conversion. *)
+
+(** In the case of a context, there is no judgement, only a pre-condition, as algorithmic
+typing never re-checks a context. *)
 Record WfContextBun Γ :=
 {
   bn_wf_ctx : [|-[de] Γ] ;
@@ -25,6 +42,7 @@ Record InferConvBun Γ A t :=
   bun_inf_conv_ctx : [|-[de] Γ] ;
   bun_inf_conv_ty : term ;
   bun_inf_conv_inf : [Γ |-[al] t ▹ bun_inf_conv_ty] ;
+  (** Allows to change the type to any convertible one. *)
   bun_inf_conv_conv : [Γ |-[de] bun_inf_conv_ty ≅ A]
 }.
 
@@ -133,6 +151,17 @@ Record RedTermBun Γ A t u :=
   bun_red_tm : [t ⇒* u] ;
 }.
 
+(** ** Instances *)
+
+(** We actually define two instances, one fully-algorithmic and one where only conversion
+is algorithmic, but typing is not. This is needed because we cannot show right away that
+(bundled) algorithmic typing has all the properties to be an instance of the generic interface.
+The issue is that the logical relation does not give enough properties of neutrals, in particular
+we cannot derive that neutral application is injective, ie if [tApp n u] and [tApp n' u'] are
+convertible then [n] and [n'] are and so are [u] and [u']. Thus, we use the mixed instance, which
+we can readily show, to gather more properties of conversion, enough to show the fully 
+algorithmic one. *)
+
 Module BundledTypingData.
 
   #[export] Instance WfContext_Bundle : WfContext bn := WfContextBun.
@@ -201,12 +230,22 @@ End BundledIntermediateData.
 
 Set Universe Polymorphism.
 
+(** ** Induction principle for bundled algorithmic conversion *)
+
+(** We show an induction principle tailored for the bundled predicates: it threads the invariants
+of the algorithm through the derivation, giving us stronger hypothesis in the minor premises,
+corresponding to both the pre-conditions being true, and the post-conditions of the induction
+hypotheses holding. *)
+
 Section BundledConv.
   Universe u.
 
   Context (PTyEq PTyRedEq : context -> term -> term -> Type@{u})
   (PNeEq PNeRedEq PTmEq PTmRedEq : context -> term -> term -> term -> Type@{u}).
 
+  (** Rather than writing by hand the various large statements of the induction principles,
+  we use Ltac to derive them generically. Hopefully, there is no need to touch any part of
+  this code when extending modifying the language with more features. *)
   #[local] Ltac pre_cond Hyp :=
     lazymatch Hyp with
     | context [PTyEq ?Γ ?A ?B] =>
@@ -290,7 +329,7 @@ Section BundledConv.
   #[local] Ltac strong_statement T :=
     lazymatch T with
       | ?Step -> ?T => let Step' := strong_step Step in let T' := strong_statement T in constr:(Step' -> T')
-      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in (* constr:(Chd') *) let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
+      | ?Chd × ?Ctl => let Chd' := strong_concl Chd in let Ctl' := strong_statement Ctl in constr:(Chd' × Ctl')
       | ?Cend => let Cend' := strong_concl Cend in constr:(Cend')
     end.
 
@@ -308,46 +347,10 @@ Section BundledConv.
       let ind := strong_statement t in
       exact ind).
 
-  Let PTyEq'  (c : context) (t t1 : term) :=
-    [ |-[ de ] c] ->
-    [c |-[ de ] t] -> [c |-[ de ] t1] -> PTyEq c t t1 × [c |-[ de ] t ≅ t1].
-
-  Let PTyRedEq' (c : context) (t t1 : term) :=
-    [ |-[ de ] c] ->
-    [c |-[ de ] t] -> [c |-[ de ] t1] -> PTyRedEq c t t1 × [c |-[ de ] t ≅ t1].
- 
-  Let PNeEq' (c : context) (t t1 t2 : term) :=
-    [ |-[ de ] c] ->
-    (∑ T : term, [c |-[ de ] t1 : T]) ->
-    (∑ T : term, [c |-[ de ] t2 : T]) ->
-    PNeEq c t t1 t2
-    × [× [c |-[ de ] t1 ≅ t2 : t],
-          forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
-        & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
-
-  Let PNeRedEq' (c : context) (t t1 t2 : term) :=
-     [ |-[ de ] c] ->
-     (∑ T : term, [c |-[ de ] t1 : T]) ->
-     (∑ T : term, [c |-[ de ] t2 : T]) ->
-     PNeRedEq c t t1 t2
-     × [× [c |-[ de ] t1 ≅ t2 : t],
-          forall T : term, [c |-[ de ] t1 : T] -> [c |-[ de ] t ≅ T]
-         & forall T : term, [c |-[ de ] t2 : T] -> [c |-[ de ] t ≅ T]].
-
-  Let PTmEq' (c : context) (t t1 t2 : term) :=
-       [ |-[ de ] c] ->
-       [c |-[ de ] t1 : t] ->
-       [c |-[ de ] t2 : t] -> PTmEq c t t1 t2 × [c |-[ de ] t1 ≅ t2 : t].
-
-  Let PTmRedEq' (c : context) (t t1 t2 : term) :=
-         [ |-[ de ] c] ->
-         [c |-[ de ] t1 : t] ->
-         [c |-[ de ] t2 : t] -> PTmRedEq c t t1 t2 × [c |-[ de ] t1 ≅ t2 : t].
-
+  (** The main theorem *)
   Theorem algo_conv_discipline : algo_conv_discipline_stmt.
   Proof.
     unfold algo_conv_discipline_stmt; intros.
-    subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
     apply AlgoConvInduction.
     - intros * HA HB ? IHA' ? ? ?.
       pose proof (HA' := HA).
@@ -510,6 +513,9 @@ Section BundledConv.
     ltac:(let t := eval red in (AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in
       let t' := weak_statement t in exact t').
 
+  (** As a corollary, we get the desired induction principle. The difference with the above one
+  is that we do not get the post-condition of the algorithm in the conclusion, but this is
+  in general not necessary. *)
   Corollary BundledConvInduction :
     ltac:(
       let t := (type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq)) in
@@ -523,6 +529,11 @@ Section BundledConv.
   Qed.
 
 End BundledConv.
+
+(** ** Soundness of algorithmic conversion *)
+
+(** Contrarily to the induction principle above, if we instantiate the main principle with
+only constant true predicates, we get only the post-conditions, ie a soundness theorem: bundled algorithmic conversion judgments imply their declarative counterparts. *)
 
 Section ConvSoundness.
 
@@ -555,6 +566,10 @@ Section ConvSoundness.
   Qed.
 
 End ConvSoundness.
+
+(** ** Induction principle for bundled algorithmic typing *)
+
+(** This is repeating the same ideas as before, but for typing. *)
 
 Section BundledTyping.
 
@@ -643,6 +658,7 @@ Section BundledTyping.
          [ |-[ de ] c] ->
          [c |-[ de ] t] -> PCheck c t t1 × [c |-[ de ] t1 : t].
 
+  (** The main theorem *)
   Theorem algo_typing_discipline : ltac:(
     let t := (type of (AlgoTypingInduction PTy PInf PInfRed PCheck)) in
     let ind := strong_statement t in
@@ -721,3 +737,14 @@ Section TypingSoundness.
   Qed.
 
 End TypingSoundness.
+
+Corollary inf_conv_decl Γ t A A' :
+[Γ |-[al] t ▹ A] ->
+[Γ |-[de] A ≅ A'] ->
+[Γ |-[de] t : A'].
+Proof.
+  intros Ht Hconv.
+  apply typing_sound in Ht.
+  2: boundary.
+  now econstructor.
+Qed.

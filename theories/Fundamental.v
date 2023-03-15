@@ -1,3 +1,4 @@
+(** * LogRel.Fundamental: declarative typing implies the logical relation for any generic instance. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
   DeclarativeTyping DeclarativeInstance GenericTyping LogicalRelation Validity.
@@ -10,8 +11,15 @@ Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Printing Primitive Projection Parameters.
 
-(* FundCon, FundTy, ... are parameterized by a tag with a bunch of typing
-  judgment predicates *)
+(** ** Definitions *)
+
+(** These records bundle together all the validity data: they do not only say that the
+relevant relation holds, but also that all its boundaries hold as well. For instance,
+FundTm tells that not only the term is valid at a given type, but also that this type is
+itself valid, and that the context is as well. This is needed because the definition of
+later validity relations depends on earlier ones, and makes using the fundamental lemma
+easier, because we can simply invoke it to get all the validity properties we need. *)
+
 Definition FundCon `{GenericTypingProperties}
   (Γ : context) : Type := [||-v Γ ].
 
@@ -95,9 +103,14 @@ End FundSubstConv.
 
 Export FundSubstConv(FundSubstConv,Build_FundSubstConv).
 
+(** ** The main proof *)
+
+(** Each cases of the fundamental lemma is proven separately, and the final proof simply
+brings them all together. *)
+
 Section Fundamental.
-  (* Fundamental is parameterized by a tag that satisfies the generic typing
-    properties *)
+  (** We need to have in scope both the declarative instance and a generic one, which we use
+  for the logical relation. *)
   Context `{GenericTypingProperties}.
   Import DeclarativeTypingData.
 
@@ -152,18 +165,6 @@ Section Fundamental.
     - intros * vσ' vσσ'.
       eapply UnivEqEq. exact (RAext _ _ _ wfΔ vσ vσ' vσσ').
   Qed.
-
-
-  Ltac irrValid :=
-    match goal with
-    | [_ : _ |- [||-v _]] => idtac
-    | [_ : _ |- [ _ ||-v _ : _ | _ | _]] => eapply irrelevanceSubst
-    | [_ : _ |- [ _ ||-v _ ≅ _ : _ | _ | _ | _]] => eapply irrelevanceSubstEq
-    | [_ : _ |- [_ ||-v<_> _ | _]] => eapply irrelevanceValidity
-    | [_ : _ |- [_ ||-v<_> _ ≅ _ | _ | _]] => eapply irrelevanceEq
-    | [_ : _ |- [_ ||-v<_> _ : _ | _ | _]] => eapply irrelevanceTm
-    | [_ : _ |- [_ ||-v<_> _ ≅ _ : _ | _ | _]] => eapply irrelevanceTmEq
-    end; eassumption.
 
   Lemma FundTmVar : forall (Γ : context) (n : nat) (decl : context_decl),
     [ |-[ de ] Γ] -> FundCon Γ ->
@@ -428,18 +429,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqTrans.
   Qed.
 
-  Corollary wf_ctx_complete Γ :
-    [|-[de] Γ] -> [|-[ta] Γ].
-  Proof.
-    induction 1 as [| ???? IH HA] ; refold.
-    - apply wfc_nil.
-    - apply wfc_cons ; tea.
-      apply Fundamental in HA as [? [HA _]].
-      pose proof (soundCtxId VΓ) as [? Hsubst].
-      specialize (HA _ _ _ Hsubst).
-      rewrite instId'_term in HA ; tea.
-      now eapply escape_ in HA.
-  Qed.
+(** ** Well-typed substitutions are also valid *)
 
   Corollary Fundamental_subst Γ Δ σ (wfΓ : [|-[ta] Γ ]) :
     [|-[de] Δ] ->

@@ -48,13 +48,13 @@ Proof.
 Qed.
 
 Lemma escapeTy {Γ l A} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : [Γ |- A].
-Proof. eapply escape_; now eapply reducibleTy. Qed.
+Proof. eapply escape; now eapply reducibleTy. Qed.
 
 
 Lemma escapeEq {Γ l A B} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : 
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ |- A ≅ B].
 Proof.
-  intros; unshelve eapply escapeEq_; tea.
+  intros; unshelve eapply escapeEq; tea.
   1: now eapply reducibleTy.
   now eapply reducibleTyEq.
 Qed.
@@ -62,7 +62,7 @@ Qed.
 Lemma escapeTm {Γ l A t} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : 
   [Γ ||-v<l> t : A | VΓ | VA] -> [Γ |- t : A].
 Proof.
-  intros; unshelve eapply escapeTerm_; tea.
+  intros; unshelve eapply escapeTerm; tea.
   1: now eapply reducibleTy.
   now eapply reducibleTm.
 Qed.
@@ -70,7 +70,7 @@ Qed.
 Lemma escapeTmEq {Γ l A t u} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) : 
   [Γ ||-v<l> t ≅ u : A | VΓ | VA] -> [Γ |- t ≅ u : A].
 Proof.
-  intros; unshelve eapply escapeEqTerm_; tea.
+  intros; unshelve eapply escapeEqTerm; tea.
   1: now eapply reducibleTy.
   now eapply reducibleTmEq.
 Qed.

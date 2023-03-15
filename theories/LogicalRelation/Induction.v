@@ -1,14 +1,33 @@
+(** * LogRel.LogicalRelation.Induction: good induction principles for the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
+GenericTyping LogicalRelation.
 
 Set Universe Polymorphism.
+
+(** As Coq is not currently able to define induction principles for nested inductive types
+as our LR, we need to prove them by hand. We use this occasion to write down principles which
+do not directly correspond to what LR would give us. More precisely, our induction principles:
+- handle the two levels uniformly, rather than having to do two separate
+  proofs, one at level zero and one at level one;
+- apply directly to an inhabitant of the bundled logical relation, rather than the raw LR;
+- give a more streamlined minor premise to prove for the case of Π type reducibility,
+  which hides the separation needed in LR between the reducibility data and its adequacy
+  (ie the two ΠA and ΠAad arguments to constructor LRPi).
+Also, and crucially, all induction principles are universe-polymorphic, so that their usage
+does not create global constraints on universes. *)
 
 Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
-  
+
+(** ** Embedding *)
+
+(** Reducibility at a lower level implies reducibility at a higher level, and their decoding are the
+same. Both need to be proven simultaneously, because of contravariance in the product case. *)
+
   Fixpoint LR_embedding@{i j k l} {l l'} (l_ : l << l')
     {Γ A rEq rTe rTeEq} (lr : LogRel@{i j k l} l Γ A rEq rTe rTeEq) {struct lr} : (LogRel@{i j k l} l' Γ A rEq rTe rTeEq) :=
     let embedΠad {Γ A} {ΠA : [Γ ||-Πd A]} (ΠAad : PiRedTyAdequate _ ΠA) :=
@@ -29,6 +48,8 @@ Section Inductions.
     | LRne _ neA => LRne _ neA
     | LRPi _ ΠA ΠAad => LRPi _ ΠA (embedΠad ΠAad)
     end.
+
+  (** A basic induction principle, that handles only the first point in the list above *)
 
   Notation PiHyp P Γ ΠA HAad G :=
     ((forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
@@ -75,6 +96,7 @@ Section Inductions.
       P (ΠA.(PiRedTyPack.codRed) ρ h ha).(LRAd.adequate)) -> G).
 
 
+  (** Induction principle specialized to LogRel as the reducibility relation on lower levels *)
   Theorem LR_rect_LogRelRec@{i j k l o}
     (P : forall {l Γ t rEq rTe rTeEq},
     LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o}) :
@@ -130,7 +152,7 @@ Section Inductions.
         P (HAad.(PiRedTy.codAd) ρ h ha)) -> G).
 
 
-  (* Induction principle specialized at level 0 to minimize universe constraints *)
+  (** Induction principle specialized at level 0 to minimize universe constraints. *)
   (* Useful anywhere ? *)
   Theorem LR_rect0@{i j k o}
     (P : forall {c t rEq rTe rTeEq},
@@ -157,6 +179,7 @@ Section Inductions.
 
 End Inductions.
 
+(** ** Inversion principles *)
 
 Section Inversions.
   Context `{ta : tag}
@@ -164,38 +187,64 @@ Section Inversions.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}.
 
-  Lemma invLR {Γ l A} (lr : [Γ ||-<l> A]) : 
-    whnf A ->
-    match A return Type with
-    | tSort _ => [Γ ||-U<l> A]
-    | tProd _ _ _ => [Γ ||-Π<l> A]
-    | _ => [Γ ||-ne A]
+  Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') :
+    match w return Type with
+    | UnivType => [Γ ||-U<l> A]
+    | ProdType => [Γ ||-Π<l> A]
+    | NeType _ => [Γ ||-ne A]
     end.
   Proof.
-    pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr.
-    + intros * h whA.
-      epose proof (redtywf_whnf (URedTy.red h) whA); subst; assumption.
-    + intros * h whA. pose (h' := h); destruct h' as [ty r ne].
-      pose proof (redtywf_whnf r whA); subst.
-      destruct ty; inversion ne; eassumption.
-    + intros ??? h _ _ whA. pose (h' := h); destruct h' as [??? r].
-      pose proof (redtywf_whnf r whA); subst. eassumption.
+    revert A' r w.
+    pattern l, Γ, A, lr ; eapply LR_rect_TyUr; clear l Γ A lr.
+    - intros * h ? red whA.
+      assert (A' = U) as ->.
+      {
+        eapply whred_det.
+        1-3: gen_typing.
+        eapply redty_red, h.
+      }
+      dependent inversion whA.
+      1: assumption.
+      exfalso.
+      gen_typing.
+    - intros * ? A' red whA.
+      enough ({w' & whA = NeType w'}) as [? ->] by easy.
+      destruct neA as [A'' redA neA''].
+      assert (A' = A'') as <-.
+      + eapply whred_det.
+        1-3: gen_typing.
+        eapply redty_red, redA.
+      + dependent inversion whA ; subst.
+        1-2: exfalso ; now gen_typing.
+        now eexists.
+    - intros ??? PiA _ _ A' red whA.
+      enough (∑ na dom cod, A' = tProd na cod dom) as (?&?&?&->).
+      + dependent inversion whA ; subst.
+        2: exfalso ; gen_typing.
+        assumption.
+      + destruct PiA as [??? redA].
+        do 3 eexists.
+        eapply whred_det.
+        1-3: gen_typing.
+        eapply redty_red, redA.
   Qed.
 
   Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U<l> U].
   Proof.
-    intros h;  eapply (invLR h); constructor.
+    intros.
+    now unshelve eapply (invLR _ redIdAlg UnivType).
   Qed.
 
   Lemma invLRne {Γ l A} : whne A -> [Γ ||-<l> A] -> [Γ ||-ne A].
   Proof.
-    intros ne h. epose proof (invLR h (whnf_whne ne)).
-    destruct A; inversion ne; assumption.
+    intros.
+    now unshelve eapply  (invLR _ redIdAlg (NeType _)).
   Qed.
 
   Lemma invLRΠ {Γ l na dom cod} : [Γ ||-<l> tProd na dom cod] -> [Γ ||-Π<l> tProd na dom cod].
   Proof.
-    intros h; eapply (invLR h); constructor.
+    intros.
+    now unshelve eapply  (invLR _ redIdAlg ProdType).
   Qed.
 
 End Inversions.

@@ -1,3 +1,4 @@
+(** * LogRel.LogicalRelation.Irrelevance: symmetry and irrelevance of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
@@ -5,8 +6,23 @@ From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 Set Universe Polymorphism.
 Set Printing Universes.
 
+(** We show a general version of irrelevance, saying that if A and A' are reducible
+and A' is reducibly convertible to A, then the reducibility predicates they decode to are equivalent.
+From this, both a simpler version of irrelevance and symmetry follow, by using reflexivity
+in the right places. *)
+(** Interestingly, we also show irrelevance with respect to universe levels, which is crucial
+in later parts of the development, where this avoids creating spurious constraints on universe levels.*)
+
+(** ** The main theorem *)
+
 Section Irrelevances.
 Context `{GenericTypingProperties}.
+
+(** *** Lemmas for product types *)
+
+(** A difficulty is that we need to show the equivalence right away, rather than only an implication,
+because of contravariance in the case of Π types. To save up work, we factor out some lemmas to
+avoid having to basically duplicate their proofs. *)
 
 Section EquivLRPack.
   Universe i i' v.
@@ -148,8 +164,11 @@ Proof.
 Qed.
 
 
+(** The main proof *)
+
 Section LRIrrelevant.
-Universe u v. (* u is a small universe level that may be instanciated to Set. v is a large universe level *)
+Universe u v.
+(** u is a small universe level that may be instanciated to Set. v is a large universe level *)
 
 Notation "A <≈> B" := (prod@{v v} (A -> B) (B -> A)) (at level 90).
 
@@ -479,7 +498,6 @@ Proof.
   cbn in *.
   now eapply TmEqRedConv.
 Qed.
-
 
 Corollary LRTmTmEqIrrelevant' lA lA' Γ A A' (e : A = A')
   (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :

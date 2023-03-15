@@ -11,8 +11,8 @@ Context `{GenericTypingProperties}.
 
 Lemma VRirrelevant Γ {vsubst vsubst' veqsubst veqsubst'}
   (vr : VR Γ vsubst veqsubst) (vr' : VR Γ vsubst' veqsubst') :
-  (forall Δ σ wfΔ wfΔ', vsubst Δ σ wfΔ <≈> vsubst' Δ σ wfΔ') ×
-  (forall Δ σ σ' wfΔ wfΔ' vs vs', veqsubst Δ σ σ' wfΔ vs <≈> veqsubst' Δ σ σ' wfΔ' vs').
+  (forall Δ σ wfΔ wfΔ', vsubst Δ σ wfΔ <~> vsubst' Δ σ wfΔ') ×
+  (forall Δ σ σ' wfΔ wfΔ' vs vs', veqsubst Δ σ σ' wfΔ vs <~> veqsubst' Δ σ σ' wfΔ' vs').
 Proof.
   revert vsubst' veqsubst' vr'.  pattern Γ, vsubst, veqsubst, vr.
   apply VR_rect; clear Γ vsubst veqsubst vr.
@@ -243,3 +243,14 @@ Proof.
 Qed.
 
 End Irrelevances.
+
+Ltac irrValid :=
+  match goal with
+  | [_ : _ |- [||-v _]] => idtac
+  | [_ : _ |- [ _ ||-v _ : _ | _ | _]] => eapply irrelevanceSubst
+  | [_ : _ |- [ _ ||-v _ ≅ _ : _ | _ | _ | _]] => eapply irrelevanceSubstEq
+  | [_ : _ |- [_ ||-v<_> _ | _]] => eapply irrelevanceValidity
+  | [_ : _ |- [_ ||-v<_> _ ≅ _ | _ | _]] => eapply irrelevanceEq
+  | [_ : _ |- [_ ||-v<_> _ : _ | _ | _]] => eapply irrelevanceTm
+  | [_ : _ |- [_ ||-v<_> _ ≅ _ : _ | _ | _]] => eapply irrelevanceTmEq
+  end; eassumption.

@@ -662,7 +662,7 @@ Section LogRelRecFoldLemmas.
 
   (* This is a duplicate of the above, no ? *)
   Lemma LogRelRec_unfold {Γ l A t eqTy redTm eqTm} (h: [Γ ||-U<l> A]) :
-    LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <≈>
+    LogRelRec l (URedTy.level h) (URedTy.lt h) Γ t eqTy redTm eqTm <~>
     LogRel (URedTy.level h) Γ t eqTy redTm eqTm.
   Proof.
     destruct l; [destruct (elim (URedTy.lt h))|].
@@ -672,7 +672,7 @@ Section LogRelRecFoldLemmas.
 
   Lemma TyEqRecFwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
     (lr : [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecFwd h lr | Γ ||- t ≅ u].
+    [lr | Γ ||- t ≅ u] <~> [RedTyRecFwd h lr | Γ ||- t ≅ u].
   Proof.
     unfold RedTyRecFwd.
     destruct h as [? lt]; cbn in *.
@@ -681,7 +681,7 @@ Section LogRelRecFoldLemmas.
 
   Lemma TyEqRecBwd {l Γ A t u} (h : [Γ ||-U<l> A]) 
     (lr : [LogRel (URedTy.level h) | Γ ||- t ]) :
-    [lr | Γ ||- t ≅ u] <≈> [RedTyRecBwd h lr | Γ ||- t ≅ u].
+    [lr | Γ ||- t ≅ u] <~> [RedTyRecBwd h lr | Γ ||- t ≅ u].
   Proof.
     unfold RedTyRecBwd.
     destruct h as [? lt]; cbn in *.
