@@ -94,6 +94,22 @@ Section RedDefinitions.
   | conv_ccons Γ na A Δ nb B : [ |- Γ ≅ Δ ] -> [Γ |- A ≅ B] -> [ |- Γ,, vass na A ≅ Δ,, vass nb B]
   where "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ).
 
+
+  Lemma well_subst_ext Γ Δ (σ σ' : nat -> term) :
+    σ =1 σ' ->
+    [Γ |-s σ : Δ] ->
+    [Γ |-s σ' : Δ].
+  Proof.
+    intros Heq.
+    induction 1 in σ', Heq |- *.
+    all: constructor.
+    - eapply IHWellSubst.
+      now rewrite Heq.
+    - rewrite <- Heq.
+      now replace A[↑ >> σ'] with A[↑ >> σ]
+        by (now rewrite Heq).
+  Qed.
+
 End RedDefinitions.
 
 Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_scope.
@@ -452,6 +468,53 @@ Section GenericConsequences.
   `{!RedTypeProperties} `{!OneStepRedTermProperties}
   `{!RedTermProperties}.
 
+  (** *** Meta-conversion *)
+  (** Similar to conversion, but using a meta-level equality rather
+  than a conversion *)
+
+  Lemma typing_meta_conv (Γ : context) (t A A' : term) :
+    [Γ |- t : A] ->
+    A' = A ->
+    [Γ |- t : A'].
+  Proof.
+    now intros ? ->.
+  Qed.
+
+  Lemma convtm_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ≅ u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ≅ u' : A'].
+  Proof.
+    now intros ? -> ->.
+  Qed.
+
+  Lemma convne_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ~ u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ~ u' : A'].
+  Proof.
+    now intros ? -> ->.
+  Qed.
+
+  Lemma redtm_meta_conv (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ⇒* u : A] ->
+    A' = A ->
+    u' = u ->
+    [Γ |- t ⇒* u' : A'].
+  Proof.
+    now intros ? -> ->.
+  Qed.
+
+  Lemma redtmwf_meta_conv_ty (Γ : context) (t u A A' : term) :
+    [Γ |- t :⇒*: u : A] ->
+    A' = A ->
+    [Γ |- t :⇒*: u : A'].
+  Proof.
+    now intros ? ->. 
+  Qed.
+
   (** *** Properties of well-typed reduction *)
 
   #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl | 2 : gen_typing.
@@ -555,6 +618,19 @@ Section GenericConsequences.
     all: gen_typing.
   Qed.
 
+  Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
+  Proof.
+    constructor.
+    3: now apply redtm_refl.
+    1,2: assumption.
+  Qed.
+
+  #[global]
+  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A). (*fun t u => [Γ |- t :⇒*: u : A]*)
+  Proof.
+    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+  Qed.
+
   Lemma redtmwf_app {Γ na A B f f' t} :
     [ Γ |- f :⇒*: f' : tProd na A B ] ->
     [ Γ |- t : A ] ->
@@ -562,6 +638,8 @@ Section GenericConsequences.
   Proof.
     intros [] ?; constructor; gen_typing.
   Qed.
+
+  (** *** Derived typing, reduction and conversion judgements *)
 
   Lemma wft_simple_arr {Γ A B} :
     [Γ |- A] ->
@@ -657,7 +735,6 @@ Section GenericConsequences.
     - cbn. eapply convtm_convneu. eapply convneu_var.
       now refine (ty_var _ (in_here _ _)).
   Qed.
-  
 
   Lemma ty_comp {Γ A B C f g} :
     [Γ |- A] ->
@@ -684,21 +761,34 @@ Section GenericConsequences.
       + unfold r; rewrite wk1_ren_on; now refine (ty_var _ (in_here _ _)).
   Qed.
 
-
-  Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
+  Lemma typing_eta (Γ : context) na A B f :
+    [Γ |- A] ->
+    [Γ,, vass na A |- B] ->
+    [Γ |- f : tProd na A B] ->
+    [Γ,, vass na A |- eta_expand f : B].
   Proof.
-    constructor.
-    3: now apply redtm_refl.
-    1,2: assumption.
+    intros ? ? Hf.
+    eapply typing_meta_conv.
+    eapply ty_app; tea.
+    2: refine (ty_var _ (in_here _ _)); gen_typing.
+    1: eapply typing_meta_conv; [renToWk; eapply ty_wk; tea;gen_typing|now rewrite wk1_ren_on].
+    fold ren_term. bsimpl; rewrite scons_eta'; now asimpl.
   Qed.
 
-  #[global]
-  Instance redtmwf_trans {Γ A} : Transitive (TermRedWf Γ A). (*fun t u => [Γ |- t :⇒*: u : A]*)
+  Lemma redtmwf_appwk {Γ Δ nA A B B' t u a} (ρ : Δ ≤ Γ) :
+    [Γ |- t :⇒*: u : tProd nA A B] ->
+    [Δ |- a : A⟨ρ⟩] ->
+    B' = B⟨upRen_term_term ρ⟩[a..] ->
+    [Δ |- tApp t⟨ρ⟩ a :⇒*: tApp u⟨ρ⟩ a : B'].
   Proof.
-    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+    intros redtu **.
+    eapply redtmwf_meta_conv_ty; tea.
+    eapply redtmwf_app; tea.
+    unshelve eapply (redtmwf_wk ρ _ redtu).
+    gen_typing.
   Qed.
 
-  (** *** Lifting properties of untyped reduction to typed reduction. *)
+  (** *** Lifting determinism properties from untyped reduction to typed reduction. *)
 
   Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
   Proof.
@@ -770,83 +860,6 @@ Section GenericConsequences.
     intros [] [].
     eapply whred_det.
     all: gen_typing.
-  Qed.
-
-  (** *** Meta-conversion *)
-  (** Similar to conversion, but using a meta-level equality rather
-  than a conversion *)
-
-  Lemma typing_meta_conv (Γ : context) (t A A' : term) :
-    [Γ |- t : A] ->
-    A' = A ->
-    [Γ |- t : A'].
-  Proof.
-    now intros ? ->.
-  Qed.
-
-  Lemma convtm_meta_conv (Γ : context) (t u u' A A' : term) :
-    [Γ |- t ≅ u : A] ->
-    A' = A ->
-    u' = u ->
-    [Γ |- t ≅ u' : A'].
-  Proof.
-    now intros ? -> ->.
-  Qed.
-
-  Lemma convne_meta_conv (Γ : context) (t u u' A A' : term) :
-    [Γ |- t ~ u : A] ->
-    A' = A ->
-    u' = u ->
-    [Γ |- t ~ u' : A'].
-  Proof.
-    now intros ? -> ->.
-  Qed.
-
-  Lemma redtm_meta_conv (Γ : context) (t u u' A A' : term) :
-    [Γ |- t ⇒* u : A] ->
-    A' = A ->
-    u' = u ->
-    [Γ |- t ⇒* u' : A'].
-  Proof.
-    now intros ? -> ->.
-  Qed.
-
-  Lemma redtmwf_meta_conv_ty (Γ : context) (t u A A' : term) :
-    [Γ |- t :⇒*: u : A] ->
-    A' = A ->
-    [Γ |- t :⇒*: u : A'].
-  Proof.
-    now intros ? ->. 
-  Qed.
-
-  (*** More properties *)
-
-  Lemma well_subst_ext Γ Δ (σ σ' : nat -> term) :
-    σ =1 σ' ->
-    [Γ |-s σ : Δ] ->
-    [Γ |-s σ' : Δ].
-  Proof.
-    intros Heq.
-    induction 1 in σ', Heq |- *.
-    all: constructor.
-    - eapply IHWellSubst.
-      now rewrite Heq.
-    - rewrite <- Heq.
-      now replace A[↑ >> σ'] with A[↑ >> σ]
-        by (now rewrite Heq).
-  Qed.
-
-  Lemma redtmwf_appwk {Γ Δ nA A B B' t u a} (ρ : Δ ≤ Γ) :
-    [Γ |- t :⇒*: u : tProd nA A B] ->
-    [Δ |- a : A⟨ρ⟩] ->
-    B' = B⟨upRen_term_term ρ⟩[a..] ->
-    [Δ |- tApp t⟨ρ⟩ a :⇒*: tApp u⟨ρ⟩ a : B'].
-  Proof.
-    intros redtu **.
-    eapply redtmwf_meta_conv_ty; tea.
-    eapply redtmwf_app; tea.
-    unshelve eapply (redtmwf_wk ρ _ redtu).
-    gen_typing.
   Qed.
 
 End GenericConsequences.

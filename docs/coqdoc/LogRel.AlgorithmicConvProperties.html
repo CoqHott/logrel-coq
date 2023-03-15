@@ -129,7 +129,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">eassumption</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * ? <span class="id" title="var">IHm</span> <span class="id" title="var">Ht</span> [<span class="id" title="var">IHt</span> []%<a class="idref" href="LogRel.LogRelConsequences.html#boundary"><span class="id" title="lemma">boundary</span></a>] **.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">edestruct</span> <span class="id" title="var">IHm</span> <span class="id" title="keyword">as</span> [[? [? (?&amp;?&amp;?&amp;[<span class="id" title="var">HconvP</span> <span class="id" title="var">HconvA</span>])%<a class="idref" href="LogRel.LogRelConsequences.html#red_ty_compl_prod_r"><span class="id" title="lemma">red_ty_compl_prod_r</span></a>]] ?] ; <span class="id" title="var">tea</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvP</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvP</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eexists</span> ; <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
@@ -147,7 +147,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">pose</span> <span class="id" title="var">proof</span> <span class="id" title="var">HconvA'</span> <span class="id" title="keyword">as</span> [? []]%<a class="idref" href="LogRel.LogRelConsequences.html#red_ty_complete"><span class="id" title="lemma">red_ty_complete</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eexists</span> ; <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">symmetry</span> ; <span class="id" title="var">etransitivity</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.DeclarativeInstance.html#RedConvTyC"><span class="id" title="definition">RedConvTyC</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">eassumption</span>.<br/>
@@ -156,12 +156,12 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">by</span> <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#conv_red_l"><span class="id" title="lemma">conv_red_l</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">pose</span> <span class="id" title="var">proof</span> <span class="id" title="var">HconvA'</span> <span class="id" title="keyword">as</span> [? []]%<a class="idref" href="LogRel.LogRelConsequences.html#red_ty_complete"><span class="id" title="lemma">red_ty_complete</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1: <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1: <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <span class="id" title="var">IH</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">etransitivity</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.DeclarativeInstance.html#RedConvTyC"><span class="id" title="definition">RedConvTyC</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * ? [<span class="id" title="var">IHA</span> <span class="id" title="var">HconvA</span>] ? <span class="id" title="var">IHB</span> ? ? ? * ? <span class="id" title="var">HconvU</span> ?.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#red_ty_compl_univ_l"><span class="id" title="lemma">red_ty_compl_univ_l</span></a>, <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvU</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#red_ty_compl_univ_l"><span class="id" title="lemma">red_ty_compl_univ_l</span></a>, <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvU</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">eapply</span> <span class="id" title="var">IHA</span> ; <span class="id" title="var">tea</span>.<br/>
@@ -179,7 +179,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * ? ? ? <span class="id" title="var">IHf</span> ? ? ? * ? (?&amp;?&amp;?&amp;[<span class="id" title="var">HconvP</span>])%<a class="idref" href="LogRel.LogRelConsequences.html#red_ty_compl_prod_l"><span class="id" title="lemma">red_ty_compl_prod_l</span></a> ?.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvP</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">HconvP</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <span class="id" title="var">IHf</span> ; <span class="id" title="var">tea</span>.<br/>
@@ -339,7 +339,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * ? <span class="id" title="var">IHm</span> ? [<span class="id" title="var">IHt</span> <span class="id" title="var">Hwft</span>]  **.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">edestruct</span> <span class="id" title="var">IHm</span> <span class="id" title="keyword">as</span> [[? [<span class="id" title="var">IHm'</span> <span class="id" title="var">Hconv</span>]] []] ; <span class="id" title="var">tea</span> ; <span class="id" title="tactic">clear</span> <span class="id" title="var">IHm</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#red_ty_compl_prod_l"><span class="id" title="lemma">red_ty_compl_prod_l</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">Hconv</span> <span class="id" title="keyword">as</span> (?&amp;?&amp;?&amp;[<span class="id" title="var">Hred</span>]).<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">Hred</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>, <a class="idref" href="LogRel.UntypedReduction.html#red_whnf"><span class="id" title="lemma">red_whnf</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">Hred</span> <span class="id" title="keyword">as</span> -&gt;.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.AlgorithmicTyping.html#algo_conv_wh"><span class="id" title="lemma">algo_conv_wh</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">IHm'</span> <span class="id" title="keyword">as</span> [] ; <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eexists</span> ; <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span>.<br/>
@@ -373,7 +373,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">pose</span> <span class="id" title="var">proof</span> <span class="id" title="var">Hconv'</span> <span class="id" title="keyword">as</span> [? []]%<a class="idref" href="LogRel.LogRelConsequences.html#red_ty_complete"><span class="id" title="lemma">red_ty_complete</span></a>; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eexists</span> ; <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">etransitivity</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.DeclarativeInstance.html#RedConvTyC"><span class="id" title="definition">RedConvTyC</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span>.<br/>
@@ -737,12 +737,22 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="tactic">econstructor</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="method">redty_red</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_red"><span class="id" title="lemma">redty_red</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.AlgorithmicConvProperties.html#algo_conv_conv"><span class="id" title="lemma">algo_conv_conv</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#ctx_refl"><span class="id" title="lemma">ctx_refl</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#typing_subst1"><span class="id" title="lemma">typing_subst1</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">eassumption</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;#[<span class="id" title="var">export</span>, <span class="id" title="tactic">refine</span>] <span class="id" title="keyword">Instance</span> <a id="AlgorithmicConvProperties.OneStepRedTermAlgProperties" class="idref" href="#AlgorithmicConvProperties.OneStepRedTermAlgProperties"><span class="id" title="instance">OneStepRedTermAlgProperties</span></a> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.GenericTyping.html#OneStepRedTermProperties"><span class="id" title="class">OneStepRedTermProperties</span></a> (<span class="id" title="var">ta</span> := <a class="idref" href="LogRel.Notations.html#bn"><span class="id" title="constructor">bn</span></a>) := {}.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">intros_bn</span>; <span class="id" title="tactic">econstructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;1: <span class="id" title="tactic">econstructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;2,3: <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#inf_conv_decl"><span class="id" title="lemma">inf_conv_decl</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#typing_sound"><span class="id" title="lemma">typing_sound</span></a>.<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
@@ -754,13 +764,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <a class="idref" href="LogRel.UntypedReduction.html#credalg_wk"><span class="id" title="lemma">credalg_wk</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * [].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#subject_reduction"><span class="id" title="lemma">subject_reduction</span></a>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">now</span> <span class="id" title="tactic">intros</span> * [].<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">intros_bn</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2: <span class="id" title="var">now</span> <span class="id" title="tactic">do</span> 2 <span class="id" title="tactic">econstructor</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">econstructor</span> ; [<span class="id" title="tactic">econstructor</span>|..].<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#typing_sound"><span class="id" title="lemma">typing_sound</span></a>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#inf_conv_decl"><span class="id" title="lemma">inf_conv_decl</span></a>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#inf_conv_decl"><span class="id" title="lemma">inf_conv_decl</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * [] ; <span class="id" title="tactic">constructor</span>; <span class="id" title="var">tea</span>; <span class="id" title="var">now</span> <span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">intros_bn</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> <a class="idref" href="LogRel.BundledAlgorithmicTyping.html#inf_conv_decl"><span class="id" title="lemma">inf_conv_decl</span></a>.<br/>
@@ -787,7 +791,6 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <a class="idref" href="LogRel.UntypedReduction.html#credalg_wk"><span class="id" title="lemma">credalg_wk</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * [].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="LogRel.LogRelConsequences.html#subject_reduction_type"><span class="id" title="lemma">subject_reduction_type</span></a>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">now</span> <span class="id" title="tactic">intros</span> * [].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">intros_bn</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">intros_bn</span>.<br/>
@@ -921,6 +924,17 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;#[<span class="id" title="var">export</span>, <span class="id" title="tactic">refine</span>] <span class="id" title="keyword">Instance</span> <a id="IntermediateTypingProperties.OneStepRedTermIntProperties" class="idref" href="#IntermediateTypingProperties.OneStepRedTermIntProperties"><span class="id" title="instance">OneStepRedTermIntProperties</span></a> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.GenericTyping.html#OneStepRedTermProperties"><span class="id" title="class">OneStepRedTermProperties</span></a> (<span class="id" title="var">ta</span> := <a class="idref" href="LogRel.Notations.html#bni"><span class="id" title="constructor">bni</span></a>) := {}.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span>; <span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">boundary</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">econstructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">do</span> 2 <span class="id" title="tactic">econstructor</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
 &nbsp;&nbsp;#[<span class="id" title="var">export</span>, <span class="id" title="tactic">refine</span>] <span class="id" title="keyword">Instance</span> <a id="IntermediateTypingProperties.RedTermIntProperties" class="idref" href="#IntermediateTypingProperties.RedTermIntProperties"><span class="id" title="instance">RedTermIntProperties</span></a> :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="LogRel.GenericTyping.html#RedTermProperties"><span class="id" title="class">RedTermProperties</span></a> (<span class="id" title="var">ta</span> := <a class="idref" href="LogRel.Notations.html#bni"><span class="id" title="constructor">bni</span></a>) := {}.<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Proof</span>.<br/>
@@ -929,13 +943,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="LogRel.GenericTyping.html#redtm_wk"><span class="id" title="method">redtm_wk</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> (<a class="idref" href="LogRel.GenericTyping.html#redtm_sound"><span class="id" title="method">redtm_sound</span></a> (<span class="id" title="var">ta</span> := <a class="idref" href="LogRel.Notations.html#bn"><span class="id" title="constructor">bn</span></a>)).<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">gen_typing</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">boundary</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">econstructor</span> ; <span class="id" title="var">tea</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">econstructor</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="tactic">do</span> 2 <span class="id" title="tactic">econstructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * []; <span class="id" title="tactic">constructor</span>; <span class="id" title="var">tea</span>; <span class="id" title="var">now</span> <span class="id" title="tactic">econstructor</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * [] ?.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">boundary</span>.<br/>
@@ -964,7 +972,6 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="LogRel.GenericTyping.html#redty_wk"><span class="id" title="method">redty_wk</span></a> ; <span class="id" title="var">tea</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">eauto</span> <span class="id" title="keyword">using</span> (<a class="idref" href="LogRel.GenericTyping.html#redty_sound"><span class="id" title="method">redty_sound</span></a> (<span class="id" title="var">ta</span> := <a class="idref" href="LogRel.Notations.html#bn"><span class="id" title="constructor">bn</span></a>)).<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="var">gen_typing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">intros</span> * [].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="id" title="var">boundary</span>.<br/>
@@ -979,7 +986,7 @@ ones, algorithmic conversion still holds, possibly with a different output type
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
-&nbsp;&nbsp;#[<span class="id" title="var">export</span>] <span class="id" title="keyword">Instance</span> <a id="IntermediateTypingProperties.IntermediateTypingProperties" class="idref" href="#IntermediateTypingProperties.IntermediateTypingProperties"><span class="id" title="instance">IntermediateTypingProperties</span></a> : <a class="idref" href="LogRel.GenericTyping.html#GenericTypingProperties"><span class="id" title="class">GenericTypingProperties</span></a> <a class="idref" href="LogRel.Notations.html#bni"><span class="id" title="constructor">bni</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> := {}.<br/>
+&nbsp;&nbsp;#[<span class="id" title="var">export</span>] <span class="id" title="keyword">Instance</span> <a id="IntermediateTypingProperties.IntermediateTypingProperties" class="idref" href="#IntermediateTypingProperties.IntermediateTypingProperties"><span class="id" title="instance">IntermediateTypingProperties</span></a> : <a class="idref" href="LogRel.GenericTyping.html#GenericTypingProperties"><span class="id" title="class">GenericTypingProperties</span></a> <a class="idref" href="LogRel.Notations.html#bni"><span class="id" title="constructor">bni</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> := {}.<br/>
 
 <br/>
 <span class="id" title="keyword">End</span> <a class="idref" href="LogRel.AlgorithmicConvProperties.html#IntermediateTypingProperties"><span class="id" title="module">IntermediateTypingProperties</span></a>.<br/>

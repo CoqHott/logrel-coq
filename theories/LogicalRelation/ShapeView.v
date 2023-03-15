@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation.ShapeView: relating reducibility witnesses of reducibly convertible types.*)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context NormalForms UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst Context Notations NormalForms UntypedReduction GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Reflexivity.
 
 Set Universe Polymorphism.

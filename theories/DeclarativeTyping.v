@@ -2,8 +2,7 @@
 From Coq Require Import ssreflect.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction.
 
 Set Primitive Projections.
 
@@ -272,7 +271,7 @@ End InductionPrinciples.
 
 Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 
-(* Type erasure *)
+(** Typed reduction implies untyped reduction *)
 Section TypeErasure.
   Import DeclarativeTypingData.
 

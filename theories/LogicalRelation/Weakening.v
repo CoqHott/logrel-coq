@@ -77,7 +77,7 @@ Section Weakenings.
     eapply LR_rect_TyUr; clear l Γ A lrA.
     - intros ?? ????? ? [] ; constructor; change U with U⟨ρ⟩; gen_typing.
     - intros * [ty]. exists ty⟨ρ⟩.
-      1,2: gen_typing. 
+      1,2: gen_typing.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
       exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.

@@ -271,7 +271,34 @@ Section RenWhnf.
 
 End RenWhnf.
 
+Section RenWlWhnf.
+
+  Context {Γ Δ} (ρ : Δ ≤ Γ).
+
+  Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
+  Proof.
+    apply whne_ren.
+  Qed.
+
+  Lemma whnf_ren_wl t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    apply whnf_ren.
+  Qed.
+  
+  Lemma isType_ren_wl A : isType A -> isType (A⟨ρ⟩).
+  Proof.
+    apply isType_ren.
+  Qed.
+  
+  Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
+  Proof.
+    apply isFun_ren.
+  Qed.
+
+End RenWlWhnf.
+
 #[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl : gen_typing.
 
 (** ** Adaptation of AutoSubst's asimpl to well typed weakenings *)
 

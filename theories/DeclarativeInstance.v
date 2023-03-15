@@ -393,47 +393,6 @@ Proof.
   - now econstructor.
 Qed.
 
-(** ** Typed reductions imply untyped reduction *)
-
-Lemma oredtmdecl_ored Γ t u A : 
-  [Γ |- t ⇒ u : A] ->
-  [t ⇒ u].
-Proof.
-  induction 1.
-  1-2: now econstructor.
-  eassumption.
-Qed.
-
-Lemma redtmdecl_red Γ t u A : 
-  [Γ |- t ⇒* u : A] ->
-  [t ⇒* u].
-Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor ; eauto using oredtmdecl_ored.
-    reflexivity.
-  - now etransitivity.
-Qed.
-
-Lemma oredtydecl_ored Γ A B : 
-  [Γ |- A ⇒ B] ->
-  [A ⇒ B].
-Proof.
-  induction 1.
-  now eapply oredtmdecl_ored.
-Qed.
-
-Lemma redtydecl_red Γ A B : 
-  [Γ |- A ⇒* B] ->
-  [A ⇒* B].
-Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor ; eauto using oredtydecl_ored.
-    reflexivity.
-  - now etransitivity.
-Qed.
-
 (** ** Derived rules for multi-step reduction *)
 
 Lemma redtmdecl_app Γ na A B f f' t :
