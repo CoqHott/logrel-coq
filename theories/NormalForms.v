@@ -15,6 +15,12 @@ with whne : term -> Type :=
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
+Ltac inv_whne :=
+  repeat lazymatch goal with
+    | H : whne _ |- _ =>
+    try solve [inversion H] ; block H
+  end; unblock.
+
 Lemma neSort s : whne (tSort s) -> False.
 Proof.
   inversion 1.
