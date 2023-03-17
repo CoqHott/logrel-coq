@@ -31,6 +31,7 @@ theories/LogicalRelation/Transitivity.v
 theories/LogicalRelation/Reduction.v
 theories/LogicalRelation/NormalRed.v
 theories/LogicalRelation/Application.v
+theories/LogicalRelation/SimpleArr.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v

@@ -6,23 +6,19 @@ From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 Set Universe Polymorphism.
 Set Printing Universes.
 
-(** We show a general version of irrelevance, saying that if A and A' are reducible
+(** We show a general version of irrelevance, saying that if A and A' are reducible (at levels logical relation levels lA, lA')
 and A' is reducibly convertible to A, then the reducibility predicates they decode to are equivalent.
 From this, both a simpler version of irrelevance and symmetry follow, by using reflexivity
 in the right places. *)
 (** Interestingly, we also show irrelevance with respect to universe levels, which is crucial
 in later parts of the development, where this avoids creating spurious constraints on universe levels.*)
 
-(** ** The main theorem *)
 
 Section Irrelevances.
 Context `{GenericTypingProperties}.
 
-(** *** Lemmas for product types *)
 
-(** A difficulty is that we need to show the equivalence right away, rather than only an implication,
-because of contravariance in the case of Π types. To save up work, we factor out some lemmas to
-avoid having to basically duplicate their proofs. *)
+(** *** Equivalences of LRPack *)
 
 Section EquivLRPack.
   Universe i i' v.
@@ -43,6 +39,13 @@ Proof.
     apply eqT + apply rTm + apply eqTm.
 Qed.
   
+
+
+(** *** Lemmas for product types *)
+
+(** A difficulty is that we need to show the equivalence right away, rather than only an implication,
+because of contravariance in the case of Π types. To save up work, we factor out some lemmas to
+avoid having to basically duplicate their proofs. *)
 
 Section ΠIrrelevanceLemmas.
 Universe i j k l i' j' k' l' v.
@@ -126,7 +129,7 @@ Proof.
   - split; now apply ΠIrrelevanceTmEq.
 Qed.
 
-Set Printing Primitive Projection Parameters.
+(** *** Irrelevance for neutral types *)
 
 Lemma NeIrrelevanceLRPack@{i j k l i' j' k' l' v}
   {Γ A A'} lA lA'
@@ -152,6 +155,7 @@ Proof.
     all: now eapply convneu_conv.
 Qed.
 
+(** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
 
 Lemma NeNfconv {Γ k A A'} : [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
 Proof.
@@ -164,7 +168,6 @@ Proof.
 Qed.
 
 
-(** The main proof *)
 
 Section LRIrrelevant.
 Universe u v.
@@ -217,6 +220,8 @@ Proof.
     1-4: now econstructor.
     all: cbn; tea.
 Qed.
+
+(** ** The main theorem *)
 
 Lemma LRIrrelevantPreds {lA lA'}
   (IH : IHStatement lA lA')
@@ -535,6 +540,9 @@ Proof.
 Qed.
 
 End Irrelevances.
+
+
+(** ** Tactics for irrelevance, with and without universe cumulativity *)
 
 Ltac irrelevanceCum0 :=
   lazymatch goal with

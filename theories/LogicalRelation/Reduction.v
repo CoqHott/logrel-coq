@@ -70,19 +70,15 @@ Proof.
     now apply LREqTermRefl_.
 Qed.
 
-
-(* KM: We do not have a 1 step typed reduction relation, so I'm not sure whether
-  the following lemma would make sense (and I don't see how to prove it)
-*)
-(* Lemma redSubst1 {Γ A B l} :
-  [A ⇒ B] ->
-  [Γ |- A] ->
-  [Γ ||-<l> B] ->
-  ∑ (RA : [Γ ||-<l> A]), [Γ ||-<l> A ≅ B | RA].
+Lemma redSubstTermOneStep {Γ t u A l} (RA : [Γ ||-<l> A]) :
+  [Γ |- t : A] ->
+  [Γ |- t ⇒ u : A ] ->
+  [Γ ||-<l> u : A | RA] ->
+  [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
-  intros ? wfA RB.
-  apply redSubst; tea; constructor; tea.
-  (* Stuck: no way to turn a one step untyped reduction to a typed one *)
-  *)
+  intros; escape.
+  eapply redSubstTerm; tea; constructor; tea.
+  now eapply redtm_one_step. 
+Qed.
 
 End Reduction.

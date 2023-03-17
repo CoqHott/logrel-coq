@@ -29,7 +29,6 @@ Definition normRedΠ {Γ nF F G l} (h : [Γ ||-<l> tProd nF F G])
   : [Γ ||-<l> tProd nF F G] :=
   LRPi' (normRedΠ0 (invLRΠ h)).
 
-
 #[program]
 Definition normLambda {Γ nF F nF' F' G t l RΠ} 
   (Rlam : [Γ ||-<l> tLambda nF' F' t : tProd nF F G | normRedΠ RΠ ]) :
@@ -42,3 +41,37 @@ Solve All Obligations with
   first [eapply app | now eapply eqq| eassumption].
 
 End Normalization.
+
+(** ** Tactics for normalizing the proof relevant components of a reducible type *)
+
+(* Normalizes a term reducible at a Π type *)
+
+Ltac normRedΠin id X :=
+  let g := type of X in
+  match g with
+  | [ LRAd.pack ?R | _ ||- ?t : _] =>
+    pose (id := normRedΠ0 (invLRΠ R));
+    let X' := fresh X in
+    rename X into X' ;
+    assert (X : [_ ||-<_> t : _ | LRPi' id]) by irrelevance; clear X'
+  end.
+
+Goal forall `{GenericTypingProperties} Γ A B l R f (Rf : [Γ ||-<l> f : arr A B | R]), True.
+Proof.
+  intros.
+  normRedΠin ΠAB Rf.
+  constructor.
+Qed.
+
+(* Normalizes a goal reducible at a Π type *)
+
+Ltac normRedΠ id :=
+  let G := fresh "G" in
+  set (G := _);
+  let g := eval unfold G in G in
+  match g with
+  | [ LRAd.pack ?R | _ ||- ?t : _] =>
+    pose (id := normRedΠ0 (invLRΠ R)); subst G;
+    enough [_ ||-<_> t : _ | LRPi' id] by irrelevance
+  end.
+
