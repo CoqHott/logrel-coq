@@ -475,13 +475,13 @@ Section NatRedTm.
     NatProp (tSucc n)
   | neR {ne} : [Γ ||-NeNf ne : tNat] -> NatProp ne.
 
-Scheme
-    Minimality for NatRedTm Sort Type with
-    Minimality for NatProp   Sort Type.
+
+Scheme NatRedTm_mut_rect := Induction for NatRedTm Sort Type with
+    NatProp_mut_rect := Induction for NatProp Sort Type.
 
 Combined Scheme _NatRedInduction from
-  NatRedTm_rect_nodep,
-  NatProp_rect_nodep.
+  NatRedTm_mut_rect,
+  NatProp_mut_rect.
 
 Let _NatRedInductionType :=
   ltac:(let ind := fresh "ind" in
@@ -501,9 +501,20 @@ Proof.
   intros ??? PRed PProp **; split; now apply (_NatRedInduction _ _ _ PRed PProp).
 Defined.
 
+Definition nf {Γ A n} {NA : [Γ ||-Nat A]} : @NatRedTm _ _ NA n -> term.
+Proof.
+  intros [? nf]. exact nf.
+Defined.
+
+Definition red {Γ A n} {NA : [Γ ||-Nat A]} (Rn : @NatRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tNat].
+Proof.
+  dependent inversion Rn; subst; cbn; tea.
+Defined.
+
 End NatRedTm.
 Arguments NatRedTm {_ _ _ _ _ _ _ _ _}.
 Arguments NatProp {_ _ _ _ _ _ _ _ _}.
+
 End NatRedTm.
 
 Export NatRedTm(NatRedTm,Build_NatRedTm, NatProp, NatRedInduction).
@@ -535,13 +546,16 @@ Section NatRedTmEq.
     NatPropEq (tSucc n) (tSucc n')
   | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tNat] -> NatPropEq ne ne'.
 
-Scheme
-    Minimality for NatRedTmEq Sort Type with
-    Minimality for NatPropEq  Sort Type.
+Scheme NatRedTmEq_mut_rect := Induction for NatRedTmEq Sort Type with
+    NatPropEq_mut_rect := Induction for NatPropEq Sort Type.
+
+Combined Scheme _NatRedInduction from
+  NatRedTmEq_mut_rect,
+  NatPropEq_mut_rect.
 
 Combined Scheme _NatRedEqInduction from
-  NatRedTmEq_rect_nodep,
-  NatPropEq_rect_nodep.
+  NatRedTmEq_mut_rect,
+  NatPropEq_mut_rect.
 
 Let _NatRedEqInductionType :=
   ltac:(let ind := fresh "ind" in
@@ -847,4 +861,14 @@ Section LogRelRecFoldLemmas.
   Qed.
 
 End LogRelRecFoldLemmas.
+
+Section NatPropProperties.
+  Context `{GenericTypingProperties}.
+  Lemma NatProp_whnf {Γ A t} {NA : [Γ ||-Nat A]} : NatProp NA t -> whnf t.
+  Proof.  intros [ | | ? []]; now econstructor. Qed.
+
+  Lemma NatPropEq_whnf {Γ A t u} {NA : [Γ ||-Nat A]} : NatPropEq NA t u -> whnf t × whnf u.
+  Proof.  intros [ | | ? ? []]; split; now econstructor. Qed.
+    
+End NatPropProperties.
 

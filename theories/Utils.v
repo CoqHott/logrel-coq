@@ -119,6 +119,29 @@ Notation "x .π2" := (@projT2 _ _ x) (at level 3, format "x '.π2'").
 
 #[global] Hint Constructors sigT : core.
 
+(** ** Reflexive and Transitivite closure of a (proof-relevant) relation *)
+
+Section ReflexiveTransitiveClosure.
+  Universe u v.
+  Context {A : Type@{u}} (R : A -> A -> Type@{v}).
+
+  Inductive reflTransClos : A -> A -> Type@{v} := 
+  | rtc_refl {x} : reflTransClos x x
+  | rtc_step {x y z} : R x y -> reflTransClos y z -> reflTransClos x z.
+  
+  #[global] Instance rtc_reflexive : Reflexive reflTransClos.
+  Proof. constructor; apply rtc_refl. Defined.
+
+  #[global] Instance rtc_transitive : Transitive reflTransClos.
+  Proof.
+    intros ?? z r; induction r in z |- *.
+    + easy.
+    + intros ?%IHr. eapply rtc_step; eassumption.
+  Defined.
+End ReflexiveTransitiveClosure.
+
+
+
 (** ** Tactics *)
 
 Ltac tea := try eassumption.

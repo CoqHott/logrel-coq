@@ -9,7 +9,7 @@ Context `{GenericTypingProperties}.
 
 Set Printing Primitive Projection Parameters.
 
-Lemma redSubstValid {Γ A t u l}
+Lemma redwfSubstValid {Γ A t u l}
   (VΓ : [||-v Γ])
   (red : [Γ ||-v t :⇒*: u : A | VΓ])
   (VA : [Γ ||-v<l> A | VΓ])
@@ -18,12 +18,12 @@ Lemma redSubstValid {Γ A t u l}
 Proof.
   assert (Veq : [Γ ||-v<l> t ≅ u : A | VΓ | VA]).
   {
-    constructor; intros; eapply redSubstTerm.
+    constructor; intros; eapply redwfSubstTerm.
     1: now eapply validTm.
     now eapply validRed.
   }
   split; tea; constructor; intros.
-  - eapply redSubstTerm.
+  - eapply redwfSubstTerm.
     1: now eapply validTm.
     now eapply validRed.
   - eapply transEqTerm. 2: eapply transEqTerm.

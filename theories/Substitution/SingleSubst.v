@@ -125,15 +125,63 @@ Qed.
 
 (* Skipping a series of lemmas on single substitution of a weakened term *)
 
-(* Lemma substLiftS {Γ F G t l} (VΓ : [||-v Γ]) nF
+
+Lemma liftSubstComm G t σ : G[t]⇑[σ] = G[t[σ] .: ↑ >> σ].
+Proof. now bsimpl. Qed.
+
+
+Lemma substLiftS {Γ F G t l} (VΓ : [||-v Γ]) nF
   (VF : [Γ ||-v<l> F | VΓ])
   (VΓF := validSnoc nF VΓ VF)
   (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
-  (VF' := wk1ValidTy VΓ nF VF VF)
+  (VF' := wk1ValidTy nF VF VF)
   (Vt : [Γ,, vass nF F ||-v<l> t : F⟨@wk1 Γ nF F⟩ | VΓF | VF']) :
-  [Γ ,, vass nF F ||-v<l> G[t .: (S >> tRel)] | VΓF].
-Proof. *)
+  [Γ ,, vass nF F ||-v<l> G[t]⇑ | VΓF].
+Proof.
+  assert (h : forall Δ σ (wfΔ: [|- Δ])
+    (vσ: [VΓF | Δ ||-v σ : Γ,, vass nF F | wfΔ]),
+    [VΓF | Δ ||-v (t[σ] .: ↑ >> σ) : _ | wfΔ ]).
+  1:{
+    unshelve econstructor.
+    + asimpl; now eapply validTail.
+    + cbn. irrelevance0.
+      2: now eapply validTm.
+      now bsimpl.
+  }
+  opector; intros; rewrite liftSubstComm.
+  - unshelve eapply validTy; cycle 2; tea; now eapply h.
+  - irrelevance0.
+    2: unshelve eapply validTyExt.
+    8: now eapply h.
+    4: now eapply (h _ _  _ vσ).
+    1: now bsimpl.
+    1: tea.
+    constructor.
+    + asimpl; eapply irrelevanceSubstEq; now eapply eqTail.
+    + cbn. irrelevance0.
+      2: now eapply validTmExt.
+      now bsimpl.
+      Unshelve. all:tea.
+Qed.
 
+Lemma substLiftSEq {Γ F G G' t l} (VΓ : [||-v Γ]) nF
+  (VF : [Γ ||-v<l> F | VΓ])
+  (VΓF := validSnoc nF VΓ VF)
+  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
+  (VG' : [Γ,, vass nF F ||-v<l> G' | VΓF])
+  (VGeq : [Γ,, vass nF F ||-v<l> G ≅ G' | VΓF | VG])
+  (VF' := wk1ValidTy nF VF VF)
+  (Vt : [Γ,, vass nF F ||-v<l> t : F⟨@wk1 Γ nF F⟩ | VΓF | VF']) :
+  [Γ ,, vass nF F ||-v<l> G[t]⇑ ≅ G'[t]⇑ | VΓF | substLiftS _ nF VF VG Vt].
+Proof.
+  constructor; intros; rewrite liftSubstComm.
+  assert (Vσt : [Δ ||-v (t[σ] .: ↑ >> σ) : _ | VΓF | wfΔ ]). 1:{
+    unshelve econstructor.
+    + bsimpl. now eapply validTail.
+    + bsimpl. instValid Vσ. irrelevance.
+  }
+  instValid Vσt. irrelevance.
+Qed.
 
 Lemma singleSubstΠ1 {Γ nF F G t l lF}
   (ΠFG : [Γ ||-<l> tProd nF F G])

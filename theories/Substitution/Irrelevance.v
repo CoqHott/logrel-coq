@@ -130,6 +130,12 @@ Proof.
   eapply irrelevanceSubst; eassumption.
 Qed.
 
+Lemma irrelevanceEq' {Γ l A A' B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) : A = A' ->
+  [Γ ||-v< l > A ≅ B | VΓ | VA] -> [Γ ||-v< l > A' ≅ B | VΓ' | VA'].
+Proof.
+  intros ->; now eapply irrelevanceEq.
+Qed.
+
 Lemma symValidEq {Γ l A B} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} (VB : [Γ ||-v<l> B | VΓ]) :
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ A | VΓ | VB].
 Proof.
@@ -157,6 +163,12 @@ Proof.
     unshelve eapply h2. 1: eassumption.
     1,2: eapply irrelevanceSubst; eassumption.
     eapply irrelevanceSubstEq; eassumption.
+Qed.
+
+Lemma irrelevanceTm' {Γ l t A A'} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) :
+  A = A' -> [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A' | VΓ' | VA'].
+Proof.
+  intros ->; now eapply irrelevanceTm.
 Qed.
 
 Lemma irrelevanceTmLift {l t A nF F nG G Γ} (VΓ : [||-v Γ])
@@ -192,6 +204,12 @@ Proof.
   intros [h]; constructor; intros; irrelevanceRefl.
   unshelve apply h; tea.
   eapply irrelevanceSubst; eassumption.
+Qed.
+
+Lemma irrelevanceTmEq' {Γ l t u A A'} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) :
+  A = A' -> [Γ ||-v<l> t ≅ u : A | VΓ | VA] -> [Γ ||-v<l> t ≅ u : A' | VΓ' | VA'].
+Proof.
+  intros ->; now eapply irrelevanceTmEq.
 Qed.
 
 Lemma symValidTmEq {Γ l t u A} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} :

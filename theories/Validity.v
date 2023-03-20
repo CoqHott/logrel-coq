@@ -312,7 +312,7 @@ Ltac instValid vσ :=
     let X := fresh "R" H in
     try pose (X := validTm H wfΔ vσ) ;
     block H
-  | [H : typeEqValidity _ _ _ _ _ |- _] =>
+  | [H : typeEqValidity _ _ _ _ _ _ |- _] =>
     let X := fresh "R" H in
     try pose (X := validTyEq H wfΔ vσ) ;
     block H

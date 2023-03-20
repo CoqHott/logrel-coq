@@ -20,6 +20,7 @@ Section Definitions.
   here before declaring the instance to which abstract notations are bound. *)
   Close Scope typing_scope.
 
+
   (** Typing and conversion are mutually defined inductive relations. To avoid having
   to bother with elimination of propositions, we put them in the Type sort. *)
 

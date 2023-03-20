@@ -36,7 +36,7 @@ Section AppTerm.
       [Γ ||-<l''> tApp t u : G[u..] | RGu]
       × [Γ ||-<l''> tApp t u ≅ tApp (PiRedTm.nf Rt) u : G[u..] | RGu].
   Proof.
-    eapply redSubstTerm.
+    eapply redwfSubstTerm.
     1: unshelve eapply app_id; tea.
     escape.
     eapply redtmwf_app.

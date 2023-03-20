@@ -123,12 +123,6 @@ Proof.
     rewrite e; apply eqApp0.
 Qed.
 
-Lemma NatProp_whnf {Γ A t} {NA : [Γ ||-Nat A]} : NatProp NA t -> whnf t.
-Proof.  intros [ | | ? []]; now econstructor. Qed.
-
-Lemma NatPropEq_whnf {Γ A t u} {NA : [Γ ||-Nat A]} : NatPropEq NA t u -> whnf t × whnf u.
-Proof.  intros [ | | ? ? []]; split; now econstructor. Qed.
-
 Lemma transNeNfEq {Γ t u v A} :
   [Γ ||-NeNf t ≅ u : A] ->
   [Γ ||-NeNf u ≅ v : A] ->

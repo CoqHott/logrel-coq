@@ -45,9 +45,8 @@ Section SimpleArrow.
       intros; cbn; escape.
       assert [Δ |- A⟨ρ⟩] by now eapply wft_wk.
       assert [Δ |- A⟨ρ⟩ ≅ A⟨ρ⟩] by now eapply convty_wk.
-      refine (redSubstTermOneStep _ _ _ ha).
-      2: now eapply osredtm_id_beta.
-      eapply ty_simple_app; tea; now eapply ty_id.
+      refine (redSubstTermOneStep _ _ ha).
+      now eapply osredtm_id_beta.
     }
     econstructor; cbn.
     - eapply redtmwf_refl.
@@ -183,11 +182,6 @@ Section SimpleArrow.
       assert (eq : forall t : term, t⟨↑⟩⟨upRen_term_term ρ⟩ = t⟨ρ⟩⟨↑⟩) by (intros; now asimpl).
       do 2 rewrite eq.
       eapply redSubstTermOneStep.
-      + eapply ty_simple_app.
-        4: cbn in *; now escape.
-        3: eapply ty_comp.
-        6,7: erewrite arr_wk; eapply ty_wk; tea.
-        1-5: eapply wft_wk; tea.
       + eapply osredtm_comp_beta.
         6: cbn in *; now escape.
         5: erewrite arr_wk; eapply ty_wk; tea.

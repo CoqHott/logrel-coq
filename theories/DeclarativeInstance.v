@@ -657,6 +657,10 @@ Module DeclarativeTypingProperties.
     now eapply redtmdecl_conv.
   - intros.
     now econstructor.
+  - intros ???? red; induction red.
+    + reflexivity.
+    + eapply rtc_step; tea; reflexivity.
+    + now etransitivity.  
   Qed. 
 
   #[export, refine] Instance RedTypeDeclProperties : RedTypeProperties (ta := de) := {}.

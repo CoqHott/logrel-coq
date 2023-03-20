@@ -41,7 +41,7 @@ Proof.
   pose proof (VσUp :=  liftSubstS' nF VF Vσ).
   instValid Vσ. instValid VσUp.  escape.
   irrelevance0. 1: now rewrite consWkEq'.
-  eapply redSubstTerm; tea.
+  eapply redwfSubstTerm; tea.
   constructor; tea.
   * rewrite <- consWkEq.  eapply (ty_app (na:= nF)); tea.
     change (tProd _ _ _) with ((tProd nF F G)[σ]⟨ρ⟩).
@@ -63,7 +63,7 @@ Proof.
   assert (eq : forall t, t[a..][σ] = t[up_term_term σ][a[σ]..]) by (intros; now bsimpl).
   assert (eq' : forall t, t[a..][σ] = t[a[σ].: σ]) by (intros; now bsimpl).
   irrelevance0. 1: symmetry; apply eq.
-  rewrite eq;  eapply redSubstTerm; tea.
+  rewrite eq;  eapply redwfSubstTerm; tea.
   1: rewrite <- eq; rewrite eq'; irrelevance.
   constructor; tea.
   * eapply (ty_app (na:= nF)); tea. refold. gen_typing.
@@ -262,12 +262,12 @@ Proof.
     do 2 rewrite eq in RVfg.
     eapply transEqTerm; [|eapply transEqTerm].
     2: irrelevance; symmetry; apply consWkEq'.
-    + eapply LRTmEqSym; eapply redSubstTerm.
+    + eapply LRTmEqSym; eapply redwfSubstTerm.
       1: unshelve epose proof (r := PiRedTm.app p ρ0 h ha); irrelevance.
       eapply redtmwf_appwk; tea.
       1: exact (PiRedTm.red p).
       now bsimpl.
-    + eapply redSubstTerm.
+    + eapply redwfSubstTerm.
       1: unshelve epose proof (r := PiRedTm.app p0 ρ0 h ha); irrelevance.
       eapply redtmwf_appwk; tea.
       1: exact (PiRedTm.red p0).

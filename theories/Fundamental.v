@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping DeclarativeInstance GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat SimpleArr.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -174,10 +174,8 @@ Section Fundamental.
       destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ;
       destruct d as [nA A]; cbn.
     - renToWk; rewrite <- (wk1_ren_on Γ nA A A).
-      exists (validSnoc nA VΓ VA) (embValidTyOne (wk1ValidTy nA VA VA)).
-      constructor; intros; cbn.
-      + epose (validHead Vσ); irrelevance.
-      + epose (eqHead Vσσ'); irrelevance.
+      eexists _ _; unshelve eapply var0Valid; tea.
+      now eapply embValidTyOne.
     - renToWk; rewrite <- (wk1_ren_on Γ d'.(decl_name) d'.(decl_type) A).
       destruct (IHhin (boundary_ctx_ctx wfΓ) VΓ); cbn in *.
       econstructor. set (ρ := wk1 _ _).
@@ -399,20 +397,28 @@ Section Fundamental.
 
   Lemma FundTyNat : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTy Γ tNat.
   Proof.
-  Admitted.
+    intros ???; unshelve econstructor; tea;  eapply natValid.
+  Qed.
 
   Lemma FundTmNat : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTm Γ U tNat.
   Proof.
-  Admitted.  
+    intros ???; unshelve econstructor; tea.
+    2: eapply natTermValid.
+  Qed.
 
   Lemma FundTmZero : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTm Γ tNat tZero.
   Proof.
-  Admitted.
+    intros; unshelve econstructor; tea. 
+    2:eapply zeroValid.
+  Qed.
 
   Lemma FundTmSucc : forall (Γ : context) (n : term),
-  [Γ |-[ de ] n : tNat] -> FundTm Γ tNat n -> FundTm Γ tNat (tSucc n).
+    [Γ |-[ de ] n : tNat] -> FundTm Γ tNat n -> FundTm Γ tNat (tSucc n).
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor; tea.
+    eapply irrelevanceTm; eapply succValid; irrValid.
+    Unshelve. tea.
+  Qed.
 
   Lemma FundTmNatElim : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
     [Γ,, vass nN tNat |-[ de ] P] ->
@@ -424,13 +430,20 @@ Section Fundamental.
     [Γ |-[ de ] n : tNat] ->
     FundTm Γ tNat n -> FundTm Γ P[n..] (tNatElim P hz hs n).
   Proof.
-  Admitted.
+    intros * ?[]?[]?[]?[]; unshelve econstructor; tea.
+    2: eapply natElimValid; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
   
   Lemma FundTmEqSuccCong : forall (Γ : context) (n n' : term),
     [Γ |-[ de ] n ≅ n' : tNat] ->
     FundTmEq Γ tNat n n' -> FundTmEq Γ tNat (tSucc n) (tSucc n').
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor; tea.
+    1,2: eapply irrelevanceTm; eapply succValid; irrValid.
+    eapply irrelevanceTmEq; eapply succcongValid; irrValid.
+    Unshelve. all: tea.
+  Qed.
 
   Lemma FundTmEqNatElimCong : forall (Γ : list context_decl) (nN : aname)
       (P P' hz hz' hs hs' n n' : term),
@@ -444,7 +457,33 @@ Section Fundamental.
     FundTmEq Γ tNat n n' ->
     FundTmEq Γ P[n..] (tNatElim P hz hs n) (tNatElim P' hz' hs' n').
   Proof.
-  Admitted.
+    intros * ?[? VP0 VP0']?[VΓ0]?[]?[].
+    pose (VN := natValid (l:=one) VΓ0).
+    assert (VP' : [ _ ||-v<one> P' | validSnoc nN VΓ0 VN]) by irrValid. 
+    assert [Γ ||-v< one > hz' : P'[tZero..] | VΓ0 | substS nN VP' (zeroValid VΓ0)]. 1:{
+      eapply conv. 2: irrValid.
+      eapply substSEq. 2,3: irrValid.
+      1: eapply reflValidTy.
+      2: eapply reflValidTm.
+      all: eapply zeroValid.
+    }
+    assert [Γ ||-v< one > hs' : elimSuccHypTy nN P' | VΓ0 | elimSuccHypTyValid VΓ0 VP']. 1:{
+      eapply conv. 2: irrValid.
+      eapply elimSuccHypTyCongValid; irrValid.
+    } 
+    unshelve econstructor; tea.
+    2: eapply natElimValid; irrValid.
+    + eapply conv.
+      2: eapply irrelevanceTm; now eapply natElimValid.
+      eapply symValidEq. 
+      eapply substSEq; tea. 
+      2,3: irrValid.
+      eapply reflValidTy.
+    + eapply natElimCongValid; tea; try irrValid.
+    Unshelve. all: try irrValid.
+    1: eapply zeroValid.
+    1: unshelve eapply substS; try irrValid.
+  Qed.
 
   Lemma FundTmEqNatElimZero : forall (Γ : list context_decl) (nN : aname) (P hz hs : term),
     [Γ,, vass nN tNat |-[ de ] P] ->
@@ -455,7 +494,12 @@ Section Fundamental.
     FundTm Γ (elimSuccHypTy nN P) hs ->
     FundTmEq Γ P[tZero..] (tNatElim P hz hs tZero) hz.
   Proof.
-  Admitted.
+    intros * ?[]?[]?[]; unshelve econstructor; tea.
+    3: irrValid.
+    3: eapply natElimZeroValid; irrValid.
+    eapply natElimValid; irrValid.
+    Unshelve. irrValid.
+  Qed.
 
   Lemma FundTmEqNatElimSucc : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
     [Γ,, vass nN tNat |-[ de ] P] ->
@@ -469,7 +513,19 @@ Section Fundamental.
     FundTmEq Γ P[(tSucc n)..] (tNatElim P hz hs (tSucc n))
       (tApp (tApp hs n) (tNatElim P hz hs n)).
   Proof.
-  Admitted.  
+    intros * ?[]?[]?[]?[]; unshelve econstructor; tea.
+    4: eapply natElimSuccValid; irrValid.
+    1: eapply natElimValid; irrValid.
+    eapply simple_appValid.
+    2: eapply natElimValid; irrValid.
+    eapply irrelevanceTm'.
+    2: now eapply appValid.
+    now bsimpl.
+    Unshelve. all: try irrValid.
+    eapply simpleArrValid; eapply substS; tea.
+    1,2: irrValid.
+    eapply succValid; irrValid.
+  Qed.
 
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
