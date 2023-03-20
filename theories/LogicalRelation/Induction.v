@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedValues Weakening GenericTyping LogicalRelation.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping LogicalRelation.
 
 Set Universe Polymorphism.
 
@@ -7,7 +7,7 @@ Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta}.
+    `{!RedType ta} `{!TypeNf ta} `{!TypeNe ta} `{!RedTerm ta} `{!TermNf ta} `{!TermNe ta}.
 
   Fixpoint LR_embedding@{i j k l} {l l'} (l_ : l << l')
     {Γ A rEq rTe rTeEq} (lr : LogRel@{i j k l} l Γ A rEq rTe rTeEq) {struct lr} : (LogRel@{i j k l} l' Γ A rEq rTe rTeEq) :=
@@ -286,7 +286,8 @@ Section Inversions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}.
+    `{!RedType ta} `{!TypeNf ta} `{!TypeNe ta} `{!RedTerm ta} `{!TermNf ta} `{!TermNe ta} `{!RedTypeProperties}
+    `{!TypeNeProperties}.
 
   Lemma invLR {Γ l A} (lr : [Γ ||-<l> A]) : 
     whnf A ->
@@ -298,9 +299,9 @@ Section Inversions.
   Proof.
     pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr.
     + intros * h whA.
-      epose proof (redtywf_whnf (URedTy.red h) whA); subst; assumption.
+      epose proof (redtywf_whnf (URedTy.red h) whA). subst; assumption.
     + intros * h whA. pose (h' := h); destruct h' as [ty [?? r] ne].
-      apply sne_whne in ne.
+      apply ty_ne_whne in ne.
       pose proof (redty_whnf r whA); subst.
       destruct ty; inversion ne; eassumption.
     + intros ??? h _ _ whA. pose (h' := h); destruct h' as [??? [?? r]].

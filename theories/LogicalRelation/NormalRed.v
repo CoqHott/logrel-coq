@@ -38,7 +38,7 @@ Definition normLambda {Γ nF F nF' F' G t l RΠ}
 Solve All Obligations with
   intros;
   pose proof (e := redtmwf_whnf (PiRedTm.red Rlam) whnf_tLambda);
-  destruct Rlam as [???? app eqq]; cbn in *; subst;
+  destruct Rlam as [????? app eqq]; cbn in *; subst;
   first [eapply app | now eapply eqq| eassumption].
 
 End Normalization.

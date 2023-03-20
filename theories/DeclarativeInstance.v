@@ -1,6 +1,6 @@
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction Weakening GenericTyping DeclarativeTyping Generation.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction UntypedValues Weakening GenericTyping DeclarativeTyping Generation.
 
 Import DeclarativeTypingData.
 
@@ -582,6 +582,8 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ := {}.
+  Export UntypedValues.WeakValuesProperties.
+
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

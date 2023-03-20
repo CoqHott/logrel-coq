@@ -178,7 +178,7 @@ Proof.
     cbn; renToWk. eapply convty_wk; tea.
     eapply escapeEq_;  unshelve eapply validTyExt; cycle 3; tea.
     - apply neuTerm; tea.
-      { eapply sne_tRel; reflexivity. }
+      { now eapply tm_ne_rel. }
       { apply convneu_var; tea. }
 Qed.
 

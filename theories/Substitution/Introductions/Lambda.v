@@ -84,6 +84,7 @@ Proof.
   exists (tLambda nF F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
   + constructor.
+  + apply tm_nf_lam.
     - now apply reifyType in RVF.
     - now apply reifyTerm in RVt.
   + eapply convtm_eta; tea. 
@@ -249,7 +250,7 @@ Proof.
     instValid Vσ; instValid VσUp; escape.
     destruct (PiRedTm.red p); destruct (PiRedTm.red p0); cbn in *.
     eapply convtm_eta; tea.
-    1,2: eapply UntypedValues.isSNFun_isFun, PiRedTm.isfun.
+    1,2: eapply PiRedTm.isfun.
     etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
   - cbn; intros.
     set (ν := (a .: σ⟨ρ0⟩)).

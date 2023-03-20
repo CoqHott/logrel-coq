@@ -273,10 +273,56 @@ Section GenericTyping.
 
 End GenericTyping.
 
+Section GenericValues.
+
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta} `{TypeNf ta} `{TypeNe ta} `{TermNf ta} `{TermNe ta}.
+
+  Class TypeNeProperties := {
+    ty_ne_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
+      [|- Δ] -> Ne[Γ |- A] -> Ne[Δ |- A⟨ρ⟩];
+    ty_ne_nf {Γ A} : Ne[Γ |- A] -> Nf[Γ |- A];
+    ty_ne_whne {Γ A} : Ne[Γ |- A] -> whne A;
+    ty_ne_term {Γ A} : Ne[Γ |- A : U] -> Ne[Γ |- A];
+  }.
+
+  Class TypeNfProperties := {
+    ty_nf_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
+      [|- Δ] -> Nf[Γ |- A] -> Nf[Δ |- A⟨ρ⟩];
+    ty_nf_red {Γ A B} : [Γ |- A ⇒* B] -> Nf[Γ |- B] -> Nf[Γ |- A];
+    ty_nf_sort {Γ} : [|- Γ] -> Nf[Γ |- U];
+    ty_nf_prod {Γ na A B} : Nf[Γ |- A] -> Nf[Γ,, vass na A |- B] -> Nf[Γ |- tProd na A B];
+   }.
+
+  Class TermNeProperties := {
+    tm_ne_wk {Γ Δ n A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> Ne[Γ |- n : A] -> Ne[Δ |- n⟨ρ⟩ : A⟨ρ⟩];
+    tm_ne_nf {Γ n A} : Ne[Γ |- n : A] -> Nf[Γ |- n : A];
+    tm_ne_whne {Γ n A} : Ne[Γ |- n : A] -> whne n;
+    tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
+    tm_ne_rel {Γ v A} : [Γ |- tRel v : A] -> Ne[Γ |- tRel v : A];
+    tm_ne_app {Γ n t na A B} : Ne[Γ |- n : tProd na A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
+  }.
+
+  Class TermNfProperties := {
+    tm_nf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> Nf[Γ |- t : A] -> Nf[Δ |- t⟨ρ⟩ : A⟨ρ⟩];
+    tm_nf_conv {Γ t A B} : Nf[Γ |- t : A] -> [Γ |- A ≅ B] -> Nf[Γ |- t : B];
+    tm_nf_red {Γ t u A} : [Γ |- t ⇒* u : A] -> Nf[Γ |- u : A] -> Nf[Γ |- t : A];
+    tm_nf_prod {Γ na A B} : Nf[Γ |- A : U] -> Nf[Γ,, vass na A |- B : U] -> Nf[Γ |- tProd na A B : U];
+    tm_nf_lam {Γ na A B t} : Nf[Γ |- A] -> Nf[Γ,, vass na A |- t : B] -> Nf[Γ |- tLambda na A t : tProd na A B];
+  }.
+
+End GenericValues.
+
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
-  `(RedType ta) `(RedTerm ta) :=
+  `(RedType ta) `(RedTerm ta)
+  `(RedType ta) `(RedTerm ta) `(TypeNf ta) `(TypeNe ta) `(TermNf ta) `(TermNe ta)
+:=
 {
   wfc_prop :> WfContextProperties ;
   wfty_prop :> WfTypeProperties ;
@@ -286,6 +332,10 @@ Class GenericTypingProperties `(ta : tag)
   convne_prop :> ConvNeuProperties ;
   redty_prop :> RedTypeProperties ;
   redtm_prop :> RedTermProperties ;
+  tynf_prop :> TypeNfProperties;
+  tyne_prop :> TypeNeProperties;
+  tmnf_prop :> TermNfProperties;
+  tmne_prop :> TermNeProperties;
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.

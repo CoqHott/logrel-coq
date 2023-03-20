@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context Untyped UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance.
 
 Set Universe Polymorphism.
@@ -29,7 +29,7 @@ Proof.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
-    1,2 : apply whnf_whne, sne_whne. all: assumption.
+    1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
   - destruct RAB as [nB domB codB redB ? domRedEq codRedEq], RBC as [nC domC codC redC ? domRedEq' codRedEq'].
     destruct ΠB as [??? redB' ??? domRedB codRedB], ΠC as [??? redC' ??? domRedC codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
     unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
@@ -79,7 +79,7 @@ Proof.
   intros [rL ?? redL] [? rR] ; exists rL rR redL; tea.
   + etransitivity; tea.
     unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (URedTm.red redR) (URedTm.red redL0))  ; tea.
-    all: apply isSNType_whnf; apply URedTm.type.
+    all: apply isType_whnf; apply URedTm.type.
   + apply TyEqRecFwd; unshelve eapply transEq@{h i j k}.
     6,7: now apply (TyEqRecFwd h). 
     2: apply (RedTyRecFwd h); tea.
@@ -93,7 +93,7 @@ Proof.
   intros [tL] [? tR]; exists tL tR; tea.
   etransitivity; tea.
   unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ redR redL0); tea.
-  all: now apply whnf_whne, sne_whne.
+  all: now eapply whnf_whne, tm_ne_whne.
 Qed.
 
 
@@ -114,7 +114,7 @@ Lemma transEqTermΠ {Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]}
 Proof.
   intros [tL] [? tR];
   unshelve epose proof (e := redtmwf_det _ _ _ _ _ _ _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
-  1,2: apply isSNFun_whnf; apply PiRedTm.isfun.
+  1,2: apply isFun_whnf; apply PiRedTm.isfun.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
   + intros. eapply ihcod.

@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedValues Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context Untyped Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -108,16 +108,16 @@ Definition elim {l : TypeLevel} (h : l << zero) : False :=
 Module neRedTy.
 
   Record neRedTy `{ta : tag}
-    `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
+    `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
     {Γ : context} {A : term}
   : Set := {
     ty : term;
     red : [ Γ |- A :⇒*: ty];
-    ne : sne ty;
+    ne : Ne[ Γ |- ty];
     eq : [ Γ |- ty ~ ty : U] ;
   }.
 
-  Arguments neRedTy {_ _ _ _}.
+  Arguments neRedTy {_ _ _ _ _}.
 
 End neRedTy.
 
@@ -127,16 +127,16 @@ Notation "[ Γ ||-ne A ]" := (neRedTy Γ A).
 Module neRedTyEq.
 
   Record neRedTyEq `{ta : tag}
-    `{WfType ta} `{ConvNeuConv ta} `{RedType ta}
+    `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
     {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
   : Set := {
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
-    ne : sne ty;
+    ne : Ne[ Γ |- ty];
     eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
   }.
 
-  Arguments neRedTyEq {_ _ _ _}.
+  Arguments neRedTyEq {_ _ _ _ _}.
 
 End neRedTyEq.
 
@@ -146,17 +146,17 @@ Notation "[ Γ ||-ne A ≅ B | R ]" := (neRedTyEq Γ A B R).
 Module neRedTm.
 
   Record neRedTm `{ta : tag}
-    `{WfType ta} `{RedType ta}
-    `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta}
+    `{WfType ta} `{RedType ta} `{TypeNe ta}
+    `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta} `{TermNe ta}
     {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
   : Set := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
-    ne : sne te ;
+    ne : Ne[ Γ |- te : R.(neRedTy.ty)];
     eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
   }.
 
-  Arguments neRedTm {_ _ _ _ _ _ _}.
+  Arguments neRedTm {_ _ _ _ _ _ _ _ _}.
 
 End neRedTm.
 
@@ -167,20 +167,20 @@ Notation "[ Γ ||-ne t : A | B ]" := (neRedTm Γ t A B).
 Module neRedTmEq.
 
   Record neRedTmEq `{ta : tag}
-    `{WfType ta} `{RedType ta}
-    `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
+    `{WfType ta} `{RedType ta} `{TypeNe ta}
+    `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta} `{TermNe ta}
     {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]}
   : Set := {
     termL     : term;
     termR     : term;
     redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
     redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
-    whneL : sne termL;
-    whneR : sne termR;
+    whneL : Ne[Γ |- termL : R.(neRedTy.ty) ];
+    whneR : Ne[Γ |- termR : R.(neRedTy.ty) ];
     eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
   }.
 
-  Arguments neRedTmEq {_ _ _ _ _ _ _ _}.
+  Arguments neRedTmEq {_ _ _ _ _ _ _ _ _ _}.
 
 End neRedTmEq.
 
@@ -226,22 +226,23 @@ Notation "[ Γ ||-U≅ B ]" := (URedTyEq Γ B).
 Module URedTm.
 
   Record URedTm@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} 
+    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} `{TermNf ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
     {Γ : context} {t A : term} {R : [Γ ||-U<l> A]}
   : Type@{j} := {
     te : term;
     red : [ Γ |- t :⇒*: te : U ];
-    type : isSNType te;
+    type : isType te;
+    val : Nf[Γ |- te : U];
     eqr : [Γ |- te ≅ te : U];
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
   }.
 
-  Arguments URedTm {_ _ _ _ _ _ _ _} rec.
+  Arguments URedTm {_ _ _ _ _ _ _ _ _} rec.
 
   (*Universe term equality*)
   Record URedTmEq@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} `{TermNf ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
     {Γ : context} {t u A : term} {R : [Γ ||-U<l> A]}
   : Type@{j} := {
@@ -253,7 +254,7 @@ Module URedTm.
       relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ] ;
   }.
 
-  Arguments URedTmEq {_ _ _ _ _ _  _ _} rec.
+  Arguments URedTmEq {_ _ _ _ _ _ _ _ _} rec.
 
 End URedTm.
 
@@ -335,12 +336,13 @@ Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
     {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     nf : term;
     red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isSNFun nf;
+    isfun : isFun nf;
+    isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
@@ -352,7 +354,7 @@ Module PiRedTm.
       : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
   }.
 
-  Arguments PiRedTm {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTm.
 
@@ -363,7 +365,7 @@ Module PiRedTmEq.
 
   Record PiRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
     {Γ : context} {t u A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     redL : [ Γ ||-Π t : A | ΠA ] ;
@@ -375,7 +377,7 @@ Module PiRedTmEq.
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
   }.
 
-  Arguments PiRedTmEq {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTmEq {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTmEq.
 
@@ -388,7 +390,7 @@ Unset Elimination Schemes.
 Inductive LR@{i j k} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
-  `{RedType ta} `{RedTerm ta}
+  `{RedType ta} `{TypeNf ta} `{TypeNe ta}  `{RedTerm ta} `{TermNf ta} `{TermNe ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
   | LRU {Γ A} (H : [Γ ||-U<l> A]) :
@@ -439,7 +441,7 @@ Section MoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta}.
+    `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}.
 
   Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=
     match elim h with
@@ -512,7 +514,7 @@ Section PiRedTyPack.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta}.
+    `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}.
 
 
   Record PiRedTyPack@{i j k l} {Γ : context} {A : term} {l : TypeLevel} 
@@ -601,7 +603,7 @@ Section PiRedTyPack.
 End PiRedTyPack.
 
 Arguments PiRedTyPack : clear implicits.
-Arguments PiRedTyPack {_ _ _ _ _ _ _ _ _} _ _ _.
+Arguments PiRedTyPack {_ _ _ _ _ _ _ _ _ _ _ _ _} _ _ _.
 
 End PiRedTyPack.
 
@@ -613,8 +615,8 @@ Section LogRelRecFoldLemmas.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta}.
-  
+    `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}.
+
   Lemma RedTyRecFwd {l Γ A t} (h : [Γ ||-U<l> A]) : 
     [LogRelRec l (URedTy.level h) (URedTy.lt h) | Γ ||- t] ->
     [LogRel (URedTy.level h) | Γ ||- t ].

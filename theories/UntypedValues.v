@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction.
+From LogRel Require Import Utils BasicAst Notations Context Untyped UntypedReduction GenericTyping.
 
 Unset Elimination Schemes.
 
@@ -180,3 +180,79 @@ Lemma isSNFun_ren ρ t : isSNFun t -> isSNFun (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
+
+Module WeakValuesData.
+
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ] × whnf B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ] × whnf u.
+
+End WeakValuesData.
+
+Module WeakValuesProperties.
+
+Export WeakValuesData.
+
+Section Properties.
+
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
+
+  #[export] Instance TypeWhneProperties : TypeNeProperties.
+  Proof.
+  split.
+  + intros; now apply Weakening.whne_ren.
+  + intros Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
+  + intros; assumption.
+  + intros; assumption.
+  Qed.
+
+  #[export] Instance TypeWhnfProperties : TypeNfProperties.
+  Proof.
+  split.
+  + intros Γ Δ A ρ _ [B [? ?]].
+    exists (B⟨ρ⟩); split.
+    - now apply (credalg_wk Γ Δ).
+    - now apply Weakening.whnf_ren.
+  + intros Γ A B ? [C [? ?]].
+    exists C; split.
+    - transitivity B; [eapply redty_red| ]; eassumption.
+    - assumption.
+  + exists (tSort set); split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  Qed.
+
+  #[export] Instance TermWhneProperties : TermNeProperties.
+  Proof.
+  split.
+  + intros; now apply Weakening.whne_ren.
+  + intros; eexists; split; [reflexivity|now constructor].
+  + intros; assumption.
+  + intros; assumption.
+  + constructor.
+  + constructor; assumption.
+  Qed.
+
+  #[export] Instance TermWhnfProperties : TermNfProperties.
+  Proof.
+  split.
+  + intros Γ Δ t A ρ _ [B [? ?]].
+    exists (B⟨ρ⟩); split.
+    - now apply (credalg_wk Γ Δ).
+    - now apply Weakening.whnf_ren.
+  + intros; assumption.
+  + intros Γ t u A ? [r [? ?]].
+    exists r; split.
+    - transitivity u; [eapply redtm_red| ]; eassumption.
+    - assumption.
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  Qed.
+
+End Properties.
+
+End WeakValuesProperties.
+

@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context Untyped UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst Context Untyped Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 
 Set Universe Polymorphism.
@@ -87,6 +87,8 @@ Proof.
     econstructor.
     all: gen_typing.
   - eassumption.
+  - apply (tm_nf_conv isnf).
+    gen_typing.
   - cbn.
     gen_typing.
   - intros.
@@ -173,21 +175,24 @@ Proof.
       split.
       all: intros [].
       all: econstructor.
-      1, 2, 3, 5, 6, 7: tea.
+      all: try match goal with
+      | |- [ _ | _ ||- _ ] => fail 1
+      | _ => tea
+      end.
       * apply (fst (IHty Γ zero Oi Oi t)). exact rel.
       * apply (snd (IHty Γ zero Oi Oi t)). exact rel.
     + cbn ; intros ? ?.
       split.
       all: intros [[] []] ; cbn in *.
       all: unshelve econstructor.
-      * econstructor. 1, 2, 3: tea.
+      * econstructor. 1, 2, 3, 4: tea.
         apply (fst (IHty Γ zero Oi Oi t)). exact relL.
-      * econstructor. 1, 2, 3: tea.
+      * econstructor. 1, 2, 3, 4: tea.
         apply (fst (IHty Γ zero Oi Oi u)). exact relR.
       * apply (fst (IHty Γ zero Oi Oi t)). exact relL.
-      * econstructor. 1, 2, 3: tea.
+      * econstructor. 1, 2, 3, 4: tea.
         apply (snd (IHty Γ zero Oi Oi t)). exact relL.
-      * econstructor. 1, 2, 3: tea.
+      * econstructor. 1, 2, 3, 4: tea.
         apply (snd (IHty Γ zero Oi Oi u)). exact relR.
       * apply (snd (IHty Γ zero Oi Oi t)). exact relL.
       * cbn. eassumption.
@@ -200,8 +205,11 @@ Proof.
     destruct he as [AA], neA' as [AA'] ; cbn in *.
     assert (AA' = AA) as eqAA'.
     {
-      all: eapply whredty_det ; econstructor; [idtac | constructor; apply sne_whne; assumption | idtac | constructor; apply sne_whne; assumption ].
-      all: gen_typing.
+      all: eapply whredty_det ; econstructor.
+      + gen_typing.
+      + constructor; now eapply ty_ne_whne.
+      + gen_typing.
+      + constructor; now eapply ty_ne_whne.
     }
     revert red1 ne1 eq1. pattern AA'.
     set (P := fun _ => _). apply (tr P (eq_sym eqAA')). subst P; cbn.
@@ -222,7 +230,8 @@ Proof.
       all: intros [].
       all: econstructor ; cbn in *.
       all: try eauto.
-      1,3: eapply redtmwf_conv ; eassumption.
+      1,4: eapply redtmwf_conv; eassumption.
+      1,3: eapply tm_ne_conv; first [eassumption|gen_typing].
       all: gen_typing.
     + intros ? ?.
       split.
@@ -230,8 +239,8 @@ Proof.
       all: intros [].
       all: econstructor.
       all: cbn in *.
-      1-2,6-7: eapply redtmwf_conv ; eassumption.
-      1-2,4-5: eassumption.
+      all: try match goal with |- [ _ |- _ :⇒*: _ : _] => eapply redtmwf_conv ; eassumption end.
+      all: try match goal with |- Ne[ _ |- _ : _] => now eapply tm_ne_conv end.
       all: now gen_typing.
   - destruct lrA' as [| | ? A' [] []] ; try solve [destruct s] ; clear s.
     destruct he ; cbn -[subst1] in *.

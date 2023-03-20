@@ -139,23 +139,24 @@ Section PiTyValidity.
     refine (convty_prod I (domainTy tΔ vσ) _ _).
     - eapply escapeEq_. eapply (validTyExt vF tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F na G Δ σ). rewrite (eq_subst_1 F na G Δ σ').
+      assert ([Δ,, vass na F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ na F[σ]⟩)]]).
+      { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
+        refine (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _)). }
       eapply escapeEq_. unshelve refine (validTyExt vG _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy tΔ vσ) vσ').
-        * cbn. eapply neuTerm. econstructor; reflexivity.
-          2: refine (convneu_var _).
-          all: eapply (ty_conv (A' := F[σ]⟨S⟩) (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _))).
-          all: replace (F[σ]⟨S⟩) with (F[σ⟨@wk1 Δ na F[σ]⟩]) by (now bsimpl).
-          all: eapply (domainTyEq tΔ vσ vσ' vσσ').
+        * assert ([Δ,, vass na F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ na F[σ']⟩)]]).
+          { eapply ty_conv; [eassumption|].
+            eapply (domainTyEq tΔ vσ vσ' vσσ'). }
+          eapply neuTerm; [apply tm_ne_rel| |refine (convneu_var _)]; assumption.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy tΔ vσ) vσ vσσ').
-        * cbn. eapply neuTermEq.
-          1, 2: econstructor; reflexivity.
-          3: refine (convneu_var _).
-          all: replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
-          all: refine (ty_var (wfc_cons na tΔ (domainTy _ vσ)) (in_here _ _)).
+        * cbn; eapply neuTermEq.
+          1,2: now apply tm_ne_rel.
+          1,2: now assumption.
+          now refine (convneu_var _).
   Qed.
 
   Lemma PiRed {Δ σ} (tΔ : [ |-[ ta ] Δ])
@@ -300,23 +301,24 @@ Section PiTmValidity.
     refine (convtm_prod I (domainTmU tΔ vσ) _ _).
     - eapply escapeEqTerm_. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F nF G Δ σ). rewrite (eq_subst_1 F nF G Δ σ').
+      assert ([Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ nF F[σ]⟩)]]).
+      { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
+        refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)). }
       eapply escapeEqTerm_. unshelve refine (validTmExt vGU _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy vΓ vF tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ').
-        * cbn. eapply neuTerm. econstructor; reflexivity.
-          2: refine (convneu_var _).
-          all: eapply (ty_conv (A' := F[σ]⟨S⟩) (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _))).
-          all: replace (F[σ]⟨S⟩) with (F[σ⟨@wk1 Δ nF F[σ]⟩]) by (now bsimpl).
-          all: eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ').
+        * assert ([ Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ nF F[σ']⟩)]]).
+          { eapply ty_conv; [eassumption|].
+            eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ'). }
+          cbn. eapply neuTerm; [apply tm_ne_rel| |refine (convneu_var _)]; assumption.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
         * cbn. eapply neuTermEq.
-          1, 2: econstructor; reflexivity.
-          3: refine (convneu_var _).
-          all: replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
-          all: refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)).
+          1, 2: now apply tm_ne_rel.
+          3: now refine (convneu_var _).
+          all: assumption.
   Qed.
 
   Lemma PiRedU {Δ σ}
@@ -327,6 +329,7 @@ Section PiTmValidity.
     - apply redtmwf_refl ; cbn.
       refine (ty_prod (domainTmU tΔ vσ) (codomainTmU tΔ vσ)).
     - cbn; constructor.
+    - cbn; apply tm_nf_prod.
       + assert (HF := validTm vFU tΔ vσ); now apply reifyTerm in HF.
       + assert (vρ := liftSubstS (nF := nF) vΓ tΔ vF vσ).
         assert (HG := validTm vGU _ vρ).
