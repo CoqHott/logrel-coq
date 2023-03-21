@@ -1,3 +1,6 @@
 [submodule "coqdocjs"]
 	path = coqdocjs
 	url = https://github.com/coq-community/coqdocjs/
+[submodule "coq-partialfun"]
+	path = coq-partialfun
+	url = https://github.com/TheoWinterhalter/coq-partialfun.git
