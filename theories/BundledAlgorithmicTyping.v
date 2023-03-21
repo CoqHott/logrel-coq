@@ -133,22 +133,45 @@ Record ConvNeuConvBun Γ A m n :=
 Record RedTypeBun Γ A B :=
 {
   bun_red_ty_ctx : [|-[de] Γ] ;
-  bun_red_ty_ty : [Γ |-[de] A] ;
+  bun_red_ty_ty : [Γ |-[al] A] ;
   bun_red_ty : [A ⇒* B] ;
 }.
 
 Record OneStepRedTermBun Γ A t u :=
 {
   bun_osred_tm_ctx : [|-[de] Γ] ;
-  bun_osred_tm_tm : [Γ |-[de] t : A] ;
+  (** We do not have the instance yet, so we have to specify it by hand,
+  but this really is [Γ |-[bn] t : A]. *)
+  bun_osred_tm_tm : typing (ta := bn) (Typing := InferConvBun) Γ A t ;
   bun_osred_tm : [t ⇒ u]
 }.
 
 Record RedTermBun Γ A t u :=
 {
   bun_red_tm_ctx : [|-[de] Γ] ;
-  bun_red_tm_tm : [Γ |-[de] t : A] ;
+  bun_red_tm_tm : typing (ta := bn) (Typing := InferConvBun) Γ A t ;
   bun_red_tm : [t ⇒* u] ;
+}.
+
+Record RedTypeBunI Γ A B :=
+{
+  buni_red_ty_ctx : [|-[de] Γ] ;
+  buni_red_ty_ty : [Γ |-[de] A] ;
+  buni_red_ty : [A ⇒* B] ;
+}.
+
+Record OneStepRedTermBunI Γ A t u :=
+{
+  buni_osred_tm_ctx : [|-[de] Γ] ;
+  buni_osred_tm_tm : [Γ |-[de] t : A] ;
+  buni_osred_tm : [t ⇒ u]
+}.
+
+Record RedTermBunI Γ A t u :=
+{
+  buni_red_tm_ctx : [|-[de] Γ] ;
+  buni_red_tm_tm : [Γ |-[de] t : A] ;
+  buni_red_tm : [t ⇒* u] ;
 }.
 
 (** ** Instances *)
@@ -211,9 +234,9 @@ Module BundledIntermediateData.
   #[export] Instance ConvType_BundleInt : ConvType bni := ConvTypeBun.
   #[export] Instance ConvTerm_BundleInt : ConvTerm bni := ConvTermBun.
   #[export] Instance ConvNeuConv_BundleInt : ConvNeuConv bni := ConvNeuConvBun.
-  #[export] Instance RedType_BundleInt : RedType bni := RedTypeBun.
-  #[export] Instance OneStepRedTerm_BundleInt : OneStepRedTerm bni := OneStepRedTermBun.
-  #[export] Instance RedTerm_BundleInt : RedTerm bni := RedTermBun.
+  #[export] Instance RedType_BundleInt : RedType bni := RedTypeBunI.
+  #[export] Instance OneStepRedTerm_BundleInt : OneStepRedTerm bni := OneStepRedTermBunI.
+  #[export] Instance RedTerm_BundleInt : RedTerm bni := RedTermBunI.
 
   Ltac unfold_bni :=
     change (wf_context (ta := bni)) with (wf_context (ta := de)) in *;
@@ -221,10 +244,7 @@ Module BundledIntermediateData.
     change (typing (ta := bni)) with (typing (ta := de)) in * ;
     change (conv_type (ta := bni)) with (conv_type (ta := bn)) in * ;
     change (conv_term (ta := bni)) with (conv_term (ta := bn)) in * ;
-    change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in *;
-    change (red_ty (ta := bni)) with (red_ty (ta := bn)) in * ;
-    change (osred_tm (ta := bni)) with (osred_tm (ta := bn)) in *;
-    change (red_tm (ta := bni)) with (red_tm (ta := bn)) in *.
+    change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in *.
 
 End BundledIntermediateData.
 

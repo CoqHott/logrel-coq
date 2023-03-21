@@ -492,6 +492,7 @@ Module AlgorithmicConvProperties.
       now apply algo_conv_wk.
     - now intros * [??? ?%conv_sound].
     - intros_bn.
+      1-2: now eapply typing_sound.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty.
       econstructor.
       1-2: now etransitivity.
@@ -533,6 +534,7 @@ Module AlgorithmicConvProperties.
       now apply algo_conv_wk.
     - now intros * [???? ?%conv_sound]. 
     - intros_bn.
+      all: eapply typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
         now gen_typing.
@@ -649,62 +651,10 @@ Module AlgorithmicConvProperties.
       eassumption.
   Qed.
 
-  #[export, refine] Instance OneStepRedTermAlgProperties :
-    OneStepRedTermProperties (ta := bn) := {}.
-  Proof.
-    intros_bn; econstructor.
-    1: econstructor. 
-    2,3: now eapply inf_conv_decl. 
-    now eapply typing_sound.
-  Qed.
-
-  #[export, refine] Instance RedTermAlgProperties :
-    RedTermProperties (ta := bn) := {}.
-  Proof.
-    - intros_bn.
-      1: now apply typing_wk.
-      now apply credalg_wk.
-    - intros * [].
-      now eapply subject_reduction. 
-    - intros * [] ; constructor; tea; now econstructor. 
-    - intros_bn.
-      + econstructor ; tea.
-        eauto using inf_conv_decl.
-      + clear -bun_red_tm.
-        induction bun_red_tm ; econstructor.
-        2: eassumption.
-        now econstructor.
-    - intros_bn.
-      eapply conv_sound in bun_conv_ty ; tea.
-      now gen_typing.
-    - intros_bn.
-      2: econstructor.
-      eauto using inf_conv_decl.
-    - red. intros_bn.
-      now etransitivity.
-  Qed.
-
-  #[export, refine] Instance RedTypeAlgProperties :
-    RedTypeProperties (ta := bn) := {}.
-  Proof.
-    - intros_bn.
-      1: now apply typing_wk.
-      now apply credalg_wk.
-    - intros * [].
-      now eapply subject_reduction_type. 
-    - intros_bn.
-      now econstructor.
-    - intros_bn.
-      1: now eapply typing_sound.
-      econstructor.
-    - red. intros_bn.
-      now etransitivity.
-  Qed.
-
 End AlgorithmicConvProperties.
 
 Module IntermediateTypingProperties.
-  Import BundledIntermediateData.
+  Export BundledIntermediateData.
   Import AlgorithmicConvProperties.
 
   #[export, refine] Instance WfCtxIntProperties : WfContextProperties (ta := bni) := {}.
@@ -733,7 +683,7 @@ Module IntermediateTypingProperties.
     - intros * ? [].
       econstructor ; tea.
       symmetry.
-      now eapply RedConvTyC, subject_reduction_type.
+      eapply RedConvTyC, subject_reduction_type ; tea.
     - intros * ? [].
       econstructor ; tea.
       now eapply conv_sound in bun_conv_ty.
@@ -748,7 +698,12 @@ Module IntermediateTypingProperties.
       apply convty_wk ; tea.
       now split.
     - eauto using (convty_sound (ta := bn)).
-    - gen_typing.
+    - intros * [] [] [] ; econstructor.
+      1-3: eassumption.
+      inversion bun_conv_ty ; subst ; clear bun_conv_ty ; refold.
+      econstructor.
+      3: eassumption.
+      1-2: now etransitivity.
     - intros ? ?.
       split.
       2-3: econstructor.
@@ -775,7 +730,18 @@ Module IntermediateTypingProperties.
       apply convtm_wk ; tea.
       now split.
     - eauto using (convtm_sound (ta := bn)).
-    - gen_typing.
+    - intros * [] [] [] [].
+      econstructor ; tea.
+      + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.
+        symmetry in buni_red_ty.
+        now gen_typing.
+      + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.
+          symmetry in buni_red_ty.
+          now gen_typing.
+      + inversion bun_conv_tm ; subst ; clear bun_conv_tm ; refold.
+        econstructor.
+        4: eassumption.
+        all: now etransitivity. 
     - gen_typing.
     - intros * ? ? [] [].
       split ; tea.
@@ -830,38 +796,49 @@ Module IntermediateTypingProperties.
     RedTermProperties (ta := bni) := {}.
   Proof.
     all: unfold_bni.
-    - intros.
-      apply redtm_wk ; tea.
-      now split.
-    - eauto using (redtm_sound (ta := bn)).
+    - intros * ? [].
+      econstructor ; tea.
+      + now eapply typing_wk.
+      + now eapply credalg_wk.
+    - intros * [].
+      now eapply subject_reduction.
+    - now intros * []. 
     - intros * []; constructor; tea; now econstructor.
     - intros * [] ?.
       split.
       + boundary.
       + now econstructor.
-      + clear -bun_red_tm.
-        induction bun_red_tm.
+      + clear -buni_red_tm.
+        induction buni_red_tm.
         1: econstructor.
         econstructor.
         1: now econstructor.
         eassumption.
-    - gen_typing.
+    - intros * [] [].
+      econstructor ; tea.
+      econstructor ; tea.
+      now eapply conv_sound in bun_conv_ty.
     - intros.
       split.
       + boundary.
       + assumption.
       + reflexivity.
-    - gen_typing.
+    - red ; intros * [] [].
+      econstructor ; tea.
+      now etransitivity.
   Qed.
 
   #[export, refine] Instance RedTypeIntProperties :
     RedTypeProperties (ta := bni) := {}.
   Proof.
     all: unfold_bni.
-    - intros.
-      apply redty_wk ; tea.
-      now split.
-    - eauto using (redty_sound (ta := bn)).
+    - intros * ? [].
+      econstructor ; tea.
+      + now eapply typing_wk.
+      + now eapply credalg_wk.
+    - intros * [].
+      now eapply subject_reduction_type.
+    - now intros * [].
     - intros * [].
       split.
       + boundary.
@@ -872,7 +849,9 @@ Module IntermediateTypingProperties.
       + boundary.
       + eassumption.
       + reflexivity.
-    - gen_typing.
+    - red. intros * [] [].
+      econstructor ; tea.
+      now etransitivity.
   Qed.
 
   Export UntypedValues.WeakValuesProperties.

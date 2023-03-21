@@ -131,12 +131,12 @@ Qed.
 
 (** *** Stability by weakening *)
 
-Lemma oredalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
+Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 [t ⇒ u] ->
 [t⟨ρ⟩ ⇒ u⟨ρ⟩].
 Proof.
   intros Hred.
-  induction Hred in Δ, ρ |- *.
+  induction Hred in ρ |- *.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
@@ -147,7 +147,7 @@ Proof.
     now econstructor.
 Qed.
 
-Lemma credalg_wk (Γ Δ : context) (ρ : nat -> nat) (t u : term) :
+Lemma credalg_wk (ρ : nat -> nat) (t u : term) :
 [t ⇒* u] ->
 [t⟨ρ⟩ ⇒* u⟨ρ⟩].
 Proof.

@@ -130,7 +130,7 @@ Reserved Notation "[ t ⇒* t' ]" (at level 0, t, t' at level 50).
 Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0, Γ, A, B at level 50).
 (** Term t one-step weak-head reduces to term u at type A in Γ *)
 Notation "[ Γ |- t ⇒ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta ] t ⇒ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
 (** Type A multi-step weak-head reduces to type B in Γ *)
 Notation "[ Γ |- A ⇒* B ]" := (red_ty Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ⇒* B ]" := (red_ty (ta := ta) Γ A B)
