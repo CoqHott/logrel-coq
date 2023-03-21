@@ -279,6 +279,7 @@ Section GenericTyping.
     redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩] ;
     redty_sound {Γ A B} : [Γ |- A ⇒* B] -> [Γ |-[de] A ⇒* B] ;
+    redty_ty_src {Γ A B} : [Γ |- A ⇒* B] -> [Γ |- A] ;
     redty_term {Γ A B} :
       [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ] ;
     redty_refl {Γ A} :
@@ -310,6 +311,7 @@ Section GenericTyping.
     redtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩] ;
     redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |-[de] t ⇒* u : A] ;
+    redtm_ty_src {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |- t : A] ;
     redtm_one_step {Γ A t u} :
       [ Γ |- t ⇒ u : A ] ->
       [ Γ |- t ⇒* u : A ] ;
@@ -646,6 +648,7 @@ Section GenericConsequences.
     constructor.
     - intros; now eapply redtywf_wk.
     - intros; now eapply redtywf_sound.
+    - intros ??? []; easy.
     - intros; now eapply redtywf_term.
     - intros; now apply redtywf_refl.
     - intros; apply redtywf_trans.

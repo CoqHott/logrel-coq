@@ -549,6 +549,7 @@ Module DeclarativeTypingProperties.
   - intros.
     now eapply redtmdecl_wk.
   - easy. 
+  - intros. now eapply boundary_red_tm_l.
   - intros. now constructor.
   - intros.
     now eapply redtmdecl_app.
@@ -563,6 +564,7 @@ Module DeclarativeTypingProperties.
   - intros.
     now eapply redtydecl_wk.
   - easy.
+  - intros. now eapply boundary_red_ty_l.
   - intros.
     now eapply redtydecl_term.
   - intros.
