@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance Validity.
 From LogRel.LogicalRelation Require Import Irrelevance Escape Reflexivity Weakening Neutral Induction.
 From LogRel.Substitution Require Import Irrelevance.
 
@@ -173,11 +173,13 @@ Proof.
   intros; unshelve econstructor.
   + now eapply wk1SubstS.
   + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ'⟨ρ⟩)]].
-    2: apply neuTerm; tea; constructor + apply convneu_var; tea.
-    eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
+    - eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
     replace F[_ >> _] with F[σ']⟨S⟩ by (unfold ρ; now bsimpl).
     cbn; renToWk. eapply convty_wk; tea.
-    eapply escapeEq; unshelve eapply validTyExt; cycle 3; tea.
+    eapply escapeEq;  unshelve eapply validTyExt; cycle 3; tea.
+    - apply neuTerm; tea.
+      { now eapply tm_ne_rel. }
+      { apply convneu_var; tea. }
 Qed.
 
 Lemma liftSubstS' {Γ σ Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}

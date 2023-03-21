@@ -1,7 +1,7 @@
 (** * LogRel.DeclarativeInstance: proof that declarative typing is an instance of generic typing. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction Weakening GenericTyping DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction UntypedValues Weakening GenericTyping DeclarativeTyping.
 
 Import DeclarativeTypingData.
 
@@ -569,6 +569,8 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ := {}.
+  Export UntypedValues.WeakValuesProperties.
+
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

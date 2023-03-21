@@ -27,6 +27,10 @@ Class Typing (ta : tag) := typing : context -> term -> term -> Set.
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
 Class Checking (ta : tag) := check : context -> term -> term -> Set.
+Class TypeNe (ta : tag) := type_ne : context -> term -> Set.
+Class TypeNf (ta : tag) := type_nf : context -> term -> Set.
+Class TermNe (ta : tag) := term_ne : context -> term -> term -> Set.
+Class TermNf (ta : tag) := term_nf : context -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
 Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
 Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
@@ -53,6 +57,22 @@ Notation "[ Γ |- t : A ]" := (typing Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t : A ]" :=
   (typing (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
+Notation "Nf[ Γ |- A ]" := (type_nf Γ A)
+  (at level 0, Γ, A at level 50, only parsing) : typing_scope.
+Notation "Nf[ Γ |-[ ta  ] A ]" := (type_nf (ta := ta) Γ A)
+  (at level 0, Γ, A at level 50) : typing_scope.
+Notation "Ne[ Γ |- A ]" := (type_ne Γ A)
+  (at level 0, Γ, A at level 50, only parsing) : typing_scope.
+Notation "Ne[ Γ |-[ ta  ] A ]" := (type_ne (ta := ta) Γ A)
+  (at level 0, Γ, A at level 50) : typing_scope.
+Notation "Nf[ Γ |- t : A ]" := (term_nf Γ A t)
+  (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
+Notation "Nf[ Γ |-[ ta  ] t : A ]" := (term_nf (ta := ta) Γ A t)
+  (at level 0, Γ, t, A at level 50) : typing_scope.
+Notation "Ne[ Γ |- t : A ]" := (term_ne Γ A t)
+  (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
+Notation "Ne[ Γ |-[ ta  ] t : A ]" := (term_ne (ta := ta) Γ A t)
+  (at level 0, Γ, t, A at level 50) : typing_scope.
 (** The term t checks against type A in Γ *)
 Notation "[ Γ |- t ◃ A ]" := (check Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.

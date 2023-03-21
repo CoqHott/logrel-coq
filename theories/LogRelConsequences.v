@@ -100,7 +100,7 @@ Section NeutralConversion.
       1-2: reflexivity.
       econstructor.
       1: eassumption.
-      now econstructor.
+      econstructor; eapply (ty_ne_whne ne).
     - intros ? ? ΠAd ΠAad IHdom IHcod m n Hconv ; cbn in *.
       rewrite <- (PiRedTyPack.pack_beta ΠAd ΠAad) in *.
       remember (PiRedTyPack.pack ΠAd ΠAad) as ΠA in *.
@@ -118,7 +118,7 @@ Section NeutralConversion.
       + apply wk1.
       + gen_typing.
       + eapply neuTerm.
-        1: now constructor.
+        1: econstructor; reflexivity.
         2: constructor.
         all: eapply typing_meta_conv.
         1,3: now do 2 econstructor ; tea ; boundary.
@@ -177,6 +177,7 @@ Proof.
   - destruct Hconv as [? red].
     eexists ; split.
     1: apply red.
+    apply ty_ne_whne in ne.
     now constructor.
   - destruct Hconv as [??? red].
     eexists ; split.
@@ -214,9 +215,9 @@ Proof.
     assert (nT' = T') as -> by
       (symmetry ; apply red_whnf ; gen_typing).
     destruct nfT.
-    1,2: exfalso ; gen_typing.
+    1,2: apply ty_ne_whne in ne, ne0; exfalso ; gen_typing.
     destruct nfT'.
-    1,2: exfalso ; gen_typing.
+    1,2: apply ty_ne_whne in ne, ne0; exfalso ; gen_typing.
     cbn.
     eassumption.
   - rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
@@ -253,7 +254,7 @@ Proof.
     }
     (unshelve now eapply escapeEq) ; tea.
     apply neuTerm.
-    1: econstructor.
+    1: econstructor; reflexivity.
     2: econstructor.
     all: econstructor.
     1,3: econstructor ; [eassumption | now econstructor].

@@ -54,10 +54,10 @@ Context {Γ lA A lA' A'}
   (ΠA' : PiRedTyPack@{i' j' k' l'} Γ A' lA')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _  ΠA'))
-  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _  ΠA'))
+  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
+  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
+  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
+  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA']).
 
 Context (eqvDom : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
@@ -82,6 +82,8 @@ Lemma ΠIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
 Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
+  - apply (tm_nf_conv isnf).
+    apply eqPi.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqvCod.
     2: now auto.
@@ -108,10 +110,10 @@ Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
   (ΠA' : PiRedTyPack@{i' j' k' l'} Γ A' lA')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _  ΠA'))
-  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _  ΠA'))
+  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
+  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
+  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
+  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA'])
   (eqvDom : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
           equivLRPack@{k k' v} (domRed Δ ρ wfΔ) (domRed' Δ ρ wfΔ))
@@ -141,17 +143,20 @@ Lemma NeIrrelevanceLRPack@{i j k l i' j' k' l' v}
   : equivLRPack@{k k' v} RA RA'.
 Proof.
   destruct neA as [ty], neA' as [ty'], eqAA' as [ty0']; cbn in *.
-  assert (ty0' = ty') by (eapply redtywf_det; tea; now constructor); subst.
+  assert (ty0' = ty'); [|subst].
+  { eapply redtywf_det; tea; constructor; now eapply ty_ne_whne. }
   assert [Γ |- ty ≅ ty'] as convty by gen_typing.
   split.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
     all: etransitivity ; [| tea]; tea; now symmetry.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
-    1,3: now eapply redtmwf_conv.
+    1,4: now eapply redtmwf_conv.
+    all: try match goal with |- Ne[ _ |- _ : _] => now eapply tm_ne_conv end.
     all: now eapply convneu_conv.
   + intros ??; split; intros []; econstructor; cbn in *.
     1-2,6-7: now eapply redtmwf_conv.
     all: tea.
+    all: try match goal with |- Ne[ _ |- _ : _] => now eapply tm_ne_conv end.
     all: now eapply convneu_conv.
 Qed.
 
@@ -202,8 +207,8 @@ Proof.
   + intros; cbn; split; intros []; now constructor.
   + intros ?; destruct (IHty Γ t) as [tfwd tbwd]; split; intros [];
       unshelve econstructor.
-    6: now apply tfwd.
-    9: now apply tbwd.
+    7: now apply tfwd.
+    11: now apply tbwd.
     all : tea.
   + cbn ; intros ? ?;
     destruct (IHty Γ t) as [tfwd tbwd];

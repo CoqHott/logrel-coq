@@ -13,6 +13,7 @@ theories/Notations.v
 theories/NormalForms.v
 theories/Weakening.v
 theories/UntypedReduction.v
+theories/UntypedValues.v
 theories/GenericTyping.v
 
 theories/DeclarativeTyping.v

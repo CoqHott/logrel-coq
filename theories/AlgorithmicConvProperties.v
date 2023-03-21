@@ -875,6 +875,8 @@ Module IntermediateTypingProperties.
     - gen_typing.
   Qed.
 
-  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ := {}.
+  Export UntypedValues.WeakValuesProperties.
+
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.

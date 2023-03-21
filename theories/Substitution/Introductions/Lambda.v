@@ -83,7 +83,10 @@ Proof.
   assert [Δ |- (tLambda nF F t)[σ] : (tProd nF F G)[σ]] by (escape; cbn; gen_typing).
   exists (tLambda nF F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
-  + now constructor.
+  + constructor.
+  + apply tm_nf_lam.
+    - now apply reifyType in RVF.
+    - now apply reifyTerm in RVt.
   + eapply convtm_eta; tea. 
     1,2: now constructor.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
@@ -246,7 +249,8 @@ Proof.
   - cbn; pose (VσUp :=  liftSubstS' nF VF Vσ).
     instValid Vσ; instValid VσUp; escape.
     destruct (PiRedTm.red p); destruct (PiRedTm.red p0); cbn in *.
-    eapply convtm_eta; tea.  1,2: eapply PiRedTm.isfun.
+    eapply convtm_eta; tea.
+    1,2: eapply PiRedTm.isfun.
     etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
   - cbn; intros.
     set (ν := (a .: σ⟨ρ0⟩)).

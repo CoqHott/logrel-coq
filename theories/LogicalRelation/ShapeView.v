@@ -42,6 +42,7 @@ when showing symmetry or transitivity of the logical relation. *)
     ∑ nf, [Γ |- A :⇒*: nf] × whnf nf.
   Proof.
     destruct lrA as [?? []| ??[] | ??[]]; eexists; split; tea; constructor; tea.
+    now eapply ty_ne_whne.
   Defined.
   
   Lemma eqTy_red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA B}
@@ -49,6 +50,7 @@ when showing symmetry or transitivity of the logical relation. *)
     eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf] × whnf nf.
   Proof.
     destruct lrA as [?? []| ??[] | ??[]] ; intros []; eexists; split; tea; constructor; tea.
+    now eapply ty_ne_whne.
   Defined.
 
 
@@ -64,8 +66,8 @@ when showing symmetry or transitivity of the logical relation. *)
     pose proof (h := redtywf_det _ _ _ _ (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
     revert eqAB x y h. 
     destruct lrA; destruct lrB; intros []; cbn; try easy; try discriminate.
-    2-3: intros e; rewrite e in ne; inversion ne.
-    all: intros e; destruct neA as [? ? ne]; rewrite <- e in ne; inversion ne.
+    2-3: intros e; rewrite e in ne; apply ty_ne_whne in ne; inversion ne.
+    all: intros e; destruct neA as [? ? ne]; rewrite <- e in ne; apply ty_ne_whne in ne; inversion ne.
   Qed.
 
 (** ** More properties *)

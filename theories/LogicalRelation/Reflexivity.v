@@ -31,7 +31,7 @@ Section Reflexivities.
     forall t, redTm t -> eqTm t t.
   Proof.
     induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod].
-    - intros t [? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
+    - intros t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.

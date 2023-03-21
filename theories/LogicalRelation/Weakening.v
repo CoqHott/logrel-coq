@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
@@ -49,8 +49,8 @@ Section Weakenings.
     intros lrA. revert Δ ρ wfΔ . pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr@{i j k l l}; clear l Γ A lrA.
     - intros **. apply LRU_. now eapply wkU.
-    - intros ???[ty]???. apply LRne_. 
-      exists (ty⟨ρ⟩); [|now apply whne_ren|change U with U⟨ρ⟩] ;gen_typing.
+    - intros ???[ty]???. apply LRne_.
+      exists (ty⟨ρ⟩); [|now apply ty_ne_wk|change U with U⟨ρ⟩] ;gen_typing.
     - intros ??? ? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ρ wfΔ ΠA).
       + intros; now apply ihdom.
       + intros; now eapply ihcod.
@@ -76,8 +76,10 @@ Section Weakenings.
     revert B Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
     - intros ?? ????? ? [] ; constructor; change U with U⟨ρ⟩; gen_typing.
-    - intros * [ty]. exists ty⟨ρ⟩.
-      1,2: gen_typing.
+    - intros * [ty].
+      exists ty⟨ρ⟩.
+      2: now apply ty_ne_wk, ne.
+      1: gen_typing.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
       exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.
@@ -107,7 +109,8 @@ Section Weakenings.
       eapply ty_wk; eassumption.
       eapply ty_wk; eassumption.
       eapply redtm_wk; eassumption.
-    + gen_typing.
+    + apply isFun_ren; assumption.
+    + now apply tm_nf_wk.
     + eapply convtm_wk; eassumption.
     + intros ? a ρ' ??.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
@@ -127,14 +130,16 @@ Section Weakenings.
     revert t Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
     - intros ?????? ρ ? [te]; exists te⟨ρ⟩;  try change U with U⟨ρ⟩.
-      1-3: gen_typing.
+      1, 4: gen_typing.
+      apply isType_ren; assumption.
+      now apply tm_nf_wk.
       apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
     - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn.
       + destruct red; unshelve econstructor.
         eapply ty_wk; eassumption.
         eapply ty_wk; eassumption.
         eapply redtm_wk; eassumption.
-      + gen_typing.
+      + apply tm_ne_wk; assumption.
       + eapply convneu_wk; eassumption.
     - intros ???? ihdom ihcod ?? ρ ?; apply wkΠTerm. 
   Qed.
@@ -143,7 +148,9 @@ Section Weakenings.
     [LogRelRec l| Γ ||-U t : A | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ : A⟨ρ⟩ | wkU ρ wfΔ h].
   Proof.
     intros [te]. exists te⟨ρ⟩; change U with U⟨ρ⟩.
-    1-3: gen_typing.
+    1, 4: gen_typing.
+    apply isType_ren; assumption.
+    now apply tm_nf_wk.
     destruct l; [destruct (elim (URedTy.lt h))|cbn].
     eapply (wk (l:=zero)); eassumption.
   Defined.
@@ -170,8 +177,8 @@ Section Weakenings.
       + destruct redR; unshelve econstructor.
         1,2: eapply ty_wk; eassumption.
         eapply redtm_wk; eassumption.
-      + gen_typing.
-      + gen_typing.
+      + apply tm_ne_wk; assumption.
+      + apply tm_ne_wk; assumption.
       + now eapply convneu_wk.
     - intros ??? ΠA ihdom ihcod t u ? ρ ? [redL redR].
       rewrite wkΠ_eq. set (X := wkΠ' _ _ _).

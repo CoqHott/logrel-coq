@@ -29,7 +29,7 @@ Proof.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
-    1,2 : apply whnf_whne. all: assumption.
+    1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
   - destruct RAB as [nB domB codB redB ? domRedEq codRedEq], RBC as [nC domC codC redC ? domRedEq' codRedEq'].
     destruct ΠB as [??? redB' ??? domRedB codRedB], ΠC as [??? redC' ??? domRedC codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
     unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
@@ -93,7 +93,7 @@ Proof.
   intros [tL] [? tR]; exists tL tR; tea.
   etransitivity; tea.
   unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ redR redL0); tea.
-  all: now apply whnf_whne.
+  all: now eapply whnf_whne, tm_ne_whne.
 Qed.
 
 

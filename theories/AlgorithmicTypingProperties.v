@@ -101,6 +101,8 @@ Module AlgorithmicTypingProperties.
       now eapply conv_sound in bun_conv_ty.
   Qed.
 
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ := {}.
+  Export UntypedValues.WeakValuesProperties.
+
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
