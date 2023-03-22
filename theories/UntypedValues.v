@@ -246,6 +246,7 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
 End Properties.

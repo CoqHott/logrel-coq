@@ -42,22 +42,20 @@ Proof.
   econstructor.
   + eapply redtmwf_refl; gen_typing.
   + constructor.
-  + admit.
+  + now apply tm_nf_nat.
   + gen_typing.
   + now eapply (natRed (l:= zero)).
-Admitted.
-(* Defined. *)
+Defined.
 
 Lemma natTermValid {Γ} (VΓ : [||-v Γ]):  [Γ ||-v<one> tNat : U | VΓ | UValid VΓ].
 Proof.
   constructor; intros.
   - eapply natTermRed. 
   - eexists (natTermRed wfΔ) (natTermRed wfΔ) (natRed wfΔ); cbn.
-    + admit. (* gen_typing. *)
+    + gen_typing.
     + now eapply (natRed (l:=zero)).
     + constructor; eapply redtywf_refl; gen_typing.
-Admitted.
-(* Qed. *)
+Qed.
 
 Lemma zeroRed {Γ l} {NN : [Γ ||-Nat tNat]} (wfΓ : [|- Γ]): [Γ ||-<l> tZero : _ | LRNat_ l NN].
 Proof.
@@ -239,8 +237,7 @@ Section NatElimRed.
     (wfΓ : [|- Γ])
     (NN : [Γ ||-Nat tNat])
     (RN := LRNat_ _ NN)
-    (tyP : [Γ,, vass nN tNat |- P])
-    (eqP : [Γ,, vass nN tNat |- P ≅ P])
+    (RP : [Γ,, vass nN tNat ||-<l> P])
     (RPpt : forall n, [Γ ||-<l> n : _ | RN] -> [Γ ||-<l> P[n..]])
     (RPext : forall n n' (Rn : [Γ ||-<l> n : _ | RN]),
       [Γ ||-<l> n' : _ | RN] ->
@@ -290,21 +287,26 @@ Section NatElimRed.
       2: unshelve eapply (appTerm RPs Rhs Rn).
       now bsimpl.
     - intros ? [] ?.
-      admit.
-      (* eapply neuTerm_aux; cbn.
-      1,2: now constructor.
-      1,2: now eapply ty_natElim.
-      eapply convneu_natElim; tea.
-      all: eapply escapeEqTerm; now eapply LREqTermRefl_. *)
+      apply reflect.
+      + apply completeness.
+      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+      + now eapply ty_natElim.
+      + now eapply ty_natElim.
+      + eapply convneu_natElim; tea.
+        { eapply escapeEq, LRTyEqRefl_. }
+        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
+        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
     Unshelve.
     * tea.
     * eapply ArrRedTy; now eapply RPpt.
     * rewrite arr_subst_eq. eapply ArrRedTy.
       2: rewrite liftSubst_singleSubst_eq; cbn.
       all: now eapply RPpt.
-  Admitted.
-  (* Qed. *)
-  
+    * exact l.
+    * assumption.
+  Qed.
+
   Lemma natElimRed : forall n (Rn : [Γ ||-<l> n : _ | RN]), [Γ ||-<l> tNatElim P hz hs n : _ | RPpt _ Rn ].
   Proof. intros. apply (fst natElimRedAux). Qed.
 End NatElimRed.
@@ -315,8 +317,8 @@ Section NatElimRedEq.
     (wfΓ : [|- Γ])
     (NN : [Γ ||-Nat tNat])
     (RN := LRNat_ _ NN)
-    (tyP : [Γ,, vass nN tNat |- P])
-    (tyQ : [Γ,, vass nN tNat |- Q])
+    (RP : [Γ,, vass nN tNat ||-<l> P])
+    (RQ : [Γ,, vass nN tNat ||-<l> Q])
     (eqPQ : [Γ,, vass nN tNat |- P ≅ Q])
     (RPpt : forall n, [Γ ||-<l> n : _ | RN] -> [Γ ||-<l> P[n..]])
     (RQpt : forall n, [Γ ||-<l> n : _ | RN] -> [Γ ||-<l> Q[n..]])
@@ -349,14 +351,12 @@ Section NatElimRedEq.
   Lemma natElimRedAuxLeft : @natRedElimStmt _ _ P hs hz NN RPpt.
   Proof.
     eapply natElimRedAux; tea.
-    + now eapply lrefl.
     + eapply RPext.
   Qed.
 
   Lemma natElimRedAuxRight : @natRedElimStmt _ _ Q hs' hz' NN RQpt.
   Proof.
     eapply natElimRedAux; tea.
-    + now eapply urefl.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
       now eapply LREqTermRefl_.
     Unshelve. 2: eauto. all:tea.
@@ -418,15 +418,16 @@ Section NatElimRedEq.
         gen_typing.
       }
       eapply neuTermEq.
-      1,2: admit. (* now constructor. *)
-      * eapply ty_natElim; tea.
-      * eapply ty_conv. 
+      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+      + eapply tm_ne_conv; [|symmetry; eassumption].
+        eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+      + eapply ty_natElim; tea.
+      + eapply ty_conv. 
         1: eapply ty_natElim; tea.
         now symmetry.
-      * eapply convneu_natElim ; tea.
+      + eapply convneu_natElim ; tea.
       Unshelve. tea.
-  Admitted.
-  (* Qed. *)
+  Qed.
 
   Lemma natElimRedEq :
     (forall n n' (Rnn' : [Γ ||-<l> n ≅ n' : _ | RN]) (Rn : [Γ ||-<l> n : _ | RN]) (Rn' : [Γ ||-<l> n' : _ | RN]), 
@@ -481,7 +482,6 @@ Section NatElimValid.
         unshelve eapply validTy; cycle 1; tea.
         unshelve econstructor; [now bsimpl| now cbn].
       + rewrite elimSuccHypTy_subst. eapply validTy; tea; eapply elimSuccHypTyValid.
-      + eapply escapeEq; eapply validTyEq; eapply reflValidTy.
       + intros m m' Rm Rm' Rmm'; cbn.
         irrelevance0. 1: now rewrite up_single_subst.
         rewrite up_single_subst.
@@ -516,9 +516,7 @@ Section NatElimValid.
         1,2: unshelve econstructor; [now bsimpl| now cbn].
         unshelve econstructor; [|now cbn].
         now bsimpl.
-      Unshelve. 4: tea. 1: gen_typing. 
-      now eapply irrelevanceSubst.
-  Qed. 
+  Qed.
 
   Lemma natElimZeroValid  : 
     [Γ ||-v<l> tNatElim P hz hs tZero ≅ hz : _ | VΓ | VPz].
@@ -527,9 +525,8 @@ Section NatElimValid.
     epose proof (Vuσ := liftSubstS' nN VN Vσ).
     instValid Vσ; instValid Vuσ; escape.
     irrelevance0.  1: now rewrite singleSubstComm'.
-    unshelve eapply (snd (natElimRedAux _ _ _ _ _ _ _ _ _) _ NatRedTm.zeroR); tea; fold subst_term.
-    8: eapply zeroValid.
-    + eapply escapeEq; eapply validTyEq; eapply reflValidTy.
+    unshelve eapply (snd (natElimRedAux _ _ _ _ _ _ _ _) _ NatRedTm.zeroR); tea; fold subst_term.
+    7: eapply zeroValid.
     + intros m Rm.
       rewrite up_single_subst. 
       unshelve eapply validTy; cycle 1; tea.
@@ -544,9 +541,9 @@ Section NatElimValid.
     + irrelevance.
     + rewrite elimSuccHypTy_subst. eapply validTy; tea; eapply elimSuccHypTyValid.
     + irrelevance. now rewrite elimSuccHypTy_subst. 
-    Unshelve. 10: tea. 6: tea. 4: tea.
+    Unshelve. 4: tea.
   Qed.
-  
+
   Lemma natElimSuccValid {n}
     (Vn : [Γ ||-v<l> n : tNat | VΓ | VN]) 
     (VPSn := substS nN VP (succValid _ Vn)) : 
@@ -557,8 +554,7 @@ Section NatElimValid.
     instValid Vσ; instValid Vuσ; escape.
     irrelevance0.  1: now rewrite singleSubstComm'.
     pose (NSn := NatRedTm.succR RVn).
-    unshelve eapply (snd (natElimRedAux _ _ _ _ _ _ _ _ _) _ NSn); tea; fold subst_term.
-    + eapply escapeEq; eapply validTyEq; eapply reflValidTy.
+    unshelve eapply (snd (natElimRedAux _ _ _ _ _ _ _ _) _ NSn); tea; fold subst_term.
     + intros m Rm.
       rewrite up_single_subst. 
       unshelve eapply validTy; cycle 1; tea.
@@ -574,7 +570,6 @@ Section NatElimValid.
     + rewrite elimSuccHypTy_subst. eapply validTy; tea; eapply elimSuccHypTyValid.
     + irrelevance. now rewrite elimSuccHypTy_subst. 
     + now eapply succRed.
-    Unshelve. 4-6: tea.
   Qed.
 
 End NatElimValid.

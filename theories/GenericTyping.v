@@ -434,6 +434,7 @@ Section GenericValues.
     tm_nf_red {Γ t u A} : [Γ |- t ⇒* u : A] -> Nf[Γ |- u : A] -> Nf[Γ |- t : A];
     tm_nf_prod {Γ na A B} : Nf[Γ |- A : U] -> Nf[Γ,, vass na A |- B : U] -> Nf[Γ |- tProd na A B : U];
     tm_nf_lam {Γ na A B t} : Nf[Γ |- A] -> Nf[Γ,, vass na A |- t : B] -> Nf[Γ |- tLambda na A t : tProd na A B];
+    tm_nf_nat {Γ} : [|- Γ] -> Nf[Γ |- tNat : U];
     tm_nf_zero {Γ} : [|- Γ] -> Nf[Γ |- tZero : tNat];
     tm_nf_succ {Γ t} : Nf[Γ |- t : tNat] -> Nf[Γ |- tSucc t : tNat];
   }.
