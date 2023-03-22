@@ -22,6 +22,8 @@ Notation "s ⟨ xi1 ⟩" := (ren1 xi1 s) (at level 7, left associativity, format
 
 Notation "s [ sigma ]" := (subst1 sigma s) (at level 7, left associativity, format "s '/' [ sigma ]") : asubst_scope.
 
+Notation "s [ t ]⇑" := (subst_term (scons t (shift >> tRel)) s) (at level 7, left associativity, format "s '/' [ t ]⇑") : asubst_scope.
+
 Notation "s '..'" := (scons s ids) (at level 1, format "s ..") : asubst_scope.
 
 Notation "↑" := (shift) : asubst_scope.

@@ -13,6 +13,13 @@ Inductive OneRedAlg : term -> term -> Type :=
     | termRedAppAlg {t t' u} :
       [ t ⇒ t' ] ->
       [ tApp t u ⇒ tApp t' u ]
+    | termRedNatElimAlg {P hz hs n n'} :
+        [n ⇒ n'] ->
+        [tNatElim P hz hs n ⇒ tNatElim P hz hs n']        
+    | termRedNatElimZeroAlg {P hz hs} :
+      [tNatElim P hz hs tZero ⇒ hz]
+    | termRedNatElimSuccAlg {P hz hs n} :
+      [tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
   where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
 (** *** Multi-step reduction *)
@@ -40,14 +47,17 @@ Inductive RedClosureAlg : term -> term -> Type :=
 
 (** *** Weak-head normal forms do not reduce *)
 
+Ltac inv_whne :=
+  match goal with [ H : whne _ |- _ ] => inversion H end.
+
 Lemma whne_nored n u :
   whne n -> [n ⇒ u] -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
   all: inversion ne ; subst ; clear ne.
-  - eapply neLambda. eassumption.
-  - auto.
+  2: auto.
+  all: now inv_whne.
 Qed.
 
 Lemma whnf_nored n u :
@@ -55,14 +65,8 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  - inversion nf ; subst.
-    inversion H ; subst.
-    eapply neLambda.
-    eassumption.
-  - inversion nf ; subst.
-    inversion H ; subst.
-    eapply IHred.
-    now constructor.
+  2,3: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  all: inversion nf; subst; inv_whne; subst; now inv_whne.
 Qed.
 
 (** *** Determinism of reduction *)
@@ -86,6 +90,13 @@ Proof.
       now econstructor.
     + f_equal.
       eauto.
+  - inversion red'; subst.
+    2,3: exfalso; eapply whnf_nored; tea; constructor.
+    f_equal; eauto.
+  - inversion red'; try reflexivity; subst.
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; try reflexivity; subst.
+    exfalso; eapply whnf_nored; tea; constructor.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -137,14 +148,13 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
+  2-5: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
     all: subst t'.
     1: econstructor.
     now asimpl.
-  - cbn ; asimpl.
-    now econstructor.
 Qed.
 
 Lemma credalg_wk (ρ : nat -> nat) (t u : term) :

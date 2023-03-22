@@ -185,6 +185,9 @@ Section GenericTyping.
       [ Γ |- A ] -> 
       [Γ ,, (vass na A) |- B ] -> 
       [ Γ |- tProd na A B ] ;
+    wft_nat {Γ} : 
+      [|- Γ] ->
+      [Γ |- tNat] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] -> 
       [ Γ |- A ] ;
@@ -211,6 +214,21 @@ Section GenericTyping.
         [ Γ |- f : tProd na A B ] -> 
         [ Γ |- a : A ] -> 
         [ Γ |- tApp f a : B[a ..] ] ;
+    ty_nat {Γ} :
+        [|-Γ] ->
+        [Γ |- tNat : U] ;
+    ty_zero {Γ} :
+        [|-Γ] ->
+        [Γ |- tZero : tNat] ;
+    ty_succ {Γ n} :
+        [Γ |- n : tNat] ->
+        [Γ |- tSucc n : tNat] ;
+    ty_natElim {Γ nN P hz hs n} :
+      [Γ ,, vass nN tNat |- P ] ->
+      [Γ |- hz : P[tZero..]] ->
+      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- n : tNat] ->
+      [Γ |- tNatElim P hz hs n : P[n..]] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -231,6 +249,8 @@ Section GenericTyping.
       eq_binder_annot na na' -> [Γ |- A] ->
       [Γ |- A ≅ A'] -> [Γ,, vass na A |- B ≅ B'] ->
       [Γ |- tProd na A B ≅ tProd na' A' B'] ;
+    convty_nat {Γ} :
+      [|- Γ] -> [Γ |- tNat ≅ tNat]
   }.
 
   Class ConvTermProperties :=
@@ -257,6 +277,24 @@ Section GenericTyping.
       isFun g ->
       [ Γ ,, vass na A |- eta_expand f ≅ eta_expand g : B ] ->
       [ Γ |- f ≅ g : tProd na A B ] ;
+    convtm_nat {Γ} :
+      [|-Γ] -> [Γ |- tNat ≅ tNat] ;
+    convtm_zero {Γ} :
+      [|-Γ] -> [Γ |- tZero ≅ tZero : tNat] ;
+    convtm_succ {Γ} {n n'} :
+        [Γ |- n ≅ n' : tNat] ->
+        [Γ |- tSucc n ≅ tSucc n' : tNat] ;
+    convtm_natElimZero {Γ nN P hz hs} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]] ;
+    convtm_natElimSucc {Γ nN P hz hs n} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- n : tNat] ->
+        [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
   }.
 
   Class ConvNeuProperties :=
@@ -271,7 +309,13 @@ Section GenericTyping.
     convneu_app {Γ f g t u na A B} :
       [ Γ |- f ~ g : tProd na A B ] ->
       [ Γ |- t ≅ u : A ] ->
-      [ Γ |- tApp f t ~ tApp g u : B[t..] ]
+      [ Γ |- tApp f t ~ tApp g u : B[t..] ] ;
+    convneu_natElim {Γ nN P P' hz hz' hs hs' n n'} :
+        [Γ ,, vass nN tNat |- P ≅ P'] ->
+        [Γ |- hz ≅ hz' : P[tZero..]] ->
+        [Γ |- hs ≅ hs' : elimSuccHypTy nN P] ->
+        [Γ |- n ~ n' : tNat] ->
+        [Γ |- tNatElim P hz hs n ~ tNatElim P' hz' hs' n' : P[n..]] ;
   }.
 
   Class RedTypeProperties :=
@@ -291,20 +335,29 @@ Section GenericTyping.
 
   Class OneStepRedTermProperties :=
   {
-    (* osredtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] ;
-    osredtm_sound {Γ A t u} : [Γ |- t ⇒ u : A] -> [Γ |-[de] t ⇒ u : A] ; *)
     osredtm_beta {Γ na A B t u} :
       [ Γ |- A ] ->
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- u : A ] ->
       [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] : B[u..] ] ;
-    (* osredtm_conv {Γ t u A A'} : 
-      [Γ |- t ⇒* u : A] ->
-      [Γ |- A ≅ A'] ->
-      [Γ |- t ⇒* u : A'] ; *)
+    osredtm_natElim {Γ nN P hz hs n n'} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs  : elimSuccHypTy nN P] ->
+        [Γ |- n ⇒ n' : tNat] ->
+        [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]] ;
+    osredtm_natElimZero {Γ nN P hz hs} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]] ;
+    osredtm_natElimSucc {Γ nN P hz hs n} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- n : tNat] ->
+        [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]] ;
   }.
-
 
   Class RedTermProperties :=
   {
@@ -403,10 +456,9 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app| 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_zero  ty_succ ty_natElim convty_nat convtm_nat convtm_zero convtm_succ convtm_natElimZero convtm_natElimSucc convneu_natElim | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
-
 
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
@@ -578,7 +630,7 @@ Section GenericConsequences.
 
   (** *** Properties of well-typed reduction *)
 
-  #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl | 2 : gen_typing.
+  #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl redtm_one_step osredtm_natElim osredtm_natElimZero osredtm_natElimSucc| 2 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
 
   Lemma redty_red {Γ A B} :
@@ -714,6 +766,19 @@ Section GenericConsequences.
     gen_typing.
   Qed.
 
+
+  Lemma redtmwf_natElimZero {Γ nN P hz hs} :
+    [Γ ,, vass nN tNat |- P ] ->
+    [Γ |- hz : P[tZero..]] ->
+    [Γ |- hs : elimSuccHypTy nN P] ->
+    [Γ |- tNatElim P hz hs tZero :⇒*: hz : P[tZero..]].
+  Proof.
+    intros ???; constructor; tea.
+    2: eapply redtm_one_step; gen_typing.
+    eapply ty_natElim; tea. 
+    eapply ty_zero.
+    now eapply wfc_ty.
+  Qed.
 
   (** *** Derived typing, reduction and conversion judgements *)
 
@@ -1006,7 +1071,7 @@ End GenericConsequences.
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)
 
-#[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red | 2 : gen_typing.
+#[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red redtmwf_natElimZero | 2 : gen_typing.
 #[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.
 
   

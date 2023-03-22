@@ -11,6 +11,9 @@ or typing, done in a declarative fashion. For instance, we _demand_ that convers
 be transitive by adding a corresponding rule. *)
 
 (** ** Definitions *)
+Definition elimSuccHypTy nN' P :=
+  tProd nN' tNat (arr P P[tSucc (tRel 0)]⇑).
+
 Section Definitions.
 
   (* We locally disable typing notations to be able to use them in the definition
@@ -36,6 +39,9 @@ Section Definitions.
           [ Γ |- A ] -> 
           [Γ ,, (vass na A) |- B ] -> 
           [ Γ |- tProd na A B ]
+      | wfTypeNat {Γ} : 
+          [|- Γ] ->
+          [Γ |- tNat]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -57,6 +63,21 @@ Section Definitions.
           [ Γ |- f : tProd na A B ] -> 
           [ Γ |- a : A ] -> 
           [ Γ |- tApp f a : B[a..] ]
+      | wfTermNat {Γ} :
+          [|-Γ] ->
+          [Γ |- tNat : U]
+      | wfTermZero {Γ} :
+          [|-Γ] ->
+          [Γ |- tZero : tNat]
+      | wfTermSucc {Γ n} :
+          [Γ |- n : tNat] ->
+          [Γ |- tSucc n : tNat]
+      | wfTermNatElim {Γ nN P hz hs n} :
+        [Γ ,, vass nN tNat |- P ] ->
+        [Γ |- hz : P[tZero..]] ->
+        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- n : tNat] ->
+        [Γ |- tNatElim P hz hs n : P[n..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -103,6 +124,26 @@ Section Definitions.
           [ Γ |- g : tProd nb A B ] ->
           [ Γ ,, vass na A |- eta_expand f ≅ eta_expand g : B ] ->
           [ Γ |- f ≅ g : tProd na A B ]
+      | TermSuccCong {Γ} {n n'} :
+          [Γ |- n ≅ n' : tNat] ->
+          [Γ |- tSucc n ≅ tSucc n' : tNat]
+      | TermNatElimCong {Γ nN P P' hz hz' hs hs' n n'} :
+          [Γ ,, vass nN tNat |- P ≅ P'] ->
+          [Γ |- hz ≅ hz' : P[tZero..]] ->
+          [Γ |- hs ≅ hs' : elimSuccHypTy nN P] ->
+          [Γ |- n ≅ n' : tNat] ->
+          [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]        
+      | TermNatElimZero {Γ nN P hz hs} :
+          [Γ ,, vass nN tNat |- P ] ->
+          [Γ |- hz : P[tZero..]] ->
+          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]
+      | TermNatElimSucc {Γ nN P hz hs n} :
+          [Γ ,, vass nN tNat |- P ] ->
+          [Γ |- hz : P[tZero..]] ->
+          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- n : tNat] ->
+          [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]
@@ -136,6 +177,23 @@ Section Definitions.
       [ Γ |- t ⇒ u : tProd na A B] ->
       [ Γ |- a : A ] ->
       [ Γ |- tApp t a ⇒ tApp u a : B[a..] ]
+  | natElimSubst {nN P hz hs n n'} :
+      [Γ ,, vass nN tNat |- P] ->
+      [Γ |- hz : P[tZero..]] ->
+      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- n ⇒ n' : tNat] ->
+      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]        
+  | natElimZero {nN P hz hs} :
+      [Γ ,, vass nN tNat |- P ] ->
+      [Γ |- hz : P[tZero..]] ->
+      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]]
+  | natElimSucc {nN P hz hs n} :
+      [Γ ,, vass nN tNat |- P ] ->
+      [Γ |- hz : P[tZero..]] ->
+      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- n : tNat] ->
+      [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
   | termRedConv {A B t u} : 
       [ Γ |- t ⇒ u : A ] ->
       [ Γ |- A ≅ B ] ->
@@ -275,14 +333,11 @@ Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 Section TypeErasure.
   Import DeclarativeTypingData.
 
-
 Lemma oredtmdecl_ored Γ t u A : 
   [Γ |- t ⇒ u : A] ->
   [t ⇒ u].
 Proof.
-  induction 1.
-  1-2: now econstructor.
-  eassumption.
+  induction 1; tea; now econstructor.
 Qed.
 
 Lemma redtmdecl_red Γ t u A : 

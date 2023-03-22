@@ -397,6 +397,80 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
+  Lemma FundTyNat : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTy Γ tNat.
+  Proof.
+  Admitted.
+
+  Lemma FundTmNat : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTm Γ U tNat.
+  Proof.
+  Admitted.  
+
+  Lemma FundTmZero : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTm Γ tNat tZero.
+  Proof.
+  Admitted.
+
+  Lemma FundTmSucc : forall (Γ : context) (n : term),
+  [Γ |-[ de ] n : tNat] -> FundTm Γ tNat n -> FundTm Γ tNat (tSucc n).
+  Proof.
+  Admitted.
+
+  Lemma FundTmNatElim : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
+    [Γ,, vass nN tNat |-[ de ] P] ->
+    FundTy (Γ,, vass nN tNat) P ->
+    [Γ |-[ de ] hz : P[tZero..]] ->
+    FundTm Γ P[tZero..] hz ->
+    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
+    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] n : tNat] ->
+    FundTm Γ tNat n -> FundTm Γ P[n..] (tNatElim P hz hs n).
+  Proof.
+  Admitted.
+  
+  Lemma FundTmEqSuccCong : forall (Γ : context) (n n' : term),
+    [Γ |-[ de ] n ≅ n' : tNat] ->
+    FundTmEq Γ tNat n n' -> FundTmEq Γ tNat (tSucc n) (tSucc n').
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqNatElimCong : forall (Γ : list context_decl) (nN : aname)
+      (P P' hz hz' hs hs' n n' : term),
+    [Γ,, vass nN tNat |-[ de ] P ≅ P'] ->
+    FundTyEq (Γ,, vass nN tNat) P P' ->
+    [Γ |-[ de ] hz ≅ hz' : P[tZero..]] ->
+    FundTmEq Γ P[tZero..] hz hz' ->
+    [Γ |-[ de ] hs ≅ hs' : elimSuccHypTy nN P] ->
+    FundTmEq Γ (elimSuccHypTy nN P) hs hs' ->
+    [Γ |-[ de ] n ≅ n' : tNat] ->
+    FundTmEq Γ tNat n n' ->
+    FundTmEq Γ P[n..] (tNatElim P hz hs n) (tNatElim P' hz' hs' n').
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqNatElimZero : forall (Γ : list context_decl) (nN : aname) (P hz hs : term),
+    [Γ,, vass nN tNat |-[ de ] P] ->
+    FundTy (Γ,, vass nN tNat) P ->
+    [Γ |-[ de ] hz : P[tZero..]] ->
+    FundTm Γ P[tZero..] hz ->
+    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
+    FundTm Γ (elimSuccHypTy nN P) hs ->
+    FundTmEq Γ P[tZero..] (tNatElim P hz hs tZero) hz.
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqNatElimSucc : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
+    [Γ,, vass nN tNat |-[ de ] P] ->
+    FundTy (Γ,, vass nN tNat) P ->
+    [Γ |-[ de ] hz : P[tZero..]] ->
+    FundTm Γ P[tZero..] hz ->
+    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
+    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] n : tNat] ->
+    FundTm Γ tNat n ->
+    FundTmEq Γ P[(tSucc n)..] (tNatElim P hz hs (tSucc n))
+      (tApp (tApp hs n) (tNatElim P hz hs n)).
+  Proof.
+  Admitted.  
+
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -408,11 +482,16 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundConCons.
   + apply FundTyU.
   + apply FundTyPi.
+  + apply FundTyNat.
   + apply FundTyUniv.
   + apply FundTmVar.
   + apply FundTmProd.
   + apply FundTmLambda.
   + apply FundTmApp.
+  + apply FundTmNat.
+  + apply FundTmZero.
+  + apply FundTmSucc.
+  + apply FundTmNatElim.
   + apply FundTmConv.
   + apply FundTyEqPiCong.
   + apply FundTyEqRefl.
@@ -423,6 +502,10 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqPiCong.
   + apply FundTmEqAppCong.
   + apply FundTmEqFunExt.
+  + apply FundTmEqSuccCong.
+  + apply FundTmEqNatElimCong.
+  + apply FundTmEqNatElimZero.
+  + apply FundTmEqNatElimSucc.
   + apply FundTmEqRefl.
   + apply FundTmEqConv.
   + apply FundTmEqSym.

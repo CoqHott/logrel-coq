@@ -24,28 +24,38 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tLambda na A t => ∑ B, [× T = tProd na A B, [Γ |- A] & [Γ,, vass na A |- t : B]]
     | tApp f a => ∑ na A B, [× T = B[a..], [Γ |- f : tProd na A B] & [Γ |- a : A]]
     | tSort _ => False
+    | tNat => T = U
+    | tZero => T = tNat
+    | tSucc n => T = tNat × [Γ |- n : tNat]
+    | tNatElim P hz hs n =>
+      ∑ nN, [× T = P[n..], [Γ,, vass nN tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy nN P] & [Γ |- n : tNat]]
   end.
+
+Ltac prod_splitter :=
+  repeat match goal with
+  | |- sigT _ => eexists
+  | |- prod _ _ => split
+  | |- and3 _ _ _ => split
+  | |- and4 _ _ _ _ => split
+  | |- and5 _ _ _ _ _ => split
+  end.
+
+Ltac by_prod_splitter :=
+  solve [now prod_splitter].
 
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
   ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
 Proof.
   induction 1.
-  1-4: eexists ; split ; [..|left ; reflexivity] ; cbn ;
-    solve [now repeat match goal with
-    | |- sigT _ => eexists
-    | |- prod _ _ => split 
-    | |- and3 _ _ _ => split
-    | |- and4 _ _ _ _ => split
-    end].
-  destruct IHTypingDecl as [A' [? [-> | ]]].
-  - eexists. split.
-    1: eassumption.
-    now right.
-  - eexists. split.
-    1: eassumption.
-    right.
-    now eapply TypeTrans.
+  1-7: eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter.
+  + destruct IHTypingDecl1 as [? [? [-> | ]]];
+    destruct IHTypingDecl2 as [? [? [-> | ]]];
+    destruct IHTypingDecl3 as [? [? [-> | ]]];
+    (prod_splitter; [| now left]; cbn in *; prod_splitter; tea; reflexivity).
+  + destruct IHTypingDecl as [? [? [-> | ]]].
+    * prod_splitter; tea; now right.
+    * prod_splitter; tea; right; now eapply TypeTrans.
 Qed.
 
 Lemma prod_ty_inv Γ na A B :
@@ -61,6 +71,10 @@ Qed.
 
 (** ** Stability by weakening *)
 
+Lemma subst_ren_wk_up {Γ Δ P nA A} {ρ : Γ ≤ Δ}: forall n, P[n..]⟨ρ⟩ = P⟨wk_up nA A ρ⟩[n⟨ρ⟩..].
+Proof. intros; now bsimpl. Qed.
+
+
 Section TypingWk.
   Import DeclarativeTypingData.
   
@@ -72,6 +86,8 @@ Section TypingWk.
     [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
   Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
+
+
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
@@ -86,6 +102,7 @@ Section TypingWk.
       1: now eapply IHA.
       eapply IHB with (ρ := wk_up _ _ ρ).
       now constructor.
+    - intros; now constructor.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -117,6 +134,19 @@ Section TypingWk.
       1: now eapply IHf.
       1: now eapply IHu.
       now asimpl.
+    - intros; now constructor.
+    - intros; now constructor.
+    - intros; cbn; econstructor; eauto.
+    - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
+      erewrite subst_ren_wk_up; eapply wfTermNatElim.
+      * eapply ihP; econstructor; tea; now econstructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihhz.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhs.
+        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * now eapply ihn.
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -182,6 +212,41 @@ Section TypingWk.
       eapply IHe.
       econstructor ; tea.
       now eapply IHA.
+    - intros * ? ih **; cbn; constructor; now apply ih.
+    - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
+      erewrite subst_ren_wk_up.
+      eapply TermNatElimCong.
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply convtm_meta_conv.
+        1: now eapply ihhz.
+        2: reflexivity.
+        now erewrite subst_ren_wk_up.
+      * eapply convtm_meta_conv.
+        1: now eapply ihhs.
+        2: reflexivity.
+        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * now eapply ihn.
+    - intros * ? ihP ? ihhz ? ihhs **.
+      erewrite subst_ren_wk_up.
+      eapply TermNatElimZero; fold ren_term.
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihhz.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhs.
+        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+    - intros * ? ihP ? ihhz ? ihhs ? ihn **.
+      erewrite subst_ren_wk_up.
+      eapply TermNatElimSucc; fold ren_term.
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihhz.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhs.
+        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * now eapply ihn.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -250,7 +315,8 @@ Section Boundaries.
   Proof.
     induction 1.
     all: econstructor ; eauto.
-    now econstructor.
+    1,3: now econstructor.
+    econstructor; now eapply boundary_tm_ctx.
   Qed.
 
   Definition boundary_ored_ty_l {Γ A B} : 
@@ -292,9 +358,8 @@ Definition RedConvTe {Γ} {t u A : term} :
     [Γ |- t ≅ u : A].
 Proof.
     induction 1.
-    1,3: now econstructor.
-    econstructor ; eauto.
-    now econstructor.
+    1,4,5: now econstructor.
+    all: econstructor; tea; now econstructor.
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
@@ -340,7 +405,7 @@ Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
 [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
 Proof.
   intros ? red.
-  induction red as [? ? ? ? ? ? Ht Ha | |]; refold.
+  induction red as [? ? ? ? ? ? Ht Ha | | | | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
@@ -358,6 +423,43 @@ Proof.
     + now eapply typing_wk.
     + now asimpl.
     + reflexivity.
+  - cbn. erewrite subst_ren_wk_up.
+    eapply (@natElimSubst _ nN); tea.
+    * erewrite <- wk_up_ren_on.
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      constructor; tea; now constructor.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      now erewrite subst_ren_wk_up.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+    Unshelve. all: tea.
+  - cbn. erewrite subst_ren_wk_up.
+    eapply (@natElimZero _ nN); tea.
+    * erewrite <- wk_up_ren_on.
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      constructor; tea; now constructor.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      now erewrite subst_ren_wk_up.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+    Unshelve. all: tea.
+  - cbn. erewrite subst_ren_wk_up.
+    eapply (@natElimSucc _ nN).
+    * erewrite <- wk_up_ren_on.
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      constructor; tea; now constructor.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      now erewrite subst_ren_wk_up.
+    * eapply typing_meta_conv.
+      1: now eapply typing_wk.
+      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+    Unshelve. all: tea.
+    * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
   - econstructor.
     1: eassumption.
     now eapply typing_wk.
@@ -455,7 +557,7 @@ Module DeclarativeTypingProperties.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
   Proof.
-    3-5: now econstructor.
+    3-6: now econstructor.
     - intros.
       now eapply typing_wk.
     - easy.
@@ -463,22 +565,13 @@ Module DeclarativeTypingProperties.
 
   #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.
   Proof.
+    all: try (intros; now econstructor).
     - intros.
       now eapply typing_wk.
     - easy. 
     - intros.
-      now econstructor.
-    - intros.
-      now econstructor.
-    - intros.
-      now econstructor.
-    - intros.
-      now econstructor.
-    - intros.
       econstructor ; tea.
       now apply TypeSym, RedConvTyC.
-    - intros.
-      now econstructor.
   Qed.
 
   #[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := de) := {}.
@@ -498,6 +591,7 @@ Module DeclarativeTypingProperties.
   - econstructor.
     now econstructor.
   - now econstructor.
+  - now do 2 econstructor.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
@@ -522,6 +616,11 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now econstructor.
+  - now do 2 econstructor.
+  - now do 2 econstructor.
+  - now econstructor.
+  - now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -537,11 +636,12 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance OneStepRedTermDeclProperties : OneStepRedTermProperties (ta := de) := {}.
   Proof.
-    intros. now constructor.
+    all: intros; now econstructor.
   Qed.
   
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.

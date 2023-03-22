@@ -8,10 +8,14 @@ Inductive whnf : term -> Type :=
   | whnf_tSort {s} : whnf (tSort s)
   | whnf_tProd {na A B} : whnf (tProd na A B)
   | whnf_tLambda {na A t} : whnf (tLambda na A t)
+  | whnf_tNat : whnf tNat
+  | whnf_tZero : whnf tZero
+  | whnf_tSucc {n} : whnf (tSucc n)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
-  | whne_tApp {n t} : whne n -> whne (tApp n t).
+  | whne_tApp {n t} : whne n -> whne (tApp n t)
+  | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
@@ -43,10 +47,12 @@ Qed.
 Inductive isType : term -> Type :=
   | UnivType {s} : isType (tSort s)
   | ProdType {na A B} : isType (tProd na A B)
+  | NatType : isType tNat
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
   | UnivPos {s} : isPosType (tSort s)
+  | NatPos : isPosType tNat
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
@@ -56,6 +62,7 @@ Inductive isFun : term -> Type :=
 Definition isPosType_isType t (i : isPosType t) : isType t :=
   match i with
     | UnivPos => UnivType
+    | NatPos => NatType
     | NePos ne => NeType ne
   end.
 
@@ -65,6 +72,7 @@ Definition isType_whnf t (i : isType t) : whnf t :=
   match i with
     | UnivType => whnf_tSort
     | ProdType => whnf_tProd
+    | NatType => whnf_tNat
     | NeType ne => whnf_whne ne
   end.
 

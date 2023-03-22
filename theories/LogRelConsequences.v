@@ -154,6 +154,7 @@ Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : is
   match nfT, nfT' with
     | @UnivType s, @UnivType s' => s = s'
     | @ProdType na A B, @ProdType na' A' B' => [Γ |- A' ≅ A] × [Γ,, vass na' A' |- B ≅ B']
+    | NatType, NatType => True
     | NeType _, NeType _ => [Γ |- T ≅ T' : U]
     | _, _ => False
   end.
@@ -209,7 +210,7 @@ Proof.
     destruct nfT' ; inversion HeqU ; subst.
     2: now exfalso ; gen_typing.
     now reflexivity. 
-  - destruct neA as [nT], Hconv as [nT'] ; cbn in *.
+  - destruct neA as [nT ? ne], Hconv as [nT' ? ne'] ; cbn in *.
     assert (nT = T) as -> by
       (symmetry ; apply red_whnf ; gen_typing).
     assert (nT' = T') as -> by
@@ -227,10 +228,10 @@ Proof.
     assert (T = tProd na dom cod) as HeqT by (apply red_whnf ; gen_typing). 
     assert (T' = tProd na' dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
     destruct nfT.
-    1: congruence.
+    1,3: congruence.
     2: subst ; exfalso ; gen_typing.
     destruct nfT'.
-    1: congruence.
+    1,3: congruence.
     2: subst ; exfalso ; gen_typing.
     inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
     cbn.
@@ -401,6 +402,32 @@ Section MoreSubst.
     all: econstructor ; cbn ; refold ; now asimpl.
   Qed.
 
+
+  Theorem typing_substmap1 Γ nt T :
+  (forall (t : term), [Γ ,, vass nt T |- t : T⟨↑⟩] ->
+    forall (A : term), [Γ,, vass nt T |- A] -> 
+      [Γ,, vass nt T |- A[t]⇑]) ×
+  (forall (t : term), [Γ ,, vass nt T |- t : T⟨↑⟩] ->
+    forall (A u : term), [Γ,, vass nt T |- u : A] -> 
+      [Γ,, vass nt T |- u[t]⇑ : A[t]⇑]) ×
+  (forall (t t' : term), [Γ ,, vass nt T |- t ≅ t' : T⟨↑⟩] ->
+    forall (A B : term), [Γ,, vass nt T |- A ≅ B] ->
+      [Γ,, vass nt T |- A[t]⇑ ≅ B[t']⇑]) ×
+  (forall (t t' : term), [Γ ,, vass nt T |- t ≅ t' : T⟨↑⟩] ->
+    forall (A u v : term), [Γ,, vass nt T |- u ≅ v : A] -> 
+      [Γ,, vass nt T |- u[t]⇑ ≅ v[t']⇑ : A[t]⇑]).
+  Proof.
+    repeat match goal with |- _ × _ => split end.
+    all: intros * Ht * Hty.
+    all: assert ([|- Γ,, vass nt T] × [|- Γ]) as [] by (split; repeat boundary).
+    all : assert (Hsubst : [Γ ,, vass nt T |-s ↑ >> tRel : Γ])
+            by (change (?x >> ?y) with y⟨x⟩; eapply well_subst_up; [boundary| now eapply id_subst]).
+    3-4: apply subst_refl in Hsubst.
+    all: eapply typing_subst ; tea.
+    all: econstructor ; cbn ; refold; bsimpl; try rewrite <- rinstInst'_term; tea.
+  Qed.
+
+
   Lemma conv_well_subst1 (Γ : context) na na' A A' :
     [Γ |- A] ->
     [Γ |- A'] ->
@@ -480,6 +507,10 @@ Section Boundary.
       now econstructor.
     - intros.
       now eapply typing_subst1, prod_ty_inv.
+    - intros; gen_typing.
+    - intros; gen_typing.
+    - intros.
+      now eapply typing_subst1.
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
@@ -527,6 +558,33 @@ Section Boundary.
       3: econstructor.
       1-3: eassumption.
       now eapply prod_ty_inv.
+    - intros * ? []; split; gen_typing.
+    - intros * ? [] ? [] ? [] ? []; split.
+      + now eapply typing_subst1.
+      + gen_typing.
+      + eapply ty_conv.
+        assert [Γ |-[de] tNat ≅ tNat] by now constructor.
+        1: eapply ty_natElim; tea; eapply ty_conv; tea. 
+        * eapply typing_subst1; tea; do 2 constructor; boundary.
+        * unfold elimSuccHypTy.
+          constructor; tea.
+          eapply convty_simple_arr; tea.
+          eapply typing_substmap1; tea.
+          do 2 constructor; refine (wfVar _ (in_here _ _)).
+          constructor; boundary.
+        * symmetry; now eapply typing_subst1.
+    - intros **; split; tea.
+      eapply ty_natElim; tea; constructor; boundary.   
+    - intros **.
+      assert [Γ |- tSucc n : tNat] by now constructor.
+      assert [Γ |- P[(tSucc n)..]] by now eapply typing_subst1.
+      split; tea.
+      2: eapply ty_simple_app.
+      1,5: now eapply ty_natElim.
+      2: tea.
+      1: now eapply typing_subst1.
+      replace (arr _ _) with (arr P P[tSucc (tRel 0)]⇑)[n..] by now bsimpl.
+      eapply ty_app; tea.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
@@ -769,6 +827,15 @@ Proof.
     econstructor.
     1: now eapply IHHred.
     refold ; gen_typing.
+  - apply termGen' in Hty as [? [[?[->]] Heq]].
+    econstructor; tea.
+    econstructor; tea.
+    now eapply IHHred.
+  - apply termGen' in Hty as [? [[?[->]] Heq]].
+    econstructor; tea; econstructor; tea.
+  - apply termGen' in Hty as [? [[?[-> ??? hsn]] Heq]].
+    econstructor; tea; econstructor; tea.
+    now apply termGen' in hsn as [? [[]?]].
 Qed.
 
 Theorem subject_reduction Γ t t' A :
