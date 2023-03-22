@@ -1,4 +1,5 @@
 (** * LogRel.AlgorithmicTyping: definition of algorithmic conversion and typing. *)
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping.
 
