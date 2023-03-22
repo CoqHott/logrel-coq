@@ -446,12 +446,11 @@ Section Transitivity.
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       3: destruct H8.
-      1,3-4: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
+      1,3-5: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.
       now econstructor.
-      admit.
     - intros * Hnconv IH ? ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       1: inversion Hnconv.
@@ -459,7 +458,7 @@ Section Transitivity.
           now unshelve eapply ty_conv_inj in H4 ; [now econstructor | now econstructor | cbn in *].
       econstructor ; tea.
       now eapply IH.
-Admitted.
+Qed.
 
 End Transitivity.
 
