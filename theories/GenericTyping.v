@@ -408,6 +408,7 @@ Section GenericValues.
     ty_nf_red {Γ A B} : [Γ |- A ⇒* B] -> Nf[Γ |- B] -> Nf[Γ |- A];
     ty_nf_sort {Γ} : [|- Γ] -> Nf[Γ |- U];
     ty_nf_prod {Γ na A B} : Nf[Γ |- A] -> Nf[Γ,, vass na A |- B] -> Nf[Γ |- tProd na A B];
+    ty_nf_nat {Γ} : [|- Γ] -> Nf[Γ |- tNat];
    }.
 
   Class TermNeProperties := {

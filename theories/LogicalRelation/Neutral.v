@@ -328,7 +328,8 @@ induction HRA.
       eapply var0. now bsimpl.
     * eassumption.
     * bsimpl ; rewrite scons_eta' ; now bsimpl.
-+ admit.
-Admitted.
++ destruct NA.
+  eapply ty_nf_red, ty_nf_nat; gen_typing.
+Qed.
 
 End Neutral.

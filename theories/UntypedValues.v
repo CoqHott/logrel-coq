@@ -7,6 +7,7 @@ Inductive snf (r : term) : Type :=
   | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
   | snf_tProd {na A B} : [ r ⇒* tProd na A B ] -> snf A -> snf B -> snf r
   | snf_tLambda {na A t} : [ r ⇒* tLambda na A t ] -> snf A -> snf t -> snf r
+  | snf_tNat : [ r ⇒* tNat ] -> snf r
   | snf_tZero : [ r ⇒* tZero ] -> snf r
   | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
@@ -38,8 +39,8 @@ Definition sne_ind
   (P : forall r : term, snf r -> Prop)
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 :=
-  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9).
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 :=
+  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -59,6 +60,7 @@ intros t u Hr Hu; destruct Hu.
   - transitivity u; eassumption.
   - assumption.
   - assumption.
++ eapply snf_tNat; transitivity u; eassumption.
 + eapply snf_tZero.
   transitivity u; eassumption.
 + eapply snf_tSucc.
@@ -130,6 +132,9 @@ Section RenSnf.
   + intros r na A t Hr HA IHA Ht IHt ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tLambda; eauto.
+  + intros r Hr ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tNat; eassumption.
   + intros r Hr ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tZero; eauto.
@@ -209,6 +214,7 @@ Section Properties.
     - transitivity B; [eapply redty_red| ]; eassumption.
     - assumption.
   + exists (tSort set); split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
