@@ -146,7 +146,8 @@ Section NeutralConversion.
       + bsimpl.
         rewrite scons_eta'.
         now bsimpl.
-  Qed.
+  - admit.
+Admitted.
 
 End NeutralConversion.
 
@@ -184,7 +185,8 @@ Proof.
     eexists ; split.
     1: apply red.
     now constructor.
-Qed.
+  - admit.
+Admitted.
 
 Lemma ty_conv_inj : forall (Γ : context) (T T' : term) (nfT : isType T) (nfT' : isType T'),
   [Γ |- T ≅ T'] ->
@@ -209,18 +211,21 @@ Proof.
     remember U as T eqn:HeqU in nfT' |- * at 2.
     destruct nfT' ; inversion HeqU ; subst.
     2: now exfalso ; gen_typing.
-    now reflexivity. 
+    now reflexivity.
   - destruct neA as [nT ? ne], Hconv as [nT' ? ne'] ; cbn in *.
     assert (nT = T) as -> by
       (symmetry ; apply red_whnf ; gen_typing).
     assert (nT' = T') as -> by
       (symmetry ; apply red_whnf ; gen_typing).
     destruct nfT.
-    1,2: apply ty_ne_whne in ne, ne0; exfalso ; gen_typing.
-    destruct nfT'.
-    1,2: apply ty_ne_whne in ne, ne0; exfalso ; gen_typing.
-    cbn.
-    eassumption.
+    + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+    + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+    + apply ty_ne_whne in ne, ne'; inversion ne.
+    + destruct nfT'.
+      * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+      * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+      * apply ty_ne_whne in ne, ne'; inversion ne'.
+      * eassumption.
   - rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
     remember (PiRedTyPack.pack ΠA ΠAad) as ΠA' eqn:Heq in *.
     clear ΠA ΠAad Heq.
@@ -260,7 +265,8 @@ Proof.
     all: econstructor.
     1,3: econstructor ; [eassumption | now econstructor].
     all: cbn ; renToWk ; now eapply typing_wk.
-  Qed.
+  - admit.
+Admitted.
 
 Corollary red_ty_compl_univ_l Γ T :
   [Γ |- U ≅ T] ->

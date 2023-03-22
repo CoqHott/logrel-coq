@@ -51,7 +51,10 @@ Module AlgorithmicTypingProperties.
     - eapply typing_subst1 ; tea.
       econstructor.
       now eapply inf_conv_decl.
-  Qed.
+    - admit.
+    - admit.
+    - admit.
+  Admitted.
 
 
   #[export, refine] Instance RedTermAlgProperties :
@@ -92,7 +95,8 @@ Module AlgorithmicTypingProperties.
     - red. intros_bn.
       2: now etransitivity.
       now econstructor.
-  Qed.
+    - admit.
+  Admitted.
 
   #[export, refine] Instance RedTypeAlgProperties :
     RedTypeProperties (ta := bn) := {}.
@@ -132,9 +136,11 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       now econstructor.
     - intros_bn.
+      admit.
+    - intros_bn.
       do 2 econstructor ; tea.
-      now apply algo_conv_complete.
-  Qed.
+(*       now apply algo_conv_complete. *)
+  Admitted.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
   Proof.
@@ -165,6 +171,10 @@ Module AlgorithmicTypingProperties.
       + eapply typing_subst1 ; tea.
         econstructor.
         now eapply inf_conv_decl.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -175,7 +185,7 @@ Module AlgorithmicTypingProperties.
       1: eassumption.
       etransitivity ; tea.
       now eapply conv_sound in bun_conv_ty.
-  Qed.
+  Admitted.
 
   Export UntypedValues.WeakValuesProperties.
 

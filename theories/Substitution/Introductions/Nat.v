@@ -108,7 +108,7 @@ Proof.
   intros RSn; inversion RSn; subst. 
   unshelve epose proof (redtmwf_whnf red _). 1: constructor.
   subst. inversion prop; subst; tea.
-  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; inv_whne end.
+  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; apply tm_ne_whne in ne; inv_whne end.
 Qed.
 
 Lemma succValid {Γ l n} (VΓ : [||-v Γ]) 

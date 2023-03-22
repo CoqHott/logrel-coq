@@ -164,12 +164,14 @@ Qed.
 
 Lemma NeNfconv {Γ k A A'} : [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
 Proof.
-  intros ? []; econstructor; tea; gen_typing.
+  intros ? []; econstructor; tea. 2,3: gen_typing.
+  now eapply tm_ne_conv.
 Qed.
 
 Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
 Proof.
-  intros ? []; econstructor; tea; gen_typing.
+  intros ? []; econstructor; tea. 3: gen_typing.
+  all: now eapply tm_ne_conv.
 Qed.
 
 

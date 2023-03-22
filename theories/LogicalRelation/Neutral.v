@@ -235,10 +235,20 @@ Proof.
     2,4: do 2 constructor; tea.
     1,7: eapply convtm_convneu.
     1,4: eapply lrefl.
-    4-6: now eapply tm_ne_whne.
+    4-6: now eapply tm_ne_conv.
     all: eapply convneu_conv; tea.
-  - admit.
-Admitted.
+  - simpl in *.
+    assert [Γ |- tNat ≅ A] by (destruct NA; gen_typing).
+    intros a Ha; eapply tm_nf_conv; [|eassumption]; revert a Ha.
+    let T := match goal with |- ?P => P end in
+    enough (IH : T × (forall (a : term) (n : NatProp NA a), Nf[ Γ |-[ ta ] a : tNat])); [apply IH|].
+    apply NatRedInduction.
+    + intros.
+      eapply tm_nf_red; [now apply tmr_wf_red|eassumption].
+    + eapply tm_nf_zero; gen_typing.
+    + intros; now eapply tm_nf_succ.
+    + intros ne []; now apply tm_ne_nf.
+Qed.
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
 Proof.

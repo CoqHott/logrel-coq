@@ -7,10 +7,14 @@ Inductive snf (r : term) : Type :=
   | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
   | snf_tProd {na A B} : [ r ⇒* tProd na A B ] -> snf A -> snf B -> snf r
   | snf_tLambda {na A t} : [ r ⇒* tLambda na A t ] -> snf A -> snf t -> snf r
+  | snf_tZero : [ r ⇒* tZero ] -> snf r
+  | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
-  | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r.
+  | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
+  | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf P -> snf hz -> snf hs -> sne n -> sne r
+.
 
 Set Elimination Schemes.
 
@@ -34,8 +38,8 @@ Definition sne_ind
   (P : forall r : term, snf r -> Prop)
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 :=
-  pair (snf_rect P Q p1 p2 p3 p4 p5 p6) (sne_rect P Q p1 p2 p3 p4 p5 p6).
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 :=
+  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -54,6 +58,11 @@ intros t u Hr Hu; destruct Hu.
 + eapply snf_tLambda.
   - transitivity u; eassumption.
   - assumption.
+  - assumption.
++ eapply snf_tZero.
+  transitivity u; eassumption.
++ eapply snf_tSucc.
+  - transitivity u; eassumption.
   - assumption.
 + eapply snf_sne.
   - transitivity u; eassumption.
@@ -121,12 +130,20 @@ Section RenSnf.
   + intros r na A t Hr HA IHA Ht IHt ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tLambda; eauto.
+  + intros r Hr ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tZero; eauto.
+  + intros r t Hr Ht IHt ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tSucc; eauto.
   + intros r n Hr Hn IHn ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_sne; eauto.
   + intros r v -> ρ; econstructor; reflexivity.
   + intros r n t -> Hn IHn Ht IHt ρ.
     cbn; eapply sne_tApp; eauto.
+  + intros r P hz hs n -> HP IHP Hhz IHhz Hhs IHhs Hn IHn ρ; cbn.
+    eapply sne_tNatElim; eauto.
   Qed.
 
   Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
@@ -204,6 +221,7 @@ Section Properties.
   + intros; assumption.
   + constructor.
   + constructor; assumption.
+  + intros; constructor; assumption.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.
@@ -218,6 +236,8 @@ Section Properties.
     exists r; split.
     - transitivity u; [eapply redtm_red| ]; eassumption.
     - assumption.
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   Qed.

@@ -451,6 +451,7 @@ Section Transitivity.
       econstructor ; tea.
       eapply IH ; tea.
       now econstructor.
+      admit.
     - intros * Hnconv IH ? ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       1: inversion Hnconv.
@@ -458,7 +459,7 @@ Section Transitivity.
           now unshelve eapply ty_conv_inj in H4 ; [now econstructor | now econstructor | cbn in *].
       econstructor ; tea.
       now eapply IH.
-  Qed.
+Admitted.
 
 End Transitivity.
 
@@ -509,7 +510,8 @@ Module AlgorithmicConvProperties.
         * symmetry.
           now eapply conv_sound in bun_conv_ty0.
       + now do 2 econstructor.
-  Qed.
+    - admit.
+Admitted.
 
   #[export, refine] Instance ConvTermAlgProperties : ConvTermProperties (ta := bn) := {}.
   Proof.
@@ -575,7 +577,12 @@ Module AlgorithmicConvProperties.
       + econstructor.
         1-3: reflexivity.
         now econstructor.
-  Qed.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+Admitted.
 
   #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
@@ -649,7 +656,8 @@ Module AlgorithmicConvProperties.
     + eapply typing_subst1 ; tea.
       econstructor.
       eassumption.
-  Qed.
+  - admit.
+Admitted.
 
 End AlgorithmicConvProperties.
 
@@ -674,6 +682,10 @@ Module IntermediateTypingProperties.
   #[export, refine] Instance TypingIntProperties : TypingProperties (ta := bni) := {}.
   Proof.
     all: unfold_bni.
+    - gen_typing.
+    - gen_typing.
+    - gen_typing.
+    - gen_typing.
     - gen_typing.
     - gen_typing.
     - gen_typing.
@@ -719,7 +731,8 @@ Module IntermediateTypingProperties.
         symmetry.
         now eapply conv_sound in bun_conv_ty.
       + now do 2 econstructor.
-  Qed.
+    - admit.
+Admitted.
 
   #[export, refine] Instance ConvTermIntProperties : ConvTermProperties (ta := bni) := {}.
   Proof.
@@ -759,7 +772,12 @@ Module IntermediateTypingProperties.
       + gen_typing.
       + boundary.
       + now do 2 econstructor.
-  Qed.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+Admitted.
 
   #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
   Proof.
@@ -780,6 +798,7 @@ Module IntermediateTypingProperties.
       + now econstructor.
       + eassumption.
     - gen_typing.
+    - gen_typing.
   Qed.
 
   #[export, refine] Instance OneStepRedTermIntProperties :
@@ -790,7 +809,10 @@ Module IntermediateTypingProperties.
     + econstructor ; tea.
       now econstructor.
     + do 2 econstructor.
-  Qed.
+    + admit.
+    + admit.
+    + admit.
+Admitted.
 
   #[export, refine] Instance RedTermIntProperties :
     RedTermProperties (ta := bni) := {}.
@@ -826,7 +848,8 @@ Module IntermediateTypingProperties.
     - red ; intros * [] [].
       econstructor ; tea.
       now etransitivity.
-  Qed.
+    - admit.
+Admitted.
 
   #[export, refine] Instance RedTypeIntProperties :
     RedTypeProperties (ta := bni) := {}.

@@ -136,7 +136,7 @@ Section Weakenings.
   Lemma wkNeNf {Γ Δ k A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
     [Γ ||-NeNf k : A] -> [Δ ||-NeNf k⟨ρ⟩ : A⟨ρ⟩].
   Proof.
-    intros []; constructor; gen_typing.
+    intros []; constructor. 1:apply tm_ne_wk. all: gen_typing.
   Qed.  
 
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
@@ -182,7 +182,7 @@ Section Weakenings.
   Lemma wkNeNfEq {Γ Δ k k' A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
     [Γ ||-NeNf k ≅ k' : A] -> [Δ ||-NeNf k⟨ρ⟩ ≅ k'⟨ρ⟩ : A⟨ρ⟩].
   Proof.
-    intros []; constructor; gen_typing.
+    intros []; constructor. 1,2: apply tm_ne_wk. all: gen_typing.
   Qed.  
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 

@@ -403,14 +403,14 @@ Section BundledConv.
         eapply algo_conv_wh in Hconv as [neM neN].
         inversion HM ; subst ; clear HM.
         1-2: now inversion neM.
-        assumption.
+(*         assumption. *) all:admit.
       }
       assert [Γ |-[de] N : U].
       {
         eapply algo_conv_wh in Hconv as [neM neN].
         inversion HN ; subst ; clear HN.
         1-2: now inversion neN.
-        assumption.
+(*         assumption. *) all:admit.
       }
       split ; [now eauto|..].
       do 2 econstructor.
@@ -527,7 +527,7 @@ Section BundledConv.
       split ; [now eauto|..].
       econstructor ; tea.
       now eapply Hm'.
-  Qed.
+Admitted.
 
   Definition BundledConvInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in

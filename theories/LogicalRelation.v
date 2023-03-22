@@ -401,22 +401,22 @@ Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
 (** ** Reducibility of neutrals at an arbitrary type *)
 
 Module NeNf.
-  Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} {Γ k A} : Set :=
+  Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} `{TermNe ta} {Γ k A} : Set :=
     {
-      ne : whne k ;
+      ne : Ne[Γ |- k : A];
       ty : [Γ |- k : A] ;
       refl : [Γ |- k ~ k : A]
     }.
-  Arguments RedTm {_ _ _}.
+  Arguments RedTm {_ _ _ _}.
 
-  Record RedTmEq `{ta : tag} `{ConvNeuConv ta} {Γ k l A} : Set :=
+  Record RedTmEq `{ta : tag} `{ConvNeuConv ta} `{TermNe ta} {Γ k l A} : Set :=
     {
-      neL : whne k;
-      neR : whne l;
+      neL : Ne[Γ |- k : A];
+      neR : Ne[Γ |- l : A];
       conv : [Γ |- k ~ l : A]
     }.
 
-  Arguments RedTmEq {_ _}.
+  Arguments RedTmEq {_ _ _}.
 End NeNf.
 
 Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
@@ -459,7 +459,7 @@ Module NatRedTm.
 Section NatRedTm.
   Context `{ta : tag} `{WfType ta} 
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
-    `{RedTerm ta}.
+    `{RedTerm ta} `{TermNe ta}.
 
   Inductive NatRedTm {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
   | Build_NatRedTm {t}
@@ -512,22 +512,21 @@ Proof.
 Defined.
 
 End NatRedTm.
-Arguments NatRedTm {_ _ _ _ _ _ _ _ _}.
-Arguments NatProp {_ _ _ _ _ _ _ _ _}.
+Arguments NatRedTm {_ _ _ _ _ _ _ _ _ _}.
+Arguments NatProp {_ _ _ _ _ _ _ _ _ _}.
 
 End NatRedTm.
 
 Export NatRedTm(NatRedTm,Build_NatRedTm, NatProp, NatRedInduction).
 
-Notation "[ Γ ||-Nat t : A | RA ]" := (@NatRedTm _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
+Notation "[ Γ ||-Nat t : A | RA ]" := (@NatRedTm _ _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
 
 
 Module NatRedTmEq.
 Section NatRedTmEq.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
-    `{RedTerm ta}.
-    
+    `{RedTerm ta} `{TermNe ta}.
 
   Inductive NatRedTmEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
   | Build_NatRedTmEq {t u}
@@ -576,13 +575,13 @@ Proof.
 Defined.
 
 End NatRedTmEq.
-Arguments NatRedTmEq {_ _ _ _ _ _ _ _ _}.
-Arguments NatPropEq {_ _ _ _ _ _ _ _ _}.
+Arguments NatRedTmEq {_ _ _ _ _ _ _ _ _ _}.
+Arguments NatPropEq {_ _ _ _ _ _ _ _ _ _}.
 End NatRedTmEq.
 
 Export NatRedTmEq(NatRedTmEq,Build_NatRedTmEq, NatPropEq, NatRedEqInduction).
 
-Notation "[ Γ ||-Nat t ≅ u : A | RA ]" := (@NatRedTmEq _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
+Notation "[ Γ ||-Nat t ≅ u : A | RA ]" := (@NatRedTmEq _ _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
 
 (** ** Definition of the logical relation *)
 
@@ -865,10 +864,10 @@ End LogRelRecFoldLemmas.
 Section NatPropProperties.
   Context `{GenericTypingProperties}.
   Lemma NatProp_whnf {Γ A t} {NA : [Γ ||-Nat A]} : NatProp NA t -> whnf t.
-  Proof.  intros [ | | ? []]; now econstructor. Qed.
+  Proof.  intros [ | | ? []]; now (econstructor; eapply tm_ne_whne). Qed.
 
   Lemma NatPropEq_whnf {Γ A t u} {NA : [Γ ||-Nat A]} : NatPropEq NA t u -> whnf t × whnf u.
-  Proof.  intros [ | | ? ? []]; split; now econstructor. Qed.
-    
+  Proof.  intros [ | | ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
+
 End NatPropProperties.
 

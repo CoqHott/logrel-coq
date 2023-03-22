@@ -418,6 +418,12 @@ Section GenericValues.
     tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
     tm_ne_rel {Γ v A} : [Γ |- tRel v : A] -> Ne[Γ |- tRel v : A];
     tm_ne_app {Γ n t na A B} : Ne[Γ |- n : tProd na A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
+    tm_ne_natelim {Γ nN P hz hs n} :
+      Nf[Γ ,, vass nN tNat |- P ] ->
+      Nf[Γ |- hz : P[tZero..]] ->
+      Nf[Γ |- hs : elimSuccHypTy nN P] ->
+      Ne[Γ |- n : tNat] ->
+      Ne[Γ |- tNatElim P hz hs n : P[n..]];
   }.
 
   Class TermNfProperties := {
@@ -427,6 +433,8 @@ Section GenericValues.
     tm_nf_red {Γ t u A} : [Γ |- t ⇒* u : A] -> Nf[Γ |- u : A] -> Nf[Γ |- t : A];
     tm_nf_prod {Γ na A B} : Nf[Γ |- A : U] -> Nf[Γ,, vass na A |- B : U] -> Nf[Γ |- tProd na A B : U];
     tm_nf_lam {Γ na A B t} : Nf[Γ |- A] -> Nf[Γ,, vass na A |- t : B] -> Nf[Γ |- tLambda na A t : tProd na A B];
+    tm_nf_zero {Γ} : [|- Γ] -> Nf[Γ |- tZero : tNat];
+    tm_nf_succ {Γ t} : Nf[Γ |- t : tNat] -> Nf[Γ |- tSucc t : tNat];
   }.
 
 End GenericValues.

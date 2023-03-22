@@ -151,10 +151,10 @@ Proof.
   - easy.
   - intros * ? ih ? uv.
     inversion uv ; subst.
-    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; inv_whne end.
-    econstructor; now eapply ih.
+    + econstructor; now eapply ih.
+    + match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; apply tm_ne_whne in neL; inv_whne end.
   - intros ?? tu ? uv; inversion uv; subst.
-    1,2: destruct tu; inv_whne.
+    1,2: destruct tu; apply tm_ne_whne in neR; inv_whne.
     econstructor; now eapply transNeNfEq.
 Qed.
 
