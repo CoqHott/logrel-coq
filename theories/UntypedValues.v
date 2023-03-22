@@ -108,8 +108,6 @@ Qed.
 
 Section RenSnf.
 
-  Notation credalg_wk := (credalg_wk nil nil).
-
   Lemma snf_sne_ren :
     prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩)) (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)).
   Proof.
@@ -187,7 +185,7 @@ Section Properties.
   split.
   + intros Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
-    - now apply (credalg_wk Γ Δ).
+    - now apply credalg_wk.
     - now apply Weakening.whnf_ren.
   + intros Γ A B ? [C [? ?]].
     exists C; split.
@@ -213,7 +211,7 @@ Section Properties.
   split.
   + intros Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
-    - now apply (credalg_wk Γ Δ).
+    - now apply credalg_wk.
     - now apply Weakening.whnf_ren.
   + intros; assumption.
   + intros Γ t u A ? [r [? ?]].
