@@ -14,37 +14,9 @@ with sne (r : term) : Type :=
 
 Set Elimination Schemes.
 
-Section rect.
-
-Variable 
-  (P : forall r, snf r -> Type)
-  (Q : forall n, sne n -> Type)
-  (ptSort : forall r s (e : [ r ⇒* tSort s ]), P _ (snf_tSort r e))
-  (ptProd : forall r na A B (e : [ r ⇒* tProd na A B ])
-    (s1 : snf A), P A s1 -> forall (s2 : snf B), P B s2 ->  P _ (snf_tProd _ e s1 s2))
-  (ptLambda : forall r na A t (e : [ r ⇒* tLambda na A t ])
-    (s1 : snf A), P _ s1 -> forall (s2 : snf t), P _ s2 -> P _ (snf_tLambda _ e s1 s2))
-  (ptne : forall r n (e : [ r ⇒* n ]) (s : sne n), Q _ s -> P _ (snf_sne _ e s))
-  (ptRel : forall r v (e : r = tRel v), Q _ (sne_tRel _ e))
-  (ptApp : forall r n t (e : r = tApp n t),
-    forall (s1 : sne n), Q _ s1 -> forall (s2 : snf t), P _ s2 ->  Q _ (sne_tApp _ e s1 s2))
-.
-
-Fixpoint snf_rect (r : term) (s : snf r) : P r s :=
-match s with
- | snf_tSort _ e => ptSort _ _ e
- | snf_tProd _ e s1 s2 => ptProd _ _ _ _ e s1 (snf_rect _ s1) s2 (snf_rect _ s2)
- | snf_tLambda _ e s1 s2 => ptLambda _ _ _ _ e s1 (snf_rect _ s1) s2 (snf_rect _ s2)
- | snf_sne _ e s => ptne _ _ e s (sne_rect _ s)
-end
-
-with sne_rect (n : term) (s : sne n) : Q n s :=
-match s with
- | sne_tRel _ e => ptRel _ _ e
- | sne_tApp _ e s1 s2 => ptApp _ _ _ e s1 (sne_rect _ s1) s2 (snf_rect _ s2)
-end.
-
-End rect.
+Scheme
+  Induction for snf Sort Type with
+  Induction for sne Sort Type.
 
 Definition snf_rec
   (P : forall r : term, snf r -> Set)
