@@ -47,6 +47,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
         with end
     | LRne _ neA => LRne _ neA
     | LRPi _ ΠA ΠAad => LRPi _ ΠA (embedΠad ΠAad)
+    | LRNat _ NA => LRNat _ NA
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -73,18 +74,21 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
       PiHyp P Γ ΠA HAad (P (LRPi rec ΠA HAad))) ->
 
+    (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat rec NA)) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros HU Hne HPi.
+    intros HU Hne HPi HNat.
     fix HRec 6.
     destruct lr.
     - eapply HU.
     - eapply Hne.
     - eapply HPi.
       all: intros ; eapply HRec.
+    - eapply HNat.
   Defined.
 
   Definition LR_rec@{i j k} := LR_rect@{i j k Set}.
@@ -109,13 +113,15 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : PiRedTyPack@{i j k l} Γ A l),
       PiHypLogRel P Γ ΠA (P (LRPi' ΠA).(LRAd.adequate ))) ->
+    
+    (forall l Γ A (NA : [Γ ||-Nat A]), P (LRNat (LogRelRec l) NA)) ->
 
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
       (rTeEq  : term -> term -> Type@{k}) (lr : LR@{j k l} (LogRelRec@{i j k} l) Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     intros HU Hne HPi **; eapply LR_rect@{j k l o}.
-    1,2: auto.
+    1,2,4: auto.
     - intros; eapply (HPi _ _ _ (PiRedTyPack.pack ΠA HAad)); eauto.
   Defined.
 
@@ -136,12 +142,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (ΠA.(PiRedTyPack.codRed) ρ h ha)) ->
     P (LRPi' ΠA)) ->
 
+    (forall l Γ A (NA : [Γ ||-Nat A]), P (LRNat_ l NA)) ->
+
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
   Proof.
-    intros HU Hne HPi l Γ A lr.
+    intros HU Hne HPi HNat l Γ A lr.
     apply (LR_rect_LogRelRec@{i j k l o} (fun l Γ A _ _ _ lr => P l Γ A (LRbuild lr))).
-    1-3: auto.
+    1-4: auto.
   Defined.
 
   Notation PiHyp0 P Γ ΠA HAad G :=
@@ -164,17 +172,20 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate LogRel0@{i j k} ΠA),
       PiHyp0 P Γ ΠA HAad (P (LRPi rec0 ΠA HAad))) ->
 
+    (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat rec0 NA)) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LogRel0@{i j k} Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros Hne HPi.
+    intros Hne HPi HNat.
     fix HRec 6.
     destruct lr.
     - destruct H as [? lt]; destruct (elim lt).
     - eapply Hne.
     - eapply HPi; intros ; eapply HRec.
+    - eapply HNat.
   Defined.
 
 End Inductions.
@@ -192,6 +203,7 @@ Section Inversions.
     match w return Type with
     | UnivType => [Γ ||-U<l> A]
     | ProdType => [Γ ||-Π<l> A]
+    | NatType => [Γ ||-Nat A]
     | NeType _ => [Γ ||-ne A]
     end.
   Proof.
@@ -217,7 +229,7 @@ Section Inversions.
         1-3: gen_typing.
         eapply redty_red, redA.
       + dependent inversion whA ; subst.
-        1-2: exfalso ; now gen_typing.
+        1-3: inv_whne.
         now eexists.
     - intros ??? PiA _ _ A' red whA.
       enough (∑ na dom cod, A' = tProd na cod dom) as (?&?&?&->).
@@ -229,6 +241,13 @@ Section Inversions.
         eapply whred_det.
         1-3: gen_typing.
         eapply redty_red, redA.
+    - intros ??? [redA] ???.
+      enough (A' = tNat) as ->.
+      + dependent inversion w. 
+        1: now econstructor.
+        inv_whne.
+      + eapply whred_det; tea.
+        all: gen_typing.
   Qed.
 
   Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U<l> U].
@@ -248,5 +267,7 @@ Section Inversions.
     intros.
     now unshelve eapply  (invLR _ redIdAlg ProdType).
   Qed.
+
+  (* invLRNat is useless *)
 
 End Inversions.

@@ -22,9 +22,9 @@ Proof.
   destruct RA as [pA lrA], RB as [pB lrB], RC as [pC lrC]; cbn in *.
   set (sv := combine _ _ _ _ lrA lrB lrC (ShapeViewConv _ _ RAB) (ShapeViewConv _ _ RBC)).
   revert lB B pB lrB lC C pC lrC RAB RBC sv.
-  induction lrA as [| |?? ΠA ΠAad ihdom ihcod]; intros ??? lrB;
-  induction lrB as [|?? neB|?? ΠB ΠBad _ _]; intros ??? lrC;
-  induction lrC as [| |?? ΠC ΠCad _ _]; intros RAB RBC [].
+  induction lrA as [| |?? ΠA ΠAad ihdom ihcod|]; intros ??? lrB;
+  induction lrB as [|?? neB|?? ΠB ΠBad _ _|]; intros ??? lrC;
+  induction lrC as [| |?? ΠC ΠCad _ _|]; intros RAB RBC [].
   - easy.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
@@ -68,6 +68,7 @@ Proof.
       }
       3: apply codAdB.
       now eapply (PiRedTy.codRed ΠA).
+  - destruct RBC; now constructor.
 Qed.
 
 
@@ -122,6 +123,47 @@ Proof.
     rewrite e; apply eqApp0.
 Qed.
 
+Lemma NatProp_whnf {Γ A t} {NA : [Γ ||-Nat A]} : NatProp NA t -> whnf t.
+Proof.  intros [ | | ? []]; now econstructor. Qed.
+
+Lemma NatPropEq_whnf {Γ A t u} {NA : [Γ ||-Nat A]} : NatPropEq NA t u -> whnf t × whnf u.
+Proof.  intros [ | | ? ? []]; split; now econstructor. Qed.
+
+Lemma transNeNfEq {Γ t u v A} :
+  [Γ ||-NeNf t ≅ u : A] ->
+  [Γ ||-NeNf u ≅ v : A] ->
+  [Γ ||-NeNf t ≅ v : A].
+Proof.
+  intros [] []; econstructor; tea; now etransitivity.
+Qed.
+
+Lemma transEqTermNat {Γ A} (NA : [Γ ||-Nat A]) :
+  (forall t u, 
+    [Γ ||-Nat t ≅ u : A | NA] -> forall v,
+    [Γ ||-Nat u ≅ v : A | NA] ->  
+    [Γ ||-Nat t ≅ v : A | NA]) ×
+  (forall t u,
+    NatPropEq NA t u -> forall v,
+    NatPropEq NA u v ->
+    NatPropEq NA t v).
+Proof.
+  apply NatRedEqInduction.
+  - intros * ???? ih ? uv; inversion uv; subst.
+    destruct (NatPropEq_whnf prop), (NatPropEq_whnf prop0). 
+    unshelve epose proof (redtmwf_det _ u _ _ _ _ _ _ redR redL0); tea; subst.
+    econstructor; tea.
+    1: now etransitivity.
+    now eapply ih.
+  - easy.
+  - intros * ? ih ? uv.
+    inversion uv ; subst.
+    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; inv_whne end.
+    econstructor; now eapply ih.
+  - intros ?? tu ? uv; inversion uv; subst.
+    1,2: destruct tu; inv_whne.
+    econstructor; now eapply transNeNfEq.
+Qed.
+
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]} :
   [Γ ||-<lA> t ≅ u : A | RA] ->
@@ -132,6 +174,7 @@ Proof.
   - intros *; apply transEqTermU@{h i j k}.
   - intros *; apply transEqTermNeu.
   - intros * ?????. apply transEqTermΠ; tea.
+  - intros ? NA **; now eapply (fst (transEqTermNat NA)).
 Qed.
 
 Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :

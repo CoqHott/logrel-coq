@@ -26,6 +26,9 @@ Proof.
     + apply LRPi'; unshelve eexists na dom cod _ _; tea; etransitivity; tea.
     + unshelve eexists na dom cod; tea; cbn.
       1,2: intros; apply LRTyEqRefl_.
+  - intros B [red] A ?; unshelve eexists.
+    + apply LRNat_; constructor; now eapply redtywf_trans.
+    + now constructor.
 Qed.
 
 Lemma redSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
@@ -68,6 +71,13 @@ Proof.
     split; tea; exists rt ru; tea.
     intros; cbn. apply eq; tea.
     now apply LREqTermRefl_.
+  - intros ? NA t ? Ru red; inversion Ru; subst.
+    assert [Γ |- t :⇒*: nf : tNat].
+    + eapply redtmwf_trans; tea.
+      eapply redtmwf_conv; tea.
+      destruct NA; gen_typing.
+    + split; econstructor; tea.
+      now eapply reflNatRedTmEq.
 Qed.
 
 Lemma redSubstTermOneStep {Γ t u A l} (RA : [Γ ||-<l> A]) :

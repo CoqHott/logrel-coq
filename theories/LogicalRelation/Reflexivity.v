@@ -11,7 +11,7 @@ Section Reflexivities.
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod | ?? []].
     all: now econstructor.
   Qed.
 
@@ -27,10 +27,20 @@ Section Reflexivities.
     intros []; now econstructor.
   Qed.
 
+  Lemma reflNatRedTmEq {Γ A} {NA : [Γ ||-Nat A]} :
+      (forall t : term, [Γ ||-Nat t : A | NA] -> [Γ ||-Nat t ≅ t : A | NA])
+    × (forall t : term, NatProp NA t -> NatPropEq NA t t).
+  Proof.
+    eapply NatRedInduction.
+    1-3: now econstructor.
+    intros; econstructor.
+    now eapply NeNfEqRefl.
+  Qed.
+
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod].
+    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod| ?? NA].
     - intros t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
@@ -48,6 +58,7 @@ Section Reflexivities.
       1-2: now econstructor.
       all: cbn.
       all: now eauto.
+    - apply reflNatRedTmEq. 
   Qed.
 
   Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 

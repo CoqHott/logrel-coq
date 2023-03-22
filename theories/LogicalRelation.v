@@ -398,6 +398,8 @@ Export PiRedTmEq(PiRedTmEq,Build_PiRedTmEq).
 
 Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
 
+(** ** Reducibility of neutrals at an arbitrary type *)
+
 Module NeNf.
   Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} {Γ k A} : Set :=
     {
@@ -419,6 +421,154 @@ End NeNf.
 
 Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
 Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
+
+
+(** ** Reducibility of natural number type *)
+Module NatRedTy.
+
+  Record NatRedTy `{ta : tag} `{WfType ta} `{RedType ta}
+    {Γ : context} {A : term}
+  : Set := 
+  {
+    red : [Γ |- A :⇒*: tNat]
+  }.
+
+  Arguments NatRedTy {_ _ _}.
+End NatRedTy.
+
+Export NatRedTy(NatRedTy, Build_NatRedTy).
+Notation "[ Γ ||-Nat A ]" := (NatRedTy Γ A) (at level 0, Γ, A at level 50).
+
+Module NatRedTyEq.
+
+  Record NatRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
+    {Γ : context} {A : term} {NA : NatRedTy Γ A} {B : term}
+  : Set := {
+    red : [Γ |- B :⇒*: tNat];
+  }.
+
+  Arguments NatRedTyEq {_ _ _ _ _}.
+
+End NatRedTyEq.
+
+Export NatRedTyEq(NatRedTyEq,Build_NatRedTyEq).
+
+Notation "[ Γ ||-Nat A ≅ B | RA ]" := (@NatRedTyEq _ _ _ Γ A RA B) (at level 0, Γ, A, B, RA at level 50).
+
+Module NatRedTm.
+Section NatRedTm.
+  Context `{ta : tag} `{WfType ta} 
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta}.
+
+  Inductive NatRedTm {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
+  | Build_NatRedTm {t}
+    (nf : term)
+    (red : [Γ |- t :⇒*: nf : tNat ])
+    (eq : [Γ |- nf ≅ nf : tNat])
+    (prop : NatProp nf) : NatRedTm t
+
+  with NatProp {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
+  | zeroR  : NatProp tZero
+  | succR {n} :
+    NatRedTm n ->
+    NatProp (tSucc n)
+  | neR {ne} : [Γ ||-NeNf ne : tNat] -> NatProp ne.
+
+Scheme
+    Minimality for NatRedTm Sort Type with
+    Minimality for NatProp   Sort Type.
+
+Combined Scheme _NatRedInduction from
+  NatRedTm_rect_nodep,
+  NatProp_rect_nodep.
+
+Let _NatRedInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _NatRedInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let NatRedInductionType :=
+  ltac: (let ind := eval cbv delta [_NatRedInductionType] zeta
+    in _NatRedInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma NatRedInduction : NatRedInductionType.
+Proof.
+  intros ??? PRed PProp **; split; now apply (_NatRedInduction _ _ _ PRed PProp).
+Defined.
+
+End NatRedTm.
+Arguments NatRedTm {_ _ _ _ _ _ _ _ _}.
+Arguments NatProp {_ _ _ _ _ _ _ _ _}.
+End NatRedTm.
+
+Export NatRedTm(NatRedTm,Build_NatRedTm, NatProp, NatRedInduction).
+
+Notation "[ Γ ||-Nat t : A | RA ]" := (@NatRedTm _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
+
+
+Module NatRedTmEq.
+Section NatRedTmEq.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta}.
+    
+
+  Inductive NatRedTmEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
+  | Build_NatRedTmEq {t u}
+    (nfL nfR : term)
+    (redL : [Γ |- t :⇒*: nfL : tNat])
+    (redR : [Γ |- u :⇒*: nfR : tNat ])
+    (eq : [Γ |- nfL ≅ nfR : tNat])
+    (prop : NatPropEq nfL nfR) : NatRedTmEq t u
+
+  with NatPropEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
+  (* KM: plugging in the parameter type directly... Is that ok ? *)
+  | zeroReq :
+    NatPropEq tZero tZero
+  | succReq {n n'} :
+    NatRedTmEq n n' ->
+    NatPropEq (tSucc n) (tSucc n')
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tNat] -> NatPropEq ne ne'.
+
+Scheme
+    Minimality for NatRedTmEq Sort Type with
+    Minimality for NatPropEq  Sort Type.
+
+Combined Scheme _NatRedEqInduction from
+  NatRedTmEq_rect_nodep,
+  NatPropEq_rect_nodep.
+
+Let _NatRedEqInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _NatRedEqInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let NatRedEqInductionType :=
+  ltac: (let ind := eval cbv delta [_NatRedEqInductionType] zeta
+    in _NatRedEqInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma NatRedEqInduction : NatRedEqInductionType.
+Proof.
+  intros ??? PRedEq PPropEq **; split; now apply (_NatRedEqInduction _ _ _ PRedEq PPropEq).
+Defined.
+
+End NatRedTmEq.
+Arguments NatRedTmEq {_ _ _ _ _ _ _ _ _}.
+Arguments NatPropEq {_ _ _ _ _ _ _ _ _}.
+End NatRedTmEq.
+
+Export NatRedTmEq(NatRedTmEq,Build_NatRedTmEq, NatPropEq, NatRedEqInduction).
+
+Notation "[ Γ ||-Nat t ≅ u : A | RA ]" := (@NatRedTmEq _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
 
 (** ** Definition of the logical relation *)
 
@@ -446,7 +596,9 @@ Inductive LR@{i j k} `{ta : tag}
     LR rec Γ A
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
-      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ]).
+      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
+  | LRNat {Γ A} (NA : [Γ ||-Nat A]) :
+    LR rec Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA).
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -520,6 +672,10 @@ Section MoreDefs.
     (ΠAad : PiRedTyAdequate (LR (LogRelRec@{i j k} l)) ΠA)
     : [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRPi (LogRelRec l) ΠA ΠAad).
+
+  Definition LRNat_@{i j k l} l {Γ A} (NA : [Γ ||-Nat A]) 
+    : [LogRel@{i j k l} l | Γ ||- A] :=
+    LRbuild (LRNat (LogRelRec l) NA).
 
 End MoreDefs.
   

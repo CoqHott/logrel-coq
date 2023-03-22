@@ -30,15 +30,18 @@ Proof.
     now eapply ty_ne_term, tm_ne_conv.
 Defined.
 
+
 Lemma neElim {Γ l K} : [Γ ||-<l> K] -> whne K -> [Γ ||-ne K].
 Proof.
-  intros h; pattern l,Γ,K,h; set (P := fun _ => _); eapply LR_rect_TyUr;
+  intros h; pattern l,Γ,K,h; eapply LR_rect_TyUr;
   clear l Γ K h.
   - intros ??? [??? r] ne; pose proof (redtywf_whne r  ne); subst; inversion ne.
-  - intros ** ne; assumption.
-  - intros ??? [??? [?? red]] ** ne ; cbn in *.
-    apply redty_red in red.
-    rewrite (red_whne _ _ red ne) in ne.
+  - intros; assumption.
+  - intros ??? [??? red] ?? ne ; cbn in *.
+    rewrite (redtywf_whne red ne) in ne.
+    inversion ne.
+  - intros ??? [red] ne.
+    rewrite (redtywf_whne red ne) in ne.
     inversion ne.
 Qed.
 
@@ -166,7 +169,7 @@ Lemma complete_Pi : forall l Γ A (RA : [Γ ||-Π< l > A]),
   complete (LRPi' RA).
 Proof.
 intros l Γ A ΠA0 ihdom ihcod; split.
-- set (ΠA := ΠA0); destruct ΠA0 as [na dom cod []].
+- set (ΠA := ΠA0); destruct ΠA0 as [na dom cod].
   simpl in ihdom, ihcod.
   assert [Γ |- A ≅ tProd na dom cod] by gen_typing.
   unshelve refine ( let funred : forall n, Ne[Γ |- n : A] -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
@@ -221,12 +224,29 @@ intros l Γ A ΠA0 ihdom ihcod; split.
   assumption.
 Qed.
 
+Lemma complete_Nat {l Γ A} (NA : [Γ ||-Nat A]) : complete (LRNat_ l NA).
+Proof.
+  split.
+  - intros. 
+    assert [Γ |- A ≅ tNat] by (destruct NA; gen_typing). 
+    assert [Γ |- n : tNat] by now eapply ty_conv.
+    split; econstructor.
+    1,4,5: eapply redtmwf_refl; tea; now eapply ty_conv.
+    2,4: do 2 constructor; tea.
+    1,7: eapply convtm_convneu.
+    1,4: eapply lrefl.
+    4-6: now eapply tm_ne_whne.
+    all: eapply convneu_conv; tea.
+  - admit.
+Admitted.
+
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
 Proof.
 revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
 - now apply complete_U.
 - now apply complete_ne.
 - now apply complete_Pi.
+- now apply complete_Nat.
 Qed.
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :
@@ -298,6 +318,7 @@ induction HRA.
       eapply var0. now bsimpl.
     * eassumption.
     * bsimpl ; rewrite scons_eta' ; now bsimpl.
-Qed.
++ admit.
+Admitted.
 
 End Neutral.

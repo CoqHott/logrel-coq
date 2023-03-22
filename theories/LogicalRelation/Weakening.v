@@ -42,6 +42,12 @@ Section Weakenings.
       subst cod'; unshelve epose (codExt Δ' a b (ρ' ∘w ρ) wfΔ' _ _ _); irrelevance.
   Defined.
 
+  Lemma wkNat {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Nat A] -> [Δ ||-Nat A⟨ρ⟩].
+  Proof. 
+    intros []; constructor.
+    change tNat with tNat⟨ρ⟩.
+    gen_typing. 
+  Qed.
 
   Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
     [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
@@ -54,6 +60,7 @@ Section Weakenings.
     - intros ??? ? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ρ wfΔ ΠA).
       + intros; now apply ihdom.
       + intros; now eapply ihcod.
+    - intros; eapply LRNat_; now eapply wkNat.
   Defined.
 
   Definition wkΠ' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :=
@@ -94,6 +101,8 @@ Section Weakenings.
         irrelevance0.
         2: unshelve eapply codRed; [eassumption|]; subst X; irrelevance.
         subst X; bsimpl; try rewrite scons_comp'; reflexivity.
+    - intros * []; constructor.
+      change tNat with tNat⟨ρ⟩; gen_typing.
   Qed.
     
 
@@ -124,6 +133,12 @@ Section Weakenings.
       subst ΠA'; bsimpl; try rewrite scons_comp'; reflexivity.
   Defined.
 
+  Lemma wkNeNf {Γ Δ k A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
+    [Γ ||-NeNf k : A] -> [Δ ||-NeNf k⟨ρ⟩ : A⟨ρ⟩].
+  Proof.
+    intros []; constructor; gen_typing.
+  Qed.  
+
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ : A⟨ρ⟩ | wk ρ wfΔ lrA].
   Proof.
@@ -142,6 +157,15 @@ Section Weakenings.
       + apply tm_ne_wk; assumption.
       + eapply convneu_wk; eassumption.
     - intros ???? ihdom ihcod ?? ρ ?; apply wkΠTerm. 
+    - intros??? NA t ? ρ wfΔ; revert t; pose (NA' := wkNat ρ wfΔ NA).
+      set (G := _); enough (h : G × (forall t, NatProp NA t -> NatProp NA' t⟨ρ⟩)) by apply h.
+      subst G; apply NatRedInduction.
+      + intros; econstructor; tea; change tNat with tNat⟨ρ⟩; gen_typing.
+      + constructor.
+      + now constructor.
+      + intros; constructor. 
+        change tNat with tNat⟨ρ⟩.
+        now eapply wkNeNf.
   Qed.
 
   Lemma wkUTerm {Γ Δ l A t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) :
@@ -154,6 +178,12 @@ Section Weakenings.
     destruct l; [destruct (elim (URedTy.lt h))|cbn].
     eapply (wk (l:=zero)); eassumption.
   Defined.
+
+  Lemma wkNeNfEq {Γ Δ k k' A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
+    [Γ ||-NeNf k ≅ k' : A] -> [Δ ||-NeNf k⟨ρ⟩ ≅ k'⟨ρ⟩ : A⟨ρ⟩].
+  Proof.
+    intros []; constructor; gen_typing.
+  Qed.  
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t ≅ u : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ ≅ u⟨ρ⟩: A⟨ρ⟩ | wk ρ wfΔ lrA].
@@ -191,5 +221,14 @@ Section Weakenings.
         irrelevance0.  2: unshelve eapply eqApp; [assumption|].
         2: irrelevance; subst X; now bsimpl.
         subst X; bsimpl; now try rewrite scons_comp'.
+    - intros??? NA t u ? ρ wfΔ; revert t u; pose (NA' := wkNat ρ wfΔ NA).
+      set (G := _); enough (h : G × (forall t u, NatPropEq NA t u -> NatPropEq NA' t⟨ρ⟩ u⟨ρ⟩)) by apply h.
+      subst G; apply NatRedEqInduction.
+      + intros; econstructor; tea; change tNat with tNat⟨ρ⟩; gen_typing.
+      + constructor.
+      + now constructor.
+      + intros; constructor. 
+        change tNat with tNat⟨ρ⟩.
+        now eapply wkNeNfEq.
   Qed.
 End Weakenings.
