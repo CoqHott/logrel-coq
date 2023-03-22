@@ -146,8 +146,13 @@ Section NeutralConversion.
       + bsimpl.
         rewrite scons_eta'.
         now bsimpl.
-  - admit.
-Admitted.
+  - intros Δ B NB **; destruct NB.
+    econstructor.
+    + now eapply redtywf_red.
+    + reflexivity.
+    + reflexivity.
+    + econstructor; [eassumption|constructor].
+Qed.
 
 End NeutralConversion.
 
@@ -185,8 +190,11 @@ Proof.
     eexists ; split.
     1: apply red.
     now constructor.
-  - admit.
-Admitted.
+  - destruct Hconv as [red].
+    eexists ; split.
+    1: apply red.
+    now constructor.
+Qed.
 
 Lemma ty_conv_inj : forall (Γ : context) (T T' : term) (nfT : isType T) (nfT' : isType T'),
   [Γ |- T ≅ T'] ->
@@ -265,8 +273,15 @@ Proof.
     all: econstructor.
     1,3: econstructor ; [eassumption | now econstructor].
     all: cbn ; renToWk ; now eapply typing_wk.
-  - admit.
-Admitted.
+  - destruct Hconv.
+    assert (T' = tNat) as HeqT' by (eapply redtywf_whnf ; gen_typing).
+    assert (T = tNat) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
+    destruct nfT; inversion HeqT.
+    + destruct nfT'; inversion HeqT'.
+      * constructor.
+      * exfalso; subst; inversion w.
+    + exfalso; subst; inversion w.
+Qed.
 
 Corollary red_ty_compl_univ_l Γ T :
   [Γ |- U ≅ T] ->
