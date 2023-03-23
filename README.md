@@ -15,7 +15,8 @@ Building
 
 The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
 
-The syntax has been generated using AutoSubst OCaml with the options `-s ucoq -v ge813 -allfv` (see the [AutoSubst OCaml documentation](https://github.com/uds-psl/autosubst-ocaml) for installation instructions for it). Currently, this implementation builds only with older version of Coq (8.13**, so we cannot add a recipe to the MakeFile for re-generating the syntax.
+The syntax has been generated using AutoSubst OCaml with the options `-s ucoq -v ge813 -allfv` (see the [AutoSubst OCaml documentation](https://github.com/uds-psl/autosubst-ocaml) for installation instructions for it). Currently, this package works only with older version of Coq (8.13), so we cannot add a recipe to the MakeFile for automatically
+re-generating the syntax.
 
 **In order to regenerate the syntax**, install autosubst paying attention to [this issue](https://github.com/uds-psl/autosubst-ocaml/issues/1) -- in an opam installation do a `cp -R $OPAM_SWITCH_PREFIX/share/coq-autosubst-ocaml $OPAM_SWITCH_PREFIX/share/autosubst`--, modify the syntax file `AutoSubst/PiUniv.sig`, run autosubst on it (`autosubst -s ucoq -v ge813 -allfv PiUniv.sig -o Ast.v`) and patch the resulting files using the checked in patch (`git apply -R autosubst-patch.diff`).
 
