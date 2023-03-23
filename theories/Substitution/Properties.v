@@ -156,9 +156,9 @@ Lemma liftSubstS {Γ σ Δ lF nF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
 Proof.
   intros; unshelve econstructor.
   - now eapply wk1SubstS.
-  - eapply var0; unfold ρ;  now bsimpl.
+  - eapply var0; unfold ρ; [now bsimpl|].
+    now eapply escape, VF.
 Defined.
-
 
 Lemma liftSubstSrealign {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
@@ -172,14 +172,20 @@ Lemma liftSubstSrealign {Γ σ σ' Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]
 Proof.
   intros; unshelve econstructor.
   + now eapply wk1SubstS.
-  + assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ'⟨ρ⟩)]].
-    - eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
-    replace F[_ >> _] with F[σ']⟨S⟩ by (unfold ρ; now bsimpl).
-    cbn; renToWk. eapply convty_wk; tea.
-    eapply escapeEq;  unshelve eapply validTyExt; cycle 3; tea.
-    - apply neuTerm; tea.
-      { now eapply tm_ne_rel. }
-      { apply convneu_var; tea. }
+  + cbn.
+    assert [Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[S >> (tRel 0 .: σ'⟨ρ⟩)]].
+    { replace F[_ >> _] with F[σ']⟨S⟩ by (unfold ρ; now bsimpl).
+      eapply ty_conv. 1: apply (ty_var wfΔF (in_here _ _)).
+      cbn; renToWk. eapply convty_wk; tea.
+      eapply escapeEq;  unshelve eapply validTyExt; cycle 3; tea. }
+    apply neuTerm; tea.
+    - eapply tm_ne_conv; [eapply tm_ne_rel|].
+      * now eapply escape, VF.
+      * replace F[_ >> _] with (F[σ'])⟨↑⟩ by (unfold ρ; now bsimpl).
+        do 2 erewrite <- wk1_ren_on.
+        apply convty_wk; [tea|].
+        eapply escapeEq, VF; tea.
+    - apply convneu_var; tea.
 Qed.
 
 Lemma liftSubstS' {Γ σ Δ lF F} nF {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}

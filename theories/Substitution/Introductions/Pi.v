@@ -147,16 +147,22 @@ Section PiTyValidity.
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy tΔ vσ) vσ').
-        * assert ([Δ,, vass na F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ na F[σ']⟩)]]).
+        * set (ρ' := @wk1 Δ na F[σ']).
+          assert ([Δ,, vass na F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨ρ'⟩)]]).
           { eapply ty_conv; [eassumption|].
             eapply (domainTyEq tΔ vσ vσ' vσσ'). }
-          eapply neuTerm; [apply tm_ne_rel| |refine (convneu_var _)]; assumption.
+          cbn; eapply neuTerm; [|assumption|now apply convneu_var].
+          replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (unfold ρ'; now bsimpl).
+          eapply tm_ne_conv; [apply tm_ne_rel; now eapply escape, vF|].
+          do 2 erewrite <- wk1_ren_on.
+          apply convty_wk; [now eapply wfc_ty|].
+          eapply escapeEq, vF; tea.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy tΔ vσ) vσ vσσ').
-        * cbn; eapply neuTermEq.
-          1,2: now apply tm_ne_rel.
-          1,2: now assumption.
-          now refine (convneu_var _).
+        * assert (ne : Ne[ Δ,, vass na F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ na F[σ]⟩)]]).
+          { replace (F[_ >> _]) with (F[σ]⟨↑⟩) by (now bsimpl).
+            apply tm_ne_rel; now eapply escape, vF. }
+          cbn; eapply neuTermEq; try apply convneu_var; tea.
   Qed.
 
   Lemma PiRed {Δ σ} (tΔ : [ |-[ ta ] Δ])
@@ -298,26 +304,33 @@ Section PiTmValidity.
     (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
     : [Δ |-[ ta ] tProd nF F[σ] G[up_term_term σ] ≅ tProd nF F[σ'] G[up_term_term σ'] : U].
   Proof.
+    assert ([Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ nF F[σ]⟩)]]).
+    { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
+      refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)). }
+    assert ([ Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ nF F[σ']⟩)]]).
+    { eapply ty_conv; [tea|].
+      eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ'). }
+    assert (Ne[ Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ nF F[σ']⟩)]]).
+    { eapply tm_ne_conv; [eapply tm_ne_rel|].
+      - pose proof vF as [vF0 _].
+        unshelve (eapply escape; eapply vF0, vσ).
+      - replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (now bsimpl).
+      do 2 erewrite <- wk1_ren_on.
+      apply convty_wk; [eapply wfc_ty; tea|].
+      eapply escapeEq, vF; tea. }
     refine (convtm_prod I (domainTmU tΔ vσ) _ _).
     - eapply escapeEqTerm. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
     - rewrite (eq_subst_1 F nF G Δ σ). rewrite (eq_subst_1 F nF G Δ σ').
-      assert ([Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ nF F[σ]⟩)]]).
-      { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
-        refine (ty_var (wfc_cons nF tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)). }
       eapply escapeEqTerm. unshelve refine (validTmExt vGU _ _ _ _).
       + eapply wfc_cons. easy. refine (domainTy vΓ vF tΔ vσ).
       + refine (liftSubstS vΓ tΔ vF vσ).
       + unshelve econstructor.
         * refine (wk1SubstS vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ').
-        * assert ([ Δ,, vass nF F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ nF F[σ']⟩)]]).
-          { eapply ty_conv; [eassumption|].
-            eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ'). }
-          cbn. eapply neuTerm; [apply tm_ne_rel| |refine (convneu_var _)]; assumption.
+        * cbn. eapply neuTerm; try apply convneu_var; tea.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
-        * cbn. eapply neuTermEq.
-          1, 2: now apply tm_ne_rel.
-          3: now refine (convneu_var _).
+        * cbn. eapply neuTermEq; try eapply convneu_var; tea.
+          all: eapply tm_ne_conv; [|symmetry; eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ')].
           all: assumption.
   Qed.
 

@@ -210,8 +210,9 @@ Proof.
   instValid Vσ; instValid VσUp; escape.
   destruct (PiRedTm.red Rf); cbn in *.
   assert (wfΔF : [|- Δ,, vass nF F[σ]]) by gen_typing.
-  unshelve epose proof (r := PiRedTm.app Rf (@wk1 Δ nF F[σ]) wfΔF (var0 _ _ _)).
+  unshelve epose proof (r := PiRedTm.app Rf (@wk1 Δ nF F[σ]) wfΔF (var0 _ _ _ _)).
   1: now rewrite wk1_ren_on.
+  assumption.
   assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ][(tRel 0) .: @wk1 Δ nF F[σ] >> tRel])
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 

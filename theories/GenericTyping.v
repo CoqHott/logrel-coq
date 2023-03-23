@@ -417,7 +417,7 @@ Section GenericValues.
     tm_ne_nf {Γ n A} : Ne[Γ |- n : A] -> Nf[Γ |- n : A];
     tm_ne_whne {Γ n A} : Ne[Γ |- n : A] -> whne n;
     tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
-    tm_ne_rel {Γ v A} : [Γ |- tRel v : A] -> Ne[Γ |- tRel v : A];
+    tm_ne_rel {Γ na A} : [Γ |- A] -> Ne[Γ,, vass na A |- tRel 0 : A⟨↑⟩];
     tm_ne_app {Γ n t na A B} : Ne[Γ |- n : tProd na A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
     tm_ne_natelim {Γ nN P hz hs n} :
       Nf[Γ ,, vass nN tNat |- P ] ->

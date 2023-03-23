@@ -55,7 +55,7 @@ Section SimpleArrow.
     - apply tm_nf_lam.
       + eapply reifyType, RA.
       + apply tm_ne_nf, tm_ne_rel.
-        refine (ty_var _ (in_here _ _)); gen_typing.
+        gen_typing.
     - now eapply convtm_id.
     - intros; cbn; irrelevance0.
       2: now eapply h.
@@ -207,7 +207,7 @@ Section SimpleArrow.
         eapply reifyTerm.
         unshelve refine (h _ (tRel 0) ρ _ (wk _ _ RA) _).
         1,2: gen_typing.
-        apply var0; unfold ρ; bsimpl; reflexivity.
+        apply var0; [|tea]; unfold ρ; bsimpl; reflexivity.
     - cbn. eapply convtm_comp; cycle 3; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.

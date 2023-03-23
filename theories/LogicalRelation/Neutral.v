@@ -281,9 +281,10 @@ Qed.
 
 Lemma var0 {l Γ A A'} nA (RA : [Γ ,, vass nA A ||-<l> A']) :
   A⟨↑⟩ = A' ->
+  [Γ |- A] ->
   [Γ ,, vass nA A ||-<l> tRel 0 : A' | RA].
 Proof.
-  intros <-.
+  intros <- HA.
   assert [Γ ,, vass nA A |- tRel 0 : A⟨↑⟩]
   by (escape; eapply (ty_var (wfc_wft EscRA) (in_here _ _))).
   eapply neuTerm; tea.
@@ -322,10 +323,10 @@ induction HRA.
     replace cod with (cod[tRel 0 .: @wk1 Γ na dom >> tRel]).
     eapply IHcodom.
     * change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
-      eapply var0. now bsimpl.
+      eapply var0; [|eassumption]. now bsimpl.
     * unshelve eapply codRed. eassumption.
       change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
-      eapply var0. now bsimpl.
+      eapply var0; [|eassumption]. now bsimpl.
     * eassumption.
     * bsimpl ; rewrite scons_eta' ; now bsimpl.
 + destruct NA.
