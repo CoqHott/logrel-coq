@@ -11,7 +11,8 @@ authors: ["Meven Lennon-Bertrand <Meven.Bertrand@univ-nantes.fr>"
 license: "MIT"
 depends: [
   "coq" { >= "8.16" & < "8.17~" }
-  "coq-smpl" 
+  "coq-smpl"
+  "coq-equations" { >= "1.3" }
 ]
 build: [
   [make]
