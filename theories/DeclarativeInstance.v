@@ -334,18 +334,26 @@ Section Boundaries.
   apply @boundary_ored_l with (K := istype).
   Qed.
 
+  Definition boundary_red_l {Γ t u K} : 
+    [ Γ |- t ⇒* u ∈ K] ->
+    match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
+  Proof.
+    induction 1; eauto.
+    now eapply boundary_ored_l.
+  Qed.
+
   Definition boundary_red_tm_l {Γ t u A} : 
     [ Γ |- t ⇒* u : A] ->
     [ Γ |- t : A ].
   Proof.
-    induction 1 ; eauto using boundary_ored_tm_l.
+    apply @boundary_red_l with (K := isterm A).
   Qed.
 
   Definition boundary_red_ty_l {Γ A B} : 
     [ Γ |- A ⇒* B ] ->
     [ Γ |- A ].
   Proof.
-    induction 1 ; eauto using boundary_ored_ty_l.
+    apply @boundary_red_l with (K := istype).
   Qed.
 
 End Boundaries.
@@ -375,14 +383,21 @@ Proof.
 apply @RedConv with (K := isterm A).
 Qed.
 
+Definition RedConvC {Γ} {t u : term} {K} :
+    [Γ |- t ⇒* u ∈ K] -> 
+    match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
+Proof.
+  induction 1.
+  - destruct K; now constructor.
+  - now eapply RedConv.
+  - destruct K; [now eapply TypeTrans|now eapply TermTrans].
+Qed.
+
 Definition RedConvTeC {Γ} {t u A : term} :
     [Γ |- t ⇒* u : A] -> 
     [Γ |- t ≅ u : A].
 Proof.
-  induction 1.
-  - now constructor.
-  - now eapply RedConvTe.
-  - now eapply TermTrans.
+apply @RedConvC with (K := isterm A).
 Qed.
 
 Definition RedConvTy {Γ} {A B : term} :
@@ -396,10 +411,7 @@ Definition RedConvTyC {Γ} {A B : term} :
     [Γ |- A ⇒* B] -> 
     [Γ |- A ≅ B].
 Proof.
-  induction 1.
-  - now constructor.
-  - now eapply RedConvTy.
-  - now eapply TypeTrans.
+apply @RedConvC with (K := istype).
 Qed.
 
 Lemma oredtm_meta_conv (Γ : context) (t u u' A A' : term) :

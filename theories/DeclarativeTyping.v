@@ -209,39 +209,31 @@ Section Definitions.
   where "[ Γ |- t ⇒ u : A ]" := (OneRedDecl Γ (isterm A) t u)
   and "[ Γ |- A ⇒ B ]" := (OneRedDecl Γ istype A B).
 
-  Inductive TermRedClosure (Γ : context) : term -> term -> term -> Type :=
-      | term_red_id {t A} :
-        [ Γ |- t : A ] ->
-        [ Γ |- t ⇒* t : A ]
-      | term_red_red {A t t'} :
-        [ Γ |- t ⇒ t' : A] ->
-        [Γ |- t ⇒* t' : A]
-      | term_red_trans {A t t' u} :
-        [ Γ |- t ⇒* t' : A ] ->
-        [ Γ |- t' ⇒* u : A ] ->
-        [ Γ |- t ⇒* u : A ]
-  where "[ Γ |- t ⇒* t' : A ]" := (TermRedClosure Γ A t t').
+  Local Notation "[ Γ |- t ⇒ u ∈ A ]" := (OneRedDecl Γ A t u).
 
-  Inductive TypeRedClosure (Γ : context) : term -> term -> Type :=
-  | type_red_id {A} :
-    [ Γ |- A ] ->
-    [ Γ |- A ⇒* A]
-  | type_red_red {A B} :
-    [Γ |- A ⇒ B] ->
-    [Γ |- A ⇒* B]
-  | type_red_succ {A A' B} :
-    [ Γ |- A ⇒* A' ] ->
-    [ Γ |- A' ⇒* B ] ->
-    [ Γ |- A ⇒* B ]
-
-  where "[ Γ |- A ⇒* B ]" := (TypeRedClosure Γ A B).
+  Inductive RedClosureDecl (Γ : context) (A : class) : term -> term -> Type :=
+      | red_id {t} :
+        match A with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end ->
+        [ Γ |- t ⇒* t ∈ A ]
+      | red_red {t t'} :
+        [ Γ |- t ⇒ t' ∈ A] ->
+        [Γ |- t ⇒* t' ∈ A]
+      | red_trans {t t' u} :
+        [ Γ |- t ⇒* t' ∈ A ] ->
+        [ Γ |- t' ⇒* u ∈ A ] ->
+        [ Γ |- t ⇒* u ∈ A ]
+  where "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
 
 End Definitions.
 
 Definition OneRedTermDecl Γ A t u := OneRedDecl Γ (isterm A) t u.
 Definition OneRedTypeDecl Γ A B := OneRedDecl Γ istype A B.
+Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
+Definition TypeRedClosure Γ A B := RedClosureDecl Γ istype A B.
 
 Notation "[ Γ |- t ⇒ u ∈ A ]" := (OneRedDecl Γ A t u).
+Notation "[ Γ |- t ⇒* u ∈ A ]" := (RedClosureDecl Γ A t u).
+
 Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u) : declarative_scope.
 Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
@@ -351,15 +343,21 @@ Proof.
 apply oreddecl_ored.
 Qed.
 
-Lemma redtmdecl_red Γ t u A : 
-  [Γ |- t ⇒* u : A] ->
+Lemma reddecl_red Γ t u A :
+  [Γ |- t ⇒* u ∈ A] ->
   [t ⇒* u].
 Proof.
   induction 1.
   - now econstructor.
-  - econstructor ; eauto using oredtmdecl_ored.
-    reflexivity.
+  - econstructor; [now eapply oreddecl_ored|reflexivity].
   - now etransitivity.
+Qed.
+
+Lemma redtmdecl_red Γ t u A : 
+  [Γ |- t ⇒* u : A] ->
+  [t ⇒* u].
+Proof.
+apply reddecl_red.
 Qed.
 
 Lemma oredtydecl_ored Γ A B : 
@@ -373,12 +371,7 @@ Lemma redtydecl_red Γ A B :
   [Γ |- A ⇒* B] ->
   [A ⇒* B].
 Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor ; eauto using oredtydecl_ored.
-    reflexivity.
-  - now etransitivity.
+apply reddecl_red.
 Qed.
 
 End TypeErasure.
-
