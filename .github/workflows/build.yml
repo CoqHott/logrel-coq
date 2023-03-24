@@ -62,6 +62,8 @@ jobs:
           args: >-  # allows you to break string into multiple lines
             --standalone
             --output=docs/index.html
+            --css=coqdoc/resources/github-pandoc.css
+            --metadata title="LogRel Overview"
             docs/index.md
       - name: Setup Pages
         if: github.ref == 'refs/heads/master'
