@@ -5,22 +5,25 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
 
 (** ** Reductions *)
 
-(** *** One-step reduction *)
+(** *** One-step reduction. *)
 
 Inductive OneRedAlg : term -> term -> Type :=
-    | termBetaAlg {na A t u} :
-      [ tApp (tLambda na A t) u ⇒ t[u..] ]
-    | termRedAppAlg {t t' u} :
-      [ t ⇒ t' ] ->
-      [ tApp t u ⇒ tApp t' u ]
-    | termRedNatElimAlg {P hz hs n n'} :
-        [n ⇒ n'] ->
-        [tNatElim P hz hs n ⇒ tNatElim P hz hs n']        
-    | termRedNatElimZeroAlg {P hz hs} :
-      [tNatElim P hz hs tZero ⇒ hz]
-    | termRedNatElimSuccAlg {P hz hs n} :
-      [tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
-  where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
+| BRed {na} {A a t} :
+    [ tApp (tLambda na A t) a ⇒ t[a..] ]
+| appSubst {t u a} :
+    [ t ⇒ u ] ->
+    [ tApp t a ⇒ tApp u a ]
+| natElimSubst {P hz hs n n'} :
+    [ n ⇒ n' ] ->
+    [ tNatElim P hz hs n ⇒ tNatElim P hz hs n' ]
+| natElimZero {P hz hs} :
+    [ tNatElim P hz hs tZero ⇒ hz ]
+| natElimSucc {P hz hs n} :
+    [ tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
+
+where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
+
+(* Keep in sync with OneRedTermDecl! *)
 
 (** *** Multi-step reduction *)
 
