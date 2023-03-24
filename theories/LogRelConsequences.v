@@ -518,6 +518,34 @@ Section MoreSubst.
 
 End MoreSubst.
 
+Lemma elimSuccHypTy_ty Γ P :
+  [|- Γ] ->
+  [Γ,,vass anDummy tNat |- P] ->
+  [Γ |-[ de ] elimSuccHypTy P].
+Proof.
+  intros HΓ HP.
+  unfold elimSuccHypTy.
+  econstructor.
+  1: now econstructor.
+  eapply wft_simple_arr.
+  1: now eapply HP.
+  eapply typing_subst.
+  - now eapply HP.
+  - boundary.
+  - econstructor.
+    + bsimpl.
+      eapply well_subst_ext.
+      2: eapply well_subst_up.
+      3: eapply id_subst ; tea.
+      2: now econstructor.
+      now bsimpl.
+    + cbn.
+      econstructor.
+      eapply typing_meta_conv.
+      1: now do 2 econstructor ; tea ; econstructor.
+      reflexivity.
+Qed.
+
 Lemma elimSuccHypTy_conv Γ P P' :
   [|- Γ] ->
   [Γ,,vass anDummy tNat |- P] ->

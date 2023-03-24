@@ -735,7 +735,7 @@ Section BundledTyping.
     intros.
     subst PTy' PInf' PInfRed' PCheck'.
     apply AlgoTypingInduction.
-    1-6: solve [intros ;
+    1-7: solve [intros ;
       repeat unshelve (
         match reverse goal with
           | IH : context [prod] |- _ => destruct IH ; [..|shelve] ; gen_typing
@@ -747,6 +747,32 @@ Section BundledTyping.
       destruct IHC ; tea.
       1: now eapply boundary, prod_ty_inv in IHt as [].
       split ; [|econstructor] ; eauto.
+    - intros.
+      split ; [eauto|..].
+      now econstructor.
+    - intros.
+      split ; [eauto|..].
+      now econstructor.
+    - intros.
+      split ; [eauto|..].
+      now econstructor.
+    - intros * ? IHn ? IHP ? IHz ? IHs ?.
+      assert [|-[de] Γ,, vass anDummy tNat]
+        by (econstructor ; tea ; now econstructor).
+      assert [Γ |-[ de ] P[tZero..]].
+      {
+        eapply typing_subst1.
+        1: now econstructor.
+        now eapply IHP.
+      }
+      assert [Γ |-[de] elimSuccHypTy P]
+        by now eapply elimSuccHypTy_ty.
+      split ; [eauto 10 |..].
+      econstructor.
+      + now eapply IHP.
+      + now eapply IHz.
+      + now eapply IHs.
+      + now eapply IHn.
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
       split ; [eauto|..].
@@ -796,12 +822,14 @@ Section TypingSoundness.
     subst PTy PInf PCheck.
     red.
     pose proof (algo_typing_discipline 
-      (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True)) as [H' H].
-    1-9: now constructor.
-    repeat (split ; [
+      (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True)) as [H' H] 
+      ;
+    cycle -1.
+    1: repeat (split ; [
       intros ; apply H' ; tea ; match goal with H : sigT _ |- _ => destruct H | _ => idtac end ; gen_typing 
       | ..] ; clear H' ; try destruct H as [H' H]).
-    intros ; apply H ; gen_typing.
+    1: now intros ; apply H ; gen_typing.
+    all: now constructor.
   Qed.
 
 End TypingSoundness.

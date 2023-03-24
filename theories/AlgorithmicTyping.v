@@ -105,6 +105,8 @@ Section Definitions.
       [Γ |- A ] ->
       [Γ,, vass na A |- B] ->
       [Γ |- tProd na A B]
+    | wfTypeNat {Γ} :
+      [Γ |- tNat]
     | wfTypeUniv {Γ A} :
       [Γ |- A ◃ U] ->
       [Γ |- A]
@@ -125,6 +127,19 @@ Section Definitions.
       [ Γ |- f ▹h tProd na A B ] -> 
       [ Γ |- a ◃ A ] -> 
       [ Γ |- tApp f a ▹ B[a..] ]
+    | infNat {Γ} :
+      [Γ |- tNat ▹ U]
+    | infZero {Γ} :
+      [Γ |- tZero ▹ tNat]
+    | infSucc {Γ t} :
+      [Γ |- t ▹h tNat] ->
+      [Γ |- tSucc t ▹ tNat]
+    | infNatElim {Γ P hz hs n} :
+      [Γ |- n ▹h tNat] ->
+      [Γ,, vass anDummy tNat |- P] ->
+      [Γ |- hz ◃ P[tZero..]] ->
+      [Γ |- hs ◃ elimSuccHypTy P] ->
+      [Γ |- tNatElim P hz hs n ▹ P[n..]]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -263,9 +278,9 @@ Lemma AlgoTypingInduction : AlgoTypingInductionType.
 Proof.
   intros PTy PInf PInfRed PCheck **.
   pose proof (_AlgoTypingInduction PTy PInf PInfRed PCheck) as H.
-  destruct H as [?[?[?]]].
-  1-9: assumption.
-  repeat (split;[assumption|]); assumption.
+  destruct H as [?[?[?]]] ; cycle -1.
+  1: by_prod_splitter.
+  all: assumption.
 Qed.
 
 Definition AlgoConvInductionConcl :=
@@ -402,6 +417,7 @@ Section TypingWk.
       + now eapply IHB with(ρ := wk_up _ _ ρ).
     - intros.
       now econstructor.
+    - now constructor. 
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.
@@ -421,6 +437,23 @@ Section TypingWk.
       eapply typing_meta_conv.
       + now econstructor.
       + now asimpl.
+    - now econstructor.
+    - now econstructor.
+    - now econstructor.
+    - intros * ? IHn ? IHP ? IHz ? IHs *.
+      cbn in *.
+      eapply typing_meta_conv.
+      1: econstructor.
+      + eauto.
+      + eapply IHP with (ρ := wk_up _ _ ρ).
+      + eapply typing_meta_conv.
+        1: eapply IHz.
+        now bsimpl.
+      + eapply typing_meta_conv.
+        1: eapply IHs.
+        unfold elimSuccHypTy.
+        now bsimpl.
+      + now bsimpl.    
     - intros.
       econstructor.
       + eauto.
