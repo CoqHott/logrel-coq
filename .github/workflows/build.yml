@@ -25,6 +25,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
+          submodules: true
           fetch-depth: 1
 
       - name: Docker-Coq-Action
@@ -45,7 +46,7 @@ jobs:
           script: |
             startGroup "Build project"
               opam exec -- make -j 2
-              opam exec -- make html
+              opam exec -- make coqdoc
             endGroup
           uninstall: |
             startGroup "Clean project"
