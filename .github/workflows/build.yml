@@ -45,7 +45,7 @@ jobs:
           script: |
             startGroup "Build project"
               opam exec -- make -j 2
-              opam exec -- make html
+              opam exec -- make coqdoc
             endGroup
           uninstall: |
             startGroup "Clean project"
