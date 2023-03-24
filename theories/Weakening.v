@@ -74,17 +74,16 @@ using indexed weakenings. *)
 
 Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_empty : well_weakening _wk_empty ε ε
-  | well_step {Γ Δ : context} (na : aname) (A : term) (ρ : weakening) :
-    well_weakening ρ Γ Δ -> well_weakening (_wk_step ρ) (Γ,,vass na A) Δ
-  | well_up {Γ Δ : context} (na : aname) (A : term) (ρ : weakening) :
-    well_weakening ρ Γ Δ -> well_weakening (_wk_up ρ) (Γ,,vass na (ren_term ρ A)) (Δ,, vass na A).
+  | well_step {Γ Δ : context} (A : term) (ρ : weakening) :
+    well_weakening ρ Γ Δ -> well_weakening (_wk_step ρ) (Γ,, A) Δ
+  | well_up {Γ Δ : context} (A : term) (ρ : weakening) :
+    well_weakening ρ Γ Δ -> well_weakening (_wk_up ρ) (Γ,, ren_term ρ A) (Δ,, A).
 
 Lemma well_wk_id (Γ : context) : well_weakening (_wk_id Γ) Γ Γ.
 Proof.
   induction Γ as [|d].
   1: econstructor.
   replace d with (d⟨wk_to_ren (_wk_id Γ)⟩) at 2.
-  all: destruct d as [na A].
   1: now econstructor.
   cbn.
   f_equal.
@@ -96,11 +95,11 @@ Lemma well_wk_compose {ρ ρ' : weakening} {Δ Δ' Δ'' : context} :
   well_weakening ρ Δ Δ' -> well_weakening ρ' Δ' Δ'' -> well_weakening (wk_compose ρ ρ') Δ Δ''.
 Proof.
   intros H H'.
-  induction H as [| | ? ? ? ? ν] in ρ', Δ'', H' |- *.
+  induction H as [| | ? ? ? ν] in ρ', Δ'', H' |- *.
   all: cbn.
   - eassumption.
   - econstructor. auto.
-  - inversion H' as [| | ? ? na' A' ν']; subst ; clear H'.
+  - inversion H' as [| | ? ? A' ν']; subst ; clear H'.
     1: now econstructor ; auto.
     asimpl.
     replace (ren_term (ν' >> ν) A') with (ren_term (wk_compose ν ν') A')
@@ -118,11 +117,11 @@ Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
 
 Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
 
-Definition wk_step {Γ Δ} na A (ρ : Γ ≤ Δ) : (Γ,, vass na A) ≤ Δ :=
-  {| wk := _wk_step ρ ; well_wk := well_step na A ρ ρ |}.
+Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
+  {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
 
-Definition wk_up {Γ Δ} na A (ρ : Γ ≤ Δ) : (Γ,, vass na A⟨wk_to_ren ρ⟩) ≤ (Δ ,, vass na A) :=
-  {| wk := _wk_up ρ ; well_wk := well_up na A ρ ρ |}.
+Definition wk_up {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,  A⟨wk_to_ren ρ⟩) ≤ (Δ ,, A) :=
+  {| wk := _wk_up ρ ; well_wk := well_up A ρ ρ |}.
 
 Definition wk_id {Γ} : Γ ≤ Γ :=
   {| wk := _wk_id Γ ; well_wk := well_wk_id Γ |}.
@@ -151,7 +150,7 @@ Smpl Add fold_wk_ren : refold.
 
 (** ** The ubiquitous operation of adding one variable at the end of a context *)
 
-Definition wk1 {Γ} nA A : Γ,, vass nA A ≤ Γ := wk_step nA A (wk_id (Γ := Γ)).
+Definition wk1 {Γ} A : Γ,, A ≤ Γ := wk_step A (wk_id (Γ := Γ)).
 
 Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|Δ| <= #|Γ|.
 Proof.
@@ -177,55 +176,38 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma wk1_ren {Γ nA A} : @wk1 Γ nA A =1 ↑.
+Lemma wk1_ren {Γ A} : @wk1 Γ A =1 ↑.
 Proof.
   intros ? ; cbv -[wk_to_ren _wk_id]. cbn.
   now rewrite wk_to_ren_id.
 Qed.
 
-Lemma wk_up_ren {Γ Δ nA A} (ρ : Δ ≤ Γ) : 
-  wk_up nA A ρ =1 upRen_term_term ρ.
+Lemma wk_up_ren {Γ Δ A} (ρ : Δ ≤ Γ) : 
+  wk_up A ρ =1 upRen_term_term ρ.
 Proof.
   intros; cbn; now asimpl.
 Qed.
 
 (** ** Weakenings play well with context access *)
 
-Lemma map_decl_lift (ρ : weakening) d :
-  map_decl (ren_term (up_ren ρ)) (map_decl (ren_term shift) d) =
-  map_decl (ren_term shift) (map_decl (ren_term ρ) d).
-Proof.
-  rewrite ! compose_map_decl.
-  eapply map_decl_ext.
-  intros t.
-  asimpl.
-  reflexivity.
-Qed.
-
 Lemma in_ctx_wk (Γ Δ : context) n decl (ρ : Δ ≤ Γ) :
   in_ctx Γ n decl ->
-  in_ctx Δ (ρ n) (map_decl (ren_term ρ) decl).
+  in_ctx Δ (ρ n) (ren_term ρ decl).
 Proof.
   intros Hdecl.
   destruct ρ as [ρ wfρ] ; cbn.
   induction wfρ in n, decl, Hdecl |- *.
+  - cbn; now asimpl.
   - cbn.
-    rewrite map_decl_id.
-    1: eassumption.
-    now asimpl.
-  - cbn.
-    change ((ρ >> S) n) with (S (ρ n)).
-    replace (map_decl _ _) with (map_decl (ren_term shift) (map_decl (ren_term ρ) decl))
-      by (now rewrite compose_map_decl ; asimpl).
+    replace (ren_term (ρ >> S) decl) with (decl⟨ρ⟩⟨↑⟩) by now asimpl.
     now econstructor.
   - destruct n ; cbn.
     + cbn.
       inversion Hdecl ; subst ; clear Hdecl.
-      cbn -[map_decl].
-      rewrite map_decl_lift.
+      replace (ren_term _ A⟨↑⟩) with (A⟨ρ⟩⟨↑⟩) by now asimpl.
       now constructor.
     + inversion Hdecl ; subst ; cbn in *.
-      rewrite map_decl_lift.
+      replace (ren_term _ (ren_term ↑ d)) with (d⟨ρ⟩⟨↑⟩) by now asimpl.
       now econstructor.
 Qed.
 
@@ -334,7 +316,7 @@ Ltac bsimpl := check_no_evars;
                 repeat
                  unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
                   Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
-                  Ren1_subst, Ren1_wk, Ren1_well_wk, Ren_decl
+                  Ren1_subst, Ren1_wk, Ren1_well_wk
                   in *; bsimpl'; minimize.
 
 (** Lemmas for easier rewriting *)
@@ -342,11 +324,11 @@ Ltac bsimpl := check_no_evars;
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
 
-Lemma wk1_ren_on Γ nF F (H : term) : H⟨@wk1 Γ nF F⟩ = H⟨↑⟩.
+Lemma wk1_ren_on Γ F (H : term) : H⟨@wk1 Γ F⟩ = H⟨↑⟩.
 Proof. now bsimpl. Qed.
   
-Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) nF F (H : term) : H⟨wk_up nF F ρ⟩ = H⟨upRen_term_term ρ⟩.
+Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) F (H : term) : H⟨wk_up F ρ⟩ = H⟨upRen_term_term ρ⟩.
 Proof. now bsimpl. Qed.
 
-Lemma wk_up_wk1_ren_on Γ nF F nG G (H : term) : H⟨wk_up nF F (@wk1 Γ nG G)⟩ = H⟨upRen_term_term ↑⟩.
+Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
 Proof. now bsimpl. Qed.

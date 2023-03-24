@@ -71,7 +71,7 @@ Module AlgorithmicTypingProperties.
     - now intros * [].
     - intros * [] ; constructor; tea; now econstructor.
     - intros_bn.
-      + eapply red_ty_compl_prod_r in bun_inf_conv_conv0 as (?&?&?&[]).
+      + eapply red_ty_compl_prod_r in bun_inf_conv_conv0 as (?&?&[]).
         econstructor ; tea.
         1: econstructor.
         * econstructor ; tea.
@@ -162,7 +162,7 @@ Module AlgorithmicTypingProperties.
       + econstructor ; tea.
         2: econstructor.
         all: boundary.
-    - intros * [? ? ? (?&?&?&[])%red_ty_compl_prod_r] [].
+    - intros * [? ? ? (?&?&[])%red_ty_compl_prod_r] [].
       esplit ; tea.
       + do 2 econstructor ; tea.
         1: now eapply (redty_red (ta := de)).

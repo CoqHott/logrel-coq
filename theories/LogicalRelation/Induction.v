@@ -232,12 +232,12 @@ Section Inversions.
         1-3: inv_whne.
         now eexists.
     - intros ??? PiA _ _ A' red whA.
-      enough (∑ na dom cod, A' = tProd na cod dom) as (?&?&?&->).
+      enough (∑ dom cod, A' = tProd cod dom) as (?&?&->).
       + dependent inversion whA ; subst.
         2: exfalso ; gen_typing.
         assumption.
-      + destruct PiA as [??? redA].
-        do 3 eexists.
+      + destruct PiA as [?? redA].
+        do 2 eexists.
         eapply whred_det.
         1-3: gen_typing.
         eapply redty_red, redA.
@@ -262,7 +262,7 @@ Section Inversions.
     now unshelve eapply  (invLR _ redIdAlg (NeType _)).
   Qed.
 
-  Lemma invLRΠ {Γ l na dom cod} : [Γ ||-<l> tProd na dom cod] -> [Γ ||-Π<l> tProd na dom cod].
+  Lemma invLRΠ {Γ l dom cod} : [Γ ||-<l> tProd dom cod] -> [Γ ||-Π<l> tProd dom cod].
   Proof.
     intros.
     now unshelve eapply  (invLR _ redIdAlg ProdType).

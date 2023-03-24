@@ -11,7 +11,7 @@ Section SimpleArrow.
   Lemma ArrRedTy0 {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-Π<l> arr A B].
   Proof.
     intros RA RB; escape.
-    unshelve econstructor; [exact anDummy|exact A| exact B⟨↑⟩|..]; tea.
+    unshelve econstructor; [exact A| exact B⟨↑⟩|..]; tea.
     - intros; now eapply wk.
     - cbn; intros.
       bsimpl; rewrite <- rinstInst'_term.
@@ -197,10 +197,9 @@ Section SimpleArrow.
     - constructor.
     - apply tm_nf_lam.
       + now eapply reifyType.
-      + change (PiRedTy.na (PiRedTyPack.toPiRedTy ΠAC)) with anDummy.
-        change (PiRedTy.dom (PiRedTyPack.toPiRedTy ΠAC)) with A.
+      + change (PiRedTy.dom (PiRedTyPack.toPiRedTy ΠAC)) with A.
         change (PiRedTy.cod (PiRedTyPack.toPiRedTy ΠAC)) with C⟨↑⟩.
-        pose (ρ := @wk_step Γ Γ anDummy A wk_id).
+        pose (ρ := @wk_step Γ Γ A wk_id).
         assert (Hr : forall (t : term), t⟨↑⟩ = t⟨ρ⟩).
         { unfold ρ; bsimpl; reflexivity. }
         do 3 rewrite Hr.

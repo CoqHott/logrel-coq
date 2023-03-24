@@ -15,7 +15,7 @@ Section AlgoConvConv.
   Lemma in_ctx_conv_r Γ' Γ n decl :
   [|-[de] Γ' ≅ Γ] ->
   in_ctx Γ n decl ->
-  ∑ decl', (in_ctx Γ' n decl') × ([Γ' |-[de] decl'.(decl_type) ≅ decl.(decl_type)]).
+  ∑ decl', (in_ctx Γ' n decl') × ([Γ' |-[de] decl' ≅ decl]).
   Proof.
   intros Hconv Hin.
   induction Hin in Γ', Hconv |- *.
@@ -27,8 +27,7 @@ Section AlgoConvConv.
     eapply typing_wk ; tea.
     econstructor.
     all: now boundary.
-  - destruct d as [? d].
-    edestruct IHHin as [[? d'] []].
+  - edestruct IHHin as [d'' [??]].
     1: eassumption.
     cbn in *.
     econstructor ; split.
@@ -43,7 +42,7 @@ Section AlgoConvConv.
   Lemma in_ctx_conv_l Γ' Γ n decl' :
   [|-[de] Γ' ≅ Γ] ->
   in_ctx Γ' n decl' ->
-  ∑ decl, (in_ctx Γ n decl) × ([Γ' |-[de] decl'.(decl_type) ≅ decl.(decl_type)]).
+  ∑ decl, (in_ctx Γ n decl) × ([Γ' |-[de] decl' ≅ decl]).
   Proof.
     intros ? Hin.
     eapply in_ctx_conv_r in Hin as [? []].
@@ -80,7 +79,7 @@ Section AlgoConvConv.
       1: now econstructor.
       eassumption.
     - intros * ? IHm Ht [IHt []%boundary] **.
-      edestruct IHm as [[? [? (?&?&?&[HconvP HconvA])%red_ty_compl_prod_r]] ?] ; tea.
+      edestruct IHm as [[? [? (?&?&[HconvP HconvA])%red_ty_compl_prod_r]] ?] ; tea.
       eapply redty_red, red_whnf in HconvP as ->.
       2: gen_typing.
       eexists ; split.
@@ -130,7 +129,7 @@ Section AlgoConvConv.
         all: econstructor ; tea.
         econstructor.
         all: gen_typing.
-    - intros * ? ? ? IHf ? ? ? * ? (?&?&?&[HconvP])%red_ty_compl_prod_l ?.
+    - intros * ? ? ? IHf ? ? ? * ? (?&?&[HconvP])%red_ty_compl_prod_l ?.
       eapply redty_red, red_whnf in HconvP as ->.
       2: gen_typing.
       econstructor ; tea.
@@ -266,7 +265,7 @@ Section Symmetry.
       now eapply stability.
     - intros * ? IHm ? [IHt Hwft]  **.
       edestruct IHm as [[? [IHm' Hconv]] []] ; tea ; clear IHm.
-      eapply red_ty_compl_prod_l in Hconv as (?&?&?&[Hred]).
+      eapply red_ty_compl_prod_l in Hconv as (?&?&[Hred]).
       eapply redty_red, red_whnf in Hred as ->.
       2: now eapply algo_conv_wh in IHm' as [] ; gen_typing.
       eexists ; split.
@@ -629,7 +628,7 @@ Admitted.
       + now econstructor.
       + eassumption.
   - intros *
-    [? ? ? ? ? ? Hf (?&?&?&[])%red_ty_compl_prod_r]
+    [? ? ? ? ? ? Hf (?&?&[])%red_ty_compl_prod_r]
     [? ? ? ? Ht].
     econstructor ; tea.
     + eapply conv_sound in Hf as [Hf] ; tea.
@@ -720,7 +719,7 @@ Module IntermediateTypingProperties.
       2-3: econstructor.
       1-3: assumption.
       do 2 econstructor.
-    - intros * ? ? [] [].
+    - intros * ?  [] [].
       split ; tea.
       + now econstructor.
       + econstructor ; tea.
@@ -755,7 +754,7 @@ Admitted.
         4: eassumption.
         all: now etransitivity. 
     - gen_typing.
-    - intros * ? ? [] [].
+    - intros * ? [] [].
       split ; tea.
       + now econstructor.
       + econstructor ; tea.

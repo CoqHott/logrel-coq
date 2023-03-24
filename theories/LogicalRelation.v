@@ -276,13 +276,12 @@ Module PiRedTy.
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {Γ : context} {A : term}
   : Type (* @ max(Set, i+1) *) := {
-    na : aname ;
     dom : term ;
     cod : term ;
-    red : [Γ |- A :⇒*: tProd na dom cod];
+    red : [Γ |- A :⇒*: tProd dom cod];
     domTy : [Γ |- dom];
-    codTy : [Γ ,, vass na dom |- cod];
-    eq : [Γ |- tProd na dom cod ≅ tProd na dom cod];
+    codTy : [Γ ,, dom |- cod];
+    eq : [Γ |- tProd dom cod ≅ tProd dom cod];
     domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩ ;
     codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
         [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
@@ -326,11 +325,10 @@ Module PiRedTyEq.
     `{WfType ta} `{ConvType ta} `{RedType ta}
     {Γ : context} {A B : term} {ΠA : PiRedTy Γ A}
   : Type := {
-    na : aname ;
     dom : term;
     cod : term;
-    red : [Γ |- B :⇒*: tProd na dom cod];
-    eq  : [Γ |- tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd na dom cod ];
+    red : [Γ |- B :⇒*: tProd dom cod];
+    eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ];
     domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
     codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
@@ -353,10 +351,10 @@ Module PiRedTm.
     {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     nf : term;
-    red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
+    red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     isfun : isFun nf;
-    isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
-    refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
+    isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
+    refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
       : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
@@ -383,7 +381,7 @@ Module PiRedTmEq.
   : Type := {
     redL : [ Γ ||-Π t : A | ΠA ] ;
     redR : [ Γ ||-Π u : A | ΠA ] ;
-    eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.na) ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
+    eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     eqApp {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
       : [ ( ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||-
@@ -716,13 +714,12 @@ Section PiRedTyPack.
 
   Record PiRedTyPack@{i j k l} {Γ : context} {A : term} {l : TypeLevel} 
     : Type@{l} := {
-      na : aname ;
       dom : term ;
       cod : term ;
-      red : [Γ |- A :⇒*: tProd na dom cod];
+      red : [Γ |- A :⇒*: tProd dom cod];
       domTy : [Γ |- dom];
-      codTy : [Γ ,, vass na dom |- cod];
-      eq : [Γ |- tProd na dom cod ≅ tProd na dom cod];
+      codTy : [Γ ,, dom |- cod];
+      eq : [Γ |- tProd dom cod ≅ tProd dom cod];
       domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ] ;
       codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
           [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
@@ -743,8 +740,8 @@ Section PiRedTyPack.
     (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA) 
     : PiRedTyPack@{i j k l} Γ A l.
   Proof.
-    destruct ΠA as [na dom cod]; destruct ΠAad; cbn in *.
-    unshelve econstructor; [eassumption| exact dom| exact cod|..].
+    destruct ΠA as [dom cod]; destruct ΠAad; cbn in *.
+    unshelve econstructor; [exact dom| exact cod|..].
     3-6: assumption.
     * intros; econstructor; now unshelve apply domAd.
     * intros; econstructor; now unshelve apply codAd.
@@ -754,8 +751,8 @@ Section PiRedTyPack.
   Definition toPiRedTy@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
     PiRedTy@{k} Γ A.
   Proof.
-    destruct ΠA as [na dom cod ???? domRed codRed codExt].
-    unshelve econstructor; [assumption|exact dom|exact cod|..].
+    destruct ΠA as [dom cod ???? domRed codRed codExt].
+    unshelve econstructor; [exact dom|exact cod|..].
     3-6: assumption.
     * intros; now eapply domRed.
     * intros; now eapply codRed.
@@ -765,7 +762,7 @@ Section PiRedTyPack.
   Definition toPiRedTyAd@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
     PiRedTyAdequate (LogRel@{i j k l} l) (toPiRedTy ΠA).
   Proof.
-    destruct ΠA as [na dom cod ???? domRed codRed ?].
+    destruct ΠA as [dom cod ???? domRed codRed ?].
     unshelve econstructor; cbn; intros; [eapply domRed|eapply codRed].
   Defined.  
 
@@ -788,11 +785,11 @@ Section PiRedTyPack.
     LRbuild (LRPi (LogRelRec l) _ (toPiRedTyAd ΠA)).
 
   Definition prod@{i j k l} {l Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
-    tProd (na ΠA) (dom ΠA) (cod ΠA).
+    tProd (dom ΠA) (cod ΠA).
 
   Lemma whne_noΠ `{!RedTypeProperties} {Γ A} : [Γ ||-Πd A] -> whne A -> False.
   Proof.
-    intros [??? r] h.
+    intros [?? r] h.
     pose proof (UntypedReduction.red_whne _ _ (redtywf_red r) h).
     subst; inversion h.
   Qed.

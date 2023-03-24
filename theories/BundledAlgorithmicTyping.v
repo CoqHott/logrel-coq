@@ -324,11 +324,11 @@ Section BundledConv.
       | ?T => (pre_cond T)
     end.
 
-  (* Eval cbn beta in ltac:(let T := strong_step (forall (Γ : context) (na na' : aname) (A B A' B' : term),
+  (* Eval cbn beta in ltac:(let T := strong_step (forall (Γ : context) (na' : aname) (A B A' B' : term),
     [Γ |-[ al ] A ≅ A'] ->
     PTyEq Γ A A' ->
-    [Γ,, vass na A |-[ al ] B ≅ B'] ->
-    PTyEq (Γ,, vass na A) B B' -> PTyRedEq Γ (tProd na A B) (tProd na' A' B')) in exact T).
+    [Γ,, A |-[ al ] B ≅ B'] ->
+    PTyEq (Γ,, A) B B' -> PTyRedEq Γ (tProd A B) (tProd na' A' B')) in exact T).
   *)
 
   #[local] Ltac weak_concl concl :=
@@ -384,7 +384,7 @@ Section BundledConv.
       now econstructor.
     - intros * ? IHA ? IHB ? HP HP'.
       eapply prod_ty_inv in HP as [], HP' as [? HB'].
-      assert [Γ,, vass na A |-[de] B'].
+      assert [Γ,, A |-[de] B'].
       { eapply stability ; tea.
         econstructor.
         1: now eapply ctx_refl.
@@ -430,8 +430,8 @@ Section BundledConv.
     - intros * ? IHm ? IHt ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
-      eapply termGen' in Htym' as [? [(?&?&?&[-> Htym' ]) ?]].
-      eapply termGen' in Htyn' as [? [(?&?&?&[-> Htyn' ]) ?]].
+      eapply termGen' in Htym' as [? [[? [? [-> Htym']]] ?]].
+      eapply termGen' in Htyn' as [? [[? [? [-> Htyn']]] ?]].
       edestruct IHm as [? [IHmc IHm' IHn']].
       1: easy.
       1-2: now econstructor.
@@ -444,13 +444,13 @@ Section BundledConv.
       split.
       + econstructor ; gen_typing.
       + intros ? Happ.
-        eapply termGen' in Happ as [? [(?&?&?&[-> Htym']) ?]].
+        eapply termGen' in Happ as [? [(?&?&[-> Htym']) ?]].
         eapply IHm', prod_ty_inj in Htym' as [].
         etransitivity ; [..|eassumption].
         eapply typing_subst1 ; tea.
         now econstructor.
       + intros ? Happ.
-        eapply termGen' in Happ as [? [(?&?&?&[-> Htyn']) ?]].
+        eapply termGen' in Happ as [? [(?&?&[-> Htyn']) ?]].
         eapply IHn', prod_ty_inj in Htyn' as [HA ?].
         etransitivity ; [..|eassumption].
         eapply typing_subst1.
@@ -499,7 +499,7 @@ Section BundledConv.
       pose proof (Htyd' := Hty').
       eapply termGen' in Htyd as [? [[->] _]].
       eapply termGen' in Htyd' as [? [[->] _]].
-      assert [Γ,, vass na A |-[de] B' : U].
+      assert [Γ,, A |-[de] B' : U].
       { eapply stability ; tea.
         econstructor.
         1: now eapply ctx_refl.

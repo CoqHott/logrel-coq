@@ -30,12 +30,12 @@ Proof.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
     1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
-  - destruct RAB as [nB domB codB redB ? domRedEq codRedEq], RBC as [nC domC codC redC ? domRedEq' codRedEq'].
-    destruct ΠB as [??? redB' ??? domRedB codRedB], ΠC as [??? redC' ??? domRedC codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
+  - destruct RAB as [domB codB redB ? domRedEq codRedEq], RBC as [domC codC redC ? domRedEq' codRedEq'].
+    destruct ΠB as [?? redB' ??? domRedB codRedB], ΠC as [?? redC' ??? domRedC codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
     unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
-    injection eqΠB; intros eqcod eqdom eqna; clear eqΠB;  subst. 
+    injection eqΠB; intros eqcod eqdom; clear eqΠB;  subst. 
     unshelve epose proof (eqΠC := redtywf_det _ _ _ _ _ _ redC' redC).  1,2 : constructor.
-    injection eqΠC; intros eqcod eqdom eqna; clear eqΠC;  subst. 
+    injection eqΠC; intros eqcod eqdom; clear eqΠC;  subst. 
     assert (domRedAC : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
       [PiRedTy.domRed ΠA ρ h | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ domC⟨ρ⟩]).
     { intros. unshelve eapply ihdom.
@@ -45,7 +45,7 @@ Proof.
       3: apply domAdB.
       now apply (PiRedTy.domRed ΠA).
     }
-    exists nC domC codC.
+    exists domC codC.
     + eassumption.
     + etransitivity; eassumption.
     + apply domRedAC.

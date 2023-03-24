@@ -19,10 +19,10 @@ Section Definitions.
       [Γ |- A ≅ B]
   (** **** Conversion of types reduced to weak-head normal forms *)
   with ConvTypeRedAlg : context -> term -> term -> Type :=
-    | typePiCongAlg {Γ na na' A B A' B'} :
+    | typePiCongAlg {Γ A B A' B'} :
       [ Γ |- A ≅ A'] ->
-      [ Γ ,, vass na A |- B ≅ B'] ->
-      [ Γ |- tProd na A B ≅h tProd na' A' B']
+      [ Γ ,, A |- B ≅ B'] ->
+      [ Γ |- tProd A B ≅h tProd A' B']
     | typeUnivConvAlg {Γ} :
       [Γ |- U ≅h U]
     | typeNeuConvAlg {Γ M N T} :
@@ -32,9 +32,9 @@ Section Definitions.
   with ConvNeuAlg : context -> term -> term  -> term -> Type :=
     | neuVarConvAlg {Γ n decl} :
       in_ctx Γ n decl ->
-      [Γ |- tRel n ~ tRel n ▹ decl.(decl_type)]
-    | neuAppCongAlg {Γ m n t u na A B} :
-      [ Γ |- m ~h n ▹ tProd na A B ] ->
+      [Γ |- tRel n ~ tRel n ▹ decl]
+    | neuAppCongAlg {Γ m n t u A B} :
+      [ Γ |- m ~h n ▹ tProd A B ] ->
       [ Γ |- t ≅ u : A ] ->
       [ Γ |- tApp m t ~ tApp n u ▹ B[t..] ]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
@@ -54,15 +54,15 @@ Section Definitions.
       [Γ |- t ≅ u : A]
   (** **** Conversion of terms reduced to a weak-head normal form at a reduced type *)
   with ConvTermRedAlg : context -> term -> term -> term -> Type :=
-    | termPiCongAlg {Γ na na' A B A' B'} :
+    | termPiCongAlg {Γ A B A' B'} :
       [ Γ |- A ≅ A' : U] ->
-      [ Γ ,, vass na A |- B ≅ B' : U] ->
-      [ Γ |- tProd na A B ≅h tProd na' A' B' : U]
-    | termFunConvAlg {Γ : context} {f g na A B} :
+      [ Γ ,, A |- B ≅ B' : U] ->
+      [ Γ |- tProd A B ≅h tProd A' B' : U]
+    | termFunConvAlg {Γ : context} {f g A B} :
       isFun f ->
       isFun g ->
-      [ Γ,, vass na A |- eta_expand f ≅ eta_expand g : B] -> 
-      [ Γ |- f ≅h g : tProd na A B]
+      [ Γ,, A |- eta_expand f ≅ eta_expand g : B] -> 
+      [ Γ |- f ≅h g : tProd A B]
     | termNeuConvAlg {Γ m n T P} :
       [Γ |- m ~ n ▹ T] ->
       isPosType P ->
@@ -82,10 +82,10 @@ Section Definitions.
   (** **** Type well-formation *)
   Inductive WfTypeAlg : context -> term -> Type :=
     | wfTypeU Γ : [ Γ |- U ]
-    | wfTypeProd {Γ na A B} :
+    | wfTypeProd {Γ A B} :
       [Γ |- A ] ->
-      [Γ,, vass na A |- B] ->
-      [Γ |- tProd na A B]
+      [Γ,, A |- B] ->
+      [Γ |- tProd A B]
     | wfTypeUniv {Γ A} :
       [Γ |- A ◃ U] ->
       [Γ |- A]
@@ -93,17 +93,17 @@ Section Definitions.
   with InferAlg : context -> term -> term -> Type :=
     | infVar {Γ n decl} :
       in_ctx Γ n decl ->
-      [Γ |- tRel n ▹ decl.(decl_type)]
-    | infProd {Γ} {na} {A B} :
+      [Γ |- tRel n ▹ decl]
+    | infProd {Γ} {A B} :
       [ Γ |- A ▹h U] -> 
-      [Γ ,, (vass na A) |- B ▹h U ] ->
-      [ Γ |- tProd na A B ▹ U ]
-    | infLam {Γ} {na} {A B t} :
+      [Γ ,, (A) |- B ▹h U ] ->
+      [ Γ |- tProd A B ▹ U ]
+    | infLam {Γ} {A B t} :
       [ Γ |- A] ->
-      [ Γ ,, vass na A |- t ▹ B ] -> 
-      [ Γ |- tLambda na A t ▹ tProd na A B]
-    | infApp {Γ} {na} {f a A B} :
-      [ Γ |- f ▹h tProd na A B ] -> 
+      [ Γ ,, A |- t ▹ B ] -> 
+      [ Γ |- tLambda A t ▹ tProd A B]
+    | infApp {Γ} {f a A B} :
+      [ Γ |- f ▹h tProd A B ] -> 
       [ Γ |- a ◃ A ] -> 
       [ Γ |- tApp f a ▹ B[a..] ]
   (** **** Inference of a type reduced to weak-head normal form*)
@@ -127,10 +127,10 @@ Section Definitions.
   (** Context well-formation *)
   Inductive WfContextAlg : context -> Type :=
   | conNilAlg : [|- ε]
-  | conConsAlg {Γ na A} :
+  | conConsAlg {Γ A} :
     [|- Γ] ->
     [ Γ |- A] ->
-    [|- Γ,, vass na A]
+    [|- Γ,, A]
   where "[ |- Γ ]" := (WfContextAlg Γ).
 
 End Definitions.
@@ -297,7 +297,7 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eauto.
-      now eapply IHB with(ρ := wk_up _ _ ρ).
+      now eapply IHB with(ρ := wk_up _ ρ).
     - econstructor.
     - intros.
       now econstructor.
@@ -325,12 +325,12 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eauto.
-      now eapply IHB with(ρ := wk_up _ _ ρ).
+      now eapply IHB with(ρ := wk_up _ ρ).
     - intros * ? ? ? IH ? ?.
       cbn.
       econstructor.
       1-2: now eauto using isFun_ren.
-      specialize IH with(ρ := wk_up _ _ ρ).
+      specialize IH with(ρ := wk_up _ ρ).
       cbn in *.
       asimpl.
       repeat (rewrite renRen_term in IH).
@@ -359,7 +359,7 @@ Section TypingWk.
       cbn.
       econstructor.
       + now eauto.
-      + now eapply IHB with(ρ := wk_up _ _ ρ).
+      + now eapply IHB with(ρ := wk_up _ ρ).
     - intros.
       now econstructor.
     - intros.
@@ -370,12 +370,12 @@ Section TypingWk.
       cbn.
       econstructor.
       + eauto.
-      + now eapply IHB with(ρ := wk_up _ _ ρ).
+      + now eapply IHB with(ρ := wk_up _ ρ).
     - intros * ? ? ? IHt ? ?.
       cbn.
       econstructor.
       + now eauto.
-      + now eapply IHt with(ρ := wk_up _ _ ρ).
+      + now eapply IHt with(ρ := wk_up _ ρ).
     - intros.
       cbn in *.
       eapply typing_meta_conv.
@@ -392,34 +392,34 @@ Section TypingWk.
   Qed.
 
   Corollary algo_conv_shift : AlgoConvInductionConcl
-      (fun (Γ : context) (A B : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩ ≅ B⟨↑⟩])
-      (fun (Γ : context) (A B : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩ ≅h B⟨↑⟩])
-      (fun (Γ : context) (A m n : term) => forall nt T, [Γ,, vass nt T |- m⟨↑⟩ ~ n⟨↑⟩ ▹ A⟨↑⟩])
-      (fun (Γ : context) (A m n : term) => forall nt T, [Γ,, vass nt T |- m⟨↑⟩ ~h n⟨↑⟩ ▹ A⟨↑⟩])
-      (fun (Γ : context) (A t u : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩])
-      (fun (Γ : context) (A t u : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ≅h u⟨↑⟩ : A⟨↑⟩]).
+      (fun (Γ : context) (A B : term) => forall T, [Γ,, T |- A⟨↑⟩ ≅ B⟨↑⟩])
+      (fun (Γ : context) (A B : term) => forall T, [Γ,, T |- A⟨↑⟩ ≅h B⟨↑⟩])
+      (fun (Γ : context) (A m n : term) => forall T, [Γ,, T |- m⟨↑⟩ ~ n⟨↑⟩ ▹ A⟨↑⟩])
+      (fun (Γ : context) (A m n : term) => forall T, [Γ,, T |- m⟨↑⟩ ~h n⟨↑⟩ ▹ A⟨↑⟩])
+      (fun (Γ : context) (A t u : term) => forall T, [Γ,, T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩])
+      (fun (Γ : context) (A t u : term) => forall T, [Γ,, T |- t⟨↑⟩ ≅h u⟨↑⟩ : A⟨↑⟩]).
   Proof.
     red.
     repeat match goal with |- _ × _ => split end.
-    all: intros Γ * Hty nt T.
+    all: intros Γ * Hty T.
     all: eapply algo_conv_wk in Hty.
-    all: specialize (Hty _ (@wk1 Γ nt T)).
-    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
+    all: specialize (Hty _ (@wk1 Γ T)).
+    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ T)) ; refold.
     all: now eapply Hty.
   Qed.
 
   Corollary algo_typing_shift : AlgoTypingInductionConcl
-  (fun (Γ : context) (A : term) => forall nt T, [Γ,, vass nt T |- A⟨↑⟩])
-  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹ A⟨↑⟩])
-  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ▹h A⟨↑⟩])
-  (fun (Γ : context) (A t : term) => forall nt T, [Γ,, vass nt T |- t⟨↑⟩ ◃ A⟨↑⟩]).
+  (fun (Γ : context) (A : term) => forall T, [Γ,, T |- A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall T, [Γ,, T |- t⟨↑⟩ ▹ A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall T, [Γ,, T |- t⟨↑⟩ ▹h A⟨↑⟩])
+  (fun (Γ : context) (A t : term) => forall T, [Γ,, T |- t⟨↑⟩ ◃ A⟨↑⟩]).
   Proof.
   red.
   repeat match goal with |- _ × _ => split end.
-  all: intros Γ * Hty nt T.
+  all: intros Γ * Hty T.
   all: eapply algo_typing_wk in Hty.
-  all: specialize (Hty _ (@wk1 Γ nt T)).
-  all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ nt T)) ; refold.
+  all: specialize (Hty _ (@wk1 Γ T)).
+  all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ T)) ; refold.
   all: now eapply Hty.
   Qed.
 

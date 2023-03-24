@@ -89,7 +89,7 @@ Section NeutralConversion.
     all: subst P ; cbn.
     - intros.
       econstructor.
-      1: eapply redty_red; now destruct h as [??? [???]].
+      1: eapply redty_red; now destruct h as [??? [??]].
       1-2: reflexivity.
       econstructor. 
       2: now constructor.
@@ -126,7 +126,7 @@ Section NeutralConversion.
       + eapply convne_meta_conv.
         3: reflexivity.
         1: econstructor.
-        * replace (tProd _ _ _) with ((tProd na dom cod)⟨↑⟩) by
+        * replace (tProd _ _) with ((tProd dom cod)⟨↑⟩) by
             (cbn ; reflexivity).
           eapply algo_conv_shift.
           econstructor ; tea.
@@ -159,7 +159,7 @@ End NeutralConversion.
 Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : isType T') : Type :=
   match nfT, nfT' with
     | @UnivType s, @UnivType s' => s = s'
-    | @ProdType na A B, @ProdType na' A' B' => [Γ |- A' ≅ A] × [Γ,, vass na' A' |- B ≅ B']
+    | @ProdType A B, @ProdType A' B' => [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B']
     | NatType, NatType => True
     | NeType _, NeType _ => [Γ |- T ≅ T' : U]
     | _, _ => False
@@ -186,7 +186,7 @@ Proof.
     1: apply red.
     apply ty_ne_whne in ne.
     now constructor.
-  - destruct Hconv as [??? red].
+  - destruct Hconv as [?? red].
     eexists ; split.
     1: apply red.
     now constructor.
@@ -237,9 +237,9 @@ Proof.
   - rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
     remember (PiRedTyPack.pack ΠA ΠAad) as ΠA' eqn:Heq in *.
     clear ΠA ΠAad Heq.
-    destruct ΠA' as [na dom cod red], Hconv as [na' dom' cod' red'] ; cbn in *.
-    assert (T = tProd na dom cod) as HeqT by (apply red_whnf ; gen_typing). 
-    assert (T' = tProd na' dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
+    destruct ΠA' as [dom cod red], Hconv as [dom' cod' red'] ; cbn in *.
+    assert (T = tProd dom cod) as HeqT by (apply red_whnf ; gen_typing). 
+    assert (T' = tProd dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
     destruct nfT.
     1,3: congruence.
     2: subst ; exfalso ; gen_typing.
@@ -256,11 +256,11 @@ Proof.
       now unshelve now eapply escapeEq.
     }
     split ; tea.
-    replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
+    replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) dom') >> tRel ])
       by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-    replace cod' with (cod'[tRel 0 .: (wk1 (Γ := Γ) na' dom') >> tRel ])
+    replace cod' with (cod'[tRel 0 .: (wk1 (Γ := Γ) dom') >> tRel ])
       by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-    assert [ |-[ de ] Γ,, vass na' dom'].
+    assert [ |-[ de ] Γ,, dom'].
     {
       econstructor ; tea.
       eapply prod_ty_inv.
@@ -270,9 +270,9 @@ Proof.
     apply neuTerm.
     1: econstructor; reflexivity.
     2: econstructor.
-    all: econstructor.
-    1,3: econstructor ; [eassumption | now econstructor].
-    all: cbn ; renToWk ; now eapply typing_wk.
+    1,2: eapply wfTermConv.
+    2,4: eapply typing_wk; tea.
+    1,2: rewrite wk1_ren_on; constructor; tea; constructor.
   - destruct Hconv.
     assert (T' = tNat) as HeqT' by (eapply redtywf_whnf ; gen_typing).
     assert (T = tNat) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
@@ -309,27 +309,27 @@ Proof.
   now symmetry.
 Qed.
 
-Corollary red_ty_compl_prod_l Γ na A B T :
-  [Γ |- tProd na A B ≅ T] ->
-  ∑ na' A' B', [× [Γ |- T ⇒* tProd na' A' B'], [Γ |- A' ≅ A] & [Γ,, vass na' A' |- B ≅ B']].
+Corollary red_ty_compl_prod_l Γ A B T :
+  [Γ |- tProd A B ≅ T] ->
+  ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
 Proof.
   intros HT.
   pose proof HT as HT'.
   unshelve eapply red_ty_complete in HT as (T''&[? nfT]).
   2: econstructor.
-  assert [Γ |- tProd na A B ≅ T''] as Hconv by 
+  assert [Γ |- tProd A B ≅ T''] as Hconv by 
     (etransitivity ; [eassumption|now eapply RedConvTyC]).
   unshelve eapply ty_conv_inj in Hconv.
   1: constructor.
   1: assumption.
   destruct nfT, Hconv.
-  do 3 eexists ; split.
+  do 2 eexists ; split.
   all: eassumption.
 Qed.
 
-Corollary prod_ty_inj Γ na A B na' A' B' :
-  [Γ |- tProd na A B ≅ tProd na' A' B'] ->
-  [Γ |- A' ≅ A] × [Γ,, vass na' A' |- B ≅ B'].
+Corollary prod_ty_inj Γ A B  A' B' :
+  [Γ |- tProd A B ≅ tProd A' B'] ->
+  [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B'].
 Proof.
   intros Hty.
   unshelve eapply ty_conv_inj in Hty.
@@ -344,7 +344,7 @@ Section MoreSubst.
     [|- Γ ≅ Γ].
   Proof.
     induction 1.
-    all: constructor ; tea.
+    all: constructor; tea.
     now econstructor.
   Qed.
 
@@ -354,7 +354,7 @@ Section MoreSubst.
     [Δ' |-s σ⟨ρ⟩ : Γ].
   Proof.
     intros ?.
-    induction 1 as [|σ Γ na A].
+    induction 1 as [|σ Γ A].
     1: now econstructor.
     econstructor.
     - asimpl ; cbn in * ; asimpl.
@@ -367,13 +367,13 @@ Section MoreSubst.
       reflexivity.
   Qed.
 
-  Corollary well_subst_up (Γ Δ : context) na A σ :
+  Corollary well_subst_up (Γ Δ : context) A σ :
     [Δ |- A] ->
     [Δ |-s σ : Γ] ->
-    [Δ ,, vass na A |-s σ⟨↑⟩ : Γ].
+    [Δ ,, A |-s σ⟨↑⟩ : Γ].
   Proof.
     intros HA Hσ.
-    eapply subst_wk with (ρ := wk_step na A wk_id) in Hσ.
+    eapply subst_wk with (ρ := wk_step A wk_id) in Hσ.
     - eapply well_subst_ext ; [|eassumption].
       bsimpl.
       now reflexivity.
@@ -404,15 +404,15 @@ Section MoreSubst.
     now eapply TermRefl.
   Qed.
 
-  Theorem typing_subst1 Γ nt T :
+  Theorem typing_subst1 Γ T :
   (forall (t : term), [Γ |- t : T] ->
-    forall (A : term), [Γ,, vass nt T |- A] -> [Γ |- A[t..]]) ×
+    forall (A : term), [Γ,, T |- A] -> [Γ |- A[t..]]) ×
   (forall (t : term), [Γ |- t : T] ->
-    forall (A u : term), [Γ,, vass nt T |- u : A] -> [Γ |- u[t..] : A[t..]]) ×
+    forall (A u : term), [Γ,, T |- u : A] -> [Γ |- u[t..] : A[t..]]) ×
   (forall (t t' : term), [Γ |- t ≅ t' : T] ->
-    forall (A B : term), [Γ,, vass nt T |- A ≅ B] -> [Γ |- A[t..] ≅ B[t'..]]) ×
+    forall (A B : term), [Γ,, T |- A ≅ B] -> [Γ |- A[t..] ≅ B[t'..]]) ×
   (forall (t t' : term), [Γ |- t ≅ t' : T] ->
-    forall (A u v : term), [Γ,, vass nt T |- u ≅ v : A] -> [Γ |- u[t..] ≅ v[t'..] : A[t..]]).
+    forall (A u v : term), [Γ,, T |- u ≅ v : A] -> [Γ |- u[t..] ≅ v[t'..] : A[t..]]).
   Proof.
     repeat match goal with |- _ × _ => split end.
     all: intros * Ht * Hty.
@@ -424,24 +424,24 @@ Section MoreSubst.
   Qed.
 
 
-  Theorem typing_substmap1 Γ nt T :
-  (forall (t : term), [Γ ,, vass nt T |- t : T⟨↑⟩] ->
-    forall (A : term), [Γ,, vass nt T |- A] -> 
-      [Γ,, vass nt T |- A[t]⇑]) ×
-  (forall (t : term), [Γ ,, vass nt T |- t : T⟨↑⟩] ->
-    forall (A u : term), [Γ,, vass nt T |- u : A] -> 
-      [Γ,, vass nt T |- u[t]⇑ : A[t]⇑]) ×
-  (forall (t t' : term), [Γ ,, vass nt T |- t ≅ t' : T⟨↑⟩] ->
-    forall (A B : term), [Γ,, vass nt T |- A ≅ B] ->
-      [Γ,, vass nt T |- A[t]⇑ ≅ B[t']⇑]) ×
-  (forall (t t' : term), [Γ ,, vass nt T |- t ≅ t' : T⟨↑⟩] ->
-    forall (A u v : term), [Γ,, vass nt T |- u ≅ v : A] -> 
-      [Γ,, vass nt T |- u[t]⇑ ≅ v[t']⇑ : A[t]⇑]).
+  Theorem typing_substmap1 Γ T :
+  (forall (t : term), [Γ ,, T |- t : T⟨↑⟩] ->
+    forall (A : term), [Γ,, T |- A] -> 
+      [Γ,, T |- A[t]⇑]) ×
+  (forall (t : term), [Γ ,, T |- t : T⟨↑⟩] ->
+    forall (A u : term), [Γ,, T |- u : A] -> 
+      [Γ,, T |- u[t]⇑ : A[t]⇑]) ×
+  (forall (t t' : term), [Γ ,, T |- t ≅ t' : T⟨↑⟩] ->
+    forall (A B : term), [Γ,, T |- A ≅ B] ->
+      [Γ,, T |- A[t]⇑ ≅ B[t']⇑]) ×
+  (forall (t t' : term), [Γ ,, T |- t ≅ t' : T⟨↑⟩] ->
+    forall (A u v : term), [Γ,, T |- u ≅ v : A] -> 
+      [Γ,, T |- u[t]⇑ ≅ v[t']⇑ : A[t]⇑]).
   Proof.
     repeat match goal with |- _ × _ => split end.
     all: intros * Ht * Hty.
-    all: assert ([|- Γ,, vass nt T] × [|- Γ]) as [] by (split; repeat boundary).
-    all : assert (Hsubst : [Γ ,, vass nt T |-s ↑ >> tRel : Γ])
+    all: assert ([|- Γ,, T] × [|- Γ]) as [] by (split; repeat boundary).
+    all : assert (Hsubst : [Γ ,, T |-s ↑ >> tRel : Γ])
             by (change (?x >> ?y) with y⟨x⟩; eapply well_subst_up; [boundary| now eapply id_subst]).
     3-4: apply subst_refl in Hsubst.
     all: eapply typing_subst ; tea.
@@ -449,41 +449,39 @@ Section MoreSubst.
   Qed.
 
 
-  Lemma conv_well_subst1 (Γ : context) na na' A A' :
+  Lemma conv_well_subst1 (Γ : context) A A' :
     [Γ |- A] ->
     [Γ |- A'] ->
     [Γ |- A ≅ A'] ->
-    [Γ,, vass na A |-s tRel : Γ,, vass na' A'].
+    [Γ,, A |-s tRel : Γ,, A'].
   Proof.
     intros HA HA' Hconv.
     econstructor.
     - change (↑ >> tRel) with (tRel⟨↑⟩).
       eapply well_subst_up ; tea.
       now eapply id_subst ; gen_typing.
-    - renamify ; refold.
-      econstructor.
-      + now do 2 econstructor ; gen_typing.
-      + cbn ; refold.
-        renToWk.
-        eapply typing_wk.
-        all: gen_typing.
+    - refold.
+      eapply wfTermConv.
+      1: constructor; [gen_typing|now econstructor].
+      rewrite <- rinstInst'_term; do 2 erewrite <- wk1_ren_on; eapply typing_wk; tea.
+      gen_typing.
   Qed.
 
-  Theorem stability1 (Γ : context) na na' A A' :
+  Theorem stability1 (Γ : context) A A' :
     [Γ |- A] ->
     [Γ |- A'] ->
     [Γ |- A ≅ A'] ->
-    (forall (T : term), [Γ,, vass na' A' |-[de] T] -> [Γ,, vass na A |-[de] T])
-    × (forall (T t : term), [Γ,, vass na' A' |-[ de ] t : T] -> [Γ,, vass na A |-[de] t : T])
-    × (forall (T T' : term), [Γ,, vass na' A' |-[ de ] T ≅ T'] -> [Γ,, vass na A |-[de] T ≅ T'])
+    (forall (T : term), [Γ,, A' |-[de] T] -> [Γ,, A |-[de] T])
+    × (forall (T t : term), [Γ,, A' |-[ de ] t : T] -> [Γ,, A |-[de] t : T])
+    × (forall (T T' : term), [Γ,, A' |-[ de ] T ≅ T'] -> [Γ,, A |-[de] T ≅ T'])
     × (forall (T t u : term),
-          [Γ,, vass na' A' |-[ de ] t ≅ u : T] -> [Γ,, vass na A |-[de] t ≅ u : T]).
+          [Γ,, A' |-[ de ] t ≅ u : T] -> [Γ,, A |-[de] t ≅ u : T]).
   Proof.
     intros * ? ? Hconv.
-    eapply (conv_well_subst1 _ na na') in Hconv ; tea.
+    eapply (conv_well_subst1 _) in Hconv ; tea.
     pose proof (Hconv' := Hconv).
     apply subst_refl in Hconv'.
-    assert [|- Γ,, vass na A] by gen_typing.
+    assert [|- Γ,, A] by gen_typing.
     repeat match goal with |- _ × _ => split end.
     all: intros * Hty.
     all: eapply typing_subst in Hty ; tea.
@@ -498,7 +496,7 @@ Section Boundary.
   Lemma in_ctx_wf Γ n decl :
     [|- Γ] ->
     in_ctx Γ n decl ->
-    [Γ |- decl.(decl_type)].
+    [Γ |- decl].
   Proof.
     intros HΓ Hin.
     induction Hin.
@@ -506,7 +504,6 @@ Section Boundary.
       renToWk.
       now apply typing_wk.
     - inversion HΓ ; subst ; cbn in * ; refold.
-      destruct d ; cbn in *.
       renToWk.
       now eapply typing_wk.
   Qed.
@@ -568,17 +565,6 @@ Section Boundary.
         1: now symmetry.
         econstructor.
         now eapply prod_ty_inv.
-    - intros * ? _ ? ? ? ? ? [].
-      split ; tea.
-      econstructor.
-      1: eassumption.
-      econstructor.
-      2-3: econstructor.
-      1-2: eassumption.
-      eapply stability1.
-      3: econstructor.
-      1-3: eassumption.
-      now eapply prod_ty_inv.
     - intros * ? []; split; gen_typing.
     - intros * ? [] ? [] ? [] ? []; split.
       + now eapply typing_subst1.
@@ -707,9 +693,9 @@ Proof.
   eapply ctx_refl ; boundary.
 Qed.
 
-Lemma typing_eta' (Γ : context) na A B f :
-  [Γ |- f : tProd na A B] ->
-  [Γ,, vass na A |- eta_expand f : B].
+Lemma typing_eta' (Γ : context) A B f :
+  [Γ |- f : tProd A B] ->
+  [Γ,, A |- eta_expand f : B].
 Proof.
   intros Hf.
   eapply typing_eta ; tea.
@@ -728,20 +714,15 @@ Section Stability.
     induction 1 as [| * ? HA].
     - now econstructor.
     - assert [Γ |- A] by boundary.
-      assert [|- Γ,, vass na A] by
+      assert [|- Γ,, A] by
         (econstructor ; boundary).
       econstructor ; tea.
       + eapply well_subst_ext, well_subst_up ; tea.
         reflexivity.
-      + econstructor.
-        1: now econstructor ; [..|econstructor].
-        cbn ; renamify ; refold.
-        (* TODO: the following should work!
-          eapply typing_wk with (ρ := wk_step na A wk_id). *)
-        unshelve eapply typing_wk in HA.
-        2: apply wk1.
-        2: eassumption.
-        now setoid_rewrite (extRen_term _ _ wk1_ren) in HA.
+      + eapply wfTermConv.
+        1: econstructor; [gen_typing| now econstructor].
+        rewrite <- rinstInst'_term; do 2 erewrite <- wk1_ren_on.
+        now eapply typing_wk.
   Qed.
 
   Let PCon (Γ : context) := True.
@@ -768,14 +749,14 @@ Section Stability.
     all: try eassumption.
   Qed.
 
-  Corollary red_ty_compl_prod_r Γ na A B T :
-    [Γ |- T ≅ tProd na A B] ->
-    ∑ na' A' B', [× [Γ |- T ⇒* tProd na' A' B'], [Γ |- A ≅ A'] & [Γ,, vass na A |- B' ≅ B]].
+  Corollary red_ty_compl_prod_r Γ A B T :
+    [Γ |- T ≅ tProd A B] ->
+    ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A ≅ A'] & [Γ,, A |- B' ≅ B]].
   Proof.
     intros HT.
     symmetry in HT.
-    eapply red_ty_compl_prod_l in HT as (?&?&?&[? HA HB]).
-    do 3 eexists ; split ; tea.
+    eapply red_ty_compl_prod_l in HT as (?&?&[HA ? HB]).
+    do 2 eexists ; split ; tea.
     1: now symmetry.
     symmetry.
     eapply stability in HB.
@@ -835,7 +816,7 @@ Theorem subject_reduction_one Γ t t' A :
 Proof.
   intros Hty Hred.
   induction Hred in Hty, A |- *.
-  - apply termGen' in Hty as (?&((?&?&?&[-> Hty])&Heq)).
+  - apply termGen' in Hty as (?&((?&?&[-> Hty])&Heq)).
     apply termGen' in Hty as (?&((?&[->])&Heq')).
     eapply prod_ty_inj in Heq' as [? HeqB].
     econstructor.
@@ -843,18 +824,18 @@ Proof.
     etransitivity ; tea.
     eapply typing_subst1 ; tea.
     now econstructor.
-  - apply termGen' in Hty as (?&((?&?&?&[->])&Heq)).
+  - apply termGen' in Hty as (?&((?&?&[->])&Heq)).
     econstructor ; tea.
     econstructor.
     1: now eapply IHHred.
     refold ; gen_typing.
-  - apply termGen' in Hty as [? [[?[->]] Heq]].
+  - apply termGen' in Hty as [?[[->]?]].
     econstructor; tea.
     econstructor; tea.
     now eapply IHHred.
-  - apply termGen' in Hty as [? [[?[->]] Heq]].
+  - apply termGen' in Hty as [?[[->]?]].
     econstructor; tea; econstructor; tea.
-  - apply termGen' in Hty as [? [[?[-> ??? hsn]] Heq]].
+  - apply termGen' in Hty as [?[[-> ??? hsn] Heq]].
     econstructor; tea; econstructor; tea.
     now apply termGen' in hsn as [? [[]?]].
 Qed.

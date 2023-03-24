@@ -17,13 +17,13 @@ Section Weakenings.
       [Δ' ||-< l > (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]⟨ρ'⟩]) :
     [Δ ||-Π< l > A⟨ρ⟩].
   Proof.
-    destruct ΠA as[na dom cod];  cbn in *.
+    destruct ΠA as[dom cod];  cbn in *.
     assert (domRed' : forall Δ' (ρ' : Δ' ≤ Δ), [|- Δ'] -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]).
     {
       intros ? ρ' ?; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
       econstructor; now unshelve eapply domRed.
     }
-    set (cod' := cod⟨wk_up na dom ρ⟩).
+    set (cod' := cod⟨wk_up dom ρ⟩).
     assert (codRed' : forall Δ' a (ρ' : Δ' ≤ Δ) (h : [|- Δ']),
       [domRed' Δ' ρ' h | _ ||- a : _] -> [Δ' ||-< l > cod'[a .: ρ' >> tRel]]).
     {
@@ -32,11 +32,11 @@ Section Weakenings.
       econstructor; unshelve eapply codRed; [assumption|].
       irrelevance.
     }
-    exists na (dom ⟨ρ⟩) cod' domRed' codRed'.
-    + unfold cod'; change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
+    exists (dom ⟨ρ⟩) cod' domRed' codRed'.
+    + unfold cod'; change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
     + gen_typing.
-    + unfold cod'; set (ρ1 := wk_up na (dom) ρ); eapply wft_wk; gen_typing.
-    + unfold cod'; change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
+    + unfold cod'; set (ρ1 := wk_up (dom) ρ); eapply wft_wk; gen_typing.
+    + unfold cod'; change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
     + intros Δ' a b ρ' wfΔ' ???. 
       replace (cod'[b .: ρ' >> tRel]) with (cod[ b .: (ρ' ∘w ρ) >> tRel]) by (unfold cod'; now bsimpl).
       subst cod'; unshelve epose (codExt Δ' a b (ρ' ∘w ρ) wfΔ' _ _ _); irrelevance.
@@ -88,11 +88,11 @@ Section Weakenings.
       2: now apply ty_ne_wk, ne.
       1: gen_typing.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
-    - intros * ihdom ihcod * [na dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
-      exists na (dom⟨ρ⟩) (cod⟨wk_up na dom ρ⟩). cbn in *.
-      + change (tProd ?na _ _) with ((tProd na dom cod)⟨ρ⟩);  gen_typing.
-      + change (tProd na _ _) with ((tProd na dom cod)⟨ρ⟩).
-        replace (tProd _ _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩) by now bsimpl.
+    - intros * ihdom ihcod * [dom cod]. rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
+      exists (dom⟨ρ⟩) (cod⟨wk_up dom ρ⟩). cbn in *.
+      + change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
+      + change (tProd dom⟨_⟩ _) with ((tProd dom cod)⟨ρ⟩).
+        replace (tProd _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩) by now bsimpl.
         eapply convty_wk; assumption.
       + intros; irrelevanceRefl.
         unshelve eapply ihdom; try eassumption; eapply domRed.
@@ -113,7 +113,7 @@ Section Weakenings.
     [Δ ||-Π u⟨ρ⟩ : A⟨ρ⟩ | PiRedTyPack.toPiRedTy ΠA' ].
   Proof.
     intros [t].
-    exists (t⟨ρ⟩); try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
+    exists (t⟨ρ⟩); try change (tProd _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
     + now eapply redtmwf_wk.
     + apply isFun_ren; assumption.
     + now apply tm_nf_wk.
@@ -199,8 +199,8 @@ Section Weakenings.
       1,2: apply tm_ne_wk; assumption.
       now eapply convneu_wk.
     - intros ??? ΠA ihdom ihcod t u ? ρ ? [redL redR].
-      rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
-      unshelve econstructor; try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
+      rewrite wkΠ_eq. set (X := wkΠ' _ _).
+      unshelve econstructor; try change (tProd _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
       1,2: now eapply wkΠTerm.
       + now eapply convtm_wk.
       + intros ? a ρ' ? ?. 

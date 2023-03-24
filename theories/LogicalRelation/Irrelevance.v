@@ -295,8 +295,8 @@ Proof.
   - destruct lrA' as [| | ? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
     pose (PA := PiRedTyPack.pack ΠA HAad).
     pose (PA' := PiRedTyPack.pack ΠA' HAad').
-    destruct he as [na0 dom0 cod0 ?? domRed codRed], ΠA' as [na1 dom1 cod1];
-    assert (tProd na0 dom0 cod0 = tProd na1 dom1 cod1) as ePi
+    destruct he as [dom0 cod0 ?? domRed codRed], ΠA' as [dom1 cod1];
+    assert (tProd dom0 cod0 = tProd dom1 cod1) as ePi
     by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
     eapply (ΠIrrelevanceLRPack PA PA').
@@ -323,7 +323,7 @@ Proof.
   - eapply LRne_. exact neA.
   - cbn in *. eapply LRPi'. unshelve econstructor.
     6: eassumption.
-    3,4,5: tea.
+    4,5,6: tea.
     + exact IHdom.
     + intros Δ a ρ tΔ ra. eapply IHcod.
       destruct (LRIrrelevantPreds IH Δ (dom⟨ρ⟩) (dom⟨ρ⟩)

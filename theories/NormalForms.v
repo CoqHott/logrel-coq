@@ -6,8 +6,8 @@ From LogRel Require Import Utils BasicAst Context.
 
 Inductive whnf : term -> Type :=
   | whnf_tSort {s} : whnf (tSort s)
-  | whnf_tProd {na A B} : whnf (tProd na A B)
-  | whnf_tLambda {na A t} : whnf (tLambda na A t)
+  | whnf_tProd {A B} : whnf (tProd A B)
+  | whnf_tLambda {A t} : whnf (tLambda A t)
   | whnf_tNat : whnf tNat
   | whnf_tZero : whnf tZero
   | whnf_tSucc {n} : whnf (tSucc n)
@@ -30,12 +30,12 @@ Proof.
   inversion 1.
 Qed.
 
-Lemma nePi na A B : whne (tProd na A B) -> False.
+Lemma nePi A B : whne (tProd A B) -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma neLambda na A t : whne (tLambda na A t) -> False.
+Lemma neLambda A t : whne (tLambda A t) -> False.
 Proof.
   inversion 1.
 Qed.
@@ -46,7 +46,7 @@ Qed.
 
 Inductive isType : term -> Type :=
   | UnivType {s} : isType (tSort s)
-  | ProdType {na A B} : isType (tProd na A B)
+  | ProdType { A B} : isType (tProd A B)
   | NatType : isType tNat
   | NeType {A}  : whne A -> isType A.
 
@@ -56,7 +56,7 @@ Inductive isPosType : term -> Type :=
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
-  | LamFun {na A t} : isFun (tLambda na A t)
+  | LamFun {A t} : isFun (tLambda A t)
   | NeFun  {f} : whne f -> isFun f.
 
 Definition isPosType_isType t (i : isPosType t) : isType t :=

@@ -15,10 +15,10 @@ Context `{GenericTypingProperties}.
 Set Printing Primitive Projection Parameters.
 
 Section AppTerm.
-  Context {Γ t u nF F G l l' l''}
-    (hΠ : [Γ ||-Π<l> tProd nF F G])
+  Context {Γ t u F G l l' l''}
+    (hΠ : [Γ ||-Π<l> tProd F G])
     {RF : [Γ ||-<l'> F]}
-    (Rt : [Γ ||-<l> t : tProd nF F G | LRPi' (normRedΠ0 hΠ)])
+    (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)])
     (Ru : [Γ ||-<l'> u : F | RF])
     (RGu : [Γ ||-<l''> G[u..]]).
 
@@ -46,10 +46,10 @@ Section AppTerm.
 
 End AppTerm.
 
-Lemma appTerm {Γ t u nF F G l}
-  (RΠ : [Γ ||-<l> tProd nF F G])
+Lemma appTerm {Γ t u F G l}
+  (RΠ : [Γ ||-<l> tProd F G])
   {RF : [Γ ||-<l> F]}
-  (Rt : [Γ ||-<l> t : tProd nF F G | RΠ])
+  (Rt : [Γ ||-<l> t : tProd F G | RΠ])
   (Ru : [Γ ||-<l> u : F | RF])
   (RGu : [Γ ||-<l> G[u..]]) : 
   [Γ ||-<l> tApp t u : G[u..]| RGu].
@@ -57,14 +57,15 @@ Proof.
   unshelve eapply appTerm0.
   7:irrelevance.
   3: exact (invLRΠ RΠ).
-  all: eassumption.
+  all: tea.
+  irrelevance.
 Qed.
 
 
-Lemma appcongTerm {Γ t t' u u' nF F G l l'}
-  (RΠ : [Γ ||-<l> tProd nF F G]) 
+Lemma appcongTerm {Γ t t' u u' F G l l'}
+  (RΠ : [Γ ||-<l> tProd F G]) 
   {RF : [Γ ||-<l'> F]}
-  (Rtt' : [Γ ||-<l> t ≅ t' : tProd nF F G | RΠ])
+  (Rtt' : [Γ ||-<l> t ≅ t' : tProd F G | RΠ])
   (Ru : [Γ ||-<l'> u : F | RF])
   (Ru' : [Γ ||-<l'> u' : F | RF])
   (Ruu' : [Γ ||-<l'> u ≅ u' : F | RF ])
@@ -73,11 +74,11 @@ Lemma appcongTerm {Γ t t' u u' nF F G l l'}
     [Γ ||-<l'> tApp t u ≅ tApp t' u' : G[u..] | RGu].
 Proof.
   set (hΠ := invLRΠ RΠ); pose (RΠ' := LRPi' (normRedΠ0 hΠ)).
-  assert [Γ ||-<l> t ≅ t' : tProd nF F G | RΠ'] as [Rt Rt' ? eqApp] by irrelevance.
+  assert [Γ ||-<l> t ≅ t' : tProd F G | RΠ'] as [Rt Rt' ? eqApp] by irrelevance.
   set (h := invLRΠ _) in hΠ.
   epose proof (e := redtywf_whnf (PiRedTyPack.red h) whnf_tProd); 
   symmetry in e; injection e; clear e; 
-  destruct h as [??????? domRed codRed codExt] ; clear RΠ Rtt'; 
+  destruct h as [?????? domRed codRed codExt] ; clear RΠ Rtt'; 
   intros; cbn in *; subst. 
   assert (wfΓ : [|-Γ]) by gen_typing.
   assert [Γ ||-<l> u' : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ] by irrelevance.

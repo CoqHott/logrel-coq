@@ -17,7 +17,7 @@ Section SimpleArrValidity.
     [Γ ||-v<l> arr F G | VΓ].
   Proof.
     unshelve eapply PiValid; tea.
-    replace G⟨↑⟩ with G⟨@wk1 Γ anDummy F⟩ by now bsimpl.
+    replace G⟨↑⟩ with G⟨@wk1 Γ F⟩ by now bsimpl.
     now eapply wk1ValidTy.
   Qed.
 
@@ -32,11 +32,11 @@ Section SimpleArrValidity.
   Proof.
     eapply irrelevanceEq.
     unshelve eapply PiCong; tea. 
-    + replace G⟨↑⟩ with G⟨@wk1 Γ anDummy F⟩ by now bsimpl.
+    + replace G⟨↑⟩ with G⟨@wk1 Γ F⟩ by now bsimpl.
       now eapply wk1ValidTy.
-    + replace G'⟨↑⟩ with G'⟨@wk1 Γ anDummy F'⟩ by now bsimpl.
+    + replace G'⟨↑⟩ with G'⟨@wk1 Γ F'⟩ by now bsimpl.
       now eapply wk1ValidTy.
-    + replace G'⟨↑⟩ with G'⟨@wk1 Γ anDummy F⟩ by now bsimpl.
+    + replace G'⟨↑⟩ with G'⟨@wk1 Γ F⟩ by now bsimpl.
       eapply irrelevanceEq'.
       2: now eapply wk1ValidTyEq.
       now bsimpl.

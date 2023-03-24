@@ -126,7 +126,7 @@ Section snocValid.
       eqHead : [ Δ ||-< l > σ var_zero ≅ σ' var_zero : A[↑ >> σ] | validTy vA wfΔ (validTail vσ) ]
     }.
 
-  Definition snocVPack na := Build_VPack@{u (* max(u,k) *)} (Γ ,, vass na A) snocValidSubst (@snocEqSubst).
+  Definition snocVPack := Build_VPack@{u (* max(u,k) *)} (Γ ,, A) snocValidSubst (@snocEqSubst).
 End snocValid.
 
 Arguments snocValidSubst : clear implicits.
@@ -145,11 +145,11 @@ Inductive VR@{i j k l} `{ta : tag}
   `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
   `{RedType ta} `{!TypeNf ta} `{!TypeNe ta} `{RedTerm ta} `{!TermNf ta} `{!TermNe ta} : VRel@{k l} :=
   | VREmpty : VR ε emptyValidSubst@{k} emptyEqSubst@{k}
-  | VRSnoc : forall {Γ na A l}
+  | VRSnoc : forall {Γ A l}
     (VΓ : VPack@{k} Γ)
     (VΓad : VPackAdequate@{k l} VR VΓ)
     (VA : typeValidity@{k i j k l} Γ VΓ l A (*[ VΓ | Γ ||-v< l > A ]*)),
-    VR (Γ ,, vass na A) (snocValidSubst Γ VΓ A l VA) (snocEqSubst Γ VΓ A l VA).
+    VR (Γ ,, A) (snocValidSubst Γ VΓ A l VA) (snocEqSubst Γ VΓ A l VA).
 
 
 Set Elimination Schemes.
@@ -166,10 +166,10 @@ Section MoreDefs.
 
   Definition validEmpty@{i j k l} : [VR@{i j k l}| ||-v ε ] := Build_VAdequate emptyVPack VREmpty.
 
-  Definition validSnoc@{i j k l} {Γ} na {A l}
+  Definition validSnoc@{i j k l} {Γ} {A l}
     (VΓ : [VR@{i j k l}| ||-v Γ]) (VA : [Γ ||-v< l > A | VΓ])
-    : [||-v Γ ,, vass na A ] :=
-    Build_VAdequate (snocVPack Γ VΓ A l VA na) (VRSnoc VΓ VΓ VA).
+    : [||-v Γ ,, A ] :=
+    Build_VAdequate (snocVPack Γ VΓ A l VA) (VRSnoc VΓ VΓ VA).
 
   Record termValidity@{i j k l} {Γ l} {t A : term}
     {VΓ : [VR@{i j k l}| ||-v Γ]}
@@ -253,8 +253,8 @@ Section Inductions.
   Theorem VR_rect
     (P : forall {Γ vSubst vSubstExt}, VR Γ vSubst vSubstExt -> Type)
     (hε : P VREmpty)
-    (hsnoc : forall {Γ na A l VΓ VΓad VA},
-      P VΓad -> P (VRSnoc (Γ := Γ) (na := na) (A := A) (l := l) VΓ VΓad VA)) :
+    (hsnoc : forall {Γ A l VΓ VΓad VA},
+      P VΓad -> P (VRSnoc (Γ := Γ) (A := A) (l := l) VΓ VΓad VA)) :
     forall {Γ vSubst vSubstExt} (VΓ : VR Γ vSubst vSubstExt), P VΓ.
   Proof.
     fix ih 4; destruct VΓ; [exact hε | apply hsnoc; apply ih].
@@ -263,7 +263,7 @@ Section Inductions.
   Theorem validity_rect
     (P : forall {Γ : context}, [||-v Γ] -> Type)
     (hε : P validEmpty)
-    (hsnoc : forall {Γ na A l} (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), P VΓ -> P (validSnoc na VΓ VA)) :
+    (hsnoc : forall {Γ A l} (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), P VΓ -> P (validSnoc VΓ VA)) :
     forall {Γ : context} (VΓ : [||-v Γ]), P VΓ.
   Proof.
     intros Γ [[s eq] VΓad]; revert Γ s eq VΓad.
@@ -275,8 +275,8 @@ Section Inductions.
   Lemma invValidity {Γ} (VΓ : [||-v Γ]) :
     match Γ as Γ return [||-v Γ] -> Type with
     | nil => fun VΓ₀ => VΓ₀ = validEmpty
-    | ({| decl_name := na ; decl_type := A|} :: Γ)%list => fun VΓ₀ =>
-      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc na VΓ VA
+    | (A :: Γ)%list => fun VΓ₀ =>
+      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc VΓ VA
     end VΓ.
   Proof.
     pattern Γ, VΓ. apply validity_rect.
@@ -287,8 +287,8 @@ Section Inductions.
   Lemma invValidityEmpty (VΓ : [||-v ε]) : VΓ = validEmpty.
   Proof. apply (invValidity VΓ). Qed.
 
-  Lemma invValiditySnoc {Γ na A} (VΓ₀ : [||-v Γ ,, vass na A ]) :
-      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc na VΓ VA.
+  Lemma invValiditySnoc {Γ A} (VΓ₀ : [||-v Γ ,, A ]) :
+      ∑ l (VΓ : [||-v Γ]) (VA : [Γ ||-v< l > A | VΓ]), VΓ₀ = validSnoc VΓ VA.
   Proof. apply (invValidity VΓ₀). Qed.
 
 End Inductions.

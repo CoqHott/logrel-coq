@@ -5,8 +5,8 @@ Unset Elimination Schemes.
 
 Inductive snf (r : term) : Type :=
   | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
-  | snf_tProd {na A B} : [ r ⇒* tProd na A B ] -> snf A -> snf B -> snf r
-  | snf_tLambda {na A t} : [ r ⇒* tLambda na A t ] -> snf A -> snf t -> snf r
+  | snf_tProd {A B} : [ r ⇒* tProd A B ] -> snf A -> snf B -> snf r
+  | snf_tLambda {A t} : [ r ⇒* tLambda A t ] -> snf A -> snf t -> snf r
   | snf_tNat : [ r ⇒* tNat ] -> snf r
   | snf_tZero : [ r ⇒* tZero ] -> snf r
   | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
@@ -73,11 +73,11 @@ Qed.
 
 Inductive isSNType : term -> Type :=
   | UnivType {s} : isSNType (tSort s)
-  | ProdType {na A B} : snf A -> snf B -> isSNType (tProd na A B)
+  | ProdType {A B} : snf A -> snf B -> isSNType (tProd A B)
   | NeType {A}  : sne A -> isSNType A.
 
 Inductive isSNFun : term -> Type :=
-  | LamFun {na A t} : snf A -> snf t -> isSNFun (tLambda na A t)
+  | LamFun {A t} : snf A -> snf t -> isSNFun (tLambda A t)
   | NeFun  {f} : sne f -> isSNFun f.
 
 Lemma isSNType_snf t : isSNType t -> snf t.
@@ -126,10 +126,10 @@ Section RenSnf.
   + intros r s Hr ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tSort; eassumption.
-  + intros r na A B Hr HA IHA HB IHB ρ.
+  + intros r A B Hr HA IHA HB IHB ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tProd; eauto.
-  + intros r na A t Hr HA IHA Ht IHt ρ.
+  + intros r A t Hr HA IHA Ht IHt ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tLambda; eauto.
   + intros r Hr ρ.

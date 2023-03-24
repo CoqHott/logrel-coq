@@ -123,8 +123,8 @@ Section Fundamental.
   + constructor.
   Qed.
 
-  Lemma FundConCons (Γ : context) (na : aname) (A : term)
-  (wfΓ : [ |-[ de ] Γ]) (fΓ : FundCon Γ) (tA : [Γ |-[ de ] A]) (fA : FundTy Γ A) : FundCon (Γ,, vass na A).
+  Lemma FundConCons (Γ : context) (A : term)
+  (wfΓ : [ |-[ de ] Γ]) (fΓ : FundCon Γ) (tA : [Γ |-[ de ] A]) (fA : FundTy Γ A) : FundCon (Γ,, A).
   Proof.
     destruct fA as [ VΓ VA ].
     eapply validSnoc. exact VA.
@@ -142,10 +142,10 @@ Section Fundamental.
         cbn; eapply redtywf_refl; gen_typing.
   Qed.
 
-  Lemma FundTyPi (Γ : context) (na : aname) (F G : term)
+  Lemma FundTyPi (Γ : context) (F G : term)
     (tF : [Γ |-[ de ] F]) (fF : FundTy Γ F)
-    (tG : [Γ,, vass na F |-[ de ] G]) (fG : FundTy (Γ,, vass na F) G)
-    : FundTy Γ (tProd na F G).
+    (tG : [Γ,, F |-[ de ] G]) (fG : FundTy (Γ,, F) G)
+    : FundTy Γ (tProd F G).
   Proof.
     destruct fF as [ VΓ VF ]. destruct fG as [ VΓF VG ].
     econstructor.
@@ -166,27 +166,26 @@ Section Fundamental.
       eapply UnivEqEq. exact (RAext _ _ _ wfΔ vσ vσ' vσσ').
   Qed.
 
-  Lemma FundTmVar : forall (Γ : context) (n : nat) (decl : context_decl),
+  Lemma FundTmVar : forall (Γ : context) (n : nat) decl,
     [ |-[ de ] Γ] -> FundCon Γ ->
-    in_ctx Γ n decl -> FundTm Γ (decl_type decl) (tRel n).
+    in_ctx Γ n decl -> FundTm Γ decl (tRel n).
   Proof.
     intros Γ n d wfΓ FΓ hin; induction hin;
-      destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ;
-      destruct d as [nA A]; cbn.
-    - renToWk; rewrite <- (wk1_ren_on Γ nA A A).
+      destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ.
+    - renToWk; rewrite <- (wk1_ren_on Γ d d).
       eexists _ _; unshelve eapply var0Valid; tea.
       now eapply embValidTyOne.
-    - renToWk; rewrite <- (wk1_ren_on Γ d'.(decl_name) d'.(decl_type) A).
+    - renToWk; rewrite <- (wk1_ren_on Γ d' d).
       destruct (IHhin (boundary_ctx_ctx wfΓ) VΓ); cbn in *.
-      econstructor. set (ρ := wk1 _ _).
+      econstructor. set (ρ := wk1 _).
       replace (tRel _) with (tRel n)⟨ρ⟩ by (unfold ρ; now bsimpl).
       unshelve eapply wk1ValidTm; cycle 1; tea; now eapply irrelevanceValidity.
   Qed.
 
-  Lemma FundTmProd : forall (Γ : context) (na : aname) (A B : term),
+  Lemma FundTmProd : forall (Γ : context) (A B : term),
     [Γ |-[ de ] A : U] -> FundTm Γ U A ->
-    [Γ,, vass na A |-[ de ] B : U] ->
-    FundTm (Γ,, vass na A) U B -> FundTm Γ U (tProd na A B).
+    [Γ,, A |-[ de ] B : U] ->
+    FundTm (Γ,, A) U B -> FundTm Γ U (tProd A B).
   Proof.
     intros * ? [] ? []; econstructor.
     eapply PiValidU; irrValid.
@@ -196,20 +195,20 @@ Section Fundamental.
     all:tea.
   Qed.
 
-  Lemma FundTmLambda : forall (Γ : context) (na : aname) (A B t : term),
+  Lemma FundTmLambda : forall (Γ : context) (A B t : term),
     [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ,, vass na A |-[ de ] t : B] ->
-    FundTm (Γ,, vass na A) B t -> FundTm Γ (tProd na A B) (tLambda na A t).
+    [Γ,, A |-[ de ] t : B] ->
+    FundTm (Γ,, A) B t -> FundTm Γ (tProd A B) (tLambda A t).
   Proof.
     intros * ?[]?[]; econstructor.
     eapply lamValid; irrValid.
     Unshelve. all: irrValid.
   Qed.
 
-  Lemma FundTmApp : forall (Γ : context) (na : aname) (f a A B : term),
-    [Γ |-[ de ] f : tProd na A B] ->
-    FundTm Γ (tProd na A B) f ->
+  Lemma FundTmApp : forall (Γ : context) (f a A B : term),
+    [Γ |-[ de ] f : tProd A B] ->
+    FundTm Γ (tProd A B) f ->
     [Γ |-[ de ] a : A] -> FundTm Γ A a -> FundTm Γ B[a..] (tApp f a).
   Proof.
     intros * ?[]?[]; econstructor.
@@ -226,13 +225,13 @@ Section Fundamental.
     Unshelve. all: tea.
   Qed.
 
-  Lemma FundTyEqPiCong : forall (Γ : context) (na nb : aname) (A B C D : term),
+  Lemma FundTyEqPiCong : forall (Γ : context) (A B C D : term),
     [Γ |-[ de ] A ] ->
     FundTy Γ A ->
     [Γ |-[ de ] A ≅ B] ->
     FundTyEq Γ A B ->
-    [Γ,, vass na A |-[ de ] C ≅ D] ->
-    FundTyEq (Γ,, vass na A) C D -> FundTyEq Γ (tProd na A C) (tProd nb B D).
+    [Γ,, A |-[ de ] C ≅ D] ->
+    FundTyEq (Γ,, A) C D -> FundTyEq Γ (tProd A C) (tProd B D).
   Proof.
     intros * ?[]?[]?[]; econstructor.
     - eapply PiValid. eapply irrelevanceLift; tea; irrValid.
@@ -272,27 +271,28 @@ Section Fundamental.
     now eapply univEqValid.
   Qed.
 
-  Lemma FundTmEqBRed : forall (Γ : context) (na : aname) (a t A B : term),
+  Lemma FundTmEqBRed : forall (Γ : context) (a t A B : term),
     [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ,, vass na A |-[ de ] t : B] ->
-    FundTm (Γ,, vass na A) B t ->
+    [Γ,, A |-[ de ] t : B] ->
+    FundTm (Γ,, A) B t ->
     [Γ |-[ de ] a : A] ->
-    FundTm Γ A a -> FundTmEq Γ B[a..] (tApp (tLambda na A t) a) t[a..].
+    FundTm Γ A a -> FundTmEq Γ B[a..] (tApp (tLambda A t) a) t[a..].
   Proof.
     intros * ?[]?[]?[]; econstructor.
     - eapply appValid. eapply lamValid. irrValid.
-    - unshelve epose (substSTm _ _ _).
-      7,9-13: irrValid.
-    - unshelve epose (betaValid VA _ _ _). 3,6,7,8:irrValid.
+    - unshelve epose (substSTm _ _).
+      8-12: irrValid.
+      tea.
+    - unshelve epose (betaValid VA _ _ _). 2,5-7:irrValid.
       Unshelve. all: tea; try irrValid.
   Qed.
 
-  Lemma FundTmEqPiCong : forall (Γ : context) (na nb : aname) (A B C D : term),
+  Lemma FundTmEqPiCong : forall (Γ : context) (A B C D : term),
     [Γ |-[ de ] A : U] -> FundTm Γ U A ->
     [Γ |-[ de ] A ≅ B : U] -> FundTmEq Γ U A B ->
-    [Γ,, vass na A |-[ de ] C ≅ D : U] -> FundTmEq (Γ,, vass na A) U C D ->
-    FundTmEq Γ U (tProd na A C) (tProd nb B D).
+    [Γ,, A |-[ de ] C ≅ D : U] -> FundTmEq (Γ,, A) U C D ->
+    FundTmEq Γ U (tProd A C) (tProd B D).
   Proof.
     intros * ?[]?[]?[].
     assert (VA' : [Γ ||-v<one> A | VΓ]) by now eapply univValid.
@@ -310,9 +310,10 @@ Section Fundamental.
       + eapply irrelevanceLift; irrValid.
       + eapply irrelevanceTmLift; irrValid.
     - unshelve epose (PiCongTm _ _ _ _ _ _ _ _ _ _ _).
-      19: irrValid.
-      1: tea.
-      1-4,7,9,10: irrValid.
+      16: irrValid.
+      2: tea.
+      2,3,8: irrValid.
+      all: try irrValid.
       + now eapply univValid.
       + eapply irrelevanceLift; irrValid.
       + eapply irrelevanceTmLift; irrValid.
@@ -322,8 +323,8 @@ Section Fundamental.
       unshelve eapply univValid; cycle 1; try irrValid.
   Qed.
 
-  Lemma FundTmEqAppCong : forall (Γ : context) (na : aname) (a b f g A B : term),
-    [Γ |-[ de ] f ≅ g : tProd na A B] -> FundTmEq Γ (tProd na A B) f g ->
+  Lemma FundTmEqAppCong : forall (Γ : context) (a b f g A B : term),
+    [Γ |-[ de ] f ≅ g : tProd A B] -> FundTmEq Γ (tProd A B) f g ->
     [Γ |-[ de ] a ≅ b : A] -> FundTmEq Γ A a b ->
     FundTmEq Γ B[a..] (tApp f a) (tApp g b).
   Proof.
@@ -337,15 +338,15 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
-  Lemma FundTmEqFunExt : forall (Γ : context) (na nb : aname) (f g A B : term),
+  Lemma FundTmEqFunExt : forall (Γ : context) (f g A B : term),
     [Γ |-[ de ] A] -> FundTy Γ A ->
-    [Γ |-[ de ] f : tProd na A B] -> FundTm Γ (tProd na A B) f ->
-    [Γ |-[ de ] g : tProd nb A B] -> FundTm Γ (tProd nb A B) g ->
-    [Γ,, vass na A |-[ de ] tApp (f⟨↑⟩) (tRel 0) ≅ tApp (g⟨↑⟩) (tRel 0) : B] -> FundTmEq (Γ,, vass na A) B (tApp (f⟨↑⟩) (tRel 0)) (tApp (g⟨↑⟩) (tRel 0)) ->
-    FundTmEq Γ (tProd na A B) f g.
+    [Γ |-[ de ] f : tProd A B] -> FundTm Γ (tProd A B) f ->
+    [Γ |-[ de ] g : tProd A B] -> FundTm Γ (tProd A B) g ->
+    [Γ,, A |-[ de ] tApp (f⟨↑⟩) (tRel 0) ≅ tApp (g⟨↑⟩) (tRel 0) : B] -> FundTmEq (Γ,, A) B (tApp (f⟨↑⟩) (tRel 0)) (tApp (g⟨↑⟩) (tRel 0)) ->
+    FundTmEq Γ (tProd A B) f g.
   Proof.
     intros * ?[]?[VΓ0 VA0]?[]?[].
-    assert [Γ ||-v< one > g : tProd na A B | VΓ0 | VA0].
+    assert [Γ ||-v< one > g : tProd A B | VΓ0 | VA0].
     1:{
       eapply conv. 
       2: irrValid.
@@ -420,13 +421,13 @@ Section Fundamental.
     Unshelve. tea.
   Qed.
 
-  Lemma FundTmNatElim : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmNatElim : forall (Γ : context) (P hz hs n : term),
+    [Γ,, tNat |-[ de ] P] ->
+    FundTy (Γ,, tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     [Γ |-[ de ] n : tNat] ->
     FundTm Γ tNat n -> FundTm Γ P[n..] (tNatElim P hz hs n).
   Proof.
@@ -445,29 +446,29 @@ Section Fundamental.
     Unshelve. all: tea.
   Qed.
 
-  Lemma FundTmEqNatElimCong : forall (Γ : list context_decl) (nN : aname)
+  Lemma FundTmEqNatElimCong : forall (Γ : context)
       (P P' hz hz' hs hs' n n' : term),
-    [Γ,, vass nN tNat |-[ de ] P ≅ P'] ->
-    FundTyEq (Γ,, vass nN tNat) P P' ->
+    [Γ,, tNat |-[ de ] P ≅ P'] ->
+    FundTyEq (Γ,, tNat) P P' ->
     [Γ |-[ de ] hz ≅ hz' : P[tZero..]] ->
     FundTmEq Γ P[tZero..] hz hz' ->
-    [Γ |-[ de ] hs ≅ hs' : elimSuccHypTy nN P] ->
-    FundTmEq Γ (elimSuccHypTy nN P) hs hs' ->
+    [Γ |-[ de ] hs ≅ hs' : elimSuccHypTy P] ->
+    FundTmEq Γ (elimSuccHypTy P) hs hs' ->
     [Γ |-[ de ] n ≅ n' : tNat] ->
     FundTmEq Γ tNat n n' ->
     FundTmEq Γ P[n..] (tNatElim P hz hs n) (tNatElim P' hz' hs' n').
   Proof.
     intros * ?[? VP0 VP0']?[VΓ0]?[]?[].
     pose (VN := natValid (l:=one) VΓ0).
-    assert (VP' : [ _ ||-v<one> P' | validSnoc nN VΓ0 VN]) by irrValid. 
-    assert [Γ ||-v< one > hz' : P'[tZero..] | VΓ0 | substS nN VP' (zeroValid VΓ0)]. 1:{
+    assert (VP' : [ _ ||-v<one> P' | validSnoc VΓ0 VN]) by irrValid. 
+    assert [Γ ||-v< one > hz' : P'[tZero..] | VΓ0 | substS VP' (zeroValid VΓ0)]. 1:{
       eapply conv. 2: irrValid.
       eapply substSEq. 2,3: irrValid.
       1: eapply reflValidTy.
       2: eapply reflValidTm.
       all: eapply zeroValid.
     }
-    assert [Γ ||-v< one > hs' : elimSuccHypTy nN P' | VΓ0 | elimSuccHypTyValid VΓ0 VP']. 1:{
+    assert [Γ ||-v< one > hs' : elimSuccHypTy P' | VΓ0 | elimSuccHypTyValid VΓ0 VP']. 1:{
       eapply conv. 2: irrValid.
       eapply elimSuccHypTyCongValid; irrValid.
     } 
@@ -485,13 +486,13 @@ Section Fundamental.
     1: unshelve eapply substS; try irrValid.
   Qed.
 
-  Lemma FundTmEqNatElimZero : forall (Γ : list context_decl) (nN : aname) (P hz hs : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmEqNatElimZero : forall (Γ : context) (P hz hs : term),
+    [Γ,, tNat |-[ de ] P] ->
+    FundTy (Γ,, tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     FundTmEq Γ P[tZero..] (tNatElim P hz hs tZero) hz.
   Proof.
     intros * ?[]?[]?[]; unshelve econstructor; tea.
@@ -501,13 +502,13 @@ Section Fundamental.
     Unshelve. irrValid.
   Qed.
 
-  Lemma FundTmEqNatElimSucc : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmEqNatElimSucc : forall (Γ : context) (P hz hs n : term),
+    [Γ,, tNat |-[ de ] P] ->
+    FundTy (Γ,, tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     [Γ |-[ de ] n : tNat] ->
     FundTm Γ tNat n ->
     FundTmEq Γ P[(tSucc n)..] (tNatElim P hz hs (tSucc n))
@@ -576,10 +577,10 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
     FundSubst Γ Δ wfΓ σ.
   Proof.
     intros HΔ.
-    induction 1 as [|σ Δ na A Hσ IH Hσ0].
+    induction 1 as [|σ Δ A Hσ IH Hσ0].
     - exists validEmpty.
       now constructor.
-    - inversion HΔ as [|??? HΔ' HA] ; subst ; clear HΔ ; refold.
+    - inversion HΔ as [|?? HΔ' HA] ; subst ; clear HΔ ; refold.
       destruct IH ; tea.
       apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0]].
       cbn in *.
@@ -605,11 +606,11 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
     FundSubstConv Γ Δ wfΓ σ σ'.
   Proof.
     intros HΔ.
-    induction 1 as [|σ τ Δ na A Hσ IH Hσ0].
+    induction 1 as [|σ τ Δ A Hσ IH Hσ0].
     - unshelve econstructor.
       1: eapply validEmpty.
       all: now econstructor.
-    - inversion HΔ as [|??? HΔ' HA] ; subst ; clear HΔ ; refold.
+    - inversion HΔ as [|?? HΔ' HA] ; subst ; clear HΔ ; refold.
       destruct IH ; tea.
       apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0] [redτ0] [redστ0]] ; cbn in *.
       clear validTyExt validTmExt validTmExt0.

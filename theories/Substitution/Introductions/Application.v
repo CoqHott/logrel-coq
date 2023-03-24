@@ -12,11 +12,11 @@ Set Printing Primitive Projection Parameters.
 
 Set Printing Universes.
 
-Lemma appValid {Γ nF F G t u l}
+Lemma appValid {Γ F G t u l}
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  {VΠFG : [Γ ||-v<l> tProd nF F G | VΓ]}
-  (Vt : [Γ ||-v<l> t : tProd nF F G | VΓ | VΠFG])
+  {VΠFG : [Γ ||-v<l> tProd F G | VΓ]}
+  (Vt : [Γ ||-v<l> t : tProd F G | VΓ | VΠFG])
   (Vu : [Γ ||-v<l> u : F | VΓ | VF])
   (VGu := substSΠ VΠFG Vu) :
   [Γ ||-v<l> tApp t u : G[u..] | VΓ | VGu].
@@ -32,11 +32,11 @@ Proof.
     unshelve eapply LRTyEqSym. 2,3: tea.
 Qed.
 
-Lemma appcongValid {Γ nF F G t u a b l}
+Lemma appcongValid {Γ F G t u a b l}
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  {VΠFG : [Γ ||-v<l> tProd nF F G | VΓ]}
-  (Vtu : [Γ ||-v<l> t ≅ u : tProd nF F G | VΓ | VΠFG])
+  {VΠFG : [Γ ||-v<l> tProd F G | VΓ]}
+  (Vtu : [Γ ||-v<l> t ≅ u : tProd F G | VΓ | VΠFG])
   (Va : [Γ ||-v<l> a : F | VΓ | VF])
   (Vb : [Γ ||-v<l> b : F | VΓ | VF])
   (Vab : [Γ ||-v<l> a ≅ b : F | VΓ | VF])
