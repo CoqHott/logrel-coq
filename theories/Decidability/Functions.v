@@ -1,4 +1,4 @@
-(** * LogRel.Decidability: type-checker implementation. *)
+(** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
 From PartialFun Require Import PartialFun.
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
