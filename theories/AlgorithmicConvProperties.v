@@ -53,8 +53,12 @@ Section AlgoConvConv.
     now eapply stability.
   Qed.
 
-  Let PTyEq' (Γ : context) (A B : term) := True.
-  Let PTyRedEq' (Γ : context) (A B : term) := True.
+  Let PTyEq' (Γ : context) (A B : term) := forall Γ',
+    [|-[de] Γ' ≅ Γ] ->
+    [Γ' |-[al] A ≅ B].
+  Let PTyRedEq' (Γ : context) (A B : term) := forall Γ',
+    [|-[de] Γ' ≅ Γ] ->
+    [Γ' |-[al] A ≅h B].
   Let PNeEq' (Γ : context) (A t u : term) := forall Γ',
     [|-[de] Γ' ≅ Γ] ->
     ∑ A', [Γ' |-[al] t ~ u ▹ A'] × [Γ' |-[de] A' ≅ A].
@@ -73,7 +77,23 @@ Section AlgoConvConv.
   Proof.
     all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
     apply BundledConvInduction ; cbn in *.
-    1-4: now constructor.
+    - intros * ??? IH **.
+      econstructor ; tea.
+      now eapply IH.
+    - intros * ? IHA ? IHB ? H **.
+      econstructor.
+      1: now eapply IHA.
+      eapply IHB.
+      econstructor ; tea.
+      econstructor.
+      eapply stability ; tea.
+      destruct IHA.
+      now boundary.
+    - now econstructor.
+    - now econstructor.
+    - intros * ? IHM **.
+      edestruct IHM as [[? []]] ; tea.
+      now econstructor.
     - intros * HΓ **.
       eapply in_ctx_conv_r in HΓ as [? []] ; tea.
       eexists ; split.
@@ -89,6 +109,35 @@ Section AlgoConvConv.
       + eapply typing_subst1 ; tea.
         econstructor.
         now eapply stability.
+    - intros * ? IHn ? IHP ? IHz ? IHs **.
+      edestruct IHn as [[A []][]] ; tea.
+      replace A with tNat in *.
+      2:{
+        symmetry.
+        apply red_whnf.
+        2: gen_typing.
+        now eapply redty_red, red_ty_compl_nat_r.
+      }
+      eexists ; split.
+      1: econstructor.
+      + eauto.
+      + eapply IHP.
+        now econstructor.
+      + eapply IHz ; tea.
+        econstructor.
+        eapply stability ; tea.
+        destruct IHz.
+        boundary.
+      + eapply IHs ; tea.
+        eapply TypeRefl ; refold.
+        eapply stability ; tea.
+        destruct IHs.
+        boundary.
+      + econstructor.
+        destruct IHP.
+        eapply stability ; tea.
+        eapply typing_subst1.
+        all: now boundary.
     - intros * ? IHm **.
       edestruct IHm as [[A'' []] []]; tea.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'.
@@ -130,6 +179,35 @@ Section AlgoConvConv.
         all: econstructor ; tea.
         econstructor.
         all: gen_typing.
+    - intros.
+      replace A' with U.
+      2:{
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply redty_red, red_ty_compl_univ_l.
+      }
+      now econstructor.
+    - intros.
+      replace A' with tNat.
+      2:{
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply redty_red, red_ty_compl_nat_l.
+      }
+      now econstructor.
+    - intros * ? IH **.
+      replace A' with tNat.
+      2:{
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply redty_red, red_ty_compl_nat_l.
+      }
+      econstructor.
+      eapply IH ; tea.
+      now do 2 econstructor.
     - intros * ? ? ? IHf ? ? ? * ? (?&?&?&[HconvP])%red_ty_compl_prod_l ?.
       eapply redty_red, red_whnf in HconvP as ->.
       2: gen_typing.
@@ -213,6 +291,10 @@ Section TermTypeConv.
     - intros.
       congruence.
     - intros.
+      congruence.
+    - intros.
+      congruence.
+    - intros. 
       now econstructor.
   Qed.
   
@@ -256,6 +338,8 @@ Section Symmetry.
       econstructor ; tea.
       eapply IHA.
     - now econstructor.
+    - intros.
+      now econstructor. 
     - intros * ? IHM  **.
       edestruct IHM as [[U' [IHM' HconvM]] []] ; tea.
       now econstructor.
@@ -287,6 +371,55 @@ Section Symmetry.
         2: now symmetry.
         eapply stability ; tea.
         now symmetry.
+    - intros * ? IHn ? IHP ? IHz ? IHs **.
+      edestruct IHn as [[? [IHn' Hconv]] []] ; tea ; clear IHn.
+      eapply red_ty_compl_nat_l, redty_red, red_whnf in Hconv as ->.
+      2: now eapply algo_conv_wh in IHn' as [] ; gen_typing.
+      eexists ; split.
+      1: econstructor ; tea.
+      + eapply IHP.
+        econstructor ; tea.
+        now do 2 econstructor.
+      + eapply algo_conv_conv.
+        * now eapply IHz.
+        * now eapply conv_ctx_refl_r.
+        * eapply stability.
+          2: now symmetry.
+          eapply typing_subst1.
+          2: eapply IHP.
+          now do 2 econstructor.
+        * eapply stability.
+          2: now symmetry.
+          destruct IHz.
+          now boundary.
+        * eapply stability.
+          2: now symmetry.
+          destruct IHz.
+          now boundary.
+      + eapply algo_conv_conv.
+        * now eapply IHs.
+        * now eapply conv_ctx_refl_r.
+        * eapply stability.
+          2: now symmetry.
+          destruct IHP.
+          eapply elimSuccHypTy_conv ; tea.
+          now boundary.
+        * eapply stability.
+          2: now symmetry.
+          destruct IHs.
+          boundary.
+        * eapply stability.
+          2: now symmetry.
+          destruct IHs.
+          boundary.
+      + eapply (typing_subst1 _ anDummy).
+        * eapply stability ; tea.
+          now symmetry.
+        * eapply stability.
+          1: now eapply IHP.
+          symmetry.
+          econstructor ; tea.
+          now do 2 econstructor.
     - intros * ? IHm  **.
       edestruct IHm as [[A'' [IHm' Hconv]] [Hwf]] ; tea ; clear IHm.
       assert [Δ |-[de] A' ≅ A''] as Hconv'.
@@ -313,6 +446,11 @@ Section Symmetry.
       eapply IHB.
       econstructor ; tea.
       now econstructor ; intuition eauto.
+    - now econstructor.
+    - now econstructor.
+    - intros * ? IH **.
+      econstructor.
+      now eapply IH.
     - intros * ? ? ? IH ? Hf  **.
       econstructor.
       1-2: assumption.

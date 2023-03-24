@@ -28,20 +28,8 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tZero => T = tNat
     | tSucc n => T = tNat × [Γ |- n : tNat]
     | tNatElim P hz hs n =>
-      ∑ nN, [× T = P[n..], [Γ,, vass nN tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy nN P] & [Γ |- n : tNat]]
+      [× T = P[n..], [Γ,, vass anDummy tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
   end.
-
-Ltac prod_splitter :=
-  repeat match goal with
-  | |- sigT _ => eexists
-  | |- prod _ _ => split
-  | |- and3 _ _ _ => split
-  | |- and4 _ _ _ _ => split
-  | |- and5 _ _ _ _ _ => split
-  end.
-
-Ltac by_prod_splitter :=
-  solve [now prod_splitter].
 
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
@@ -423,42 +411,39 @@ Proof.
     + now eapply typing_wk.
     + now asimpl.
     + reflexivity.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimSubst _ nN); tea.
+  - cbn.
+    rewrite (subst_ren_wk_up (nA := anDummy) (A := tNat)).
+    econstructor ; tea.
     * erewrite <- wk_up_ren_on.
       refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
-    Unshelve. all: tea.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimZero _ nN); tea.
+  - cbn. rewrite (subst_ren_wk_up (nA := anDummy) (A := tNat)).
+    econstructor ; tea.
     * erewrite <- wk_up_ren_on.
       refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
-    Unshelve. all: tea.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimSucc _ nN).
-    * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+  - cbn. rewrite (subst_ren_wk_up (nA := anDummy) (A := tNat)).
+    econstructor.
+    * refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
-    Unshelve. all: tea.
     * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
   - econstructor.
     1: eassumption.

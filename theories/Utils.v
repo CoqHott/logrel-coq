@@ -78,7 +78,7 @@ Variant and8 (P1 P2 P3 P4 P5 P6 P7 P8 : Type) : Type := Times8 of P1 & P2 & P3 &
 Variant and9 (P1 P2 P3 P4 P5 P6 P7 P8 P9 : Type) : Type := Times9 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9.
 Variant and10 (P1 P2 P3 P4 P5 P6 P7 P8 P9 P10 : Type) : Type := Times10 of P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10.
 
-Notation "[ × P1 & P2 ]" := (pair P1 P2) (only parsing) : type_scope.
+Notation "[ × P1 & P2 ]" := (prod P1 P2) (only parsing) : type_scope.
 Notation "[ × P1 , P2 & P3 ]" := (and3 P1 P2 P3) : type_scope.
 Notation "[ × P1 , P2 , P3 & P4 ]" := (and4 P1 P2 P3 P4) : type_scope.
 Notation "[ × P1 , P2 , P3 , P4 & P5 ]" := (and5 P1 P2 P3 P4 P5) : type_scope.
@@ -89,18 +89,6 @@ Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 & P9 ]" := (and9 P1 P2 P3 P
 Notation "[ × P1 , P2 , P3 , P4 , P5 , P6 , P7 , P8 , P9 & P10 ]" := (and10 P1 P2 P3 P4 P5 P6 P7 P8 P9 P10) : type_scope.
 
 #[global] Hint Constructors prod and3 and3 and5 and6 and7 and8 and9 : core.
-(* #[global] Hint Extern 0 =>
-  repeat match goal with
-    | H : [× _ & _] |- _ => destruct H 
-    | H : [× _, _ & _] |- _ => destruct H 
-    | H : [× _, _, _ & _] |- _ => destruct H
-    | H : [× _, _, _, _ & _] |- _ => destruct H
-    | H : [× _, _, _, _, _ & _] |- _ => destruct H
-    | H : [× _, _, _, _, _, _ & _] |- _ => destruct H
-    | H : [× _, _, _, _, _, _, _ & _] |- _ => destruct H
-    | H : [× _, _, _, _, _, _, _, _ & _] |- _ => destruct H
-  end
-  : core. *)
 
 Inductive sigT {A : Type} (P : A -> Type) : Type := 
   | existT (projT1 : A) (projT2 : P projT1) : sigT P.
@@ -146,6 +134,30 @@ End ReflexiveTransitiveClosure.
 
 Ltac tea := try eassumption.
 Ltac easy ::= solve [intuition eauto 3 with core crelations].
+
+Ltac prod_splitter :=
+  repeat match goal with
+  | |- sigT _ => eexists
+  | |- prod _ _ => split
+  | |- and3 _ _ _ => split
+  | |- and4 _ _ _ _ => split
+  | |- and5 _ _ _ _ _ => split
+  end.
+
+Ltac prod_hyp_splitter :=
+  repeat match goal with
+    | H : [× _ & _] |- _ => destruct H 
+    | H : [× _, _ & _] |- _ => destruct H 
+    | H : [× _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _, _ & _] |- _ => destruct H
+    | H : [× _, _, _, _, _, _, _, _ & _] |- _ => destruct H
+  end.
+
+Ltac by_prod_splitter :=
+  solve [now prod_splitter].
 
 (** The database used for generic typing *)
 Create HintDb gen_typing.

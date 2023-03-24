@@ -1,6 +1,6 @@
 (** * LogRel.AlgorithmicTyping: definition of algorithmic conversion and typing. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping.
 
 Section Definitions.
 
@@ -25,6 +25,8 @@ Section Definitions.
       [ Γ |- tProd na A B ≅h tProd na' A' B']
     | typeUnivConvAlg {Γ} :
       [Γ |- U ≅h U]
+    | typeNatConvAlg {Γ} :
+      [Γ |- tNat ≅h tNat]
     | typeNeuConvAlg {Γ M N T} :
       [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
@@ -37,6 +39,16 @@ Section Definitions.
       [ Γ |- m ~h n ▹ tProd na A B ] ->
       [ Γ |- t ≅ u : A ] ->
       [ Γ |- tApp m t ~ tApp n u ▹ B[t..] ]
+    | neuNatElimCong {Γ n n' P P' hz hz' hs hs'} :
+    (** Here, we know by invariant that the inferred type has to be tNat,
+    so there should be no need to check that, but with parameterized/indexed
+    inductive we need to recover informations from the neutrals to construct
+    the context for the predicate and the type of the branches. *)
+      [Γ |- n ~h n' ▹ tNat] ->
+      [Γ,, vass anDummy tNat |- P ≅ P'] ->
+      [Γ |- hz ≅ hz' : P[tZero..]] ->
+      [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
+      [Γ |- tNatElim P hz hs n ~ tNatElim P' hz' hs' n' ▹ P[n..]]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -58,6 +70,13 @@ Section Definitions.
       [ Γ |- A ≅ A' : U] ->
       [ Γ ,, vass na A |- B ≅ B' : U] ->
       [ Γ |- tProd na A B ≅h tProd na' A' B' : U]
+    | termNatReflAlg {Γ} :
+      [Γ |- tNat ≅h tNat : U]
+    | termZeroReflAlg {Γ} :
+      [Γ |- tZero ≅h tZero : tNat]
+    | termSuccCongAlg {Γ t t'} :
+      [Γ |- t ≅ t' : tNat] ->
+      [Γ |- tSucc t ≅h tSucc t' : tNat]
     | termFunConvAlg {Γ : context} {f g na A B} :
       isFun f ->
       isFun g ->
@@ -222,9 +241,9 @@ Lemma AlgoConvInduction : AlgoConvInductionType.
 Proof.
   intros PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq **.
   pose proof (_AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
-  destruct H as [?[?[?[?[?]]]]].
-  1-11: assumption.
-  repeat (split;[assumption|]); assumption.
+  destruct H as [?[?[?[?[?]]]]] ; cycle -1.
+  1: by_prod_splitter.
+  all: assumption.
 Qed.
 
 Let _AlgoTypingInductionType :=
@@ -301,6 +320,8 @@ Section TypingWk.
     - econstructor.
     - intros.
       now econstructor.
+    - intros.
+      now econstructor. 
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
@@ -312,6 +333,22 @@ Section TypingWk.
       + eauto.
       + now asimpl.
       + reflexivity.
+    - intros * ? IHn ? IHP ? IHz ? IHs *.
+      cbn.
+      eapply convne_meta_conv ; [econstructor|..] ; refold.
+      + eauto.
+      + now eapply (IHP _ (wk_up anDummy tNat ρ)).
+      + eapply convtm_meta_conv.
+        * eapply IHz.
+        * now bsimpl.
+        * reflexivity.   
+      + eapply convtm_meta_conv.
+        * eapply IHs.
+        * unfold elimSuccHypTy.
+          now bsimpl.
+        * reflexivity.
+      + now bsimpl.
+      + now bsimpl.
     - intros.
       econstructor.
       + eauto.
@@ -326,6 +363,9 @@ Section TypingWk.
       econstructor.
       1: now eauto.
       now eapply IHB with(ρ := wk_up _ _ ρ).
+    - now econstructor.
+    - now econstructor.
+    - now econstructor.
     - intros * ? ? ? IH ? ?.
       cbn.
       econstructor.
@@ -447,17 +487,8 @@ Section AlgTypingWh.
   Proof.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
     apply AlgoConvInduction.
-    1,7-8: now constructor.
-    all: intros ;
-      repeat match goal with
-      | H : [× _, _ & _] |- _ => destruct H
-      | H : _ × _ |- _ => destruct H
-      end.
-    1-6: now do 2 constructor.
-    - split.
-      1-2: gen_typing.
-      now constructor.
-    - split.
-      all: gen_typing. 
+    all: intros ; prod_splitter ; prod_hyp_splitter.
+    all: try solve [now constructor].
+    all: gen_typing. 
   Qed.
 End AlgTypingWh.

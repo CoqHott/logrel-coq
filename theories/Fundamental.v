@@ -420,13 +420,13 @@ Section Fundamental.
     Unshelve. tea.
   Qed.
 
-  Lemma FundTmNatElim : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmNatElim : forall (Γ : list context_decl) (P hz hs n : term),
+    [Γ,, vass anDummy tNat |-[ de ] P] ->
+    FundTy (Γ,, vass anDummy tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     [Γ |-[ de ] n : tNat] ->
     FundTm Γ tNat n -> FundTm Γ P[n..] (tNatElim P hz hs n).
   Proof.
@@ -445,29 +445,29 @@ Section Fundamental.
     Unshelve. all: tea.
   Qed.
 
-  Lemma FundTmEqNatElimCong : forall (Γ : list context_decl) (nN : aname)
+  Lemma FundTmEqNatElimCong : forall (Γ : list context_decl)
       (P P' hz hz' hs hs' n n' : term),
-    [Γ,, vass nN tNat |-[ de ] P ≅ P'] ->
-    FundTyEq (Γ,, vass nN tNat) P P' ->
+    [Γ,, vass anDummy tNat |-[ de ] P ≅ P'] ->
+    FundTyEq (Γ,, vass anDummy tNat) P P' ->
     [Γ |-[ de ] hz ≅ hz' : P[tZero..]] ->
     FundTmEq Γ P[tZero..] hz hz' ->
-    [Γ |-[ de ] hs ≅ hs' : elimSuccHypTy nN P] ->
-    FundTmEq Γ (elimSuccHypTy nN P) hs hs' ->
+    [Γ |-[ de ] hs ≅ hs' : elimSuccHypTy P] ->
+    FundTmEq Γ (elimSuccHypTy P) hs hs' ->
     [Γ |-[ de ] n ≅ n' : tNat] ->
     FundTmEq Γ tNat n n' ->
     FundTmEq Γ P[n..] (tNatElim P hz hs n) (tNatElim P' hz' hs' n').
   Proof.
     intros * ?[? VP0 VP0']?[VΓ0]?[]?[].
     pose (VN := natValid (l:=one) VΓ0).
-    assert (VP' : [ _ ||-v<one> P' | validSnoc nN VΓ0 VN]) by irrValid. 
-    assert [Γ ||-v< one > hz' : P'[tZero..] | VΓ0 | substS nN VP' (zeroValid VΓ0)]. 1:{
+    assert (VP' : [ _ ||-v<one> P' | validSnoc anDummy VΓ0 VN]) by irrValid. 
+    assert [Γ ||-v< one > hz' : P'[tZero..] | VΓ0 | substS anDummy VP' (zeroValid VΓ0)]. 1:{
       eapply conv. 2: irrValid.
       eapply substSEq. 2,3: irrValid.
       1: eapply reflValidTy.
       2: eapply reflValidTm.
       all: eapply zeroValid.
     }
-    assert [Γ ||-v< one > hs' : elimSuccHypTy nN P' | VΓ0 | elimSuccHypTyValid VΓ0 VP']. 1:{
+    assert [Γ ||-v< one > hs' : elimSuccHypTy P' | VΓ0 | elimSuccHypTyValid VΓ0 VP']. 1:{
       eapply conv. 2: irrValid.
       eapply elimSuccHypTyCongValid; irrValid.
     } 
@@ -485,13 +485,13 @@ Section Fundamental.
     1: unshelve eapply substS; try irrValid.
   Qed.
 
-  Lemma FundTmEqNatElimZero : forall (Γ : list context_decl) (nN : aname) (P hz hs : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmEqNatElimZero : forall (Γ : list context_decl) (P hz hs : term),
+    [Γ,, vass anDummy tNat |-[ de ] P] ->
+    FundTy (Γ,, vass anDummy tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     FundTmEq Γ P[tZero..] (tNatElim P hz hs tZero) hz.
   Proof.
     intros * ?[]?[]?[]; unshelve econstructor; tea.
@@ -501,13 +501,13 @@ Section Fundamental.
     Unshelve. irrValid.
   Qed.
 
-  Lemma FundTmEqNatElimSucc : forall (Γ : list context_decl) (nN : aname) (P hz hs n : term),
-    [Γ,, vass nN tNat |-[ de ] P] ->
-    FundTy (Γ,, vass nN tNat) P ->
+  Lemma FundTmEqNatElimSucc : forall (Γ : list context_decl) (P hz hs n : term),
+    [Γ,, vass anDummy tNat |-[ de ] P] ->
+    FundTy (Γ,, vass anDummy tNat) P ->
     [Γ |-[ de ] hz : P[tZero..]] ->
     FundTm Γ P[tZero..] hz ->
-    [Γ |-[ de ] hs : elimSuccHypTy nN P] ->
-    FundTm Γ (elimSuccHypTy nN P) hs ->
+    [Γ |-[ de ] hs : elimSuccHypTy P] ->
+    FundTm Γ (elimSuccHypTy P) hs ->
     [Γ |-[ de ] n : tNat] ->
     FundTm Γ tNat n ->
     FundTmEq Γ P[(tSucc n)..] (tNatElim P hz hs (tSucc n))

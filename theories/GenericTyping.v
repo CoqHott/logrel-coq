@@ -223,10 +223,10 @@ Section GenericTyping.
     ty_succ {Γ n} :
         [Γ |- n : tNat] ->
         [Γ |- tSucc n : tNat] ;
-    ty_natElim {Γ nN P hz hs n} :
-      [Γ ,, vass nN tNat |- P ] ->
+    ty_natElim {Γ P hz hs n} :
+      [Γ ,, vass anDummy tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n : tNat] ->
       [Γ |- tNatElim P hz hs n : P[n..]] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
@@ -284,15 +284,15 @@ Section GenericTyping.
     convtm_succ {Γ} {n n'} :
         [Γ |- n ≅ n' : tNat] ->
         [Γ |- tSucc n ≅ tSucc n' : tNat] ;
-    convtm_natElimZero {Γ nN P hz hs} :
-        [Γ ,, vass nN tNat |- P ] ->
+    convtm_natElimZero {Γ P hz hs} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]] ;
-    convtm_natElimSucc {Γ nN P hz hs n} :
-        [Γ ,, vass nN tNat |- P ] ->
+    convtm_natElimSucc {Γ P hz hs n} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
   }.
@@ -310,10 +310,10 @@ Section GenericTyping.
       [ Γ |- f ~ g : tProd na A B ] ->
       [ Γ |- t ≅ u : A ] ->
       [ Γ |- tApp f t ~ tApp g u : B[t..] ] ;
-    convneu_natElim {Γ nN P P' hz hz' hs hs' n n'} :
-        [Γ ,, vass nN tNat |- P ≅ P'] ->
+    convneu_natElim {Γ P P' hz hz' hs hs' n n'} :
+        [Γ ,, vass anDummy tNat |- P ≅ P'] ->
         [Γ |- hz ≅ hz' : P[tZero..]] ->
-        [Γ |- hs ≅ hs' : elimSuccHypTy nN P] ->
+        [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
         [Γ |- n ~ n' : tNat] ->
         [Γ |- tNatElim P hz hs n ~ tNatElim P' hz' hs' n' : P[n..]] ;
   }.
@@ -340,21 +340,21 @@ Section GenericTyping.
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- u : A ] ->
       [ Γ |- tApp (tLambda na A t) u ⇒ t[u..] : B[u..] ] ;
-    osredtm_natElim {Γ nN P hz hs n n'} :
-        [Γ ,, vass nN tNat |- P ] ->
+    osredtm_natElim {Γ P hz hs n n'} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs  : elimSuccHypTy nN P] ->
+        [Γ |- hs  : elimSuccHypTy P] ->
         [Γ |- n ⇒ n' : tNat] ->
         [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]] ;
-    osredtm_natElimZero {Γ nN P hz hs} :
-        [Γ ,, vass nN tNat |- P ] ->
+    osredtm_natElimZero {Γ P hz hs} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]] ;
-    osredtm_natElimSucc {Γ nN P hz hs n} :
-        [Γ ,, vass nN tNat |- P ] ->
+    osredtm_natElimSucc {Γ P hz hs n} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]] ;
   }.
@@ -419,10 +419,10 @@ Section GenericValues.
     tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
     tm_ne_rel {Γ na A} : [Γ |- A] -> Ne[Γ,, vass na A |- tRel 0 : A⟨↑⟩];
     tm_ne_app {Γ n t na A B} : Ne[Γ |- n : tProd na A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
-    tm_ne_natelim {Γ nN P hz hs n} :
-      Nf[Γ ,, vass nN tNat |- P ] ->
+    tm_ne_natelim {Γ P hz hs n} :
+      Nf[Γ ,, vass anDummy tNat |- P ] ->
       Nf[Γ |- hz : P[tZero..]] ->
-      Nf[Γ |- hs : elimSuccHypTy nN P] ->
+      Nf[Γ |- hs : elimSuccHypTy P] ->
       Ne[Γ |- n : tNat] ->
       Ne[Γ |- tNatElim P hz hs n : P[n..]];
   }.
@@ -779,10 +779,10 @@ Section GenericConsequences.
   Qed.
 
 
-  Lemma redtmwf_natElimZero {Γ nN P hz hs} :
-    [Γ ,, vass nN tNat |- P ] ->
+  Lemma redtmwf_natElimZero {Γ P hz hs} :
+    [Γ ,, vass anDummy tNat |- P ] ->
     [Γ |- hz : P[tZero..]] ->
-    [Γ |- hs : elimSuccHypTy nN P] ->
+    [Γ |- hs : elimSuccHypTy P] ->
     [Γ |- tNatElim P hz hs tZero :⇒*: hz : P[tZero..]].
   Proof.
     intros ???; constructor; tea.

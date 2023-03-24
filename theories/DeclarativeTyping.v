@@ -11,8 +11,8 @@ or typing, done in a declarative fashion. For instance, we _demand_ that convers
 be transitive by adding a corresponding rule. *)
 
 (** ** Definitions *)
-Definition elimSuccHypTy nN' P :=
-  tProd nN' tNat (arr P P[tSucc (tRel 0)]⇑).
+Definition elimSuccHypTy P :=
+  tProd anDummy tNat (arr P P[tSucc (tRel 0)]⇑).
 
 Section Definitions.
 
@@ -73,10 +73,10 @@ Section Definitions.
       | wfTermSucc {Γ n} :
           [Γ |- n : tNat] ->
           [Γ |- tSucc n : tNat]
-      | wfTermNatElim {Γ nN P hz hs n} :
-        [Γ ,, vass nN tNat |- P ] ->
+      | wfTermNatElim {Γ P hz hs n} :
+        [Γ ,, vass anDummy tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs n : P[n..]]
       | wfTermConv {Γ} {t A B} :
@@ -128,21 +128,21 @@ Section Definitions.
       | TermSuccCong {Γ} {n n'} :
           [Γ |- n ≅ n' : tNat] ->
           [Γ |- tSucc n ≅ tSucc n' : tNat]
-      | TermNatElimCong {Γ nN P P' hz hz' hs hs' n n'} :
-          [Γ ,, vass nN tNat |- P ≅ P'] ->
+      | TermNatElimCong {Γ P P' hz hz' hs hs' n n'} :
+          [Γ ,, vass anDummy tNat |- P ≅ P'] ->
           [Γ |- hz ≅ hz' : P[tZero..]] ->
-          [Γ |- hs ≅ hs' : elimSuccHypTy nN P] ->
+          [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
           [Γ |- n ≅ n' : tNat] ->
-          [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]        
-      | TermNatElimZero {Γ nN P hz hs} :
-          [Γ ,, vass nN tNat |- P ] ->
+          [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]
+      | TermNatElimZero {Γ P hz hs} :
+          [Γ ,, vass anDummy tNat |- P ] ->
           [Γ |- hz : P[tZero..]] ->
-          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]
-      | TermNatElimSucc {Γ nN P hz hs n} :
-          [Γ ,, vass nN tNat |- P ] ->
+      | TermNatElimSucc {Γ P hz hs n} :
+          [Γ ,, vass anDummy tNat |- P ] ->
           [Γ |- hz : P[tZero..]] ->
-          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- n : tNat] ->
           [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
       | TermRefl {Γ} {t A} :
@@ -178,21 +178,21 @@ Section Definitions.
       [ Γ |- t ⇒ u : tProd na A B] ->
       [ Γ |- a : A ] ->
       [ Γ |- tApp t a ⇒ tApp u a : B[a..] ]
-  | natElimSubst {nN P hz hs n n'} :
-      [Γ ,, vass nN tNat |- P] ->
+  | natElimSubst {P hz hs n n'} :
+      [Γ ,, vass anDummy tNat |- P] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n ⇒ n' : tNat] ->
-      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]        
-  | natElimZero {nN P hz hs} :
-      [Γ ,, vass nN tNat |- P ] ->
+      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]
+  | natElimZero {P hz hs} :
+      [Γ ,, vass anDummy tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]]
-  | natElimSucc {nN P hz hs n} :
-      [Γ ,, vass nN tNat |- P ] ->
+  | natElimSucc {P hz hs n} :
+      [Γ ,, vass anDummy tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n : tNat] ->
       [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
   | termRedConv {A B t u} : 
