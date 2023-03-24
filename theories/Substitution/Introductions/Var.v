@@ -11,8 +11,8 @@ Set Printing Primitive Projection Parameters.
 Section Var.
   Context `{GenericTypingProperties}.
   
-  Lemma var0Valid {Γ l nA A} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) :
-    [Γ,, vass nA A ||-v<l> tRel 0 : _ | validSnoc nA VΓ VA | wk1ValidTy nA _ VA ].
+  Lemma var0Valid {Γ l A} (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) :
+    [Γ,, A ||-v<l> tRel 0 : _ | validSnoc VΓ VA | wk1ValidTy _ VA ].
   Proof.
     constructor; intros; cbn.
     + epose (validHead Vσ); irrelevance.

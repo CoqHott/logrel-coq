@@ -8,8 +8,8 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
 (** *** One-step reduction. *)
 
 Inductive OneRedAlg : term -> term -> Type :=
-| BRed {na} {A a t} :
-    [ tApp (tLambda na A t) a ⇒ t[a..] ]
+| BRed {A a t} :
+    [ tApp (tLambda A t) a ⇒ t[a..] ]
 | appSubst {t u a} :
     [ t ⇒ u ] ->
     [ tApp t a ⇒ tApp u a ]

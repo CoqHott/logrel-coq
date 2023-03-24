@@ -37,7 +37,7 @@ Proof.
   clear l Γ K h.
   - intros ??? [??? r] ne; pose proof (redtywf_whne r  ne); subst; inversion ne.
   - intros; assumption.
-  - intros ??? [??? red] ?? ne ; cbn in *.
+  - intros ??? [?? red] ?? ne ; cbn in *.
     rewrite (redtywf_whne red ne) in ne.
     inversion ne.
   - intros ??? [red] ne.
@@ -62,38 +62,37 @@ Proof.
   all: cbn; assumption.
 Qed.
 
-Lemma ty_app_ren {Γ Δ A f a na dom cod} (ρ : Δ ≤ Γ) :
-  [Γ |- f : A] -> [Γ |- A ≅ tProd na dom cod] -> [Δ |- a : dom⟨ρ⟩] -> [Δ |- tApp f⟨ρ⟩ a : cod[a .: ρ >> tRel]].
+Lemma ty_app_ren {Γ Δ A f a dom cod} (ρ : Δ ≤ Γ) :
+  [Γ |- f : A] -> [Γ |- A ≅ tProd dom cod] -> [Δ |- a : dom⟨ρ⟩] -> [Δ |- tApp f⟨ρ⟩ a : cod[a .: ρ >> tRel]].
 Proof.
   intros.
-  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up na dom ρ⟩[a..]) by (now bsimpl).
-  unshelve eapply ty_app. 1,4: eassumption.
-  replace (tProd _ _ _) with (tProd na dom cod)⟨ρ⟩ by now bsimpl.
+  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up dom ρ⟩[a..]) by (now bsimpl).
+  unshelve eapply ty_app. 3: eassumption.
+  replace (tProd _ _) with (tProd dom cod)⟨ρ⟩ by now bsimpl.
   gen_typing.
 Qed.
 
-Lemma convneu_app_ren {Γ Δ A f g a b na dom cod} (ρ : Δ ≤ Γ) :
+Lemma convneu_app_ren {Γ Δ A f g a b dom cod} (ρ : Δ ≤ Γ) :
   [Γ |- f ~ g : A] ->
-  [Γ |- A ≅ tProd na dom cod] ->
+  [Γ |- A ≅ tProd dom cod] ->
   [Δ |- a ≅ b : dom⟨ρ⟩] ->
   [Δ |- tApp f⟨ρ⟩ a ~ tApp g⟨ρ⟩ b : cod[a .: ρ >> tRel]].
 Proof.
   intros.
-  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up na dom ρ⟩[a..]) by (now bsimpl).
-  unshelve eapply convneu_app. 1,4: eassumption.
-  replace (tProd _ _ _) with (tProd na dom cod)⟨ρ⟩ by now bsimpl.
+  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up dom ρ⟩[a..]) by (now bsimpl).
+  unshelve eapply convneu_app. 3: eassumption.
+  replace (tProd _ _) with (tProd dom cod)⟨ρ⟩ by now bsimpl.
   gen_typing.
 Qed.
 
-Lemma neu_app_ren {Γ Δ A n a na dom cod} (ρ : Δ ≤ Γ) :
+Lemma neu_app_ren {Γ Δ A n a dom cod} (ρ : Δ ≤ Γ) :
   [|- Δ] ->
-  Ne[Γ |- n : A] -> [Γ |- A ≅ tProd na dom cod] -> Nf[Δ |- a : dom⟨ρ⟩] -> Ne[Δ |- tApp n⟨ρ⟩ a : cod[a .: ρ >> tRel]].
+  Ne[Γ |- n : A] -> [Γ |- A ≅ tProd dom cod] -> Nf[Δ |- a : dom⟨ρ⟩] -> Ne[Δ |- tApp n⟨ρ⟩ a : cod[a .: ρ >> tRel]].
 Proof.
   intros.
-  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up na dom ρ⟩[a..]) by (now bsimpl).
+  replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up dom ρ⟩[a..]) by (now bsimpl).
   eapply tm_ne_app; [|eassumption].
-  instantiate (1 := na).
-  change (Ne[Δ |- n⟨ρ⟩ : (tProd na dom cod)⟨ρ⟩]).
+  change (Ne[Δ |- n⟨ρ⟩ : (tProd dom cod)⟨ρ⟩]).
   eapply tm_ne_conv; [|now eapply convty_wk].
   now eapply tm_ne_wk.
 Qed.
@@ -169,9 +168,9 @@ Lemma complete_Pi : forall l Γ A (RA : [Γ ||-Π< l > A]),
   complete (LRPi' RA).
 Proof.
 intros l Γ A ΠA0 ihdom ihcod; split.
-- set (ΠA := ΠA0); destruct ΠA0 as [na dom cod].
+- set (ΠA := ΠA0); destruct ΠA0 as [dom cod].
   simpl in ihdom, ihcod.
-  assert [Γ |- A ≅ tProd na dom cod] by gen_typing.
+  assert [Γ |- A ≅ tProd dom cod] by gen_typing.
   unshelve refine ( let funred : forall n, Ne[Γ |- n : A] -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
   {
     intros. exists n; cbn.
@@ -217,8 +216,8 @@ intros l Γ A ΠA0 ihdom ihcod; split.
     + eapply convneu_app_ren. 1,2: eassumption.
     eapply escapeEqTerm; eapply LREqTermRefl_; eassumption.
 - intros a [a' Hr Ha].
-  destruct ΠA0 as [na dom codom]; simpl in *.
-  assert ([Γ |- tProd na dom codom ≅ A ]) by gen_typing.
+  destruct ΠA0 as [dom codom]; simpl in *.
+  assert ([Γ |- tProd dom codom ≅ A ]) by gen_typing.
   eapply tm_nf_conv; [|eassumption].
   eapply tm_nf_red; [now apply tmr_wf_red|].
   assumption.
@@ -279,13 +278,13 @@ Proof.
   intros; now eapply completeness.
 Qed.
 
-Lemma var0 {l Γ A A'} nA (RA : [Γ ,, vass nA A ||-<l> A']) :
+Lemma var0 {l Γ A A'} (RA : [Γ ,, A ||-<l> A']) :
   A⟨↑⟩ = A' ->
   [Γ |- A] ->
-  [Γ ,, vass nA A ||-<l> tRel 0 : A' | RA].
+  [Γ ,, A ||-<l> tRel 0 : A' | RA].
 Proof.
   intros <- HA.
-  assert [Γ ,, vass nA A |- tRel 0 : A⟨↑⟩]
+  assert [Γ ,, A |- tRel 0 : A⟨↑⟩]
   by (escape; eapply (ty_var (wfc_wft EscRA) (in_here _ _))).
   eapply neuTerm; tea.
   - now eapply tm_ne_rel.
@@ -315,17 +314,17 @@ induction HRA.
   - specialize (IHdom _ wk_id tΓ (PiRedTy.domRed _ _ tΓ) tΓ).
     rewrite wk_id_ren_on in IHdom; apply IHdom.
   - destruct ΠA ; destruct HAad ; cbn in *.
-    pose (Δ := Γ ,, vass na dom).
+    pose (Δ := Γ ,, dom).
     assert (tΔ : wf_context Δ) by (now apply wfc_cons).
-    unshelve epose (rdom := _ : [ Γ ,, vass na dom ||-< l > dom⟨@wk1 Γ na dom⟩ ]).
-    { econstructor. exact (domAd (Γ,, vass na dom) (@wk1 Γ na dom) tΔ). }
-    specialize (IHcodom _ (tRel 0) (wk1 na dom) tΔ).
-    replace cod with (cod[tRel 0 .: @wk1 Γ na dom >> tRel]).
+    unshelve epose (rdom := _ : [ Γ ,, dom ||-< l > dom⟨@wk1 Γ dom⟩ ]).
+    { econstructor. exact (domAd (Γ,, dom) (@wk1 Γ dom) tΔ). }
+    specialize (IHcodom _ (tRel 0) (wk1 dom) tΔ).
+    replace cod with (cod[tRel 0 .: @wk1 Γ dom >> tRel]).
     eapply IHcodom.
-    * change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
+    * change ([ Γ ,, dom ||-< l > tRel 0 : dom⟨@wk1 Γ dom⟩ | rdom ]).
       eapply var0; [|eassumption]. now bsimpl.
     * unshelve eapply codRed. eassumption.
-      change ([ Γ ,, vass na dom ||-< l > tRel 0 : dom⟨@wk1 Γ na dom⟩ | rdom ]).
+      change ([ Γ ,, dom ||-< l > tRel 0 : dom⟨@wk1 Γ dom⟩ | rdom ]).
       eapply var0; [|eassumption]. now bsimpl.
     * eassumption.
     * bsimpl ; rewrite scons_eta' ; now bsimpl.

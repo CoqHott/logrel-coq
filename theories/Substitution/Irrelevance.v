@@ -17,7 +17,7 @@ Proof.
   revert vsubst' veqsubst' vr'.  pattern Γ, vsubst, veqsubst, vr.
   apply VR_rect; clear Γ vsubst veqsubst vr.
   - intros ?? h. inversion h. split; reflexivity.
-  - intros ??????? ih ?? h. inversion h.
+  - intros ?????? ih ?? h. inversion h.
     specialize (ih _ _ VΓad0); destruct ih as [ih1 ih2].
     split.
     + intros. split; intros []; unshelve econstructor.
@@ -101,11 +101,11 @@ Proof.
 Qed.
 
 
-Lemma irrelevanceLift {l A nF F nG G Γ} (VΓ : [||-v Γ])
+Lemma irrelevanceLift {l A F G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])
   (VFeqG : [Γ ||-v<l> F ≅ G | VΓ | VF]) :
-  [Γ ,, vass nF F ||-v<l> A | validSnoc nF VΓ VF] ->
-  [Γ ,, vass nG G ||-v<l> A | validSnoc nG VΓ VG].
+  [Γ ,, F ||-v<l> A | validSnoc VΓ VF] ->
+  [Γ ,, G ||-v<l> A | validSnoc VΓ VG].
 Proof.
   intros [VA VAext]; unshelve econstructor.
   - intros ??? [hd tl]. eapply VA.
@@ -171,13 +171,13 @@ Proof.
   intros ->; now eapply irrelevanceTm.
 Qed.
 
-Lemma irrelevanceTmLift {l t A nF F nG G Γ} (VΓ : [||-v Γ])
+Lemma irrelevanceTmLift {l t A F G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])
   (VFeqG : [Γ ||-v<l> F ≅ G | VΓ | VF])
-  (VA : [Γ ,, vass nF F ||-v<l> A | validSnoc nF VΓ VF])
-  (VA' : [Γ ,, vass nG G ||-v<l> A | validSnoc nG VΓ VG])  :
-  [Γ ,, vass nF F ||-v<l> t : A | validSnoc nF VΓ VF | VA] ->
-  [Γ ,, vass nG G ||-v<l> t : A | validSnoc nG VΓ VG | VA'].
+  (VA : [Γ ,, F ||-v<l> A | validSnoc VΓ VF])
+  (VA' : [Γ ,, G ||-v<l> A | validSnoc VΓ VG])  :
+  [Γ ,, F ||-v<l> t : A | validSnoc VΓ VF | VA] ->
+  [Γ ,, G ||-v<l> t : A | validSnoc VΓ VG | VA'].
 Proof.
   intros [Vt Vtext]; unshelve econstructor.
   - intros ??? [hd tl]. irrelevanceRefl. 
@@ -233,7 +233,7 @@ Lemma irrelevanceSubstExt {Γ} (VΓ : [||-v Γ]) {σ σ' Δ} (wfΔ : [|- Δ]) :
 Proof.
   revert σ σ'; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - constructor.
-  - intros ?????? ih ?? eq.  unshelve econstructor.
+  - intros ????? ih ?? eq.  unshelve econstructor.
     + eapply ih. 2: now eapply validTail.
       now rewrite eq.
     + rewrite <- (eq var_zero).
@@ -249,7 +249,7 @@ Lemma irrelevanceSubstEqExt {Γ} (VΓ : [||-v Γ]) {σ1 σ1' σ2 σ2' Δ}
 Proof.
   revert σ1 σ1' σ2 σ2' eq1 eq2 Vσ1; pattern Γ, VΓ; apply validity_rect; clear Γ VΓ.
   - constructor.
-  - intros ?????? ih ???? eq1 eq2 ? X. unshelve econstructor.
+  - intros ????? ih ???? eq1 eq2 ? X. unshelve econstructor.
     + eapply irrelevanceSubstEq.
       unshelve eapply ih.
       6: now eapply eqTail.

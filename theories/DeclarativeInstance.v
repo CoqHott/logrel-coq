@@ -19,16 +19,16 @@ this implication. *)
 
 Definition termGenData (Γ : context) (t T : term) : Type :=
   match t with
-    | tRel n => ∑ decl, [× T = decl.(decl_type), [|- Γ]& in_ctx Γ n decl]
-    | tProd na A B =>  [× T = U, [Γ |- A : U] & [Γ,, vass na A |- B : U]]
-    | tLambda na A t => ∑ B, [× T = tProd na A B, [Γ |- A] & [Γ,, vass na A |- t : B]]
-    | tApp f a => ∑ na A B, [× T = B[a..], [Γ |- f : tProd na A B] & [Γ |- a : A]]
+    | tRel n => ∑ decl, [× T = decl, [|- Γ]& in_ctx Γ n decl]
+    | tProd A B =>  [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
+    | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A] & [Γ,, A |- t : B]]
+    | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
     | tSort _ => False
     | tNat => T = U
     | tZero => T = tNat
     | tSucc n => T = tNat × [Γ |- n : tNat]
-    | tNatElim P hz hs n =>
-      ∑ nN, [× T = P[n..], [Γ,, vass nN tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy nN P] & [Γ |- n : tNat]]
+    |  tNatElim P hz hs n =>
+      [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
   end.
 
 Ltac prod_splitter :=
@@ -58,9 +58,9 @@ Proof.
     * prod_splitter; tea; right; now eapply TypeTrans.
 Qed.
 
-Lemma prod_ty_inv Γ na A B :
-  [Γ |- tProd na A B] ->
-  [Γ |- A] × [Γ,, vass na A |- B].
+Lemma prod_ty_inv Γ A B :
+  [Γ |- tProd A B] ->
+  [Γ |- A] × [Γ,, A |- B].
 Proof.
   intros Hty.
   inversion Hty ; subst ; clear Hty.
@@ -71,7 +71,7 @@ Qed.
 
 (** ** Stability by weakening *)
 
-Lemma subst_ren_wk_up {Γ Δ P nA A} {ρ : Γ ≤ Δ}: forall n, P[n..]⟨ρ⟩ = P⟨wk_up nA A ρ⟩[n⟨ρ⟩..].
+Lemma subst_ren_wk_up {Γ Δ P A} {ρ : Γ ≤ Δ}: forall n, P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
 Proof. intros; now bsimpl. Qed.
 
 
@@ -97,10 +97,10 @@ Section TypingWk.
     - trivial.
     - intros ? ? IH.
       now econstructor.
-    - intros Γ na A B HA IHA HB IHB Δ ρ HΔ.
+    - intros Γ A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
-      eapply IHB with (ρ := wk_up _ _ ρ).
+      eapply IHB with (ρ := wk_up _ ρ).
       now constructor.
     - intros; now constructor.
     - intros * _ IHA ? * ?.
@@ -115,14 +115,14 @@ Section TypingWk.
       cbn.
       econstructor.
       1: now eapply IHA.
-      eapply IHB with (ρ := wk_up _ _ ρ).
+      eapply IHB with (ρ := wk_up _ ρ).
       econstructor ; tea.
       econstructor.
       now eapply IHA.
     - intros * _ IHA _ IHt ? ρ ?.
       econstructor.
       1: now eapply IHA.
-      eapply IHt with (ρ := wk_up _ _ ρ).
+      eapply IHt with (ρ := wk_up _ ρ).
       econstructor ; tea.
       now eapply IHA.
     - intros * _ IHf _ IHu ? ρ ?.
@@ -151,12 +151,12 @@ Section TypingWk.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
-    - intros Γ ? ? A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
+    - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply IHBB' with (ρ := wk_up _ _ ρ).
+      + eapply IHBB' with (ρ := wk_up _ ρ).
         econstructor ; tea.
         now eapply IHA.
     - intros * _ IHA ? ρ ?.
@@ -171,26 +171,26 @@ Section TypingWk.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - intros Γ ? u t A B _ IHA _ IHt _ IHu ? ρ ?.
+    - intros Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
       1: econstructor.
       + now eapply IHA.
-      + eapply IHt with (ρ := wk_up _ _ ρ).
+      + eapply IHt with (ρ := wk_up _ ρ).
         econstructor ; tea.
         now eapply IHA.
       + now eapply IHu.
       + now asimpl.
       + now asimpl. 
-    - intros Γ ? ? A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
+    - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
       + now eapply IHAA'.
-      + eapply IHBB' with (ρ := wk_up _ _ ρ).
+      + eapply IHBB' with (ρ := wk_up _ ρ).
         pose (IHA _ ρ H).
         econstructor; tea; now econstructor.
-    - intros Γ ? u u' f f' A B _ IHf _ IHu ? ρ ?.
+    - intros Γ u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
       cbn in IHf.
@@ -200,15 +200,15 @@ Section TypingWk.
       + now eapply IHu.
       + now asimpl.
       + now asimpl.
-    - intros Γ ? ? f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
+    - intros Γ f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
       cbn.
       econstructor.
       1-3: easy.
-      specialize (IHe _ (wk_up _ _ ρ)).
+      specialize (IHe _ (wk_up _ ρ)).
       cbn in IHe.
-      bsimpl.
       repeat rewrite renRen_term in IHe.
       cbn in * ; refold.
+      bsimpl.
       eapply IHe.
       econstructor ; tea.
       now eapply IHA.
@@ -271,12 +271,12 @@ by substitution and injectivity of type constructors, which we get from the logi
 Section Boundaries.
   Import DeclarativeTypingData.
 
-  Definition boundary_ctx_ctx {Γ na A} : [|- Γ,, vass na A] -> [|- Γ].
+  Definition boundary_ctx_ctx {Γ A} : [|- Γ,, A] -> [|- Γ].
   Proof.
     now inversion 1.
   Qed.
 
-  Definition boundary_ctx_tip {Γ na A} : [|- Γ,, vass na A] -> [Γ |- A].
+  Definition boundary_ctx_tip {Γ A} : [|- Γ,, A] -> [Γ |- A].
   Proof.
     now inversion 1.
   Qed.
@@ -430,12 +430,12 @@ Lemma oreddecl_wk {Γ Δ t u K} (ρ : Δ ≤ Γ) :
   match K with istype => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩] | isterm A => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] end.
 Proof.
   intros ? red.
-  induction red as [? ? ? ? ? ? Ht Ha | | | | | |]; refold.
+  induction red as [| | | | | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
     + now eapply typing_wk.
-    + eapply typing_wk with (ρ := wk_up _ _ ρ) ; tea.
+    + eapply typing_wk with (ρ := wk_up _ ρ) ; tea.
       econstructor ; tea.
       now eapply typing_wk.
     + now eapply typing_wk.
@@ -449,9 +449,9 @@ Proof.
     + now asimpl.
     + reflexivity.
   - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimSubst _ nN); tea.
+    eapply natElimSubst; tea.
     * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
@@ -461,9 +461,9 @@ Proof.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
     Unshelve. all: tea.
   - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimZero _ nN); tea.
+    eapply natElimZero; tea.
     * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
@@ -473,9 +473,9 @@ Proof.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
     Unshelve. all: tea.
   - cbn. erewrite subst_ren_wk_up.
-    eapply (@natElimSucc _ nN).
+    eapply natElimSucc.
     * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ _ ρ) _). 
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
@@ -525,13 +525,13 @@ Qed.
 
 (** ** Derived rules for multi-step reduction *)
 
-Lemma redtmdecl_app Γ na A B f f' t :
-  [ Γ |- f ⇒* f' : tProd na A B ] ->
+Lemma redtmdecl_app Γ A B f f' t :
+  [ Γ |- f ⇒* f' : tProd A B ] ->
   [ Γ |- t : A ] ->
   [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ].
 Proof.
   intros Hf ?.
-  remember (tProd na A B) as T in *.
+  remember (tProd A B) as T in *.
   induction Hf.
   + subst.
     now do 2 econstructor.

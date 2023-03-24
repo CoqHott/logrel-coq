@@ -8,8 +8,8 @@ Module Core.
 Inductive term : Type :=
   | tRel : nat -> term
   | tSort : sort -> term
-  | tProd : aname -> term -> term -> term
-  | tLambda : aname -> term -> term -> term
+  | tProd : term -> term -> term
+  | tLambda : term -> term -> term
   | tApp : term -> term -> term
   | tNat : term
   | tZero : term
@@ -22,24 +22,18 @@ Proof.
 exact (eq_trans eq_refl (ap (fun x => tSort x) H0)).
 Qed.
 
-Lemma congr_tProd {s0 : aname} {s1 : term} {s2 : term} {t0 : aname}
-  {t1 : term} {t2 : term} (H0 : s0 = t0) (H1 : s1 = t1) (H2 : s2 = t2) :
-  tProd s0 s1 s2 = tProd t0 t1 t2.
+Lemma congr_tProd {s0 : term} {s1 : term} {t0 : term} {t1 : term}
+  (H0 : s0 = t0) (H1 : s1 = t1) : tProd s0 s1 = tProd t0 t1.
 Proof.
-exact (eq_trans
-         (eq_trans (eq_trans eq_refl (ap (fun x => tProd x s1 s2) H0))
-            (ap (fun x => tProd t0 x s2) H1))
-         (ap (fun x => tProd t0 t1 x) H2)).
+exact (eq_trans (eq_trans eq_refl (ap (fun x => tProd x s1) H0))
+         (ap (fun x => tProd t0 x) H1)).
 Qed.
 
-Lemma congr_tLambda {s0 : aname} {s1 : term} {s2 : term} {t0 : aname}
-  {t1 : term} {t2 : term} (H0 : s0 = t0) (H1 : s1 = t1) (H2 : s2 = t2) :
-  tLambda s0 s1 s2 = tLambda t0 t1 t2.
+Lemma congr_tLambda {s0 : term} {s1 : term} {t0 : term} {t1 : term}
+  (H0 : s0 = t0) (H1 : s1 = t1) : tLambda s0 s1 = tLambda t0 t1.
 Proof.
-exact (eq_trans
-         (eq_trans (eq_trans eq_refl (ap (fun x => tLambda x s1 s2) H0))
-            (ap (fun x => tLambda t0 x s2) H1))
-         (ap (fun x => tLambda t0 t1 x) H2)).
+exact (eq_trans (eq_trans eq_refl (ap (fun x => tLambda x s1) H0))
+         (ap (fun x => tLambda t0 x) H1)).
 Qed.
 
 Lemma congr_tApp {s0 : term} {s1 : term} {t0 : term} {t1 : term}
@@ -88,11 +82,10 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
   match s with
   | tRel s0 => tRel (xi_term s0)
   | tSort s0 => tSort s0
-  | tProd s0 s1 s2 =>
-      tProd s0 (ren_term xi_term s1) (ren_term (upRen_term_term xi_term) s2)
-  | tLambda s0 s1 s2 =>
-      tLambda s0 (ren_term xi_term s1)
-        (ren_term (upRen_term_term xi_term) s2)
+  | tProd s0 s1 =>
+      tProd (ren_term xi_term s0) (ren_term (upRen_term_term xi_term) s1)
+  | tLambda s0 s1 =>
+      tLambda (ren_term xi_term s0) (ren_term (upRen_term_term xi_term) s1)
   | tApp s0 s1 => tApp (ren_term xi_term s0) (ren_term xi_term s1)
   | tNat => tNat
   | tZero => tZero
@@ -112,12 +105,12 @@ term :=
   match s with
   | tRel s0 => sigma_term s0
   | tSort s0 => tSort s0
-  | tProd s0 s1 s2 =>
-      tProd s0 (subst_term sigma_term s1)
-        (subst_term (up_term_term sigma_term) s2)
-  | tLambda s0 s1 s2 =>
-      tLambda s0 (subst_term sigma_term s1)
-        (subst_term (up_term_term sigma_term) s2)
+  | tProd s0 s1 =>
+      tProd (subst_term sigma_term s0)
+        (subst_term (up_term_term sigma_term) s1)
+  | tLambda s0 s1 =>
+      tLambda (subst_term sigma_term s0)
+        (subst_term (up_term_term sigma_term) s1)
   | tApp s0 s1 => tApp (subst_term sigma_term s0) (subst_term sigma_term s1)
   | tNat => tNat
   | tZero => tZero
@@ -145,12 +138,12 @@ subst_term sigma_term s = s :=
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0) (idSubst_term sigma_term Eq_term s1)
-        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0) (idSubst_term sigma_term Eq_term s1)
-        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s2)
+  | tProd s0 s1 =>
+      congr_tProd (idSubst_term sigma_term Eq_term s0)
+        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda (idSubst_term sigma_term Eq_term s0)
+        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp (idSubst_term sigma_term Eq_term s0)
         (idSubst_term sigma_term Eq_term s1)
@@ -181,14 +174,14 @@ ren_term xi_term s = ren_term zeta_term s :=
   match s with
   | tRel s0 => ap (tRel) (Eq_term s0)
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0) (extRen_term xi_term zeta_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd (extRen_term xi_term zeta_term Eq_term s0)
         (extRen_term (upRen_term_term xi_term) (upRen_term_term zeta_term)
-           (upExtRen_term_term _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0) (extRen_term xi_term zeta_term Eq_term s1)
+           (upExtRen_term_term _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda (extRen_term xi_term zeta_term Eq_term s0)
         (extRen_term (upRen_term_term xi_term) (upRen_term_term zeta_term)
-           (upExtRen_term_term _ _ Eq_term) s2)
+           (upExtRen_term_term _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp (extRen_term xi_term zeta_term Eq_term s0)
         (extRen_term xi_term zeta_term Eq_term s1)
@@ -221,14 +214,14 @@ subst_term sigma_term s = subst_term tau_term s :=
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0) (ext_term sigma_term tau_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd (ext_term sigma_term tau_term Eq_term s0)
         (ext_term (up_term_term sigma_term) (up_term_term tau_term)
-           (upExt_term_term _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0) (ext_term sigma_term tau_term Eq_term s1)
+           (upExt_term_term _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda (ext_term sigma_term tau_term Eq_term s0)
         (ext_term (up_term_term sigma_term) (up_term_term tau_term)
-           (upExt_term_term _ _ Eq_term) s2)
+           (upExt_term_term _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp (ext_term sigma_term tau_term Eq_term s0)
         (ext_term sigma_term tau_term Eq_term s1)
@@ -260,18 +253,16 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
   match s with
   | tRel s0 => ap (tRel) (Eq_term s0)
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0)
-        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
         (compRenRen_term (upRen_term_term xi_term)
            (upRen_term_term zeta_term) (upRen_term_term rho_term)
-           (up_ren_ren _ _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0)
-        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+           (up_ren_ren _ _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
         (compRenRen_term (upRen_term_term xi_term)
            (upRen_term_term zeta_term) (upRen_term_term rho_term)
-           (up_ren_ren _ _ _ Eq_term) s2)
+           (up_ren_ren _ _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
@@ -309,18 +300,17 @@ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0)
-        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
         (compRenSubst_term (upRen_term_term xi_term) (up_term_term tau_term)
            (up_term_term theta_term) (up_ren_subst_term_term _ _ _ Eq_term)
-           s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0)
-        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+           s1)
+  | tLambda s0 s1 =>
+      congr_tLambda
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
         (compRenSubst_term (upRen_term_term xi_term) (up_term_term tau_term)
            (up_term_term theta_term) (up_ren_subst_term_term _ _ _ Eq_term)
-           s2)
+           s1)
   | tApp s0 s1 =>
       congr_tApp (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
         (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
@@ -367,18 +357,18 @@ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0)
-        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
         (compSubstRen_term (up_term_term sigma_term)
            (upRen_term_term zeta_term) (up_term_term theta_term)
-           (up_subst_ren_term_term _ _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0)
-        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+           (up_subst_ren_term_term _ _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
         (compSubstRen_term (up_term_term sigma_term)
            (upRen_term_term zeta_term) (up_term_term theta_term)
-           (up_subst_ren_term_term _ _ _ Eq_term) s2)
+           (up_subst_ren_term_term _ _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
@@ -430,18 +420,18 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0)
-        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
         (compSubstSubst_term (up_term_term sigma_term)
            (up_term_term tau_term) (up_term_term theta_term)
-           (up_subst_subst_term_term _ _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0)
-        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+           (up_subst_subst_term_term _ _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
         (compSubstSubst_term (up_term_term sigma_term)
            (up_term_term tau_term) (up_term_term theta_term)
-           (up_subst_subst_term_term _ _ _ Eq_term) s2)
+           (up_subst_subst_term_term _ _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
@@ -545,16 +535,14 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
   match s with
   | tRel s0 => Eq_term s0
   | tSort s0 => congr_tSort (eq_refl s0)
-  | tProd s0 s1 s2 =>
-      congr_tProd (eq_refl s0)
-        (rinst_inst_term xi_term sigma_term Eq_term s1)
+  | tProd s0 s1 =>
+      congr_tProd (rinst_inst_term xi_term sigma_term Eq_term s0)
         (rinst_inst_term (upRen_term_term xi_term) (up_term_term sigma_term)
-           (rinstInst_up_term_term _ _ Eq_term) s2)
-  | tLambda s0 s1 s2 =>
-      congr_tLambda (eq_refl s0)
-        (rinst_inst_term xi_term sigma_term Eq_term s1)
+           (rinstInst_up_term_term _ _ Eq_term) s1)
+  | tLambda s0 s1 =>
+      congr_tLambda (rinst_inst_term xi_term sigma_term Eq_term s0)
         (rinst_inst_term (upRen_term_term xi_term) (up_term_term sigma_term)
-           (rinstInst_up_term_term _ _ Eq_term) s2)
+           (rinstInst_up_term_term _ _ Eq_term) s1)
   | tApp s0 s1 =>
       congr_tApp (rinst_inst_term xi_term sigma_term Eq_term s0)
         (rinst_inst_term xi_term sigma_term Eq_term s1)
@@ -764,14 +752,12 @@ Fixpoint allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
   match s with
   | tRel s0 => p_term s0
   | tSort s0 => and True True
-  | tProd s0 s1 s2 =>
-      and True
-        (and (allfv_term p_term s1)
-           (and (allfv_term (upAllfv_term_term p_term) s2) True))
-  | tLambda s0 s1 s2 =>
-      and True
-        (and (allfv_term p_term s1)
-           (and (allfv_term (upAllfv_term_term p_term) s2) True))
+  | tProd s0 s1 =>
+      and (allfv_term p_term s0)
+        (and (allfv_term (upAllfv_term_term p_term) s1) True)
+  | tLambda s0 s1 =>
+      and (allfv_term p_term s0)
+        (and (allfv_term (upAllfv_term_term p_term) s1) True)
   | tApp s0 s1 =>
       and (allfv_term p_term s0) (and (allfv_term p_term s1) True)
   | tNat => True
@@ -797,18 +783,16 @@ Fixpoint allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
   match s with
   | tRel s0 => H_term s0
   | tSort s0 => conj I I
-  | tProd s0 s1 s2 =>
-      conj I
-        (conj (allfvTriv_term p_term H_term s1)
-           (conj
-              (allfvTriv_term (upAllfv_term_term p_term)
-                 (upAllfvTriv_term_term H_term) s2) I))
-  | tLambda s0 s1 s2 =>
-      conj I
-        (conj (allfvTriv_term p_term H_term s1)
-           (conj
-              (allfvTriv_term (upAllfv_term_term p_term)
-                 (upAllfvTriv_term_term H_term) s2) I))
+  | tProd s0 s1 =>
+      conj (allfvTriv_term p_term H_term s0)
+        (conj
+           (allfvTriv_term (upAllfv_term_term p_term)
+              (upAllfvTriv_term_term H_term) s1) I)
+  | tLambda s0 s1 =>
+      conj (allfvTriv_term p_term H_term s0)
+        (conj
+           (allfvTriv_term (upAllfv_term_term p_term)
+              (upAllfvTriv_term_term H_term) s1) I)
   | tApp s0 s1 =>
       conj (allfvTriv_term p_term H_term s0)
         (conj (allfvTriv_term p_term H_term s1) I)
@@ -840,48 +824,36 @@ allfv_term p_term s -> allfv_term q_term s :=
   match s with
   | tRel s0 => fun HP => H_term s0 HP
   | tSort s0 => fun HP => conj I I
-  | tProd s0 s1 s2 =>
+  | tProd s0 s1 =>
       fun HP =>
-      conj I
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
         (conj
-           (allfvImpl_term p_term q_term H_term s1
+           (allfvImpl_term (upAllfv_term_term p_term)
+              (upAllfv_term_term q_term) (upAllfvImpl_term_term H_term) s1
               match HP with
               | conj _ HP => match HP with
                              | conj HP _ => HP
                              end
-              end)
-           (conj
-              (allfvImpl_term (upAllfv_term_term p_term)
-                 (upAllfv_term_term q_term) (upAllfvImpl_term_term H_term) s2
-                 match HP with
-                 | conj _ HP =>
-                     match HP with
-                     | conj _ HP => match HP with
-                                    | conj HP _ => HP
-                                    end
-                     end
-                 end) I))
-  | tLambda s0 s1 s2 =>
+              end) I)
+  | tLambda s0 s1 =>
       fun HP =>
-      conj I
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
         (conj
-           (allfvImpl_term p_term q_term H_term s1
+           (allfvImpl_term (upAllfv_term_term p_term)
+              (upAllfv_term_term q_term) (upAllfvImpl_term_term H_term) s1
               match HP with
               | conj _ HP => match HP with
                              | conj HP _ => HP
                              end
-              end)
-           (conj
-              (allfvImpl_term (upAllfv_term_term p_term)
-                 (upAllfv_term_term q_term) (upAllfvImpl_term_term H_term) s2
-                 match HP with
-                 | conj _ HP =>
-                     match HP with
-                     | conj _ HP => match HP with
-                                    | conj HP _ => HP
-                                    end
-                     end
-                 end) I))
+              end) I)
   | tApp s0 s1 =>
       fun HP =>
       conj
@@ -964,50 +936,36 @@ allfv_term (funcomp p_term xi_term) s :=
   match s with
   | tRel s0 => fun H => H
   | tSort s0 => fun H => conj I I
-  | tProd s0 s1 s2 =>
+  | tProd s0 s1 =>
       fun H =>
-      conj I
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
         (conj
-           (allfvRenL_term p_term xi_term s1
-              match H with
-              | conj _ H => match H with
-                            | conj H _ => H
-                            end
-              end)
-           (conj
-              (allfvImpl_term _ _ (upAllfvRenL_term_term p_term xi_term) s2
-                 (allfvRenL_term (upAllfv_term_term p_term)
-                    (upRen_term_term xi_term) s2
-                    match H with
-                    | conj _ H =>
-                        match H with
-                        | conj _ H => match H with
-                                      | conj H _ => H
-                                      end
-                        end
-                    end)) I))
-  | tLambda s0 s1 s2 =>
+           (allfvImpl_term _ _ (upAllfvRenL_term_term p_term xi_term) s1
+              (allfvRenL_term (upAllfv_term_term p_term)
+                 (upRen_term_term xi_term) s1
+                 match H with
+                 | conj _ H => match H with
+                               | conj H _ => H
+                               end
+                 end)) I)
+  | tLambda s0 s1 =>
       fun H =>
-      conj I
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
         (conj
-           (allfvRenL_term p_term xi_term s1
-              match H with
-              | conj _ H => match H with
-                            | conj H _ => H
-                            end
-              end)
-           (conj
-              (allfvImpl_term _ _ (upAllfvRenL_term_term p_term xi_term) s2
-                 (allfvRenL_term (upAllfv_term_term p_term)
-                    (upRen_term_term xi_term) s2
-                    match H with
-                    | conj _ H =>
-                        match H with
-                        | conj _ H => match H with
-                                      | conj H _ => H
-                                      end
-                        end
-                    end)) I))
+           (allfvImpl_term _ _ (upAllfvRenL_term_term p_term xi_term) s1
+              (allfvRenL_term (upAllfv_term_term p_term)
+                 (upRen_term_term xi_term) s1
+                 match H with
+                 | conj _ H => match H with
+                               | conj H _ => H
+                               end
+                 end)) I)
   | tApp s0 s1 =>
       fun H =>
       conj
@@ -1087,52 +1045,36 @@ allfv_term p_term (ren_term xi_term s) :=
   match s with
   | tRel s0 => fun H => H
   | tSort s0 => fun H => conj I I
-  | tProd s0 s1 s2 =>
+  | tProd s0 s1 =>
       fun H =>
-      conj I
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
         (conj
-           (allfvRenR_term p_term xi_term s1
-              match H with
-              | conj _ H => match H with
-                            | conj H _ => H
-                            end
-              end)
-           (conj
-              (allfvRenR_term (upAllfv_term_term p_term)
-                 (upRen_term_term xi_term) s2
-                 (allfvImpl_term _ _ (upAllfvRenR_term_term p_term xi_term)
-                    s2
-                    match H with
-                    | conj _ H =>
-                        match H with
-                        | conj _ H => match H with
-                                      | conj H _ => H
-                                      end
-                        end
-                    end)) I))
-  | tLambda s0 s1 s2 =>
+           (allfvRenR_term (upAllfv_term_term p_term)
+              (upRen_term_term xi_term) s1
+              (allfvImpl_term _ _ (upAllfvRenR_term_term p_term xi_term) s1
+                 match H with
+                 | conj _ H => match H with
+                               | conj H _ => H
+                               end
+                 end)) I)
+  | tLambda s0 s1 =>
       fun H =>
-      conj I
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
         (conj
-           (allfvRenR_term p_term xi_term s1
-              match H with
-              | conj _ H => match H with
-                            | conj H _ => H
-                            end
-              end)
-           (conj
-              (allfvRenR_term (upAllfv_term_term p_term)
-                 (upRen_term_term xi_term) s2
-                 (allfvImpl_term _ _ (upAllfvRenR_term_term p_term xi_term)
-                    s2
-                    match H with
-                    | conj _ H =>
-                        match H with
-                        | conj _ H => match H with
-                                      | conj H _ => H
-                                      end
-                        end
-                    end)) I))
+           (allfvRenR_term (upAllfv_term_term p_term)
+              (upRen_term_term xi_term) s1
+              (allfvImpl_term _ _ (upAllfvRenR_term_term p_term xi_term) s1
+                 match H with
+                 | conj _ H => match H with
+                               | conj H _ => H
+                               end
+                 end)) I)
   | tApp s0 s1 =>
       fun H =>
       conj

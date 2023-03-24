@@ -49,9 +49,9 @@ Arguments ren1 {_ _ _}%type_scope {Ren1} _ !_/.
 Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.
 
-Notation arr A B := (tProd anDummy A B⟨↑⟩).
-Notation comp A f g := (tLambda anDummy A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
-Notation idterm A  := (tLambda anDummy A (tRel 0)).
+Notation arr A B := (tProd A B⟨↑⟩).
+Notation comp A f g := (tLambda A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
+Notation idterm A  := (tLambda A (tRel 0)).
 
 Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
 Proof.

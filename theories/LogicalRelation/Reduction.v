@@ -24,10 +24,10 @@ Proof.
     + apply LRne_; exists t; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + exists t; tea.
-  - intros B [na dom cod] A ? ihdom ihcod; cbn in *; unshelve eexists.
-    + apply LRPi'; unshelve eexists na dom cod _ _; tea; etransitivity; tea.
+  - intros B [dom cod] A ? ihdom ihcod; cbn in *; unshelve eexists.
+    + apply LRPi'; unshelve eexists dom cod _ _; tea; etransitivity; tea.
       constructor; tea; gen_typing.
-    + unshelve eexists na dom cod; tea; cbn.
+    + unshelve eexists dom cod; tea; cbn.
       1,2: intros; apply LRTyEqRefl_.
   - intros B [red] A ?; unshelve eexists.
     + apply LRNat_; constructor; tea; etransitivity; tea.
@@ -76,7 +76,7 @@ Proof.
     + split; tea; exists n n; tea; destruct red; constructor; tea; now etransitivity. 
   - intros ? ΠA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [f].
     assert [Γ |- A ≅ PiRedTyPack.prod ΠA]. 1:{
-      destruct ΠA as [??? []]. cbn in *.
+      destruct ΠA as [?? []]. cbn in *.
       eapply convty_exp; tea.
       now apply redtywf_refl.
     }
@@ -90,8 +90,7 @@ Proof.
   - intros ? NA t ? Ru red; inversion Ru; subst.
     assert [Γ |- A ≅ tNat] by (destruct NA; gen_typing).
     assert [Γ |- t :⇒*: nf : tNat]. 1:{
-      constructor. 2: gen_typing.
-      1: eapply ty_conv; gen_typing.
+      constructor. 1: gen_typing.
       etransitivity. 2: gen_typing.
       now eapply redtm_conv.
     }
@@ -130,7 +129,7 @@ Proof.
     1: constructor; now eapply ty_ne_whne.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
-  - intros ??? [??? red] ?? ? red' ?.
+  - intros ??? [?? red] ?? ? red' ?.
     eapply LRPi'. 
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
     1: constructor.

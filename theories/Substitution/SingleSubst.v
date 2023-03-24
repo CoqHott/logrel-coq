@@ -14,9 +14,9 @@ Lemma singleSubstComm G t σ : G[t..][σ] = G[t[σ] .: σ].
 Proof. now asimpl. Qed.
 
 
-Lemma substS {Γ F G t l} {VΓ : [||-v Γ]} nF
+Lemma substS {Γ F G t l} {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  (VG : [Γ,, vass nF F ||-v<l> G | validSnoc nF VΓ VF])
+  (VG : [Γ,, F ||-v<l> G | validSnoc VΓ VF])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) :
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
@@ -30,25 +30,25 @@ Proof.
     Unshelve. all: eassumption.
 Qed.
 
-Lemma substSEq {Γ F F' G G' t t' l} {VΓ : [||-v Γ]} nF 
+Lemma substSEq {Γ F F' G G' t t' l} {VΓ : [||-v Γ]} 
   {VF : [Γ ||-v<l> F | VΓ]}
   {VF' : [Γ ||-v<l> F' | VΓ]}
   (VFF' : [Γ ||-v<l> F ≅ F' | VΓ | VF])
-  (VΓF := validSnoc nF VΓ VF)
-  (VΓF' := validSnoc nF VΓ VF')
-  {VG : [Γ,, vass nF F ||-v<l> G | VΓF]}
-  (VG' : [Γ,, vass nF F' ||-v<l> G' | VΓF'])
-  (VGG' : [Γ ,, vass nF F ||-v<l> G ≅ G' | VΓF | VG])
+  (VΓF := validSnoc VΓ VF)
+  (VΓF' := validSnoc VΓ VF')
+  {VG : [Γ,, F ||-v<l> G | VΓF]}
+  (VG' : [Γ,, F' ||-v<l> G' | VΓF'])
+  (VGG' : [Γ ,, F ||-v<l> G ≅ G' | VΓF | VG])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF])
   (Vt' : [Γ ||-v<l> t' : F' | VΓ | VF'])
   (Vtt' : [Γ ||-v<l> t ≅ t' : F | VΓ | VF])
-  (VGt := substS nF VG Vt) :
+  (VGt := substS VG Vt) :
   [Γ ||-v<l> G[t..] ≅ G'[t'..] | VΓ | VGt].
 Proof.
   constructor; intros.
   assert (VtF' : [Γ ||-v<l> t : F' | VΓ | VF']) by now eapply conv.
-  pose proof (consSubstSvalid (nA:=nF) _ _ Vσ _ Vt').
-  pose proof (consSubstSvalid (nA:=nF) _ _ Vσ _ VtF').
+  pose proof (consSubstSvalid _ _ Vσ _ Vt').
+  pose proof (consSubstSvalid _ _ Vσ _ VtF').
   rewrite singleSubstComm; irrelevance0.
   1: symmetry; apply singleSubstComm.
   eapply transEq.
@@ -66,13 +66,13 @@ Qed.
 
 
 
-Lemma substSTm {Γ F G t f l} {VΓ : [||-v Γ]} nF
+Lemma substSTm {Γ F G t f l} {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  (VΓF := validSnoc nF VΓ VF)
-  {VG : [Γ,, vass nF F ||-v<l> G | VΓF]}
+  (VΓF := validSnoc VΓ VF)
+  {VG : [Γ,, F ||-v<l> G | VΓF]}
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) 
-  (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG])
-  (VGt := substS nF VG Vt) :
+  (Vf : [Γ ,, F ||-v<l> f : G | VΓF | VG])
+  (VGt := substS VG Vt) :
   [Γ ||-v<l> f[t..] : G[t..] | VΓ | VGt].
 Proof.
   constructor; intros; rewrite !singleSubstComm; irrelevance0. 
@@ -85,22 +85,22 @@ Proof.
     now apply consSubstSvalid.
 Qed.
 
-Lemma substSTmEq {Γ F F' G G' t t' f f' l} (VΓ : [||-v Γ]) nF 
+Lemma substSTmEq {Γ F F' G G' t t' f f' l} (VΓ : [||-v Γ]) 
   (VF : [Γ ||-v<l> F | VΓ])
   (VF' : [Γ ||-v<l> F' | VΓ])
   (VFF' : [Γ ||-v<l> F ≅ F' | VΓ | VF])
-  (VΓF := validSnoc nF VΓ VF)
-  (VΓF' := validSnoc nF VΓ VF')
-  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
-  (VG' : [Γ,, vass nF F' ||-v<l> G' | VΓF'])
-  (VGG' : [Γ ,, vass nF F ||-v<l> G ≅ G' | VΓF | VG])
+  (VΓF := validSnoc VΓ VF)
+  (VΓF' := validSnoc VΓ VF')
+  (VG : [Γ,, F ||-v<l> G | VΓF])
+  (VG' : [Γ,, F' ||-v<l> G' | VΓF'])
+  (VGG' : [Γ ,, F ||-v<l> G ≅ G' | VΓF | VG])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF])
   (Vt' : [Γ ||-v<l> t' : F' | VΓ | VF'])
   (Vtt' : [Γ ||-v<l> t ≅ t' : F | VΓ | VF]) 
-  (Vf : [Γ ,, vass nF F ||-v<l> f : G | VΓF | VG])
-  (Vf' : [Γ ,, vass nF F' ||-v<l> f' : G' | VΓF' | VG'])
-  (Vff' : [Γ ,, vass nF F ||-v<l> f ≅ f' : G | VΓF | VG]) :
-  [Γ ||-v<l> f[t..] ≅ f'[t'..] : G[t..] | VΓ | substS nF VG Vt].
+  (Vf : [Γ ,, F ||-v<l> f : G | VΓF | VG])
+  (Vf' : [Γ ,, F' ||-v<l> f' : G' | VΓF' | VG'])
+  (Vff' : [Γ ,, F ||-v<l> f ≅ f' : G | VΓF | VG]) :
+  [Γ ||-v<l> f[t..] ≅ f'[t'..] : G[t..] | VΓ | substS VG Vt].
 Proof.
   constructor; intros; rewrite !singleSubstComm; irrelevance0. 
   1: symmetry; apply singleSubstComm.
@@ -130,16 +130,16 @@ Lemma liftSubstComm G t σ : G[t]⇑[σ] = G[t[σ] .: ↑ >> σ].
 Proof. now bsimpl. Qed.
 
 
-Lemma substLiftS {Γ F G t l} (VΓ : [||-v Γ]) nF
+Lemma substLiftS {Γ F G t l} (VΓ : [||-v Γ])
   (VF : [Γ ||-v<l> F | VΓ])
-  (VΓF := validSnoc nF VΓ VF)
-  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
-  (VF' := wk1ValidTy nF VF VF)
-  (Vt : [Γ,, vass nF F ||-v<l> t : F⟨@wk1 Γ nF F⟩ | VΓF | VF']) :
-  [Γ ,, vass nF F ||-v<l> G[t]⇑ | VΓF].
+  (VΓF := validSnoc VΓ VF)
+  (VG : [Γ,, F ||-v<l> G | VΓF])
+  (VF' := wk1ValidTy VF VF)
+  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  [Γ ,, F ||-v<l> G[t]⇑ | VΓF].
 Proof.
   assert (h : forall Δ σ (wfΔ: [|- Δ])
-    (vσ: [VΓF | Δ ||-v σ : Γ,, vass nF F | wfΔ]),
+    (vσ: [VΓF | Δ ||-v σ : Γ,, F | wfΔ]),
     [VΓF | Δ ||-v (t[σ] .: ↑ >> σ) : _ | wfΔ ]).
   1:{
     unshelve econstructor.
@@ -164,15 +164,15 @@ Proof.
       Unshelve. all:tea.
 Qed.
 
-Lemma substLiftSEq {Γ F G G' t l} (VΓ : [||-v Γ]) nF
+Lemma substLiftSEq {Γ F G G' t l} (VΓ : [||-v Γ])
   (VF : [Γ ||-v<l> F | VΓ])
-  (VΓF := validSnoc nF VΓ VF)
-  (VG : [Γ,, vass nF F ||-v<l> G | VΓF])
-  (VG' : [Γ,, vass nF F ||-v<l> G' | VΓF])
-  (VGeq : [Γ,, vass nF F ||-v<l> G ≅ G' | VΓF | VG])
-  (VF' := wk1ValidTy nF VF VF)
-  (Vt : [Γ,, vass nF F ||-v<l> t : F⟨@wk1 Γ nF F⟩ | VΓF | VF']) :
-  [Γ ,, vass nF F ||-v<l> G[t]⇑ ≅ G'[t]⇑ | VΓF | substLiftS _ nF VF VG Vt].
+  (VΓF := validSnoc VΓ VF)
+  (VG : [Γ,, F ||-v<l> G | VΓF])
+  (VG' : [Γ,, F ||-v<l> G' | VΓF])
+  (VGeq : [Γ,, F ||-v<l> G ≅ G' | VΓF | VG])
+  (VF' := wk1ValidTy VF VF)
+  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  [Γ ,, F ||-v<l> G[t]⇑ ≅ G'[t]⇑ | VΓF | substLiftS _ VF VG Vt].
 Proof.
   constructor; intros; rewrite liftSubstComm.
   assert (Vσt : [Δ ||-v (t[σ] .: ↑ >> σ) : _ | VΓF | wfΔ ]). 1:{
@@ -183,13 +183,13 @@ Proof.
   instValid Vσt. irrelevance.
 Qed.
 
-Lemma singleSubstΠ1 {Γ nF F G t l lF}
-  (ΠFG : [Γ ||-<l> tProd nF F G])
+Lemma singleSubstΠ1 {Γ F G t l lF}
+  (ΠFG : [Γ ||-<l> tProd F G])
   {RF : [Γ ||-<lF> F]}
   (Rt : [Γ ||-<lF> t : F | RF]) :
   [Γ ||-<l> G[t..]].
 Proof.
-  apply invLRΠ in ΠFG; destruct ΠFG as [??? red ??? domRed codRed].
+  apply invLRΠ in ΠFG; destruct ΠFG as [?? red ??? domRed codRed].
   unshelve eassert (h :=redtywf_whnf red _).
   1: constructor.
   symmetry in h; injection h; clear h; intros ;  subst.
@@ -200,9 +200,9 @@ Proof.
   now bsimpl.
 Qed.
 
-Lemma singleSubstΠ2 {Γ nF nF' F F' G G' t t' l lF lF'}
-  {ΠFG : [Γ ||-<l> tProd nF F G]}
-  (ΠFGeq : [Γ ||-<l> tProd nF F G ≅ tProd nF' F' G' | ΠFG])
+Lemma singleSubstΠ2 {Γ F F' G G' t t' l lF lF'}
+  {ΠFG : [Γ ||-<l> tProd F G]}
+  (ΠFGeq : [Γ ||-<l> tProd F G ≅ tProd F' G' | ΠFG])
   {RF : [Γ ||-<lF> F]}
   {RF' : [Γ ||-<lF'> F']}
   (Rt : [Γ ||-<lF> t : F | RF]) 
@@ -213,10 +213,10 @@ Lemma singleSubstΠ2 {Γ nF nF' F F' G G' t t' l lF lF'}
   [Γ ||-<lF> G[t..] ≅ G'[t'..] | RGt ].
 Proof.
   pose (hΠ := invLRΠ ΠFG).
-  assert (heq : [Γ ||-<l> tProd nF F G ≅ tProd nF' F' G' | LRPi' hΠ]) by irrelevance.
-  destruct hΠ as [??? red ??? domRed codRed codExt]; clear ΠFG ΠFGeq.
+  assert (heq : [Γ ||-<l> tProd F G ≅ tProd F' G' | LRPi' hΠ]) by irrelevance.
+  destruct hΠ as [?? red ??? domRed codRed codExt]; clear ΠFG ΠFGeq.
   assert (wfΓ : [|-Γ]) by gen_typing.
-  destruct heq as [??? red' ? domRedEq codRedEq]; cbn in *.
+  destruct heq as [?? red' ? domRedEq codRedEq]; cbn in *.
   unshelve eassert (h :=redtywf_whnf red _).  1: constructor.
   unshelve eassert (h' :=redtywf_whnf red' _).  1: constructor.
   symmetry in h; symmetry in h' ; injection h; injection h'; clear h h'; intros ;  subst.
@@ -238,10 +238,10 @@ Proof.
   irrelevance0; tea; now bsimpl.
 Qed.
 
-Lemma substSΠaux {Γ nF F G t l} 
+Lemma substSΠaux {Γ F G t l} 
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  (VΠFG : [Γ ||-v<l> tProd nF F G | VΓ])
+  (VΠFG : [Γ ||-v<l> tProd F G | VΓ])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF])
   (Δ : context) (σ : nat -> term) 
   (wfΔ : [ |-[ ta ] Δ]) (vσ : [VΓ | Δ ||-v σ : Γ | wfΔ]) :
@@ -256,10 +256,10 @@ Qed.
 Lemma singleSubstComm' G t σ : G[t..][σ] = G[up_term_term σ][t[σ]..].
 Proof. now asimpl. Qed.
 
-Lemma substSΠ {Γ nF F G t l} 
+Lemma substSΠ {Γ F G t l} 
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
-  (VΠFG : [Γ ||-v<l> tProd nF F G | VΓ])
+  (VΠFG : [Γ ||-v<l> tProd F G | VΓ])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) :
   [Γ ||-v<l> G[t..] | VΓ].
 Proof.
@@ -277,13 +277,13 @@ Proof.
     now eapply substSΠaux.
 Qed.
 
-Lemma substSΠeq {Γ nF nF' F F' G G' t u l} 
+Lemma substSΠeq {Γ F F' G G' t u l} 
   {VΓ : [||-v Γ]}
   {VF : [Γ ||-v<l> F | VΓ]}
   {VF' : [Γ ||-v<l> F' | VΓ]}
-  {VΠFG : [Γ ||-v<l> tProd nF F G | VΓ]}
-  (VΠFG' : [Γ ||-v<l> tProd nF' F' G' | VΓ])
-  (VΠFGeq : [Γ ||-v<l> tProd nF F G ≅ tProd nF' F' G' | VΓ | VΠFG])
+  {VΠFG : [Γ ||-v<l> tProd F G | VΓ]}
+  (VΠFG' : [Γ ||-v<l> tProd F' G' | VΓ])
+  (VΠFGeq : [Γ ||-v<l> tProd F G ≅ tProd F' G' | VΓ | VΠFG])
   (Vt : [Γ ||-v<l> t : F | VΓ | VF]) 
   (Vu : [Γ ||-v<l> u : F' | VΓ | VF']) 
   (Vtu : [Γ ||-v<l> t ≅ u : F | VΓ | VF]) 

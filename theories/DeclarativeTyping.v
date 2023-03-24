@@ -11,8 +11,8 @@ or typing, done in a declarative fashion. For instance, we _demand_ that convers
 be transitive by adding a corresponding rule. *)
 
 (** ** Definitions *)
-Definition elimSuccHypTy nN' P :=
-  tProd nN' tNat (arr P P[tSucc (tRel 0)]⇑).
+Definition elimSuccHypTy P :=
+  tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
 Section Definitions.
 
@@ -27,19 +27,19 @@ Section Definitions.
   (** **** Context well-formation *)
   Inductive WfContextDecl : context -> Type :=
       | connil : [ |- ε ]
-      | concons {Γ na A} : 
+      | concons {Γ A} : 
           [ |- Γ ] -> 
           [ Γ |- A ] -> 
-          [ |-  Γ ,, vass na A]
+          [ |-  Γ ,, A]
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> term -> Type :=
       | wfTypeU {Γ} : 
           [ |- Γ ] -> 
           [ Γ |- U ] 
-      | wfTypeProd {Γ} {na : aname} {A B} : 
+      | wfTypeProd {Γ} {A B} : 
           [ Γ |- A ] -> 
-          [Γ ,, (vass na A) |- B ] -> 
-          [ Γ |- tProd na A B ]
+          [Γ ,, (A) |- B ] -> 
+          [ Γ |- tProd A B ]
       | wfTypeNat {Γ} : 
           [|- Γ] ->
           [Γ |- tNat]
@@ -51,17 +51,17 @@ Section Definitions.
       | wfVar {Γ} {n decl} :
           [   |- Γ ] ->
           in_ctx Γ n decl ->
-          [ Γ |- tRel n : decl.(decl_type) ]
-      | wfTermProd {Γ} {na} {A B} :
+          [ Γ |- tRel n : decl ]
+      | wfTermProd {Γ} {A B} :
           [ Γ |- A : U] -> 
-          [Γ ,, (vass na A) |- B : U ] ->
-          [ Γ |- tProd na A B : U ]
-      | wfTermLam {Γ} {na} {A B t} :
+          [Γ ,, (A) |- B : U ] ->
+          [ Γ |- tProd A B : U ]
+      | wfTermLam {Γ} {A B t} :
           [ Γ |- A ] ->        
-          [ Γ ,, vass na A |- t : B ] -> 
-          [ Γ |- tLambda na A t : tProd na A B]
-      | wfTermApp {Γ} {na} {f a A B} :
-          [ Γ |- f : tProd na A B ] -> 
+          [ Γ ,, A |- t : B ] -> 
+          [ Γ |- tLambda A t : tProd A B]
+      | wfTermApp {Γ} {f a A B} :
+          [ Γ |- f : tProd A B ] -> 
           [ Γ |- a : A ] -> 
           [ Γ |- tApp f a : B[a..] ]
       | wfTermNat {Γ} :
@@ -73,10 +73,10 @@ Section Definitions.
       | wfTermSucc {Γ n} :
           [Γ |- n : tNat] ->
           [Γ |- tSucc n : tNat]
-      | wfTermNatElim {Γ nN P hz hs n} :
-        [Γ ,, vass nN tNat |- P ] ->
+      | wfTermNatElim {Γ P hz hs n} :
+        [Γ ,, tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy nN P] ->
+        [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs n : P[n..]]
       | wfTermConv {Γ} {t A B} :
@@ -85,11 +85,11 @@ Section Definitions.
           [ Γ |- t : B ]
   (** **** Conversion of types *)
   with ConvTypeDecl : context -> term -> term  -> Type :=  
-      | TypePiCong {Γ} {na nb} {A B C D} :
+      | TypePiCong {Γ} {A B C D} :
           [ Γ |- A] ->
           [ Γ |- A ≅ B] ->
-          [ Γ ,, vass na A |- C ≅ D] ->
-          [ Γ |- tProd na A C ≅ tProd nb B D]
+          [ Γ ,, A |- C ≅ D] ->
+          [ Γ |- tProd A C ≅ tProd B D]
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
@@ -105,44 +105,44 @@ Section Definitions.
           [ Γ |- A ≅ C]
   (** **** Conversion of terms *)
   with ConvTermDecl : context -> term -> term -> term -> Type :=
-      | TermBRed {Γ} {na} {a t A B} :
+      | TermBRed {Γ} {a t A B} :
               [ Γ |- A ] ->
-              [ Γ ,, vass na A |- t : B ] ->
+              [ Γ ,, A |- t : B ] ->
               [ Γ |- a : A ] ->
-              [ Γ |- tApp (tLambda na A t) a ≅ t[a..] : B[a..] ]
-      | TermPiCong {Γ} {na nb } {A B C D} :
+              [ Γ |- tApp (tLambda A t) a ≅ t[a..] : B[a..] ]
+      | TermPiCong {Γ} {A B C D} :
           [ Γ |- A : U] ->
           [ Γ |- A ≅ B : U ] ->
-          [ Γ ,, vass na A |- C ≅ D : U ] ->
-          [ Γ |- tProd na A C ≅ tProd nb B D : U ]
-      | TermAppCong {Γ} {na} {a b f g A B} :
-          [ Γ |- f ≅ g : tProd na A B ] ->
+          [ Γ ,, A |- C ≅ D : U ] ->
+          [ Γ |- tProd A C ≅ tProd B D : U ]
+      | TermAppCong {Γ} {a b f g A B} :
+          [ Γ |- f ≅ g : tProd A B ] ->
           [ Γ |- a ≅ b : A ] ->
           [ Γ |- tApp f a ≅ tApp g b : B[a..] ]
-      | TermFunExt {Γ} {na nb} {f g A B} :
+      | TermFunExt {Γ} {f g A B} :
           [ Γ |- A ] ->
-          [ Γ |- f : tProd na A B ] ->
-          [ Γ |- g : tProd nb A B ] ->
-          [ Γ ,, vass na A |- eta_expand f ≅ eta_expand g : B ] ->
-          [ Γ |- f ≅ g : tProd na A B ]
+          [ Γ |- f : tProd A B ] ->
+          [ Γ |- g : tProd A B ] ->
+          [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ] ->
+          [ Γ |- f ≅ g : tProd A B ]
       | TermSuccCong {Γ} {n n'} :
           [Γ |- n ≅ n' : tNat] ->
           [Γ |- tSucc n ≅ tSucc n' : tNat]
-      | TermNatElimCong {Γ nN P P' hz hz' hs hs' n n'} :
-          [Γ ,, vass nN tNat |- P ≅ P'] ->
+      | TermNatElimCong {Γ P P' hz hz' hs hs' n n'} :
+          [Γ ,, tNat |- P ≅ P'] ->
           [Γ |- hz ≅ hz' : P[tZero..]] ->
-          [Γ |- hs ≅ hs' : elimSuccHypTy nN P] ->
+          [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
           [Γ |- n ≅ n' : tNat] ->
           [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]        
-      | TermNatElimZero {Γ nN P hz hs} :
-          [Γ ,, vass nN tNat |- P ] ->
+      | TermNatElimZero {Γ P hz hs} :
+          [Γ ,, tNat |- P ] ->
           [Γ |- hz : P[tZero..]] ->
-          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]
-      | TermNatElimSucc {Γ nN P hz hs n} :
-          [Γ ,, vass nN tNat |- P ] ->
+      | TermNatElimSucc {Γ P hz hs n} :
+          [Γ ,, tNat |- P ] ->
           [Γ |- hz : P[tZero..]] ->
-          [Γ |- hs : elimSuccHypTy nN P] ->
+          [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- n : tNat] ->
           [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
       | TermRefl {Γ} {t A} :
@@ -172,30 +172,30 @@ Section Definitions.
   Local Coercion isterm : term >-> class.
 
   Inductive OneRedDecl (Γ : context) : class -> term -> term -> Type :=
-  | BRed {na} {A B : term} {a t} :
+  | BRed {A B : term} {a t} :
       [ Γ |- A ] -> 
-      [ Γ ,, vass na A |- t : B ] ->
+      [ Γ ,, A |- t : B ] ->
       [ Γ |- a : A ] ->
-      [ Γ |- tApp (tLambda na A t) a ⇒ t[a..] : B[a..] ]
-  | appSubst {na A B t u a} :
-      [ Γ |- t ⇒ u : tProd na A B] ->
+      [ Γ |- tApp (tLambda A t) a ⇒ t[a..] : B[a..] ]
+  | appSubst {A B t u a} :
+      [ Γ |- t ⇒ u : tProd A B] ->
       [ Γ |- a : A ] ->
       [ Γ |- tApp t a ⇒ tApp u a : B[a..] ]
-  | natElimSubst {nN P hz hs n n'} :
-      [Γ ,, vass nN tNat |- P] ->
+  | natElimSubst {P hz hs n n'} :
+      [Γ ,, tNat |- P] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n ⇒ n' : tNat] ->
-      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]
-  | natElimZero {nN P hz hs} :
-      [Γ ,, vass nN tNat |- P ] ->
+      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]        
+  | natElimZero {P hz hs} :
+      [Γ ,, tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]]
-  | natElimSucc {nN P hz hs n} :
-      [Γ ,, vass nN tNat |- P ] ->
+  | natElimSucc {P hz hs n} :
+      [Γ ,, tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy nN P] ->
+      [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n : tNat] ->
       [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
   | termRedConv {A B : term} {t u} :
