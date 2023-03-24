@@ -10,6 +10,7 @@ ideally wisely in cases where there is only one instance at hand. The tagged one
 and can be used in input when disambiguation is desired. *)
 
 Variant tag := | de | al | bn | bni.
+Inductive class := istype | isterm : term -> class.
 
 Declare Scope typing_scope.
 Delimit Scope typing_scope with ty.
@@ -52,11 +53,13 @@ Notation "[ Γ |- A ]" := (wf_type Γ A)
   (at level 0, Γ, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A ]" := (wf_type (ta := ta) Γ A)
   (at level 0, ta, Γ, A at level 50) : typing_scope.
+
 (** The term t has type A in Γ *)
 Notation "[ Γ |- t : A ]" := (typing Γ A t)
   (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t : A ]" :=
   (typing (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
+
 Notation "Nf[ Γ |- A ]" := (type_nf Γ A)
   (at level 0, Γ, A at level 50, only parsing) : typing_scope.
 Notation "Nf[ Γ |-[ ta  ] A ]" := (type_nf (ta := ta) Γ A)
@@ -128,6 +131,10 @@ Reserved Notation "[ t ⇒* t' ]" (at level 0, t, t' at level 50).
 
 (** Type A one-step weak-head reduces to type B in Γ *)
 Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0, Γ, A, B at level 50).
+(** Term or type t one-step weak-head reduces to term or type type u as class A in Γ *)
+Reserved Notation "[ Γ |- t ⇒ u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
+(** Term or type t multi-step weak-head reduces to term or type type u as class A in Γ *)
+Reserved Notation "[ Γ |- t ⇒* u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
 (** Term t one-step weak-head reduces to term u at type A in Γ *)
 Notation "[ Γ |- t ⇒ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
