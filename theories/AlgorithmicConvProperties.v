@@ -525,9 +525,14 @@ Section Transitivity.
       inversion Hconv ; subst ; clear Hconv.
       2:{ apply algo_conv_wh in H2 as [e _]. now inversion e. }
       now constructor.
+    - intros * ? ? _ * ? Hconv.
+      inversion Hconv ; subst ; refold.
+      1: now constructor.
+      eapply algo_conv_wh in H2 as [e _].
+      now inversion e.
     - intros * ? IH ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
-      1-2: apply algo_conv_wh in H as [_ e] ; now inversion e.
+      1-3: apply algo_conv_wh in H as [_ e] ; now inversion e.
       econstructor.
       now eapply IH.
     - intros * Hin ? _ _ * ? Hconv.
@@ -548,6 +553,27 @@ Section Transitivity.
         econstructor.
         1: now eapply IHt.
         now symmetry.
+    - intros * ? IHn ? IHP ? IHz ? IHs ? ? ? * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; refold.
+      eapply IHn in H13 as [? _] ; tea.
+      split.
+      + econstructor ; tea.
+        * eapply IHP ; tea.
+          econstructor ; tea.
+          now do 2 econstructor.
+        * eapply IHz ; tea.
+          symmetry.
+          eapply typing_subst1.
+          2: eapply IHP.
+          now do 2 econstructor.
+        * eapply IHs ; tea.
+          symmetry.
+          destruct IHP.
+          eapply elimSuccHypTy_conv ; tea.
+          now boundary.
+      + eapply typing_subst1 ; tea.
+        1: eapply IHn.
+        eapply IHP.
     - intros * ? IH ? ? ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       edestruct IH as [[? HconvA] ?] ; tea.
@@ -581,17 +607,32 @@ Section Transitivity.
         * now symmetry in HΓ ; boundary.
         * econstructor.
           boundary.
+    - intros * ? ? _ * ? ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; refold.
+      + now econstructor.
+      + inversion H3 ; subst. inversion H6.
+      + eapply algo_conv_wh in H3 as [w]. inversion w.
+    - intros * ?? _ * ? ? Hconv.  
+      inversion Hconv ; subst ; clear Hconv ; refold.
+      2: now inversion H3 ; inversion H6.
+      2: now inversion H3.
+      now econstructor.
+    - intros * ? IHt ??? * ? ? Hconv.  
+      inversion Hconv ; subst ; clear Hconv ; refold.
+      2: now inversion H5 ; inversion H8.
+      2: now inversion H5.
+      now econstructor.
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
-      3: destruct H8.
-      1,3-5: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
+      6: destruct H8.
+      1-4,6-8: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.
       now econstructor.
     - intros * Hnconv IH ? ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
-      1: inversion Hnconv.
+      1-4: inversion Hnconv.
       1: destruct H ;
           now unshelve eapply ty_conv_inj in H4 ; [now econstructor | now econstructor | cbn in *].
       econstructor ; tea.
@@ -647,8 +688,9 @@ Module AlgorithmicConvProperties.
         * symmetry.
           now eapply conv_sound in bun_conv_ty0.
       + now do 2 econstructor.
-    - admit.
-Admitted.
+    - intros_bn.
+      all: now do 2 econstructor.
+Qed.
 
   #[export, refine] Instance ConvTermAlgProperties : ConvTermProperties (ta := bn) := {}.
   Proof.
@@ -714,12 +756,16 @@ Admitted.
       + econstructor.
         1-3: reflexivity.
         now econstructor.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-Admitted.
+    - intros_bn.
+      1-3: gen_typing.
+      now do 2 econstructor.
+    - intros_bn.
+      1-3: gen_typing.
+      now do 2 econstructor.
+    - intros_bn.
+      1-2: gen_typing.
+      now do 2 econstructor.
+  Qed.
 
   #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
@@ -793,8 +839,36 @@ Admitted.
     + eapply typing_subst1 ; tea.
       econstructor.
       eassumption.
-  - admit.
-Admitted.
+  - intros_bn.
+    + eexists.
+      econstructor ; tea.
+      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply boundary in Hconv as [].
+      now econstructor.
+    + now econstructor.
+    + eexists.
+      econstructor ; tea.
+      * econstructor ; tea.
+        eapply typing_subst1 ; tea.
+        2: now eapply conv_sound in bun_conv_ty.
+        now do 2 econstructor.
+      * econstructor ; tea.
+        eapply elimSuccHypTy_conv ; tea.
+        now eapply conv_sound in bun_conv_ty.
+      * eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+        eapply boundary in Hconv as [].
+        now econstructor.
+    + now econstructor.
+    + econstructor ; tea.
+      econstructor ; tea.
+      2: now econstructor.
+      now eapply redty_red, red_ty_compl_nat_r.
+    + econstructor.
+      eapply typing_subst1 ; tea.
+      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply boundary in Hconv as [].
+      now econstructor.
+  Qed.
 
 End AlgorithmicConvProperties.
 
@@ -868,8 +942,10 @@ Module IntermediateTypingProperties.
         symmetry.
         now eapply conv_sound in bun_conv_ty.
       + now do 2 econstructor.
-    - admit.
-Admitted.
+    - econstructor ; tea.
+      1-3: econstructor ; tea.
+      all: now econstructor.
+  Qed.
 
   #[export, refine] Instance ConvTermIntProperties : ConvTermProperties (ta := bni) := {}.
   Proof.
@@ -877,8 +953,8 @@ Admitted.
     - gen_typing.
     - gen_typing.
     - intros.
-      apply convtm_wk ; tea.
-      now split.
+      apply (convtm_wk (ta := bn)) ; tea.
+      now econstructor.
     - eauto using (convtm_sound (ta := bn)).
     - intros * [] [] [] [].
       econstructor ; tea.
@@ -909,12 +985,15 @@ Admitted.
       + gen_typing.
       + boundary.
       + now do 2 econstructor.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-Admitted.
+    - intros.
+      eapply (convtm_nat (ta := bn)).
+      now econstructor.
+    - intros.
+      eapply (convtm_zero (ta := bn)).
+      now econstructor.
+    - intros.
+      now eapply (convtm_succ (ta := bn)).
+  Qed.
 
   #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
   Proof.
@@ -942,14 +1021,32 @@ Admitted.
     OneStepRedTermProperties (ta := bni) := {}.
   Proof.
     intros; split.
-    + boundary.
-    + econstructor ; tea.
+    - boundary.
+    - econstructor ; tea.
       now econstructor.
-    + do 2 econstructor.
-    + admit.
-    + admit.
-    + admit.
-Admitted.
+    - do 2 econstructor.
+    - unfold_bni.
+      intros * ??? [].
+      split ; tea.
+      + now gen_typing.
+      + now econstructor.
+    - unfold_bni.
+      intros * ???.
+      split.
+      + boundary.
+      + econstructor ; tea.
+        econstructor.
+        now boundary.
+      + now econstructor.
+    - unfold_bni.
+      intros * ???.
+      split.
+      + boundary.
+      + econstructor ; tea.
+        econstructor.
+        now boundary.
+      + now econstructor.
+  Qed.
 
   #[export, refine] Instance RedTermIntProperties :
     RedTermProperties (ta := bni) := {}.
@@ -985,8 +1082,15 @@ Admitted.
     - red ; intros * [] [].
       econstructor ; tea.
       now etransitivity.
-    - admit.
-Admitted.
+    - intros ???? [?? red].
+      induction red as [|??? ored].
+      2: eapply rtc_step.
+      + reflexivity.
+      + now econstructor.
+      + eapply IHred.
+        eapply subject_reduction_one in ored ; tea.
+        boundary.
+    Qed.
 
   #[export, refine] Instance RedTypeIntProperties :
     RedTypeProperties (ta := bni) := {}.

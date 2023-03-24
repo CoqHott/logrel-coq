@@ -604,8 +604,6 @@ Module DeclarativeTypingProperties.
   - now do 2 econstructor.
   - now do 2 econstructor.
   - now econstructor.
-  - now econstructor.
-  - now econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
