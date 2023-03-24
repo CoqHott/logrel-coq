@@ -1,0 +1,19 @@
+opam-version: "2.0"              
+version: "8.16.dev"
+maintainer: "Meven.Bertrand@univ-nantes.fr"
+homepage: "https://metacoq.github.io/metacoq"
+dev-repo: "git+https://github.com/MetaCoq/metacoq.git#coq-8.16"
+bug-reports: "https://github.com/MetaCoq/metacoq/issues"
+authors: ["Meven Lennon-Bertrand <Meven.Bertrand@univ-nantes.fr>"
+          "Loic Pujet <loic.pujet@ens.fr>"
+          "Kenji Maillard <kenji.maillard@inria.fr>"
+          "Pierre-Marie Pédrot <pierre-marie.pedrot@inria.fr>"
+]
+license: "MIT"
+depends: [
+  "coq" { >= "8.16" & < "8.17~" }
+  "coq-smpl" 
+]
+build: [
+  [make]
+]

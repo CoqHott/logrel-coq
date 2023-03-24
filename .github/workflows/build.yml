@@ -1,0 +1,72 @@
+name: LogRel CI
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      coq_version: '8.16'
+      ocaml_version: '4.14-flambda'
+      fail-fast: true
+      # url: ${{ steps.deployment.outputs.page_url }} 
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Docker-Coq-Action
+        uses: coq-community/docker-coq-action@v1
+        with:
+          coq_version: ${{ env.coq_version }}
+          ocaml_version: ${{ env.ocaml_version }}
+          before_install: |
+            startGroup "Print opam config"
+              sudo chown -R coq:coq .
+              opam config list; opam repo list; opam list
+            endGroup
+          before_script: |
+            startGroup "Workaround permission issue"
+              sudo chown -R coq:coq .  # <--
+              opam exec -- ocamlfind list
+            endGroup
+          script: |
+            startGroup "Build project"
+              opam exec -- make -j 2
+              opam exec -- make html
+            endGroup
+          uninstall: |
+            startGroup "Clean project"
+            endGroup
+
+      - name: Revert permissions
+        # to avoid a warning at cleanup time
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .  # <--
+
+      - name: Setup Pages
+        if: github.ref == 'refs/heads/master'
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload entire repository
+          path: 'docs'
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        id: deployment
+        uses: actions/deploy-pages@v1
