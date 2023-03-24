@@ -56,6 +56,13 @@ jobs:
         if: ${{ always() }}
         run: sudo chown -R 1001:116 .  # <--
 
+      - name: Build doc overview
+        uses: docker://pandoc/core:2.9
+        with:
+          args: >-  # allows you to break string into multiple lines
+            --standalone
+            --output=docs/index.html
+            docs/index.md
       - name: Setup Pages
         if: github.ref == 'refs/heads/master'
         uses: actions/configure-pages@v3
