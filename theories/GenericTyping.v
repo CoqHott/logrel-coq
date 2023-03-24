@@ -797,6 +797,34 @@ Section GenericConsequences.
     eapply redtm_one_step; gen_typing.
   Qed.
 
+  Lemma rtc_osredtm_redtm {Γ A x y} :
+    reflTransClos (osred_tm Γ A) x y ->
+    [Γ |- y : A] ->
+    [Γ |- x ⇒* y : A].
+  Proof.
+    intros r ?; induction r.
+    + now eapply redtm_refl.
+    + intros. etransitivity.
+      2: now eapply IHr.
+      now eapply redtm_one_step.
+  Qed.
+
+  Lemma rtc_osredtm_redtmwf {Γ A x y} :
+    reflTransClos (osred_tm Γ A) x y ->
+    [Γ |- y : A] ->
+    [Γ |- x :⇒*: y : A].
+  Proof.
+    intros reds yty.
+    pose proof (rtc_osredtm_redtm reds yty).
+    constructor; tea; gen_typing.
+  Qed.
+
+  Lemma osredtm_ty_src {Γ t u A} : [Γ |- t ⇒ u : A] -> [Γ |- t : A].
+  Proof.
+    intros ?%redtm_one_step; gen_typing.
+  Qed.
+
+
   (** *** Derived typing, reduction and conversion judgements *)
 
   Lemma ty_var0 {Γ A} : 

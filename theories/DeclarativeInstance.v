@@ -430,7 +430,7 @@ Lemma oreddecl_wk {Γ Δ t u K} (ρ : Δ ≤ Γ) :
   match K with istype => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩] | isterm A => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] end.
 Proof.
   intros ? red.
-  induction red as [? ? ? ? ? ? Ht Ha | | | | | |]; refold.
+  induction red as [| | | | | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
