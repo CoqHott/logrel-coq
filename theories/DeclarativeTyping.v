@@ -168,8 +168,11 @@ Section Definitions.
 
   (** (Typed) reduction is defined afterwards,
   rather than mutually with the other relations. *)
-  Inductive OneRedTermDecl (Γ : context) : term -> term -> term -> Type :=
-  | BRed {na} {A B a t} :
+
+  Local Coercion isterm : term >-> class.
+
+  Inductive OneRedDecl (Γ : context) : class -> term -> term -> Type :=
+  | BRed {na} {A B : term} {a t} :
       [ Γ |- A ] -> 
       [ Γ ,, vass na A |- t : B ] ->
       [ Γ |- a : A ] ->
@@ -183,7 +186,7 @@ Section Definitions.
       [Γ |- hz : P[tZero..]] ->
       [Γ |- hs : elimSuccHypTy nN P] ->
       [Γ |- n ⇒ n' : tNat] ->
-      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]        
+      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]
   | natElimZero {nN P hz hs} :
       [Γ ,, vass nN tNat |- P ] ->
       [Γ |- hz : P[tZero..]] ->
@@ -195,19 +198,16 @@ Section Definitions.
       [Γ |- hs : elimSuccHypTy nN P] ->
       [Γ |- n : tNat] ->
       [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
-  | termRedConv {A B t u} : 
+  | termRedConv {A B : term} {t u} :
       [ Γ |- t ⇒ u : A ] ->
       [ Γ |- A ≅ B ] ->
       [ Γ |- t ⇒ u : B ]
-
-  where "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u).
-
-  Inductive OneRedTypeDecl (Γ : context) : term -> term -> Type :=
   | typeRedUniv {A B} :
       [ Γ |- A ⇒ B : U ] ->
       [ Γ |- A ⇒ B ]
 
-  where "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
+  where "[ Γ |- t ⇒ u : A ]" := (OneRedDecl Γ (isterm A) t u)
+  and "[ Γ |- A ⇒ B ]" := (OneRedDecl Γ istype A B).
 
   Inductive TermRedClosure (Γ : context) : term -> term -> term -> Type :=
       | term_red_id {t A} :
@@ -238,7 +238,10 @@ Section Definitions.
 
 End Definitions.
 
+Definition OneRedTermDecl Γ A t u := OneRedDecl Γ (isterm A) t u.
+Definition OneRedTypeDecl Γ A B := OneRedDecl Γ istype A B.
 
+Notation "[ Γ |- t ⇒ u ∈ A ]" := (OneRedDecl Γ A t u).
 Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u) : declarative_scope.
 Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
@@ -334,11 +337,18 @@ Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 Section TypeErasure.
   Import DeclarativeTypingData.
 
+Lemma oreddecl_ored Γ t u K :
+  [Γ |- t ⇒ u ∈ K] ->
+  [t ⇒ u].
+Proof.
+  induction 1; tea; now econstructor.
+Qed.
+
 Lemma oredtmdecl_ored Γ t u A : 
   [Γ |- t ⇒ u : A] ->
   [t ⇒ u].
 Proof.
-  induction 1; tea; now econstructor.
+apply oreddecl_ored.
 Qed.
 
 Lemma redtmdecl_red Γ t u A : 
@@ -356,8 +366,7 @@ Lemma oredtydecl_ored Γ A B :
   [Γ |- A ⇒ B] ->
   [A ⇒ B].
 Proof.
-  induction 1.
-  now eapply oredtmdecl_ored.
+apply oreddecl_ored.
 Qed.
 
 Lemma redtydecl_red Γ A B : 
@@ -372,4 +381,4 @@ Proof.
 Qed.
 
 End TypeErasure.
- 
+

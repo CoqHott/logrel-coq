@@ -309,9 +309,10 @@ Section Boundaries.
     induction 1 ; now eauto using boundary_ty_ctx, boundary_tm_conv_ctx.
   Qed.
 
-  Definition boundary_ored_tm_l {Γ t u A} : 
-    [ Γ |- t ⇒ u : A] ->
-    [ Γ |- t : A ].
+
+  Definition boundary_ored_l {Γ t u K} : 
+    [ Γ |- t ⇒ u ∈ K ] ->
+    match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
   Proof.
     induction 1.
     all: econstructor ; eauto.
@@ -319,13 +320,18 @@ Section Boundaries.
     econstructor; now eapply boundary_tm_ctx.
   Qed.
 
+  Definition boundary_ored_tm_l {Γ t u A} : 
+    [ Γ |- t ⇒ u : A] ->
+    [ Γ |- t : A ].
+  Proof.
+  apply @boundary_ored_l with (K := isterm A).
+  Qed.
+
   Definition boundary_ored_ty_l {Γ A B} : 
     [ Γ |- A ⇒ B ] ->
     [ Γ |- A ].
   Proof.
-    destruct 1.
-    econstructor.
-    now eapply boundary_ored_tm_l.
+  apply @boundary_ored_l with (K := istype).
   Qed.
 
   Definition boundary_red_tm_l {Γ t u A} : 
@@ -353,13 +359,20 @@ End Boundaries.
 
 (** ** Inclusion of the various reductions in conversion *)
 
+Definition RedConv {Γ} {t u : term} {K} :
+  [Γ |- t ⇒ u ∈ K] -> 
+  match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
+Proof.
+induction 1.
+1,4,5: now econstructor.
+all: econstructor; tea; now econstructor.
+Qed.
+
 Definition RedConvTe {Γ} {t u A : term} :
     [Γ |- t ⇒ u : A] -> 
     [Γ |- t ≅ u : A].
 Proof.
-    induction 1.
-    1,4,5: now econstructor.
-    all: econstructor; tea; now econstructor.
+apply @RedConv with (K := isterm A).
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
@@ -376,8 +389,7 @@ Definition RedConvTy {Γ} {A B : term} :
     [Γ |- A ⇒ B] -> 
     [Γ |- A ≅ B].
 Proof.
-  destruct 1.
-  now econstructor ; eapply RedConvTe.
+apply @RedConv with (K := istype).
 Qed.
 
 Definition RedConvTyC {Γ} {A B : term} :
@@ -401,11 +413,12 @@ Qed.
 
 (** ** Weakenings of reduction *)
 
-Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-[|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
+Lemma oreddecl_wk {Γ Δ t u K} (ρ : Δ ≤ Γ) :
+  [|- Δ ] -> [Γ |- t ⇒ u ∈ K] ->
+  match K with istype => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩] | isterm A => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] end.
 Proof.
   intros ? red.
-  induction red as [? ? ? ? ? ? Ht Ha | | | | |]; refold.
+  induction red as [? ? ? ? ? ? Ht Ha | | | | | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
@@ -463,6 +476,13 @@ Proof.
   - econstructor.
     1: eassumption.
     now eapply typing_wk.
+  - now econstructor.
+Qed.
+
+Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+  [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
+Proof.
+apply @oreddecl_wk with (K := isterm A).
 Qed.
 
 Lemma redtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
@@ -478,11 +498,7 @@ Qed.
 Lemma oredtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
   [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A⟨ρ⟩ ⇒ B⟨ρ⟩].
 Proof.
-  intros ? red.
-  destruct red.
-  constructor.
-  change U with (U⟨ρ⟩).
-  now apply oredtmdecl_wk.
+apply @oreddecl_wk with (K := istype).
 Qed.
 
 Lemma redtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
