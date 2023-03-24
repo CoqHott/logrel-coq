@@ -172,7 +172,7 @@ Lemma red_natElimSubst {Γ l nN P hz hs n n'} :
 Proof.
   intros hp hhz hhs red rN rn' congP.
   generalize (tmr_wf_red _ _ _ _ red).
-  destruct red as [_ _ r%redtm_rtc]. 
+  destruct red as [_ r%redtm_rtc]. 
   induction r as [|??? step reds ih] ; intros red; escape.
   - eapply redtmwf_refl; gen_typing.
   - unshelve epose (reds' := rtc_osredtm_redtm reds _); tea.
@@ -188,7 +188,6 @@ Proof.
       all: now eapply redSubstTerm.
     }
     constructor.
-    + eapply ty_natElim; tea. now eapply osredtm_ty_src.
     + eapply ty_conv; gen_typing.
     + etransitivity.
       1: eapply redtm_one_step; now eapply osredtm_natElim.

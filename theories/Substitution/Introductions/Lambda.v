@@ -43,13 +43,10 @@ Proof.
   irrelevance0. 1: now rewrite consWkEq'.
   eapply redwfSubstTerm; tea.
   constructor; tea.
-  * rewrite <- consWkEq.  eapply (ty_app (na:= nF)); tea.
-    change (tProd _ _ _) with ((tProd nF F G)[σ]⟨ρ⟩).
-    eapply ty_wk; tea; cbn; gen_typing.
-  * do 2 rewrite <- consWkEq.
-    eapply redtm_beta; tea.
-    fold subst_term; renToWk;  eapply ty_wk; tea.
-    eapply wfc_cons; tea; eapply wft_wk; tea.
+  do 2 rewrite <- consWkEq.
+  eapply redtm_beta; tea.
+  fold subst_term; renToWk;  eapply ty_wk; tea.
+  eapply wfc_cons; tea; eapply wft_wk; tea.
 Qed.
 
 Lemma betaValid {t a} (Vt : [Γ ,, vass nF F ||-v<l> t : G | VΓF | VG]) 
@@ -66,7 +63,6 @@ Proof.
   rewrite eq;  eapply redwfSubstTerm; tea.
   1: rewrite <- eq; rewrite eq'; irrelevance.
   constructor; tea.
-  * eapply (ty_app (na:= nF)); tea. refold. gen_typing.
   * do 2 (rewrite <- eq; rewrite eq'); tea.
   * eapply redtm_beta; tea.
     Unshelve. 2:rewrite <- eq; now rewrite eq'.

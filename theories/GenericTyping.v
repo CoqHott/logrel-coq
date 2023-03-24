@@ -62,13 +62,11 @@ Section RedDefinitions.
     }.
 
   Record TypeRedWf (Γ : context) (A B : term) : Type := {
-    tyr_wf_l : [Γ |- A];
     tyr_wf_r : [Γ |- B];
     tyr_wf_red :> [Γ |- A ⇒* B]
   }.
 
   Record TermRedWf (Γ : context) (A t u : term) : Type := {
-    tmr_wf_l : [Γ |- t : A];
     tmr_wf_r : [Γ |- u : A];
     tmr_wf_red :> [Γ |- t ⇒* u : A]
   }.
@@ -135,7 +133,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
   Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
   Build_TermConvWf Build_TypeRedWf Build_TermRedWf
   well_sempty well_scons conv_sempty conv_scons
-  tyr_wf_l tyr_wf_r tyr_wf_red tmr_wf_l tmr_wf_r tmr_wf_red
+  tyr_wf_r tyr_wf_red tmr_wf_r tmr_wf_red
   : gen_typing.
 
 (* #[export] Hint Extern 1 =>
@@ -642,6 +640,17 @@ Section GenericConsequences.
 
   (** *** Properties of well-typed reduction *)
 
+  Lemma tyr_wf_l {Γ A B} : [Γ |- A :⇒*: B] -> [Γ |- A].
+  Proof.
+    intros []; now eapply redty_ty_src.
+  Qed.
+  
+  Lemma tmr_wf_l {Γ t u A} : [Γ |- t :⇒*: u : A] -> [Γ |- t : A].
+  Proof.
+    intros []; now eapply redtm_ty_src.
+  Qed.
+
+  #[local] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
   #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl redtm_one_step osredtm_natElim osredtm_natElimZero osredtm_natElimSucc| 2 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
 
@@ -712,7 +721,7 @@ Section GenericConsequences.
     constructor.
     - intros; now eapply redtywf_wk.
     - intros; now eapply redtywf_sound.
-    - intros ??? []; easy.
+    - intros ??? []; now eapply redty_ty_src.
     - intros; now eapply redtywf_term.
     - intros; now apply redtywf_refl.
     - intros; apply redtywf_trans.
@@ -739,16 +748,15 @@ Section GenericConsequences.
       [Γ |- A ≅ B ] ->
       [Γ |- t :⇒*: u : B].
   Proof.
-    intros [wfr wfl red] ?.
+    intros [wfl red] ?.
     constructor.
     all: gen_typing.
   Qed.
 
   Lemma redtmwf_refl {Γ a A} : [Γ |- a : A] -> [Γ |- a :⇒*: a : A].
   Proof.
-    constructor.
-    3: now apply redtm_refl.
-    1,2: assumption.
+    constructor; tea.
+    now apply redtm_refl.
   Qed.
 
   #[global]
@@ -786,10 +794,7 @@ Section GenericConsequences.
     [Γ |- tNatElim P hz hs tZero :⇒*: hz : P[tZero..]].
   Proof.
     intros ???; constructor; tea.
-    2: eapply redtm_one_step; gen_typing.
-    eapply ty_natElim; tea. 
-    eapply ty_zero.
-    now eapply wfc_ty.
+    eapply redtm_one_step; gen_typing.
   Qed.
 
   (** *** Derived typing, reduction and conversion judgements *)
@@ -1083,6 +1088,7 @@ End GenericConsequences.
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)
 
+#[export] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
 #[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red redtmwf_natElimZero | 2 : gen_typing.
 #[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.
 

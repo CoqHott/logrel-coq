@@ -114,10 +114,7 @@ Section Weakenings.
   Proof.
     intros [t].
     exists (t⟨ρ⟩); try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).
-    + destruct red; unshelve econstructor.
-      eapply ty_wk; eassumption.
-      eapply ty_wk; eassumption.
-      eapply redtm_wk; eassumption.
+    + now eapply redtmwf_wk.
     + apply isFun_ren; assumption.
     + now apply tm_nf_wk.
     + eapply convtm_wk; eassumption.
@@ -150,10 +147,7 @@ Section Weakenings.
       now apply tm_nf_wk.
       apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
     - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn.
-      + destruct red; unshelve econstructor.
-        eapply ty_wk; eassumption.
-        eapply ty_wk; eassumption.
-        eapply redtm_wk; eassumption.
+      + now eapply redtmwf_wk.
       + apply tm_ne_wk; assumption.
       + eapply convneu_wk; eassumption.
     - intros ???? ihdom ihcod ?? ρ ?; apply wkΠTerm. 
@@ -201,15 +195,9 @@ Section Weakenings.
       + apply TyEqRecBwd. eapply wkEq. now apply TyEqRecFwd.
     - intros ??????? ρ ? [tL tR].
       exists (tL⟨ρ⟩) (tR⟨ρ⟩); cbn.
-      + destruct redL; unshelve econstructor.
-        1,2: eapply ty_wk; eassumption.
-        eapply redtm_wk; eassumption.
-      + destruct redR; unshelve econstructor.
-        1,2: eapply ty_wk; eassumption.
-        eapply redtm_wk; eassumption.
-      + apply tm_ne_wk; assumption.
-      + apply tm_ne_wk; assumption.
-      + now eapply convneu_wk.
+      1,2: now eapply redtmwf_wk. 
+      1,2: apply tm_ne_wk; assumption.
+      now eapply convneu_wk.
     - intros ??? ΠA ihdom ihcod t u ? ρ ? [redL redR].
       rewrite wkΠ_eq. set (X := wkΠ' _ _ _).
       unshelve econstructor; try change (tProd ?na _ _) with ((PiRedTyPack.prod ΠA)⟨ρ⟩).

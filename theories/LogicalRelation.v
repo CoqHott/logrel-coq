@@ -792,8 +792,8 @@ Section PiRedTyPack.
 
   Lemma whne_noΠ `{!RedTypeProperties} {Γ A} : [Γ ||-Πd A] -> whne A -> False.
   Proof.
-    intros [??? [?? r]] h.
-    pose proof (UntypedReduction.red_whne _ _ (redty_red r) h).
+    intros [??? r] h.
+    pose proof (UntypedReduction.red_whne _ _ (redtywf_red r) h).
     subst; inversion h.
   Qed.
 

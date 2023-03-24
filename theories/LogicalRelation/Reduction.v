@@ -90,8 +90,7 @@ Proof.
   - intros ? NA t ? Ru red; inversion Ru; subst.
     assert [Γ |- A ≅ tNat] by (destruct NA; gen_typing).
     assert [Γ |- t :⇒*: nf : tNat]. 1:{
-      constructor. 2: gen_typing.
-      1: eapply ty_conv; gen_typing.
+      constructor. 1: gen_typing.
       etransitivity. 2: gen_typing.
       now eapply redtm_conv.
     }
