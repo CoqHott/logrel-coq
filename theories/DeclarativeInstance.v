@@ -31,18 +31,6 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
       [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
   end.
 
-Ltac prod_splitter :=
-  repeat match goal with
-  | |- sigT _ => eexists
-  | |- prod _ _ => split
-  | |- and3 _ _ _ => split
-  | |- and4 _ _ _ _ => split
-  | |- and5 _ _ _ _ _ => split
-  end.
-
-Ltac by_prod_splitter :=
-  solve [now prod_splitter].
-
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
   ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
@@ -455,7 +443,7 @@ Proof.
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
@@ -467,23 +455,22 @@ Proof.
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
     Unshelve. all: tea.
-  - cbn. erewrite subst_ren_wk_up.
+  - cbn. erewrite (subst_ren_wk_up (A := tNat)).
     eapply natElimSucc.
     * erewrite <- wk_up_ren_on.
       refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now erewrite subst_ren_wk_up.
+      now bsimpl.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
-    Unshelve. all: tea.
     * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
   - econstructor.
     1: eassumption.
@@ -649,7 +636,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - now econstructor.
   - now econstructor.
-  Qed.
+ Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
   Proof.

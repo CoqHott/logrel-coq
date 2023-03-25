@@ -309,6 +309,32 @@ Proof.
   now symmetry.
 Qed.
 
+Corollary red_ty_compl_nat_l Γ T :
+  [Γ |- tNat ≅ T] ->
+  [Γ |- T ⇒* tNat].
+Proof.
+  intros HT.
+  pose proof HT as HT'.
+  unshelve eapply red_ty_complete in HT' as (T''&[? nfT]).
+  2: econstructor.
+  enough (T'' = tNat) as -> by easy.
+  assert [Γ |- tNat ≅ T''] as Hconv by
+    (etransitivity ; [eassumption|now eapply RedConvTyC]).
+  unshelve eapply ty_conv_inj in Hconv.
+  1: econstructor.
+  1: eassumption.
+  now destruct nfT, Hconv.
+Qed.
+
+Corollary red_ty_compl_nat_r Γ T :
+  [Γ |- T ≅ tNat] ->
+  [Γ |- T ⇒* tNat].
+Proof.
+  intros.
+  eapply red_ty_compl_nat_l.
+  now symmetry.
+Qed.
+
 Corollary red_ty_compl_prod_l Γ A B T :
   [Γ |- tProd A B ≅ T] ->
   ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
@@ -448,7 +474,6 @@ Section MoreSubst.
     all: econstructor ; cbn ; refold; bsimpl; try rewrite <- rinstInst'_term; tea.
   Qed.
 
-
   Lemma conv_well_subst1 (Γ : context) A A' :
     [Γ |- A] ->
     [Γ |- A'] ->
@@ -490,6 +515,51 @@ Section MoreSubst.
   Qed.
 
 End MoreSubst.
+
+Lemma elimSuccHypTy_ty Γ P :
+  [|- Γ] ->
+  [Γ,, tNat |- P] ->
+  [Γ |-[ de ] elimSuccHypTy P].
+Proof.
+  intros HΓ HP.
+  unfold elimSuccHypTy.
+  econstructor.
+  1: now econstructor.
+  eapply wft_simple_arr.
+  1: now eapply HP.
+  eapply typing_subst.
+  - now eapply HP.
+  - boundary.
+  - econstructor.
+    + bsimpl.
+      eapply well_subst_ext.
+      2: eapply well_subst_up.
+      3: eapply id_subst ; tea.
+      2: now econstructor.
+      now bsimpl.
+    + cbn.
+      econstructor.
+      eapply typing_meta_conv.
+      1: now do 2 econstructor ; tea ; econstructor.
+      reflexivity.
+Qed.
+
+Lemma elimSuccHypTy_conv Γ P P' :
+  [|- Γ] ->
+  [Γ,, tNat |- P] ->
+  [Γ,, tNat |- P ≅ P' ] ->
+  [Γ |- elimSuccHypTy P ≅ elimSuccHypTy P'].
+Proof.
+  intros.
+  unfold elimSuccHypTy.
+  constructor.
+  2: constructor.
+  1-2: now constructor.
+  eapply convty_simple_arr; tea.
+  eapply typing_substmap1; tea.
+  do 2 constructor; refine (wfVar _ (in_here _ _)).
+  constructor; boundary.
+Qed.
 
 Section Boundary.
 
@@ -573,12 +643,8 @@ Section Boundary.
         assert [Γ |-[de] tNat ≅ tNat] by now constructor.
         1: eapply ty_natElim; tea; eapply ty_conv; tea. 
         * eapply typing_subst1; tea; do 2 constructor; boundary.
-        * unfold elimSuccHypTy.
-          constructor; tea.
-          eapply convty_simple_arr; tea.
-          eapply typing_substmap1; tea.
-          do 2 constructor; refine (wfVar _ (in_here _ _)).
-          constructor; boundary.
+        * eapply elimSuccHypTy_conv ; tea.
+          now boundary.
         * symmetry; now eapply typing_subst1.
     - intros **; split; tea.
       eapply ty_natElim; tea; constructor; boundary.   

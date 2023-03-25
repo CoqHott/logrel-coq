@@ -466,7 +466,7 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_zero  ty_succ ty_natElim convty_nat convtm_nat convtm_zero convtm_succ convtm_natElimZero convtm_natElimSucc convneu_natElim redty_ty_src redtm_ty_src| 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_zero ty_succ ty_natElim convty_nat convtm_nat convtm_zero convtm_succ convneu_natElim redty_ty_src redtm_ty_src | 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
