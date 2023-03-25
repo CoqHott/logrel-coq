@@ -127,9 +127,8 @@ Proof.
   constructor; intros; cbn; instValid Vσ; now unshelve eapply succRedEq.
 Qed.
 
-
-
 Lemma red_natElimSubst {Γ l P hz hs n n'} :
+  [|- Γ] ->
   [Γ ,, tNat |- P] ->
   [Γ |- hz : P[tZero..]] ->
   [Γ |- hs : elimSuccHypTy P] ->
@@ -143,29 +142,26 @@ Lemma red_natElimSubst {Γ l P hz hs n n'} :
     [Γ |- P[t..] ≅ P[t'..]]) -> 
   [Γ |- tNatElim P hz hs n :⇒*: tNatElim P hz hs n' : P[n..]].
 Proof.
-  intros hp hhz hhs red rN rn' congP.
+  intros hΓ hp hhz hhs red rN rn' congP.
   generalize (tmr_wf_red _ _ _ _ red).
-  destruct red as [_ r%redtm_rtc]. 
-  induction r as [|??? step reds ih] ; intros red; escape.
-  - eapply redtmwf_refl; gen_typing.
-  - unshelve epose (reds' := rtc_osredtm_redtm reds _); tea.
-    specialize (ih rn' reds').
-    assert [Γ |- P[z..] ≅ P[x..]]. 1:{
-      eapply congP; tea.
-      2: eapply LRTmEqSym.
-      all: now eapply redSubstTerm.
-    }
-    assert [Γ |- P[y..] ≅ P[x..]]. 1:{
-      etransitivity; tea.
-      eapply congP; tea.
-      all: now eapply redSubstTerm.
-    }
-    constructor.
-    + eapply ty_conv; gen_typing.
-    + etransitivity.
-      1: eapply redtm_one_step; now eapply osredtm_natElim.
-      eapply redtm_conv; tea.
-      now eapply tmr_wf_red.
+  escape.
+  assert ([rN | Γ ||- n : tNat]).
+  { now eapply redwfSubstTerm. }
+  assert ([ Γ |- P[n..] ≅ P[n'..]]).
+  { apply congP; [assumption|assumption|].
+    now eapply redwfSubstTerm. }
+  intros.
+  econstructor.
+  - eapply ty_conv; [|now symmetry].
+    escape; apply ty_natElim; tea.
+  - apply redtm_natelim; tea.
+    + now eapply redtm_ty_src.
+    + intros u Hu.
+      assert ([Γ |-[ ta ] u :⇒*: n' : tNat]).
+      { now constructor. }
+      apply congP; [eassumption| |].
+      * eapply redwfSubstTerm; [exact rn'|assumption].
+      * now eapply LRTmEqSym, redwfSubstTerm.
 Qed.
 
 Lemma arr_subst_eq {A B σ} : (arr A B)[σ] = arr A[σ] B[σ].

@@ -809,7 +809,6 @@ Admitted.
     + do 2 econstructor.
     + admit.
     + admit.
-    + admit.
 Admitted.
 
   #[export, refine] Instance RedTermIntProperties :
@@ -834,6 +833,7 @@ Admitted.
         econstructor.
         1: now econstructor.
         eassumption.
+    - admit.
     - intros * [] [].
       econstructor ; tea.
       econstructor ; tea.
@@ -846,7 +846,6 @@ Admitted.
     - red ; intros * [] [].
       econstructor ; tea.
       now etransitivity.
-    - admit.
 Admitted.
 
   #[export, refine] Instance RedTypeIntProperties :
