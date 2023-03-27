@@ -53,7 +53,6 @@ Module AlgorithmicTypingProperties.
       now eapply inf_conv_decl.
     - admit.
     - admit.
-    - admit.
   Admitted.
 
 
@@ -86,6 +85,7 @@ Module AlgorithmicTypingProperties.
         induction bun_red_tm ; econstructor.
         2: eassumption.
         now econstructor.
+    - admit.
     - intros_bn.
       eapply conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -95,7 +95,6 @@ Module AlgorithmicTypingProperties.
     - red. intros_bn.
       2: now etransitivity.
       now econstructor.
-    - admit.
   Admitted.
 
   #[export, refine] Instance RedTypeAlgProperties :

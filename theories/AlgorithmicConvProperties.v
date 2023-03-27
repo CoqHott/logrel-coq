@@ -809,7 +809,6 @@ Admitted.
     + do 2 econstructor.
     + admit.
     + admit.
-    + admit.
 Admitted.
 
   #[export, refine] Instance RedTermIntProperties :
@@ -834,6 +833,12 @@ Admitted.
         econstructor.
         1: now econstructor.
         eassumption.
+    - intros ? ? ? ? ? ? ? ? ? ? [? ? Hr]; econstructor.
+      + now eapply boundary_tm_ctx.
+      + now constructor.
+      + clear - Hr; induction Hr; try constructor.
+        econstructor; [|eassumption].
+        now constructor.
     - intros * [] [].
       econstructor ; tea.
       econstructor ; tea.
@@ -846,8 +851,7 @@ Admitted.
     - red ; intros * [] [].
       econstructor ; tea.
       now etransitivity.
-    - admit.
-Admitted.
+Qed.
 
   #[export, refine] Instance RedTypeIntProperties :
     RedTypeProperties (ta := bni) := {}.

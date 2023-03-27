@@ -671,7 +671,7 @@ Module DeclarativeTypingProperties.
   Proof.
     all: intros; now econstructor.
   Qed.
-  
+
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
   Proof.
   - intros.
@@ -681,15 +681,27 @@ Module DeclarativeTypingProperties.
   - intros. now constructor.
   - intros.
     now eapply redtmdecl_app.
+  - intros Γ P hz hs n n' HP Hhz Hhs Hn Hr Hcong.
+    revert Hcong; induction Hr; intros Hcong.
+    + apply red_id.
+      now econstructor.
+    + apply red_red.
+      now constructor.
+    + eapply red_trans.
+      * apply IHHr1; [assumption|].
+        intros w Hw.
+        eapply TypeTrans; [apply TypeSym|]; eapply Hcong; [eassumption|].
+        now transitivity t'.
+      * eapply redtmdecl_conv; [eapply IHHr2|].
+        -- now eapply boundary_red_tm_l.
+        -- intros w Hw; now apply Hcong.
+        -- eapply TypeTrans; [apply TypeSym|]; apply Hcong; [assumption|].
+          now transitivity t'.
   - intros.
     now eapply redtmdecl_conv.
   - intros.
     now econstructor.
-  - intros ???? red; induction red.
-    + reflexivity.
-    + eapply rtc_step; tea; reflexivity.
-    + now etransitivity.  
-  Qed. 
+  Qed.
 
   #[export, refine] Instance RedTypeDeclProperties : RedTypeProperties (ta := de) := {}.
   Proof.

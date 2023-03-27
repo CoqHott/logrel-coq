@@ -338,12 +338,6 @@ Section GenericTyping.
       [ Γ ,, A |- t : B ] ->
       [ Γ |- u : A ] ->
       [ Γ |- tApp (tLambda A t) u ⇒ t[u..] : B[u..] ] ;
-    osredtm_natElim {Γ P hz hs n n'} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs  : elimSuccHypTy P] ->
-        [Γ |- n ⇒ n' : tNat] ->
-        [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]] ;
     osredtm_natElimZero {Γ P hz hs} :
         [Γ ,, tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
@@ -370,6 +364,14 @@ Section GenericTyping.
       [ Γ |- f ⇒* f' : tProd A B ] ->
       [ Γ |- t : A ] ->
       [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ];
+    redtm_natelim {Γ P hz hs n n'} :
+      [ Γ,, tNat |- P ] ->
+      [ Γ |- hz : P[tZero..] ] ->
+      [ Γ |- hs : elimSuccHypTy P ] ->
+      [ Γ |- n : tNat ] ->
+      [ Γ |- n ⇒* n' : tNat ] ->
+      (forall n, [Γ |- n ⇒* n' : tNat] -> [Γ |- P[n'..] ≅ P[n..]]) ->
+      [ Γ |- tNatElim P hz hs n ⇒* tNatElim P hz hs n' : P[n..] ];
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -379,8 +381,6 @@ Section GenericTyping.
       [Γ |- t ⇒* t : A] ;
     redtm_trans {Γ A} :>
       Transitive (red_tm Γ A) ;
-    redtm_rtc {Γ A t t'} :
-      [Γ |- t ⇒* t' : A] -> reflTransClos (osred_tm Γ A) t t'
   }.
 
 End GenericTyping.
@@ -651,7 +651,7 @@ Section GenericConsequences.
   Qed.
 
   #[local] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
-  #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl redtm_one_step osredtm_natElim osredtm_natElimZero osredtm_natElimSucc| 2 : gen_typing.
+  #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl redtm_one_step osredtm_natElimZero osredtm_natElimSucc| 2 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
 
   Lemma redty_red {Γ A B} :
