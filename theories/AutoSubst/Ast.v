@@ -15,6 +15,11 @@ Inductive term : Type :=
   | tZero : term
   | tSucc : term -> term
   | tNatElim : term -> term -> term -> term -> term
+  | tBool : term
+  | tTrue : term
+  | tFalse : term
+  | tBoolElim : term -> term -> term -> term -> term
+  | tAlpha : term -> term                                             
   | tEmpty : term
   | tEmptyElim : term -> term -> term.
 
@@ -87,6 +92,41 @@ exact (eq_trans (eq_trans eq_refl (ap (fun x => tEmptyElim x s1) H0))
          (ap (fun x => tEmptyElim t0 x) H1)).
 Qed.
 
+Lemma congr_tBool : tBool = tBool.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_tTrue : tTrue = tTrue.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_tFalse : tFalse = tFalse.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_tBoolElim {s0 : term} {s1 : term} {s2 : term} {s3 : term}
+  {t0 : term} {t1 : term} {t2 : term} {t3 : term} (H0 : s0 = t0)
+  (H1 : s1 = t1) (H2 : s2 = t2) (H3 : s3 = t3) :
+  tBoolElim s0 s1 s2 s3 = tBoolElim t0 t1 t2 t3.
+Proof.
+exact (eq_trans
+         (eq_trans
+            (eq_trans
+               (eq_trans eq_refl (ap (fun x => tBoolElim x s1 s2 s3) H0))
+               (ap (fun x => tBoolElim t0 x s2 s3) H1))
+            (ap (fun x => tBoolElim t0 t1 x s3) H2))
+         (ap (fun x => tBoolElim t0 t1 t2 x) H3)).
+Qed.
+
+Lemma congr_tAlpha {s0 : term} {t0 : term} (H0 : s0 = t0) :
+  tAlpha s0 = tAlpha t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => tAlpha x) H0)).
+Qed.
+
 Lemma upRen_term_term (xi : nat -> nat) : nat -> nat.
 Proof.
 exact (up_ren xi).
@@ -111,6 +151,13 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
   | tEmptyElim s0 s1 =>
       tEmptyElim (ren_term (upRen_term_term xi_term) s0)
         (ren_term xi_term s1)
+  | tBool => tBool
+  | tTrue => tTrue
+  | tFalse => tFalse
+  | tBoolElim s0 s1 s2 s3 => 
+      tBoolElim (ren_term (upRen_term_term xi_term) s0) (ren_term xi_term s1)
+        (ren_term xi_term s2) (ren_term xi_term s3)
+  | tAlpha n => tAlpha (ren_term xi_term n)
   end.
 
 Lemma up_term_term (sigma : nat -> term) : nat -> term.
@@ -141,6 +188,14 @@ term :=
   | tEmptyElim s0 s1 =>
       tEmptyElim (subst_term (up_term_term sigma_term) s0)
         (subst_term sigma_term s1)
+  | tBool => tBool
+  | tTrue => tTrue
+  | tFalse => tFalse
+  | tBoolElim s0 s1 s2 s3 =>
+      tBoolElim (subst_term (up_term_term sigma_term) s0)
+        (subst_term sigma_term s1) (subst_term sigma_term s2)
+        (subst_term sigma_term s3)
+  | tAlpha s0 => tAlpha (subst_term sigma_term s0)
   end.
 
 Lemma upId_term_term (sigma : nat -> term)
@@ -183,6 +238,16 @@ subst_term sigma_term s = s :=
       congr_tEmptyElim
         (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s0)
         (idSubst_term sigma_term Eq_term s1)
+  | tTrue => congr_tTrue
+  | tFalse => congr_tFalse
+  | tBoolElim s0 s1 s2 s3 =>
+      congr_tBoolElim
+        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s0)
+        (idSubst_term sigma_term Eq_term s1)
+        (idSubst_term sigma_term Eq_term s2)
+        (idSubst_term sigma_term Eq_term s3)
+  | tAlpha s0 => congr_tAlpha (idSubst_term sigma_term Eq_term s0)
+                           
   end.
 
 Lemma upExtRen_term_term (xi : nat -> nat) (zeta : nat -> nat)
