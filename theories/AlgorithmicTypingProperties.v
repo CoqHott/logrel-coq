@@ -86,6 +86,7 @@ Module AlgorithmicTypingProperties.
         2: eassumption.
         now econstructor.
     - admit.
+    - admit.
     - intros_bn.
       eapply conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -170,6 +171,8 @@ Module AlgorithmicTypingProperties.
       + eapply typing_subst1 ; tea.
         econstructor.
         now eapply inf_conv_decl.
+    - admit.
+    - admit.
     - admit.
     - admit.
     - admit.

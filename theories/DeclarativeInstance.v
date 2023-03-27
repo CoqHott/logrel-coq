@@ -29,6 +29,9 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tSucc n => T = tNat × [Γ |- n : tNat]
     |  tNatElim P hz hs n =>
       [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
+    | tEmpty => T = U
+    | tEmptyElim P e =>
+      [× T = P[e..], [Γ,, tEmpty |- P] & [Γ |- e : tEmpty]]
   end.
 
 Ltac prod_splitter :=
@@ -48,11 +51,7 @@ Lemma termGen Γ t A :
   ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
 Proof.
   induction 1.
-  1-7: eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter.
-  + destruct IHTypingDecl1 as [? [? [-> | ]]];
-    destruct IHTypingDecl2 as [? [? [-> | ]]];
-    destruct IHTypingDecl3 as [? [? [-> | ]]];
-    (prod_splitter; [| now left]; cbn in *; prod_splitter; tea; reflexivity).
+  all: try (eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
   + destruct IHTypingDecl as [? [? [-> | ]]].
     * prod_splitter; tea; now right.
     * prod_splitter; tea; right; now eapply TypeTrans.
@@ -103,6 +102,7 @@ Section TypingWk.
       eapply IHB with (ρ := wk_up _ ρ).
       now constructor.
     - intros; now constructor.
+    - intros; now constructor.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -147,6 +147,12 @@ Section TypingWk.
         1: now eapply ihhs.
         unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
       * now eapply ihn.
+    - intros; now constructor.
+    - intros * ? ihP ? ihe **; cbn.
+      erewrite subst_ren_wk_up; eapply wfTermEmptyElim.
+      * eapply ihP; econstructor; tea; now econstructor.
+      * now eapply ihe.
+
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -247,6 +253,11 @@ Section TypingWk.
         1: now eapply ihhs.
         unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
       * now eapply ihn.
+    - intros * ? ihP ? ihe **; cbn.
+      erewrite subst_ren_wk_up.
+      eapply TermEmptyElimCong.
+      * eapply ihP; constructor; tea; now constructor.
+      * now eapply ihe.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -430,7 +441,7 @@ Lemma oreddecl_wk {Γ Δ t u K} (ρ : Δ ≤ Γ) :
   match K with istype => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩] | isterm A => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] end.
 Proof.
   intros ? red.
-  induction red as [| | | | | |]; refold.
+  induction red as [| | | | | | |]; refold.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
@@ -485,6 +496,12 @@ Proof.
       unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
     Unshelve. all: tea.
     * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
+  - cbn. erewrite subst_ren_wk_up.
+    eapply (@emptyElimSubst _); tea.
+    * erewrite <- wk_up_ren_on.
+      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
+      constructor; tea; now constructor.
+    Unshelve. all: tea.
   - econstructor.
     1: eassumption.
     now eapply typing_wk.
@@ -585,7 +602,7 @@ Module DeclarativeTypingProperties.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
   Proof.
-    3-6: now econstructor.
+    all: try now econstructor.
     - intros.
       now eapply typing_wk.
     - easy.
@@ -620,6 +637,7 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - now econstructor.
   - now do 2 econstructor.
+  - now repeat econstructor.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
@@ -649,6 +667,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - now econstructor.
   - now econstructor.
+  - now do 2 econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -664,6 +683,7 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now econstructor.
+  - now econstructor.
   - now econstructor.
   Qed.
 
@@ -682,6 +702,22 @@ Module DeclarativeTypingProperties.
   - intros.
     now eapply redtmdecl_app.
   - intros Γ P hz hs n n' HP Hhz Hhs Hn Hr Hcong.
+    revert Hcong; induction Hr; intros Hcong.
+    + apply red_id.
+      now econstructor.
+    + apply red_red.
+      now constructor.
+    + eapply red_trans.
+      * apply IHHr1; [assumption|].
+        intros w Hw.
+        eapply TypeTrans; [apply TypeSym|]; eapply Hcong; [eassumption|].
+        now transitivity t'.
+      * eapply redtmdecl_conv; [eapply IHHr2|].
+        -- now eapply boundary_red_tm_l.
+        -- intros w Hw; now apply Hcong.
+        -- eapply TypeTrans; [apply TypeSym|]; apply Hcong; [assumption|].
+          now transitivity t'.
+  - intros Γ P n n' HP Hn Hr Hcong.
     revert Hcong; induction Hr; intros Hcong.
     + apply red_id.
       now econstructor.

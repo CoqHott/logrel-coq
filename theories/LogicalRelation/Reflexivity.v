@@ -11,7 +11,7 @@ Section Reflexivities.
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod | ?? []].
+    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod | ?? [] | ?? []].
     all: now econstructor.
   Qed.
 
@@ -37,10 +37,23 @@ Section Reflexivities.
     now eapply NeNfEqRefl.
   Qed.
 
+  Lemma reflEmptyRedTmEq {Γ A} {NA : [Γ ||-Empty A]} :
+      (forall t : term, [Γ ||-Empty t : A | NA] -> [Γ ||-Empty t ≅ t : A | NA])
+    × (forall t : term, @EmptyProp _ _ _ _ Γ t -> @EmptyPropEq _ _ _ Γ t t).
+  Proof.
+    split.
+    - intros t Ht. induction Ht.
+      econstructor; eauto.
+      destruct prop; econstructor.
+      now eapply NeNfEqRefl.
+    - intros ? []. econstructor. 
+      now eapply NeNfEqRefl.
+  Qed.
+
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod| ?? NA].
+    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod| ?? NA | ?? NA].
     - intros t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
@@ -58,7 +71,8 @@ Section Reflexivities.
       1-2: now econstructor.
       all: cbn.
       all: now eauto.
-    - apply reflNatRedTmEq. 
+    - apply reflNatRedTmEq.
+    - apply reflEmptyRedTmEq. 
   Qed.
 
   Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 

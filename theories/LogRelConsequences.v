@@ -152,6 +152,12 @@ Section NeutralConversion.
     + reflexivity.
     + reflexivity.
     + econstructor; [eassumption|constructor].
+  - intros Δ B NB **; destruct NB.
+    econstructor.
+    + now eapply redtywf_red.
+    + reflexivity.
+    + reflexivity.
+    + econstructor; [eassumption|constructor].
 Qed.
 
 End NeutralConversion.
@@ -161,6 +167,7 @@ Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : is
     | @UnivType s, @UnivType s' => s = s'
     | @ProdType A B, @ProdType A' B' => [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B']
     | NatType, NatType => True
+    | EmptyType, EmptyType => True
     | NeType _, NeType _ => [Γ |- T ≅ T' : U]
     | _, _ => False
   end.
@@ -187,6 +194,10 @@ Proof.
     apply ty_ne_whne in ne.
     now constructor.
   - destruct Hconv as [?? red].
+    eexists ; split.
+    1: apply red.
+    now constructor.
+  - destruct Hconv as [red].
     eexists ; split.
     1: apply red.
     now constructor.
@@ -233,7 +244,14 @@ Proof.
       * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
       * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
       * apply ty_ne_whne in ne, ne'; inversion ne'.
-      * eassumption.
+      * apply ty_ne_whne in ne, ne'; inversion ne'; gen_typing.
+      * apply ty_ne_whne in ne, ne'. inversion ne.
+    + destruct nfT'.
+      * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+      * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
+      * apply ty_ne_whne in ne, ne'; inversion ne'.
+      * apply ty_ne_whne in ne, ne'; inversion ne'; gen_typing.
+      * apply ty_ne_whne in ne, ne'. cbn. gen_typing.
   - rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
     remember (PiRedTyPack.pack ΠA ΠAad) as ΠA' eqn:Heq in *.
     clear ΠA ΠAad Heq.
@@ -241,10 +259,10 @@ Proof.
     assert (T = tProd dom cod) as HeqT by (apply red_whnf ; gen_typing). 
     assert (T' = tProd dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
     destruct nfT.
-    1,3: congruence.
+    1,3,4: congruence.
     2: subst ; exfalso ; gen_typing.
     destruct nfT'.
-    1,3: congruence.
+    1,3,4: congruence.
     2: subst ; exfalso ; gen_typing.
     inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
     cbn.
@@ -279,6 +297,14 @@ Proof.
     destruct nfT; inversion HeqT.
     + destruct nfT'; inversion HeqT'.
       * constructor.
+      * exfalso; subst; inversion w.
+    + exfalso; subst; inversion w.
+  - destruct Hconv.
+    assert (T' = tEmpty) as HeqT' by (eapply redtywf_whnf ; gen_typing).
+    assert (T = tEmpty) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
+    destruct nfT; inversion HeqT.
+    + destruct nfT'; inversion HeqT'.
+      * econstructor.
       * exfalso; subst; inversion w.
     + exfalso; subst; inversion w.
 Qed.
@@ -529,6 +555,9 @@ Section Boundary.
     - intros; gen_typing.
     - intros.
       now eapply typing_subst1.
+    - intros; gen_typing.
+    - intros.
+      now eapply typing_subst1.
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
@@ -592,6 +621,13 @@ Section Boundary.
       1: now eapply typing_subst1.
       replace (arr _ _) with (arr P P[tSucc (tRel 0)]⇑)[n..] by now bsimpl.
       eapply ty_app; tea.
+    - intros * ? [] ? []; split.
+      + now eapply typing_subst1.
+      + gen_typing.
+      + eapply ty_conv.
+        assert [Γ |-[de] tEmpty ≅ tEmpty] by now constructor.
+        1: eapply ty_emptyElim; tea; eapply ty_conv; tea. 
+        * symmetry; now eapply typing_subst1.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
@@ -838,6 +874,10 @@ Proof.
   - apply termGen' in Hty as [?[[-> ??? hsn] Heq]].
     econstructor; tea; econstructor; tea.
     now apply termGen' in hsn as [? [[]?]].
+  - apply termGen' in Hty as [?[[->]?]].
+    econstructor; tea.
+    econstructor; tea.
+    now eapply IHHred.
 Qed.
 
 Theorem subject_reduction Γ t t' A :

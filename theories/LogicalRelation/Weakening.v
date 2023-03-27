@@ -49,6 +49,13 @@ Section Weakenings.
     gen_typing. 
   Qed.
 
+  Lemma wkEmpty {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Empty A] -> [Δ ||-Empty A⟨ρ⟩].
+  Proof. 
+    intros []; constructor.
+    change tEmpty with tEmpty⟨ρ⟩.
+    gen_typing. 
+  Qed.
+
   Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
     [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
   Proof.
@@ -61,6 +68,7 @@ Section Weakenings.
       + intros; now apply ihdom.
       + intros; now eapply ihcod.
     - intros; eapply LRNat_; now eapply wkNat.
+    - intros; eapply LREmpty_; now eapply wkEmpty.
   Defined.
 
   Definition wkΠ' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :=
@@ -103,6 +111,8 @@ Section Weakenings.
         subst X; bsimpl; try rewrite scons_comp'; reflexivity.
     - intros * []; constructor.
       change tNat with tNat⟨ρ⟩; gen_typing.
+    - intros * []; constructor.
+      change tEmpty with tEmpty⟨ρ⟩; gen_typing.
   Qed.
     
 
@@ -159,6 +169,19 @@ Section Weakenings.
       + now constructor.
       + intros; constructor. 
         change tNat with tNat⟨ρ⟩.
+        now eapply wkNeNf.
+    - intros??? NA t ? ρ wfΔ; revert t; pose (NA' := wkEmpty ρ wfΔ NA).
+      set (G := _); enough (h : G × (forall t, EmptyProp Γ t -> EmptyProp Δ t⟨ρ⟩)) by apply h.
+      subst G.
+      split.
+      2:{ intros t Ht. inversion Ht. subst. econstructor.
+          change tEmpty with tEmpty⟨ρ⟩.
+          now eapply wkNeNf. }
+      intros t Ht. induction Ht. econstructor.
+      + change tEmpty with tEmpty⟨ρ⟩; gen_typing.
+      + change tEmpty with tEmpty⟨ρ⟩; gen_typing.
+      + destruct prop. econstructor.
+        change tEmpty with tEmpty⟨ρ⟩.
         now eapply wkNeNf.
   Qed.
 
@@ -217,6 +240,19 @@ Section Weakenings.
       + now constructor.
       + intros; constructor. 
         change tNat with tNat⟨ρ⟩.
+        now eapply wkNeNfEq.
+    - intros??? NA t u ? ρ wfΔ; revert t u; pose (NA' := wkEmpty ρ wfΔ NA).
+      set (G := _); enough (h : G × (forall t u, EmptyPropEq Γ t u -> EmptyPropEq Δ t⟨ρ⟩ u⟨ρ⟩)) by apply h.
+      subst G. split.
+      2:{ intros t u Ht. inversion Ht. subst. econstructor.
+          change tEmpty with tEmpty⟨ρ⟩.
+          now eapply wkNeNfEq. }
+      intros t u Ht. induction Ht. econstructor.
+      + change tEmpty with tEmpty⟨ρ⟩; gen_typing.
+      + change tEmpty with tEmpty⟨ρ⟩; gen_typing.
+      + change tEmpty with tEmpty⟨ρ⟩; gen_typing.
+      + destruct prop. econstructor.
+        change tEmpty with tEmpty⟨ρ⟩.
         now eapply wkNeNfEq.
   Qed.
 End Weakenings.

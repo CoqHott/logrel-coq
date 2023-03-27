@@ -581,6 +581,127 @@ Export NatRedTmEq(NatRedTmEq,Build_NatRedTmEq, NatPropEq, NatRedEqInduction).
 
 Notation "[ Γ ||-Nat t ≅ u : A | RA ]" := (@NatRedTmEq _ _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
 
+(** ** Reducibility of empty type *)
+Module EmptyRedTy.
+
+  Record EmptyRedTy `{ta : tag} `{WfType ta} `{RedType ta}
+    {Γ : context} {A : term}
+  : Set := 
+  {
+    red : [Γ |- A :⇒*: tEmpty]
+  }.
+
+  Arguments EmptyRedTy {_ _ _}.
+End EmptyRedTy.
+
+Export EmptyRedTy(EmptyRedTy, Build_EmptyRedTy).
+Notation "[ Γ ||-Empty A ]" := (EmptyRedTy Γ A) (at level 0, Γ, A at level 50).
+
+Module EmptyRedTyEq.
+
+  Record EmptyRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
+    {Γ : context} {A : term} {NA : EmptyRedTy Γ A} {B : term}
+  : Set := {
+    red : [Γ |- B :⇒*: tEmpty];
+  }.
+
+  Arguments EmptyRedTyEq {_ _ _ _ _}.
+
+End EmptyRedTyEq.
+
+Export EmptyRedTyEq(EmptyRedTyEq,Build_EmptyRedTyEq).
+
+Notation "[ Γ ||-Empty A ≅ B | RA ]" := (@EmptyRedTyEq _ _ _ Γ A RA B) (at level 0, Γ, A, B, RA at level 50).
+
+Module EmptyRedTm.
+Section EmptyRedTm.
+  Context `{ta : tag} `{WfType ta} 
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} `{TermNe ta}.
+
+  Inductive EmptyProp {Γ : context} : term -> Set :=
+  | neR {ne} : [Γ ||-NeNf ne : tEmpty] -> EmptyProp ne.
+
+  Inductive EmptyRedTm {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> Set :=
+  | Build_EmptyRedTm {t}
+    (nf : term)
+    (red : [Γ |- t :⇒*: nf : tEmpty ])
+    (eq : [Γ |- nf ≅ nf : tEmpty])
+    (prop : @EmptyProp Γ nf) : EmptyRedTm t.
+
+(* Scheme EmptyRedTm_mut_rect := Induction for EmptyRedTm Sort Type with *)
+(*     EmptyProp_mut_rect := Induction for EmptyProp Sort Type. *)
+
+(* Combined Scheme _EmptyRedInduction from *)
+(*   EmptyRedTm_mut_rect, *)
+(*   EmptyProp_mut_rect. *)
+
+(* Let _EmptyRedInductionType := *)
+(*   ltac:(let ind := fresh "ind" in *)
+(*       pose (ind := _EmptyRedInduction); *)
+(*       let ind_ty := type of ind in *)
+(*       exact ind_ty). *)
+
+(* Let EmptyRedInductionType := *)
+(*   ltac: (let ind := eval cbv delta [_EmptyRedInductionType] zeta *)
+(*     in _EmptyRedInductionType in *)
+(*     let ind' := polymorphise ind in *)
+(*   exact ind'). *)
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+(* Lemma EmptyRedInduction : EmptyRedInductionType. *)
+(* Proof. *)
+(*   intros ??? PRed PProp **; split; now apply (_EmptyRedInduction _ _ _ PRed PProp). *)
+(* Defined. *)
+
+Definition nf {Γ A n} {NA : [Γ ||-Empty A]} : @EmptyRedTm _ _ NA n -> term.
+Proof.
+  intros [? nf]. exact nf.
+Defined.
+
+Definition red {Γ A n} {NA : [Γ ||-Empty A]} (Rn : @EmptyRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tEmpty].
+Proof.
+  dependent inversion Rn; subst; cbn; tea.
+Defined.
+
+End EmptyRedTm.
+Arguments EmptyRedTm {_ _ _ _ _ _ _ _ _ _}.
+Arguments EmptyProp {_ _ _ _}.
+
+End EmptyRedTm.
+
+Export EmptyRedTm(EmptyRedTm,Build_EmptyRedTm, EmptyProp).
+
+Notation "[ Γ ||-Empty t : A | RA ]" := (@EmptyRedTm _ _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
+
+
+Module EmptyRedTmEq.
+Section EmptyRedTmEq.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} `{TermNe ta}.
+
+  Inductive EmptyPropEq {Γ : context} : term -> term -> Set :=
+  (* KM: plugging in the parameter type directly... Is that ok ? *)
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tEmpty] -> EmptyPropEq ne ne'.
+
+  Inductive EmptyRedTmEq {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> term -> Set :=
+  | Build_EmptyRedTmEq {t u}
+    (nfL nfR : term)
+    (redL : [Γ |- t :⇒*: nfL : tEmpty])
+    (redR : [Γ |- u :⇒*: nfR : tEmpty ])
+    (eq : [Γ |- nfL ≅ nfR : tEmpty])
+    (prop : @EmptyPropEq Γ nfL nfR) : EmptyRedTmEq t u.
+
+End EmptyRedTmEq.
+Arguments EmptyRedTmEq {_ _ _ _ _ _ _ _ _ _}.
+Arguments EmptyPropEq {_ _ _}.
+End EmptyRedTmEq.
+
+Export EmptyRedTmEq(EmptyRedTmEq,Build_EmptyRedTmEq, EmptyPropEq).
+
+Notation "[ Γ ||-Empty t ≅ u : A | RA ]" := (@EmptyRedTmEq _ _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
+
 (** ** Definition of the logical relation *)
 
 (** This simply bundles the different cases for reducibility already defined. *)
@@ -609,7 +730,9 @@ Inductive LR@{i j k} `{ta : tag}
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
       (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
   | LRNat {Γ A} (NA : [Γ ||-Nat A]) :
-    LR rec Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA).
+    LR rec Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
+  | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
+    LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA).
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -687,6 +810,10 @@ Section MoreDefs.
   Definition LRNat_@{i j k l} l {Γ A} (NA : [Γ ||-Nat A]) 
     : [LogRel@{i j k l} l | Γ ||- A] :=
     LRbuild (LRNat (LogRelRec l) NA).
+
+  Definition LREmpty_@{i j k l} l {Γ A} (NA : [Γ ||-Empty A]) 
+    : [LogRel@{i j k l} l | Γ ||- A] :=
+    LRbuild (LREmpty (LogRelRec l) NA).
 
 End MoreDefs.
   
@@ -868,3 +995,56 @@ Section NatPropProperties.
 
 End NatPropProperties.
 
+Section EmptyPropProperties.
+  Context `{GenericTypingProperties}.
+  Lemma EmptyProp_whnf {Γ A t} {NA : [Γ ||-Empty A]} : @EmptyProp _ _ _ _ Γ t -> whnf t.
+  Proof.  intros [ ? []]; now (econstructor; eapply tm_ne_whne). Qed.
+
+  Lemma EmptyPropEq_whnf {Γ A t u} {NA : [Γ ||-Empty A]} : @EmptyPropEq _ _ _ Γ t u -> whnf t × whnf u.
+  Proof.  intros [ ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
+
+End EmptyPropProperties.
+
+(* A&Y: We prove the hand-crafted induction principles here: *)
+
+Lemma EmptyRedInduction :
+  forall {ta : tag} {H : WfType ta} {H0 : RedType ta} {H1 : Typing ta}
+    {H2 : ConvNeuConv ta} {H3 : ConvTerm ta} {H4 : RedTerm ta} 
+    {H5 : TermNe ta} (Γ : context) (A : term) (NA : [Γ ||-Empty A])
+    (P : forall t : term, [Γ ||-Empty t : A | NA] -> Type)
+    (P0 : forall t : term, EmptyProp Γ t -> Type),
+    (forall (t nf : term) (red : [Γ |-[ ta ] t :⇒*: nf : tEmpty])
+       (eq : [Γ |-[ ta ] nf ≅ nf : tEmpty]) (prop : EmptyProp Γ nf),
+        P0 nf prop -> P t (Build_EmptyRedTm nf red eq prop)) ->
+    (forall (ne : term) (r : [Γ ||-NeNf ne : tEmpty]), P0 ne (EmptyRedTm.neR r)) ->
+    (forall (t : term) (n : [Γ ||-Empty t : A | NA]), P t n)
+      × (forall (t : term) (n : EmptyProp Γ t), P0 t n).
+Proof.
+  intros. split.
+  - intros. induction n.
+    eapply X. destruct prop. eapply X0.
+  - intros. induction n. eapply X0.
+Qed.
+
+
+Lemma EmptyRedEqInduction :
+  forall {ta : tag} {H0 : WfType ta} {H2 : RedType ta} {H3 : Typing ta}
+    {H4 : ConvNeuConv ta} {H5 : ConvTerm ta} {H6 : RedTerm ta} 
+    {H7 : TermNe ta} (Γ : context) (A : term) (NA : [Γ ||-Empty A])
+    (P : forall t t0 : term, [Γ ||-Empty t ≅ t0 : A | NA] -> Type)
+    (P0 : forall t t0 : term, EmptyPropEq Γ t t0 -> Type),
+    (forall (t u nfL nfR : term) (redL : [Γ |-[ ta ] t :⇒*: nfL : tEmpty])
+       (redR : [Γ |-[ ta ] u :⇒*: nfR : tEmpty]) (eq : [Γ |-[ ta ] nfL ≅ nfR : tEmpty])
+       (prop : EmptyPropEq Γ nfL nfR),
+        P0 nfL nfR prop -> P t u (Build_EmptyRedTmEq nfL nfR redL redR eq prop)) ->
+    (forall (ne ne' : term) (r : [Γ ||-NeNf ne ≅ ne' : tEmpty]),
+        P0 ne ne' (EmptyRedTmEq.neReq r)) ->
+    (forall (t t0 : term) (n : [Γ ||-Empty t ≅ t0 : A | NA]), P t t0 n)
+      × (forall (t t0 : term) (n : EmptyPropEq Γ t t0), P0 t t0 n).
+Proof.
+  intros.
+  split.
+  - intros t t0 n. induction n.
+    eapply X; eauto. destruct prop; eauto.
+  - intros. induction n. eapply X0.
+Qed.

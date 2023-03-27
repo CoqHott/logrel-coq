@@ -445,7 +445,7 @@ Section Transitivity.
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       3: destruct H8.
-      1,3-5: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
+      1,3-6: now unshelve eapply ty_conv_inj in H6 ; [econstructor | econstructor | cbn in *].
       eapply prod_ty_inj in H6 as [].
       econstructor ; tea.
       eapply IH ; tea.
@@ -690,6 +690,8 @@ Module IntermediateTypingProperties.
     - gen_typing.
     - gen_typing.
     - gen_typing.
+    - gen_typing.
+    - gen_typing.
     - intros * ? [].
       econstructor ; tea.
       symmetry.
@@ -730,7 +732,8 @@ Module IntermediateTypingProperties.
         now eapply conv_sound in bun_conv_ty.
       + now do 2 econstructor.
     - admit.
-Admitted.
+    - admit.
+  Admitted.
 
   #[export, refine] Instance ConvTermIntProperties : ConvTermProperties (ta := bni) := {}.
   Proof.
@@ -775,6 +778,7 @@ Admitted.
     - admit.
     - admit.
     - admit.
+    - admit.
 Admitted.
 
   #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
@@ -795,6 +799,7 @@ Admitted.
       + gen_typing.
       + now econstructor.
       + eassumption.
+    - gen_typing.
     - gen_typing.
     - gen_typing.
   Qed.
@@ -834,6 +839,12 @@ Admitted.
         1: now econstructor.
         eassumption.
     - intros ? ? ? ? ? ? ? ? ? ? [? ? Hr]; econstructor.
+      + now eapply boundary_tm_ctx.
+      + now constructor.
+      + clear - Hr; induction Hr; try constructor.
+        econstructor; [|eassumption].
+        now constructor.
+    - intros ? ? ? ? ? ? [? ? Hr]; econstructor.
       + now eapply boundary_tm_ctx.
       + now constructor.
       + clear - Hr; induction Hr; try constructor.

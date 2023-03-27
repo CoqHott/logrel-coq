@@ -48,6 +48,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     | LRne _ neA => LRne _ neA
     | LRPi _ ΠA ΠAad => LRPi _ ΠA (embedΠad ΠAad)
     | LRNat _ NA => LRNat _ NA
+    | LREmpty _ NA => LREmpty _ NA
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -76,12 +77,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
     (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat rec NA)) ->
 
+    (forall Γ A (NA : [Γ ||-Empty A]), P (LREmpty rec NA)) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros HU Hne HPi HNat.
+    intros HU Hne HPi HNat HEmpty.
     fix HRec 6.
     destruct lr.
     - eapply HU.
@@ -89,6 +92,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     - eapply HPi.
       all: intros ; eapply HRec.
     - eapply HNat.
+    - eapply HEmpty.
   Defined.
 
   Definition LR_rec@{i j k} := LR_rect@{i j k Set}.
@@ -116,12 +120,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     
     (forall l Γ A (NA : [Γ ||-Nat A]), P (LRNat (LogRelRec l) NA)) ->
 
+    (forall l Γ A (NA : [Γ ||-Empty A]), P (LREmpty (LogRelRec l) NA)) ->
+
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
       (rTeEq  : term -> term -> Type@{k}) (lr : LR@{j k l} (LogRelRec@{i j k} l) Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     intros HU Hne HPi **; eapply LR_rect@{j k l o}.
-    1,2,4: auto.
+    1,2,4,5: auto.
     - intros; eapply (HPi _ _ _ (PiRedTyPack.pack ΠA HAad)); eauto.
   Defined.
 
@@ -144,12 +150,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
     (forall l Γ A (NA : [Γ ||-Nat A]), P (LRNat_ l NA)) ->
 
+    (forall l Γ A (NA : [Γ ||-Empty A]), P (LREmpty_ l NA)) ->
+
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
   Proof.
-    intros HU Hne HPi HNat l Γ A lr.
+    intros HU Hne HPi HNat HEmpty l Γ A lr.
     apply (LR_rect_LogRelRec@{i j k l o} (fun l Γ A _ _ _ lr => P l Γ A (LRbuild lr))).
-    1-4: auto.
+    all: auto.
   Defined.
 
   Notation PiHyp0 P Γ ΠA HAad G :=
@@ -174,18 +182,21 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
     (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat rec0 NA)) ->
 
+    (forall Γ A (NA : [Γ ||-Empty A]), P (LREmpty rec0 NA)) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LogRel0@{i j k} Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros Hne HPi HNat.
+    intros Hne HPi HNat HEmpty.
     fix HRec 6.
     destruct lr.
     - destruct H as [? lt]; destruct (elim lt).
     - eapply Hne.
     - eapply HPi; intros ; eapply HRec.
     - eapply HNat.
+    - eapply HEmpty.
   Defined.
 
 End Inductions.
@@ -204,6 +215,7 @@ Section Inversions.
     | UnivType => [Γ ||-U<l> A]
     | ProdType => [Γ ||-Π<l> A]
     | NatType => [Γ ||-Nat A]
+    | EmptyType => [Γ ||-Empty A]
     | NeType _ => [Γ ||-ne A]
     end.
   Proof.
@@ -229,8 +241,8 @@ Section Inversions.
         1-3: gen_typing.
         eapply redty_red, redA.
       + dependent inversion whA ; subst.
-        1-3: inv_whne.
-        now eexists.
+        all: inv_whne.
+        all: now eexists.
     - intros ??? PiA _ _ A' red whA.
       enough (∑ dom cod, A' = tProd cod dom) as (?&?&->).
       + dependent inversion whA ; subst.
@@ -243,6 +255,13 @@ Section Inversions.
         eapply redty_red, redA.
     - intros ??? [redA] ???.
       enough (A' = tNat) as ->.
+      + dependent inversion w. 
+        1: now econstructor.
+        inv_whne.
+      + eapply whred_det; tea.
+        all: gen_typing.
+    - intros ??? [redA] ???.
+      enough (A' = tEmpty) as ->.
       + dependent inversion w. 
         1: now econstructor.
         inv_whne.

@@ -43,6 +43,9 @@ Section Definitions.
       | wfTypeNat {Γ} : 
           [|- Γ] ->
           [Γ |- tNat]
+      | wfTypeEmpty {Γ} : 
+          [|- Γ] ->
+          [Γ |- tEmpty]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -79,6 +82,13 @@ Section Definitions.
         [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs n : P[n..]]
+      | wfTermEmpty {Γ} :
+          [|-Γ] ->
+          [Γ |- tEmpty : U]
+      | wfTermEmptyElim {Γ P e} :
+        [Γ ,, tEmpty |- P ] ->
+        [Γ |- e : tEmpty] ->
+        [Γ |- tEmptyElim P e : P[e..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -145,6 +155,10 @@ Section Definitions.
           [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- n : tNat] ->
           [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
+      | TermEmptyElimCong {Γ P P' e e'} :
+          [Γ ,, tEmpty |- P ≅ P'] ->
+          [Γ |- e ≅ e' : tEmpty] ->
+          [Γ |- tEmptyElim P e ≅ tEmptyElim P' e' : P[e..]]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]
@@ -198,6 +212,10 @@ Section Definitions.
       [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n : tNat] ->
       [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
+  | emptyElimSubst {P e e'} :
+      [Γ ,, tEmpty |- P] ->
+      [Γ |- e ⇒ e' : tEmpty] ->
+      [Γ |- tEmptyElim P e ⇒ tEmptyElim P e' : P[e..]]
   | termRedConv {A B : term} {t u} :
       [ Γ |- t ⇒ u : A ] ->
       [ Γ |- A ≅ B ] ->

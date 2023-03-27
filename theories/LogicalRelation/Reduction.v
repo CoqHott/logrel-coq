@@ -33,6 +33,10 @@ Proof.
     + apply LRNat_; constructor; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + now constructor.
+  - intros B [red] A ?; unshelve eexists.
+    + apply LREmpty_; constructor; tea; etransitivity; tea.
+      constructor; tea; gen_typing.
+    + now constructor.
 Qed.
 
 
@@ -96,6 +100,17 @@ Proof.
     }
     split; econstructor; tea.
     now eapply reflNatRedTmEq.
+  - intros ? NA t ? Ru red; inversion Ru; subst.
+    assert [Γ |- A ≅ tEmpty] by (destruct NA; gen_typing).
+    assert [Γ |- t :⇒*: nf : tEmpty]. 1:{
+      constructor. 
+      1: eapply ty_conv; gen_typing.
+      etransitivity. 2: gen_typing.
+      now eapply redtm_conv.
+    }
+    split; econstructor; tea.
+    now eapply reflEmptyRedTmEq.
+    Unshelve. 2: tea.
 Qed.
 
 Lemma redwfSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
@@ -141,6 +156,12 @@ Proof.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
+  - intros ??? [red] ? red' ?.
+    eapply LREmpty_.
+    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    1: constructor.
+    econstructor; tea.
+    eapply redtywf_refl; gen_typing.
 Qed.
 
 Lemma redTmFwd {Γ l A t u} {RA : [Γ ||-<l> A]} : 
@@ -170,6 +191,12 @@ Proof.
     1: now eapply NatProp_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
+  - intros ?????? Rt red' ?; inversion Rt; subst.
+    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    1: now eapply EmptyProp_whnf.
+    econstructor; tea.
+    eapply redtmwf_refl; gen_typing.
+    Unshelve. 2: tea.
 Qed.
 
 End Reduction.
