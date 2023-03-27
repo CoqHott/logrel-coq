@@ -22,9 +22,9 @@ Proof.
   destruct RA as [pA lrA], RB as [pB lrB], RC as [pC lrC]; cbn in *.
   set (sv := combine _ _ _ _ lrA lrB lrC (ShapeViewConv _ _ RAB) (ShapeViewConv _ _ RBC)).
   revert lB B pB lrB lC C pC lrC RAB RBC sv.
-  induction lrA as [| |?? ΠA ΠAad ihdom ihcod|]; intros ??? lrB;
-  induction lrB as [|?? neB|?? ΠB ΠBad _ _|]; intros ??? lrC;
-  induction lrC as [| |?? ΠC ΠCad _ _|]; intros RAB RBC [].
+  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| |]; intros ??? lrB;
+  induction lrB as [|?? neB|?? ΠB ΠBad _ _| |]; intros ??? lrC;
+  induction lrC as [| |?? ΠC ΠCad _ _| |]; intros RAB RBC [].
   - easy.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
@@ -68,6 +68,7 @@ Proof.
       }
       3: apply codAdB.
       now eapply (PiRedTy.codRed ΠA).
+  - destruct RBC; now constructor.
   - destruct RBC; now constructor.
 Qed.
 
@@ -158,6 +159,36 @@ Proof.
     econstructor; now eapply transNeNfEq.
 Qed.
 
+Lemma and_two P Q : Q -> (Q -> P) -> (P × Q).
+Proof.
+  firstorder.
+Qed.
+
+Lemma transEqTermEmpty {Γ A} (NA : [Γ ||-Empty A]) :
+  (forall t u, 
+    [Γ ||-Empty t ≅ u : A | NA] -> forall v,
+    [Γ ||-Empty u ≅ v : A | NA] ->  
+    [Γ ||-Empty t ≅ v : A | NA]) ×
+  (forall t u,
+    EmptyPropEq Γ t u -> forall v,
+    EmptyPropEq Γ u v ->
+    EmptyPropEq Γ t v).
+Proof.
+  eapply and_two.
+  - intros ?? tu ? uv; inversion uv; subst.
+    destruct tu.
+    econstructor; now eapply transNeNfEq.
+  - intros HH.
+    intros t u tu v uv. inversion uv; subst.
+    inversion tu; subst.
+    unshelve eapply EmptyPropEq_whnf in prop as HH1. 2: tea. destruct HH1.
+    unshelve eapply EmptyPropEq_whnf in prop0 as HH2. 2: tea. destruct HH2.
+    unshelve epose proof (redtmwf_det _ u _ _ _ _ _ _ redL redR0); tea; subst.
+    econstructor; tea.
+    1: now etransitivity.
+    eapply HH; eauto.
+Qed.
+
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]} :
   [Γ ||-<lA> t ≅ u : A | RA] ->
@@ -169,6 +200,7 @@ Proof.
   - intros *; apply transEqTermNeu.
   - intros * ?????. apply transEqTermΠ; tea.
   - intros ? NA **; now eapply (fst (transEqTermNat NA)).
+  - intros ? NA **; now eapply (fst (transEqTermEmpty NA)).
 Qed.
 
 Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :

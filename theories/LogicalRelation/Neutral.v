@@ -43,6 +43,9 @@ Proof.
   - intros ??? [red] ne.
     rewrite (redtywf_whne red ne) in ne.
     inversion ne.
+  - intros ??? [red] ne.
+    rewrite (redtywf_whne red ne) in ne.
+    inversion ne.
 Qed.
 
 Set Printing Primitive Projection Parameters.
@@ -246,7 +249,30 @@ Proof.
       eapply tm_nf_red; [now apply tmr_wf_red|eassumption].
     + eapply tm_nf_zero; gen_typing.
     + intros; now eapply tm_nf_succ.
-    + intros ne []; now apply tm_ne_nf.
+    + intros ne []. apply tm_ne_nf. assumption.
+Qed.
+
+Lemma complete_Empty {l Γ A} (NA : [Γ ||-Empty A]) : complete (LREmpty_ l NA).
+Proof.
+  split.
+  - intros. 
+    assert [Γ |- A ≅ tEmpty] by (destruct NA; gen_typing). 
+    assert [Γ |- n : tEmpty] by now eapply ty_conv.
+    split; econstructor.
+    1,4,5: eapply redtmwf_refl; tea; now eapply ty_conv.
+    2,4: do 2 constructor; tea.
+    1,7: eapply convtm_convneu.
+    1,4: eapply lrefl.
+    4-6: now eapply tm_ne_conv.
+    all: eapply convneu_conv; tea.
+  - simpl in *.
+    assert [Γ |- tEmpty ≅ A] by (destruct NA; gen_typing).
+    intros a Ha; eapply tm_nf_conv; [|eassumption].
+    destruct Ha.
+    destruct prop.
+    destruct r.
+    eapply tm_nf_red. exact red.
+    now apply tm_ne_nf.
 Qed.
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
@@ -256,6 +282,7 @@ revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
 - now apply complete_ne.
 - now apply complete_Pi.
 - now apply complete_Nat.
+- now apply complete_Empty.
 Qed.
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :
@@ -330,6 +357,8 @@ induction HRA.
     * bsimpl ; rewrite scons_eta' ; now bsimpl.
 + destruct NA.
   eapply ty_nf_red, ty_nf_nat; gen_typing.
++ destruct NA.
+  eapply ty_nf_red, ty_nf_empty; gen_typing.
 Qed.
 
 End Neutral.

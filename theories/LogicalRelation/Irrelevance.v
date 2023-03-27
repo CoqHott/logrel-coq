@@ -212,6 +212,41 @@ Proof.
   - split; apply NatIrrelevanceTmEq.
 Qed.
 
+Section EmptyIrrelevant.
+  Universe i j k l i' j' k' l'.
+
+  Context {Γ lA lA' A A'} (NA : [Γ ||-Empty A]) (NA' : [Γ ||-Empty A'])
+    (RA := LREmpty_@{i j k l} lA NA) (RA' := LREmpty_@{i' j' k' l'} lA' NA').
+  
+  Lemma EmptyIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
+  Proof.
+    intros []; now econstructor.
+  Qed.
+
+  Lemma EmptyIrrelevanceTm :
+    (forall t, [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA']).
+  Proof.
+    intros t Ht. induction Ht; now econstructor.
+  Qed.
+   
+  Lemma EmptyIrrelevanceTmEq :
+    (forall t u, [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA']).
+  Proof.
+    intros t u Htu. induction Htu. now econstructor.
+  Qed.
+End EmptyIrrelevant.
+
+Lemma EmptyIrrelevanceLRPack@{i j k l i' j' k' l' v}
+  {Γ lA lA' A A'} (NA : [Γ ||-Empty A]) (NA' : [Γ ||-Empty A'])
+  (RA := LREmpty_@{i j k l} lA NA) (RA' := LREmpty_@{i' j' k' l'} lA' NA') :
+  equivLRPack@{k k' v} RA RA'.
+Proof.
+  constructor.
+  - split; apply EmptyIrrelevanceTyEq.
+  - split; apply EmptyIrrelevanceTm.
+  - split; apply EmptyIrrelevanceTmEq.
+Qed.
+
 (** The main proof *)
 
 Section LRIrrelevant.
@@ -286,13 +321,13 @@ Proof.
   pose proof (fun Γ l0 ltA ltA' => snd (IH l0 ltA ltA') Γ) as IHeq.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA]
+  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA]
     in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
-  - destruct lrA' as [? ? h2 | | |]; try solve [destruct s] ; clear s.
+  - destruct lrA' as [? ? h2 | | | |]; try solve [destruct s] ; clear s.
     now apply UnivIrrelevanceLRPack.
-  - destruct lrA' as [|? A' neA'| |] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [|? A' neA'| | |] ; try solve [destruct s] ; clear s.
     exact (NeIrrelevanceLRPack lA lA' neA neA' he).
-  - destruct lrA' as [| | ? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
     pose (PA := PiRedTyPack.pack ΠA HAad).
     pose (PA' := PiRedTyPack.pack ΠA' HAad').
     destruct he as [dom0 cod0 ?? domRed codRed], ΠA' as [dom1 cod1];
@@ -307,8 +342,10 @@ Proof.
     + intros; unshelve eapply IHcod.
       1: eapply (LRAd.adequate (PiRedTyPack.codRed PA' _ _ _)).
       eapply codRed.
-  - destruct lrA' as [| | ? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
     apply (NatIrrelevanceLRPack (lA:=lA) (lA':=lA')).
+  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
+    apply (EmptyIrrelevanceLRPack (lA:=lA) (lA':=lA')).
 Qed.
 
 
@@ -318,7 +355,7 @@ Lemma LRIrrelevantCumTy {lA}
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
   intros [ [] lrA ] ; cbn in lrA.
-  induction lrA as [? ? [l1 lt1] | ? | ? A [] [] IHdom IHcod|?? NEA].
+  induction lrA as [? ? [l1 lt1] | ? | ? A [] [] IHdom IHcod|?? NEA|?? NEA].
   - eapply LRU_. econstructor ; tea.
   - eapply LRne_. exact neA.
   - cbn in *. eapply LRPi'. unshelve econstructor.
@@ -345,6 +382,7 @@ Proof.
       exact (snd (irrTmRed b) rb).
       exact (snd (irrTmEq a b) rab).
   - now eapply LRNat_.
+  - now eapply LREmpty_.
 Qed.
 
 
@@ -590,6 +628,10 @@ Proof.
     subst G; apply NatRedEqInduction.
     1-3: now econstructor.
     intros; constructor; now eapply NeNfEqSym.
+  - intros ??? NA.
+    intros t u [? ? ? ? ? ? ? prop]. destruct prop. econstructor; eauto.
+    2: econstructor; now eapply NeNfEqSym.
+    symmetry; eassumption.
 Qed.
 
 End Irrelevances.

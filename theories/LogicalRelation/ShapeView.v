@@ -21,6 +21,7 @@ Section ShapeViews.
       | LRne _ _, LRne _ _ => True
       | LRPi _ _ _, LRPi _ _ _ => True
       | LRNat _ _, LRNat _ _ => True
+      | LREmpty _ _, LREmpty _ _ => True
       | _, _ => False
     end.
 
@@ -42,7 +43,7 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
     ∑ nf, [Γ |- A :⇒*: nf] × whnf nf.
   Proof.
-    destruct lrA as [?? []| ??[] | ??[]| ??[]]; eexists; split; tea; constructor; tea.
+    destruct lrA as [?? []| ??[] | ??[]| ??[] | ??[]]; eexists; split; tea; constructor; tea.
     now eapply ty_ne_whne.
   Defined.
 
@@ -50,7 +51,7 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
     eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf] × whnf nf.
   Proof.
-    destruct lrA as [?? []| ??[] | ??[]|??[]] ; intros []; eexists; split; tea; constructor; tea.
+    destruct lrA as [?? []| ??[] | ??[]| ??[] | ??[]] ; intros []; eexists; split; tea; constructor; tea.
     now eapply ty_ne_whne.
   Defined.
 
@@ -66,8 +67,8 @@ when showing symmetry or transitivity of the logical relation. *)
     pose proof (h := redtywf_det _ _ _ _ (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
     revert eqAB x y h. 
     destruct lrA; destruct lrB; intros []; cbn; try easy; try discriminate.
-    2-4: intros e; rewrite e in ne; apply ty_ne_whne in ne; inversion ne.
-    all: intros e; destruct neA as [? ? ne]; rewrite <- e in ne; apply ty_ne_whne in ne; inversion ne.
+    all: try now (intros e; rewrite e in ne; apply ty_ne_whne in ne; inversion ne).
+    all: try now (intros e; destruct neA as [? ? ne]; rewrite <- e in ne; apply ty_ne_whne in ne; inversion ne).
   Qed.
 
 (** ** More properties *)
@@ -93,6 +94,7 @@ when showing symmetry or transitivity of the logical relation. *)
       | LRne _ _, LRne _ _, LRne _ _ => True
       | LRPi _ _ _, LRPi _ _ _, LRPi _ _ _ => True
       | LRNat _ _, LRNat _ _, LRNat _ _ => True
+      | LREmpty _ _, LREmpty _ _, LREmpty _ _ => True
       | _, _, _ => False
     end.
 

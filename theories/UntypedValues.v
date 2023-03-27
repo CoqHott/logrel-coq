@@ -10,11 +10,13 @@ Inductive snf (r : term) : Type :=
   | snf_tNat : [ r ⇒* tNat ] -> snf r
   | snf_tZero : [ r ⇒* tZero ] -> snf r
   | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
+  | snf_tEmpty : [ r ⇒* tEmpty ] -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
   | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf P -> snf hz -> snf hs -> sne n -> sne r
+  | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
 .
 
 Set Elimination Schemes.
@@ -39,8 +41,9 @@ Definition sne_ind
   (P : forall r : term, snf r -> Prop)
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 :=
-  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10).
+(* A&Y: add as many ps as you added new constructors for snf and sne in total *)
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 :=
+  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -66,6 +69,7 @@ intros t u Hr Hu; destruct Hu.
 + eapply snf_tSucc.
   - transitivity u; eassumption.
   - assumption.
++ eapply snf_tEmpty; transitivity u; eassumption.
 + eapply snf_sne.
   - transitivity u; eassumption.
   - eassumption.
@@ -141,6 +145,9 @@ Section RenSnf.
   + intros r t Hr Ht IHt ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tSucc; eauto.
+  + intros r Hr ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tEmpty; eassumption.
   + intros r n Hr Hn IHn ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_sne; eauto.
@@ -149,6 +156,8 @@ Section RenSnf.
     cbn; eapply sne_tApp; eauto.
   + intros r P hz hs n -> HP IHP Hhz IHhz Hhs IHhs Hn IHn ρ; cbn.
     eapply sne_tNatElim; eauto.
+  + intros. subst. cbn.
+    eapply sne_tEmptyElim; eauto.
   Qed.
 
   Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
@@ -216,6 +225,7 @@ Section Properties.
   + exists (tSort set); split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
   #[export] Instance TermWhneProperties : TermNeProperties.
@@ -227,6 +237,7 @@ Section Properties.
   + intros; assumption.
   + constructor.
   + constructor; assumption.
+  + intros; constructor; assumption.
   + intros; constructor; assumption.
   Qed.
 
@@ -247,9 +258,9 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
 End Properties.
 
 End WeakValuesProperties.
-

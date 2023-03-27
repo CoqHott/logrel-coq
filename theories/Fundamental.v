@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping DeclarativeInstance GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat SimpleArr.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -435,7 +435,29 @@ Section Fundamental.
     2: eapply natElimValid; irrValid.
     Unshelve. all: irrValid.
   Qed.
-  
+
+  Lemma FundTyEmpty : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTy Γ tEmpty.
+  Proof.
+    intros ???; unshelve econstructor; tea;  eapply emptyValid.
+  Qed.
+
+  Lemma FundTmEmpty : forall Γ : context, [ |-[ de ] Γ] -> FundCon Γ -> FundTm Γ U tEmpty.
+  Proof.
+    intros ???; unshelve econstructor; tea.
+    2: eapply emptyTermValid.
+  Qed.
+
+  Lemma FundTmEmptyElim : forall (Γ : context) (P n : term),
+    [Γ,, tEmpty |-[ de ] P] ->
+    FundTy (Γ,, tEmpty) P ->
+    [Γ |-[ de ] n : tEmpty] ->
+    FundTm Γ tEmpty n -> FundTm Γ P[n..] (tEmptyElim P n).
+  Proof.
+    intros * ?[]?[]; unshelve econstructor; tea.
+    2: eapply emptyElimValid; irrValid.
+    Unshelve. 1,2: irrValid. 
+  Qed.
+
   Lemma FundTmEqSuccCong : forall (Γ : context) (n n' : term),
     [Γ |-[ de ] n ≅ n' : tNat] ->
     FundTmEq Γ tNat n n' -> FundTmEq Γ tNat (tSucc n) (tSucc n').
@@ -528,6 +550,30 @@ Section Fundamental.
     eapply succValid; irrValid.
   Qed.
 
+  Lemma FundTmEqEmptyElimCong : forall (Γ : context)
+      (P P' n n' : term),
+    [Γ,, tEmpty |-[ de ] P ≅ P'] ->
+    FundTyEq (Γ,, tEmpty) P P' ->
+    [Γ |-[ de ] n ≅ n' : tEmpty] ->
+    FundTmEq Γ tEmpty n n' ->
+    FundTmEq Γ P[n..] (tEmptyElim P n) (tEmptyElim P' n').
+  Proof.
+    intros * ?[? VP0 VP0']?[VΓ0].
+    pose (VN := emptyValid (l:=one) VΓ0).
+    assert (VP' : [ _ ||-v<one> P' | validSnoc VΓ0 VN]) by irrValid.
+    unshelve econstructor; tea.
+    2: eapply emptyElimValid; irrValid.
+    + eapply conv.
+      2: eapply irrelevanceTm; now eapply emptyElimValid.
+      eapply symValidEq.
+      eapply substSEq; tea.
+      2,3: irrValid.
+      eapply reflValidTy.
+    + eapply emptyElimCongValid; tea; try irrValid.
+    Unshelve. all: try irrValid.
+    1: unshelve eapply substS; try irrValid.
+  Qed.
+
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -540,6 +586,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTyU.
   + apply FundTyPi.
   + apply FundTyNat.
+  + apply FundTyEmpty.
   + apply FundTyUniv.
   + apply FundTmVar.
   + apply FundTmProd.
@@ -549,6 +596,8 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmZero.
   + apply FundTmSucc.
   + apply FundTmNatElim.
+  + apply FundTmEmpty.
+  + apply FundTmEmptyElim.
   + apply FundTmConv.
   + apply FundTyEqPiCong.
   + apply FundTyEqRefl.
@@ -563,6 +612,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqNatElimCong.
   + apply FundTmEqNatElimZero.
   + apply FundTmEqNatElimSucc.
+  + apply FundTmEqEmptyElimCong.
   + apply FundTmEqRefl.
   + apply FundTmEqConv.
   + apply FundTmEqSym.

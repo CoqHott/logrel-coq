@@ -20,6 +20,9 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tNatElim P hz hs tZero ⇒ hz ]
 | natElimSucc {P hz hs n} :
     [ tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
+| termRedEmptyElimAlg {P e e'} :
+    [e ⇒ e'] ->
+    [tEmptyElim P e ⇒ tEmptyElim P e']        
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
@@ -68,7 +71,7 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  2,3,6: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
   all: inversion nf; subst; inv_whne; subst; now inv_whne.
 Qed.
 
@@ -100,6 +103,8 @@ Proof.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; try reflexivity; subst.
     exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst.
+    f_equal; eauto.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -151,7 +156,7 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5: cbn; asimpl; now econstructor.
+  2-5,6: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
