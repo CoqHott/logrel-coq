@@ -294,17 +294,6 @@ Section GenericTyping.
     convtm_succ {Γ} {n n'} :
         [Γ |- n ≅ n' : tNat] ->
         [Γ |- tSucc n ≅ tSucc n' : tNat] ;
-    convtm_natElimZero {Γ P hz hs} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]] ;
-    convtm_natElimSucc {Γ P hz hs n} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- n : tNat] ->
-        [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]] ;
     convtm_empty {Γ} :
       [|-Γ] -> [Γ |- tEmpty ≅ tEmpty : U] ;
   }.
@@ -500,7 +489,7 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat wft_empty ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_empty ty_zero  ty_succ ty_natElim ty_emptyElim convty_nat convty_empty convtm_nat convtm_empty convtm_zero convtm_succ convtm_natElimZero convtm_natElimSucc convneu_natElim convneu_emptyElim redty_ty_src redtm_ty_src| 2 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat wft_empty ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_empty ty_zero  ty_succ ty_natElim ty_emptyElim convty_nat convty_empty convtm_nat convtm_empty convtm_zero convtm_succ convneu_natElim convneu_emptyElim redty_ty_src redtm_ty_src| 2 : gen_typing.
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
