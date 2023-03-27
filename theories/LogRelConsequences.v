@@ -744,7 +744,7 @@ Lemma boundary_ctx_conv_l (Γ Δ : context) :
   [ |- Γ ≅ Δ] ->
   [|- Γ].
 Proof.
-  destruct 1 as [| ? ? ? ? ? ? ? HA].
+  destruct 1.
   all: econstructor ; boundary.
 Qed.
 

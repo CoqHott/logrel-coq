@@ -764,41 +764,7 @@ Qed.
     - intros_bn.
       1-2: gen_typing.
       now do 2 econstructor.
-    - intros ???? [] [] [].
-      assert [Γ,, tNat |-[de] P].
-      { now apply typing_sound. }
-      assert [Γ |-[de] hz : P[tZero..]] by eauto using inf_conv_decl.
-      assert [Γ |-[de] hs : elimSuccHypTy P].
-      { eapply inf_conv_decl; eassumption. }
-      assert [ |-[de] Γ] by boundary.
-      constructor.
-      + assumption.
-      + admit.
-      + constructor; tea.
-        now constructor.
-      + eassumption.
-      + eapply termConvRed; [reflexivity| |reflexivity|].
-        * eapply redSuccAlg; [|reflexivity].
-          apply UntypedReduction.natElimZero.
-        * Search concl:ConvTermRedAlg.
-reflexivity.
-        econstructor; [|].
-
-    - intros ????? [] [] [] [].
-      assert [Γ,, tNat |-[de] P].
-      { now apply typing_sound. }
-      assert [Γ |-[de] hz : P[tZero..]] by eauto using inf_conv_decl.
-      assert [Γ |-[de] hs : elimSuccHypTy P].
-      { eapply inf_conv_decl; eassumption. }
-      assert [Γ |-[de] n : tNat] by eauto using inf_conv_decl.
-      assert [ |-[de] Γ] by boundary.
-      constructor.
-      + assumption.
-      + admit.
-      + constructor; tea.
-        constructor; tea.
-      + admit.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
@@ -1026,9 +992,7 @@ Module IntermediateTypingProperties.
       now econstructor.
     - intros.
       now eapply (convtm_succ (ta := bn)).
-    - admit.
-    - admit.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
   Proof.

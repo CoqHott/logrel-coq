@@ -281,18 +281,7 @@ Section GenericTyping.
       [|-Γ] -> [Γ |- tZero ≅ tZero : tNat] ;
     convtm_succ {Γ} {n n'} :
         [Γ |- n ≅ n' : tNat] ->
-        [Γ |- tSucc n ≅ tSucc n' : tNat] ;
-    convtm_natElimZero {Γ P hz hs} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]] ;
-    convtm_natElimSucc {Γ P hz hs n} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- n : tNat] ->
-        [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
+        [Γ |- tSucc n ≅ tSucc n' : tNat]
   }.
 
   Class ConvNeuProperties :=
