@@ -432,7 +432,7 @@ Section GenericValues.
       [|- Δ ] -> Ne[Γ |- n : A] -> Ne[Δ |- n⟨ρ⟩ : A⟨ρ⟩];
     tm_ne_nf {Γ n A} : Ne[Γ |- n : A] -> Nf[Γ |- n : A];
     tm_ne_whne {Γ n A} : Ne[Γ |- n : A] -> whne n;
-    tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
+    tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- B] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
     tm_ne_rel {Γ A} : [Γ |- A] -> Ne[Γ,, A |- tRel 0 : A⟨↑⟩];
     tm_ne_app {Γ n t A B} : Ne[Γ |- n : tProd A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
     tm_ne_natelim {Γ P hz hs n} :
@@ -450,7 +450,7 @@ Section GenericValues.
   Class TermNfProperties := {
     tm_nf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> Nf[Γ |- t : A] -> Nf[Δ |- t⟨ρ⟩ : A⟨ρ⟩];
-    tm_nf_conv {Γ t A B} : Nf[Γ |- t : A] -> [Γ |- A ≅ B] -> Nf[Γ |- t : B];
+    tm_nf_conv {Γ t A B} : Nf[Γ |- t : A] -> [Γ |- B] -> [Γ |- A ≅ B] -> Nf[Γ |- t : B];
     tm_nf_red {Γ t u A} : [Γ |- t ⇒* u : A] -> Nf[Γ |- u : A] -> Nf[Γ |- t : A];
     tm_nf_prod {Γ A B} : Nf[Γ |- A : U] -> Nf[Γ,, A |- B : U] -> Nf[Γ |- tProd A B : U];
     tm_nf_lam {Γ A B t} : Nf[Γ |- A] -> Nf[Γ,, A |- t : B] -> Nf[Γ |- tLambda A t : tProd A B];

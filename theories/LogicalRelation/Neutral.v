@@ -23,11 +23,11 @@ Proof.
   intros; exists n.
   * eapply redtmwf_conv; tea; now eapply redtmwf_refl.
   * now eapply NeType, tm_ne_whne.
-  * eapply tm_nf_conv; [|eassumption].
+  * eapply tm_nf_conv; [|gen_typing|eassumption].
     now eapply tm_ne_nf.
   * eapply convtm_conv; tea; gen_typing.
   * eapply RedTyRecBwd, neu. 2,3: gen_typing.
-    now eapply ty_ne_term, tm_ne_conv.
+    eapply ty_ne_term, tm_ne_conv; now gen_typing.
 Defined.
 
 
@@ -90,14 +90,16 @@ Qed.
 
 Lemma neu_app_ren {Γ Δ A n a dom cod} (ρ : Δ ≤ Γ) :
   [|- Δ] ->
+  [Γ |- tProd dom cod] ->
   Ne[Γ |- n : A] -> [Γ |- A ≅ tProd dom cod] -> Nf[Δ |- a : dom⟨ρ⟩] -> Ne[Δ |- tApp n⟨ρ⟩ a : cod[a .: ρ >> tRel]].
 Proof.
   intros.
   replace (cod[a .: ρ >> tRel]) with (cod⟨wk_up dom ρ⟩[a..]) by (now bsimpl).
   eapply tm_ne_app; [|eassumption].
   change (Ne[Δ |- n⟨ρ⟩ : (tProd dom cod)⟨ρ⟩]).
-  eapply tm_ne_conv; [|now eapply convty_wk].
-  now eapply tm_ne_wk.
+  eapply tm_ne_conv; [| |now eapply convty_wk].
+  + now eapply tm_ne_wk.
+  + now eapply wft_wk.
 Qed.
 
 Record complete {l Γ A} (RA : [Γ ||-<l> A]) := {
@@ -127,17 +129,18 @@ intros l Γ A h0; split.
   2: unshelve econstructor.
   1-3: now apply neU.
   + eapply RedTyRecBwd, neu. 2,3: try gen_typing.
-    now eapply ty_ne_term, tm_ne_conv.
+    eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
   + cbn. gen_typing.
   + eapply RedTyRecBwd; apply neu. 2, 3: gen_typing.
-    now eapply ty_ne_term, tm_ne_conv.
+    eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
   + eapply TyEqRecBwd. eapply neuEq. all: try gen_typing.
-    all: now eapply ty_ne_term, tm_ne_conv.
+    all: eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
 - intros a [a' Hr Ha].
   assert ([Γ |-[ ta ] U ≅ A]).
   { destruct h0; gen_typing. }
-  eapply tm_nf_conv; [|eassumption].
-  eapply tm_nf_red; [eapply tmr_wf_red|]; eassumption.
+  eapply tm_nf_conv; [| |eassumption].
+  + eapply tm_nf_red; [eapply tmr_wf_red|]; eassumption.
+  + now eapply escape, LRU_.
 Qed.
 
 Lemma complete_ne : forall l Γ A (RA : [Γ ||-ne A]), complete (LRne_ l RA).
@@ -157,9 +160,10 @@ intros l Γ A h0; split.
   { destruct h0; simpl in *; symmetry.
     eapply convty_exp; [now apply tyr_wf_red| |].
     all: gen_typing. }
-  eapply tm_nf_conv; [|eassumption].
-  eapply tm_nf_red; [now apply tmr_wf_red|].
-  now apply tm_ne_nf.
+  eapply tm_nf_conv; [| |eassumption].
+  + eapply tm_nf_red; [now apply tmr_wf_red|].
+    now apply tm_ne_nf.
+  + now eapply escape, LRne_ with (l := l).
 Qed.
 
 Lemma complete_Pi : forall l Γ A (RA : [Γ ||-Π< l > A]),
@@ -179,22 +183,27 @@ intros l Γ A ΠA0 ihdom ihcod; split.
     intros. exists n; cbn.
     * eapply redtmwf_refl ; gen_typing.
     * now eapply NeFun, tm_ne_whne.
-    * eapply tm_nf_conv; [|eassumption].
-      now eapply tm_ne_nf.
+    * eapply tm_nf_conv; [| |eassumption].
+      + now eapply tm_ne_nf.
+      + now eapply wft_prod.
     * gen_typing.
     * intros; apply complete_reflect_simpl; [apply ihcod| |..].
       { eapply neu_app_ren; try eassumption.
-        now apply (ihdom _ ρ h). }
+        + now apply wft_prod.
+        + now apply (ihdom _ ρ h). }
       1: escape ; now eapply ty_app_ren.
       eapply convneu_app_ren. 1,2: eassumption.
       eapply LREqTermRefl_ in ha.
       now escape.
     * intros. apply ihcod.
       + eapply neu_app_ren; try eassumption.
-        now apply (ihdom _ ρ h).
+        -- now apply wft_prod.
+        -- now apply (ihdom _ ρ h).
       + eapply tm_ne_conv.
         - eapply neu_app_ren; try eassumption.
-          now apply (ihdom _ ρ h).
+          -- now apply wft_prod.
+          -- now apply (ihdom _ ρ h).
+        - now eapply escape, codRed.
         - symmetry. now unshelve eapply escapeEq, codExt.
       + apply escapeTerm in ha; now eapply ty_app_ren.
       + pose proof (cv := escapeEq _ (codExt _ _ _ ρ _ ha hb eq0)).
@@ -211,9 +220,11 @@ intros l Γ A ΠA0 ihdom ihcod; split.
   * gen_typing.
   * intros. apply ihcod; cbn.
     + eapply neu_app_ren; try eassumption.
-      now eapply (ihdom _ ρ).
+      -- now apply wft_prod.
+      -- now eapply (ihdom _ ρ).
     + eapply neu_app_ren; try eassumption.
-      now eapply (ihdom _ ρ).
+      -- now apply wft_prod.
+      -- now eapply (ihdom _ ρ).
     + apply escapeTerm in ha; now eapply ty_app_ren.
     + apply escapeTerm in ha; now eapply ty_app_ren.
     + eapply convneu_app_ren. 1,2: eassumption.
@@ -221,9 +232,10 @@ intros l Γ A ΠA0 ihdom ihcod; split.
 - intros a [a' Hr Ha].
   destruct ΠA0 as [dom codom]; simpl in *.
   assert ([Γ |- tProd dom codom ≅ A ]) by gen_typing.
-  eapply tm_nf_conv; [|eassumption].
-  eapply tm_nf_red; [now apply tmr_wf_red|].
-  assumption.
+  eapply tm_nf_conv; [| |eassumption].
+  * eapply tm_nf_red; [now apply tmr_wf_red|].
+    assumption.
+  * destruct red; gen_typing.
 Qed.
 
 Lemma complete_Nat {l Γ A} (NA : [Γ ||-Nat A]) : complete (LRNat_ l NA).
@@ -237,11 +249,12 @@ Proof.
     2,4: do 2 constructor; tea.
     1,7: eapply convtm_convneu.
     1,4: eapply lrefl.
-    4-6: now eapply tm_ne_conv.
+    4-6: now (eapply tm_ne_conv; gen_typing).
     all: eapply convneu_conv; tea.
   - simpl in *.
     assert [Γ |- tNat ≅ A] by (destruct NA; gen_typing).
-    intros a Ha; eapply tm_nf_conv; [|eassumption]; revert a Ha.
+    assert [Γ |- A] by now (destruct NA; gen_typing).
+    intros a Ha; eapply tm_nf_conv; [|eassumption|eassumption]; revert a Ha.
     let T := match goal with |- ?P => P end in
     enough (IH : T × (forall (a : term) (n : NatProp NA a), Nf[ Γ |-[ ta ] a : tNat])); [apply IH|].
     apply NatRedInduction.
@@ -263,16 +276,17 @@ Proof.
     2,4: do 2 constructor; tea.
     1,7: eapply convtm_convneu.
     1,4: eapply lrefl.
-    4-6: now eapply tm_ne_conv.
+    4-6: now (eapply tm_ne_conv; gen_typing).
     all: eapply convneu_conv; tea.
   - simpl in *.
     assert [Γ |- tEmpty ≅ A] by (destruct NA; gen_typing).
-    intros a Ha; eapply tm_nf_conv; [|eassumption].
-    destruct Ha.
-    destruct prop.
-    destruct r.
-    eapply tm_nf_red. exact red.
-    now apply tm_ne_nf.
+    intros a Ha; eapply tm_nf_conv; [| |eassumption].
+    + destruct Ha.
+      destruct prop.
+      destruct r.
+      eapply tm_nf_red. exact red.
+      now apply tm_ne_nf.
+    + destruct NA as [[]]; gen_typing.
 Qed.
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
