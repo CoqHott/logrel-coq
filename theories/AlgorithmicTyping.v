@@ -27,6 +27,8 @@ Section Definitions.
       [Γ |- U ≅h U]
     | typeNatConvAlg {Γ} :
       [Γ |- tNat ≅h tNat]
+    | typeEmptyConvAlg {Γ} :
+      [Γ |- tEmpty ≅h tEmpty]
     | typeNeuConvAlg {Γ M N T} :
       [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
@@ -49,6 +51,10 @@ Section Definitions.
       [Γ |- hz ≅ hz' : P[tZero..]] ->
       [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
       [Γ |- tNatElim P hz hs n ~ tNatElim P' hz' hs' n' ▹ P[n..]]
+    | neuEmptyElimCong {Γ P P' e e'} :
+      [Γ |- e ~h e' ▹ tEmpty] ->
+      [Γ ,, tEmpty |- P ≅ P'] ->
+      [Γ |- tEmptyElim P e ~ tEmptyElim P' e' ▹ P[e..]]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -77,6 +83,8 @@ Section Definitions.
     | termSuccCongAlg {Γ t t'} :
       [Γ |- t ≅ t' : tNat] ->
       [Γ |- tSucc t ≅h tSucc t' : tNat]
+    | termEmptyReflAlg {Γ} :
+      [Γ |- tEmpty ≅h tEmpty : U]
     | termFunConvAlg {Γ : context} {f g A B} :
       isFun f ->
       isFun g ->
@@ -107,6 +115,8 @@ Section Definitions.
       [Γ |- tProd A B]
     | wfTypeNat {Γ} :
       [Γ |- tNat]
+    | wfTypeEmpty {Γ} :
+        [Γ |- tEmpty]
     | wfTypeUniv {Γ A} :
       [Γ |- A ◃ U] ->
       [Γ |- A]
@@ -140,6 +150,12 @@ Section Definitions.
       [Γ |- hz ◃ P[tZero..]] ->
       [Γ |- hs ◃ elimSuccHypTy P] ->
       [Γ |- tNatElim P hz hs n ▹ P[n..]]
+    | infEmpty {Γ} :
+      [Γ |- tEmpty ▹ U]
+    | infEmptyElim {Γ P e} :
+      [Γ |- e ▹h tEmpty] ->
+      [Γ ,, tEmpty |- P ] ->
+      [Γ |- tEmptyElim P e ▹ P[e..]]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -336,7 +352,9 @@ Section TypingWk.
     - intros.
       now econstructor.
     - intros.
-      now econstructor. 
+      now econstructor.
+    - intros.
+      now econstructor.  
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
@@ -356,7 +374,7 @@ Section TypingWk.
       + eapply convtm_meta_conv.
         * eapply IHz.
         * now bsimpl.
-        * reflexivity.   
+        * reflexivity.
       + eapply convtm_meta_conv.
         * eapply IHs.
         * unfold elimSuccHypTy.
@@ -364,6 +382,13 @@ Section TypingWk.
         * reflexivity.
       + now bsimpl.
       + now bsimpl.
+    - intros * ? IHe ? IHP *.
+      cbn.
+      eapply convne_meta_conv ; [econstructor|..] ; refold.
+      + eauto.
+      + now eapply (IHP _ (wk_up tEmpty ρ)).
+      + now bsimpl.
+      + now bsimpl. 
     - intros.
       econstructor.
       + eauto.
@@ -378,6 +403,7 @@ Section TypingWk.
       econstructor.
       1: now eauto.
       now eapply IHB with(ρ := wk_up _ ρ).
+    - now econstructor.
     - now econstructor.
     - now econstructor.
     - now econstructor.
@@ -417,7 +443,8 @@ Section TypingWk.
       + now eapply IHB with(ρ := wk_up _ ρ).
     - intros.
       now econstructor.
-    - now constructor. 
+    - now constructor.
+    - now constructor.
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.
@@ -453,7 +480,16 @@ Section TypingWk.
         1: eapply IHs.
         unfold elimSuccHypTy.
         now bsimpl.
-      + now bsimpl.    
+      + now bsimpl.
+    - intros.
+      now econstructor.
+    - intros * ? IHe ? IHP *.
+      cbn in *.
+      eapply typing_meta_conv.
+      1: econstructor.
+      + eauto.
+      + eapply IHP with (ρ := wk_up _ ρ).
+      + now bsimpl.        
     - intros.
       econstructor.
       + eauto.

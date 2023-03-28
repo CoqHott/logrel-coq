@@ -356,10 +356,6 @@ Section GenericTyping.
         [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
         [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]] ;
-    osredtm_emptyElim {Γ P e e'} :
-        [Γ ,, tEmpty |- P ] ->
-        [Γ |- e ⇒ e' : tEmpty] ->
-        [Γ |- tEmptyElim P e ⇒ tEmptyElim P e' : P[e..]] ;
   }.
 
   Class RedTermProperties :=

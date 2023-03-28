@@ -58,11 +58,12 @@ Module AlgorithmicTypingProperties.
       now econstructor.
     - intros_bn.
       now econstructor.
-    - admit.
+    - intros_bn.
+      now econstructor.
     - intros_bn.
       do 2 econstructor ; tea.
       now apply algo_conv_complete.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
   Proof.
@@ -115,8 +116,17 @@ Module AlgorithmicTypingProperties.
         eapply typing_subst1.
         1: eauto using inf_conv_decl.
         now eapply typing_sound.
-    - admit.
-    - admit.
+    - intros_bn.
+      1: econstructor.
+      gen_typing.
+    - intros_bn.
+      1: econstructor ; tea.
+      + econstructor ; tea.
+        now eapply (redty_red (ta := de)), red_ty_compl_empty_r.
+      + econstructor.
+        eapply typing_subst1.
+        1: eauto using inf_conv_decl.
+        now eapply typing_sound.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -127,7 +137,7 @@ Module AlgorithmicTypingProperties.
       1: eassumption.
       etransitivity ; tea.
       now eapply conv_sound in bun_conv_ty.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance OneStepRedTermAlgProperties :
     OneStepRedTermProperties (ta := bn) := {}.
@@ -160,8 +170,7 @@ Module AlgorithmicTypingProperties.
           now eapply (redty_red (ta := de)), red_ty_compl_nat_r.
         * now do 2 econstructor.
       + constructor.
-    - admit.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance RedTermAlgProperties :
     RedTermProperties (ta := bn) := {}.
@@ -216,7 +225,26 @@ Module AlgorithmicTypingProperties.
         1: now constructor.
         econstructor ; tea.
         now econstructor. 
-    - admit.
+    - intros * [] [] [] ?.
+      assert [Γ |-[al] n ▹h tEmpty].
+      {
+        econstructor ; tea.
+        now eapply (redty_red (ta := de)), red_ty_compl_empty_r.
+      }
+      split ; tea.
+      1: econstructor ; tea.
+      1: econstructor ; tea.
+      + econstructor.
+        eapply typing_subst1.
+        all: eapply typing_sound ; tea.
+        2: now econstructor.
+        econstructor ; tea.
+        now eapply algo_conv_complete.
+      + clear -bun_red_tm.
+        induction bun_red_tm.
+        1: now constructor.
+        econstructor ; tea.
+        now econstructor. 
     - intros_bn.
       eapply conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -226,7 +254,7 @@ Module AlgorithmicTypingProperties.
     - red. intros_bn.
       2: now etransitivity.
       now econstructor.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance RedTypeAlgProperties :
     RedTypeProperties (ta := bn) := {}.

@@ -399,6 +399,9 @@ Section BundledConv.
       now gen_typing.
     - intros * ?? _.
       split ; [gen_typing|..].
+      now econstructor.
+    - intros * ?? _.
+      split ; [gen_typing|..].
       now econstructor. 
     - intros * Hconv IH ? HM HN.
       assert [Γ |-[de] M : U].
@@ -491,7 +494,26 @@ Section BundledConv.
       + intros ?[? [[->]]]%termGen'.
         etransitivity.
         1: eapply typing_subst1.
-        all: eassumption. 
+        all: eassumption.
+    - intros * ? IHe ? IHP ? Hty Hty'.
+      pose proof Hty as [? Hty2].
+      pose proof Hty' as [? Hty2'].
+      eapply termGen' in Hty2 as [? [[->]]].
+      eapply termGen' in Hty2' as [? [[->]]].
+      edestruct IHe as [? [IHec IHnty IHnty']].
+      1: easy.
+      1-2: now eexists.
+      assert [|-[de] Γ,, tEmpty] by boundary.
+      assert [Γ,, tEmpty |-[de] P ≅ P']
+        by now edestruct IHP.
+      split ; [eauto |..].
+      split.
+      + now econstructor.
+      + now intros ?[? [[->]]]%termGen'.
+      + intros ?[? [[->]]]%termGen'.
+        etransitivity.
+        1: eapply typing_subst1.
+        all: eassumption.
     - intros * ? IHm HA ? ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
@@ -558,6 +580,9 @@ Section BundledConv.
       eapply termGen' in Htyd' as [? [[->] _]].
       split ; [eauto|..].
       now econstructor.
+    - intros.
+      split ; eauto.
+      now econstructor. 
     - intros * ? ? ? IH ? Hf Hg.
       assert [Γ |-[de] A] by
         (now eapply boundary, prod_ty_inv in Hf).
@@ -625,12 +650,14 @@ Section ConvSoundness.
     red.
     pose proof (algo_conv_discipline 
       (fun _ _ _ => True) (fun _ _ _ => True) (fun _ _ _ _ => True)
-      (fun _ _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ _ => True)) as [H' H].
-    1-16: now constructor.
-    repeat (split ; [
+      (fun _ _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ _ => True)) as [H' H] ;
+    cycle -1.
+    1:{
+      repeat (split ; [
       intros ; apply H' ; tea ; match goal with H : sigT _ |- _ => destruct H | _ => idtac end ; gen_typing 
       | ..] ; clear H' ; try destruct H as [H' H]).
-    intros ; apply H ; gen_typing.
+      intros ; apply H ; gen_typing. }
+    all: now constructor.
   Qed.
 
 End ConvSoundness.
@@ -735,7 +762,7 @@ Section BundledTyping.
     intros.
     subst PTy' PInf' PInfRed' PCheck'.
     apply AlgoTypingInduction.
-    1-7: solve [intros ;
+    1-8: solve [intros ;
       repeat unshelve (
         match reverse goal with
           | IH : context [prod] |- _ => destruct IH ; [..|shelve] ; gen_typing
@@ -773,6 +800,16 @@ Section BundledTyping.
       + now eapply IHz.
       + now eapply IHs.
       + now eapply IHn.
+    - intros.
+      split ; [eauto|..].
+      now econstructor.
+    - intros * ? IHe ? IHP ?.
+      assert [|-[de] Γ,, tEmpty]
+        by (econstructor ; tea ; now econstructor).
+      split ; [eauto|..].
+      econstructor.
+      + now eapply IHP.
+      + now eapply IHe.
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
       split ; [eauto|..].

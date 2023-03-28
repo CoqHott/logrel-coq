@@ -361,6 +361,32 @@ Proof.
   now symmetry.
 Qed.
 
+Corollary red_ty_compl_empty_l Γ T :
+  [Γ |- tEmpty ≅ T] ->
+  [Γ |- T ⇒* tEmpty].
+Proof.
+  intros HT.
+  pose proof HT as HT'.
+  unshelve eapply red_ty_complete in HT' as (T''&[? nfT]).
+  2: econstructor.
+  enough (T'' = tEmpty) as -> by easy.
+  assert [Γ |- tEmpty ≅ T''] as Hconv by
+    (etransitivity ; [eassumption|now eapply RedConvTyC]).
+  unshelve eapply ty_conv_inj in Hconv.
+  1: econstructor.
+  1: eassumption.
+  now destruct nfT, Hconv.
+Qed.
+
+Corollary red_ty_compl_empty_r Γ T :
+  [Γ |- T ≅ tEmpty] ->
+  [Γ |- T ⇒* tEmpty].
+Proof.
+  intros.
+  eapply red_ty_compl_empty_l.
+  now symmetry.
+Qed.
+
 Corollary red_ty_compl_prod_l Γ A B T :
   [Γ |- tProd A B ≅ T] ->
   ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
