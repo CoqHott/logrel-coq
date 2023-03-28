@@ -387,7 +387,7 @@ Section NatElimRedEq.
       }
       eapply neuTermEq.
       + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_conv; [|symmetry; eassumption].
+      + eapply tm_ne_conv; [|now eapply escape|symmetry; eassumption].
         eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + eapply ty_natElim; tea.
       + eapply ty_conv. 

@@ -153,10 +153,13 @@ Section PiTyValidity.
             eapply (domainTyEq tΔ vσ vσ' vσσ'). }
           cbn; eapply neuTerm; [|assumption|now apply convneu_var].
           replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (unfold ρ'; now bsimpl).
-          eapply tm_ne_conv; [apply tm_ne_rel; now eapply escape, vF|].
-          do 2 erewrite <- wk1_ren_on.
-          apply convty_wk; [now eapply wfc_ty|].
-          eapply escapeEq, vF; tea.
+          eapply tm_ne_conv; [apply tm_ne_rel; now eapply escape, vF| |].
+          -- replace F[σ']⟨↑⟩ with F[σ']⟨@wk1 Δ F[σ]⟩ by (now bsimpl).
+             apply wft_wk; [|now eapply escape, vF].
+             now eapply wfc_ty.
+          -- do 2 erewrite <- wk1_ren_on.
+            apply convty_wk; [now eapply wfc_ty|].
+            eapply escapeEq, vF; tea.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy tΔ vσ) vσ vσσ').
         * assert (ne : Ne[ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
@@ -307,13 +310,20 @@ Section PiTmValidity.
     assert ([Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
     { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
       refine (ty_var (wfc_cons tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)). }
+    assert ([Δ,, F[σ] |-[ ta ] F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
+    { replace (F[_ >> _]) with (F[σ]⟨@wk1 Δ F[σ]⟩) by (now bsimpl).
+      apply wft_wk; [now eapply wfc_ty|].
+      now eapply escape, vF. }
     assert ([ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ F[σ']⟩)]]).
     { eapply ty_conv; [tea|].
       eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ'). }
     assert (Ne[ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ F[σ']⟩)]]).
-    { eapply tm_ne_conv; [eapply tm_ne_rel|].
+    { eapply tm_ne_conv; [eapply tm_ne_rel| |].
       - pose proof vF as [vF0 _].
         unshelve (eapply escape; eapply vF0, vσ).
+      - replace (F[_ >> _]) with (F[σ']⟨@wk1 Δ F[σ]⟩) by (now bsimpl).
+        apply wft_wk; [now eapply wfc_ty|].
+        now eapply escape, vF.
       - replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (now bsimpl).
       do 2 erewrite <- wk1_ren_on.
       apply convty_wk; [eapply wfc_ty; tea|].
@@ -330,7 +340,7 @@ Section PiTmValidity.
       + unshelve econstructor.
         * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
         * cbn. eapply neuTermEq; try eapply convneu_var; tea.
-          all: eapply tm_ne_conv; [|symmetry; eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ')].
+          all: eapply tm_ne_conv; [|eassumption|symmetry; eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ')].
           all: assumption.
   Qed.
 

@@ -83,7 +83,8 @@ Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
   - apply (tm_nf_conv isnf).
-    apply eqPi.
+    + destruct ΠA'; simpl in *; now apply wft_prod.
+    + apply eqPi.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqvCod.
     2: now auto.
@@ -151,26 +152,26 @@ Proof.
     all: etransitivity ; [| tea]; tea; now symmetry.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
     1,4: now eapply redtmwf_conv.
-    all: try match goal with |- Ne[ _ |- _ : _] => now eapply tm_ne_conv end.
+    all: try match goal with |- Ne[ _ |- _ : _] => destruct red, red1; now eapply tm_ne_conv; first [eassumption|symmetry; eassumption|gen_typing] end.
     all: now eapply convneu_conv.
   + intros ??; split; intros []; econstructor; cbn in *.
     1-2,6-7: now eapply redtmwf_conv.
     all: tea.
-    all: try match goal with |- Ne[ _ |- _ : _] => now eapply tm_ne_conv end.
+    all: try match goal with |- Ne[ _ |- _ : _] => destruct red, red1; now eapply tm_ne_conv; first [eassumption|symmetry; eassumption|gen_typing] end.
     all: now eapply convneu_conv.
 Qed.
 
 (** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
 
-Lemma NeNfconv {Γ k A A'} : [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
+Lemma NeNfconv {Γ k A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
 Proof.
-  intros ? []; econstructor; tea. 2,3: gen_typing.
+  intros ?? []; econstructor; tea. 2,3: gen_typing.
   now eapply tm_ne_conv.
 Qed.
 
-Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
+Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
 Proof.
-  intros ? []; econstructor; tea. 3: gen_typing.
+  intros ?? []; econstructor; tea. 3: gen_typing.
   all: now eapply tm_ne_conv.
 Qed.
 

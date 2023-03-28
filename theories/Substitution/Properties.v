@@ -179,8 +179,12 @@ Proof.
       cbn; renToWk. eapply convty_wk; tea.
       eapply escapeEq;  unshelve eapply validTyExt; cycle 3; tea. }
     apply neuTerm; tea.
-    - eapply tm_ne_conv; [eapply tm_ne_rel|].
-      * now eapply escape, VF.
+    - assert ([Δ |-[ ta ] F[σ]]).
+      { now eapply escape, VF. }
+      eapply tm_ne_conv; [now eapply tm_ne_rel| |].
+      * replace F[_ >> _] with F[σ']⟨ρ⟩ by (unfold ρ; now bsimpl).
+        apply wft_wk; [eassumption|].
+        now eapply escape, VF.
       * replace F[_ >> _] with (F[σ'])⟨↑⟩ by (unfold ρ; now bsimpl).
         do 2 erewrite <- wk1_ren_on.
         apply convty_wk; [tea|].

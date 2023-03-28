@@ -243,8 +243,9 @@ Section EmptyElimRedEq.
       }
       eapply neuTermEq.
       + eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_conv; [|symmetry; eassumption].
-        eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+      + eapply tm_ne_conv; [| |symmetry; eassumption].
+        * eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
+        * now eapply escape.
       + eapply ty_emptyElim; tea.
       + eapply ty_conv. 
         1: eapply ty_emptyElim; tea.
