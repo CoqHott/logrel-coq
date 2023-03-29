@@ -1,7 +1,7 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
 From Coq Require Import Lia.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms.
 
 (** ** Raw weakenings *)
 
@@ -217,34 +217,54 @@ Section RenWhnf.
 
   Variable (ρ : nat -> nat).
 
-  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
+  Lemma whne_ren {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩)
+  with containsne_ren {l} t : containsne (l := l) t -> containsne (l := l) (t⟨ρ⟩).
   Proof.
-    induction 1 ; cbn.
-    all: now econstructor.
+    - induction 1 ; cbn.
+      all: now econstructor.
+    - induction 1 ; cbn.
+      all: now econstructor.
   Qed.
 
-  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Lemma nat_to_term_ren n : nat_to_term n = (nat_to_term n)⟨ρ⟩.
+  Proof.
+    induction n.
+    - reflexivity.
+    - cbn ; f_equal.
+      exact IHn.
+  Qed.
+
+  Lemma bool_to_term_ren b : bool_to_term b = (bool_to_term b)⟨ρ⟩.
+  Proof.
+    now induction b. 
+  Qed. 
+
+  Lemma whnf_ren {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
+    all: try (rewrite <- (nat_to_term_ren n) ;
+              now eapply whnf_tAlpha).
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
+  Lemma isType_ren {l} A :
+    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
 
-  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
+  Lemma isPosType_ren {l} A :
+    isPosType (l := l) A -> isPosType (l := l) (A⟨ρ⟩).
   Proof.
     destruct 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
+  Lemma isFun_ren {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -257,22 +277,23 @@ Section RenWlWhnf.
 
   Context {Γ Δ} (ρ : Δ ≤ Γ).
 
-  Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
+  Lemma whne_ren_wl {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩).
   Proof.
     apply whne_ren.
   Qed.
 
-  Lemma whnf_ren_wl t : whnf t -> whnf (t⟨ρ⟩).
+  Lemma whnf_ren_wl {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
   Proof.
     apply whnf_ren.
   Qed.
   
-  Lemma isType_ren_wl A : isType A -> isType (A⟨ρ⟩).
+  Lemma isType_ren_wl {l} A :
+    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
   Proof.
     apply isType_ren.
   Qed.
   
-  Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
+  Lemma isFun_ren_wl {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
   Qed.

@@ -10,6 +10,7 @@ theories/AutoSubst/unscoped.v
 theories/AutoSubst/Ast.v
 theories/AutoSubst/Extra.v
 theories/Context.v
+theories/LContexts.v
 theories/Notations.v
 
 theories/NormalForms.v
