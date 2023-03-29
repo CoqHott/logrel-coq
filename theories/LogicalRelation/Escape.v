@@ -77,6 +77,19 @@ Section Escapes.
     - intros ??? [] []; cbn in *.
       eapply convtm_exp; tea; gen_typing.
   Qed.
+
+  Lemma escapeConv {l Γ A} (RA : [Γ ||-<l> A]) :
+    forall B,
+    [Γ ||-<l> A ≅ B | RA] ->
+    [Γ |- B].
+  Proof.
+    pattern l, Γ, A, RA; eapply LR_rect_TyUr; clear l Γ A RA.
+    - intros * []; gen_typing.
+    - intros * []; gen_typing.
+    - intros * ihdom ihcod ? []; gen_typing.
+    - intros * []; gen_typing.
+    - intros * []; gen_typing.
+  Qed.
   
 End Escapes.
 
