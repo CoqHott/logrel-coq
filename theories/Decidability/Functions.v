@@ -1,17 +1,39 @@
 (** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
-From PartialFun Require Import PartialFun.
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context DeclarativeTyping.
+From PartialFun Require Import Monad PartialFun.
+
+Import MonadNotations.
+Set Universe Polymorphism.
+
+(* #[local] Remove Hints MonadOrec : typeclass_instances.
+#[local] Hint Resolve MonadOrec | 3 : typeclass_instances.
+#[local] Hint Resolve MonadId | 10 : typeclass_instances. *)
+
+Inductive errors : Type :=
+  | conv_error
+  | type_error.
+
+#[local]Instance ty_errors : Errors := errors.
+
+(* #[local] Instance MonadOrecError A B : Monad (fun X => orec A B (result X)) :=
+  MonadTransResult.(mon_trans_mon) _ _.
+Definition MonadError : Monad result :=
+  MonadTransResult.(mon_trans_mon) id _.
+
+#[local]Existing Instance MonadError | 1. *)
 
 Inductive stack :=
+| sEmptyElim (P : term) (π : stack)
 | sNatElim (P : term) (hs hz : term) (π : stack)
 | sApp (u : term) (π : stack)
 | sNil.
 
 Fixpoint zip t π :=
   match π with
+  | sEmptyElim P π => zip (tEmptyElim P t) π
   | sNatElim P hs hz π => zip (tNatElim P hs hz t) π 
   | sApp u π => zip (tApp t u) π
   | sNil => t
@@ -19,64 +41,43 @@ Fixpoint zip t π :=
 
 Equations wh_red_stack : term × stack ⇀ term :=
   wh_red_stack (tRel n, π) := ret (zip (tRel n) π) ;
-  wh_red_stack (tLambda _ _ t, sApp u π) :=
-    v ← rec (t[u..], π) ;;
-    ret v ;
+  wh_red_stack (tLambda _ t, sApp u π) :=
+    id <*> rec (t[u..], π) ;
   wh_red_stack (tApp t u, π) :=
-    rec (t, sApp u π) ret ;
+    id <*> rec (t, sApp u π) ;
   wh_red_stack (tZero,sNatElim _ hz _ π) :=
-    v ← rec (hz,π) ;;
-    ret v ;
+    id <*> rec (hz,π) ;
   wh_red_stack (tSucc t,sNatElim P hz hs π) :=
-    v ← rec (hs,sApp t (sApp (tNatElim P hz hs t) π)) ;;
-    ret v ;
+    id <*> rec (hs,sApp t (sApp (tNatElim P hz hs t) π)) ;
   wh_red_stack (tNatElim P hz hs t, π) :=
-    v ← rec (t,sNatElim P hz hs π) ;;
-    ret v ;
+    id <*> rec (t,sNatElim P hz hs π) ;
+  wh_red_stack (tEmptyElim P t, π) :=
+    id <*> rec (t,sEmptyElim P π) ;
   wh_red_stack (t,sNil) := ret t ; (** A normal form in the empty stack has finished computing *)
   wh_red_stack (t, sApp _ _) := undefined ; (** The stack does not correspond to the term! *)
-  wh_red_stack (t, sNatElim _ _ _ _) := undefined. (** The stack does not correspond to the term! *)
+  wh_red_stack (t, sNatElim _ _ _ _) := undefined ; (** The stack does not correspond to the term! *)
+  wh_red_stack (t, sEmptyElim _ _ ) := undefined. (** The stack does not correspond to the term! *)
 
 Equations wh_red : term ⇀ term :=
-  wh_red t := t' ← call wh_red_stack (t,sNil) ;; ret t'.
+  wh_red t := id <*> call wh_red_stack (t,sNil).
 
 Definition wh_red_fuel n t := fueled wh_red n t.
 
-(* Compute (deep_red_fuel 10 (tApp (tLambda anDummy U (tRel 0)) U)).
+(* Compute (deep_red_fuel 10 (tApp (tLambda U (tRel 0)) U)).
 Compute (deep_red_fuel 1000 (tNatElim
   tNat
   tZero
-  (tLambda anDummy tNat (tLambda anDummy tNat (tSucc (tSucc (tRel 0)))))
+  (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
   (tSucc (tSucc tZero)))). *)
 
-Variant conv_state : Set :=
-  | ty_state (** Conversion of arbitrary types *)
-  | ty_red_state (** Comparison of types in weak-head normal forms *)
-  | tm_state (** Conversion of arbitrary terms *)
-  | tm_red_state (** Comparison of terms if weak-head normal forms *)
-  | ne_state (** Comparison of neutrals *)
-  | ne_red_state. (** Comparison of neutrals with a reduced type *)
-
-Definition cstate_input (c : conv_state) : Set :=
-  match c with
-  | tm_state | tm_red_state => term
-  | ty_state | ty_red_state | ne_state | ne_red_state => unit
-  end.
-
-Definition cstate_output (c : conv_state) : Set :=
-  match c with
-  | ty_state | ty_red_state | tm_state | tm_red_state => unit
-  | ne_state | ne_red_state => term
-  end.
-
-Equations ctx_access : (context × nat) ⇀ context_decl :=
+Equations ctx_access : (context × nat) ⇀ term :=
   ctx_access (ε , _ ) := undefined ; (** The context does not contain the variable! *)
   ctx_access (_,,d , 0 ) := ret (d⟨↑⟩) ;
   ctx_access ( Γ,,_ , S n') := d ← rec (Γ,n') ;; ret d⟨↑⟩.
 
-Definition eq_sort (s s' : sort) : bool := true.
+Definition eq_sort (s s' : sort) : result unit := success (M := id).
 
-Inductive nf_view1 : term -> Set :=
+Inductive nf_view1 : term -> Type :=
   | nf_view1_type t : nf_view1 t
   | nf_view1_fun t : nf_view1 t
   | nf_view1_nat t : nf_view1 t
@@ -84,34 +85,37 @@ Inductive nf_view1 : term -> Set :=
 
 Definition build_nf_view1 t : nf_view1 t :=
   match t with
-  | tRel _| tApp _ _ | tNatElim _ _ _ _ => nf_view1_ne _
-  | tSort _| tProd _ _ _ | tNat => nf_view1_type _
-  | tLambda _ _ _ => nf_view1_fun _
+  | tRel _| tApp _ _ | tNatElim _ _ _ _ | tEmptyElim _ _ => nf_view1_ne _
+  | tSort _| tProd _ _ | tNat | tEmpty => nf_view1_type _
+  | tLambda _ _ => nf_view1_fun _
   | tZero | tSucc _ => nf_view1_nat _
   end.
 
-Inductive nf_ty_view : term -> Set :=
+Inductive nf_ty_view : term -> Type :=
 | nf_ty_view_sort s : nf_ty_view (tSort s)
-| nf_ty_view_prod na A B : nf_ty_view (tProd na A B)
+| nf_ty_view_prod A B : nf_ty_view (tProd A B)
 | nf_ty_view_nat : nf_ty_view tNat
+| nf_ty_view_empty : nf_ty_view tEmpty
 | nf_ty_view_ne n : nf_ty_view n
 | nf_ty_view_anomaly t : nf_ty_view t.
 
 Definition build_nf_ty_view t : nf_ty_view t :=
   match t with
   | tSort s => nf_ty_view_sort _
-  | tProd na A B => nf_ty_view_prod _ _ _
+  | tProd A B => nf_ty_view_prod _ _
   | tNat => nf_ty_view_nat
-  | tRel _ | tApp _ _ | tNatElim _ _ _ _ => nf_ty_view_ne _
-  | tLambda _ _ _ | tZero | tSucc _ => nf_ty_view_anomaly _
+  | tEmpty => nf_ty_view_empty
+  | tRel _ | tApp _ _ | tNatElim _ _ _ _ | tEmptyElim _ _ => nf_ty_view_ne _
+  | tLambda _ _ | tZero | tSucc _ => nf_ty_view_anomaly _
   end.
 
-Inductive nf_view3 : term -> term -> term -> Set :=
+Inductive nf_view3 : term -> term -> term -> Type :=
 | sorts (s s1 s2 : sort) : nf_view3 (tSort s) (tSort s1) (tSort s2)
-| prods (s : sort) (na na' : aname) (A A' B B' : term) :
-    nf_view3 (tSort s) (tProd na A B) (tProd na' A' B')
+| prods (s : sort) (A A' B B' : term) :
+    nf_view3 (tSort s) (tProd A B) (tProd A' B')
 | nats s : nf_view3 (tSort s) tNat tNat
-| functions na A B t t' : nf_view3 (tProd na A B) t t'
+| emptys s : nf_view3 (tSort s) tEmpty tEmpty
+| functions A B t t' : nf_view3 (tProd A B) t t'
 | zeros : nf_view3 tNat tZero tZero
 | succs t t' : nf_view3 tNat (tSucc t) (tSucc t')
 | neutrals (A n n' : term) : nf_view3 A n n'
@@ -123,8 +127,8 @@ Equations nf_case T t t' : nf_view3 T t t' :=
   (** Matching typed *)
   | nf_ty_view_sort s, nf_view1_type (tSort s1), nf_view1_type (tSort s2) :=
       sorts s s1 s2 ;
-  | nf_ty_view_sort s, nf_view1_type (tProd na A B), nf_view1_type (tProd na' A' B') :=
-      prods s na na' A A' B B' ;
+  | nf_ty_view_sort s, nf_view1_type (tProd A B), nf_view1_type (tProd A' B') :=
+      prods s A A' B B' ;
   | nf_ty_view_sort _, nf_view1_type tNat, nf_view1_type tNat :=
       nats s;
   | nf_ty_view_sort _, nf_view1_ne _, nf_view1_ne _ :=
@@ -137,8 +141,8 @@ Equations nf_case T t t' : nf_view3 T t t' :=
   | nf_ty_view_sort _, nf_view1_type _, nf_view1_ne _ :=
       mismatch _ _ _ ;
   (** Functions *)
-  | nf_ty_view_prod na A B, _, _ :=
-      functions na A B _ _ ;
+  | nf_ty_view_prod A B, _, _ :=
+      functions A B _ _ ;
   (** Matching naturals *)
   | nf_ty_view_nat, nf_view1_nat tZero, nf_view1_nat tZero :=
       zeros ;
@@ -153,6 +157,9 @@ Equations nf_case T t t' : nf_view3 T t t' :=
       mismatch _ _ _ ;
   | nf_ty_view_nat, nf_view1_nat _, nf_view1_ne _ :=
       mismatch _ _ _ ;
+  (** Inhabitants of the empty type must be neutrals *)
+  | nf_ty_view_empty, nf_view1_ne _, nf_view1_ne _ :=
+      neutrals _ _ _ ;
   (** Elements of a neutral type *)
   | nf_ty_view_ne _, nf_view1_ne _, nf_view1_ne _ :=
       neutrals _ _ _ ;
@@ -160,238 +167,262 @@ Equations nf_case T t t' : nf_view3 T t t' :=
   | _, _, _ := anomaly _ _ _
   }.
 
+Variant conv_state : Type :=
+  | ty_state (** Conversion of arbitrary types *)
+  | ty_red_state (** Comparison of types in weak-head normal forms *)
+  | tm_state (** Conversion of arbitrary terms *)
+  | tm_red_state (** Comparison of terms if weak-head normal forms *)
+  | ne_state (** Comparison of neutrals *)
+  | ne_red_state. (** Comparison of neutrals with a reduced type *)
+
+Definition cstate_input (c : conv_state) : Type :=
+  match c with
+  | tm_state | tm_red_state => term
+  | ty_state | ty_red_state | ne_state | ne_red_state => unit
+  end.
+
+Definition cstate_output (c : conv_state) : Type :=
+  match c with
+  | ty_state | ty_red_state | tm_state | tm_red_state => unit
+  | ne_state | ne_red_state => term
+  end.
+
 Equations conv :
   ∇ (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term),
-  option (cstate_output (x.π1)) :=
+  (result (cstate_output (x.π1))) :=
   conv (ty_state;Γ;_;T;V) :=
     T' ← call wh_red T ;;
     V' ← call wh_red V ;;
-    r ← rec (ty_red_state;Γ;tt;T';V') ;;
-    ret (r : option unit) ;
+    id <*> rec (ty_red_state;Γ;tt;T';V') ;
   conv (ty_red_state;Γ;_;T;T') with (build_nf_ty_view T), (build_nf_ty_view T') :=
   {
-    | nf_ty_view_sort s, nf_ty_view_sort s' := if (eq_sort s s') then ret (Some tt) else ret None ;
-    | (nf_ty_view_prod na A B), (nf_ty_view_prod na' A' B') with (eq_binder_annot na na') :=
-    {
-      | false := ret None
-      | true :=
-          r ← rec (ty_state;Γ;tt;A;A') ;;
-          match r with
-          | None => ret None
-          | Some _ => r' ← rec (ty_state;(Γ,,vass na A);tt;B;B') ;; ret (r' : option unit)
-          end
-    }
-    | nf_ty_view_nat, nf_ty_view_nat := ret (Some tt) ;
+    | nf_ty_view_sort s, nf_ty_view_sort s' :=
+        ret (M := orec _ _) (Monad := MonadOrec) (eq_sort s s') ;
+    | (nf_ty_view_prod A B), (nf_ty_view_prod A' B') :=
+      r ← rec (ty_state;Γ;tt;A;A') ;;
+      id <*> rec (ty_state;(Γ,,A);tt;B;B')
+    | nf_ty_view_nat, nf_ty_view_nat := success ;
     | nf_ty_view_ne _, nf_ty_view_ne _ :=
-        r ← rec (ne_state;Γ;tt;T;T') ;; ret (if (r : option term) then Some tt else None);
+        (* (fun _ => tt) <*> rec (ne_state;Γ;tt;T;T') ; *)
+        (* This should work, but the system does not find the correct bind *)
+        r ← rec (ne_state;Γ;tt;T;T') ;;
+        match r with
+        | ok _ => success
+        | error e => raise e
+        end ;
     | nf_ty_view_anomaly _, _ := undefined ;
     | _, nf_ty_view_anomaly _ := undefined ;
-    | _, _ := ret None ; (** Heads do not match *)
+    | _, _ := raise conv_error ; (** Heads do not match *)
   } ;
   conv (tm_state;Γ;A;t;u) :=
     A' ← call wh_red A ;;
     t' ← call wh_red t ;;
     u' ← call wh_red u ;;
-    r ← rec (tm_red_state;Γ;A';t';u') ;;
-    ret (r : option unit) ; (* weird: using b without annotation fails? *)
+    id <*> rec (tm_red_state;Γ;A';t';u') ;
   conv (tm_red_state;Γ;A;t;u) with (nf_case A t u) :=
   {
-    | sorts s s1 s2 with (eq_sort s1 s2) :=
-      {
-        | false => ret None
-        | true => ret (Some tt)
-      }
-    | prods s na na' A A' B B' with (eq_binder_annot na na') :=
-      {
-        | false := ret None
-        | true := r ← rec (tm_state;Γ;tSort s;A;A') ;;
-            match r with
-            | None => ret None
-            | Some _ => r' ← rec (tm_state;Γ,,vass na A;tSort s;B;B') ;;
-                ret r'
-            end
-      }
-    | nats s := ret (Some tt) ;
-    | functions na A B _ _ :=
-        rec (tm_state;Γ,,vass na A;B;eta_expand t;eta_expand u) ret ;
-    | zeros := ret (Some tt) ;
+    | sorts s s1 s2 := 
+      ret (eq_sort s1 s2) ;
+    | prods s A A' B B' :=
+      r ← rec (tm_state;Γ;tSort s;A;A') ;;
+      id <*> rec (tm_state;Γ,,A;tSort s;B;B') ;
+    | nats s := success ;
+    | emptys s := success ;
+    | functions A B _ _ :=
+        id <*> rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) ;
+    | zeros := success ;
     | succs t' u' :=
-        rec (tm_state;Γ;tNat;t';u') ret ;
-    | neutrals _ _ _ := r ← rec (ne_state;Γ;tt;t;u) ;;
+        id <*> rec (tm_state;Γ;tNat;t';u') ;
+    | neutrals _ _ _ := 
+      r ← rec (ne_state;Γ;tt;t;u) ;;
         match r with
-        | Some _ => ret (Some tt)
-        | None => ret None
+        | ok _ => success
+        | error e => raise e
         end ;
-    | mismatch _ _ _ := ret None ;
+    | mismatch _ _ _ := raise conv_error ;
     | anomaly _ _ _ := undefined ;
   } ;
   conv (ne_state;Γ;_;tRel n;tRel n')
     with n =? n' :=
-    { | false => ret None
-      | true => d ← call ctx_access (Γ,n) ;; ret (Some d.(decl_type))
+    { | false => raise conv_error
+      | true => d ← call ctx_access (Γ,n) ;; ret (ok d)
     } ;
   conv (ne_state;Γ;_;tApp n t ; tApp n' t') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
-    | None => ret None
-    | (Some (tProd na A B)) => r ← rec (tm_state;Γ;A;t;t') ;;
+    | error e => raise e
+    | (ok (tProd A B)) => r ← rec (tm_state;Γ;A;t;t') ;;
       match r with
-      | None => ret None
-      | Some _ => ret (Some (B[t..] : term))
+      | error e => raise e
+      | ok _ => ret (ok B[t..])
       end
-    | (Some _) => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
+    | (ok _) => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
     end ;
   conv (ne_state;Γ;_;tNatElim P hz hs n;tNatElim P' hz' hs' n') :=
-    rP ← rec (ty_state;(Γ,,vass anDummy tNat);tt;P;P') ;;
+    rP ← rec (ty_state;(Γ,,tNat);tt;P;P') ;;
     match rP with
-    | None => ret None
-    | Some _ =>
+    | error e => raise e
+    | ok _ =>
         rz ← rec (tm_state;Γ;P[tZero..];hz;hz') ;;
-        rs ← rec (tm_state;Γ;elimSuccHypTy anDummy P;hs;hs') ;;
+        rs ← rec (tm_state;Γ;elimSuccHypTy P;hs;hs') ;;
         rn ← rec (tm_state;Γ;tNat;n;n') ;;
         match rz, rs, rn with
-        | Some _, Some _, Some _ => ret (Some P[n..])
-        | _, _, _ => ret None
+        | ok _, ok _, ok _ => ret (ok P[n..])
+        | _, _, _ => raise conv_error
         end
     end ;
-  conv (ne_state;_) := ret None ;
+  conv (ne_state;Γ;_;tEmptyElim P n;tEmptyElim P' n') :=
+    rP ← rec (ty_state;(Γ,,tEmpty);tt;P;P') ;;
+    match rP with
+    | error e => raise e
+    | ok _ =>
+        rn ← rec (tm_state;Γ;tNat;n;n') ;;
+        match rn with
+        | ok _ => ret (ok P[n..])
+        | error e => raise e
+        end
+    end ;
+  conv (ne_state;_) := raise conv_error ;
   conv (ne_red_state;Γ;_;t;u) :=
     Ainf ← rec (ne_state;Γ;tt;t;u) ;;
     match Ainf with
-    | None => ret None
-    | Some Ainf' => A' ← call wh_red Ainf' ;; ret (Some (A' : term))
-      (* same, why do we need an annotation here? Coq seems to be lost by pattern-matching*)
+    | error e => raise e
+    | ok Ainf' => A' ← call wh_red Ainf' ;; ret (ok A')
     end.
 
-Variant typing_state : Set :=
+Variant typing_state : Type :=
   | inf_state (** inference *)
   | check_state (** checking *)
   | inf_red_state (** inference of a type reduced to whnf *)
   | wf_ty_state. (** checking well-formation of a type *)
 
-Definition tstate_input (s : typing_state) : Set :=
+Definition tstate_input (s : typing_state) : Type :=
   match s with
   | inf_state | inf_red_state | wf_ty_state => unit
   | check_state => term
   end.
 
-Definition tstate_output (s : typing_state) : Set :=
+Definition tstate_output (s : typing_state) : Type :=
   match s with
   | inf_state | inf_red_state => term
   | wf_ty_state | check_state => unit
   end.
 
 Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term),
-  option (tstate_output (x.π1)) :=
+  (result (tstate_output (x.π1))) :=
   typing (wf_ty_state;Γ;_;T) with (build_nf_ty_view T) :=
   {
-    | nf_ty_view_sort s := ret (Some tt) ;
-    | nf_ty_view_prod na A B :=
+    | nf_ty_view_sort s := success ;
+    | nf_ty_view_prod A B :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
-        match rA with
-        | Some _ =>
-            rB ← rec (wf_ty_state;Γ,,vass na A;tt;B) ;;
-            ret rB
-        | _ => ret None
-        end ;
-    | nf_ty_view_nat := ret (Some tt) ;
+        id <*> rec (wf_ty_state;Γ,,A;tt;B) ;
+    | nf_ty_view_nat := success ;
+    | nf_ty_view_empty := success ;
     | nf_ty_view_ne _ :=
         r ← rec (inf_red_state;Γ;tt;T) ;;
         match r with
-        | Some (tSort _) => ret (Some tt)
-        | _ => ret None
+        | ok (tSort _) => success
+        | ok _ => raise type_error
+        | error e => raise e
         end
-    | nf_ty_view_anomaly _ := ret None
+    | nf_ty_view_anomaly _ := raise type_error ;
   } ;
   typing (inf_state;Γ;_;t) with t :=
   {
-    | tRel n := r ← call ctx_access (Γ,n) ;; ret (Some (r.(decl_type))) ;
-    | tSort s := ret None ;
-    | tProd na A B :=
+    | tRel n := ok <*> call ctx_access (Γ,n) ;
+    | tSort s := raise type_error ;
+    | tProd A B :=
         rA ← rec (inf_red_state;Γ;tt;A) ;;
         match rA with
-        | Some (tSort sA) =>
-            rB ← rec (inf_red_state;Γ,,vass na A;tt;B) ;;
+        | ok (tSort sA) =>
+            rB ← rec (inf_red_state;Γ,,A;tt;B) ;;
             match rB with
-            | Some (tSort sB) => ret (Some (tSort (sort_of_product sA sB)))
-            | _ => ret None
+            | ok _ => raise type_error
+            | error e => raise e
             end
-        | _ => ret None
+        | ok _ => raise type_error
+        | error e => raise e
         end ;
-    | tLambda na A u :=
+    | tLambda A u :=
         rA ← rec (inf_red_state;Γ;tt;A) ;;
         match rA with
-        | Some (tSort sA) =>
-            ru ← rec (inf_state;Γ,,vass na A;tt;u) ;;
+        | ok (tSort sA) =>
+            ru ← rec (inf_state;Γ,,A;tt;u) ;;
             match ru with
-            | Some B => ret (Some (tProd na A B))
-            | _ => ret None
+            | ok B => ret (ok (tProd A B))
+            | error e => raise e
             end
-        | _ => ret None
+        | ok _ => raise type_error
+        | error e => raise e
         end ;
     | tApp f u :=
       rf ← rec (inf_red_state;Γ;tt;f) ;;
       match rf with
-      | Some (tProd na A B) =>
+      | ok (tProd A B) =>
           ru ← rec (check_state;Γ;A;u) ;;
-          if (ru : option unit) then (ret (Some B[u..])) else (ret None)
-      | _ => ret None
+          match ru with
+          | ok _ => (ret (ok B[u..])) 
+          | error e => raise e
+          end 
+      | ok _ => raise type_error
+      | error e => raise e 
       end ;
-    | tNat := ret (Some U) ;
-    | tZero := ret (Some tNat) ;
+    | tNat := ret (ok U) ;
+    | tZero := ret (ok tNat) ;
     | tSucc u :=
         ru ← rec (inf_red_state;Γ;tt;u) ;;
         match ru with
-        | Some tNat => ret (Some tNat)
-        | _ => ret None
+        | ok tNat => ret (ok tNat)
+        | ok _ => raise type_error
+        | error e => raise e
         end ;
     | tNatElim P hz hs n :=
-      rP ← rec (wf_ty_state;(Γ,,vass anDummy tNat);tt;P) ;;
+      rP ← rec (wf_ty_state;(Γ,,tNat);tt;P) ;;
       match rP with
-      | None => ret None
-      | Some _ =>
+      | error e => raise e
+      | ok _ =>
           rz ← rec (check_state;Γ;P[tZero..];hz) ;;
-          rs ← rec (check_state;Γ;elimSuccHypTy anDummy P;hs) ;;
+          rs ← rec (check_state;Γ;elimSuccHypTy P;hs) ;;
           rn ← rec (check_state;Γ;tNat;n) ;;
           match rz, rs, rn with
-          | Some _, Some _, Some _ => ret (Some P[n..])
-          | _, _, _ => ret None
+          | ok _, ok _, ok _ => ret (ok P[n..])
+          | _, _, _ => raise type_error
           end
       end ;
+    | _ := undefined ;
   } ;
   typing (inf_red_state;Γ;_;t) :=
     r ← rec (inf_state;Γ;_;t) ;;
     match r with
-    | None => ret None
-    | Some T => T' ← call wh_red T ;; ret (Some (T' : term))
+    | error e => raise e
+    | ok T => ok <*> call wh_red T
     end ;
   typing (check_state;Γ;T;t) :=
     r ← rec (inf_state;Γ;tt;t) ;;
     match r with
-    | None => ret None
-    | Some T' => r' ← call conv (ty_state;Γ;tt;T';T) ;;
-        ret (r' : option unit)
+    | error e => raise e
+    | ok T' => (id (X := result unit)) <*> call conv (ty_state;Γ;tt;T';T)
     end.
 
-#[local] Definition infer (Γ : context) (t : term) : Fueled (option term) := 
+#[local] Definition infer (Γ : context) (t : term) : Fueled (result term) := 
   (fueled typing 1000 (inf_state;Γ;tt;t)).
 
-#[local] Definition check_ty (Γ : context) (t : term) : Fueled (option unit) := 
+#[local] Definition check_ty (Γ : context) (t : term) : Fueled (result unit) := 
   (fueled typing 1000 (wf_ty_state;Γ;tt;t)).
 
 Compute (infer ε
   (tNatElim
     tNat
     tZero
-  (tLambda anDummy tNat (tLambda anDummy tNat (tSucc (tSucc (tRel 0)))))
+  (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
   (tSucc (tSucc tZero)))).
 
-Compute (infer ε (tProd anDummy U (tRel 0))).
-Compute (check_ty ε (tProd anDummy U (tRel 0))).
+Compute (infer ε (tProd U (tRel 0))).
+Compute (check_ty ε (tProd U (tRel 0))).
 
 Compute (infer ε
-  (tLambda anDummy tNat (tNatElim
+  (tLambda tNat (tNatElim
     tNat
     tZero
-  (tLambda anDummy tNat (tLambda anDummy tNat (tSucc (tSucc (tRel 0)))))
+  (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
   (tRel 0)))).
