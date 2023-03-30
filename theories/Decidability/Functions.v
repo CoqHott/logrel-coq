@@ -132,7 +132,7 @@ Equations wh_red_stack : term × stack ⇀ term :=
     ret (zip (tRel n) π) ;
   wh_red_stack (?(zip1 t s),π) (tm_view1_dest t s) :=
     id <*> rec (t,cons s π) ;
-  wh_red_stack (?(tLambda A t),nil) (tm_view1_fun A t) := ret t ;
+  wh_red_stack (?(tLambda A t),nil) (tm_view1_fun A t) := ret (tLambda A t) ;
   wh_red_stack (?(tLambda A t),cons (eApp u) π) (tm_view1_fun A t) :=
     id <*> rec (t[u..], π) ;
   wh_red_stack (_,cons _ _) (tm_view1_fun _ _) := undefined ;
@@ -141,10 +141,10 @@ Equations wh_red_stack : term × stack ⇀ term :=
     id <*> rec (hz,π) ;
   wh_red_stack (?(tSucc t),cons (eNatElim P hz hs) π) (tm_view1_nat (eSucc t)) :=
     id <*> rec (hs,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
-  wh_red_stack (_,cons _ _) (tm_view1_nat _) :=
+  wh_red_stack (t,cons _ _) (tm_view1_nat _) :=
     undefined ;
   wh_red_stack (t,nil) (tm_view1_type _) := ret t ;
-  wh_red_stack (_,cons _ _) (tm_view1_type _) := undefined.
+  wh_red_stack (t,cons s _) (tm_view1_type _) := undefined.
 
 Equations wh_red : term ⇀ term :=
   wh_red t := id <*> call wh_red_stack (t,nil).
