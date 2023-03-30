@@ -15,6 +15,15 @@ with containsne {l : wfLCon} : term -> Type :=
   | necontne {t}: whne t -> containsne t
   | scontne {t} : containsne t -> containsne (tSucc t).
 
+Inductive alphawhne (l : wfLCon) : term -> Type :=
+  | alphawhne_base {n} : not_in_LCon (fst l) n -> alphawhne l (tAlpha (nat_to_term n))
+  | alphawhne_tApp {n t} : alphawhne l n -> alphawhne l (tApp n t)
+  | alphawhne_tNatElim {P hz hs n} : alphawhne l n -> alphawhne l (tNatElim P hz hs n)
+  | alphawhne_tBoolElim {P hz hs n} : alphawhne l n -> alphawhne l (tBoolElim P hz hs n)
+  | alphawhne_tEmptyElim {P e} : alphawhne l e -> alphawhne l (tEmptyElim P e)
+  | alphawhne_alpha {t} : alphawhne l t -> alphawhne l (tAlpha t).
+                                           
+
 Inductive whnf {l : wfLCon} : term -> Type :=
   | whnf_tSort {s} : whnf (tSort s)
   | whnf_tProd {A B} : whnf (tProd A B)
@@ -27,7 +36,7 @@ Inductive whnf {l : wfLCon} : term -> Type :=
   | whnf_tFalse : whnf tFalse
   | whnf_tEmpty : whnf tEmpty
   | whnf_whne {n} : whne (l := l) n -> whnf n
-  | whnf_tAlpha {n} : not_in_LCon (fst l) n -> whnf (tAlpha (nat_to_term n)).
+  | whnf_tAlpha {n} : alphawhne l n -> whnf n.
   
 #[global] Hint Constructors whne whnf : gen_typing.
 
