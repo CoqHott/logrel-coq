@@ -279,3 +279,5 @@ Reserved Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]< l >"  (at level 0, R, �
 Reserved Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]< l >" (at level 0, R, Δ, σ, σ', Γ, l, RΓ, wfΔ, vσ at level 50).
 Reserved Notation "[ P | Γ ||-v< k > A ]< l >"  (at level 0, P, Γ, l, l, k, A at level 50).
 
+(** LCon Notations *)
+Notation " ne £ b ::l l" := (wfLCons l ne b) (at level 40).

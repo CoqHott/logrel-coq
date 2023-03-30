@@ -45,7 +45,15 @@ Section Definitions.
           [ Γ |- tNat ]< l >
       | wfTypeEmpty {Γ} : 
           [ |- Γ ]< l > ->
-          [ Γ |- tEmpty ]< l >           
+          [ Γ |- tEmpty ]< l >    
+      | wfTypeBool {Γ} : 
+          [ |- Γ ]< l > ->
+          [ Γ |- tBool ]< l >
+      | ϝwfType {Γ A n} {ne : not_in_LCon _ n} : 
+        [ Γ |- A ]< ne £ true ::l l > ->
+        [ Γ |- A ]< ne £ false ::l l > ->
+        [ Γ |- A ]< l >
+          
   (** **** Typing *)
   with TypingDecl (l : wfLCon) : context -> term -> term -> Type :=
       | wfVar {Γ} {n decl} :
@@ -67,6 +75,9 @@ Section Definitions.
       | wfTermNat {Γ} :
           [ |- Γ ]< l > ->
           [ Γ |- tNat : U]< l >
+      | wfTermBool {Γ} :
+          [ |- Γ ]< l > ->
+          [ Γ |- tBool : U]< l >
       | wfTermZero {Γ} :
           [ |- Γ ]< l > ->
           [ Γ |- tZero : tNat]< l >
@@ -79,6 +90,21 @@ Section Definitions.
         [ Γ |- hs : elimSuccHypTy P]< l > ->
         [ Γ |- n : tNat]< l > ->
         [ Γ |- tNatElim P hz hs n : P[n..]]< l >
+      | wfTermTrue {Γ} :
+          [ |- Γ ]< l > ->
+          [ Γ |- tTrue : tBool]< l >
+      | wfTermFalse {Γ} :
+          [ |- Γ ]< l > ->
+          [ Γ |- tFalse : tBool]< l >
+      | wfTermAlpha {Γ n} :
+          [ Γ |- n : tNat]< l > ->
+          [ Γ |- tAlpha n : tBool]< l >
+      | wfTermBoolElim {Γ P ht hf b} :
+        [ Γ ,, tBool |- P ]< l > ->
+        [ Γ |- ht : P[tTrue..]]< l > ->
+        [ Γ |- hf : P[tFalse..]]< l > ->
+        [ Γ |- b : tBool]< l > ->
+        [ Γ |- tBoolElim P ht hf b : P[b..]]< l >
       | wfTermEmpty {Γ} :
           [ |- Γ ]< l > ->
           [ Γ |- tEmpty : U]< l >
@@ -90,6 +116,10 @@ Section Definitions.
           [ Γ |- t : A ]< l > -> 
           [ Γ |- A ≅ B ]< l > -> 
           [ Γ |- t : B ]< l >
+      | ϝwfTerm {Γ t A n} {ne : not_in_LCon _ n} : 
+        [ Γ |- t : A ]< ne £ true ::l l > ->
+        [ Γ |- t : A ]< ne £ false ::l l > ->
+        [ Γ |- t : A ]< l >
   (** **** Conversion of types *)
   with ConvTypeDecl (l : wfLCon) : context -> term -> term  -> Type :=  
       | TypePiCong {Γ} {A B C D} :
@@ -110,6 +140,10 @@ Section Definitions.
           [ Γ |- A ≅ B]< l > ->
           [ Γ |- B ≅ C]< l > ->
           [ Γ |- A ≅ C]< l >
+      | ϝTyConv {Γ A B n} {ne : not_in_LCon _ n} : 
+        [ Γ |- A ≅ B ]< ne £ true ::l l > ->
+        [ Γ |- A ≅ B ]< ne £ false ::l l > ->
+        [ Γ |- A ≅ B ]< l >
   (** **** Conversion of terms *)
   with ConvTermDecl (l : wfLCon) : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {a t A B} :
@@ -145,13 +179,29 @@ Section Definitions.
           [ Γ ,, tNat |- P ]< l > ->
           [ Γ |- hz : P[tZero..]]< l > ->
           [ Γ |- hs : elimSuccHypTy P]< l > ->
-          [ Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]< l >
+          [ Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]< l >   
       | TermNatElimSucc {Γ P hz hs n} :
           [ Γ ,, tNat |- P ]< l > ->
           [ Γ |- hz : P[tZero..]]< l > ->
           [ Γ |- hs : elimSuccHypTy P]< l > ->
           [ Γ |- n : tNat]< l > ->
-          [ Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]< l >
+          [ Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]< l >    
+      | TermBoolElimCong {Γ P P' ht ht' hf hf' b b'} :
+          [ Γ ,, tBool |- P ≅ P']< l > ->
+          [ Γ |- ht ≅ ht' : P[tTrue..]]< l > ->
+          [ Γ |- hf ≅ hf' : P[tFalse..]]< l > ->
+          [ Γ |- b ≅ b' : tBool]< l > ->
+          [ Γ |- tBoolElim P ht hf b ≅ tBoolElim P' ht' hf' b' : P[b..]]< l > 
+      | TermBoolElimTrue {Γ P ht hf} :
+          [ Γ ,, tBool |- P ]< l > ->
+          [ Γ |- ht : P[tTrue..]]< l > ->
+          [ Γ |- ht : P[tFalse..]]< l > ->
+          [ Γ |- tBoolElim P ht hf tTrue ≅ ht : P[tTrue..]]< l >  
+      | TermBoolElimFalse {Γ P ht hf} :
+          [ Γ ,, tBool |- P ]< l > ->
+          [ Γ |- ht : P[tTrue..]]< l > ->
+          [ Γ |- ht : P[tFalse..]]< l > ->
+          [ Γ |- tBoolElim P ht hf tFalse ≅ ht : P[tFalse..]]< l >
       | TermEmptyElimCong {Γ P P' e e'} :
           [ Γ ,, tEmpty |- P ≅ P']< l > ->
           [ Γ |- e ≅ e' : tEmpty]< l > ->
@@ -170,6 +220,14 @@ Section Definitions.
           [ Γ |- t ≅ t' : A ]< l > ->
           [ Γ |- t' ≅ t'' : A ]< l > ->
           [ Γ |- t ≅ t'' : A ]< l >
+      | alphaConv {Γ n b} :
+        [ |- Γ ]< l > ->
+        in_LCon (fst l) n b ->
+        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >
+      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon _ n} : 
+        [ Γ |- t ≅ t' : A ]< ne £ true ::l l > ->
+        [ Γ |- t ≅ t' : A ]< ne £ false ::l l > ->
+        [ Γ |- t ≅ t' : A ]< l >
       
   where "[ |- Γ ]< l >" := (WfContextDecl l Γ)
   and   "[ Γ |- T ]< l >" := (WfTypeDecl l Γ T)
@@ -220,6 +278,10 @@ Section Definitions.
   | typeRedUniv {A B} :
       [ Γ |- A ⇒ B : U ]< l > ->
       [ Γ |- A ⇒ B ]< l >
+  | alphaRed {n b} :
+    [ |- Γ ]< l > ->
+    in_LCon (fst l) n b ->
+    [ Γ |- tAlpha (nat_to_term n) ⇒ bool_to_term b : tBool ]< l >
 
   where "[ Γ |- t ⇒ u : A ]< l >" := (OneRedDecl l Γ (isterm A) t u)
   and "[ Γ |- A ⇒ B ]< l >" := (OneRedDecl l Γ istype A B).
@@ -326,9 +388,9 @@ Let WfDeclInductionType :=
 
 Lemma WfDeclInduction : WfDeclInductionType.
 Proof.
-  intros PL PCon PTy PTm PTyEq PTmEq **.
-  pose proof (_WfDeclInduction PL PCon PTy PTm PTyEq PTmEq) as H.
-  destruct H as [?[?[? []]]].
+  intros PL PCon PTy PTm PTyEq PTmEq test **.
+  pose proof (_WfDeclInduction PL PCon PTy PTm PTyEq PTmEq test) as H.
+  destruct H with (l := l) as [?[?[? []]]].
   all: try (assumption ; fail).
   repeat (split;[assumption|]); assumption.
 Qed.

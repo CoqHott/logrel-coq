@@ -66,7 +66,8 @@ Inductive RedClosureAlg {l} : term -> term -> Type :=
 (** *** Weak-head normal forms do not reduce *)
 
 Ltac inv_whne :=
-  match goal with [ H : whne _ |- _ ] => inversion H end.
+  match goal with | [ H : whne _ |- _ ] => inversion H
+             | [ H : alphawhne _ _ |- _ ] => inversion H end.
 
 Lemma whne_nored {l} n u :
   whne (l := l) n -> [ n ⇒ u]< l > -> False.
@@ -82,6 +83,23 @@ Proof.
   - inversion H0 ; subst ; auto. now inv_whne.
 Qed.
 
+Lemma alphawhne_nored {l} n u :
+  alphawhne l n -> [ n ⇒ u]< l > -> False.
+Proof.
+  intros ne red.
+  induction red in ne |- *.
+  all: inversion ne ; subst ; clear ne.
+  2: auto.
+  9:{ induction n0 ; now inversion red. }
+  all: try now inv_whne.
+  - eapply notinLConnotinLCon.
+    exact H0.
+    rewrite (nattoterminj H) ; exact i.
+  - clear i. induction n ; cbn in *.
+    + now inv_whne.
+    + now inv_whne.
+Qed.
+
 Lemma whnf_nored {l} n u :
   whnf (l := l) n -> [n ⇒ u]< l > -> False.
 Proof.
@@ -92,11 +110,13 @@ Proof.
   - apply IHred. now eapply containsnewhnf.
   - apply IHred.
     now eapply whnfnattoterm.
+  - now eapply alphawhne_nored.
   - now eapply containsnenattoterm.
   - eapply notinLConnotinLCon.
-    exact H0.
-    rewrite (nattoterminj H).
+    exact H1.
+    rewrite (nattoterminj H0).
     exact i.
+  - induction n ; now inv_whne.
 Qed.
 
 (** *** Determinism of reduction *)

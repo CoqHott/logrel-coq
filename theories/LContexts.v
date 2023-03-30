@@ -6,8 +6,8 @@ Inductive SFalse : SProp := .
 Definition LCon := list (prod nat bool).
 
 Inductive in_LCon : LCon -> nat -> bool -> Prop :=
-| in_here (l : LCon) {d b} : in_LCon (cons (d,b) l) d b
-| in_there {l : LCon} {d b d' b'} : in_LCon l d b -> in_LCon (cons (d',b') l) d b.
+| in_here_l (l : LCon) {d b} : in_LCon (cons (d,b) l) d b
+| in_there_l {l : LCon} {d b d' b'} : in_LCon l d b -> in_LCon (cons (d',b') l) d b.
 
 Inductive not_in_LCon : LCon -> nat -> Prop :=
 | not_in_nil : forall n, not_in_LCon nil n
@@ -94,3 +94,13 @@ Proof.
       * exfalso ; exact (notinLConnotinLCon H H5).
       * exact (IHwfl H5 H6).
 Qed.
+
+
+Definition wfLCons (l : wfLCon) {n : nat} (ne : not_in_LCon (fst l) n) (b : bool) : wfLCon.
+Proof.
+  exists (cons (n,b) (fst l)).
+  econstructor ; trivial.
+  exact (snd l).
+Defined.
+
+

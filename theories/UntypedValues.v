@@ -1,22 +1,27 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms UntypedReduction GenericTyping.
 
 Unset Elimination Schemes.
 
-Inductive snf (r : term) : Type :=
-  | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
-  | snf_tProd {A B} : [ r ⇒* tProd A B ] -> snf A -> snf B -> snf r
-  | snf_tLambda {A t} : [ r ⇒* tLambda A t ] -> snf A -> snf t -> snf r
-  | snf_tNat : [ r ⇒* tNat ] -> snf r
-  | snf_tZero : [ r ⇒* tZero ] -> snf r
-  | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
-  | snf_tEmpty : [ r ⇒* tEmpty ] -> snf r
-  | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
-with sne (r : term) : Type :=
-  | sne_tRel {v} : r = tRel v -> sne r
-  | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
-  | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf P -> snf hz -> snf hs -> sne n -> sne r
-  | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
+Inductive snf l (r : term) : Type :=
+  | snf_tSort {s} : [ r ⇒* tSort s ]< l > -> snf l r
+  | snf_tProd {A B} : [ r ⇒* tProd A B ]< l > -> snf l A -> snf l B -> snf l r
+  | snf_tLambda {A t} : [ r ⇒* tLambda A t ]< l > -> snf l A -> snf l t -> snf l r
+  | snf_tNat : [ r ⇒* tNat ]< l > -> snf l r
+  | snf_tZero : [ r ⇒* tZero ]< l > -> snf l r
+  | snf_tSucc {n} : [ r ⇒* tSucc n ]< l > -> snf l n -> snf l r
+  | snf_tEmpty : [ r ⇒* tEmpty ]< l > -> snf l r
+  | snf_tBool : [ r ⇒* tBool ]< l > -> snf l r
+  | snf_tTrue : [ r ⇒* tTrue ]< l > -> snf l r
+  | snf_tFalse : [ r ⇒* tFalse ]< l > -> snf l r
+  | snf_sne {n} : [ r ⇒* n ]< l > -> sne l n -> snf l r
+with sne l (r : term) : Type :=
+  | sne_tRel {v} : r = tRel v -> sne l r
+  | sne_tApp {n t} : r = tApp n t -> sne l n -> snf l t -> sne l r
+  | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf l P -> snf l hz -> snf l hs -> sne l n -> sne l r
+  | sne_tBoolElim {P ht hf b} : r = tNatElim P ht hf b -> snf l P -> snf l ht -> snf l hf -> sne l b -> sne l r
+  | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf l P -> sne l e -> sne l r
+  | sne_tAlpha {n} : r = tAlpha n -> sne l n -> sne l r
 .
 
 Set Elimination Schemes.
@@ -25,32 +30,32 @@ Scheme
   Induction for snf Sort Type with
   Induction for sne Sort Type.
 
-Definition snf_rec
-  (P : forall r : term, snf r -> Set)
-  (Q : forall r : term, sne r -> Set) := snf_rect P Q.
+Definition snf_rec l
+  (P : forall r : term, snf l r -> Set)
+  (Q : forall r : term, sne l r -> Set) := snf_rect l P Q.
 
-Definition snf_ind
-  (P : forall r : term, snf r -> Prop)
-  (Q : forall r : term, sne r -> Prop) := snf_rect P Q.
+Definition snf_ind l
+  (P : forall r : term, snf l r -> Prop)
+  (Q : forall r : term, sne l r -> Prop) := snf_rect l P Q.
 
-Definition sne_rec
-  (P : forall r : term, snf r -> Set)
-  (Q : forall r : term, sne r -> Set) := sne_rect P Q.
+Definition sne_rec l
+  (P : forall r : term, snf l r -> Set)
+  (Q : forall r : term, sne l r -> Set) := sne_rect l P Q.
 
-Definition sne_ind
-  (P : forall r : term, snf r -> Prop)
-  (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
+Definition sne_ind l
+  (P : forall r : term, snf l r -> Prop)
+  (Q : forall r : term, sne l r -> Prop) := sne_rect l P Q.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 :=
-  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12).
+Definition snf_sne_rect l P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 :=
+  pair (snf_rect l P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12) (sne_rect l P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12).
 
-Lemma sne_whne : forall (t : term), sne t -> whne t.
+Lemma sne_whne l : forall (t : term), sne l t -> whne (l := l) t.
 Proof.
 apply sne_rect with (P := fun _ _ => True); intros; subst; constructor; assumption.
 Qed.
 
-Lemma snf_red : forall t u, [ t ⇒* u ] -> snf u -> snf t.
+Lemma snf_red l : forall t u, [ t ⇒* u ]< l > -> snf l u -> snf l t.
 Proof.
 intros t u Hr Hu; destruct Hu.
 + eapply snf_tSort.
@@ -75,16 +80,16 @@ intros t u Hr Hu; destruct Hu.
   - eassumption.
 Qed.
 
-Inductive isSNType : term -> Type :=
-  | UnivType {s} : isSNType (tSort s)
-  | ProdType {A B} : snf A -> snf B -> isSNType (tProd A B)
-  | NeType {A}  : sne A -> isSNType A.
+Inductive isSNType l : term -> Type :=
+  | UnivType {s} : isSNType l (tSort s)
+  | ProdType {A B} : snf l A -> snf l B -> isSNType l (tProd A B)
+  | NeType {A}  : sne l A -> isSNType l A.
 
-Inductive isSNFun : term -> Type :=
-  | LamFun {A t} : snf A -> snf t -> isSNFun (tLambda A t)
-  | NeFun  {f} : sne f -> isSNFun f.
+Inductive isSNFun l : term -> Type :=
+  | LamFun {A t} : snf l A -> snf l t -> isSNFun l (tLambda A t)
+  | NeFun  {f} : sne l f -> isSNFun l f.
 
-Lemma isSNType_snf t : isSNType t -> snf t.
+Lemma isSNType_snf l t : isSNType l t -> snf l t.
 Proof.
 destruct 1.
 + eapply snf_tSort; reflexivity.
@@ -92,39 +97,39 @@ destruct 1.
 + eapply snf_sne; first[reflexivity|assumption].
 Qed.
 
-Lemma isSNType_whnf t : isSNType t -> whnf t.
+Lemma isSNType_whnf l t : isSNType l t -> whnf (l := l) t.
 Proof.
 destruct 1; constructor.
 apply sne_whne; assumption.
 Qed.
 
-Lemma isSNFun_snf t : isSNFun t -> snf t.
+Lemma isSNFun_snf l t : isSNFun l t -> snf l t.
 Proof.
 destruct 1.
 + eapply snf_tLambda; first[reflexivity|assumption].
 + eapply snf_sne; first[reflexivity|assumption].
 Qed.
 
-Lemma isSNFun_whnf t : isSNFun t -> whnf t.
+Lemma isSNFun_whnf l t : isSNFun l t -> whnf (l := l) t.
 Proof.
 destruct 1; constructor.
 apply sne_whne; assumption.
 Qed.
 
-Lemma isSNType_isType t : isSNType t -> isType t.
+Lemma isSNType_isType l t : isSNType l t -> isType (l := l) t.
 Proof.
 destruct 1; constructor; now apply sne_whne.
 Qed.
 
-Lemma isSNFun_isFun t : isSNFun t -> isFun t.
+Lemma isSNFun_isFun l t : isSNFun l t -> isFun (l := l) t.
 Proof.
 destruct 1; constructor; now apply sne_whne.
 Qed.
 
 Section RenSnf.
 
-  Lemma snf_sne_ren :
-    prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩)) (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)).
+  Lemma snf_sne_ren l :
+    prod (forall t, snf l t -> forall ρ, snf l (t⟨ρ⟩)) (forall t, sne l t -> forall ρ, sne l (t⟨ρ⟩)).
   Proof.
   apply snf_sne_rect.
   + intros r s Hr ρ.
@@ -160,34 +165,34 @@ Section RenSnf.
     eapply sne_tEmptyElim; eauto.
   Qed.
 
-  Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
+  Lemma sne_ren l ρ t : sne l t -> sne l (t⟨ρ⟩).
   Proof.
   intros; apply snf_sne_ren; assumption.
   Qed.
 
-  Lemma snf_ren ρ t : snf t -> snf (t⟨ρ⟩).
+  Lemma snf_ren l ρ t : snf l t -> snf l (t⟨ρ⟩).
   Proof.
   intros; apply snf_sne_ren; assumption.
   Qed.
 
 End RenSnf.
 
-Lemma isSNType_ren ρ t : isSNType t -> isSNType (t⟨ρ⟩).
+Lemma isSNType_ren l ρ t : isSNType l t -> isSNType l (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
 
-Lemma isSNFun_ren ρ t : isSNFun t -> isSNFun (t⟨ρ⟩).
+Lemma isSNFun_ren l ρ t : isSNFun l t -> isSNFun l (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
 
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ] × whnf B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ] × whnf u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne (l := l) A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun l Γ A => ∑ B, [ A ⇒* B ]< l > × whnf (l := l) B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne (l := l) t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun l Γ A t => ∑ u, [ t ⇒* u ]< l > × whnf (l := l) u.
 
 End WeakValuesData.
 
@@ -197,12 +202,12 @@ Export WeakValuesData.
 
 Section Properties.
 
-  Context `{ta : tag}
+  Context `{ta : tag} `{l : wfLCon}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
+    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties l} `{!RedTermProperties l}.
 
-  #[export] Instance TypeWhneProperties : TypeNeProperties.
+  #[export] Instance TypeWhneProperties : TypeNeProperties l.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
@@ -211,7 +216,7 @@ Section Properties.
   + intros; assumption.
   Qed.
 
-  #[export] Instance TypeWhnfProperties : TypeNfProperties.
+  #[export] Instance TypeWhnfProperties : TypeNfProperties l.
   Proof.
   split.
   + intros Γ Δ A ρ _ [B [? ?]].
@@ -228,7 +233,7 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
-  #[export] Instance TermWhneProperties : TermNeProperties.
+  #[export] Instance TermWhneProperties : TermNeProperties l.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
@@ -241,7 +246,7 @@ Section Properties.
   + intros; constructor; assumption.
   Qed.
 
-  #[export] Instance TermWhnfProperties : TermNfProperties.
+  #[export] Instance TermWhnfProperties : TermNfProperties l.
   Proof.
   split.
   + intros Γ Δ t A ρ _ [B [? ?]].

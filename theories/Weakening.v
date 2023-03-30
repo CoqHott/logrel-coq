@@ -225,6 +225,7 @@ Section RenWhnf.
     - induction 1 ; cbn.
       all: now econstructor.
   Qed.
+    
 
   Lemma nat_to_term_ren n : nat_to_term n = (nat_to_term n)⟨ρ⟩.
   Proof.
@@ -239,11 +240,19 @@ Section RenWhnf.
     now induction b. 
   Qed. 
 
+  Lemma alphawhne_ren {l} t :
+    alphawhne l t -> alphawhne l (t⟨ρ⟩).
+  Proof.
+    induction 1; cbn in *.
+    1: rewrite <- (nat_to_term_ren n).
+    all: now econstructor.
+  Qed.
+    
   Lemma whnf_ren {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
-    all: try (rewrite <- (nat_to_term_ren n) ;
-              now eapply whnf_tAlpha).
+    12:{ apply whnf_tAlpha.
+         now eapply alphawhne_ren. }
     all: econstructor.
     now eapply whne_ren.
   Qed.
