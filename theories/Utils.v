@@ -149,6 +149,7 @@ Ltac prod_splitter :=
 
 Ltac prod_hyp_splitter :=
   repeat match goal with
+    | H : ∑ _, _ |- _ => destruct H
     | H : [× _ & _] |- _ => destruct H 
     | H : [× _, _ & _] |- _ => destruct H 
     | H : [× _, _, _ & _] |- _ => destruct H
