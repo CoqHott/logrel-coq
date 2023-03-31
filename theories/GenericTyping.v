@@ -108,6 +108,12 @@ Section RedDefinitions.
         by (now rewrite Heq).
   Qed.
 
+  Record well_typed Γ t :=
+  {
+    well_typed_ty : term ;
+    well_typed_typed : [Γ |- t : well_typed_ty]
+  }.
+  
 End RedDefinitions.
 
 Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_scope.
@@ -485,9 +491,9 @@ Class GenericTypingProperties `(ta : tag)
 }.
 
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
-#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat wft_empty ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_empty ty_zero  ty_succ ty_natElim ty_emptyElim convty_nat convty_empty convtm_nat convtm_empty convtm_zero convtm_succ convneu_natElim convneu_emptyElim redty_ty_src redtm_ty_src| 2 : gen_typing.
-#[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
-#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
+#[export] Hint Resolve wfc_nil wfc_cons wft_wk wft_U wft_prod wft_nat wft_empty ty_wk ty_var ty_prod ty_lam ty_app convty_wk convty_uni convty_prod convtm_wk convtm_prod convtm_eta convneu_wk convneu_var convneu_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim convty_nat convty_empty convtm_nat convtm_empty convtm_zero convtm_succ convneu_natElim convneu_emptyElim redty_ty_src redtm_ty_src ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_empty tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_emptyelim tm_nf_wk | 2 : gen_typing.
+#[export] Hint Resolve wft_term convty_term convtm_convneu ty_ne_term | 4 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv ty_ne_nf ty_nf_red ty_ne_whne tm_ne_whne tm_ne_conv tm_nf_conv tm_nf_red tm_nf_prod tm_nf_lam tm_nf_nat tm_nf_zero tm_nf_succ tm_nf_empty | 6 : gen_typing.
 
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.

@@ -55,7 +55,9 @@ theories/Substitution/Introductions/Empty.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v
-theories/LogRelConsequences.v
+theories/DeclarativeSubst.v
+theories/TypeConstructorsInj.v
+theories/Normalisation.v
 theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicConvProperties.v
 theories/AlgorithmicTypingProperties.v

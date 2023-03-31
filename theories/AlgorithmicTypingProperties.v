@@ -1,7 +1,7 @@
 (** * LogRel.AlgorithmicTypingProperties: properties of algorithmic typing. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
-  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj BundledAlgorithmicTyping AlgorithmicConvProperties.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape.
 From LogRel.Substitution Require Import Properties.
