@@ -1,7 +1,7 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
 From Coq Require Import Lia.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms.
 
 (** ** Raw weakenings *)
 
@@ -14,12 +14,15 @@ Inductive weakening : Set :=
   | _wk_step (w : weakening) : weakening
   | _wk_up (w : weakening) : weakening.
 
-Fixpoint _wk_id (Γ : context) : weakening :=
+Fixpoint _wk_id_aux (Γ : list term) : weakening :=
   match Γ with
     | nil => _wk_empty
-    | cons _ Γ' => _wk_up (_wk_id Γ')
+    | cons _ Γ' => _wk_up (_wk_id_aux Γ')
   end.
 
+Definition _wk_id (Γ : context) : weakening :=
+  _wk_id_aux (fst Γ).
+  
 (** Transforms an (intentional) weakening into a renaming. *)
 Fixpoint wk_to_ren (ρ : weakening) : nat -> nat :=
   match ρ with
@@ -30,6 +33,7 @@ Fixpoint wk_to_ren (ρ : weakening) : nat -> nat :=
 
 Lemma wk_to_ren_id Γ : (wk_to_ren (_wk_id Γ)) =1 id.
 Proof.
+  destruct Γ as [Γ l].
   induction Γ.
   1: reflexivity.
   intros [] ; cbn.
@@ -73,7 +77,7 @@ a predicate on raw weakenings defined above, rather than directly
 using indexed weakenings. *)
 
 Inductive well_weakening : weakening -> context -> context -> Type :=
-  | well_empty : well_weakening _wk_empty ε ε
+  | well_empty {l} : well_weakening _wk_empty (ε l) (ε l)
   | well_step {Γ Δ : context} (A : term) (ρ : weakening) :
     well_weakening ρ Γ Δ -> well_weakening (_wk_step ρ) (Γ,, A) Δ
   | well_up {Γ Δ : context} (A : term) (ρ : weakening) :
@@ -81,27 +85,30 @@ Inductive well_weakening : weakening -> context -> context -> Type :=
 
 Lemma well_wk_id (Γ : context) : well_weakening (_wk_id Γ) Γ Γ.
 Proof.
+  destruct Γ as [Γ l].
   induction Γ as [|d].
   1: econstructor.
-  replace d with (d⟨wk_to_ren (_wk_id Γ)⟩) at 2.
-  1: now econstructor.
+  replace d with (d⟨wk_to_ren (_wk_id_aux Γ)⟩) at 2.
+  1:  exact (well_up (Γ := (Γ , l)) d (_wk_id_aux Γ) IHΓ).
   cbn.
   f_equal.
-  rewrite wk_to_ren_id.
+  rewrite (wk_to_ren_id (Γ , l)).
   now asimpl.
 Qed.
 
 Lemma well_wk_compose {ρ ρ' : weakening} {Δ Δ' Δ'' : context} :
   well_weakening ρ Δ Δ' -> well_weakening ρ' Δ' Δ'' -> well_weakening (wk_compose ρ ρ') Δ Δ''.
 Proof.
+  destruct Δ as [Δ l] ; destruct Δ' as [Δ' l'] ; destruct Δ'' as [Δ'' l''].
   intros H H'.
   induction H as [| | ? ? ? ν] in ρ', Δ'', H' |- *.
   all: cbn.
   - eassumption.
   - econstructor. auto.
-  - inversion H' as [| | ? ? A' ν']; subst ; clear H'.
-    1: now econstructor ; auto.
-    asimpl.
+  - inversion H' as [| | ? ? A' ν']; subst ; clear H' ; destruct Γ0 ; destruct Δ0 ;
+      cbn in * ; subst.
+    1: now econstructor.
+    destruct Δ1 ; asimpl.
     replace (ren_term (ν' >> ν) A') with (ren_term (wk_compose ν ν') A')
       by now rewrite wk_compose_compose.
     econstructor ; auto.
@@ -115,7 +122,7 @@ Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
 
 #[global] Hint Resolve well_wk : core.
 
-Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
+Definition wk_empty {l} : (ε l ≤ ε l) := {| wk := _wk_empty ; well_wk := well_empty |}.
 
 Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
   {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
@@ -152,7 +159,7 @@ Smpl Add fold_wk_ren : refold.
 
 Definition wk1 {Γ} A : Γ,, A ≤ Γ := wk_step A (wk_id (Γ := Γ)).
 
-Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|Δ| <= #|Γ|.
+Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|(fst Δ)| <= #|(fst Γ)|.
 Proof.
   destruct ρ as [ρ wellρ].
   induction wellρ.
@@ -162,7 +169,7 @@ Qed.
 Lemma id_ren (Γ : context) (ρ : Γ ≤ Γ) : ρ.(wk) = (_wk_id Γ).
 Proof.
   destruct ρ as [ρ wellρ] ; cbn.
-  pose proof (@eq_refl _ #|Γ|) as eΓ.
+  pose proof (@eq_refl _ #|fst Γ|) as eΓ.
   revert eΓ wellρ.
   generalize Γ at 2 4.
   intros Δ e wellρ.
@@ -208,7 +215,8 @@ Proof.
       now constructor.
     + inversion Hdecl ; subst ; cbn in *.
       replace (ren_term _ (ren_term ↑ d)) with (d⟨ρ⟩⟨↑⟩) by now asimpl.
-      now econstructor.
+      apply (in_there _ _) ; apply IHwfρ.
+      now destruct Δ ; destruct Γ0 ; cbn in * ; subst.
 Qed.
 
 (** ** Normal and neutral forms are stable by weakening *)
@@ -217,12 +225,17 @@ Section RenWhnf.
 
   Variable (ρ : nat -> nat).
 
-  Lemma whne_ren {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩)
-  with containsne_ren {l} t : containsne (l := l) t -> containsne (l := l) (t⟨ρ⟩).
+  Lemma nSucc_ren n t : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
+  Proof.
+    induction n ; cbn.
+    - reflexivity.
+    - now rewrite IHn.
+  Qed.
+      
+  Lemma whne_ren {l} t : whne l t -> whne l (t⟨ρ⟩).
   Proof.
     - induction 1 ; cbn.
-      all: now econstructor.
-    - induction 1 ; cbn.
+      6: rewrite (nSucc_ren n t).
       all: now econstructor.
   Qed.
     
@@ -248,7 +261,7 @@ Section RenWhnf.
     all: now econstructor.
   Qed.
     
-  Lemma whnf_ren {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
+  Lemma whnf_ren {l} t : whnf l t -> whnf l (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     12:{ apply whnf_tAlpha.
@@ -258,7 +271,7 @@ Section RenWhnf.
   Qed.
   
   Lemma isType_ren {l} A :
-    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
+    isType l A -> isType l (A⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -266,14 +279,14 @@ Section RenWhnf.
   Qed.
 
   Lemma isPosType_ren {l} A :
-    isPosType (l := l) A -> isPosType (l := l) (A⟨ρ⟩).
+    isPosType l A -> isPosType l (A⟨ρ⟩).
   Proof.
     destruct 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isFun_ren {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
+  Lemma isFun_ren {l} f : isFun l f -> isFun l (f⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -286,23 +299,23 @@ Section RenWlWhnf.
 
   Context {Γ Δ} (ρ : Δ ≤ Γ).
 
-  Lemma whne_ren_wl {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩).
+  Lemma whne_ren_wl {l} t : whne l t -> whne l (t⟨ρ⟩).
   Proof.
     apply whne_ren.
   Qed.
 
-  Lemma whnf_ren_wl {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
+  Lemma whnf_ren_wl {l} t : whnf l t -> whnf l (t⟨ρ⟩).
   Proof.
     apply whnf_ren.
   Qed.
   
   Lemma isType_ren_wl {l} A :
-    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
+    isType l A -> isType l (A⟨ρ⟩).
   Proof.
     apply isType_ren.
   Qed.
   
-  Lemma isFun_ren_wl {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
+  Lemma isFun_ren_wl {l} f : isFun l f -> isFun l (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
   Qed.
