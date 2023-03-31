@@ -1,7 +1,7 @@
 (** * LogRel.UntypedReduction: untyped reduction, used to define algorithmic typing.*)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms Weakening.
 
 (** ** Reductions *)
 
@@ -33,7 +33,7 @@ Inductive OneRedAlg {l : wfLCon} : term -> term -> Type :=
   [ tBoolElim P ht hf tFalse ⇒ hf ]< l >
 | alphaSubst {n n'} :
   [ n ⇒ n' ]< l > -> [ tAlpha n ⇒ tAlpha n' ]< l >
-| alphaRed {n b} : in_LCon (pi1 l) n b ->
+| alphaRed {n b} : in_LCon (fst l) n b ->
                    [ tAlpha (nat_to_term n) ⇒ bool_to_term b]< l >
 
 where "[ t ⇒ t' ]< l >" := (OneRedAlg (l := l) t t') : typing_scope.
@@ -66,26 +66,21 @@ Inductive RedClosureAlg {l} : term -> term -> Type :=
 (** *** Weak-head normal forms do not reduce *)
 
 Ltac inv_whne :=
-  match goal with | [ H : whne _ _ |- _ ] => inversion H
+  match goal with | [ H : whne _ |- _ ] => inversion H
              | [ H : alphawhne _ _ |- _ ] => inversion H end.
 
 Lemma whne_nored {l} n u :
-  whne l n -> [ n ⇒ u]< l > -> False.
+  whne (l := l) n -> [ n ⇒ u]< l > -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
   all: inversion ne ; subst ; clear ne.
   2: auto.
-  9: induction n0 ; auto ; now inversion red.
+  9: inversion H0 ; subst ; auto; now inversion red.
   all: try now inv_whne.
-  clear i ; revert n0 H ; induction n ; cbn in * ; intros.
-  - destruct n0.
-    * inversion H0 ; subst ; simpl in H ;  rewrite H in H0 ; now inversion H0.
-    * change (match nSucc (S n0) t with | tSucc _ => False | _ => True end).
-      now rewrite H.
-  - induction n0 ; cbn in *.
-    * rewrite H in H0 ; inversion H0.
-    * apply (IHn n0) ; now apply tSucc_inj.
+  clear i. induction n ; cbn in *.
+  - inversion H0 ; subst. now inv_whne.
+  - inversion H0 ; subst ; auto. now inv_whne.
 Qed.
 
 Lemma alphawhne_nored {l} n u :
@@ -106,7 +101,7 @@ Proof.
 Qed.
 
 Lemma whnf_nored {l} n u :
-  whnf l n -> [n ⇒ u]< l > -> False.
+  whnf (l := l) n -> [n ⇒ u]< l > -> False.
 Proof.
   intros nf red.
   induction red in nf |- *.
@@ -168,11 +163,11 @@ Proof.
   - inversion red' ; subst.
     + exfalso ; eapply whnf_nored ; tea.
       now eapply whnfnattoterm.
-    + erewrite (uniqueinLCon (pi2 l) i) ; trivial.
+    + erewrite (uniqueinLCon (snd l) i) ; trivial.
       rewrite (nattoterminj H) in H0 ; assumption.
 Qed.
 
-Lemma red_whne {l} t u : [t ⇒* u]< l > -> whne l t -> t = u.
+Lemma red_whne {l} t u : [t ⇒* u]< l > -> whne (l := l) t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -180,7 +175,7 @@ Proof.
   eauto using whne_nored.
 Qed.
 
-Lemma red_whnf {l} t u : [t ⇒* u]< l > -> whnf l t -> t = u.
+Lemma red_whnf {l} t u : [t ⇒* u]< l > -> whnf (l := l) t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -189,7 +184,7 @@ Proof.
 Qed.
 
 Lemma whred_red_det {l} t u u' :
-  whnf l u ->
+  whnf (l := l) u ->
   [t ⇒* u]< l > -> [t ⇒* u']< l > ->
   [u' ⇒* u]< l >.
 Proof.
@@ -204,7 +199,7 @@ Proof.
 Qed.
 
 Corollary whred_det {l} t u u' :
-  whnf l u -> whnf l u' ->
+  whnf (l := l) u -> whnf (l := l) u' ->
   [t ⇒* u]< l > -> [t ⇒* u']< l > ->
   u = u'.
 Proof.
