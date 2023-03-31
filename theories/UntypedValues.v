@@ -191,6 +191,15 @@ Module WeakValuesData.
 
 End WeakValuesData.
 
+Module StrongValuesData.
+
+#[export] Instance TypeSne {ta} : Notations.TypeNe ta := fun Γ A => sne A.
+#[export] Instance TypeSnf {ta} : Notations.TypeNf ta := fun Γ A => snf A.
+#[export] Instance TermSne {ta} : Notations.TermNe ta := fun Γ A t => sne t.
+#[export] Instance Termsnf {ta} : Notations.TermNf ta := fun Γ A t => snf t.
+
+End StrongValuesData.
+
 Module WeakValuesProperties.
 
 Export WeakValuesData.
@@ -264,3 +273,54 @@ Section Properties.
 End Properties.
 
 End WeakValuesProperties.
+
+Module StrongValuesProperties.
+
+Export StrongValuesData.
+
+Section Properties.
+
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
+
+  #[export] Instance TypeSneProperties : TypeNeProperties.
+  Proof.
+  split.
+  + intros; now apply sne_ren.
+  + intros; eapply snf_sne; [reflexivity|assumption].
+  + intros; now apply sne_whne.
+  + intros; assumption.
+  Qed.
+
+  #[export] Instance TypeSnfProperties : TypeNfProperties.
+  Proof.
+  split.
+  all: try (now econstructor; first [reflexivity|eassumption]).
+  + intros; now apply snf_ren.
+  + intros; eapply snf_red; [eapply redty_red|]; eassumption.
+  Qed.
+
+  #[export] Instance TermSneProperties : TermNeProperties.
+  Proof.
+  split.
+  all: try (intros; now econstructor).
+  + intros; now apply sne_ren.
+  + intros; eapply snf_sne; [reflexivity|assumption].
+  + intros; now apply sne_whne.
+  + intros; assumption.
+  Qed.
+
+  #[export] Instance TermSnfProperties : TermNfProperties.
+  Proof.
+  split.
+  all: try (now econstructor; first [reflexivity|eassumption]).
+  + intros; now apply snf_ren.
+  + intros; assumption.
+  + intros; eapply snf_red; [eapply redtm_red|]; eassumption.
+  Qed.
+
+End Properties.
+
+End StrongValuesProperties.
