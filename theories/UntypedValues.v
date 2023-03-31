@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms UntypedReduction GenericTyping.
-
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction GenericTyping.
+(*
 Unset Elimination Schemes.
 
 Inductive snf l (r : term) : Type :=
@@ -186,7 +186,7 @@ Lemma isSNFun_ren l ρ t : isSNFun l t -> isSNFun l (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
-
+*)
 Module WeakValuesData.
 
 #[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
@@ -216,7 +216,7 @@ Section Properties.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
 
-  #[export] Instance TypeWhneProperties : TypeNeProperties l.
+  #[export] Instance TypeWhneProperties : TypeNeProperties.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
@@ -226,7 +226,7 @@ Section Properties.
   + intros; assumption.
   Qed.
 
-  #[export] Instance TypeWhnfProperties : TypeNfProperties l.
+  #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
   + intros Γ Δ A ρ _ [B [? ?]].
@@ -243,10 +243,12 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
-  #[export] Instance TermWhneProperties : TermNeProperties l.
+  #[export] Instance TermWhneProperties : TermNeProperties.
   Proof.
   split.
-  + intros; now apply Weakening.whne_ren.
+  + intros; apply Weakening.whne_ren.
+    destruct ρ ; clear H1.
+    now induction well_wk. 
   + intros; eexists; split; [reflexivity|now constructor].
   + intros; assumption.
   + intros; assumption.
@@ -256,13 +258,17 @@ Section Properties.
   + intros; constructor; assumption.
   Qed.
 
-  #[export] Instance TermWhnfProperties : TermNfProperties l.
+  #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
   + intros Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
-    - now apply credalg_wk.
-    - now apply Weakening.whnf_ren.
+    - apply credalg_wk.
+      destruct ρ ; clear w.
+      now induction well_wk.   
+    - apply Weakening.whnf_ren.
+      destruct ρ ; clear r.
+      now induction well_wk.   
   + intros; assumption.
   + intros Γ t u A ? [r [? ?]].
     exists r; split.

@@ -2,7 +2,7 @@
 From Coq Require Import ssreflect.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction LContexts.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction.
 
 Set Primitive Projections.
 
@@ -22,215 +22,222 @@ Section Definitions.
   to bother with elimination of propositions, we put them in the Type sort. *)
 
   (** **** Context well-formation *)
-  Inductive WfContextDecl (l : wfLCon) : context -> Type :=
-  | connil : [ |- ε ]< l >
+  Inductive WfContextDecl : context -> Type :=
+  | connil {l} : [ |- ε l ]
   | concons {Γ A} : 
-          [ |- Γ ]< l > -> 
-          [ Γ |- A ]< l > -> 
-          [ |- Γ ,, A ]< l >
+          [ |- Γ ] -> 
+          [ Γ |- A ] -> 
+          [ |- Γ ,, A ]
+  | ϝwfCon {Γ n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+        [ |- Γ ,,l (ne, true) ] ->
+        [ |- Γ ,,l (ne, false) ] ->
+        [ |- Γ ]
   (** **** Type well-formation *)
-  with WfTypeDecl (l : wfLCon) : context -> term -> Type :=
+  with WfTypeDecl : context -> term -> Type :=
       | wfTypeU {Γ} : 
-          [ |- Γ ]< l > -> 
-          [ Γ |- U ]< l > 
+          [ |- Γ ] -> 
+          [ Γ |- U ] 
       | wfTypeProd {Γ} {A B} : 
-          [ Γ |- A ]< l > -> 
-          [ Γ ,, (A) |- B ]< l > -> 
-          [ Γ |- tProd A B ]< l >
+          [ Γ |- A ] -> 
+          [ Γ ,, (A) |- B ] -> 
+          [ Γ |- tProd A B ]
       | wfTypeNat {Γ} : 
-          [ |- Γ ]< l > ->
-          [ Γ |- tNat ]< l >
+          [ |- Γ ] ->
+          [ Γ |- tNat ]
       | wfTypeEmpty {Γ} : 
-          [ |- Γ ]< l > ->
-          [ Γ |- tEmpty ]< l >    
+          [ |- Γ ] ->
+          [ Γ |- tEmpty ]    
       | wfTypeBool {Γ} : 
-          [ |- Γ ]< l > ->
-          [ Γ |- tBool ]< l >
-      | ϝwfType {Γ A n} {ne : not_in_LCon _ n} : 
-        [ Γ |- A ]< ne £ true ::l l > ->
-        [ Γ |- A ]< ne £ false ::l l > ->
-        [ Γ |- A ]< l >
+          [ |- Γ ] ->
+          [ Γ |- tBool ]
+      | ϝwfType {Γ A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+        [ Γ ,,l (ne, true) |- A ] ->
+        [ Γ ,,l (ne, false) |- A ] ->
+        [ Γ |- A ]
           
   (** **** Typing *)
-  with TypingDecl (l : wfLCon) : context -> term -> term -> Type :=
+  with TypingDecl  : context -> term -> term -> Type :=
       | wfVar {Γ} {n decl} :
-          [ |- Γ ]< l > ->
+          [ |- Γ ] ->
           in_ctx Γ n decl ->
-          [ Γ |- tRel n : decl ]< l >
+          [ Γ |- tRel n : decl ]
       | wfTermProd {Γ} {A B} :
-          [ Γ |- A : U]< l > -> 
-          [ Γ ,, (A) |- B : U ]< l > ->
-          [ Γ |- tProd A B : U ]< l >
+          [ Γ |- A : U] -> 
+          [ Γ ,, (A) |- B : U ] ->
+          [ Γ |- tProd A B : U ]
       | wfTermLam {Γ} {A B t} :
-          [ Γ |- A ]< l > ->        
-          [ Γ ,, A |- t : B ]< l > -> 
-          [ Γ |- tLambda A t : tProd A B]< l >
+          [ Γ |- A ] ->        
+          [ Γ ,, A |- t : B ] -> 
+          [ Γ |- tLambda A t : tProd A B]
       | wfTermApp {Γ} {f a A B} :
-          [ Γ |- f : tProd A B ]< l > -> 
-          [ Γ |- a : A ]< l > -> 
-          [ Γ |- tApp f a : B[a..] ]< l >
+          [ Γ |- f : tProd A B ] -> 
+          [ Γ |- a : A ] -> 
+          [ Γ |- tApp f a : B[a..] ]
       | wfTermNat {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tNat : U]< l >
+          [ |- Γ ] ->
+          [ Γ |- tNat : U]
       | wfTermBool {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tBool : U]< l >
+          [ |- Γ ] ->
+          [ Γ |- tBool : U]
       | wfTermZero {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tZero : tNat]< l >
+          [ |- Γ ] ->
+          [ Γ |- tZero : tNat]
       | wfTermSucc {Γ n} :
-          [ Γ |- n : tNat]< l > ->
-          [ Γ |- tSucc n : tNat]< l >
+          [ Γ |- n : tNat] ->
+          [ Γ |- tSucc n : tNat]
       | wfTermNatElim {Γ P hz hs n} :
-        [ Γ ,, tNat |- P ]< l > ->
-        [ Γ |- hz : P[tZero..]]< l > ->
-        [ Γ |- hs : elimSuccHypTy P]< l > ->
-        [ Γ |- n : tNat]< l > ->
-        [ Γ |- tNatElim P hz hs n : P[n..]]< l >
+        [ Γ ,, tNat |- P ] ->
+        [ Γ |- hz : P[tZero..]] ->
+        [ Γ |- hs : elimSuccHypTy P] ->
+        [ Γ |- n : tNat] ->
+        [ Γ |- tNatElim P hz hs n : P[n..]]
       | wfTermTrue {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tTrue : tBool]< l >
+          [ |- Γ ] ->
+          [ Γ |- tTrue : tBool]
       | wfTermFalse {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tFalse : tBool]< l >
+          [ |- Γ ] ->
+          [ Γ |- tFalse : tBool]
       | wfTermAlpha {Γ n} :
-          [ Γ |- n : tNat]< l > ->
-          [ Γ |- tAlpha n : tBool]< l >
+          [ Γ |- n : tNat] ->
+          [ Γ |- tAlpha n : tBool]
       | wfTermBoolElim {Γ P ht hf b} :
-        [ Γ ,, tBool |- P ]< l > ->
-        [ Γ |- ht : P[tTrue..]]< l > ->
-        [ Γ |- hf : P[tFalse..]]< l > ->
-        [ Γ |- b : tBool]< l > ->
-        [ Γ |- tBoolElim P ht hf b : P[b..]]< l >
+        [ Γ ,, tBool |- P ] ->
+        [ Γ |- ht : P[tTrue..]] ->
+        [ Γ |- hf : P[tFalse..]] ->
+        [ Γ |- b : tBool] ->
+        [ Γ |- tBoolElim P ht hf b : P[b..]]
       | wfTermEmpty {Γ} :
-          [ |- Γ ]< l > ->
-          [ Γ |- tEmpty : U]< l >
+          [ |- Γ ] ->
+          [ Γ |- tEmpty : U]
       | wfTermEmptyElim {Γ P e} :
-        [ Γ ,, tEmpty |- P ]< l > ->
-        [ Γ |- e : tEmpty]< l > ->
-        [ Γ |- tEmptyElim P e : P[e..]]< l >
+        [ Γ ,, tEmpty |- P ] ->
+        [ Γ |- e : tEmpty] ->
+        [ Γ |- tEmptyElim P e : P[e..]]
       | wfTermConv {Γ} {t A B} :
-          [ Γ |- t : A ]< l > -> 
-          [ Γ |- A ≅ B ]< l > -> 
-          [ Γ |- t : B ]< l >
-      | ϝwfTerm {Γ t A n} {ne : not_in_LCon _ n} : 
-        [ Γ |- t : A ]< ne £ true ::l l > ->
-        [ Γ |- t : A ]< ne £ false ::l l > ->
-        [ Γ |- t : A ]< l >
+          [ Γ |- t : A ] -> 
+          [ Γ |- A ≅ B ] -> 
+          [ Γ |- t : B ]
+      | ϝwfTerm {Γ t A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+        [ Γ ,,l (ne, true) |- t : A ] ->
+        [ Γ ,,l (ne, false) |- t : A ] ->
+        [ Γ |- t : A ]
   (** **** Conversion of types *)
-  with ConvTypeDecl (l : wfLCon) : context -> term -> term  -> Type :=  
+  with ConvTypeDecl  : context -> term -> term  -> Type :=  
       | TypePiCong {Γ} {A B C D} :
-          [ Γ |- A ]< l > ->
-          [ Γ |- A ≅ B]< l > ->
-          [ Γ ,, A |- C ≅ D]< l > ->
-          [ Γ |- tProd A C ≅ tProd B D]< l >
+          [ Γ |- A ] ->
+          [ Γ |- A ≅ B] ->
+          [ Γ ,, A |- C ≅ D] ->
+          [ Γ |- tProd A C ≅ tProd B D]
       | TypeRefl {Γ} {A} : 
-          [ Γ |- A ]< l > ->
-          [ Γ |- A ≅ A ]< l >
+          [ Γ |- A ] ->
+          [ Γ |- A ≅ A ]
       | convUniv {Γ} {A B} :
-        [ Γ |- A ≅ B : U ]< l > -> 
-        [ Γ |- A ≅ B ]< l >
+        [ Γ |- A ≅ B : U ] -> 
+        [ Γ |- A ≅ B ]
       | TypeSym {Γ} {A B} :
-          [ Γ |- A ≅ B ]< l > ->
-          [ Γ |- B ≅ A ]< l >
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- B ≅ A ]
       | TypeTrans {Γ} {A B C} :
-          [ Γ |- A ≅ B]< l > ->
-          [ Γ |- B ≅ C]< l > ->
-          [ Γ |- A ≅ C]< l >
-      | ϝTyConv {Γ A B n} {ne : not_in_LCon _ n} : 
-        [ Γ |- A ≅ B ]< ne £ true ::l l > ->
-        [ Γ |- A ≅ B ]< ne £ false ::l l > ->
-        [ Γ |- A ≅ B ]< l >
+          [ Γ |- A ≅ B] ->
+          [ Γ |- B ≅ C] ->
+          [ Γ |- A ≅ C]
+      | ϝTyConv {Γ A B n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+        [ Γ ,,l (ne, true) |- A ≅ B ] ->
+        [ Γ ,,l (ne, false) |- A ≅ B ] ->
+        [ Γ |- A ≅ B ]
   (** **** Conversion of terms *)
-  with ConvTermDecl (l : wfLCon) : context -> term -> term -> term -> Type :=
+  with ConvTermDecl  : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {a t A B} :
-              [ Γ |- A ]< l > ->
-              [ Γ ,, A |- t : B ]< l > ->
-              [ Γ |- a : A ]< l > ->
-              [ Γ |- tApp (tLambda A t) a ≅ t[a..] : B[a..] ]< l >
+              [ Γ |- A ] ->
+              [ Γ ,, A |- t : B ] ->
+              [ Γ |- a : A ] ->
+              [ Γ |- tApp (tLambda A t) a ≅ t[a..] : B[a..] ]
       | TermPiCong {Γ} {A B C D} :
-          [ Γ |- A : U]< l > ->
-          [ Γ |- A ≅ B : U ]< l > ->
-          [ Γ ,, A |- C ≅ D : U ]< l > ->
-          [ Γ |- tProd A C ≅ tProd B D : U ]< l >
+          [ Γ |- A : U] ->
+          [ Γ |- A ≅ B : U ] ->
+          [ Γ ,, A |- C ≅ D : U ] ->
+          [ Γ |- tProd A C ≅ tProd B D : U ]
       | TermAppCong {Γ} {a b f g A B} :
-          [ Γ |- f ≅ g : tProd A B ]< l > ->
-          [ Γ |- a ≅ b : A ]< l > ->
-          [ Γ |- tApp f a ≅ tApp g b : B[a..] ]< l >
+          [ Γ |- f ≅ g : tProd A B ] ->
+          [ Γ |- a ≅ b : A ] ->
+          [ Γ |- tApp f a ≅ tApp g b : B[a..] ]
       | TermFunExt {Γ} {f g A B} :
-          [ Γ |- A ]< l > ->
-          [ Γ |- f : tProd A B ]< l > ->
-          [ Γ |- g : tProd A B ]< l > ->
-          [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ]< l > ->
-          [ Γ |- f ≅ g : tProd A B ]< l >
+          [ Γ |- A ] ->
+          [ Γ |- f : tProd A B ] ->
+          [ Γ |- g : tProd A B ] ->
+          [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ] ->
+          [ Γ |- f ≅ g : tProd A B ]
       | TermSuccCong {Γ} {n n'} :
-          [ Γ |- n ≅ n' : tNat]< l > ->
-          [ Γ |- tSucc n ≅ tSucc n' : tNat]< l >
+          [ Γ |- n ≅ n' : tNat] ->
+          [ Γ |- tSucc n ≅ tSucc n' : tNat]
       | TermNatElimCong {Γ P P' hz hz' hs hs' n n'} :
-          [ Γ ,, tNat |- P ≅ P']< l > ->
-          [ Γ |- hz ≅ hz' : P[tZero..]]< l > ->
-          [ Γ |- hs ≅ hs' : elimSuccHypTy P]< l > ->
-          [ Γ |- n ≅ n' : tNat]< l > ->
-          [ Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]< l >        
+          [ Γ ,, tNat |- P ≅ P'] ->
+          [ Γ |- hz ≅ hz' : P[tZero..]] ->
+          [ Γ |- hs ≅ hs' : elimSuccHypTy P] ->
+          [ Γ |- n ≅ n' : tNat] ->
+          [ Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]        
       | TermNatElimZero {Γ P hz hs} :
-          [ Γ ,, tNat |- P ]< l > ->
-          [ Γ |- hz : P[tZero..]]< l > ->
-          [ Γ |- hs : elimSuccHypTy P]< l > ->
-          [ Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]< l >   
+          [ Γ ,, tNat |- P ] ->
+          [ Γ |- hz : P[tZero..]] ->
+          [ Γ |- hs : elimSuccHypTy P] ->
+          [ Γ |- tNatElim P hz hs tZero ≅ hz : P[tZero..]]   
       | TermNatElimSucc {Γ P hz hs n} :
-          [ Γ ,, tNat |- P ]< l > ->
-          [ Γ |- hz : P[tZero..]]< l > ->
-          [ Γ |- hs : elimSuccHypTy P]< l > ->
-          [ Γ |- n : tNat]< l > ->
-          [ Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]< l >    
+          [ Γ ,, tNat |- P ] ->
+          [ Γ |- hz : P[tZero..]] ->
+          [ Γ |- hs : elimSuccHypTy P] ->
+          [ Γ |- n : tNat] ->
+          [ Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]    
       | TermBoolElimCong {Γ P P' ht ht' hf hf' b b'} :
-          [ Γ ,, tBool |- P ≅ P']< l > ->
-          [ Γ |- ht ≅ ht' : P[tTrue..]]< l > ->
-          [ Γ |- hf ≅ hf' : P[tFalse..]]< l > ->
-          [ Γ |- b ≅ b' : tBool]< l > ->
-          [ Γ |- tBoolElim P ht hf b ≅ tBoolElim P' ht' hf' b' : P[b..]]< l > 
+          [ Γ ,, tBool |- P ≅ P'] ->
+          [ Γ |- ht ≅ ht' : P[tTrue..]] ->
+          [ Γ |- hf ≅ hf' : P[tFalse..]] ->
+          [ Γ |- b ≅ b' : tBool] ->
+          [ Γ |- tBoolElim P ht hf b ≅ tBoolElim P' ht' hf' b' : P[b..]] 
       | TermBoolElimTrue {Γ P ht hf} :
-          [ Γ ,, tBool |- P ]< l > ->
-          [ Γ |- ht : P[tTrue..]]< l > ->
-          [ Γ |- ht : P[tFalse..]]< l > ->
-          [ Γ |- tBoolElim P ht hf tTrue ≅ ht : P[tTrue..]]< l >  
+          [ Γ ,, tBool |- P ] ->
+          [ Γ |- ht : P[tTrue..]] ->
+          [ Γ |- ht : P[tFalse..]] ->
+          [ Γ |- tBoolElim P ht hf tTrue ≅ ht : P[tTrue..]]  
       | TermBoolElimFalse {Γ P ht hf} :
-          [ Γ ,, tBool |- P ]< l > ->
-          [ Γ |- ht : P[tTrue..]]< l > ->
-          [ Γ |- ht : P[tFalse..]]< l > ->
-          [ Γ |- tBoolElim P ht hf tFalse ≅ ht : P[tFalse..]]< l >
+          [ Γ ,, tBool |- P ] ->
+          [ Γ |- ht : P[tTrue..]] ->
+          [ Γ |- ht : P[tFalse..]] ->
+          [ Γ |- tBoolElim P ht hf tFalse ≅ ht : P[tFalse..]]
       | TermEmptyElimCong {Γ P P' e e'} :
-          [ Γ ,, tEmpty |- P ≅ P']< l > ->
-          [ Γ |- e ≅ e' : tEmpty]< l > ->
-          [ Γ |- tEmptyElim P e ≅ tEmptyElim P' e' : P[e..]]< l >
+          [ Γ ,, tEmpty |- P ≅ P'] ->
+          [ Γ |- e ≅ e' : tEmpty] ->
+          [ Γ |- tEmptyElim P e ≅ tEmptyElim P' e' : P[e..]]
       | TermRefl {Γ} {t A} :
-          [ Γ |- t : A ]< l > -> 
-          [ Γ |- t ≅ t : A ]< l >
+          [ Γ |- t : A ] -> 
+          [ Γ |- t ≅ t : A ]
       | TermConv {Γ} {t t' A B} :
-          [ Γ |- t ≅ t': A ]< l > ->
-          [ Γ |- A ≅ B ]< l > ->
-          [ Γ |- t ≅ t': B ]< l >
+          [ Γ |- t ≅ t': A ] ->
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- t ≅ t': B ]
       | TermSym {Γ} {t t' A} :
-          [ Γ |- t ≅ t' : A ]< l > ->
-          [ Γ |- t' ≅ t : A ]< l >
+          [ Γ |- t ≅ t' : A ] ->
+          [ Γ |- t' ≅ t : A ]
       | TermTrans {Γ} {t t' t'' A} :
-          [ Γ |- t ≅ t' : A ]< l > ->
-          [ Γ |- t' ≅ t'' : A ]< l > ->
-          [ Γ |- t ≅ t'' : A ]< l >
-      | alphaConv {Γ n b} :
-        [ |- Γ ]< l > ->
-        in_LCon (fst l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >
-      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon _ n} : 
-        [ Γ |- t ≅ t' : A ]< ne £ true ::l l > ->
-        [ Γ |- t ≅ t' : A ]< ne £ false ::l l > ->
-        [ Γ |- t ≅ t' : A ]< l >
+          [ Γ |- t ≅ t' : A ] ->
+          [ Γ |- t' ≅ t'' : A ] ->
+          [ Γ |- t ≅ t'' : A ]
+      | TermAlphaCong {Γ} {n n'} :
+          [ Γ |- n ≅ n' : tNat] ->
+          [ Γ |- tAlpha n ≅ tAlpha n' : tBool]
+      | TypeAlphaConv {Γ n b} :
+        [ |- Γ ] ->
+        in_LCon (pi1 (snd Γ)) n b ->
+        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]
+      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+        [ Γ ,,l (ne, true) |- t ≅ t' : A ] ->
+        [ Γ ,,l (ne, false) |- t ≅ t' : A ] ->
+        [ Γ |- t ≅ t' : A ]
       
-  where "[ |- Γ ]< l >" := (WfContextDecl l Γ)
-  and   "[ Γ |- T ]< l >" := (WfTypeDecl l Γ T)
-  and   "[ Γ |- t : T ]< l >" := (TypingDecl l Γ T t)
-  and   "[ Γ |- A ≅ B ]< l >" := (ConvTypeDecl l Γ A B)
-  and   "[ Γ |- t ≅ t' : T ]< l >" := (ConvTermDecl l Γ T t t').
+  where "[ |- Γ ]" := (WfContextDecl Γ)
+  and   "[ Γ |- T ]" := (WfTypeDecl Γ T)
+  and   "[ Γ |- t : T ]" := (TypingDecl Γ T t)
+  and   "[ Γ |- A ≅ B ]" := (ConvTypeDecl Γ A B)
+  and   "[ Γ |- t ≅ t' : T ]" := (ConvTermDecl Γ T t t').
 
   (** (Typed) reduction is defined afterwards,
   rather than mutually with the other relations. *)
@@ -325,7 +332,7 @@ Lemma WfDeclInduction : WfDeclInductionType.
 Proof.
   intros PL PCon PTy PTm PTyEq PTmEq test **.
   pose proof (_WfDeclInduction PL PCon PTy PTm PTyEq PTmEq test) as H.
-  destruct H with (l := l) as [?[?[? []]]].
+  destruct H as [?[?[? []]]].
   all: try (assumption ; fail).
   repeat (split;[assumption|]); assumption.
 Qed.
