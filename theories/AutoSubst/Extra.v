@@ -36,13 +36,19 @@ Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsi
 #[global] Instance Ren1_subst {Y Z : Type} `{Ren1 (nat -> nat) Y Z} :
   (Ren1 (nat -> nat) (nat -> Y) (nat -> Z)) :=
   fun ρ σ i => (σ i)⟨ρ⟩.
-
+    
 Ltac fold_autosubst :=
+    fold ren_term ;
+    fold subst_term.
+
+Smpl Add fold_autosubst : refold.
+
+Ltac change_autosubst :=
     change ren_term with (@ren1 _ _ _ Ren_term) in * ;
     change subst_term with (@subst1 _ _ _ Subst_term) in *;
     change (fun i => (?σ i)⟨?ρ⟩) with (@ren1 _ _ _ Ren1_subst ρ σ) in *.
 
-Smpl Add fold_autosubst : refold.
+Smpl Add 50 change_autosubst : refold.
 
 Arguments ren1 {_ _ _}%type_scope {Ren1} _ !_/.
 (* Ideally, we'd like Ren_term to not be there, and ren_term to be directly the Ren1 instance… *)
@@ -57,3 +63,7 @@ Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
 Proof.
   now asimpl.
 Qed.
+
+Definition elimSuccHypTy P :=
+  tProd tNat (arr P P[tSucc (tRel 0)]⇑).
+

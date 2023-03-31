@@ -61,6 +61,8 @@ Qed.
 Lemma subst_ren_wk_up {Γ Δ P A} {ρ : Γ ≤ Δ}: forall n, P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
 Proof. intros; now bsimpl. Qed.
 
+Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
+Proof. now asimpl. Qed.
 
 Section TypingWk.
   Import DeclarativeTypingData.
@@ -131,16 +133,14 @@ Section TypingWk.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
         now erewrite subst_ren_wk_up.
-      * eapply typing_meta_conv.
-        1: now eapply ihhs.
-        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * rewrite wk_elimSuccHypTy.
+        now eapply ihhs.
       * now eapply ihn.
     - intros; now constructor.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up; eapply wfTermEmptyElim.
       * eapply ihP; econstructor; tea; now econstructor.
       * now eapply ihe.
-
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -202,7 +202,8 @@ Section TypingWk.
       cbn in IHe.
       repeat rewrite renRen_term in IHe.
       cbn in * ; refold.
-      bsimpl.
+      do 2 rewrite shift_up_ren.
+      erewrite <- wk_up_ren_on.
       eapply IHe.
       econstructor ; tea.
       now eapply IHA.
@@ -215,10 +216,8 @@ Section TypingWk.
         1: now eapply ihhz.
         2: reflexivity.
         now erewrite subst_ren_wk_up.
-      * eapply convtm_meta_conv.
-        1: now eapply ihhs.
-        2: reflexivity.
-        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * rewrite wk_elimSuccHypTy. 
+        now eapply ihhs.
       * now eapply ihn.
     - intros * ? ihP ? ihhz ? ihhs **.
       erewrite subst_ren_wk_up.
@@ -227,9 +226,8 @@ Section TypingWk.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
         now erewrite subst_ren_wk_up.
-      * eapply typing_meta_conv.
-        1: now eapply ihhs.
-        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * rewrite wk_elimSuccHypTy.
+        now eapply ihhs.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **.
       erewrite subst_ren_wk_up.
       eapply TermNatElimSucc; fold ren_term.
@@ -237,9 +235,8 @@ Section TypingWk.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
         now erewrite subst_ren_wk_up.
-      * eapply typing_meta_conv.
-        1: now eapply ihhs.
-        unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      * rewrite wk_elimSuccHypTy.
+        now eapply ihhs.
       * now eapply ihn.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up.
@@ -438,8 +435,8 @@ Proof.
       econstructor ; tea.
       now eapply typing_wk.
     + now eapply typing_wk.
-    + now asimpl.
-    + now asimpl. 
+    + apply subst_ren_wk_up.
+    + unshelve eapply subst_ren_wk_up; tea.
   - cbn in *.
     eapply oredtm_meta_conv.
     1: econstructor.
@@ -454,10 +451,10 @@ Proof.
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now bsimpl.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      symmetry; unshelve eapply subst_ren_wk_up; tea.
+    * unshelve erewrite <- wk_up_ren_on; tea.
+      rewrite wk_elimSuccHypTy.
+      now eapply typing_wk.
     Unshelve. all: tea.
   - cbn. erewrite subst_ren_wk_up.
     eapply natElimZero; tea.
@@ -466,10 +463,10 @@ Proof.
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now bsimpl.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      symmetry; unshelve eapply subst_ren_wk_up; tea.
+    * unshelve erewrite <- wk_up_ren_on; tea.
+      rewrite wk_elimSuccHypTy.
+      now eapply typing_wk.
     Unshelve. all: tea.
   - cbn. erewrite (subst_ren_wk_up (A := tNat)).
     eapply natElimSucc.
@@ -478,10 +475,10 @@ Proof.
       constructor; tea; now constructor.
     * eapply typing_meta_conv.
       1: now eapply typing_wk.
-      now bsimpl.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+      symmetry; unshelve eapply subst_ren_wk_up; tea.
+    * unshelve erewrite <- wk_up_ren_on; tea.
+      rewrite wk_elimSuccHypTy.
+      now eapply typing_wk.
     * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
   - cbn. erewrite subst_ren_wk_up.
     eapply (@emptyElimSubst _); tea.
