@@ -66,13 +66,6 @@ Proof.
 exact (eq_trans eq_refl (ap (fun x => tSucc x) H0)).
 Qed.
 
-Lemma tSucc_inj {s0 : term} {t0 : term} (H0 : tSucc s0 = tSucc t0) :
-  s0 = t0.
-Proof.
-  change (match (tSucc s0) with tSucc x => x | _ => tZero end = t0).
-  now rewrite H0.
-Qed.
-
 Lemma congr_tNatElim {s0 : term} {s1 : term} {s2 : term} {s3 : term}
   {t0 : term} {t1 : term} {t2 : term} {t3 : term} (H0 : s0 = t0)
   (H1 : s1 = t1) (H2 : s2 = t2) (H3 : s3 = t3) :
