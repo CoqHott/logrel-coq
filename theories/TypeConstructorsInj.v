@@ -1,5 +1,4 @@
-(** * LogRel.TypeConstructorsInj: injectivity and no-confusion of type constructors, and
-many consequences, including subject reduction. *)
+(** * LogRel.TypeConstructorsInj: injectivity and no-confusion of type constructors, and many consequences, including subject reduction. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction

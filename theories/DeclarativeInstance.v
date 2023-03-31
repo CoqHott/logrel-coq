@@ -732,8 +732,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  Set Typeclasses Debug.
-
   #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

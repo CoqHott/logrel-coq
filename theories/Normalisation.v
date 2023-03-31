@@ -1,4 +1,4 @@
-(** * LogRel.Normalisation: well-typed terms always reduce to a normal form.*)
+(** * LogRel.Normalisation: well-typed terms always reduce to a normal form. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
