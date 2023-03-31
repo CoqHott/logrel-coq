@@ -11,9 +11,6 @@ or typing, done in a declarative fashion. For instance, we _demand_ that convers
 be transitive by adding a corresponding rule. *)
 
 (** ** Definitions *)
-Definition elimSuccHypTy P :=
-  tProd tNat (arr P P[tSucc (tRel 0)]⇑).
-
 Section Definitions.
 
   (* We locally disable typing notations to be able to use them in the definition

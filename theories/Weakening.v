@@ -143,10 +143,18 @@ Arguments Ren1_wk {_ _ _} _ _/.
 Arguments Ren1_well_wk {_ _ _ _ _} _ _/.
 
 Ltac fold_wk_ren :=
-  change ?t⟨wk_to_ren ?ρ⟩ with t⟨ρ⟩ in * ;
-  change ?t⟨wk_to_ren ?ρ.(wk)⟩ with t⟨ρ⟩ in *.
+  change (@ren1 _ _ _ Ren_term (wk_to_ren (@wk _ _ ?ρ)))
+    with (@ren1 _ _ _ (@Ren1_well_wk _ _ _ _ _) ρ);
+  change (@ren1 _ _ _ (@Ren1_wk _ _ _) (@wk _ _ ?ρ))
+    with (@ren1 _ _ _ (@Ren1_well_wk _ _ _ _ _) ρ).
 
-Smpl Add fold_wk_ren : refold.
+Smpl Add 20 fold_wk_ren : refold.
+
+Ltac change_well_wk :=
+    change ren_term with (@ren1 _ _ _ Ren1_well_wk) in *.
+
+Smpl Add 10 change_well_wk : refold.
+
 
 (** ** The ubiquitous operation of adding one variable at the end of a context *)
 
@@ -332,3 +340,11 @@ Proof. now bsimpl. Qed.
 
 Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
 Proof. now bsimpl. Qed.
+Lemma wk_arr {A B Γ Δ} (ρ : Δ ≤ Γ) : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_elimSuccHypTy {P Γ Δ} A (ρ : Δ ≤ Γ) :
+  elimSuccHypTy P⟨wk_up A ρ⟩ = (elimSuccHypTy P)⟨ρ⟩.
+Proof.
+  unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+Qed.
