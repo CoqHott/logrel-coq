@@ -61,6 +61,7 @@ theories/Normalisation.v
 theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicConvProperties.v
 theories/AlgorithmicTypingProperties.v
+theories/TypeUniqueness.v
 
 theories/Decidability/Functions.v
 

@@ -52,20 +52,20 @@ Qed.
 
 Lemma isType_tm_view1 t e :
   build_tm_view1 t = tm_view1_type e ->
-  isType t.
+  isType t × ~ whne t.
 Proof.
   intros H.
   destruct e ; cbn.
-  all: now econstructor.
+  all: split ; [ now econstructor | intros H' ; inversion H'].
 Qed.
 
 Lemma whnf_tm_view1_nat t e :
   build_tm_view1 t = tm_view1_nat e ->
-  whnf t.
+  whnf t × ~ whne t.
 Proof.
   intros H.
   destruct e ; cbn.
-  all: now econstructor.
+  all: split ; [ now econstructor | intros H' ; inversion H'].
 Qed.
 
 Lemma red_stack_whnf :
@@ -174,6 +174,34 @@ Section RedImplemComplete.
       now econstructor.
   Qed.
 
+  Lemma isType_ty Γ T t :
+    [Γ |- t : T] ->
+    isType t ->
+    ~ whne t ->
+    [Γ |- U ≅ T].
+  Proof.
+    intros Hty HisT Hne.
+    all: inversion HisT ; subst ; clear HisT ; cycle -1.
+    1: now exfalso.
+    all: clear Hne.
+    all: eapply termGen' in Hty as (?&[]&?); subst.
+    all: eassumption.
+  Qed.
+
+  Lemma zip1_notType Γ T t π :
+    isType t ->
+    ~ whne t ->
+    [Γ |- zip1 t π : T] ->
+    False.
+  Proof.
+    intros Ht Ht' Hty.
+    destruct π ; cbn in * ;
+      eapply termGen' in Hty as (?&[]&?) ; subst ; prod_hyp_splitter ;
+      match goal with H : [_ |-[de] t : _] |- _ => (unshelve eapply isType_ty, ty_conv_inj in H) end ; tea.
+    all: try solve [now econstructor].
+    all: now easy.
+  Qed.
+
   Lemma wh_red_stack_complete Γ t π :
     well_typed Γ (zip t π) ->
     domain wh_red_stack (t,π).
@@ -186,12 +214,19 @@ Section RedImplemComplete.
     apply compute_domain. funelim (wh_red_stack z).
     all: simpl.
     all: try easy.
-    - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-      admit. (* impossible typing *)
-    - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-      admit. (* impossible typing *)
-    - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-      admit. (* impossible typing *)
+    - cbn in * ; eapply well_typed_zip in Hty as [? [? _]] ; cbn in *.
+      eapply zip1_notType ; tea.
+      all: now eapply isType_tm_view1.
+    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+      eapply termGen' in Hty as (?&[_ _ (?&[?[->]]&Hconv)%termGen']&?).
+      unshelve eapply ty_conv_inj in Hconv.
+      1-2: now econstructor.
+      easy.
+    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+      eapply termGen' in Hty as (?&[_ _ _ _ (?&[?[->]]&Hconv)%termGen']&?).
+      unshelve eapply ty_conv_inj in Hconv.
+      1-2: now econstructor.
+      easy.
     - split ; [|easy].
       eapply IH.
       + red. red. cbn.
@@ -203,8 +238,11 @@ Section RedImplemComplete.
         eapply well_typed_zip in Hty as (?&[??Hu]).
         eapply Hu, RedConvTeC, subject_reduction ; tea.
         now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-    admit. (* impossible typing *)
+    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+      eapply termGen' in Hty as (?&[? ? (?&->&Hconv)%termGen']&?).
+      unshelve eapply ty_conv_inj in Hconv.
+      1-2: now econstructor.
+      easy.
   - split ; [|easy].
     eapply IH.
     + red. red. cbn.
@@ -216,10 +254,16 @@ Section RedImplemComplete.
       eapply well_typed_zip in Hty as (?&[??Hu]).
       eapply Hu, RedConvTeC, subject_reduction ; tea.
       now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-    admit. (* impossible typing *)
-  - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-    admit. (* impossible typing *)
+  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+    eapply termGen' in Hty as (?&(?&?&[_ (?&->&Hconv)%termGen'])&?).
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    easy.
+  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+    eapply termGen' in Hty as (?&[_ _ (?&[->]&Hconv)%termGen']&?).
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    easy.
   - cbn in *.
     split ; [|easy].
     eapply IH ; cbn in *.
@@ -232,8 +276,11 @@ Section RedImplemComplete.
       eapply well_typed_zip in Hty as (?&[??Hu]).
       eapply Hu, RedConvTeC, subject_reduction ; tea.
       now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [] ; cbn in *.
-    admit. (* impossible typing *)
+  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
+    eapply termGen' in Hty as (?&(?&?&[_ (?&[->]&Hconv)%termGen'])&?).
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    easy.
   - cbn in *.
     split ; [|easy].
     eapply IH ; cbn in *.
@@ -242,7 +289,7 @@ Section RedImplemComplete.
     right.
     econstructor.
     destruct s ; cbn ; now constructor.
-  Admitted.
+  Qed.
 
   Corollary wh_red_complete Γ t :
     well_typed Γ t ->
@@ -288,4 +335,3 @@ Section CtxAccessCorrect.
   Qed.
 
 End CtxAccessCorrect.
-    
