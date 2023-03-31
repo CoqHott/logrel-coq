@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms UntypedReduction GenericTyping.
-
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction GenericTyping.
+(*
 Unset Elimination Schemes.
 
 Inductive snf l (r : term) : Type :=
@@ -186,13 +186,13 @@ Lemma isSNFun_ren l ρ t : isSNFun l t -> isSNFun l (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
-
+*)
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne (l := l) A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun l Γ A => ∑ B, [ A ⇒* B ]< l > × whnf (l := l) B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne (l := l) t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun l Γ A t => ∑ u, [ t ⇒* u ]< l > × whnf (l := l) u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne (snd Γ) A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ]< (snd Γ) > × whnf (snd Γ) B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne (snd Γ) t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ]< (snd Γ) > × whnf (snd Γ) u.
 
 End WeakValuesData.
 
@@ -205,24 +205,34 @@ Section Properties.
   Context `{ta : tag} `{l : wfLCon}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties l} `{!RedTermProperties l}.
+    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
 
-  #[export] Instance TypeWhneProperties : TypeNeProperties l.
+  #[export] Instance TypeWhneProperties : TypeNeProperties.
   Proof.
   split.
-  + intros; now apply Weakening.whne_ren.
+  + intros.
+    apply Weakening.whne_ren.
+    induction H2 ; try now econstructor.
+    destruct ρ.
+    clear H1.
+    induction well_wk ;  try now econstructor.
+    all: now destruct Γ.
   + intros Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
   + intros; assumption.
   + intros; assumption.
   Qed.
 
-  #[export] Instance TypeWhnfProperties : TypeNfProperties l.
+  #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
   + intros Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
-    - now apply credalg_wk.
-    - now apply Weakening.whnf_ren.
+  - apply credalg_wk.
+    destruct ρ ; clear w.
+    now induction well_wk.
+  - apply Weakening.whnf_ren.
+    destruct ρ ; clear r.
+    now induction well_wk.    
   + intros Γ A B ? [C [? ?]].
     exists C; split.
     - transitivity B; [eapply redty_red| ]; eassumption.
@@ -233,10 +243,12 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
-  #[export] Instance TermWhneProperties : TermNeProperties l.
+  #[export] Instance TermWhneProperties : TermNeProperties.
   Proof.
   split.
-  + intros; now apply Weakening.whne_ren.
+  + intros; apply Weakening.whne_ren.
+    destruct ρ ; clear H1.
+    now induction well_wk. 
   + intros; eexists; split; [reflexivity|now constructor].
   + intros; assumption.
   + intros; assumption.
@@ -246,13 +258,17 @@ Section Properties.
   + intros; constructor; assumption.
   Qed.
 
-  #[export] Instance TermWhnfProperties : TermNfProperties l.
+  #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
   + intros Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
-    - now apply credalg_wk.
-    - now apply Weakening.whnf_ren.
+    - apply credalg_wk.
+      destruct ρ ; clear w.
+      now induction well_wk.   
+    - apply Weakening.whnf_ren.
+      destruct ρ ; clear r.
+      now induction well_wk.   
   + intros; assumption.
   + intros Γ t u A ? [r [? ?]].
     exists r; split.
