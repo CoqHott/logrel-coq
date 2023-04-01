@@ -1,9 +1,15 @@
-# Taken from https://github.com/palmskog/coq-program-verification-template
+# Inspired from https://github.com/palmskog/coq-program-verification-template
 
-all: Makefile.coq
+all: partial-fun logrel
+
+partial-fun:
+	@+$(MAKE) -C coq-partialfun all
+
+logrel: partial-fun Makefile.coq
 	@+$(MAKE) -f Makefile.coq all
 
 clean: Makefile.coq
+	@+$(MAKE) -C coq-partialfun clean
 	@+$(MAKE) -f Makefile.coq cleanall
 	@rm -f Makefile.coq Makefile.coq.conf
 
@@ -15,4 +21,4 @@ force _CoqProject Makefile: ;
 %: Makefile.coq force
 	@+$(MAKE) -f Makefile.coq $@
 
-.PHONY: all clean force
+.PHONY: all clean force partial-fun logrel

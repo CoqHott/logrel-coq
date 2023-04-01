@@ -632,22 +632,17 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
       now constructor.
     - inversion HΔ as [|?? HΔ' HA] ; subst ; clear HΔ ; refold.
       destruct IH ; tea.
-      apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0]].
+      apply Fundamental in Hσ0 as [?? Hσ0].
       cbn in *.
-      clear validTyExt validTmExt.
-      specialize (redσ0 _ _ _ (projT2 (soundCtxId redΓ))).
-      set (redA'' := (redA' _ _ _ (projT2 (soundCtxId redΓ)))) in *.
-      clearbody redA''.
-      clear redA'.
-      repeat rewrite instId'_term in *.
-      eapply Fundamental in HA as [VΔ' VA].
+      eapply reducibleTm in Hσ0.
+      eapply Fundamental in HA as [].
       unshelve econstructor.
       1: now eapply validSnoc.
       unshelve econstructor.
       + now eapply irrelevanceSubst.
       + cbn; irrelevance0.
-        2: now eapply redσ0.
-        now rewrite instId'_term.
+        2: eassumption.
+        reflexivity.
   Qed.
 
   Corollary Fundamental_subst_conv Γ Δ σ σ' (wfΓ : [|-[ta] Γ ]) :
@@ -662,39 +657,32 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
       all: now econstructor.
     - inversion HΔ as [|?? HΔ' HA] ; subst ; clear HΔ ; refold.
       destruct IH ; tea.
-      apply Fundamental in Hσ0 as [redΓ [redA'] [redσ0] [redτ0] [redστ0]] ; cbn in *.
-      clear validTyExt validTmExt validTmExt0.
-      specialize (redσ0 _ _ _ (projT2 (soundCtxId redΓ))).
-      specialize (redτ0 _ _ _ (projT2 (soundCtxId redΓ))).
-      specialize (redστ0 _ _ _ (projT2 (soundCtxId redΓ))).
-      set (redA'' := (redA' _ _ _ (projT2 (soundCtxId redΓ)))) in *.
-      clearbody redA''.
-      clear redA'.
-      repeat rewrite instId'_term in *.
-      eapply Fundamental in HA as [VΔ' VA].
+      apply Fundamental in Hσ0 as [?? Hσ0 Hτ0 Ηστ] ; cbn in *.
+      eapply Fundamental in HA as [? HA].
       unshelve econstructor.
-      1: now eapply validSnoc.
+      + now eapply validSnoc.
       + unshelve econstructor.
-        * now eapply irrelevanceSubst.
-        * cbn; irrelevance0.
-          2: now eapply redσ0.
-          now rewrite instId'_term.
+        1: now irrValid.
+        cbn.
+        irrelevanceRefl.
+        now eapply reducibleTm.
       + unshelve econstructor.
-        * now eapply irrelevanceSubst.
-        * cbn.
-          eapply RedTmConv.
-          4: now eapply redτ0.
-          -- now unshelve eapply redA''.
-          -- now eapply validTy.
-          -- unshelve eapply LRTyEqIrrelevant'.
-             4: rewrite instId'_term ; reflexivity.
-             2,3: unshelve eapply VA ; tea.
-             1-2: now eapply irrelevanceSubst.
-             now eapply irrelevanceSubstEq.
+        1: now eapply irrelevanceSubst.
+        cbn.
+        unshelve irrelevanceRefl.
+        2: now unshelve eapply HA ; tea ; irrValid.
+        cbn.
+        unshelve eapply LRTmRedConv.
+        3: now eapply reducibleTy.
+        * irrelevanceRefl.
+          unshelve eapply HA ; tea.
+          all: now irrValid.
+        * irrelevanceRefl.
+          now eapply reducibleTm.
       + unshelve econstructor ; cbn in *.
-        * now eapply irrelevanceSubstEq.
-        * eapply LRTmEqIrrelevant' ; tea.
-          now bsimpl.
+        * now irrValid.
+        * irrelevanceRefl.
+          now eapply reducibleTmEq.
   Qed.
 
 End Fundamental.

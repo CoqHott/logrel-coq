@@ -4,3 +4,5 @@ From LogRel.AutoSubst Require Import core unscoped.
 
 Inductive sort :=
   | set : sort.
+
+Definition sort_of_product (s s' : sort) := set.

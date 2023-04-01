@@ -1,6 +1,6 @@
 (** * LogRel.BundledAlgorithmicTyping: algorithmic typing bundled with its pre-conditions, and a tailored induction principle. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj.
 
 Import DeclarativeTypingProperties AlgorithmicTypingData.
 
@@ -361,7 +361,7 @@ Section BundledConv.
     | ?Cend => let Cend' := weak_concl Cend in constr:(Cend')
   end.
 
-  Definition algo_conv_discipline_stmt := 
+  #[local] Definition algo_conv_discipline_stmt := 
     ltac:(
       let t := (type of (AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq)) in
       let ind := strong_statement t in
@@ -662,6 +662,24 @@ Section ConvSoundness.
 
 End ConvSoundness.
 
+Theorem bn_conv_sound :
+BundledConvInductionConcl
+  (fun Γ A B => [Γ |-[de] A ≅ B])
+  (fun Γ A B => [Γ |-[de] A ≅ B])
+  (fun Γ A t u => [Γ |-[de] t ≅ u : A])
+  (fun Γ A t u => [Γ |-[de] t ≅ u : A])
+  (fun Γ A t u => [Γ |-[de] t ≅ u : A])
+  (fun Γ A t u => [Γ |-[de] t ≅ u : A]).
+Proof.
+  red.
+  prod_splitter.
+  all: intros * [].
+  all: match goal with H : context [al] |- _ => eapply conv_sound in H end.
+  all: prod_hyp_splitter.
+  all: try eassumption.
+  all: now eexists.
+Qed.
+
 (** ** Induction principle for bundled algorithmic typing *)
 
 (** This is repeating the same ideas as before, but for typing. *)
@@ -870,6 +888,29 @@ Section TypingSoundness.
   Qed.
 
 End TypingSoundness.
+
+Theorem bn_alg_typing_sound :
+BundledTypingInductionConcl
+  (fun Γ A => [Γ |-[de] A])
+  (fun Γ A t => [Γ |-[de] t : A])
+  (fun Γ A t => [Γ |-[de] t : A])
+  (fun Γ A t => [Γ |-[de] t : A]).
+Proof.
+  red.
+  prod_splitter.
+  all: intros * [].
+  all: match goal with H : context [al] |- _ => eapply typing_sound in H end.
+  all: prod_hyp_splitter.
+  all: now eassumption.
+Qed.
+
+Lemma bn_typing_sound Γ t A :
+  [Γ |-[bn] t : A] -> [Γ |-[de] t : A].
+Proof.
+  intros [???Hty?].
+  econstructor ; tea.
+  now eapply typing_sound in Hty.
+Qed.
 
 Corollary inf_conv_decl Γ t A A' :
 [Γ |-[al] t ▹ A] ->

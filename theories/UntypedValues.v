@@ -184,10 +184,10 @@ Qed.
 
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ] × whnf B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ] × whnf u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ] × isType B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ] × whnf u.
 
 End WeakValuesData.
 
@@ -215,7 +215,8 @@ Section Properties.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
-  + intros Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
+  + intros Γ A HA; exists A; split; [reflexivity|..].
+    now apply NormalForms.NeType.
   + intros; assumption.
   + intros; assumption.
   Qed.
@@ -226,7 +227,7 @@ Section Properties.
   + intros Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - now apply credalg_wk.
-    - now apply Weakening.whnf_ren.
+    - now apply Weakening.isType_ren.
   + intros Γ A B ? [C [? ?]].
     exists C; split.
     - transitivity B; [eapply redty_red| ]; eassumption.

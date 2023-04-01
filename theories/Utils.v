@@ -50,6 +50,9 @@ Arguments pair {_ _} _ _.
 Definition fst {A B} : prod A B -> A := fun '(pair a b) => a.
 Definition snd {A B} : prod A B -> B := fun '(pair a b) => b.
 
+
+Notation "( x , .. , y , z )" := (pair x .. (pair y z) ..) : core_scope.
+
 Notation "x × y" := (prod x y) (at level 80, right associativity).
 Reserved Notation "[ × P1 & P2 ]" (at level 0).
 Reserved Notation "[ × P1 , P2 & P3 ]" (at level 0, format
@@ -146,6 +149,7 @@ Ltac prod_splitter :=
 
 Ltac prod_hyp_splitter :=
   repeat match goal with
+    | H : ∑ _, _ |- _ => destruct H
     | H : [× _ & _] |- _ => destruct H 
     | H : [× _, _ & _] |- _ => destruct H 
     | H : [× _, _, _ & _] |- _ => destruct H

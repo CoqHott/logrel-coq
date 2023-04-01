@@ -1,10 +1,10 @@
 (** * LogRel.AlgorithmicTypingProperties: properties of algorithmic typing. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
-  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping LogRelConsequences BundledAlgorithmicTyping AlgorithmicConvProperties.
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj BundledAlgorithmicTyping AlgorithmicConvProperties.
 From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape.
-From LogRel.Substitution Require Import Properties.
+From LogRel.Substitution Require Import Properties Escape.
 
 Import DeclarativeTypingProperties AlgorithmicTypingData BundledTypingData BundledIntermediateData IntermediateTypingProperties.
 
@@ -16,15 +16,7 @@ Lemma algo_conv_complete Γ A B :
   [Γ |-[de] A ≅ B] ->
   [Γ |-[al] A ≅ B].
 Proof.
-  intros Hconv.
-  enough [Γ |-[bni] A ≅ B] as [] by easy.
-  eapply Fundamental in Hconv as [HΓ [HA HAext] _ [Hconv]].
-  cbn in *.
-  clear HAext.
-  pose proof (soundCtxId HΓ) as [? Hsubst].
-  specialize (Hconv _ _ _ Hsubst).
-  escape.
-  now repeat rewrite instId'_term in *.
+  now intros [HΓ ? _ []%escapeEq]%Fundamental.
 Qed.
 
 (** ** Instance *)
@@ -280,3 +272,12 @@ Module AlgorithmicTypingProperties.
   #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
+
+Import AlgorithmicTypingProperties.
+
+Corollary algo_typing_complete Γ A t :
+  [Γ |-[de] t : A] ->
+  [Γ |-[bn] t : A].
+Proof.
+  now intros [_ _ ?%escapeTm]%(Fundamental (ta := bn)).
+Qed.

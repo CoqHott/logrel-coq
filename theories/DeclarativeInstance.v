@@ -65,7 +65,6 @@ Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> 
 Proof. now asimpl. Qed.
 
 Section TypingWk.
-  Import DeclarativeTypingData.
   
   Let PCon (Γ : context) := True.
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
@@ -576,7 +575,7 @@ Qed.
 (** ** Bundling the properties together in an instance *)
 
 Module DeclarativeTypingProperties.
-  Export DeclarativeTypingData.
+  Export DeclarativeTypingData UntypedValues.WeakValuesProperties.
 
   #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
@@ -732,8 +731,6 @@ Module DeclarativeTypingProperties.
   - intros.
     now econstructor.
   Qed.
-
-  Export UntypedValues.WeakValuesProperties.
 
   #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
