@@ -663,3 +663,54 @@ Proof.
   eapply RedConvTyC, subject_reduction_type ; tea.
   boundary.
 Qed.
+
+Lemma Uterm_isType Γ A :
+  [Γ |-[de] A : U] ->
+  whnf A ->
+  isType A.
+Proof.
+  intros Hty Hwh.
+  destruct Hwh.
+  all: try solve [now econstructor].
+  all: exfalso.
+  all: eapply termGen' in Hty ; cbn in *.
+  all: prod_hyp_splitter ; try easy.
+  all: subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ U] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end.
+  all: try now econstructor.
+  all: try now cbn in Hconv.
+Qed.
+  
+Lemma type_isType Γ A :
+  [Γ |-[de] A] ->
+  whnf A ->
+  isType A.
+Proof.
+  intros [] ; refold.
+  1-4: econstructor.
+  intros.
+  now eapply Uterm_isType.
+Qed.
+
+Lemma fun_isFun Γ A B t:
+  [Γ |-[de] t : tProd A B] ->
+  whnf t ->
+  isFun t.
+Proof.
+  intros Hty Hwh.
+  destruct Hwh.
+  all: try now econstructor.
+  all: eapply termGen' in Hty ; cbn in *.
+  all: exfalso.
+  all: prod_hyp_splitter ; try easy.
+  all: subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ tProd _ _] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end.
+  all: try now econstructor.
+  all: now cbn in Hconv.
+Qed.

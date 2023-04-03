@@ -1,14 +1,15 @@
 (** * LogRel.Decidability.Soundness: the implementations imply the inductive predicates. *)
-From Coq Require Import Nat Lia.
+From Coq Require Import Nat Lia Arith.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
-From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj BundledAlgorithmicTyping Normalisation.
+From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation.
 From LogRel.Decidability Require Import Functions.
 From PartialFun Require Import Monad PartialFun.
 
-
 Import DeclarativeTypingProperties.
+
+Set Universe Polymorphism.
 
 Section RedImplemSound.
 
@@ -80,7 +81,7 @@ Proof.
   - now eapply whnf_tm_view1_nat.
 Qed.
 
-Corollary red_sound :
+Corollary _red_sound :
   funrect wh_red (fun _ => True) (fun t t' => [t ⇒* t'] × whnf t').
 Proof.
   intros ? _.
@@ -94,6 +95,16 @@ Proof.
   - eapply funrect_graph in H.
     2: exact red_stack_whnf.
     all: easy.
+Qed.
+
+#[universes(polymorphic)]Corollary red_sound t t' :
+  graph wh_red t t' ->
+  [t ⇒* t'] × whnf t'.
+Proof.
+  intros H.
+  eapply (funrect_graph wh_red _ _ _ _ _red_sound). (* weird universe inconsistency? *)
+  1: easy.
+  eassumption.
 Qed.
 
 End RedImplemSound.
@@ -302,16 +313,14 @@ Section RedImplemComplete.
     rewrite (wh_red_equation_1 t).
     cbn.
     split ; [|easy].
-    Fail eapply wh_red_stack_complete.
-    (* again, why the failure? *)
-    now eapply (wh_red_stack_complete Γ t nil).
+    now eapply wh_red_stack_complete.
   Qed.
   
 End RedImplemComplete.
 
 Section CtxAccessCorrect.
 
-  Lemma ctx_access_sound :
+  #[universes(polymorphic)]Lemma ctx_access_sound :
     funrect ctx_access (fun _ => True) (fun '(Γ,n) d => in_ctx Γ n d).
   Proof.
     intros ? _.
@@ -323,15 +332,97 @@ Section CtxAccessCorrect.
       now econstructor.
   Qed.
 
-  Lemma ctx_access_complete Γ n d :
+  #[universes(polymorphic)]Lemma ctx_access_complete Γ n d :
     in_ctx Γ n d ->
-    domain ctx_access (Γ,n).
+    graph ctx_access (Γ,n) d.
   Proof.
     induction 1.
-    all: apply compute_domain ; simp ctx_access ; cbn.
-    1: easy.
-    split ; tea.
-    easy.
+    all: unfold graph ; simp ctx_access ; econstructor ; cbn.
+    1: eassumption.
+    econstructor.
+  Qed.
+
+  Corollary ctx_access_correct Γ n d :
+    in_ctx Γ n d <~> graph ctx_access (Γ,n) d.
+  Proof.
+    split.
+    - eapply ctx_access_complete.
+    - intros.
+      eapply (funrect_graph ctx_access (fun _ => True) (fun '(Γ,n) d => _) (Γ,n) d).
+      1: eapply ctx_access_sound.
+      all: easy.
   Qed.
 
 End CtxAccessCorrect.
+
+Section ConversionCorrect.
+
+  Import AlgorithmicTypingData.
+
+  #[local]Existing Instance ty_errors.
+
+  #[universes(polymorphic)]Equations conv_correct_type (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term)
+    (r : result (cstate_output x.π1)) : Type :=
+  conv_correct_type _ (error _) := True ;
+  conv_correct_type (ty_state;Γ;_;T;V) (ok tt) :=  [Γ |-[al] T ≅ V] ;
+  conv_correct_type (ty_red_state;Γ;_;T;V) (ok tt) := [Γ |-[al] T ≅h V] ;
+  conv_correct_type (tm_state;Γ;A;t;u) (ok tt) := [Γ |-[al] t ≅ u : A] ;
+  conv_correct_type (tm_red_state;Γ;A;t;u) (ok tt) :=
+    ([× whnf A, whnf t & whnf u] -> [Γ |-[al] t ≅h u : A]) ;
+  conv_correct_type (ne_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~ n ▹ T] ;
+  conv_correct_type (ne_red_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~h n ▹ T].
+
+  Lemma conv_correct :
+    funrect conv (fun _ => True) conv_correct_type.
+  Proof.
+    intros x _.
+    funelim (conv _) ; cbn.
+    all: intros ; simp conv_correct_type ; try easy ; cbn.
+    all: repeat (
+      match goal with
+      | |- True * _ => split ; [easy|..]
+      | |- forall x : result unit, _ => intros [[]|] ; [..|easy] ; cbn
+      | |- forall x : result _, _ => intros [|] ; [..|easy] ; cbn
+      | |- _ -> _ => simp conv_correct_type ; intros ?
+      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
+      end).
+    - econstructor ; tea.
+      all: now eapply red_sound.
+    - econstructor.
+      4: eapply H2 ; split.
+      all: now eapply red_sound.
+    - now econstructor.
+    - now econstructor.
+    - now econstructor.
+    - econstructor ; tea.
+      all: now eapply red_sound.
+    - destruct s, s'.
+      now econstructor.
+    - now econstructor.
+    - now econstructor.
+    - now econstructor.
+    - now econstructor.
+    - destruct s.
+      now econstructor.
+    - destruct s.
+      now econstructor.
+    - destruct s.
+      now econstructor.
+    - econstructor ; tea.
+      now econstructor.
+    - econstructor ; tea.
+      all: now prod_hyp_splitter.
+    - now econstructor.
+    - now econstructor.
+    - econstructor ; tea.
+      prod_hyp_splitter.
+      destruct w ; simp build_nf_view3 in Heq ; try solve [inversion Heq].
+      all: now econstructor.
+    - eapply convne_meta_conv.
+      2: reflexivity.
+      + econstructor.
+        now eapply ctx_access_correct.
+      + f_equal.
+        symmetry.
+        now eapply Nat.eqb_eq.
+  Qed.

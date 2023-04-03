@@ -269,8 +269,11 @@ Equations conv :
     | ty_sorts s s' :=
         ret (eq_sort s s') ;
     | ty_prods A A' B B' :=
-      rec (ty_state;Γ;tt;A;A') ;;
-      id <*> rec (ty_state;(Γ,,A);tt;B;B') ;
+      r ← rec (ty_state;Γ;tt;A;A') ;;
+      match r with
+      | error e => raise e
+      | ok _ => id <*> rec (ty_state;(Γ,,A);tt;B;B')
+      end ;
     | ty_nats := success ;
     | ty_emptys := success ;
     | ty_neutrals _ _ :=
@@ -289,11 +292,13 @@ Equations conv :
     id <*> rec (tm_red_state;Γ;A';t';u') ;
   conv (tm_red_state;Γ;A;t;u) with (build_nf_view3 A t u) :=
   {
-    | types s (ty_sorts s1 s2) := 
-      ret (eq_sort s1 s2) ;
+    | types s (ty_sorts s1 s2) := undefined ;
     | types s (ty_prods A A' B B') :=
       r ← rec (tm_state;Γ;tSort s;A;A') ;;
-      id <*> rec (tm_state;Γ,,A;tSort s;B;B') ;
+      match r with
+      | error e => raise e
+      | ok _ => id <*> rec (tm_state;Γ,,A;tSort s;B;B') 
+      end ;
     | types _ ty_nats := success ;
     | types _ ty_emptys := success ;
     | types _ (ty_neutrals _ _) := 
@@ -335,28 +340,34 @@ Equations conv :
     | (ok _) => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
     end ;
   conv (ne_state;Γ;_;tNatElim P hz hs n;tNatElim P' hz' hs' n') :=
-    rP ← rec (ty_state;(Γ,,tNat);tt;P;P') ;;
-    match rP with
+    rn ← rec (ne_red_state;Γ;tt;n;n') ;;
+    match rn with
     | error e => raise e
-    | ok _ =>
-        rz ← rec (tm_state;Γ;P[tZero..];hz;hz') ;;
-        rs ← rec (tm_state;Γ;elimSuccHypTy P;hs;hs') ;;
-        rn ← rec (tm_state;Γ;tNat;n;n') ;;
-        match rz, rs, rn with
-        | ok _, ok _, ok _ => ret (ok P[n..])
-        | _, _, _ => raise conv_error
+    | ok tNat =>
+        rP ← rec (ty_state;(Γ,,tNat);tt;P;P') ;;
+        match rP with
+        | error e => raise e
+        | ok _ =>
+            rz ← rec (tm_state;Γ;P[tZero..];hz;hz') ;;
+            rs ← rec (tm_state;Γ;elimSuccHypTy P;hs;hs') ;;
+            match rz, rs with
+            | ok _, ok _ => ret (ok P[n..])
+            | _, _ => raise conv_error
+            end
         end
+    | ok _ => undefined
     end ;
   conv (ne_state;Γ;_;tEmptyElim P n;tEmptyElim P' n') :=
-    rP ← rec (ty_state;(Γ,,tEmpty);tt;P;P') ;;
-    match rP with
+    rn ← rec (ne_red_state;Γ;tt;n;n') ;;
+    match rn with
     | error e => raise e
-    | ok _ =>
-        rn ← rec (tm_state;Γ;tNat;n;n') ;;
-        match rn with
-        | ok _ => ret (ok P[n..])
+    | ok tEmpty =>
+        rP ← rec (ty_state;(Γ,,tEmpty);tt;P;P') ;;
+        match rP with
         | error e => raise e
+        | ok _ => ret (ok P[n..])
         end
+    | ok _ => undefined
     end ;
   conv (ne_state;Γ;_;n;n') := raise (destructor_mismatch n n') ;
   conv (ne_red_state;Γ;_;t;u) :=
