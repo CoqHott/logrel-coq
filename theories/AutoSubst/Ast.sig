@@ -1,10 +1,12 @@
 sort : Type
 term(tRel) : Type
 
+option : Functor 
+
 tSort : sort -> term
 
 tProd : term -> (bind term in term) -> term
-tLambda : term -> (bind term in term) -> term
+tLambda : "option" (term) -> (bind term in term) -> term
 tApp : term -> term -> term
 
 tNat : term

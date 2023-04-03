@@ -70,6 +70,40 @@ Proof.
   intros H0 H1. destruct p as [a b]. cbn. f_equal; [ apply H0 | apply H1 ].
 Defined.
 
+(** *** Option Instance *)
+
+Definition option_map {A B} (f : A -> B) (p : option A) :
+  option B :=
+match p with
+  | Some a => Some (f a)
+  | None => None
+end.
+
+Definition option_id {A} {f : A -> A} :
+  (forall x, f x = x) -> forall p, option_map f p = p.
+Proof.
+  intros H. destruct p ; cbn.
+  - f_equal. apply H.
+  - reflexivity.
+Defined.
+
+Definition option_ext {A B} {f f' : A -> B} :
+  (forall x, f x = f' x) -> forall p, option_map f p = option_map f' p.
+Proof.
+  intros H. destruct p as [a|] ; cbn.
+  - f_equal. apply H.
+  - reflexivity.
+Defined.
+
+Definition option_comp {A B C} {f : A -> B} {g : B -> C} {h : A -> C}:
+  (forall x, (funcomp  g f) x = h x) ->
+  forall p, option_map g (option_map f p) = option_map h p.
+Proof.
+  intros H. destruct p as [a|]; cbn.
+  - f_equal. apply H.
+  - reflexivity. 
+Defined.
+
 (* a.d. TODO hints outside of sections without explicit locality are deprecated. Is this even used in the first place?  *)
 (* but with 8.13.1 the attribute is forbidden. So what's the correct way to use this? *)
 (* #[ global ] *)
