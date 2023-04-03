@@ -62,19 +62,27 @@ Defined.
 (** Context: list of declarations *)
 (** Terms use de Bruijn indices to refer to context entries.*)
 
-Definition context := prod (list term) (wfLCon).
+Record rprod (A B : Type) := mkrprod {rfst : A ; rsnd : B}.
+Arguments rfst [_ _] _.
+Arguments rsnd [_ _] _.
+Arguments mkrprod [_ _] _.
+
+Definition context := rprod (list term) (wfLCon).
 
 Definition cons_con (Γ : context) (d : term) : context :=
-  ((@cons term d (fst Γ)) , snd Γ).
+  mkrprod (@cons term d (rfst Γ)) (rsnd Γ).
 
-Definition cons_lcon (Γ : context) {n : nat} (d : prod (not_in_LCon (pi1 (snd Γ)) n) bool) : context :=
-  (fst Γ , wfLCons (snd Γ) (fst d) (snd d)).
+Definition cons_lcon (Γ : context) {n : nat} (d : prod (not_in_LCon (pi1 (rsnd Γ)) n) bool) : context :=
+  mkrprod (rfst Γ) (wfLCons (rsnd Γ) (fst d) (snd d)).
 
 Definition app_con (Γ : context) (l : list term) : context :=
-  (@app term l (fst Γ) , snd Γ).
+  mkrprod (@app term l (rfst Γ)) (rsnd Γ).
+
+Definition change_LCon (Γ : context) (l : wfLCon) : context :=
+  mkrprod Γ.(rfst) l.
 
 
-Notation "'ε' l" := ((@nil term) , l) (at level 20).
+Notation "'ε' l" := (mkrprod (@nil term) l) (at level 20).
 Notation " Γ ,, d " := (@cons_con Γ d) (at level 20, d at next level).
 Notation " Γ ,,, Δ " := (app_con Γ (fst Δ)) (at level 25, Δ at next level, left associativity).
 Notation " Γ ',,l' d " := (cons_lcon Γ d) (at level 20, d at next level).

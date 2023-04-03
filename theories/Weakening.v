@@ -21,7 +21,7 @@ Fixpoint _wk_id_aux (Γ : list term) : weakening :=
   end.
 
 Definition _wk_id (Γ : context) : weakening :=
-  _wk_id_aux (fst Γ).
+  _wk_id_aux (rfst Γ).
   
 (** Transforms an (intentional) weakening into a renaming. *)
 Fixpoint wk_to_ren (ρ : weakening) : nat -> nat :=
@@ -83,16 +83,17 @@ Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_up {Γ Δ : context} (A : term) (ρ : weakening) :
     well_weakening ρ Γ Δ -> well_weakening (_wk_up ρ) (Γ,, ren_term ρ A) (Δ,, A).
 
+
 Lemma well_wk_id (Γ : context) : well_weakening (_wk_id Γ) Γ Γ.
 Proof.
   destruct Γ as [Γ l].
   induction Γ as [|d].
   1: econstructor.
   replace d with (d⟨wk_to_ren (_wk_id_aux Γ)⟩) at 2.
-  1:  exact (well_up (Γ := (Γ , l)) d (_wk_id_aux Γ) IHΓ).
+  1:  exact (well_up (Γ := mkrprod Γ l) d (_wk_id_aux Γ) IHΓ).
   cbn.
   f_equal.
-  rewrite (wk_to_ren_id (Γ , l)).
+  rewrite (wk_to_ren_id (mkrprod Γ l)).
   now asimpl.
 Qed.
 
@@ -103,7 +104,8 @@ Proof.
   intros H H'.
   induction H as [| | ? ? ? ν] in ρ', Δ'', H' |- *.
   all: cbn.
-  - eassumption.
+  - inversion H' ; subst.
+    econstructor.
   - econstructor. auto.
   - inversion H' as [| | ? ? A' ν']; subst ; clear H' ; destruct Γ0 ; destruct Δ0 ;
       cbn in * ; subst.
@@ -159,7 +161,7 @@ Smpl Add fold_wk_ren : refold.
 
 Definition wk1 {Γ} A : Γ,, A ≤ Γ := wk_step A (wk_id (Γ := Γ)).
 
-Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|(fst Δ)| <= #|(fst Γ)|.
+Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|(rfst Δ)| <= #|(rfst Γ)|.
 Proof.
   destruct ρ as [ρ wellρ].
   induction wellρ.
@@ -169,7 +171,7 @@ Qed.
 Lemma id_ren (Γ : context) (ρ : Γ ≤ Γ) : ρ.(wk) = (_wk_id Γ).
 Proof.
   destruct ρ as [ρ wellρ] ; cbn.
-  pose proof (@eq_refl _ #|fst Γ|) as eΓ.
+  pose proof (@eq_refl _ #|rfst Γ|) as eΓ.
   revert eΓ wellρ.
   generalize Γ at 2 4.
   intros Δ e wellρ.
@@ -204,7 +206,8 @@ Proof.
   intros Hdecl.
   destruct ρ as [ρ wfρ] ; cbn.
   induction wfρ in n, decl, Hdecl |- *.
-  - cbn; now asimpl.
+  - cbn.
+    now inversion Hdecl.
   - cbn.
     replace (ren_term (ρ >> S) decl) with (decl⟨ρ⟩⟨↑⟩) by now asimpl.
     now econstructor.
@@ -375,3 +378,26 @@ Proof. now bsimpl. Qed.
 
 Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
 Proof. now bsimpl. Qed.
+
+
+(*Weakening doesn't care about LContexts
+
+Lemma wk_irr_LCon' {Γ Δ} (ρ : weakening) (wellρ : well_weakening ρ Γ Δ) l  :
+  well_weakening ρ Γ (change_LCon Δ l). 
+Proof.
+  induction wellρ.
+  - unfold change_LCon.
+    econstructor. ; econstructor.
+  - now econstructor.
+  - replace (change_LCon (Δ,, A) l) with ((change_LCon Δ l),, A).
+    + now econstructor.
+    + unfold change_LCon ; reflexivity.
+Qed.
+
+Lemma wk_irr_LCon {Γ Δ} (ρ : Γ ≤ Δ) l : Γ ≤ (change_LCon Δ l).
+Proof.
+  exists ρ.
+  refine (wk_irr_LCon' ρ _ l).
+  now destruct ρ.
+Qed.
+*)

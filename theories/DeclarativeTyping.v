@@ -31,7 +31,7 @@ Section Definitions.
           [ |- Γ ] -> 
           [ Γ |- A ] -> 
           [ |- Γ ,, A ]
-  | ϝwfCon {Γ n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+  | ϝwfCon {Γ n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} : 
         [ |- Γ ,,l (ne, true) ] ->
         [ |- Γ ,,l (ne, false) ] ->
         [ |- Γ ]
@@ -53,7 +53,10 @@ Section Definitions.
       | wfTypeBool {Γ} : 
           [ |- Γ ] ->
           [ Γ |- tBool ]
-      | ϝwfType {Γ A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+      | wfTypeUniv {Γ} {A} :
+          [ Γ |- A : U ] ->
+          [ Γ |- A ]
+      | ϝwfType {Γ A n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} : 
         [ Γ ,,l (ne, true) |- A ] ->
         [ Γ ,,l (ne, false) |- A ] ->
         [ Γ |- A ]
@@ -120,7 +123,7 @@ Section Definitions.
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
           [ Γ |- t : B ]
-      | ϝwfTerm {Γ t A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+      | ϝwfTerm {Γ t A n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} : 
         [ Γ ,,l (ne, true) |- t : A ] ->
         [ Γ ,,l (ne, false) |- t : A ] ->
         [ Γ |- t : A ]
@@ -144,7 +147,7 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ |- B ≅ C] ->
           [ Γ |- A ≅ C]
-      | ϝTyConv {Γ A B n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+      | ϝTyConv {Γ A B n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} : 
         [ Γ ,,l (ne, true) |- A ≅ B ] ->
         [ Γ ,,l (ne, false) |- A ≅ B ] ->
         [ Γ |- A ≅ B ]
@@ -229,9 +232,9 @@ Section Definitions.
           [ Γ |- tAlpha n ≅ tAlpha n' : tBool]
       | TypeAlphaConv {Γ n b} :
         [ |- Γ ] ->
-        in_LCon (pi1 (snd Γ)) n b ->
+        in_LCon (pi1 (rsnd Γ)) n b ->
         [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]
-      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 (snd Γ)) n} : 
+      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} : 
         [ Γ ,,l (ne, true) |- t ≅ t' : A ] ->
         [ Γ ,,l (ne, false) |- t ≅ t' : A ] ->
         [ Γ |- t ≅ t' : A ]
@@ -287,7 +290,7 @@ Section Definitions.
       [ Γ |- A ⇒ B ]
   | alphaRed {n b} :
     [ |- Γ ] ->
-    in_LCon (pi1 (snd Γ)) n b ->
+    in_LCon (pi1 (rsnd Γ)) n b ->
     [ Γ |- tAlpha (nat_to_term n) ⇒ bool_to_term b : tBool ]
 
   where "[ Γ |- t ⇒ u : A ]" := (OneRedDecl Γ (isterm A) t u)
@@ -418,21 +421,21 @@ Section TypeErasure.
 
 Lemma oreddecl_ored Γ t u K :
   [ Γ |- t ⇒ u ∈ K] ->
-  [t ⇒ u]< (snd Γ) >.
+  [t ⇒ u]< (rsnd Γ) >.
 Proof.
   induction 1; tea; now econstructor.
 Qed.
 
 Lemma oredtmdecl_ored Γ t u A : 
   [ Γ |- t ⇒ u : A] ->
-  [t ⇒ u]< (snd Γ) >.
+  [t ⇒ u]< (rsnd Γ) >.
 Proof.
 apply oreddecl_ored.
 Qed.
 
 Lemma reddecl_red Γ t u A :
   [ Γ |- t ⇒* u ∈ A] ->
-  [t ⇒* u]< (snd Γ) >.
+  [t ⇒* u]< (rsnd Γ) >.
 Proof.
   induction 1.
   - now econstructor.
@@ -442,21 +445,21 @@ Qed.
 
 Lemma redtmdecl_red Γ t u A : 
   [ Γ |- t ⇒* u : A] ->
-  [t ⇒* u]< (snd Γ) >.
+  [t ⇒* u]< (rsnd Γ) >.
 Proof.
 apply reddecl_red.
 Qed.
 
 Lemma oredtydecl_ored Γ A B : 
   [ Γ |- A ⇒ B] ->
-  [A ⇒ B]< (snd Γ) >.
+  [A ⇒ B]< (rsnd Γ) >.
 Proof.
 apply oreddecl_ored.
 Qed.
 
 Lemma redtydecl_red Γ A B : 
   [ Γ |- A ⇒* B] ->
-  [A ⇒* B]< (snd Γ) >.
+  [A ⇒* B]< (rsnd Γ) >.
 Proof.
 apply reddecl_red.
 Qed.

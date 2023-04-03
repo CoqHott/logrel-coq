@@ -25,24 +25,61 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
     | tSort _ => False
     | tNat => T = U
+    | tBool => T = U
     | tZero => T = tNat
     | tSucc n => T = tNat × [Γ |- n : tNat]
-    |  tNatElim P hz hs n =>
+    | tNatElim P hz hs n =>
       [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
+    | tTrue => T = tBool
+    | tFalse => T = tBool
+    | tAlpha n => T = tBool × [Γ |- n : tNat]
+    | tBoolElim P ht hf b =>
+      [× T = P[b..], [Γ,, tBool |- P], [Γ |- ht : P[tTrue..]], [Γ |- hf : P[tFalse..]] & [Γ |- b : tBool]]
     | tEmpty => T = U
     | tEmptyElim P e =>
       [× T = P[e..], [Γ,, tEmpty |- P] & [Γ |- e : tEmpty]]
   end.
 
+                       
+Inductive tree Γ t : term -> Type :=
+| here : forall A, termGenData Γ t A -> tree Γ t A
+| conv : forall A A', termGenData Γ t A' -> [Γ |- A' ≅ A] -> tree Γ t A
+| split : forall {n} {ne : not_in_LCon (pi1 (rsnd Γ)) n} {A A' A''},
+    tree (Γ ,,l (ne, true)) t A' -> tree (Γ ,,l (ne, true)) t A'' ->
+    [Γ ,,l (ne, true) |- A' ≅ A] -> [Γ ,,l (ne, false) |- A'' ≅ A] ->
+    tree Γ t A.
+
+(*
+Lemma termGen Γ t A :
+  [Γ |- t : A] -> tree Γ t A.
+Proof.
+  induction 1.
+  - apply here ; exists decl ; split ; easy.
+  - inversion  IHTypingDecl1.
+    + inversion IHTypingDecl2.
+      * apply here.
+        split.
+        reflexivity.
+        eexists ; [ reflexivity | .. |  ].
+
+    
+  all: try (apply here ; eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
+
+  
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
-  ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
+  (∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A])).
 Proof.
   induction 1.
   all: try (eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
-  + destruct IHTypingDecl as [? [? [-> | ]]].
+  1:{ destruct IHTypingDecl as [? [? [-> | ]]].
     * prod_splitter; tea; now right.
-    * prod_splitter; tea; right; now eapply TypeTrans.
+    * prod_splitter; tea; right; now eapply TypeTrans. }
+  + eexists ; split ; [ ..| left ; reflexivity].
+    cbn ; prod_splitter ; auto.
+    destruct IHTypingDecl1 as [? [? [-> | ]]].
+    simpl.
+    prod_splitter.
 Qed.
 
 Lemma prod_ty_inv Γ A B :
@@ -52,9 +89,18 @@ Proof.
   intros Hty.
   inversion Hty ; subst ; clear Hty.
   1: easy.
+  prod_splitter.
+  - apply (ϝwfType (ne := ne)).
+    + inversion H.
+      pose (t:= WfDeclInduction).
+      apply WfDeclInduction in H.
+      induction H. ; try easy.
+      subst.
+    easy.
+    easy.
   eapply termGen in H as (?&[-> ]&_).
   split ; now econstructor.
-Qed.
+Qed.*)
 
 (** ** Stability by weakening *)
 
@@ -84,6 +130,7 @@ Section TypingWk.
     - trivial.
     - intros ? ? IH.
       now econstructor.
+    - admit.
     - intros Γ A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
@@ -91,28 +138,25 @@ Section TypingWk.
       now constructor.
     - intros; now constructor.
     - intros; now constructor.
-    - intros * _ IHA ? * ?.
+    - intros * _  ? * IHA.
       econstructor.
       now eapply IHA.
+    - admit.
+    -admit.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
       1: eapply in_ctx_wk ; tea.
       reflexivity.
+    - admit.
     - intros * _ IHA _ IHB ? ρ ?.
       cbn.
       econstructor.
       1: now eapply IHA.
       eapply IHB with (ρ := wk_up _ ρ).
       econstructor ; tea.
-      econstructor.
       now eapply IHA.
-    - intros * _ IHA _ IHt ? ρ ?.
-      econstructor.
-      1: now eapply IHA.
-      eapply IHt with (ρ := wk_up _ ρ).
-      econstructor ; tea.
-      now eapply IHA.
+
     - intros * _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -125,6 +169,7 @@ Section TypingWk.
     - intros; now constructor.
     - intros; now constructor.
     - intros; cbn; econstructor; eauto.
+    - admit.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
       erewrite subst_ren_wk_up; eapply wfTermNatElim.
       * eapply ihP; econstructor; tea; now econstructor.
@@ -136,6 +181,10 @@ Section TypingWk.
         unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
       * now eapply ihn.
     - intros; now constructor.
+    - intros ; now constructor.
+    - intros ; now constructor.
+    - admit.
+    - intros ; now constructor.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up; eapply wfTermEmptyElim.
       * eapply ihP; econstructor; tea; now econstructor.
@@ -145,6 +194,7 @@ Section TypingWk.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
+    - admit.
     - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
@@ -165,6 +215,7 @@ Section TypingWk.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
+    - admit.
     - intros Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
@@ -183,7 +234,7 @@ Section TypingWk.
       + now eapply IHAA'.
       + eapply IHBB' with (ρ := wk_up _ ρ).
         pose (IHA _ ρ H).
-        econstructor; tea; now econstructor.
+        econstructor; tea. now econstructor.
     - intros Γ u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -241,6 +292,9 @@ Section TypingWk.
         1: now eapply ihhs.
         unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
       * now eapply ihn.
+    - admit.
+    - admit.
+    - admit.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up.
       eapply TermEmptyElimCong.
@@ -254,6 +308,16 @@ Section TypingWk.
       now econstructor.
     - intros * _ IHt _ IHt' ? ρ ?.
       now econstructor.
+    - intros ; now econstructor.
+    - admit.
+    - intros * Ht Ht' Hf Hf' * H.
+      eapply ϝTermConv.
+      + destruct Δ as [Δ lΔ] ; destruct Γ as [Γ lΓ].
+        cbn in *.
+        pose (q:= fun rho =>  Ht' (Δ , lΔ) rho H).
+        apply q.
+      assumption.
+      econstructor.
   Qed.
 
 End TypingWk.

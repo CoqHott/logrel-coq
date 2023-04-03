@@ -189,10 +189,10 @@ Qed.
 *)
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne (snd Γ) A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ]< (snd Γ) > × whnf (snd Γ) B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne (snd Γ) t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ]< (snd Γ) > × whnf (snd Γ) u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne (rsnd Γ) A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ]< (rsnd Γ) > × whnf (rsnd Γ) B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne (rsnd Γ) t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ]< (rsnd Γ) > × whnf (rsnd Γ) u.
 
 End WeakValuesData.
 
@@ -213,10 +213,6 @@ Section Properties.
   + intros.
     apply Weakening.whne_ren.
     induction H2 ; try now econstructor.
-    destruct ρ.
-    clear H1.
-    induction well_wk ;  try now econstructor.
-    all: now destruct Γ.
   + intros Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
   + intros; assumption.
   + intros; assumption.
