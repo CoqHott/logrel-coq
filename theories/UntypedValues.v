@@ -209,7 +209,7 @@ Section Properties.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
+    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
 
   #[export] Instance TypeWhneProperties : TypeNeProperties.
   Proof.
@@ -284,7 +284,7 @@ Section Properties.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
+    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
 
   #[export] Instance TypeSneProperties : TypeNeProperties.
   Proof.

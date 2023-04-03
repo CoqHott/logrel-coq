@@ -668,18 +668,15 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   Qed.
 
-  #[export, refine] Instance OneStepRedTermDeclProperties : OneStepRedTermProperties (ta := de) := {}.
-  Proof.
-    all: intros; now econstructor.
-  Qed.
-
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
   Proof.
   - intros.
     now eapply redtmdecl_wk.
   - easy. 
   - intros. now eapply boundary_red_tm_l.
-  - intros. now constructor.
+  - intros; econstructor; now constructor.
+  - intros; econstructor; now constructor.
+  - intros; econstructor; now constructor.
   - intros.
     now eapply redtmdecl_app.
   - intros Γ P hz hs n n' HP Hhz Hhs Hn Hr Hcong.
@@ -732,6 +729,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

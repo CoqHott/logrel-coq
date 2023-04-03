@@ -121,16 +121,6 @@ Proof.
   intros ? []; now eapply redSubstTerm.
 Qed.
 
-Lemma redSubstTermOneStep {Γ t u A l} (RA : [Γ ||-<l> A]) :
-  [Γ |- t ⇒ u : A ] ->
-  [Γ ||-<l> u : A | RA] ->
-  [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
-Proof.
-  intros; escape.
-  eapply redSubstTerm; tea.
-  now eapply redtm_one_step. 
-Qed.
-
 
 Lemma redFwd {Γ l A B} : [Γ ||-<l> A] -> [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B].
 Proof.
