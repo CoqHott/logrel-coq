@@ -171,3 +171,29 @@ Lemma credalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   induction 1 ; econstructor ; eauto using oredalg_wk.
 Qed.
+
+(** Derived rules *)
+
+Lemma redalg_app {t t' u} : [t ⇒* t'] -> [tApp t u ⇒* tApp t' u].
+Proof.
+induction 1.
++ reflexivity.
++ econstructor; [|eassumption].
+  now econstructor.
+Qed.
+
+Lemma redalg_natElim {P hs hz t t'} : [t ⇒* t'] -> [tNatElim P hs hz t ⇒* tNatElim P hs hz t'].
+Proof.
+induction 1.
++ reflexivity.
++ econstructor; [|eassumption].
+  now econstructor.
+Qed.
+
+Lemma redalg_natEmpty {P t t'} : [t ⇒* t'] -> [tEmptyElim P t ⇒* tEmptyElim P t'].
+Proof.
+induction 1.
++ reflexivity.
++ econstructor; [|eassumption].
+  now econstructor.
+Qed.
