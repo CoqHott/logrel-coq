@@ -333,7 +333,7 @@ Section GenericTyping.
   {
     redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩] ;
-    redty_sound {Γ A B} : [Γ |- A ⇒* B] -> [Γ |-[de] A ⇒* B] ;
+    redty_sound {Γ A B} : [Γ |- A ⇒* B] -> [A ⇒* B] ;
     redty_ty_src {Γ A B} : [Γ |- A ⇒* B] -> [Γ |- A] ;
     redty_term {Γ A B} :
       [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ] ;
@@ -348,7 +348,7 @@ Section GenericTyping.
   {
     redtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩] ;
-    redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |-[de] t ⇒* u : A] ;
+    redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [t ⇒* u] ;
     redtm_ty_src {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |- t : A] ;
     redtm_beta {Γ A B t u} :
       [ Γ |- A ] ->
@@ -671,7 +671,7 @@ Section GenericConsequences.
       [Γ |- A ⇒* B] -> [ A ⇒* B ].
   Proof.
     intros ?%redty_sound. 
-    now eapply redtydecl_red. 
+    assumption.
   Qed.
 
   Lemma redtm_red {Γ t u A} : 
@@ -679,7 +679,7 @@ Section GenericConsequences.
       [t ⇒* u].
   Proof.
     intros ?%redtm_sound.
-    now eapply redtmdecl_red.
+    assumption.
   Qed.
 
   #[local] Hint Resolve redty_red  redtm_red | 2 : gen_typing.
@@ -688,11 +688,6 @@ Section GenericConsequences.
       [|- Δ ] -> [Γ |- A :⇒*: B] -> [Δ |- A⟨ρ⟩ :⇒*: B⟨ρ⟩].
   Proof.
     intros ? []; constructor; gen_typing.
-  Qed.
-
-  Lemma redtywf_sound {Γ A B} : [Γ |- A :⇒*: B] -> TypeRedClosure Γ A B.
-  Proof.
-    intros []; now eapply redty_sound.
   Qed.
 
   Lemma redtywf_red {Γ A B} : [Γ |- A :⇒*: B] -> [A ⇒* B].
@@ -715,21 +710,6 @@ Section GenericConsequences.
     intros ??? [] []; unshelve econstructor; try etransitivity; tea.
   Qed.
 
-  (** All properties of type reduction also hold for 
-    well-typed type reduction 
-    (but we probably don't want to export the instance or the notations will get very puzzling). *)
-  Definition redtywf_props : 
-    @RedTypeProperties _ _ _ TypeRedWf TermRedWf.
-  Proof.
-    constructor.
-    - intros; now eapply redtywf_wk.
-    - intros; now eapply redtywf_sound.
-    - intros ??? []; now eapply redty_ty_src.
-    - intros; now eapply redtywf_term.
-    - intros; now apply redtywf_refl.
-    - intros; apply redtywf_trans.
-  Qed.
-
   (** Almost all of the RedTermProperties can be derived 
     for the well-formed reduction [Γ |- t :⇒*: u : A]
     but for application (which requires stability of typing under substitution). *)
@@ -737,10 +717,6 @@ Section GenericConsequences.
   Definition redtmwf_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t :⇒*: u : A] -> [Δ |- t⟨ρ⟩ :⇒*: u⟨ρ⟩ : A⟨ρ⟩].
   Proof.  intros ? []; constructor; gen_typing. Qed.
-
-  Definition redtmwf_sound {Γ t u A} :
-    [Γ |- t :⇒*: u : A] ->  TermRedClosure Γ A t u.
-  Proof. intros []; now eapply redtm_sound. Qed.
 
   Definition redtmwf_red {Γ t u A} :
     [Γ |- t :⇒*: u : A] -> [t ⇒* u].
@@ -1009,8 +985,8 @@ Section GenericConsequences.
   Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.
   Proof.
     intros.
-    apply red_whnf.
-    all: gen_typing.
+    apply red_whnf; [|assumption].
+    now eapply redtm_sound.
   Qed.
 
   Lemma redtmwf_whnf {Γ t u A} : [Γ |- t :⇒*: u : A] -> whnf t -> t = u.
@@ -1026,8 +1002,8 @@ Section GenericConsequences.
   Lemma redty_whnf {Γ A B} : [Γ |- A ⇒* B] -> whnf A -> A = B.
   Proof.
     intros.
-    apply red_whnf.
-    all: gen_typing.
+    apply red_whnf; [|eassumption].
+    now eapply redty_sound.
   Qed.
 
   Lemma redtywf_whnf {Γ A B} : [Γ |- A :⇒*: B] -> whnf A -> A = B.
@@ -1046,8 +1022,8 @@ Section GenericConsequences.
     u = u'.
   Proof.
     intros ?? [] [].
-    eapply whred_det.
-    all: gen_typing.
+    eapply whred_det; tea.
+    all: now eapply redtm_sound.
   Qed.
 
   Lemma redtywf_det Γ A B B' :
@@ -1056,8 +1032,8 @@ Section GenericConsequences.
     B = B'.
   Proof.
     intros ?? [] [].
-    eapply whred_det.
-    all: gen_typing.
+    eapply whred_det; tea.
+    all: now eapply redty_sound.
   Qed.
 
   Lemma whredtm_det Γ t u u' A A' :
@@ -1065,8 +1041,8 @@ Section GenericConsequences.
     u = u'.
   Proof.
     intros [] [].
-    eapply whred_det.
-    all: gen_typing.
+    eapply whred_det; tea.
+    all: now eapply redtm_sound.
   Qed.
 
   Lemma whredty_det Γ A B B' :
@@ -1074,8 +1050,8 @@ Section GenericConsequences.
     B = B'.
   Proof.
     intros [] [].
-    eapply whred_det.
-    all: gen_typing.
+    eapply whred_det; tea.
+    all: now eapply redty_sound.
   Qed.
 
 End GenericConsequences.

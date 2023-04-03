@@ -139,9 +139,7 @@ Module AlgorithmicTypingProperties.
       econstructor ; tea.
       1: now eapply algo_typing_wk.
       now eapply typing_wk.
-    - intros * [? []].
-      eapply subject_reduction ; tea.
-      now eapply inf_conv_decl.
+    - intros * [? []]; assumption.
     - now intros * [].
     - intros_bn. 2: econstructor; [|reflexivity].
       all: econstructor ; tea.
@@ -247,9 +245,7 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       1: now apply algo_typing_wk.
       now apply credalg_wk.
-    - intros * [].
-      eapply subject_reduction_type ; tea.
-      now eapply typing_sound.
+    - intros * []; assumption.
     - now intros_bn.
     - intros_bn.
       do 2 econstructor ; tea.
