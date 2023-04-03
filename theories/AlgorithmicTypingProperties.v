@@ -131,39 +131,6 @@ Module AlgorithmicTypingProperties.
       now eapply conv_sound in bun_conv_ty.
   Qed.
 
-  #[export, refine] Instance OneStepRedTermAlgProperties :
-    OneStepRedTermProperties (ta := bn) := {}.
-  Proof.
-    intros_bn.
-    2: econstructor.
-    econstructor ; tea.
-    - econstructor.
-      1: now do 2 econstructor.
-      econstructor ; tea.
-      now eapply algo_conv_complete.
-    - eapply typing_subst1 ; tea.
-      econstructor.
-      now eapply inf_conv_decl.
-    - intros * HP Hz Hs.
-      assert [|-[de] Γ] by (destruct Hz ; boundary).
-      split ; tea.
-      + eapply ty_natElim ; tea.
-        econstructor ; tea.
-        1: econstructor.
-        now do 2 econstructor.
-      + now constructor.
-    - intros * HP Hz Hs [].
-      assert [|-[de] Γ] by (destruct Hz ; boundary).
-      split ; tea.
-      + eapply ty_natElim ; tea.
-        econstructor.
-        * eassumption.
-        * do 2 econstructor ; tea.
-          now eapply (redty_red (ta := de)), red_ty_compl_nat_r.
-        * now do 2 econstructor.
-      + constructor.
-  Qed.
-
   #[export, refine] Instance RedTermAlgProperties :
     RedTermProperties (ta := bn) := {}.
   Proof.
@@ -176,7 +143,33 @@ Module AlgorithmicTypingProperties.
       eapply subject_reduction ; tea.
       now eapply inf_conv_decl.
     - now intros * [].
-    - intros * [] ; constructor; tea; now econstructor.
+    - intros_bn. 2: econstructor; [|reflexivity].
+      all: econstructor ; tea.
+      + econstructor.
+        1: now do 2 econstructor.
+        econstructor ; tea.
+        now eapply algo_conv_complete.
+      + eapply typing_subst1 ; tea.
+        econstructor.
+        now eapply inf_conv_decl.
+    - intros * HP Hz Hs.
+      assert [|-[de] Γ] by (destruct Hz ; boundary).
+      split ; tea.
+      + eapply ty_natElim ; tea.
+        econstructor ; tea.
+        1: econstructor.
+        now do 2 econstructor.
+      + econstructor; [|reflexivity]; now constructor.
+    - intros * HP Hz Hs [].
+      assert [|-[de] Γ] by (destruct Hz ; boundary).
+      split ; tea.
+      + eapply ty_natElim ; tea.
+        econstructor.
+        * eassumption.
+        * do 2 econstructor ; tea.
+          now eapply (redty_red (ta := de)), red_ty_compl_nat_r.
+        * now do 2 econstructor.
+      + econstructor; [|reflexivity]; now constructor.
     - intros_bn.
       + eapply red_ty_compl_prod_r in bun_inf_conv_conv0 as (?&?&[]).
         econstructor ; tea.
@@ -269,7 +262,7 @@ Module AlgorithmicTypingProperties.
 
   Export UntypedValues.WeakValuesProperties.
 
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
 

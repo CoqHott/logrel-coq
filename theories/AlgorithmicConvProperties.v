@@ -1122,32 +1122,6 @@ Module IntermediateTypingProperties.
     - gen_typing.
   Qed.
 
-  #[export, refine] Instance OneStepRedTermIntProperties :
-    OneStepRedTermProperties (ta := bni) := {}.
-  Proof.
-    intros; split.
-    - boundary.
-    - econstructor ; tea.
-      now econstructor.
-    - do 2 econstructor.
-    - unfold_bni.
-      intros * ???.
-      split.
-      + boundary.
-      + econstructor ; tea.
-        econstructor.
-        now boundary.
-      + now econstructor.
-    - unfold_bni.
-      intros * ???.
-      split.
-      + boundary.
-      + econstructor ; tea.
-        econstructor.
-        now boundary.
-      + now econstructor.
-  Qed.
-
   #[export, refine] Instance RedTermIntProperties :
     RedTermProperties (ta := bni) := {}.
   Proof.
@@ -1159,7 +1133,23 @@ Module IntermediateTypingProperties.
     - intros * [].
       now eapply subject_reduction.
     - now intros * []. 
-    - intros * []; constructor; tea; now econstructor.
+    - intros; constructor.
+      + boundary.
+      + econstructor ; tea.
+        now econstructor.
+      + do 2 econstructor.
+    - constructor; unfold_bni.
+      + boundary.
+      + econstructor ; tea.
+        econstructor.
+        now boundary.
+      + econstructor ; [| reflexivity]; econstructor.
+    - constructor; unfold_bni.
+      + boundary.
+      + econstructor ; tea.
+        econstructor.
+        now boundary.
+      + econstructor ; [| reflexivity]; econstructor.
     - intros * [] ?.
       split.
       + boundary.
@@ -1224,6 +1214,6 @@ Module IntermediateTypingProperties.
 
   Export UntypedValues.WeakValuesProperties.
 
-  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.

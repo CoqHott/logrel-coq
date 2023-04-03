@@ -340,6 +340,7 @@ Proof. now bsimpl. Qed.
 
 Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
 Proof. now bsimpl. Qed.
+
 Lemma wk_arr {A B Γ Δ} (ρ : Δ ≤ Γ) : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
 Proof. now bsimpl. Qed.
 

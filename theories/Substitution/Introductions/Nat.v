@@ -242,13 +242,13 @@ Section NatElimRed.
       + eapply red_natElimSubst; tea.
         intros; eapply escapeEq; now eapply RPext.
     - intros. 
-      eapply redSubstTermOneStep.
-      1: eapply osredtm_natElimZero; tea.
+      eapply redSubstTerm.
+      2: eapply redtm_natElimZero; tea.
       irrelevance.
     - intros n Rn ih RSucc; change [Γ ||-<l> n : tNat | RN] in Rn.
-      eapply redSubstTermOneStep.
-      1: eapply osredtm_natElimSucc; tea.
-      1: now escape.
+      eapply redSubstTerm.
+      2: eapply redtm_natElimSucc; tea.
+      2: now escape.
       eapply simple_appTerm.
       2: eapply ih.
       irrelevance0.
