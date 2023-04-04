@@ -1,7 +1,7 @@
 (** * LogRel.DeclarativeInstance: proof that declarative typing is an instance of generic typing. *)
 From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction UntypedValues Weakening GenericTyping DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms UntypedReduction UntypedValues Weakening GenericTyping DeclarativeTyping.
 
 Import DeclarativeTypingData.
 
@@ -17,44 +17,51 @@ one, and we get the slightly clumsy disjunction of either an equality or a
 conversion proof. We get a better version of generation later on, once we have
 this implication. *)
 
-Definition termGenData (Γ : context) (t T : term) : Type :=
+Definition termGenData l (Γ : context) (t T : term) : Type :=
   match t with
-    | tRel n => ∑ decl, [× T = decl, [|- Γ]& in_ctx Γ n decl]
-    | tProd A B =>  [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
-    | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A] & [Γ,, A |- t : B]]
-    | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
+    | tRel n => ∑ decl, [× T = decl, [|- Γ]< l > & in_ctx Γ n decl]
+    | tProd A B =>  [× T = U, [Γ |- A : U]< l > & [Γ,, A |- B : U]< l >]
+    | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A]< l > & [Γ,, A |- t : B]< l >]
+    | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B]< l > & [Γ |- a : A]< l >]
     | tSort _ => False
     | tNat => T = U
     | tZero => T = tNat
-    | tSucc n => T = tNat × [Γ |- n : tNat]
-    |  tNatElim P hz hs n =>
-      [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
+    | tSucc n => T = tNat × [Γ |- n : tNat]< l >
+    | tNatElim P hz hs n =>
+      [× T = P[n..], [Γ,, tNat |- P]< l >, [Γ |- hz : P[tZero..]]< l >, [Γ |- hs : elimSuccHypTy P]< l > & [Γ |- n : tNat]< l >]
+    | tBool => T = U
+    | tTrue => T = tBool
+    | tFalse => T = tBool
+    | tAlpha n => T = tBool × [Γ |- n : tNat]< l >
+    | tBoolElim P ht hf b =>
+      [× T = P[b..], [Γ,, tBool |- P]< l >, [Γ |- ht : P[tTrue..]]< l >, [Γ |- hf : P[tFalse..]]< l > & [Γ |- b : tBool]< l >]
     | tEmpty => T = U
     | tEmptyElim P e =>
-      [× T = P[e..], [Γ,, tEmpty |- P] & [Γ |- e : tEmpty]]
+      [× T = P[e..], [Γ,, tEmpty |- P]< l > & [Γ |- e : tEmpty]< l >]
   end.
-
-Lemma termGen Γ t A :
-  [Γ |- t : A] ->
-  ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
+(*
+Lemma termGen l Γ t A :
+  [Γ |- t : A]< l > ->
+  ∑ A', (termGenData l Γ t A') × ((A' = A) + [Γ |- A' ≅ A]< l >).
 Proof.
   induction 1.
   all: try (eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
   + destruct IHTypingDecl as [? [? [-> | ]]].
     * prod_splitter; tea; now right.
     * prod_splitter; tea; right; now eapply TypeTrans.
+  + 
 Qed.
 
-Lemma prod_ty_inv Γ A B :
-  [Γ |- tProd A B] ->
-  [Γ |- A] × [Γ,, A |- B].
+Lemma prod_ty_inv l Γ A B :
+  [Γ |- tProd A B]< l > ->
+  [Γ |- A]< l > × [Γ,, A |- B]< l >.
 Proof.
   intros Hty.
   inversion Hty ; subst ; clear Hty.
   1: easy.
   eapply termGen in H as (?&[-> ]&_).
   split ; now econstructor.
-Qed.
+Qed.*)
 
 (** ** Stability by weakening *)
 
@@ -66,35 +73,42 @@ Proof. now asimpl. Qed.
 
 Section TypingWk.
   
-  Let PCon (Γ : context) := True.
-  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
-  Let PTm (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
-    [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
-  Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
-    [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
-  Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
-    [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
+  Let PCon (l : wfLCon) (Γ : context) := True.
+  Let PTy l (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ]< l > -> [Δ |- A⟨ρ⟩]< l >.
+  Let PTm l (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ]< l > ->
+    [Δ |- t⟨ρ⟩ : A⟨ρ⟩]< l >.
+  Let PTyEq l (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ]< l > ->
+    [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩]< l >.
+  Let PTmEq l (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ]< l > ->
+    [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩]< l >.
 
 
 
-  Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
+  Theorem typing_wk l : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq l.
   Proof.
     subst PCon PTy PTm PTyEq PTmEq.
-    apply WfDeclInduction.
+    apply WfDeclInduction ; clear l.
     - trivial.
     - trivial.
     - intros ? ? IH.
       now econstructor.
-    - intros Γ A B HA IHA HB IHB Δ ρ HΔ.
+    - intros ? ? IH.
+      now econstructor.
+    - intros ? Γ A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply IHB with (ρ := wk_up _ ρ).
       now constructor.
     - intros; now constructor.
     - intros; now constructor.
-    - intros * _ IHA ? * ?.
+    - intros l' * ? ? ? ? IHA *.
       econstructor.
       now eapply IHA.
+    - intros. now econstructor.
+    - intros l Γ A n ne HAt IHAt HAf IHAf Δ ρ HΔ.
+      eapply ϝwfType.
+      + eapply IHAt.
+        
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
@@ -126,8 +140,9 @@ Section TypingWk.
     - intros; now constructor.
     - intros; now constructor.
     - intros; cbn; econstructor; eauto.
+    - intros; cbn; econstructor; eauto.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
-      erewrite subst_ren_wk_up; eapply wfTermNatElim.
+      erewrite subst_ren_wk_up; eapply (wfTermNatElim l).
       * eapply ihP; econstructor; tea; now econstructor.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
@@ -136,15 +151,20 @@ Section TypingWk.
         now eapply ihhs.
       * now eapply ihn.
     - intros; now constructor.
+    - intros; now constructor.
+    - intros; now constructor.
+    - admit.
+    - intros; now constructor.
     - intros * ? ihP ? ihe **; cbn.
-      erewrite subst_ren_wk_up; eapply wfTermEmptyElim.
+      erewrite subst_ren_wk_up; eapply (wfTermEmptyElim l).
       * eapply ihP; econstructor; tea; now econstructor.
       * now eapply ihe.
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
-    - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
+    - admit.
+    - intros l Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
@@ -164,7 +184,8 @@ Section TypingWk.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - intros Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
+    - admit.
+    - intros l Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
       1: econstructor.
@@ -175,7 +196,7 @@ Section TypingWk.
       + now eapply IHu.
       + now asimpl.
       + now asimpl. 
-    - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
+    - intros l Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
       + now eapply IHA.
@@ -183,7 +204,7 @@ Section TypingWk.
       + eapply IHBB' with (ρ := wk_up _ ρ).
         pose (IHA _ ρ H).
         econstructor; tea; now econstructor.
-    - intros Γ u u' f f' A B _ IHf _ IHu ? ρ ?.
+    - intros l Γ u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
       cbn in IHf.
@@ -193,7 +214,7 @@ Section TypingWk.
       + now eapply IHu.
       + now asimpl.
       + now asimpl.
-    - intros Γ f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
+    - intros l Γ f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
       cbn.
       econstructor.
       1-3: easy.
@@ -209,7 +230,7 @@ Section TypingWk.
     - intros * ? ih **; cbn; constructor; now apply ih.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
       erewrite subst_ren_wk_up.
-      eapply TermNatElimCong.
+      eapply (TermNatElimCong l).
       * eapply ihP; constructor; tea; now constructor.
       * eapply convtm_meta_conv.
         1: now eapply ihhz.
@@ -220,7 +241,7 @@ Section TypingWk.
       * now eapply ihn.
     - intros * ? ihP ? ihhz ? ihhs **.
       erewrite subst_ren_wk_up.
-      eapply TermNatElimZero; fold ren_term.
+      eapply (TermNatElimZero l); fold ren_term.
       * eapply ihP; constructor; tea; now constructor.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
@@ -229,7 +250,7 @@ Section TypingWk.
         now eapply ihhs.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **.
       erewrite subst_ren_wk_up.
-      eapply TermNatElimSucc; fold ren_term.
+      eapply (TermNatElimSucc l); fold ren_term.
       * eapply ihP; constructor; tea; now constructor.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
@@ -237,9 +258,12 @@ Section TypingWk.
       * rewrite wk_elimSuccHypTy.
         now eapply ihhs.
       * now eapply ihn.
+    - admit.
+    - admit.
+    - admit.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up.
-      eapply TermEmptyElimCong.
+      eapply (TermEmptyElimCong l).
       * eapply ihP; constructor; tea; now constructor.
       * now eapply ihe.
     - intros * _ IHt ? ρ ?.
@@ -250,6 +274,9 @@ Section TypingWk.
       now econstructor.
     - intros * _ IHt _ IHt' ? ρ ?.
       now econstructor.
+    - admit.
+    - admit.
+    - admit.
   Qed.
 
 End TypingWk.

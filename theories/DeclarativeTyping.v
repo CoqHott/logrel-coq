@@ -50,6 +50,9 @@ Section Definitions.
       | wfTypeBool {Γ} : 
           [ |- Γ ]< l > ->
           [ Γ |- tBool ]< l >
+      | wfTypeUniv {Γ} {A} :
+          [ Γ |- A : U ]< l > ->
+          [ Γ |- A ]< l >
       | ϝwfType {Γ A n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- A ]< l ,,l (ne, true) > ->
         [ Γ |- A ]< l ,,l (ne, false) > ->
@@ -342,7 +345,6 @@ Definition WfDeclInductionConcl :=
     let t := eval cbv delta [WfDeclInductionType] beta in WfDeclInductionType in
     let t' := remove_steps t in
     exact t').
-
 End InductionPrinciples.
 
 Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
