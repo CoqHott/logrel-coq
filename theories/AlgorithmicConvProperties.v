@@ -164,10 +164,15 @@ Section AlgoConvConv.
         eapply conv_red_l ; tea.
         now symmetry.
       }
-      pose proof HconvA' as [? []]%red_ty_complete ; tea.
+      pose proof HconvA' as [? []]%red_ty_complete.
+      2:{
+        eapply type_isType ; tea.
+        now boundary.
+      }
       eexists ; split.
       + econstructor.
-        all: eauto using redty_red.
+        1-2: eauto using redty_red.
+        gen_typing.
       + symmetry ; etransitivity ; tea.
         now eapply RedConvTyC.
       + eassumption.
@@ -478,10 +483,13 @@ Section Symmetry.
         2: now symmetry.
         boundary.
       }
-      pose proof Hconv' as [? []]%red_ty_complete; tea.
+      pose proof Hconv' as [? []]%red_ty_complete.
+      2: now eapply type_isType ; boundary.
       eexists ; split.
-      + econstructor ; tea.
-        now eapply redty_red.
+      + econstructor.
+        * eassumption.
+        * now eapply redty_red.
+        * gen_typing.
       + etransitivity ; tea.
         now eapply RedConvTyC.
     - intros.
@@ -657,10 +665,17 @@ Section Transitivity.
       1: symmetry.
       1,3: eapply RedConvTyC, subject_reduction_type ; tea ; boundary.
       eassumption.
-    - intros * ? [IHA HpostA] ? IHB ? ? ? * HΓ ? Hconv.
+    - intros * ? [IHA HpostA] ? IHB ? ? ? ? A'' ? HΓ Hconvty Hconv.
+      replace A'' with U in *.
+      2:{
+        eapply algo_conv_wh in Hconv as [].
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply red_ty_compl_univ_r, redty_red in Hconvty.
+      }
       inversion Hconv ; subst ; clear Hconv ; refold.
-      2: now inversion H5 ; inversion H8.
-      2: now inversion H5.
+      2: inversion H4.
       econstructor.
       1: now eapply IHA.
       eapply IHB.
@@ -670,25 +685,53 @@ Section Transitivity.
         * now symmetry in HΓ ; boundary.
         * econstructor.
           boundary.
-    - intros * ? ? _ * ? ? Hconv.
+    - intros * ? ? _ ? A' ? ? Hconvty Hconv.
+      replace A' with U in *.
+        2:{
+          eapply algo_conv_wh in Hconv as [].
+          symmetry.
+          eapply red_whnf.
+          2: gen_typing.
+          now eapply red_ty_compl_univ_r, redty_red in Hconvty.
+        }
       inversion Hconv ; subst ; clear Hconv ; refold.
       + now econstructor.
-      + inversion H3 ; subst. inversion H6.
-      + eapply algo_conv_wh in H3 as [w]. inversion w.
-    - intros * ?? _ * ? ? Hconv.  
+      + inversion H2.
+    - intros * ?? _ ? A' ? ? Hconvty Hconv.
+      replace A' with tNat in *.
+        2:{
+          eapply algo_conv_wh in Hconv as [].
+          symmetry.
+          eapply red_whnf.
+          2: gen_typing.
+          now eapply red_ty_compl_nat_r, redty_red in Hconvty.
+        }
       inversion Hconv ; subst ; clear Hconv ; refold.
-      2: now inversion H3 ; inversion H6.
-      2: now inversion H3.
+      2: now inversion H2.
       now econstructor.
-    - intros * ? IHt ??? * ? ? Hconv.  
+    - intros * ? IHt ??? ? A' ? ? Hconvty Hconv.
+      replace A' with tNat in *.
+      2:{
+        eapply algo_conv_wh in Hconv as [].
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply red_ty_compl_nat_r, redty_red in Hconvty.
+      }
       inversion Hconv ; subst ; clear Hconv ; refold.
-      2: now inversion H5 ; inversion H8.
-      2: now inversion H5.
+      2: now inversion H4.
       now econstructor.
-    - intros * ? IHt ??? * ? ? Hconv.  
+    - intros * ? IHt _ ? A' ? ? Hconvty Hconv.
+      replace A' with U in *.
+      2:{
+        eapply algo_conv_wh in Hconv as [].
+        symmetry.
+        eapply red_whnf.
+        2: gen_typing.
+        now eapply red_ty_compl_univ_r, redty_red in Hconvty.
+      }  
       inversion Hconv ; subst ; clear Hconv ; refold.
-      2: now inversion H3 ; inversion H6.
-      2: now inversion H3.
+      2: now inversion H1.
       now econstructor.
     - intros * ? ? ? IH ? ? ? * ? ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
@@ -826,7 +869,9 @@ Qed.
       + eauto using inf_conv_decl.
       + econstructor.
         1-3: reflexivity.
-        now econstructor.
+        econstructor.
+        1-2: gen_typing.
+        eassumption.
     - intros_bn.
       1-3: gen_typing.
       now do 2 econstructor.
@@ -1085,7 +1130,7 @@ Module IntermediateTypingProperties.
       split ; tea.
       + gen_typing.
       + boundary.
-      + now do 2 econstructor.
+      + do 2 econstructor ; gen_typing.
     - intros.
       eapply (convtm_nat (ta := bn)).
       now econstructor.

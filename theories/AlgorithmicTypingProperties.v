@@ -54,7 +54,7 @@ Module AlgorithmicTypingProperties.
       now econstructor.
     - intros_bn.
       do 2 econstructor ; tea.
-      now apply algo_conv_complete.
+      now eapply (redty_red (ta := de)), red_ty_compl_univ_r.
   Qed.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
@@ -249,7 +249,7 @@ Module AlgorithmicTypingProperties.
     - now intros_bn.
     - intros_bn.
       do 2 econstructor ; tea.
-      now eapply algo_conv_complete.
+      now eapply (redty_red (ta := de)), red_ty_compl_univ_r.
     - intros_bn.
       now econstructor. 
     - red. intros_bn.

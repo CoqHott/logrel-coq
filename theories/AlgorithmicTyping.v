@@ -61,7 +61,7 @@ Section Definitions.
     | neuConvRed {Γ m n A A'} :
       [Γ |- m ~ n ▹ A] ->
       [A ⇒* A'] ->
-      isType A' ->
+      whnf A' ->
       [Γ |- m ~h n ▹ A']
   (** **** Conversion of terms *)
   with ConvTermAlg : context -> term -> term -> term -> Type :=
@@ -87,8 +87,8 @@ Section Definitions.
     | termEmptyReflAlg {Γ} :
       [Γ |- tEmpty ≅h tEmpty : U]
     | termFunConvAlg {Γ : context} {f g A B} :
-      isFun f ->
-      isFun g ->
+      whnf f ->
+      whnf g ->
       [ Γ,, A |- eta_expand f ≅ eta_expand g : B] -> 
       [ Γ |- f ≅h g : tProd A B]
     | termNeuConvAlg {Γ m n T P} :
@@ -119,7 +119,7 @@ Section Definitions.
     | wfTypeEmpty {Γ} :
         [Γ |- tEmpty]
     | wfTypeUniv {Γ A} :
-      [Γ |- A ◃ U] ->
+      [Γ |- A ▹h U] ->
       [Γ |- A]
   (** **** Type inference *)
   with InferAlg : context -> term -> term -> Type :=
@@ -394,7 +394,7 @@ Section TypingWk.
       econstructor.
       + eauto.
       + eauto using credalg_wk.
-      + now eapply isType_ren. 
+      + gen_typing. 
     - intros.
       econstructor.
       1-3: eauto using credalg_wk.
@@ -411,7 +411,7 @@ Section TypingWk.
     - intros * ? ? ? IH ? ?.
       cbn.
       econstructor.
-      1-2: now eauto using isFun_ren.
+      1-2: gen_typing.
       specialize IH with(ρ := wk_up _ ρ).
       cbn in *.
       asimpl.
@@ -547,7 +547,7 @@ Section AlgTypingWh.
   Let PNeEq (Γ : context) (A t u : term) := 
     whne t × whne u.
   Let PNeRedEq (Γ : context) (A t u : term) :=
-    [× whne t, whne u & isType A].
+    [× whne t, whne u & whnf A].
   Let PTmEq (Γ : context) (A t u : term) := True.
   Let PTmRedEq (Γ : context) (A t u : term) := 
     [× whnf t, whnf u & isType A].
@@ -559,6 +559,6 @@ Section AlgTypingWh.
     apply AlgoConvInduction.
     all: intros ; prod_splitter ; prod_hyp_splitter.
     all: try solve [now constructor].
-    all: gen_typing. 
+    all: gen_typing.
   Qed.
 End AlgTypingWh.
