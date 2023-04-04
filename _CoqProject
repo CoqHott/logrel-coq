@@ -64,5 +64,6 @@ theories/AlgorithmicTypingProperties.v
 theories/TypeUniqueness.v
 
 theories/Decidability/Functions.v
+theories/Decidability/Soundness.v
 
 theories/Positivity.v

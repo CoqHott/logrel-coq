@@ -364,15 +364,15 @@ Section ConversionCorrect.
   #[universes(polymorphic)]Equations conv_correct_type (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term)
     (r : result (cstate_output x.π1)) : Type :=
   conv_correct_type _ (error _) := True ;
-  conv_correct_type (ty_state;Γ;_;T;V) (ok tt) :=  [Γ |-[al] T ≅ V] ;
-  conv_correct_type (ty_red_state;Γ;_;T;V) (ok tt) := [Γ |-[al] T ≅h V] ;
-  conv_correct_type (tm_state;Γ;A;t;u) (ok tt) := [Γ |-[al] t ≅ u : A] ;
-  conv_correct_type (tm_red_state;Γ;A;t;u) (ok tt) :=
-    ([× whnf A, whnf t & whnf u] -> [Γ |-[al] t ≅h u : A]) ;
+  conv_correct_type (ty_state;Γ;_;T;V) (ok _) :=  [Γ |-[al] T ≅ V] ;
+  conv_correct_type (ty_red_state;Γ;_;T;V) (ok _) := [Γ |-[al] T ≅h V] ;
+  conv_correct_type (tm_state;Γ;A;t;u) (ok _) := [Γ |-[al] t ≅ u : A] ;
+  conv_correct_type (tm_red_state;Γ;A;t;u) (ok _) :=
+    whnf A -> whnf t -> whnf u -> [Γ |-[al] t ≅h u : A] ;
   conv_correct_type (ne_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~ n ▹ T] ;
   conv_correct_type (ne_red_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~h n ▹ T].
 
-  Lemma conv_correct :
+  Lemma _conv_correct :
     funrect conv (fun _ => True) conv_correct_type.
   Proof.
     intros x _.
@@ -381,42 +381,18 @@ Section ConversionCorrect.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
-      | |- forall x : result unit, _ => intros [[]|] ; [..|easy] ; cbn
       | |- forall x : result _, _ => intros [|] ; [..|easy] ; cbn
       | |- _ -> _ => simp conv_correct_type ; intros ?
       | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
+      | s : sort |- _ => destruct s
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
       end).
-    - econstructor ; tea.
-      all: now eapply red_sound.
-    - econstructor.
-      4: eapply H2 ; split.
-      all: now eapply red_sound.
-    - now econstructor.
-    - now econstructor.
-    - now econstructor.
-    - econstructor ; tea.
-      all: now eapply red_sound.
-    - destruct s, s'.
-      now econstructor.
-    - now econstructor.
-    - now econstructor.
-    - now econstructor.
-    - now econstructor.
-    - destruct s.
-      now econstructor.
-    - destruct s.
-      now econstructor.
-    - destruct s.
-      now econstructor.
+    all: try solve [now econstructor].
     - econstructor ; tea.
       now econstructor.
-    - econstructor ; tea.
-      all: now prod_hyp_splitter.
-    - now econstructor.
-    - now econstructor.
     - econstructor ; tea.
       prod_hyp_splitter.
-      destruct w ; simp build_nf_view3 in Heq ; try solve [inversion Heq].
+      destruct H0 ; simp build_nf_view3 in Heq ; try solve [inversion Heq].
       all: now econstructor.
     - eapply convne_meta_conv.
       2: reflexivity.
@@ -426,3 +402,50 @@ Section ConversionCorrect.
         symmetry.
         now eapply Nat.eqb_eq.
   Qed.
+
+  Corollary conv_correct x r :
+    graph conv x r ->
+    conv_correct_type x r.
+  Proof.
+    eapply funrect_graph.
+    1: now apply _conv_correct.
+    easy.
+  Qed.
+
+End ConversionCorrect.
+
+Section TypingCorrect.
+
+  Import AlgorithmicTypingData.
+
+  #[local]Existing Instance ty_errors.
+
+  #[universes(polymorphic)]Equations typing_correct_type (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
+    (r : result (tstate_output x.π1)) : Type :=
+  typing_correct_type _ (error _) := True ;
+  typing_correct_type (wf_ty_state;Γ;_;T) (ok _) :=  [Γ |-[al] T] ;
+  typing_correct_type (inf_state;Γ;_;t) (ok T) := [Γ |-[al] t ▹ T] ;
+  typing_correct_type (inf_red_state;Γ;_;t) (ok T) := [Γ |-[al] t ▹h T] ;
+  typing_correct_type (check_state;Γ;T;t) (ok _) := [Γ |-[al] t ◃ T].
+
+  Lemma typing_correct :
+    funrect typing (fun _ => True) typing_correct_type.
+  Proof.
+    intros x _.
+    funelim (typing _) ; cbn.
+    all: intros ; simp typing_correct_type ; try easy ; cbn.
+    all: repeat (
+      match goal with
+      | |- True * _ => split ; [easy|..]
+      | |- forall x : result _, _ => intros [|] ; simp typing_correct_type ; try easy ; cbn
+      | |- _ -> _ => simp typing_correct_type ; intros ?
+      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; simp typing_correct_type ; try easy
+      | s : sort |- _ => destruct s
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+      | H : graph conv _ _ |- _ => eapply conv_correct in H ; simp conv_correct_type in H
+      | H : graph ctx_access _ _ |- _ => eapply ctx_access_correct in H
+      end).
+    all: now econstructor.
+  Qed.
+
+End TypingCorrect.

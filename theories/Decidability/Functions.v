@@ -402,7 +402,10 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
     | ty_view1_ty (eSort s) := success ;
     | ty_view1_ty (eProd A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
-        id <*> rec (wf_ty_state;Γ,,A;tt;B) ;
+        match rA with
+        | error e => raise e
+        | ok _ => id <*> rec (wf_ty_state;Γ,,A;tt;B)
+        end ;
     | ty_view1_ty (eNat) := success ;
     | ty_view1_ty (eEmpty) := success ;
     | ty_view1_small _ :=
@@ -431,15 +434,14 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
         | error e => raise e
         end ;
     | tLambda A u :=
-        rA ← rec (inf_red_state;Γ;tt;A) ;;
+        rA ← rec (wf_ty_state;Γ;tt;A) ;;
         match rA with
-        | ok (tSort sA) =>
+        | ok _ =>
             ru ← rec (inf_state;Γ,,A;tt;u) ;;
             match ru with
             | ok B => ret (ok (tProd A B))
             | error e => raise e
             end
-        | ok _ => raise type_error
         | error e => raise e
         end ;
     | tApp f u :=
@@ -464,19 +466,36 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
         | error e => raise e
         end ;
     | tNatElim P hz hs n :=
-      rP ← rec (wf_ty_state;(Γ,,tNat);tt;P) ;;
-      match rP with
+      rn ← rec (inf_red_state;Γ;tt;n) ;;
+      match rn with
       | error e => raise e
-      | ok _ =>
-          rz ← rec (check_state;Γ;P[tZero..];hz) ;;
-          rs ← rec (check_state;Γ;elimSuccHypTy P;hs) ;;
-          rn ← rec (check_state;Γ;tNat;n) ;;
-          match rz, rs, rn with
-          | ok _, ok _, ok _ => ret (ok P[n..])
-          | _, _, _ => raise type_error
+      | ok tNat =>
+          rP ← rec (wf_ty_state;(Γ,,tNat);tt;P) ;;
+          match rP with
+          | error e => raise e
+          | ok _ =>
+              rz ← rec (check_state;Γ;P[tZero..];hz) ;;
+              rs ← rec (check_state;Γ;elimSuccHypTy P;hs) ;;
+              match rz, rs with
+              | ok _, ok _ => ret (ok P[n..])
+              | _, _ => raise type_error
+              end
           end
+      | ok _ => raise type_error
       end ;
-    | _ := undefined ;
+      | tEmpty := ret (ok U) ;
+      | tEmptyElim P e :=
+          re ← rec (inf_red_state;Γ;tt;e) ;;
+          match re with
+          | error e => raise e
+          | ok tEmpty =>
+              rP ← rec (wf_ty_state;(Γ,,tEmpty);tt;P) ;;
+              match rP with
+              | error e => raise e
+              | ok _ => ret (ok P[e..])
+              end
+          | ok _ => raise type_error
+          end ;
   } ;
   typing (inf_red_state;Γ;_;t) :=
     r ← rec (inf_state;Γ;_;t) ;;

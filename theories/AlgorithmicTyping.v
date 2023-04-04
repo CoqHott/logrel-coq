@@ -119,7 +119,7 @@ Section Definitions.
     | wfTypeEmpty {Γ} :
         [Γ |- tEmpty]
     | wfTypeUniv {Γ A} :
-      [Γ |- A ◃ U] ->
+      [Γ |- A ▹h U] ->
       [Γ |- A]
   (** **** Type inference *)
   with InferAlg : context -> term -> term -> Type :=
