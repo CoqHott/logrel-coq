@@ -189,10 +189,10 @@ Qed.
 *)
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne (snd Γ) A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ]< (snd Γ) > × whnf (snd Γ) B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne (snd Γ) t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ]< (snd Γ) > × whnf (snd Γ) u.
+  #[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne l A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun l Γ A => ∑ B, [ A ⇒* B ]< l > × whnf l B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne l t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun l Γ A t => ∑ u, [ t ⇒* u ]< l > × whnf l u.
 
 End WeakValuesData.
 
@@ -202,7 +202,7 @@ Export WeakValuesData.
 
 Section Properties.
 
-  Context `{ta : tag} `{l : wfLCon}
+  Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!OneStepRedTerm ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
@@ -212,12 +212,8 @@ Section Properties.
   split.
   + intros.
     apply Weakening.whne_ren.
-    induction H2 ; try now econstructor.
-    destruct ρ.
-    clear H1.
-    induction well_wk ;  try now econstructor.
-    all: now destruct Γ.
-  + intros Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
+    induction H2 ; now econstructor.
+  + intros l Γ A HA; exists A; split; [reflexivity|now apply whnf_whne].
   + intros; assumption.
   + intros; assumption.
   Qed.
@@ -225,7 +221,7 @@ Section Properties.
   #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
-  + intros Γ Δ A ρ _ [B [? ?]].
+  + intros l Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
   - apply credalg_wk.
     destruct ρ ; clear w.
@@ -233,11 +229,12 @@ Section Properties.
   - apply Weakening.whnf_ren.
     destruct ρ ; clear r.
     now induction well_wk.    
-  + intros Γ A B ? [C [? ?]].
+  + intros l Γ A B ? [C [? ?]].
     exists C; split.
     - transitivity B; [eapply redty_red| ]; eassumption.
     - assumption.
   + exists (tSort set); split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
@@ -256,12 +253,13 @@ Section Properties.
   + constructor; assumption.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
+  + intros; constructor; assumption.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
-  + intros Γ Δ t A ρ _ [B [? ?]].
+  + intros l Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - apply credalg_wk.
       destruct ρ ; clear w.
@@ -270,7 +268,7 @@ Section Properties.
       destruct ρ ; clear r.
       now induction well_wk.   
   + intros; assumption.
-  + intros Γ t u A ? [r [? ?]].
+  + intros l Γ t u A ? [r [? ?]].
     exists r; split.
     - transitivity u; [eapply redtm_red| ]; eassumption.
     - assumption.
@@ -279,6 +277,12 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity| ].
+    apply whnf_tAlpha.
+    now constructor.
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 

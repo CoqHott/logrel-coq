@@ -1,5 +1,6 @@
 Require Import ssreflect.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import Utils.
 
 Inductive SFalse : SProp := .
 
@@ -27,11 +28,16 @@ Definition le_LCon_trans {l l' l''} :
   le_LCon l l' -> le_LCon l' l'' -> le_LCon l l'' :=
   fun le le' n b ne => le' n b (le n b ne).
 
-Fixpoint nat_to_term (n : nat) : term :=
+
+
+Fixpoint nSucc (n : nat) (t : term) : term :=
   match n with
-  | 0 => tZero
-  | S n => tSucc (nat_to_term n)
+  | 0 => t
+  | S n => tSucc (nSucc n t)
   end.
+
+Definition nat_to_term (n : nat) : term := nSucc n tZero.
+
 
 Definition bool_to_term (b : bool) : term :=
   match b with
@@ -40,9 +46,9 @@ Definition bool_to_term (b : bool) : term :=
   end.
 
 Record SsigT (A : Type) (B : A -> Prop) :=
-  exist {fst : A ; snd : B fst}.
-Arguments fst [_ _] _.
-Arguments snd [_ _] _.
+  exist {pi1 : A ; pi2 : B pi1}.
+Arguments pi1 [_ _] _.
+Arguments pi2 [_ _] _.
 
 Definition wfLCon := SsigT LCon wf_LCon.
 
@@ -96,11 +102,16 @@ Proof.
 Qed.
 
 
-Definition wfLCons (l : wfLCon) {n : nat} (ne : not_in_LCon (fst l) n) (b : bool) : wfLCon.
+Definition wfLCons (l : wfLCon) {n : nat} (ne : not_in_LCon (pi1 l) n) (b : bool) : wfLCon.
 Proof.
-  exists (cons (n,b) (fst l)).
+  exists (cons (n,b) (pi1 l)).
   econstructor ; trivial.
-  exact (snd l).
+  exact (pi2 l).
 Defined.
+
+Definition wfLCons' (l : wfLCon) {n : nat} (d : (not_in_LCon (pi1 l) n) × bool) : wfLCon
+  := let (ne,b) := d in wfLCons l ne b.
+
+Notation " l ',,l' d " := (wfLCons' l d) (at level 20, d at next level).
 
 
