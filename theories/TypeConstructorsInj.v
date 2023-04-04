@@ -573,71 +573,87 @@ econstructor.
 boundary.
 Qed.
 
-Theorem subject_reduction_one Γ t t' A :
+Theorem subject_reduction_one Γ A t t' :
     [Γ |- t : A] ->
     [t ⇒ t'] ->
-    [Γ |- t ⇒* t' : A].
+    [Γ |- t ≅ t' : A].
 Proof.
-  intros Hty Hred.
-  split; [assumption| |].
-(*
   intros Hty Hred.
   induction Hred in Hty, A |- *.
   - apply termGen' in Hty as (?&((?&?&[-> Hty])&Heq)).
     apply termGen' in Hty as (?&((?&[->])&Heq')).
     eapply prod_ty_inj in Heq' as [? HeqB].
-(*
-    eapply wfTermConv; [eapply typing_subst1|]; tea.
-    eapply wfTermConv; [|tea].
-    eapply wfTermConv.*)
-    admit.
+    econstructor.
+    1: econstructor ; gen_typing.
+    etransitivity ; tea.
+    eapply typing_subst1 ; tea.
+    now econstructor.
   - apply termGen' in Hty as (?&((?&?&[->])&Heq)).
     econstructor ; tea.
     econstructor.
     + now eapply IHHred.
-    + refold ; gen_typing.
+    + now econstructor.
   - apply termGen' in Hty as [?[[->]?]].
     econstructor; tea.
-    admit.
-(*     apply wfTermNatElim. *)
-(*     econstructor; tea. *)
-(*     now eapply IHHred. *)
+    econstructor.
+    1-3: now econstructor.
+    now eapply IHHred.
   - apply termGen' in Hty as [?[[->]?]].
-    econstructor; tea; econstructor; tea.
-  - apply termGen' in Hty as [?[[-> ??? hsn] Heq]].
-    admit.
-(*     now apply termGen' in hsn as [? [[]?]]. *)
+    now do 2 econstructor.
+  - apply termGen' in Hty as [?[[-> ???(?&[->]&?)%termGen']?]].
+    now do 2 econstructor.
   - apply termGen' in Hty as [?[[->]?]].
-    econstructor; tea.
-    admit.
-*)
-Admitted.
+    econstructor ; tea.
+    econstructor.
+    1: now econstructor.
+    now eapply IHHred.
+  Qed.
+
+
+  Theorem subject_reduction_one_type Γ A A' :
+  [Γ |- A] ->
+  [A ⇒ A'] ->
+  [Γ |- A ≅ A'].
+Proof.
+  intros Hty Hred.
+  destruct Hred.
+  all: inversion Hty ; subst ; clear Hty ; refold.
+  all: econstructor.
+  all: eapply subject_reduction_one ; tea.
+  all: now econstructor.
+Qed.
 
 Theorem subject_reduction Γ t t' A :
   [Γ |- t : A] ->
   [t ⇒* t'] ->
   [Γ |- t ⇒* t' : A].
 Proof.
-  intros Hty Hr; split.
-  + assumption.
-  + assumption.
-  + induction Hr; constructor.
-    - assumption.
-    - apply TermSym.
-      eapply TermTrans.
-      * eapply subject_reduction_one.
-Admitted.
+  intros Hty Hr; split ; refold.
+  - assumption.
+  - assumption.
+  - induction Hr.
+    + now constructor.
+    + eapply subject_reduction_one in o ; tea.
+      etransitivity ; tea.
+      eapply IHHr.
+      now boundary.
+Qed.
 
 Theorem subject_reduction_type Γ A A' :
 [Γ |- A] ->
 [A ⇒* A'] ->
 [Γ |- A ⇒* A'].
 Proof.
-  intros Hty Hr; split.
-  + assumption.
-  + assumption.
-  + admit.
-Admitted.
+  intros Hty Hr; split; refold.
+  - assumption.
+  - assumption.
+  - induction Hr.
+    + now constructor.
+    + eapply subject_reduction_one_type in o ; tea.
+      etransitivity ; tea.
+      eapply IHHr.
+      now boundary.
+Qed.
 
 Corollary conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].
 Proof.
