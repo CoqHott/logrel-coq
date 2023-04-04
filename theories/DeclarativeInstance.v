@@ -305,36 +305,11 @@ Section Boundaries.
   Qed.
 
 
-  Definition boundary_ored_l {Γ t u K} : 
-    [ Γ |- t ⇒ u ∈ K ] ->
-    match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
-  Proof.
-    induction 1.
-    all: econstructor ; eauto.
-    1,3: now econstructor.
-    econstructor; now eapply boundary_tm_ctx.
-  Qed.
-
-  Definition boundary_ored_tm_l {Γ t u A} : 
-    [ Γ |- t ⇒ u : A] ->
-    [ Γ |- t : A ].
-  Proof.
-  apply @boundary_ored_l with (K := isterm A).
-  Qed.
-
-  Definition boundary_ored_ty_l {Γ A B} : 
-    [ Γ |- A ⇒ B ] ->
-    [ Γ |- A ].
-  Proof.
-  apply @boundary_ored_l with (K := istype).
-  Qed.
-
   Definition boundary_red_l {Γ t u K} : 
     [ Γ |- t ⇒* u ∈ K] ->
     match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
   Proof.
-    induction 1; eauto.
-    now eapply boundary_ored_l.
+    destruct 1; assumption.
   Qed.
 
   Definition boundary_red_tm_l {Γ t u A} : 
@@ -356,36 +331,16 @@ End Boundaries.
 #[export] Hint Resolve
   boundary_ctx_ctx boundary_ctx_tip boundary_tm_ctx
   boundary_ty_ctx boundary_tm_conv_ctx boundary_ty_conv_ctx
-  boundary_ored_tm_l boundary_ored_ty_l boundary_red_tm_l
+  boundary_red_tm_l
   boundary_red_ty_l : boundary.
 
-
 (** ** Inclusion of the various reductions in conversion *)
-
-Definition RedConv {Γ} {t u : term} {K} :
-  [Γ |- t ⇒ u ∈ K] -> 
-  match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
-Proof.
-induction 1.
-1,4,5: now econstructor.
-all: econstructor; tea; now econstructor.
-Qed.
-
-Definition RedConvTe {Γ} {t u A : term} :
-    [Γ |- t ⇒ u : A] -> 
-    [Γ |- t ≅ u : A].
-Proof.
-apply @RedConv with (K := isterm A).
-Qed.
 
 Definition RedConvC {Γ} {t u : term} {K} :
     [Γ |- t ⇒* u ∈ K] -> 
     match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
 Proof.
-  induction 1.
-  - destruct K; now constructor.
-  - now eapply RedConv.
-  - destruct K; [now eapply TypeTrans|now eapply TermTrans].
+apply reddecl_conv.
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
@@ -395,13 +350,6 @@ Proof.
 apply @RedConvC with (K := isterm A).
 Qed.
 
-Definition RedConvTy {Γ} {A B : term} :
-    [Γ |- A ⇒ B] -> 
-    [Γ |- A ≅ B].
-Proof.
-apply @RedConv with (K := istype).
-Qed.
-
 Definition RedConvTyC {Γ} {A B : term} :
     [Γ |- A ⇒* B] -> 
     [Γ |- A ≅ B].
@@ -409,118 +357,24 @@ Proof.
 apply @RedConvC with (K := istype).
 Qed.
 
-Lemma oredtm_meta_conv (Γ : context) (t u u' A A' : term) :
-  [Γ |- t ⇒ u : A] ->
-  A' = A ->
-  u' = u ->
-  [Γ |- t ⇒ u' : A'].
-Proof.
-  now intros ? -> ->.
-Qed.
-
 (** ** Weakenings of reduction *)
-
-Lemma oreddecl_wk {Γ Δ t u K} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- t ⇒ u ∈ K] ->
-  match K with istype => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩] | isterm A => [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩] end.
-Proof.
-  intros ? red.
-  induction red as [| | | | | | |]; refold.
-  - cbn in *.
-    eapply oredtm_meta_conv.
-    1: econstructor.
-    + now eapply typing_wk.
-    + eapply typing_wk with (ρ := wk_up _ ρ) ; tea.
-      econstructor ; tea.
-      now eapply typing_wk.
-    + now eapply typing_wk.
-    + apply subst_ren_wk_up.
-    + unshelve eapply subst_ren_wk_up; tea.
-  - cbn in *.
-    eapply oredtm_meta_conv.
-    1: econstructor.
-    + now eauto.
-    + now eapply typing_wk.
-    + now asimpl.
-    + reflexivity.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply natElimSubst; tea.
-    * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
-      constructor; tea; now constructor.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      symmetry; unshelve eapply subst_ren_wk_up; tea.
-    * unshelve erewrite <- wk_up_ren_on; tea.
-      rewrite wk_elimSuccHypTy.
-      now eapply typing_wk.
-    Unshelve. all: tea.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply natElimZero; tea.
-    * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
-      constructor; tea; now constructor.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      symmetry; unshelve eapply subst_ren_wk_up; tea.
-    * unshelve erewrite <- wk_up_ren_on; tea.
-      rewrite wk_elimSuccHypTy.
-      now eapply typing_wk.
-    Unshelve. all: tea.
-  - cbn. erewrite (subst_ren_wk_up (A := tNat)).
-    eapply natElimSucc.
-    * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
-      constructor; tea; now constructor.
-    * eapply typing_meta_conv.
-      1: now eapply typing_wk.
-      symmetry; unshelve eapply subst_ren_wk_up; tea.
-    * unshelve erewrite <- wk_up_ren_on; tea.
-      rewrite wk_elimSuccHypTy.
-      now eapply typing_wk.
-    * change tNat with tNat⟨ρ⟩; now eapply typing_wk.
-  - cbn. erewrite subst_ren_wk_up.
-    eapply (@emptyElimSubst _); tea.
-    * erewrite <- wk_up_ren_on.
-      refine (fst (snd typing_wk) _ _ w _ (wk_up _ ρ) _). 
-      constructor; tea; now constructor.
-    Unshelve. all: tea.
-  - econstructor.
-    1: eassumption.
-    now eapply typing_wk.
-  - now econstructor.
-Qed.
-
-Lemma oredtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- t ⇒ u : A] -> [Δ |- t⟨ρ⟩ ⇒ u⟨ρ⟩ : A⟨ρ⟩].
-Proof.
-apply @oreddecl_wk with (K := isterm A).
-Qed.
 
 Lemma redtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
   [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩].
 Proof.
-  intros * ?.
-  induction 1.
-  - econstructor ; now apply typing_wk.
-  - econstructor ; now eapply oredtmdecl_wk.
-  - now econstructor.
-Qed.
-
-Lemma oredtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- A ⇒ B] -> [Δ |- A⟨ρ⟩ ⇒ B⟨ρ⟩].
-Proof.
-apply @oreddecl_wk with (K := istype).
+  intros * ? []; split.
+  - now apply typing_wk.
+  - now apply credalg_wk.
+  - now apply typing_wk.
 Qed.
 
 Lemma redtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
   [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩].
 Proof.
-  intros * ?.
-  induction 1.
-  - now econstructor ; apply typing_wk.
-  - now econstructor ; eapply oredtydecl_wk.
-  - now econstructor.
+  intros * ? []; split.
+  - now apply typing_wk.
+  - now apply credalg_wk.
+  - now apply typing_wk.
 Qed.
 
 (** ** Derived rules for multi-step reduction *)
@@ -530,14 +384,10 @@ Lemma redtmdecl_app Γ A B f f' t :
   [ Γ |- t : A ] ->
   [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ].
 Proof.
-  intros Hf ?.
-  remember (tProd A B) as T in *.
-  induction Hf.
-  + subst.
-    now do 2 econstructor.
-  + subst.
-    now do 2 econstructor.
+  intros [] ?; split.
   + now econstructor.
+  + now apply redalg_app.
+  + econstructor; [tea|now apply TermRefl].
 Qed.
 
 Lemma redtmdecl_conv Γ t u A A' : 
@@ -545,31 +395,35 @@ Lemma redtmdecl_conv Γ t u A A' :
   [Γ |- A ≅ A'] ->
   [Γ |- t ⇒* u : A'].
 Proof.
-  intros Ht ?.
-  induction Ht.
-  + now do 2 econstructor.
-  + now do 2 econstructor.
+  intros [] ?; split.
+  + now econstructor.
+  + assumption.
   + now econstructor.
 Qed.
 
 Lemma redtydecl_term Γ A B :
   [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ].
 Proof.
-  remember U as T.
-  induction 1 ; subst.
-  + now do 2 econstructor.
-  + now do 2 econstructor.
-  + now econstructor.
+  intros []; split.
+  + now constructor.
+  + assumption.
+  + now constructor.
 Qed.
 
 #[export] Instance RedTermTrans Γ A : Transitive (red_tm Γ A).
 Proof.
-  now econstructor.
+  intros t u r [] []; split.
+  + assumption.
+  + now etransitivity.
+  + now eapply TermTrans.
 Qed.
 
 #[export] Instance RedTypeTrans Γ : Transitive (red_ty Γ).
 Proof.
-  now econstructor.
+  intros t u r [] []; split.
+  + assumption.
+  + now etransitivity.
+  + now eapply TypeTrans.
 Qed.
 
 (** ** Bundling the properties together in an instance *)
@@ -672,61 +526,49 @@ Module DeclarativeTypingProperties.
   Proof.
   - intros.
     now eapply redtmdecl_wk.
-  - easy. 
+  - intros; now eapply redtmdecl_red.
   - intros. now eapply boundary_red_tm_l.
-  - intros; econstructor; now constructor.
-  - intros; econstructor; now constructor.
-  - intros; econstructor; now constructor.
-  - intros.
-    now eapply redtmdecl_app.
-  - intros Γ P hz hs n n' HP Hhz Hhs Hn Hr Hcong.
-    revert Hcong; induction Hr; intros Hcong.
-    + apply red_id.
-      now econstructor.
-    + apply red_red.
-      now constructor.
-    + eapply red_trans.
-      * apply IHHr1; [assumption|].
-        intros w Hw.
-        eapply TypeTrans; [apply TypeSym|]; eapply Hcong; [eassumption|].
-        now transitivity t'.
-      * eapply redtmdecl_conv; [eapply IHHr2|].
-        -- now eapply boundary_red_tm_l.
-        -- intros w Hw; now apply Hcong.
-        -- eapply TypeTrans; [apply TypeSym|]; apply Hcong; [assumption|].
-          now transitivity t'.
-  - intros Γ P n n' HP Hn Hr Hcong.
-    revert Hcong; induction Hr; intros Hcong.
-    + apply red_id.
-      now econstructor.
-    + apply red_red.
-      now constructor.
-    + eapply red_trans.
-      * apply IHHr1; [assumption|].
-        intros w Hw.
-        eapply TypeTrans; [apply TypeSym|]; eapply Hcong; [eassumption|].
-        now transitivity t'.
-      * eapply redtmdecl_conv; [eapply IHHr2|].
-        -- now eapply boundary_red_tm_l.
-        -- intros w Hw; now apply Hcong.
-        -- eapply TypeTrans; [apply TypeSym|]; apply Hcong; [assumption|].
-          now transitivity t'.
-  - intros.
-    now eapply redtmdecl_conv.
-  - intros.
-    now econstructor.
+  - intros; split.
+    + repeat (econstructor; tea).
+    + eapply redSuccAlg; [constructor|reflexivity].
+    + now constructor.
+  - intros; split.
+    + repeat (econstructor; tea).
+      now eapply boundary_tm_ctx.
+    + eapply redSuccAlg; [constructor|reflexivity].
+    + now constructor.
+  - intros; split.
+    + repeat (econstructor; tea).
+    + eapply redSuccAlg; [constructor|reflexivity].
+    + now constructor.
+  - intros; now eapply redtmdecl_app.
+  - intros ?????????? []?; split.
+    + repeat (constructor; tea).
+    + now eapply redalg_natElim.
+    + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
+  - intros ?????? []?; split.
+    + repeat (constructor; tea).
+    + now eapply redalg_natEmpty.
+    + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
+  - intros; now eapply redtmdecl_conv.
+  - intros; split.
+    + assumption.
+    + reflexivity.
+    + now econstructor.
   Qed.
 
   #[export, refine] Instance RedTypeDeclProperties : RedTypeProperties (ta := de) := {}.
   Proof.
   - intros.
     now eapply redtydecl_wk.
-  - easy.
+  - intros; now eapply redtydecl_red.
   - intros. now eapply boundary_red_ty_l.
   - intros.
     now eapply redtydecl_term.
-  - intros.
-    now econstructor.
+  - intros; split.
+    + assumption.
+    + reflexivity.
+    + now constructor.
   Qed.
 
   #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.

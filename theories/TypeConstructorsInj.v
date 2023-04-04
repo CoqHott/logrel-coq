@@ -404,11 +404,6 @@ Proof.
   now intros ?%boundary.
 Qed.
 
-Corollary boundary_ored_ty_r Γ A B : [Γ |- A ⇒ B] -> [Γ |- B].
-Proof.
-  now intros ?%RedConvTy%boundary.
-Qed.
-
 Corollary boundary_red_ty_r Γ A B : [Γ |- A ⇒* B] -> [Γ |- B].
 Proof.
   now intros ?%RedConvTyC%boundary.
@@ -429,21 +424,6 @@ Proof.
   now intros []%boundary.
 Qed.
 
-Corollary boundary_ored_tm_l Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- t : A].
-Proof.
-  now intros []%RedConvTe%boundary.
-Qed.
-
-Corollary boundary_ored_tm_r Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- u : A].
-Proof.
-  now intros []%RedConvTe%boundary.
-Qed.
-
-Corollary boundary_ored_tm_ty Γ A t u : [Γ |- t ⇒ u : A] -> [Γ |- A].
-Proof.
-  now intros []%RedConvTe%boundary.
-Qed.
-
 Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- u : A].
 Proof.
   now intros []%RedConvTeC%boundary.
@@ -457,9 +437,8 @@ Qed.
 #[export] Hint Resolve
   boundary_tm boundary_ty_conv_l boundary_ty_conv_r
   boundary_tm_conv_l boundary_tm_conv_r boundary_tm_conv_ty
-  boundary_ored_tm_l boundary_ored_tm_r boundary_ored_tm_ty
   boundary_red_tm_l boundary_red_tm_r boundary_red_tm_ty
-  boundary_ored_ty_r boundary_red_ty_r : boundary.
+  boundary_red_ty_r : boundary.
 
 Lemma boundary_ctx_conv_l (Γ Δ : context) :
   [ |- Γ ≅ Δ] ->
@@ -594,10 +573,10 @@ econstructor.
 boundary.
 Qed.
 
-Theorem subject_reduction_one Γ t t' A :
+Theorem subject_reduction_one Γ A t t' :
     [Γ |- t : A] ->
     [t ⇒ t'] ->
-    [Γ |- t ⇒ t' : A].
+    [Γ |- t ≅ t' : A].
 Proof.
   intros Hty Hred.
   induction Hred in Hty, A |- *.
@@ -612,21 +591,36 @@ Proof.
   - apply termGen' in Hty as (?&((?&?&[->])&Heq)).
     econstructor ; tea.
     econstructor.
-    1: now eapply IHHred.
-    refold ; gen_typing.
+    + now eapply IHHred.
+    + now econstructor.
   - apply termGen' in Hty as [?[[->]?]].
     econstructor; tea.
-    econstructor; tea.
+    econstructor.
+    1-3: now econstructor.
     now eapply IHHred.
   - apply termGen' in Hty as [?[[->]?]].
-    econstructor; tea; econstructor; tea.
-  - apply termGen' in Hty as [?[[-> ??? hsn] Heq]].
-    econstructor; tea; econstructor; tea.
-    now apply termGen' in hsn as [? [[]?]].
+    now do 2 econstructor.
+  - apply termGen' in Hty as [?[[-> ???(?&[->]&?)%termGen']?]].
+    now do 2 econstructor.
   - apply termGen' in Hty as [?[[->]?]].
-    econstructor; tea.
-    econstructor; tea.
+    econstructor ; tea.
+    econstructor.
+    1: now econstructor.
     now eapply IHHred.
+  Qed.
+
+
+  Theorem subject_reduction_one_type Γ A A' :
+  [Γ |- A] ->
+  [A ⇒ A'] ->
+  [Γ |- A ≅ A'].
+Proof.
+  intros Hty Hred.
+  destruct Hred.
+  all: inversion Hty ; subst ; clear Hty ; refold.
+  all: econstructor.
+  all: eapply subject_reduction_one ; tea.
+  all: now econstructor.
 Qed.
 
 Theorem subject_reduction Γ t t' A :
@@ -634,26 +628,15 @@ Theorem subject_reduction Γ t t' A :
   [t ⇒* t'] ->
   [Γ |- t ⇒* t' : A].
 Proof.
-  intros Hty.
-  induction 1 as [| ? ? ? o red] in A, Hty |- *.
-  1: now econstructor.
-  eapply subject_reduction_one in o ; tea.
-  etransitivity.
-  2: eapply IHred.
-  1: now constructor.
-  boundary.
-Qed.
-
-Lemma subject_reduction_one_type Γ A A' :
-  [Γ |- A] ->
-  [A ⇒ A'] ->
-  [Γ |- A ⇒ A'].
-Proof.
-  intros Hty.
-  inversion 1 ; subst.
-  all: inversion Hty ; subst ; clear Hty.
-  all: econstructor.
-  all: now eapply subject_reduction_one.
+  intros Hty Hr; split ; refold.
+  - assumption.
+  - assumption.
+  - induction Hr.
+    + now constructor.
+    + eapply subject_reduction_one in o ; tea.
+      etransitivity ; tea.
+      eapply IHHr.
+      now boundary.
 Qed.
 
 Theorem subject_reduction_type Γ A A' :
@@ -661,14 +644,15 @@ Theorem subject_reduction_type Γ A A' :
 [A ⇒* A'] ->
 [Γ |- A ⇒* A'].
 Proof.
-  intros Hty.
-  induction 1 as [| ? ? ? o red] in Hty |- *.
-  1: now econstructor.
-  eapply subject_reduction_one_type in o ; tea.
-  etransitivity.
-  2: eapply IHred.
-  1: now constructor.
-  boundary.
+  intros Hty Hr; split; refold.
+  - assumption.
+  - assumption.
+  - induction Hr.
+    + now constructor.
+    + eapply subject_reduction_one_type in o ; tea.
+      etransitivity ; tea.
+      eapply IHHr.
+      now boundary.
 Qed.
 
 Corollary conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].

@@ -182,75 +182,20 @@ Section Definitions.
 
   Local Coercion isterm : term >-> class.
 
-  Inductive OneRedDecl (Γ : context) : class -> term -> term -> Type :=
-  | BRed {A B : term} {a t} :
-      [ Γ |- A ] -> 
-      [ Γ ,, A |- t : B ] ->
-      [ Γ |- a : A ] ->
-      [ Γ |- tApp (tLambda A t) a ⇒ t[a..] : B[a..] ]
-  | appSubst {A B t u a} :
-      [ Γ |- t ⇒ u : tProd A B] ->
-      [ Γ |- a : A ] ->
-      [ Γ |- tApp t a ⇒ tApp u a : B[a..] ]
-  | natElimSubst {P hz hs n n'} :
-      [Γ ,, tNat |- P] ->
-      [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy P] ->
-      [Γ |- n ⇒ n' : tNat] ->
-      [Γ |- tNatElim P hz hs n ⇒ tNatElim P hz hs n' : P[n..]]        
-  | natElimZero {P hz hs} :
-      [Γ ,, tNat |- P ] ->
-      [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy P] ->
-      [Γ |- tNatElim P hz hs tZero ⇒ hz : P[tZero..]]
-  | natElimSucc {P hz hs n} :
-      [Γ ,, tNat |- P ] ->
-      [Γ |- hz : P[tZero..]] ->
-      [Γ |- hs : elimSuccHypTy P] ->
-      [Γ |- n : tNat] ->
-      [Γ |- tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
-  | emptyElimSubst {P e e'} :
-      [Γ ,, tEmpty |- P] ->
-      [Γ |- e ⇒ e' : tEmpty] ->
-      [Γ |- tEmptyElim P e ⇒ tEmptyElim P e' : P[e..]]
-  | termRedConv {A B : term} {t u} :
-      [ Γ |- t ⇒ u : A ] ->
-      [ Γ |- A ≅ B ] ->
-      [ Γ |- t ⇒ u : B ]
-  | typeRedUniv {A B} :
-      [ Γ |- A ⇒ B : U ] ->
-      [ Γ |- A ⇒ B ]
+  Record RedClosureDecl (Γ : context) (A : class) (t u : term) := {
+    reddecl_typ : match A with istype => [Γ |- t] | isterm A => [Γ |- t : A] end;
+    reddecl_red : RedClosureAlg t u;
+    reddecl_conv : match A with istype => [ Γ |- t ≅ u ] | isterm A => [Γ |- t ≅ u : A] end;
+  }.
 
-  where "[ Γ |- t ⇒ u : A ]" := (OneRedDecl Γ (isterm A) t u)
-  and "[ Γ |- A ⇒ B ]" := (OneRedDecl Γ istype A B).
-
-  Local Notation "[ Γ |- t ⇒ u ∈ A ]" := (OneRedDecl Γ A t u).
-
-  Inductive RedClosureDecl (Γ : context) (A : class) : term -> term -> Type :=
-      | red_id {t} :
-        match A with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end ->
-        [ Γ |- t ⇒* t ∈ A ]
-      | red_red {t t'} :
-        [ Γ |- t ⇒ t' ∈ A] ->
-        [Γ |- t ⇒* t' ∈ A]
-      | red_trans {t t' u} :
-        [ Γ |- t ⇒* t' ∈ A ] ->
-        [ Γ |- t' ⇒* u ∈ A ] ->
-        [ Γ |- t ⇒* u ∈ A ]
-  where "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
+  Notation "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
 
 End Definitions.
 
-Definition OneRedTermDecl Γ A t u := OneRedDecl Γ (isterm A) t u.
-Definition OneRedTypeDecl Γ A B := OneRedDecl Γ istype A B.
 Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
 Definition TypeRedClosure Γ A B := RedClosureDecl Γ istype A B.
 
-Notation "[ Γ |- t ⇒ u ∈ A ]" := (OneRedDecl Γ A t u).
 Notation "[ Γ |- t ⇒* u ∈ A ]" := (RedClosureDecl Γ A t u).
-
-Notation "[ Γ |- t ⇒ u : A ]" := (OneRedTermDecl Γ A t u) : declarative_scope.
-Notation "[ Γ |- A ⇒ B ]" := (OneRedTypeDecl Γ A B).
 
 (** ** Instances *)
 (** Used for printing (see Notations) and as a support for the generic typing
@@ -266,7 +211,7 @@ Module DeclarativeTypingData.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvTermDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
-  #[export] Instance OneStepRedTerm_Decl : OneStepRedTerm de := OneRedTermDecl.
+(*   #[export] Instance OneStepRedTerm_Decl : OneStepRedTerm de := OneRedTermDecl. *)
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 
   Ltac fold_decl :=
@@ -344,42 +289,11 @@ Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 Section TypeErasure.
   Import DeclarativeTypingData.
 
-Lemma oreddecl_ored Γ t u K :
-  [Γ |- t ⇒ u ∈ K] ->
-  [t ⇒ u].
-Proof.
-  induction 1; tea; now econstructor.
-Qed.
-
-Lemma oredtmdecl_ored Γ t u A : 
-  [Γ |- t ⇒ u : A] ->
-  [t ⇒ u].
-Proof.
-apply oreddecl_ored.
-Qed.
-
-Lemma reddecl_red Γ t u A :
-  [Γ |- t ⇒* u ∈ A] ->
-  [t ⇒* u].
-Proof.
-  induction 1.
-  - now econstructor.
-  - econstructor; [now eapply oreddecl_ored|reflexivity].
-  - now etransitivity.
-Qed.
-
 Lemma redtmdecl_red Γ t u A : 
   [Γ |- t ⇒* u : A] ->
   [t ⇒* u].
 Proof.
 apply reddecl_red.
-Qed.
-
-Lemma oredtydecl_ored Γ A B : 
-  [Γ |- A ⇒ B] ->
-  [A ⇒ B].
-Proof.
-apply oreddecl_ored.
 Qed.
 
 Lemma redtydecl_red Γ A B : 

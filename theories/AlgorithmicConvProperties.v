@@ -1130,8 +1130,7 @@ Module IntermediateTypingProperties.
       econstructor ; tea.
       + now eapply typing_wk.
       + now eapply credalg_wk.
-    - intros * [].
-      now eapply subject_reduction.
+    - intros * []; assumption.
     - now intros * []. 
     - intros; constructor.
       + boundary.
@@ -1194,8 +1193,7 @@ Module IntermediateTypingProperties.
       econstructor ; tea.
       + now eapply typing_wk.
       + now eapply credalg_wk.
-    - intros * [].
-      now eapply subject_reduction_type.
+    - intros * []; assumption.
     - now intros * [].
     - intros * [].
       split.
