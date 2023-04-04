@@ -1,6 +1,6 @@
 (** * LogRel.NormalForms: definition of normal and neutral forms, and properties. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context.
+From LogRel Require Import Utils BasicAst Context LContexts.
 
 (** ** Weak-head normal forms and neutrals. *)
 
@@ -75,6 +75,7 @@ Lemma containsnenattoterm {l n} : whne l (tAlpha (nat_to_term n)) -> False.
 Proof.
   intro H ; inversion H ; subst ; clear H.
   revert n0 H0.
+  unfold nat_to_term ; cbn.
   induction n ; cbn in * ; intros.
   - induction n0 ; cbn in *.
     + rewrite H0 in H1 ; inversion H1.

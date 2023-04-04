@@ -211,7 +211,7 @@ Export WeakValuesData.
 
 Section Properties.
 
-  Context `{ta : tag} `{l : wfLCon}
+  Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties} `{!RedTermProperties}.
@@ -229,7 +229,7 @@ Section Properties.
   #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
-  + intros Γ Δ A ρ _ [B [? ?]].
+  + intros l Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - now apply credalg_wk.
     - now apply Weakening.isType_ren.
@@ -238,6 +238,7 @@ Section Properties.
     - transitivity B; [eapply redty_red| ]; eassumption.
     - assumption.
   + exists (tSort set); split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
@@ -256,12 +257,13 @@ Section Properties.
   + constructor; assumption.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
+  + intros; constructor; assumption.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
-  + intros Γ Δ t A ρ _ [B [? ?]].
+  + intros l Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - apply credalg_wk.
       destruct ρ ; clear w.
@@ -270,7 +272,7 @@ Section Properties.
       destruct ρ ; clear r.
       now induction well_wk.   
   + intros; assumption.
-  + intros Γ t u A ? [r [? ?]].
+  + intros l Γ t u A ? [r [? ?]].
     exists r; split.
     - transitivity u; [eapply redtm_red| ]; eassumption.
     - assumption.
@@ -279,6 +281,12 @@ Section Properties.
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
   + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity|constructor].
+  + intros; eexists; split; [reflexivity| ].
+    apply whnf_tAlpha.
+    now constructor.
   + intros; eexists; split; [reflexivity|constructor].
   Qed.
 

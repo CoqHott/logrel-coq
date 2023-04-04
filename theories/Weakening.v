@@ -225,12 +225,17 @@ Section RenWhnf.
 
   Variable (ρ : nat -> nat).
 
-  Lemma whne_ren {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩)
-  with containsne_ren {l} t : containsne (l := l) t -> containsne (l := l) (t⟨ρ⟩).
+  Lemma nSucc_ren n t : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
+  Proof.
+    induction n ; cbn.
+    - reflexivity.
+    - now rewrite IHn.
+  Qed.
+      
+  Lemma whne_ren {l} t : whne l t -> whne l (t⟨ρ⟩).
   Proof.
     - induction 1 ; cbn.
-      all: now econstructor.
-    - induction 1 ; cbn.
+      6: rewrite (nSucc_ren n t).
       all: now econstructor.
   Qed.
     
@@ -256,7 +261,7 @@ Section RenWhnf.
     all: now econstructor.
   Qed.
     
-  Lemma whnf_ren {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
+  Lemma whnf_ren {l} t : whnf l t -> whnf l (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     12:{ apply whnf_tAlpha.
@@ -266,7 +271,7 @@ Section RenWhnf.
   Qed.
   
   Lemma isType_ren {l} A :
-    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
+    isType l A -> isType l (A⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -274,14 +279,14 @@ Section RenWhnf.
   Qed.
 
   Lemma isPosType_ren {l} A :
-    isPosType (l := l) A -> isPosType (l := l) (A⟨ρ⟩).
+    isPosType l A -> isPosType l (A⟨ρ⟩).
   Proof.
     destruct 1 ; cbn.
     all: econstructor.
     now eapply whne_ren.
   Qed.
   
-  Lemma isFun_ren {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
+  Lemma isFun_ren {l} f : isFun l f -> isFun l (f⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
@@ -294,23 +299,23 @@ Section RenWlWhnf.
 
   Context {Γ Δ} (ρ : Δ ≤ Γ).
 
-  Lemma whne_ren_wl {l} t : whne (l := l) t -> whne (l := l) (t⟨ρ⟩).
+  Lemma whne_ren_wl {l} t : whne l t -> whne l (t⟨ρ⟩).
   Proof.
     apply whne_ren.
   Qed.
 
-  Lemma whnf_ren_wl {l} t : whnf (l := l) t -> whnf (l := l) (t⟨ρ⟩).
+  Lemma whnf_ren_wl {l} t : whnf l t -> whnf l (t⟨ρ⟩).
   Proof.
     apply whnf_ren.
   Qed.
   
   Lemma isType_ren_wl {l} A :
-    isType (l := l) A -> isType (l := l) (A⟨ρ⟩).
+    isType l A -> isType l (A⟨ρ⟩).
   Proof.
     apply isType_ren.
   Qed.
   
-  Lemma isFun_ren_wl {l} f : isFun (l := l) f -> isFun (l := l) (f⟨ρ⟩).
+  Lemma isFun_ren_wl {l} f : isFun l f -> isFun l (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
   Qed.

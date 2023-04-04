@@ -4,6 +4,7 @@ From Coq Require Import ssrbool.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 
+
 Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Primitive Projections.
