@@ -66,4 +66,6 @@ theories/TypeUniqueness.v
 
 theories/Decidability/Functions.v
 
+theories/Decidability/Functions.v
+
 theories/Positivity.v
