@@ -119,6 +119,7 @@ Section Definitions.
     | wfTypeEmpty {Γ} :
         [Γ |- tEmpty]
     | wfTypeUniv {Γ A} :
+      ~ isCanonical A ->
       [Γ |- A ▹h U] ->
       [Γ |- A]
   (** **** Type inference *)
@@ -445,7 +446,9 @@ Section TypingWk.
     - intros.
       now econstructor.
     - now constructor.
-    - now constructor.
+    - constructor.
+      + now intros ?%isCanonical_ren.
+      + eauto. 
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.

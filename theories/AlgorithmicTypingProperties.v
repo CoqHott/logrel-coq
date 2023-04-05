@@ -6,7 +6,73 @@ From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape.
 From LogRel.Substitution Require Import Properties Escape.
 
-Import DeclarativeTypingProperties AlgorithmicTypingData BundledTypingData BundledIntermediateData IntermediateTypingProperties.
+Import DeclarativeTypingProperties AlgorithmicTypingData BundledTypingData.
+
+Lemma algo_typing_small_large Γ A :
+  [Γ |-[bn] A : U] ->
+  [Γ |-[bn] A].
+Proof.
+  enough (BundledTypingInductionConcl
+    (fun _ _ => True)
+    (fun Γ A t => [Γ |-[de] A ≅ U] -> [Γ |-[al] t])
+    (fun Γ A t => A = U -> [Γ |-[al] t])
+    (fun _ _ _ => True)) as (?&?&H&?).
+  {
+    intros [].
+    split ; tea.
+    eapply H.
+    2: reflexivity.
+    do 2 (econstructor ; tea).
+    now eapply redty_red, red_ty_compl_univ_r.
+  }
+  eapply BundledTypingInduction.
+  all: try solve [econstructor].
+  - intros.
+    econstructor.
+    + intros Hcan ; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros.
+    prod_hyp_splitter.
+    now econstructor.
+  - intros * ????? Hconv.
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    now cbn in Hconv.
+  - intros.
+    econstructor.
+    + intros Hcan ; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? Hconv.
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    now cbn in Hconv.
+  - intros * ??? Hconv.
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now econstructor.
+    now cbn in Hconv.
+  - intros.
+    econstructor.
+    + intros Hcan ; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros.
+    econstructor.
+    + intros Hcan ; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? [IH] **; subst.
+    eapply IH.
+    eapply subject_reduction_type ; tea.
+    boundary.
+Qed.
+
+Import BundledIntermediateData IntermediateTypingProperties.
 
 (** ** Completeness of algorithmic conversion *)
 (** We use the intermediate instance derived in AlgorithmicConvProperties to get this result,
@@ -52,9 +118,8 @@ Module AlgorithmicTypingProperties.
       now econstructor.
     - intros_bn.
       now econstructor.
-    - intros_bn.
-      do 2 econstructor ; tea.
-      now eapply (redty_red (ta := de)), red_ty_compl_univ_r.
+    - intros.
+      now eapply algo_typing_small_large.
   Qed.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
@@ -247,9 +312,8 @@ Module AlgorithmicTypingProperties.
       now apply credalg_wk.
     - intros * []; assumption.
     - now intros_bn.
-    - intros_bn.
-      do 2 econstructor ; tea.
-      now eapply (redty_red (ta := de)), red_ty_compl_univ_r.
+    - intros * [?[]%algo_typing_small_large].
+      now econstructor.
     - intros_bn.
       now econstructor. 
     - red. intros_bn.

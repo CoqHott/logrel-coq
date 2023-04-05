@@ -36,19 +36,27 @@ Import DeclarativeTypingProperties.
 Record cored t t' : Prop := { _ : [t' ⇒ t] }.
 
 Theorem typing_SN Γ t :
-  well_typed Γ t ->
+  well_formed Γ t ->
   Acc cored t.
 Proof.
-  intros [? Hty].
-  eapply typing_nf in Hty as [? [red wh]].
-  induction red.
+  intros [[] Hty].
+  all: eapply typing_nf in Hty as [? [red wh]].
+  all: induction red.
+  - econstructor.
+    intros t' [red].
+    exfalso.
+    eapply whnf_nored ; tea.
+    now gen_typing.
+  - econstructor.
+    intros t'' [red'].
+    now eapply ored_det in red' as <-.
   - econstructor.
     intros t' [red].
     exfalso.
     now eapply whnf_nored.
   - econstructor.
     intros t'' [red'].
-    now eapply ored_det in red' as <-.
+    now eapply ored_det in red' as <-. 
 Qed.
 
 Section NeutralConversion.

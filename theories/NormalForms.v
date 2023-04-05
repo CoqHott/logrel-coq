@@ -93,3 +93,16 @@ Definition isFun_whnf t (i : isFun t) : whnf t :=
 Coercion isFun_whnf : isFun >-> whnf.
 
 #[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf : gen_typing.
+
+(** ** Canonical forms *)
+
+Inductive isCanonical : term -> Type :=
+  | can_tSort {s} : isCanonical (tSort s)
+  | can_tProd {A B} : isCanonical (tProd A B)
+  | can_tLambda {A t} : isCanonical (tLambda A t)
+  | can_tNat : isCanonical tNat
+  | can_tZero : isCanonical tZero
+  | can_tSucc {n} : isCanonical (tSucc n)
+  | can_tEmpty : isCanonical tEmpty.
+
+#[global] Hint Constructors isCanonical : gen_typing.

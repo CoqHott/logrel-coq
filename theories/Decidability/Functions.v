@@ -427,6 +427,7 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
         | ok (tSort sA) =>
             rB ← rec (inf_red_state;Γ,,A;tt;B) ;;
             match rB with
+            | ok (tSort sB) => ret (ok (tSort (sort_of_product sA sB)))
             | ok _ => raise type_error
             | error e => raise e
             end

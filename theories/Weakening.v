@@ -259,6 +259,13 @@ Section RenWhnf.
     now eapply whne_ren.
   Qed.
 
+  Lemma isCanonical_ren t : isCanonical t <~> isCanonical (t⟨ρ⟩).
+  Proof.
+    split.
+    all: destruct t ; cbn ; inversion 1.
+    all: now econstructor.
+  Qed.
+
 End RenWhnf.
 
 Section RenWlWhnf.
@@ -285,10 +292,15 @@ Section RenWlWhnf.
     apply isFun_ren.
   Qed.
 
+  Lemma isCanonical_ren_wl t : isCanonical t <~> isCanonical (t⟨ρ⟩).
+  Proof.
+    apply isCanonical_ren.
+  Qed.
+
 End RenWlWhnf.
 
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
-#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl : gen_typing.
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isCanonical_ren : gen_typing.
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
 
 (** ** Adaptation of AutoSubst's asimpl to well typed weakenings *)
 

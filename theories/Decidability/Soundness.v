@@ -109,215 +109,6 @@ Qed.
 
 End RedImplemSound.
 
-Equations Derive NoConfusion Subterm for term.
-
-Section RedImplemComplete.
-
-  #[local]Definition R_aux := lexprod term term cored term_subterm.
-
-  #[local]Definition R (t u : term × stack) :=
-    R_aux (Datatypes.pair (zip (fst t) (snd t)) (fst t)) (Datatypes.pair (zip (fst u) (snd u)) (fst u)).
-
-  #[local]Lemma R_acc t π :
-    Acc cored (zip t π) ->
-    Acc R (t, π).
-  Proof.
-  intros h.
-  eapply acc_A_B_lexprod with (leA := cored) (leB := term_subterm) (y := t) in h.
-  - remember (Datatypes.pair (zip t π) t) as z eqn:e.
-    induction h as [z h ih] in t, π, e |- *. subst.
-    constructor. intros [v ρ] hr.
-    unfold R, R_aux in hr ; cbn in *.
-    eapply ih. 2: reflexivity.
-    assumption.
-  - eapply well_founded_term_subterm.
-  - eapply well_founded_term_subterm.
-  Qed.
-
-  #[local] Lemma well_typed_acc Γ t π :
-    well_typed Γ (zip t π) ->
-    Acc R (t,π).
-  Proof.
-    intros.
-    now eapply R_acc, typing_SN.
-  Qed.
-
-  Lemma well_typed_zip Γ t π :
-    well_typed Γ (zip t π) ->
-    ∑ T, [Γ |- t : T] × (forall u, [Γ |- t ≅ u : T] -> well_typed Γ (zip u π)).
-  Proof.
-    intros H.
-    induction π as [|[]] in t, H |- * ; cbn.
-    - destruct H as [T Hty].
-      exists T ; split.
-      1: eassumption.
-      intros *.
-      eexists.
-      boundary.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermEmptyElimCong ; tea ; refold.
-      2: eassumption.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermNatElimCong ; tea ; refold.
-      + now econstructor.
-      + now econstructor.
-      + now eapply TermRefl.
-      + eassumption.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&(?&?&[])&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u' Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: econstructor ; tea.
-      2: eassumption.
-      now econstructor.
-  Qed.
-
-  Lemma isType_ty Γ T t :
-    [Γ |- t : T] ->
-    isType t ->
-    ~ whne t ->
-    [Γ |- U ≅ T].
-  Proof.
-    intros Hty HisT Hne.
-    all: inversion HisT ; subst ; clear HisT ; cycle -1.
-    1: now exfalso.
-    all: clear Hne.
-    all: eapply termGen' in Hty as (?&[]&?); subst.
-    all: eassumption.
-  Qed.
-
-  Lemma zip1_notType Γ T t π :
-    isType t ->
-    ~ whne t ->
-    [Γ |- zip1 t π : T] ->
-    False.
-  Proof.
-    intros Ht Ht' Hty.
-    destruct π ; cbn in * ;
-      eapply termGen' in Hty as (?&[]&?) ; subst ; prod_hyp_splitter ;
-      match goal with H : [_ |-[de] t : _] |- _ => (unshelve eapply isType_ty, ty_conv_inj in H) end ; tea.
-    all: try solve [now econstructor].
-    all: now easy.
-  Qed.
-
-  Lemma wh_red_stack_complete Γ t π :
-    well_typed Γ (zip t π) ->
-    domain wh_red_stack (t,π).
-  Proof.
-    intros Hty.
-    pose proof (Hacc := well_typed_acc _ _ _ Hty).
-    change (zip t π) with (zip (fst (t,π)) (snd (t,π))) in *.
-    set (z := (t, π)) in *. clearbody z.
-    induction Hacc as [z H IH] in Hty |- *.
-    apply compute_domain. funelim (wh_red_stack z).
-    all: simpl.
-    all: try easy.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [? _]] ; cbn in *.
-      eapply zip1_notType ; tea.
-      all: now eapply isType_tm_view1.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[_ _ (?&[?[->]]&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[_ _ _ _ (?&[?[->]]&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-    - split ; [|easy].
-      eapply IH.
-      + red. red. cbn.
-        left.
-        constructor.
-        eapply zip_ored.
-        now econstructor.
-      + cbn in *.
-        eapply well_typed_zip in Hty as (?&[??Hu]).
-        eapply Hu, RedConvTeC, subject_reduction ; tea.
-        now do 2 econstructor.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[? ? (?&->&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-  - split ; [|easy].
-    eapply IH.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&(?&?&[_ (?&->&Hconv)%termGen'])&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&[_ _ (?&[->]&Hconv)%termGen']&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&(?&?&[_ (?&[->]&Hconv)%termGen'])&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    2: eassumption.
-    red. red. cbn.
-    right.
-    econstructor.
-    destruct s ; cbn ; now constructor.
-  Qed.
-
-  Corollary wh_red_complete Γ t :
-    well_typed Γ t ->
-    domain wh_red t.
-  Proof.
-    intros.
-    eapply compute_domain.
-    Fail rewrite wh_red_equation_1.
-    (* weird, should work? probably the reason why simp also fails? *)
-    rewrite (wh_red_equation_1 t).
-    cbn.
-    split ; [|easy].
-    now eapply wh_red_stack_complete.
-  Qed.
-  
-End RedImplemComplete.
-
 Section CtxAccessCorrect.
 
   #[universes(polymorphic)]Lemma ctx_access_sound :
@@ -420,6 +211,13 @@ Section TypingCorrect.
 
   #[local]Existing Instance ty_errors.
 
+  Lemma ty_view1_small_can T n : build_ty_view1 T = ty_view1_small n -> ~ isCanonical T.
+  Proof.
+    destruct T ; cbn.
+    all: inversion 1.
+    all: inversion 1.
+  Qed.
+
   #[universes(polymorphic)]Equations typing_correct_type (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
     (r : result (tstate_output x.π1)) : Type :=
   typing_correct_type _ (error _) := True ;
@@ -444,6 +242,7 @@ Section TypingCorrect.
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
       | H : graph conv _ _ |- _ => eapply conv_correct in H ; simp conv_correct_type in H
       | H : graph ctx_access _ _ |- _ => eapply ctx_access_correct in H
+      | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
       end).
     all: now econstructor.
   Qed.
