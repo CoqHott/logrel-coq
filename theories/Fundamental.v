@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping DeclarativeInstance GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -298,6 +298,7 @@ Section Fundamental.
     assert (VA' : [Γ ||-v<one> A | VΓ]) by now eapply univValid.
     assert [Γ ||-v<one> A ≅ B | VΓ | VA'] by (eapply univEqValid; irrValid).
     opector; tea.
+    - eapply UValid.
     - edestruct FundTmProd. 5: irrValid.
       1,3: eapply ty_sound; now eapply escapeTm.
       all: unshelve econstructor; irrValid.
@@ -305,16 +306,16 @@ Section Fundamental.
       1,3: eapply ty_sound; eapply escapeTm; tea.
       1: eapply irrelevanceTmLift; tea; irrValid.
       1: unshelve econstructor; irrValid.
-      opector.
+      unshelve econstructor.
       + eapply validSnoc; now eapply univValid.
-      + eapply irrelevanceLift; irrValid.
+      + eapply UValid.
       + eapply irrelevanceTmLift; irrValid.
     - unshelve epose (PiCongTm _ _ _ _ _ _ _ _ _ _ _).
       16: irrValid.
       2: tea.
       2,3,8: irrValid.
       all: try irrValid.
-      + now eapply univValid.
+      + eapply univValid; irrValid.
       + eapply irrelevanceLift; irrValid.
       + eapply irrelevanceTmLift; irrValid.
       Unshelve.
@@ -574,6 +575,190 @@ Section Fundamental.
     1: unshelve eapply substS; try irrValid.
   Qed.
 
+  Lemma FundTySig : forall (Γ : context) (A B : term),
+  [Γ |-[ de ] A] ->
+  FundTy Γ A -> [Γ,, A |-[ de ] B] -> FundTy (Γ,, A) B -> FundTy Γ (tSig A B).
+  Proof.
+    intros * ?[] ?[]; unshelve econstructor; tea.
+    unshelve eapply SigValid; tea; irrValid.
+  Qed.
+
+  Lemma FundTmSig : forall (Γ : context) (A B : term),
+    [Γ |-[ de ] A : U] ->
+    FundTm Γ U A ->
+    [Γ,, A |-[ de ] B : U] -> FundTm (Γ,, A) U B -> FundTm Γ U (tSig A B).
+  Proof.
+    intros * ?[]?[]; unshelve econstructor.
+    3: unshelve eapply SigValidU.
+    3-5: irrValid.
+    1: tea.
+    unshelve eapply univValid; tea.
+  Qed.
+
+  Lemma FundTmPair : forall (Γ : context) (A B a b : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ,, A |-[ de ] B] ->
+    FundTy (Γ,, A) B ->
+    [Γ |-[ de ] a : A] ->
+    FundTm Γ A a ->
+    [Γ |-[ de ] b : B[a..]] ->
+    FundTm Γ B[a..] b -> FundTm Γ (tSig A B) (tPair A B a b).
+  Proof.
+    intros * ?[]?[]?[]?[]; unshelve econstructor.
+    3: unshelve eapply pairValid; irrValid.
+    tea.
+  Qed.
+
+  Lemma FundTmFst : forall (Γ : context) (A B p : term),
+    [Γ |-[ de ] p : tSig A B] -> FundTm Γ (tSig A B) p -> FundTm Γ A (tFst p).
+  Proof.
+    intros * ?[]; unshelve econstructor.
+    3: unshelve eapply fstValid.
+    5: irrValid.
+    2: now eapply domSigValid.
+    now eapply codSigValid.
+  Qed.
+
+  Lemma FundTmSnd : forall (Γ : context) (A B p : term),
+    [Γ |-[ de ] p : tSig A B] ->
+    FundTm Γ (tSig A B) p -> FundTm Γ B[(tFst p)..] (tSnd p).
+  Proof.
+    intros * ?[]; unshelve econstructor.
+    3: unshelve eapply sndValid.
+    5: irrValid.
+    2: now eapply domSigValid.
+    now eapply codSigValid.
+  Qed.
+
+  Lemma FundTyEqSigCong : forall (Γ : context) (A B C D : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] A ≅ B] ->
+    FundTyEq Γ A B ->
+    [Γ,, A |-[ de ] C ≅ D] ->
+    FundTyEq (Γ,, A) C D -> FundTyEq Γ (tSig A C) (tSig B D).
+  Proof.
+    intros * ?[]?[]?[].
+    unshelve econstructor.
+    4: eapply SigCong; tea; try irrValid.
+    2: eapply irrelevanceLift; irrValid.
+    eapply SigValid; eapply irrelevanceLift; irrValid.
+    Unshelve. all: irrValid.
+  Qed.  
+
+  Lemma FundTmEqSigCong :forall (Γ : context) (A A' B B' : term),
+    [Γ |-[ de ] A : U] ->
+    FundTm Γ U A ->
+    [Γ |-[ de ] A ≅ A' : U] ->
+    FundTmEq Γ U A A' ->
+    [Γ,, A |-[ de ] B ≅ B' : U] ->
+    FundTmEq (Γ,, A) U B B' -> FundTmEq Γ U (tSig A B) (tSig A' B').
+  Proof.
+    intros * ?[]?[]?[]; unshelve econstructor.
+    5: eapply SigCongTm; tea; try irrValid.
+    4: eapply irrelevanceTmLift ; try irrValid; now eapply univEqValid.
+    1,2: unshelve eapply SigValidU; try irrValid.
+    1,2: now eapply univValid.
+    1: eapply UValid.
+    eapply irrelevanceTmLift ; try irrValid; now eapply univEqValid.
+    Unshelve. all: solve [ eapply UValid | now eapply univValid | irrValid].
+  Qed.
+
+  Lemma FundTmEqSigEta : forall (Γ : context) (A B p q : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ,, A |-[ de ] B] ->
+    FundTy (Γ,, A) B ->
+    [Γ |-[ de ] p : tSig A B] ->
+    FundTm Γ (tSig A B) p ->
+    [Γ |-[ de ] q : tSig A B] ->
+    FundTm Γ (tSig A B) q ->
+    [Γ |-[ de ] tFst p ≅ tFst q : A] ->
+    FundTmEq Γ A (tFst p) (tFst q) ->
+    [Γ |-[ de ] tSnd p ≅ tSnd q : B[(tFst p)..]] ->
+    FundTmEq Γ B[(tFst p)..] (tSnd p) (tSnd q) -> FundTmEq Γ (tSig A B) p q.
+  Proof.
+    intros * ?[]?[]?[]?[]?[]?[]; unshelve econstructor.
+    5: eapply sigEtaValid; tea; irrValid.
+    all: irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
+
+  Lemma FundTmEqFstCong : forall (Γ : context) (A B p p' : term),
+    [Γ |-[ de ] p ≅ p' : tSig A B] ->
+    FundTmEq Γ (tSig A B) p p' -> FundTmEq Γ A (tFst p) (tFst p').
+  Proof.
+    intros * ?[]; unshelve econstructor.
+    5: eapply fstCongValid; irrValid.
+    2: now eapply domSigValid.
+    1,2: eapply fstValid; irrValid.
+    Unshelve. all: now eapply codSigValid.
+  Qed.  
+
+  Lemma FundTmEqFstBeta : forall (Γ : context) (A B a b : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ,, A |-[ de ] B] ->
+    FundTy (Γ,, A) B ->
+    [Γ |-[ de ] a : A] ->
+    FundTm Γ A a ->
+    [Γ |-[ de ] b : B[a..]] ->
+    FundTm Γ B[a..] b -> FundTmEq Γ A (tFst (tPair A B a b)) a.
+  Proof.
+    intros * ?[]?[]?[]?[].
+    unshelve econstructor.
+    3,5: eapply pairFstValid; irrValid.
+    2,3: irrValid. 
+    tea.
+    Unshelve. all: irrValid.
+  Qed.
+  
+  Lemma FundTmEqSndCong : forall (Γ : context) (A B p p' : term),
+    [Γ |-[ de ] p ≅ p' : tSig A B] ->
+    FundTmEq Γ (tSig A B) p p' -> FundTmEq Γ B[(tFst p)..] (tSnd p) (tSnd p').
+  Proof.
+    intros * ?[]; unshelve econstructor.
+    5: eapply sndCongValid; irrValid.
+    1: tea.
+    1: eapply sndValid.
+    eapply conv; [| eapply sndValid].
+    eapply substSEq.
+    5: eapply fstCongValid.
+    4: eapply fstValid.
+    4-6: irrValid.
+    + eapply reflValidTy.
+    + eapply codSigValid.
+    + eapply reflValidTy.
+    + eapply symValidTmEq; irrValid.
+    Unshelve. all: try solve [now eapply domSigValid| now eapply codSigValid| irrValid].
+  Qed.
+
+  Lemma FundTmEqSndBeta : forall (Γ : context) (A B a b : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ,, A |-[ de ] B] ->
+    FundTy (Γ,, A) B ->
+    [Γ |-[ de ] a : A] ->
+    FundTm Γ A a ->
+    [Γ |-[ de ] b : B[a..]] ->
+    FundTm Γ B[a..] b ->
+    FundTmEq Γ B[(tFst (tPair A B a b))..] (tSnd (tPair A B a b)) b.
+  Proof.
+    intros * ?[]?[]?[]?[]; unshelve econstructor.
+    3,5: unshelve eapply pairSndValid; irrValid.
+    + tea.
+    + eapply conv; tea.
+      eapply irrelevanceEq.
+      eapply substSEq.
+      1,3: eapply reflValidTy.
+      1: irrValid.
+      2: eapply symValidTmEq.
+      1,2: eapply pairFstValid; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -587,6 +772,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTyPi.
   + apply FundTyNat.
   + apply FundTyEmpty.
+  + apply FundTySig.
   + apply FundTyUniv.
   + apply FundTmVar.
   + apply FundTmProd.
@@ -598,8 +784,13 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmNatElim.
   + apply FundTmEmpty.
   + apply FundTmEmptyElim.
+  + apply FundTmSig.
+  + apply FundTmPair.
+  + apply FundTmFst.
+  + apply FundTmSnd.
   + apply FundTmConv.
   + apply FundTyEqPiCong.
+  + apply FundTyEqSigCong.
   + apply FundTyEqRefl.
   + apply FundTyEqUniv.
   + apply FundTyEqSym.
@@ -613,6 +804,12 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + apply FundTmEqNatElimZero.
   + apply FundTmEqNatElimSucc.
   + apply FundTmEqEmptyElimCong.
+  + apply FundTmEqSigCong.
+  + apply FundTmEqSigEta.
+  + apply FundTmEqFstCong.
+  + apply FundTmEqFstBeta.
+  + apply FundTmEqSndCong.
+  + apply FundTmEqSndBeta.
   + apply FundTmEqRefl.
   + apply FundTmEqConv.
   + apply FundTmEqSym.

@@ -341,6 +341,8 @@ Section GenericTyping.
     convtm_eta_sig {Γ p p' A B} :
       [Γ |- A] ->
       [Γ ,, A |- B] ->
+      [Γ |- p : tSig A B] ->
+      [Γ |- p' : tSig A B] ->
       [Γ |- tFst p ≅ tFst p' : A] ->
       [Γ |- tSnd p ≅ tSnd p' : B[(tFst p)..]] ->
       [Γ |- p ≅ p' : tSig A B] ;
@@ -424,12 +426,10 @@ Section GenericTyping.
       [ Γ |- hz : P[tZero..] ] ->
       [ Γ |- hs : elimSuccHypTy P ] ->
       [ Γ |- n ⇒* n' : tNat ] ->
-      (forall n, [Γ |- n ⇒* n' : tNat] -> [Γ |- P[n'..] ≅ P[n..]]) ->
       [ Γ |- tNatElim P hz hs n ⇒* tNatElim P hz hs n' : P[n..] ];
     redtm_emptyelim {Γ P n n'} :
       [ Γ,, tEmpty |- P ] ->
       [ Γ |- n ⇒* n' : tEmpty ] ->
-      (forall n, [Γ |- n ⇒* n' : tEmpty] -> [Γ |- P[n'..] ≅ P[n..]]) ->
       [ Γ |- tEmptyElim P n ⇒* tEmptyElim P n' : P[n..] ];
     redtm_fst_beta {Γ A B a b} :
       [Γ |- A] ->
@@ -448,7 +448,6 @@ Section GenericTyping.
       [Γ |- tSnd (tPair A B a b) ⇒* b : B[(tFst (tPair A B a b))..]] ;
     redtm_snd {Γ A B p p'} :
       [Γ |- p ⇒* p' : tSig A B] ->
-      (forall p, [Γ |- p ⇒* p' : tSig A B] -> [Γ |- B[(tFst p')..] ≅ B[(tFst p)..]]) ->
       [Γ |- tSnd p ⇒* tSnd p' : B[(tFst p)..]] ;
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->

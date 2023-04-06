@@ -189,6 +189,8 @@ Section Definitions.
       | TermPairEta {Γ} {A B p q} :
           [Γ |- A] ->
           [Γ ,, A |- B] ->
+          [Γ |- p : tSig A B] ->
+          [Γ |- q : tSig A B] ->
           [Γ |- tFst p ≅ tFst q : A] ->
           [Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] ->
           [Γ |- p ≅ q : tSig A B]

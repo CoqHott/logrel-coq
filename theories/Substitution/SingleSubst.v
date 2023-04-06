@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance Validity.
-From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity.
+From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion.
 
 Set Universe Polymorphism.
@@ -183,21 +183,68 @@ Proof.
   instValid Vσt. irrelevance.
 Qed.
 
+Lemma singleSubstPoly {Γ F G t l lF}
+  (RFG : PolyRed Γ l F G)
+  {RF : [Γ ||-<lF> F]}
+  (Rt : [Γ ||-<lF> t : F | RF]) :
+  [Γ ||-<l> G[t..]].
+Proof.
+  replace G[t..] with G[t .: wk_id (Γ:=Γ) >> tRel] by now bsimpl.
+  unshelve eapply (PolyRed.posRed RFG).
+  1: escape; gen_typing.
+  irrelevance0; tea.
+  now bsimpl.
+Qed.
+
 Lemma singleSubstΠ1 {Γ F G t l lF}
   (ΠFG : [Γ ||-<l> tProd F G])
   {RF : [Γ ||-<lF> F]}
   (Rt : [Γ ||-<lF> t : F | RF]) :
   [Γ ||-<l> G[t..]].
 Proof.
-  apply invLRΠ in ΠFG; destruct ΠFG as [?? red ??? domRed codRed].
-  unshelve eassert (h :=redtywf_whnf red _).
-  1: constructor.
-  symmetry in h; injection h; clear h; intros ;  subst.
-  replace G[t..] with G[t .: wk_id (Γ:=Γ) >> tRel] by now bsimpl.
-  unshelve eapply codRed.
-  1: gen_typing.
-  irrelevance0; tea.
-  now bsimpl.
+  eapply singleSubstPoly; tea.
+  eapply (ParamRedTy.polyRed (normRedΠ0 (invLRΠ ΠFG))).
+Qed.
+
+Lemma singleSubstΣ1 {Γ F G t l lF}
+  (ΠFG : [Γ ||-<l> tSig F G])
+  {RF : [Γ ||-<lF> F]}
+  (Rt : [Γ ||-<lF> t : F | RF]) :
+  [Γ ||-<l> G[t..]].
+Proof.
+  eapply singleSubstPoly; tea.
+  eapply (ParamRedTy.polyRed (normRedΣ0 (invLRΣ ΠFG))).
+Qed.
+
+Lemma singleSubstPoly2 {Γ F F' G G' t t' l lF lF'}
+  {RFG : PolyRed Γ l F G}
+  (RFGeq : PolyRedEq RFG F' G')
+  {RF : [Γ ||-<lF> F]}
+  {RF' : [Γ ||-<lF'> F']}
+  (Rt : [Γ ||-<lF> t : F | RF]) 
+  (Rt' : [Γ ||-<lF'> t' : F' | RF']) 
+  (Rteq : [Γ ||-<lF> t ≅ t' : F | RF])
+  (RGt : [Γ ||-<lF> G[t..]])
+  (RGt' : [Γ ||-<lF'> G'[t'..]]) :
+  [Γ ||-<lF> G[t..] ≅ G'[t'..] | RGt ].
+Proof.
+  assert (wfΓ : [|-Γ]) by (escape ; gen_typing).
+  assert [Γ ||-<l> t' : F⟨wk_id (Γ:=Γ)⟩ | PolyRed.shpRed RFG wk_id wfΓ].
+  {
+    eapply LRTmRedConv; tea.
+    eapply LRTyEqSym. 
+    replace F' with F'⟨wk_id (Γ := Γ)⟩ by now bsimpl.
+    eapply (PolyRedEq.shpRed RFGeq).
+  }
+  eapply transEq.
+  2: (replace G'[t'..] with G'[t' .: wk_id (Γ:=Γ) >> tRel] by now bsimpl); eapply (PolyRedEq.posRed RFGeq).
+  irrelevance0.
+  2: eapply (PolyRed.posExt RFG).
+  3: irrelevance0; tea; now bsimpl.
+  1: now bsimpl.
+  eassumption.
+  Unshelve. all: tea.
+  irrelevance0; tea; now bsimpl.
 Qed.
 
 Lemma singleSubstΠ2 {Γ F F' G G' t t' l lF lF'}
@@ -212,30 +259,13 @@ Lemma singleSubstΠ2 {Γ F F' G G' t t' l lF lF'}
   (RGt' : [Γ ||-<lF'> G'[t'..]]) :
   [Γ ||-<lF> G[t..] ≅ G'[t'..] | RGt ].
 Proof.
-  pose (hΠ := invLRΠ ΠFG).
+  eapply singleSubstPoly2; tea.
+  pose (hΠ := normRedΠ0 (invLRΠ ΠFG)).
   assert (heq : [Γ ||-<l> tProd F G ≅ tProd F' G' | LRPi' hΠ]) by irrelevance.
-  destruct hΠ as [?? red ??? domRed codRed codExt]; clear ΠFG ΠFGeq.
-  assert (wfΓ : [|-Γ]) by gen_typing.
-  destruct heq as [?? red' ? domRedEq codRedEq]; cbn in *.
-  unshelve eassert (h :=redtywf_whnf red _).  1: constructor.
-  unshelve eassert (h' :=redtywf_whnf red' _).  1: constructor.
-  symmetry in h; symmetry in h' ; injection h; injection h'; clear h h'; intros ;  subst.
-  assert [Γ ||-<l> t' : F⟨wk_id (Γ:=Γ)⟩ | domRed Γ wk_id wfΓ].
-  {
-    eapply LRTmRedConv; tea.
-    eapply LRTyEqSym. 
-    replace F' with F'⟨wk_id (Γ := Γ)⟩ by now bsimpl.
-    eapply domRedEq.
-  }
-  eapply transEq.
-  2: (replace G'[t'..] with G'[t' .: wk_id (Γ:=Γ) >> tRel] by now bsimpl); eapply codRedEq.
-  irrelevance0.
-  2: eapply codExt.
-  3: irrelevance0; tea; now bsimpl.
-  1: now bsimpl.
-  eassumption.
-  Unshelve. all: tea.
-  irrelevance0; tea; now bsimpl.
+  destruct heq as [?? red' ? polyRed]; cbn in *.
+  assert (h' :=redtywf_whnf red' whnf_tProd).
+  symmetry in h'; injection h'; clear h'; intros ;  subst.
+  exact polyRed.
 Qed.
 
 Lemma substSΠaux {Γ F G t l} 

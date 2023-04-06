@@ -176,6 +176,13 @@ Proof.
     eapply redtywf_refl; gen_typing.
 Qed.
 
+Lemma redFwdConv {Γ l A B} (RA : [Γ ||-<l> A]) : [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B] × [Γ ||-<l> A ≅ B | RA].
+Proof.
+  intros red wh. pose (RB := redFwd RA red wh).
+  destruct (redwfSubst RB red).
+  split; tea; irrelevance.
+Qed.
+
 Lemma redTmFwd {Γ l A t u} {RA : [Γ ||-<l> A]} : 
   [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA].
 Proof.
@@ -214,6 +221,13 @@ Proof.
     1: now eapply isPair_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
+Qed.
+
+Lemma redTmFwdConv {Γ l A t u} {RA : [Γ ||-<l> A]} : 
+  [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
+Proof.
+  intros Rt red wh. pose (Ru := redTmFwd Rt red wh).
+  destruct (redwfSubstTerm RA Ru red); now split.
 Qed.
 
 End Reduction.

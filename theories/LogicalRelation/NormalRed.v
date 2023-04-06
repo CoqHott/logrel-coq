@@ -35,6 +35,19 @@ Definition normRedΣ {Γ F G l} (h : [Γ ||-<l> tSig F G]) : [Γ ||-<l> tSig F G
   LRSig' (normRedΣ0 (invLRΣ h)).
 
 #[program]
+Definition normEqRedΣ {Γ F F' G G' l} (h : [Γ ||-<l> tSig F G]) 
+  (heq : [Γ ||-<l> _ ≅ tSig F' G' | h]) : [Γ ||-<l> _ ≅ tSig F' G' | normRedΣ h] :=
+  {|
+    PiRedTyEq.dom := F';
+    PiRedTyEq.cod := G';
+  |}.
+Solve All Obligations with
+  intros; assert[Γ ||-<l> _ ≅ tSig F' G' | normRedΣ h] as [?? red] by irrelevance;
+  pose proof (e := redtywf_whnf red whnf_tSig);
+  symmetry in e; injection e; clear e; 
+  destruct h ; intros; cbn in *; subst; eassumption.
+
+#[program]
 Definition normLambda {Γ F F' G t l RΠ} 
   (Rlam : [Γ ||-<l> tLambda F' t : tProd F G | normRedΠ RΠ ]) :
   [Γ ||-<l> tLambda F' t : tProd F G | normRedΠ RΠ ] :=

@@ -145,6 +145,23 @@ Proof.
   now eapply wkSubstS.
 Qed.
 
+Lemma consWkSubstSEq' {Γ Δ Ξ A σ σ' a b l} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (VA : [Γ ||-v<l> A | VΓ])
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
+  (Vσσ' : [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ])
+  (ρ : Ξ ≤ Δ) wfΞ {RA}
+  (Ra : [Ξ ||-<l> a : A[σ]⟨ρ⟩ | RA])
+  (Rab : [Ξ ||-<l> a ≅ b : A[σ]⟨ρ⟩ | RA]) 
+  (Vawkσ := consWkSubstS VA ρ wfΞ Vσ Ra) :
+  [Ξ ||-v (a .: σ⟨ρ⟩) ≅  (b .: σ'⟨ρ⟩) : Γ ,, A | validSnoc VΓ VA | wfΞ | Vawkσ].
+Proof.
+  unshelve eapply consSubstSEq'.
+  - unshelve eapply irrelevanceSubstEq.
+    4: now eapply wkSubstSEq.
+    tea.
+  - irrelevance0; tea. now bsimpl.
+Qed.  
+
 
 Lemma liftSubstS {Γ σ Δ lF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])

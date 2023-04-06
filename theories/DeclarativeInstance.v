@@ -271,8 +271,8 @@ Section TypingWk.
     - intros * ??? ihB **. rewrite <- wk_sig.
       constructor; eauto.
       1: eapply ihB; constructor; eauto.
-      change (tFst _) with (tFst p)⟨ρ⟩.
-      rewrite <- subst_ren_wk_up; eauto.
+      1,2: rewrite wk_sig; eauto.
+      rewrite wk_fst, <- subst_ren_wk_up; eauto.
     - intros * ? ih **. econstructor; now eapply ih.
     - intros * ??? ihB ** ; rewrite <- wk_fst; rewrite <- wk_pair; constructor; eauto.
       1: eapply ihB; constructor; eauto.
@@ -591,11 +591,11 @@ Module DeclarativeTypingProperties.
     + eapply redSuccAlg; [constructor|reflexivity].
     + now constructor.
   - intros; now eapply redtmdecl_app.
-  - intros ????????? []?; split.
+  - intros * ??? []; split.
     + repeat (constructor; tea).
     + now eapply redalg_natElim.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
-  - intros ????? []?; split.
+  - intros * ? []; split.
     + repeat (constructor; tea).
     + now eapply redalg_natEmpty.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
