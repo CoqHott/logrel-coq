@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation: Definition of the logical relation *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -25,6 +25,7 @@ Ltac logrel := eauto with logrel.
   three outputs (eqTy, redTm and eqTm). *)
 
   Definition RedRel@{i j} :=
+  wfLCon               ->
   context               ->
   term                  ->
   (term -> Type@{i})         ->
@@ -36,7 +37,7 @@ Ltac logrel := eauto with logrel.
 
 Module LRPack.
 
-  Record LRPack@{i} {Γ : context} {A : term} :=
+  Record LRPack@{i} {l : wfLCon} {Γ : context} {A : term} :=
   {
     eqTy : term -> Type@{i};
     redTm : term -> Type@{i};
@@ -49,27 +50,27 @@ End LRPack.
 
 Export LRPack(LRPack,Build_LRPack).
 
-Notation "[ P | Γ ||- A ≅ B ]" := (@LRPack.eqTy Γ A P B).
-Notation "[ P | Γ ||- t : A ]" := (@LRPack.redTm Γ A P t).
-Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
+Notation "[ P | Γ ||- A ≅ B ]< l >" := (@LRPack.eqTy l Γ A P B).
+Notation "[ P | Γ ||- t : A ]< l >" := (@LRPack.redTm l Γ A P t).
+Notation "[ P | Γ ||- t ≅ u : A ]< l >" := (@LRPack.eqTm l Γ A P t u).
 
 (** An LRPack is adequate wrt. a RedRel when its three unpacked components are. *)
-Definition LRPackAdequate@{i j} {Γ : context} {A : term}
-  (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
-  R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
+Definition LRPackAdequate@{i j} {l : wfLCon} {Γ : context} {A : term}
+  (R : RedRel@{i j}) (P : LRPack@{i} l Γ A) : Type@{j} :=
+  R l Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
 
-Arguments LRPackAdequate _ _ /.
+Arguments LRPackAdequate _ _ _ /.
 
 Module LRAd.
   
-  Record > LRAdequate@{i j} {Γ : context} {A : term} {R : RedRel@{i j}} : Type :=
+  Record > LRAdequate@{i j} {l : wfLCon} {Γ : context} {A : term} {R : RedRel@{i j}} : Type :=
   {
-    pack :> LRPack@{i} Γ A ;
+    pack :> LRPack@{i} l Γ A ;
     adequate :> LRPackAdequate@{i j} R pack
   }.
 
   Arguments LRAdequate : clear implicits.
-  Arguments Build_LRAdequate {_ _ _ _}.
+  Arguments Build_LRAdequate {_ _ _ _ _}.
 
 End LRAd.
 
@@ -81,10 +82,10 @@ Coercion LRAd.adequate : LRAdequate >-> LRPackAdequate.
 
 (* TODO : update these for LRAdequate *)
 
-Notation "[ R | Γ ||- A ]"              := (@LRAdequate Γ A R).
-Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eqTy) B).
-Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.redTm) t).
-Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(@LRAd.pack Γ A R).(LRPack.eqTm) t u).
+Notation "[ R | Γ ||- A ]< l >"              := (@LRAdequate l Γ A R).
+Notation "[ R | Γ ||- A ≅ B | RA ]< l >"     := (RA.(@LRAd.pack l Γ A R).(LRPack.eqTy) B).
+Notation "[ R | Γ ||- t : A | RA ]< l >"     := (RA.(@LRAd.pack l Γ A R).(LRPack.redTm) t).
+Notation "[ R | Γ ||- t ≅ u : A | RA ]< l >" := (RA.(@LRAd.pack l Γ A R).(LRPack.eqTm) t u).
 
 (** ** Universe levels *)
 
@@ -114,12 +115,12 @@ Module neRedTy.
 
   Record neRedTy `{ta : tag}
     `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
-    {Γ : context} {A : term}
+    {wl : wfLCon} {Γ : context} {A : term}
   : Set := {
     ty : term;
-    red : [ Γ |- A :⇒*: ty];
-    ne : Ne[ Γ |- ty];
-    eq : [ Γ |- ty ~ ty : U] ;
+    red : [ Γ |- A :⇒*: ty]< wl >;
+    ne : Ne[ Γ |- ty]< wl >;
+    eq : [ Γ |- ty ~ ty : U]< wl > ;
   }.
 
   Arguments neRedTy {_ _ _ _ _}.
@@ -127,18 +128,18 @@ Module neRedTy.
 End neRedTy.
 
 Export neRedTy(neRedTy, Build_neRedTy).
-Notation "[ Γ ||-ne A ]" := (neRedTy Γ A).
+Notation "[ Γ ||-ne A ]< l >" := (neRedTy l Γ A).
 
 Module neRedTyEq.
 
   Record neRedTyEq `{ta : tag}
     `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
-    {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
+    {wl : wfLCon} {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]< wl >}
   : Set := {
     ty   : term;
-    red  : [ Γ |- B :⇒*: ty];
-    ne : Ne[ Γ |- ty];
-    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
+    red  : [ Γ |- B :⇒*: ty]< wl >;
+    ne : Ne[ Γ |- ty]< wl >;
+    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U]< wl >;
   }.
 
   Arguments neRedTyEq {_ _ _ _ _}.
@@ -146,19 +147,19 @@ Module neRedTyEq.
 End neRedTyEq.
 
 Export neRedTyEq(neRedTyEq,Build_neRedTyEq).
-Notation "[ Γ ||-ne A ≅ B | R ]" := (neRedTyEq Γ A B R).
+Notation "[ Γ ||-ne A ≅ B | R ]< l >" := (neRedTyEq l Γ A B R).
 
 Module neRedTm.
 
   Record neRedTm `{ta : tag}
     `{WfType ta} `{RedType ta} `{TypeNe ta}
     `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta} `{TermNe ta}
-    {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
+    {l : wfLCon} {Γ : context} {t A : term} {R : [ Γ ||-ne A ]< l >}
   : Set := {
     te  : term;
-    red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
-    ne : Ne[ Γ |- te : R.(neRedTy.ty)];
-    eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
+    red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)]< l >;
+    ne : Ne[ Γ |- te : R.(neRedTy.ty)]< l >;
+    eq : [Γ |- te ~ te : R.(neRedTy.ty)]< l > ;
   }.
 
   Arguments neRedTm {_ _ _ _ _ _ _ _ _}.
@@ -167,22 +168,22 @@ End neRedTm.
 
 Export neRedTm(neRedTm, Build_neRedTm).
 
-Notation "[ Γ ||-ne t : A | B ]" := (neRedTm Γ t A B).
+Notation "[ Γ ||-ne t : A | B ]< l >" := (neRedTm l Γ t A B).
 
 Module neRedTmEq.
 
   Record neRedTmEq `{ta : tag}
     `{WfType ta} `{RedType ta} `{TypeNe ta}
     `{Typing ta} `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta} `{TermNe ta}
-    {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]}
+    {l : wfLCon} {Γ : context} {t u A : term} {R : [ Γ ||-ne A ]< l >}
   : Set := {
     termL     : term;
     termR     : term;
-    redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
-    redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
-    whneL : Ne[Γ |- termL : R.(neRedTy.ty) ];
-    whneR : Ne[Γ |- termR : R.(neRedTy.ty) ];
-    eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
+    redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ]< l >;
+    redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ]< l >;
+    whneL : Ne[Γ |- termL : R.(neRedTy.ty) ]< l >;
+    whneR : Ne[Γ |- termR : R.(neRedTy.ty) ]< l >;
+    eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)]< l > ;
   }.
 
   Arguments neRedTmEq {_ _ _ _ _ _ _ _ _ _}.
@@ -190,19 +191,19 @@ Module neRedTmEq.
 End neRedTmEq.
 
 Export neRedTmEq(neRedTmEq, Build_neRedTmEq).
-Notation "[ Γ ||-ne t ≅ u : A | R ] " := (neRedTmEq Γ t u A R).
+Notation "[ Γ ||-ne t ≅ u : A | R ]< l > " := (neRedTmEq l Γ t u A R).
 
 (** ** Reducibility of the universe *)
 
 Module URedTy.
 
   Record URedTy `{ta : tag} `{!WfType ta} `{!RedType ta} `{WfContext ta}
-    {l} {Γ : context} {A : term}
+    {l} {wl : wfLCon} {Γ : context} {A : term}
   : Set := {
     level  : TypeLevel;
     lt  : level << l;
-    wfCtx : [|- Γ] ;
-    red : [ Γ |- A  :⇒*: U ]
+    wfCtx : [|- Γ]< wl > ;
+    red : [ Γ |- A  :⇒*: U ]< wl >
   }.
 
   Arguments URedTy {_ _ _ _}.
@@ -212,13 +213,13 @@ End URedTy.
 Export URedTy(URedTy,Build_URedTy).
 
 
-Notation "[ Γ ||-U< l > A ]" := (URedTy l Γ A) (at level 0, Γ, l, A at level 50).
+Notation "[ Γ ||-U< l > A ]< wl >" := (URedTy l wl Γ A) (at level 0, Γ, wl, l, A at level 50).
 
 Module URedTyEq.
 
   Record URedTyEq `{ta : tag} `{!WfType ta} `{!RedType ta} 
-    {Γ : context} {B : term} : Set := {
-    red : [Γ |- B :⇒*: U]
+   {l : wfLCon} {Γ : context} {B : term} : Set := {
+    red : [Γ |- B :⇒*: U]< l >
   }.
 
   Arguments URedTyEq : clear implicits.
@@ -228,21 +229,21 @@ End URedTyEq.
 
 Export URedTyEq(URedTyEq,Build_URedTyEq).
 
-Notation "[ Γ ||-U≅ B ]" := (URedTyEq Γ B).
+Notation "[ Γ ||-U≅ B ]< l >" := (URedTyEq l Γ B).
 
 Module URedTm.
 
   Record URedTm@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
     `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} `{TermNf ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
-    {Γ : context} {t A : term} {R : [Γ ||-U<l> A]}
+    {wl : wfLCon} {Γ : context} {t A : term} {R : [Γ ||-U<l> A]< wl >}
   : Type@{j} := {
     te : term;
-    red : [ Γ |- t :⇒*: te : U ];
-    type : isType te;
-    val : Nf[Γ |- te : U];
-    eqr : [Γ |- te ≅ te : U];
-    rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
+    red : [ Γ |- t :⇒*: te : U ]< wl >;
+    type : isType wl te;
+    val : Nf[Γ |- te : U]< wl >;
+    eqr : [Γ |- te ≅ te : U]< wl >;
+    rel : [rec R.(URedTy.lt) | Γ ||- t ]< wl > ;
   }.
 
   Arguments URedTm {_ _ _ _ _ _ _ _ _} rec.
@@ -250,14 +251,14 @@ Module URedTm.
   Record URedTmEq@{i j} `{ta : tag} `{WfContext ta} `{WfType ta}
     `{Typing ta} `{ConvTerm ta} `{RedType ta} `{RedTerm ta} `{TermNf ta}
     {l} {rec : forall {l'}, l' << l -> RedRel@{i j}}
-    {Γ : context} {t u A : term} {R : [Γ ||-U<l> A]}
+    {wl : wfLCon} {Γ : context} {t u A : term} {R : [Γ ||-U<l> A]< wl >}
   : Type@{j} := {
-      redL : URedTm (@rec) Γ t A R ;
-      redR : URedTm (@rec) Γ u A R ;
-      eq   : [ Γ |- redL.(te) ≅ redR.(te) : U ];
-      relL    : [ rec R.(URedTy.lt) | Γ ||- t ] ;
-      relR    : [ rec R.(URedTy.lt) | Γ ||- u ] ;
-      relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ] ;
+      redL : URedTm (@rec) wl Γ t A R ;
+      redR : URedTm (@rec) wl Γ u A R ;
+      eq   : [ Γ |- redL.(te) ≅ redR.(te) : U ]< wl >;
+      relL    : [ rec R.(URedTy.lt) | Γ ||- t ]< wl > ;
+      relR    : [ rec R.(URedTy.lt) | Γ ||- u ]< wl > ;
+      relEq : [ rec R.(URedTy.lt) | Γ ||- t ≅ u | relL ]< wl > ;
   }.
 
   Arguments URedTmEq {_ _ _ _ _ _ _ _ _} rec.
@@ -265,35 +266,43 @@ Module URedTm.
 End URedTm.
 
 Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
-Notation "[ R | Γ ||-U t : A | l ]" := (URedTm R Γ t A l) (at level 0, R, Γ, t, A, l at level 50).
-Notation "[ R | Γ ||-U t ≅ u : A | l ]" := (URedTmEq R Γ t u A l) (at level 0, R, Γ, t, u, A, l at level 50).
+Notation "[ R | Γ ||-U t : A | l ]< wl >" := (URedTm R wl Γ t A l) (at level 0, R, Γ, t, A, wl, l at level 50).
+Notation "[ R | Γ ||-U t ≅ u : A | l ]< wl >" := (URedTmEq R wl Γ t u A l) (at level 0, R, Γ, t, u, A, wl, l at level 50).
 
 (** ** Reducibility of product types *)
 
 Module PiRedTy.
-
+  
   Record PiRedTy@{i} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term}
+    {l : wfLCon} {Γ : context} {A : term}
   : Type (* @ max(Set, i+1) *) := {
     dom : term ;
     cod : term ;
-    red : [Γ |- A :⇒*: tProd dom cod];
-    domTy : [Γ |- dom];
-    codTy : [Γ ,, dom |- cod];
-    eq : [Γ |- tProd dom cod ≅ tProd dom cod];
-    domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩ ;
-    codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-        [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
-        LRPack@{i} Δ (cod[a .: (ρ >> tRel)]) ;
+    red : [Γ |- A :⇒*: tProd dom cod]< l >;
+    domTy : [Γ |- dom]< l >;
+    codTy : [Γ ,, dom |- cod]< l > ;
+    eq : [Γ |- tProd dom cod ≅ tProd dom cod]< l > ;
+    domN : nat ;
+    domRed {Δ} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l') :
+      [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩ ;
+    codomN {Δ} {a} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l')
+      (h : [ |- Δ ]< l' >)
+      (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
+        nat ;
+    codRed {Δ} {a} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l')
+        (h : [ |- Δ ]< l' >) (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
+     forall {l''} (τ' : l'' ≤ε l') (Minfl : codomN ρ τ Ninfl h ha <= length l''),
+       LRPack@{i} l'' Δ (cod[a .: (ρ >> tRel)]) ;
     codExt
-      {Δ a b}
-      (ρ : Δ ≤ Γ)
-      (h :  [ |- Δ ])
-      (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
-      [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
-      [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-      [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
+      {Δ a b l'}
+      (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
+      (h :  [ |- Δ ]< l' >)
+      (ha : [ (domRed ρ τ Ninfl h) | Δ ||- a : dom⟨ρ⟩ ]< l' >) :
+      [ (domRed ρ τ Ninfl h) | Δ ||- b : dom⟨ρ⟩]< l' > ->
+      [ (domRed ρ τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< l' > ->
+      forall {l''} (τ' : l'' ≤ε l') (Minfl : codomN ρ τ Ninfl h ha <= length l''),
+      [ (codRed ρ τ Ninfl h ha τ' Minfl) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< l'' >
   }.
 
   Arguments PiRedTy {_ _ _ _ _}.
@@ -305,35 +314,50 @@ Module PiRedTy.
   make reasoning easier. *)
   Record PiRedTyAdequate@{i j} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} Γ A}
+    {l : wfLCon} {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} l Γ A}
   : Type@{j} := {
-    domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (ΠA.(domRed) ρ h);
-    codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ])
-      : LRPackAdequate@{i j} R (ΠA.(codRed) ρ h ha);
+      domAd {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >) :
+      LRPackAdequate@{i j} R (ΠA.(domRed) ρ τ Ninfl h) ;
+      codAd {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >)
+        {l''} (τ' : l'' ≤ε l')
+        (Minfl : ΠA.(codomN) ρ τ Ninfl h ha <= length l'')
+      : LRPackAdequate@{i j} R (ΠA.(codRed) ρ τ Ninfl h ha τ' Minfl);
   }.
 
-  Arguments PiRedTyAdequate {_ _ _ _ _ _ _}.
+  Arguments PiRedTyAdequate {_ _ _ _ _ _ _ _}.
 
 End PiRedTy.
 
 Export PiRedTy(PiRedTy,Build_PiRedTy,PiRedTyAdequate,Build_PiRedTyAdequate).
-Notation "[ Γ ||-Πd A ]" := (PiRedTy Γ A).
+Notation "[ Γ ||-Πd A ]< l >" := (PiRedTy l Γ A).
 
 Module PiRedTyEq.
 
   Record PiRedTyEq `{ta : tag} `{WfContext ta}
-    `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A B : term} {ΠA : PiRedTy Γ A}
+    `{WfType ta} `{ConvType ta} `{RedType ta} {l : wfLCon}
+    {Γ : context} {A B : term} {ΠA : PiRedTy l Γ A}
   : Type := {
-    dom : term;
-    cod : term;
-    red : [Γ |- B :⇒*: tProd dom cod];
-    eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ];
-    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-      [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
-    codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]) :
-      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ];
+      dom : term;
+      cod : term;
+      red : [Γ |- B :⇒*: tProd dom cod]< l > ;
+      eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ]< l > ;
+      domN : nat ;
+      domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+      (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+      (Ninfl' : domN <= length l') (h : [ |- Δ ]< l' >) :
+      [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ]< l' > ;
+      codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
+      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ;
+      codRed {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
+        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl' : codomN ρ τ Ninfl h ha <= length l'') :
+        [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ]< l'' >;
   }.
 
   Arguments PiRedTyEq {_ _ _ _ _}.
@@ -341,28 +365,37 @@ Module PiRedTyEq.
 End PiRedTyEq.
 
 Export PiRedTyEq(PiRedTyEq,Build_PiRedTyEq).
-Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq Γ A B ΠA).
+Notation "[ Γ ||-Π A ≅ B | ΠA ]< l >" := (PiRedTyEq l Γ A B ΠA).
 
 Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
-    {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta} {l : wfLCon}
+    {Γ : context} {t A : term} {ΠA : PiRedTy l Γ A}
   : Type := {
-    nf : term;
-    red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isFun nf;
-    isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
-    refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
-    eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      (eq : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
+      nf : term;
+      red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
+      isfun : isFun l nf ;
+      isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)]< l > ;
+      refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
+      appN {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
+      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
+      app {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl' : appN ρ τ Ninfl h ha <= length l'') :
+      [(ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' > ;
+      eq {Δ l' a b} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        (hb : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        (eq : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl' : appN ρ τ Ninfl h ha <= length l'') :
+      [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]< l'' >
   }.
 
   Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
@@ -370,22 +403,28 @@ Module PiRedTm.
 End PiRedTm.
 
 Export PiRedTm(PiRedTm,Build_PiRedTm).
-Notation "[ Γ ||-Π t : A | ΠA ]" := (PiRedTm Γ t A ΠA).
+Notation "[ Γ ||-Π t : A | ΠA ]< l >" := (PiRedTm l Γ t A ΠA).
 
 Module PiRedTmEq.
 
   Record PiRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
-    {Γ : context} {t u A : term} {ΠA : PiRedTy Γ A}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta} {l : wfLCon}
+    {Γ : context} {t u A : term} {ΠA : PiRedTy l Γ A}
   : Type := {
-    redL : [ Γ ||-Π t : A | ΠA ] ;
-    redR : [ Γ ||-Π u : A | ΠA ] ;
-    eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    eqApp {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
-      : [ ( ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||-
-          tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
+      redL : [ Γ ||-Π t : A | ΠA ]< l > ;
+      redR : [ Γ ||-Π u : A | ΠA ]< l > ;
+      eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
+      eqappN {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
+      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
+      eqApp {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (ha : [(ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl' : eqappN ρ τ Ninfl h ha <= length l'') :
+      [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||-
+          tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' >
   }.
 
   Arguments PiRedTmEq {_ _ _ _ _ _ _ _ _}.
@@ -394,64 +433,64 @@ End PiRedTmEq.
 
 Export PiRedTmEq(PiRedTmEq,Build_PiRedTmEq).
 
-Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
+Notation "[ Γ ||-Π t ≅ u : A | ΠA ]< l >" := (PiRedTmEq l Γ t u A ΠA).
 
 (** ** Reducibility of neutrals at an arbitrary type *)
 
 Module NeNf.
-  Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} `{TermNe ta} {Γ k A} : Set :=
+  Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} `{TermNe ta} {l Γ k A} : Set :=
     {
-      ne : Ne[Γ |- k : A];
-      ty : [Γ |- k : A] ;
-      refl : [Γ |- k ~ k : A]
+      ne : Ne[Γ |- k : A]< l >;
+      ty : [Γ |- k : A]< l > ;
+      refl : [Γ |- k ~ k : A]< l >
     }.
   Arguments RedTm {_ _ _ _}.
 
-  Record RedTmEq `{ta : tag} `{ConvNeuConv ta} `{TermNe ta} {Γ k l A} : Set :=
+  Record RedTmEq `{ta : tag} `{ConvNeuConv ta} `{TermNe ta} {l Γ k k' A} : Set :=
     {
-      neL : Ne[Γ |- k : A];
-      neR : Ne[Γ |- l : A];
-      conv : [Γ |- k ~ l : A]
+      neL : Ne[Γ |- k : A]< l >;
+      neR : Ne[Γ |- k' : A]< l >;
+      conv : [Γ |- k ~ k' : A]< l >
     }.
 
   Arguments RedTmEq {_ _ _}.
 End NeNf.
 
-Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
-Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
+Notation "[ Γ ||-NeNf k : A ]< l >" := (NeNf.RedTm l Γ k A) (at level 0, Γ, l,  k, A at level 50).
+Notation "[ Γ ||-NeNf k ≅ i : A ]< l >" := (NeNf.RedTmEq l Γ k i A) (at level 0, Γ, k, l, i, A at level 50).
 
 
 (** ** Reducibility of natural number type *)
 Module NatRedTy.
 
   Record NatRedTy `{ta : tag} `{WfType ta} `{RedType ta}
-    {Γ : context} {A : term}
+    {l : wfLCon} {Γ : context} {A : term}
   : Set := 
   {
-    red : [Γ |- A :⇒*: tNat]
+    red : [Γ |- A :⇒*: tNat]< l >
   }.
 
   Arguments NatRedTy {_ _ _}.
 End NatRedTy.
 
 Export NatRedTy(NatRedTy, Build_NatRedTy).
-Notation "[ Γ ||-Nat A ]" := (NatRedTy Γ A) (at level 0, Γ, A at level 50).
+Notation "[ Γ ||-Nat A ]< l >" := (NatRedTy l Γ A) (at level 0, l, Γ, A at level 50).
 
 Module NatRedTyEq.
 
   Record NatRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
-    {Γ : context} {A : term} {NA : NatRedTy Γ A} {B : term}
+    {l : wfLCon} {Γ : context} {A : term} {NA : NatRedTy l Γ A} {B : term}
   : Set := {
-    red : [Γ |- B :⇒*: tNat];
+    red : [Γ |- B :⇒*: tNat]< l >;
   }.
 
-  Arguments NatRedTyEq {_ _ _ _ _}.
+  Arguments NatRedTyEq {_ _ _ _ _ _}.
 
 End NatRedTyEq.
 
 Export NatRedTyEq(NatRedTyEq,Build_NatRedTyEq).
 
-Notation "[ Γ ||-Nat A ≅ B | RA ]" := (@NatRedTyEq _ _ _ Γ A RA B) (at level 0, Γ, A, B, RA at level 50).
+Notation "[ Γ ||-Nat A ≅ B | RA ]< l >" := (@NatRedTyEq _ _ _ l Γ A RA B) (at level 0, l, Γ, A, B, RA at level 50).
 
 Module NatRedTm.
 Section NatRedTm.
@@ -459,19 +498,19 @@ Section NatRedTm.
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
     `{RedTerm ta} `{TermNe ta}.
 
-  Inductive NatRedTm {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
+  Inductive NatRedTm {l : wfLCon} {Γ : context} {A: term} {NA : NatRedTy l Γ A} : term -> Set :=
   | Build_NatRedTm {t}
     (nf : term)
-    (red : [Γ |- t :⇒*: nf : tNat ])
-    (eq : [Γ |- nf ≅ nf : tNat])
+    (red : [Γ |- t :⇒*: nf : tNat ]< l >)
+    (eq : [Γ |- nf ≅ nf : tNat]< l >)
     (prop : NatProp nf) : NatRedTm t
 
-  with NatProp {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
+  with NatProp {l : wfLCon} {Γ : context} {A: term} {NA : NatRedTy l Γ A} : term -> Set :=
   | zeroR  : NatProp tZero
   | succR {n} :
     NatRedTm n ->
     NatProp (tSucc n)
-  | neR {ne} : [Γ ||-NeNf ne : tNat] -> NatProp ne.
+  | neR {ne} : [Γ ||-NeNf ne : tNat]< l > -> NatProp ne.
 
 
 Scheme NatRedTm_mut_rect := Induction for NatRedTm Sort Type with
@@ -496,28 +535,28 @@ Let NatRedInductionType :=
 (* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma NatRedInduction : NatRedInductionType.
 Proof.
-  intros ??? PRed PProp **; split; now apply (_NatRedInduction _ _ _ PRed PProp).
+  intros ???? PRed PProp **; split ; now apply (_NatRedInduction _ _ _ _ PRed PProp).
 Defined.
 
-Definition nf {Γ A n} {NA : [Γ ||-Nat A]} : @NatRedTm _ _ NA n -> term.
+Definition nf {l Γ A n} {NA : [Γ ||-Nat A]< l > } : @NatRedTm _ _ _ NA n -> term.
 Proof.
   intros [? nf]. exact nf.
 Defined.
 
-Definition red {Γ A n} {NA : [Γ ||-Nat A]} (Rn : @NatRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tNat].
+Definition red {l Γ A n} {NA : [Γ ||-Nat A]< l >} (Rn : @NatRedTm _ _ _ NA n) : [Γ |- n :⇒*: nf Rn : tNat]< l >.
 Proof.
   dependent inversion Rn; subst; cbn; tea.
 Defined.
 
 End NatRedTm.
-Arguments NatRedTm {_ _ _ _ _ _ _ _ _ _}.
+Arguments NatRedTm {_ _ _ _ _ _ _ _ _ _ _}.
 Arguments NatProp {_ _ _ _ _ _ _ _ _ _}.
 
 End NatRedTm.
 
 Export NatRedTm(NatRedTm,Build_NatRedTm, NatProp, NatRedInduction).
 
-Notation "[ Γ ||-Nat t : A | RA ]" := (@NatRedTm _ _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
+Notation "[ Γ ||-Nat t : A | RA ]< l >" := (@NatRedTm _ _ _ _ _ _ _ _ l Γ A RA t) (at level 0, l, Γ, t, A, RA at level 50).
 
 
 Module NatRedTmEq.
@@ -526,22 +565,22 @@ Section NatRedTmEq.
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
     `{RedTerm ta} `{TermNe ta}.
 
-  Inductive NatRedTmEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
+  Inductive NatRedTmEq {l : wfLCon} {Γ : context} {A: term} {NA : NatRedTy l Γ A} : term -> term -> Set :=
   | Build_NatRedTmEq {t u}
     (nfL nfR : term)
-    (redL : [Γ |- t :⇒*: nfL : tNat])
-    (redR : [Γ |- u :⇒*: nfR : tNat ])
-    (eq : [Γ |- nfL ≅ nfR : tNat])
+    (redL : [Γ |- t :⇒*: nfL : tNat]< l >)
+    (redR : [Γ |- u :⇒*: nfR : tNat ]< l >)
+    (eq : [Γ |- nfL ≅ nfR : tNat]< l >)
     (prop : NatPropEq nfL nfR) : NatRedTmEq t u
 
-  with NatPropEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
+  with NatPropEq {l : wfLCon} {Γ : context} {A: term} {NA : NatRedTy l Γ A} : term -> term -> Set :=
   (* KM: plugging in the parameter type directly... Is that ok ? *)
   | zeroReq :
     NatPropEq tZero tZero
   | succReq {n n'} :
     NatRedTmEq n n' ->
     NatPropEq (tSucc n) (tSucc n')
-  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tNat] -> NatPropEq ne ne'.
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tNat]< l > -> NatPropEq ne ne'.
 
 Scheme NatRedTmEq_mut_rect := Induction for NatRedTmEq Sort Type with
     NatPropEq_mut_rect := Induction for NatPropEq Sort Type.
@@ -569,49 +608,210 @@ Let NatRedEqInductionType :=
 (* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma NatRedEqInduction : NatRedEqInductionType.
 Proof.
-  intros ??? PRedEq PPropEq **; split; now apply (_NatRedEqInduction _ _ _ PRedEq PPropEq).
+  intros ???? PRedEq PPropEq **; split; now apply (_NatRedEqInduction _ _ _ _ PRedEq PPropEq).
 Defined.
 
 End NatRedTmEq.
-Arguments NatRedTmEq {_ _ _ _ _ _ _ _ _ _}.
+Arguments NatRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
 Arguments NatPropEq {_ _ _ _ _ _ _ _ _ _}.
 End NatRedTmEq.
 
 Export NatRedTmEq(NatRedTmEq,Build_NatRedTmEq, NatPropEq, NatRedEqInduction).
 
-Notation "[ Γ ||-Nat t ≅ u : A | RA ]" := (@NatRedTmEq _ _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
+Notation "[ Γ ||-Nat t ≅ u : A | RA ]< l >" := (@NatRedTmEq _ _ _ _ _ _ _ _ l Γ A RA t u) (at level 0, l, Γ, t, u, A, RA at level 50).
+
+
+(** ** Reducibility of boolean type *)
+Module BoolRedTy.
+
+  Record BoolRedTy `{ta : tag} `{WfType ta} `{RedType ta}
+    {l : wfLCon} {Γ : context} {A : term}
+  : Set := 
+  {
+    red : [Γ |- A :⇒*: tBool]< l >
+  }.
+
+  Arguments BoolRedTy {_ _ _}.
+End BoolRedTy.
+
+Export BoolRedTy(BoolRedTy, Build_BoolRedTy).
+Notation "[ Γ ||-Bool A ]< l >" := (BoolRedTy l Γ A) (at level 0, l, Γ, A at level 50).
+
+Module BoolRedTyEq.
+
+  Record BoolRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
+    {l : wfLCon} {Γ : context} {A : term} {NA : BoolRedTy l Γ A} {B : term}
+  : Set := {
+    red : [Γ |- B :⇒*: tBool]< l >;
+  }.
+
+  Arguments BoolRedTyEq {_ _ _ _ _ _}.
+
+End BoolRedTyEq.
+
+Export BoolRedTyEq(BoolRedTyEq,Build_BoolRedTyEq).
+
+Notation "[ Γ ||-Bool A ≅ B | RA ]< l >" := (@BoolRedTyEq _ _ _ l Γ A RA B) (at level 0, l, Γ, A, B, RA at level 50).
+
+Module BoolRedTm.
+Section BoolRedTm.
+  Context `{ta : tag} `{WfType ta} 
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} `{TermNe ta}.
+
+  Inductive BoolProp {l : wfLCon} {Γ : context} {A: term} {NA : BoolRedTy l Γ A} : term -> Set :=
+  | trueR  : BoolProp tTrue
+  | falseR  : BoolProp tFalse
+  | neR {ne} : [Γ ||-NeNf ne : tBool]< l > -> BoolProp ne.
+  
+  Inductive BoolRedTm {l : wfLCon} {Γ : context} {A: term} {NA : BoolRedTy l Γ A} : term -> Set :=
+  | Build_BoolRedTm {t}
+    (nf : term)
+    (red : [Γ |- t :⇒*: nf : tBool ]< l >)
+    (eq : [Γ |- nf ≅ nf : tBool]< l >)
+    (prop : BoolProp (l := l) (Γ := Γ) (A := A) (NA := NA) nf) : BoolRedTm t.
+
+
+Scheme BoolRedTm_mut_rect := Induction for BoolRedTm Sort Type.
+Scheme BoolProp_mut_rect := Induction for BoolProp Sort Type.
+
+(*Combined Scheme _BoolRedInduction from
+  BoolRedTm_mut_rect,
+  BoolProp_mut_rect.
+
+Let _BoolRedInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _BoolRedInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let BoolRedInductionType :=
+  ltac: (let ind := eval cbv delta [_BoolRedInductionType] zeta
+    in _BoolRedInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma BoolRedInduction : BoolRedInductionType.
+Proof.
+  intros ???? PRed PProp **; split ; now apply (_BoolRedInduction _ _ _ _ PRed PProp).
+Defined.*)
+
+Definition nf {l Γ A n} {NA : [Γ ||-Bool A]< l > } : @BoolRedTm _ _ _ NA n -> term.
+Proof.
+  intros [? nf]. exact nf.
+Defined.
+
+Definition red {l Γ A n} {NA : [Γ ||-Bool A]< l >} (Rn : @BoolRedTm _ _ _ NA n) : [Γ |- n :⇒*: nf Rn : tBool]< l >.
+Proof.
+  dependent inversion Rn; subst; cbn; tea.
+Defined.
+
+End BoolRedTm.
+Arguments BoolRedTm {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments BoolProp {_ _ _ _ _ _ _ _ _ _}.
+
+End BoolRedTm.
+
+Export BoolRedTm(BoolRedTm,Build_BoolRedTm, BoolProp).
+
+Notation "[ Γ ||-Bool t : A | RA ]< l >" := (@BoolRedTm _ _ _ _ _ _ _ _ l Γ A RA t) (at level 0, l, Γ, t, A, RA at level 50).
+
+
+Module BoolRedTmEq.
+Section BoolRedTmEq.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} `{TermNe ta}.
+
+  Inductive BoolPropEq {l : wfLCon} {Γ : context} {A: term} {NA : BoolRedTy l Γ A} : term -> term -> Set :=
+  (* KM: plugging in the parameter type directly... Is that ok ? *)
+  | trueReq :
+    BoolPropEq tTrue tTrue
+  | falseReq :
+    BoolPropEq tFalse tFalse
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tBool]< l > -> BoolPropEq ne ne'.
+  
+  Inductive BoolRedTmEq {l : wfLCon} {Γ : context} {A: term} {NA : BoolRedTy l Γ A} : term -> term -> Set :=
+  | Build_BoolRedTmEq {t u}
+    (nfL nfR : term)
+    (redL : [Γ |- t :⇒*: nfL : tBool]< l >)
+    (redR : [Γ |- u :⇒*: nfR : tBool ]< l >)
+    (eq : [Γ |- nfL ≅ nfR : tBool]< l >)
+    (prop : BoolPropEq (l := l) (Γ := Γ) (A := A) (NA := NA) nfL nfR) :
+    BoolRedTmEq t u.
+
+ 
+
+Scheme BoolRedTmEq_mut_rect := Induction for BoolRedTmEq Sort Type.
+Scheme BoolPropEq_mut_rect := Induction for BoolPropEq Sort Type.
+
+(*Combined Scheme _BoolRedInduction from
+  BoolRedTmEq_mut_rect,
+  BoolPropEq_mut_rect.
+
+Combined Scheme _BoolRedEqInduction from
+  BoolRedTmEq_mut_rect,
+  BoolPropEq_mut_rect.
+
+Let _BoolRedEqInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _BoolRedEqInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let BoolRedEqInductionType :=
+  ltac: (let ind := eval cbv delta [_BoolRedEqInductionType] zeta
+    in _BoolRedEqInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma BoolRedEqInduction : BoolRedEqInductionType.
+Proof.
+  intros ???? PRedEq PPropEq **; split; now apply (_BoolRedEqInduction _ _ _ _ PRedEq PPropEq).
+Defined.
+*)
+End BoolRedTmEq.
+Arguments BoolRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments BoolPropEq {_ _ _ _ _ _ _ _ _ _}.
+End BoolRedTmEq.
+
+Export BoolRedTmEq(BoolRedTmEq,Build_BoolRedTmEq, BoolPropEq).
+
+Notation "[ Γ ||-Bool t ≅ u : A | RA ]< l >" := (@BoolRedTmEq _ _ _ _ _ _ _ _ l Γ A RA t u) (at level 0, l, Γ, t, u, A, RA at level 50).
 
 (** ** Reducibility of empty type *)
 Module EmptyRedTy.
 
   Record EmptyRedTy `{ta : tag} `{WfType ta} `{RedType ta}
-    {Γ : context} {A : term}
+    {l : wfLCon} {Γ : context} {A : term}
   : Set := 
   {
-    red : [Γ |- A :⇒*: tEmpty]
+    red : [Γ |- A :⇒*: tEmpty]< l >
   }.
 
   Arguments EmptyRedTy {_ _ _}.
 End EmptyRedTy.
 
 Export EmptyRedTy(EmptyRedTy, Build_EmptyRedTy).
-Notation "[ Γ ||-Empty A ]" := (EmptyRedTy Γ A) (at level 0, Γ, A at level 50).
+Notation "[ Γ ||-Empty A ]< l >" := (EmptyRedTy l Γ A) (at level 0, l, Γ, A at level 50).
 
 Module EmptyRedTyEq.
 
   Record EmptyRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
-    {Γ : context} {A : term} {NA : EmptyRedTy Γ A} {B : term}
+    {l : wfLCon} {Γ : context} {A : term} {NA : EmptyRedTy l Γ A} {B : term}
   : Set := {
-    red : [Γ |- B :⇒*: tEmpty];
+    red : [Γ |- B :⇒*: tEmpty]< l >;
   }.
 
-  Arguments EmptyRedTyEq {_ _ _ _ _}.
+  Arguments EmptyRedTyEq {_ _ _ _ _ _}.
 
 End EmptyRedTyEq.
 
 Export EmptyRedTyEq(EmptyRedTyEq,Build_EmptyRedTyEq).
 
-Notation "[ Γ ||-Empty A ≅ B | RA ]" := (@EmptyRedTyEq _ _ _ Γ A RA B) (at level 0, Γ, A, B, RA at level 50).
+Notation "[ Γ ||-Empty A ≅ B | RA ]< l >" := (@EmptyRedTyEq _ _ _ l Γ A RA B) (at level 0, l, Γ, A, B, RA at level 50).
 
 Module EmptyRedTm.
 Section EmptyRedTm.
@@ -619,15 +819,15 @@ Section EmptyRedTm.
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
     `{RedTerm ta} `{TermNe ta}.
 
-  Inductive EmptyProp {Γ : context} : term -> Set :=
-  | neR {ne} : [Γ ||-NeNf ne : tEmpty] -> EmptyProp ne.
+  Inductive EmptyProp {l : wfLCon} {Γ : context} : term -> Set :=
+  | neR {ne} : [Γ ||-NeNf ne : tEmpty]< l > -> EmptyProp ne.
 
-  Inductive EmptyRedTm {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> Set :=
+  Inductive EmptyRedTm {l : wfLCon} {Γ : context} {A: term} {NA : EmptyRedTy l Γ A} : term -> Set :=
   | Build_EmptyRedTm {t}
     (nf : term)
-    (red : [Γ |- t :⇒*: nf : tEmpty ])
-    (eq : [Γ |- nf ≅ nf : tEmpty])
-    (prop : @EmptyProp Γ nf) : EmptyRedTm t.
+    (red : [Γ |- t :⇒*: nf : tEmpty ]< l >)
+    (eq : [Γ |- nf ≅ nf : tEmpty]< l >)
+    (prop : @EmptyProp l Γ nf) : EmptyRedTm t.
 
 (* Scheme EmptyRedTm_mut_rect := Induction for EmptyRedTm Sort Type with *)
 (*     EmptyProp_mut_rect := Induction for EmptyProp Sort Type. *)
@@ -654,25 +854,25 @@ Section EmptyRedTm.
 (*   intros ??? PRed PProp **; split; now apply (_EmptyRedInduction _ _ _ PRed PProp). *)
 (* Defined. *)
 
-Definition nf {Γ A n} {NA : [Γ ||-Empty A]} : @EmptyRedTm _ _ NA n -> term.
+Definition nf {l Γ A n} {NA : [Γ ||-Empty A]< l >} : @EmptyRedTm _ _ _ NA n -> term.
 Proof.
   intros [? nf]. exact nf.
 Defined.
 
-Definition red {Γ A n} {NA : [Γ ||-Empty A]} (Rn : @EmptyRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tEmpty].
+Definition red {l Γ A n} {NA : [Γ ||-Empty A]< l >} (Rn : @EmptyRedTm _ _ _ NA n) : [Γ |- n :⇒*: nf Rn : tEmpty]< l >.
 Proof.
   dependent inversion Rn; subst; cbn; tea.
 Defined.
 
 End EmptyRedTm.
-Arguments EmptyRedTm {_ _ _ _ _ _ _ _ _ _}.
-Arguments EmptyProp {_ _ _ _}.
+Arguments EmptyRedTm {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments EmptyProp {_ _ _ _ _}.
 
 End EmptyRedTm.
 
 Export EmptyRedTm(EmptyRedTm,Build_EmptyRedTm, EmptyProp).
 
-Notation "[ Γ ||-Empty t : A | RA ]" := (@EmptyRedTm _ _ _ _ _ _ _ _ Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
+Notation "[ Γ ||-Empty t : A | RA ]< l >" := (@EmptyRedTm _ _ _ _ _ _ _ _ l Γ A RA t) (at level 0, Γ, t, A, RA at level 50).
 
 
 Module EmptyRedTmEq.
@@ -681,26 +881,26 @@ Section EmptyRedTmEq.
     `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
     `{RedTerm ta} `{TermNe ta}.
 
-  Inductive EmptyPropEq {Γ : context} : term -> term -> Set :=
+  Inductive EmptyPropEq {l} {Γ : context} : term -> term -> Set :=
   (* KM: plugging in the parameter type directly... Is that ok ? *)
-  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tEmpty] -> EmptyPropEq ne ne'.
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tEmpty]< l > -> EmptyPropEq ne ne'.
 
-  Inductive EmptyRedTmEq {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> term -> Set :=
+  Inductive EmptyRedTmEq {l} {Γ : context} {A: term} {NA : EmptyRedTy l Γ A} : term -> term -> Set :=
   | Build_EmptyRedTmEq {t u}
     (nfL nfR : term)
-    (redL : [Γ |- t :⇒*: nfL : tEmpty])
-    (redR : [Γ |- u :⇒*: nfR : tEmpty ])
-    (eq : [Γ |- nfL ≅ nfR : tEmpty])
-    (prop : @EmptyPropEq Γ nfL nfR) : EmptyRedTmEq t u.
+    (redL : [Γ |- t :⇒*: nfL : tEmpty]< l >)
+    (redR : [Γ |- u :⇒*: nfR : tEmpty ]< l >)
+    (eq : [Γ |- nfL ≅ nfR : tEmpty]< l >)
+    (prop : @EmptyPropEq l Γ nfL nfR) : EmptyRedTmEq t u.
 
 End EmptyRedTmEq.
-Arguments EmptyRedTmEq {_ _ _ _ _ _ _ _ _ _}.
-Arguments EmptyPropEq {_ _ _}.
+Arguments EmptyRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments EmptyPropEq {_ _ _ _}.
 End EmptyRedTmEq.
 
 Export EmptyRedTmEq(EmptyRedTmEq,Build_EmptyRedTmEq, EmptyPropEq).
 
-Notation "[ Γ ||-Empty t ≅ u : A | RA ]" := (@EmptyRedTmEq _ _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
+Notation "[ Γ ||-Empty t ≅ u : A | RA ]< l >" := (@EmptyRedTmEq _ _ _ _ _ _ _ _ l Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
 
 (** ** Definition of the logical relation *)
 
@@ -714,25 +914,28 @@ Inductive LR@{i j k} `{ta : tag}
   `{RedType ta} `{TypeNf ta} `{TypeNe ta}  `{RedTerm ta} `{TermNf ta} `{TermNe ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
-  | LRU {Γ A} (H : [Γ ||-U<l> A]) :
-      LR rec Γ A
-      (fun B   => [Γ ||-U≅ B ])
-      (fun t   => [ rec | Γ ||-U t     : A | H ])
-      (fun t u => [ rec | Γ ||-U t ≅ u : A | H ])
-  | LRne {Γ A} (neA : [ Γ ||-ne A ]) :
-      LR rec Γ A
-      (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
-      (fun t   =>  [ Γ ||-ne t     : A | neA])
-      (fun t u =>  [ Γ ||-ne t ≅ u : A | neA])
-  | LRPi {Γ : context} {A : term} (ΠA : PiRedTy@{j} Γ A) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
-    LR rec Γ A
-      (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
-      (fun t   => [ Γ ||-Π t     : A | ΠA ])
-      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
-  | LRNat {Γ A} (NA : [Γ ||-Nat A]) :
-    LR rec Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
-  | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
-    LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA).
+  | LRU {wl Γ A} (H : [Γ ||-U<l> A]< wl >) :
+      LR rec wl Γ A
+      (fun B   => [Γ ||-U≅ B ]< wl >)
+      (fun t   => [ rec | Γ ||-U t     : A | H ]< wl >)
+      (fun t u => [ rec | Γ ||-U t ≅ u : A | H ]< wl >)
+  | LRne {wl Γ A} (neA : [ Γ ||-ne A ]< wl >) :
+      LR rec wl Γ A
+      (fun B   =>  [ Γ ||-ne A ≅ B     | neA]< wl >)
+      (fun t   =>  [ Γ ||-ne t     : A | neA]< wl >)
+      (fun t u =>  [ Γ ||-ne t ≅ u : A | neA]< wl >)
+  | LRPi {wl : wfLCon} {Γ : context} {A : term}
+    (ΠA : PiRedTy@{j} wl Γ A) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
+    LR rec wl Γ A
+      (fun B   => [ Γ ||-Π A ≅ B     | ΠA ]< wl >)
+      (fun t   => [ Γ ||-Π t     : A | ΠA ]< wl >)
+      (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ]< wl >)
+  | LRNat {wl Γ A} (NA : [Γ ||-Nat A]< wl >) :
+    LR rec wl Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
+  | LRBool {wl Γ A} (NA : [Γ ||-Bool A]< wl >) :
+    LR rec wl Γ A (BoolRedTyEq NA) (BoolRedTm NA) (BoolRedTmEq NA)
+  | LREmpty {wl Γ A} (NA : [Γ ||-Empty A]< wl >) :
+    LR rec wl Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA).
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -760,8 +963,8 @@ Section MoreDefs.
   Definition LogRel0@{i j k} :=
     LR@{i j k} rec0@{i j}.
 
-  Definition LRbuild0@{i j k} {Γ A rEq rTe rTeEq} :
-    LogRel0@{i j k} Γ A rEq rTe rTeEq -> [ LogRel0@{i j k} | Γ ||- A ] :=
+  Definition LRbuild0@{i j k} {wl Γ A rEq rTe rTeEq} :
+    LogRel0@{i j k} wl Γ A rEq rTe rTeEq -> [ LogRel0@{i j k} | Γ ||- A ]< wl > :=
     fun H => {|
       LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
       LRAd.adequate := H |}.
@@ -783,36 +986,40 @@ Section MoreDefs.
   Definition LogRel@{i j k l} (l : TypeLevel) :=
     LR@{j k l} (LogRelRec@{i j k} l).
 
-  Definition LRbuild@{i j k l} {Γ l A rEq rTe rTeEq} :
-    LR@{j k l} (LogRelRec@{i j k} l) Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ] :=
+  Definition LRbuild@{i j k l} {wl Γ l A rEq rTe rTeEq} :
+    LR@{j k l} (LogRelRec@{i j k} l) wl Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ]< wl > :=
     fun H => {|
       LRAd.pack := {| LRPack.eqTy := rEq ; LRPack.redTm := rTe ; LRPack.eqTm := rTeEq |} ;
       LRAd.adequate := H |}.
 
-  Definition LRunbuild {Γ l A} :
-  [ LogRel l | Γ ||- A ] ->
-    ∑ rEq rTe rTeEq , LR (LogRelRec l) Γ A rEq rTe rTeEq :=
+  Definition LRunbuild {wl Γ l A} :
+  [ LogRel l | Γ ||- A ]< wl > ->
+    ∑ rEq rTe rTeEq , LR (LogRelRec l) wl Γ A rEq rTe rTeEq :=
       fun H => (LRPack.eqTy H; LRPack.redTm H; LRPack.eqTm H; H.(LRAd.adequate)).
 
-  Definition LRU_@{i j k l} {l Γ A} (H : [Γ ||-U<l> A])
-    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+  Definition LRU_@{i j k l} {wl l Γ A} (H : [Γ ||-U<l> A]< wl >)
+    : [ LogRel@{i j k l} l | Γ ||- A ]< wl > :=
     LRbuild (LRU (LogRelRec l) H).
 
-  Definition LRne_@{i j k l} l {Γ A} (neA : [Γ ||-ne A])
-    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+  Definition LRne_@{i j k l} l {wl Γ A} (neA : [Γ ||-ne A]< wl >)
+    : [ LogRel@{i j k l} l | Γ ||- A ]< wl > :=
     LRbuild (LRne (LogRelRec l) neA).
 
-  Definition LRPi_@{i j k l} l {Γ A} (ΠA : PiRedTy@{k} Γ A)
+  Definition LRPi_@{i j k l} l {wl Γ A} (ΠA : PiRedTy@{k} wl Γ A)
     (ΠAad : PiRedTyAdequate (LR (LogRelRec@{i j k} l)) ΠA)
-    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    : [ LogRel@{i j k l} l | Γ ||- A ]< wl > :=
     LRbuild (LRPi (LogRelRec l) ΠA ΠAad).
 
-  Definition LRNat_@{i j k l} l {Γ A} (NA : [Γ ||-Nat A]) 
-    : [LogRel@{i j k l} l | Γ ||- A] :=
+  Definition LRNat_@{i j k l} l {wl Γ A} (NA : [Γ ||-Nat A]< wl >) 
+    : [LogRel@{i j k l} l | Γ ||- A]< wl > :=
     LRbuild (LRNat (LogRelRec l) NA).
 
-  Definition LREmpty_@{i j k l} l {Γ A} (NA : [Γ ||-Empty A]) 
-    : [LogRel@{i j k l} l | Γ ||- A] :=
+  Definition LRBool_@{i j k l} l {wl Γ A} (NA : [Γ ||-Bool A]< wl >) 
+    : [LogRel@{i j k l} l | Γ ||- A]< wl > :=
+    LRbuild (LRBool (LogRelRec l) NA).
+
+  Definition LREmpty_@{i j k l} l {wl Γ A} (NA : [Γ ||-Empty A]< wl >) 
+    : [LogRel@{i j k l} l | Γ ||- A]< wl > :=
     LRbuild (LREmpty (LogRelRec l) NA).
 
 End MoreDefs.
@@ -820,10 +1027,10 @@ End MoreDefs.
 (** To be explicit with universe levels use the rhs, e.g
    [ LogRel@{i j k l} l | Γ ||- A] or [ LogRel0@{i j k} ||- Γ ||- A ≅ B | RA ]
  *)
-Notation "[ Γ ||-< l > A ]" := [ LogRel l | Γ ||- A ].
-Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
-Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
-Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
+Notation "[ Γ ||-< l > A ]< wl >" := [ LogRel l | Γ ||- A ]< wl >.
+Notation "[ Γ ||-< l > A ≅ B | RA ]< wl >" := [ LogRel l | Γ ||- A ≅ B | RA ]< wl >.
+Notation "[ Γ ||-< l > t : A | RA ]< wl >" := [ LogRel l | Γ ||- t : A | RA ]< wl >.
+Notation "[ Γ ||-< l > t ≅ u : A | RA ]< wl >" := [ LogRel l | Γ ||- t ≅ u : A | RA ]< wl >.
 
 (** ** Rebundling reducibility of product types *)
 
@@ -839,41 +1046,55 @@ Section PiRedTyPack.
     `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}.
 
 
-  Record PiRedTyPack@{i j k l} {Γ : context} {A : term} {l : TypeLevel} 
+  Record PiRedTyPack@{i j k l} {wl : wfLCon} {Γ : context} {A : term}
+    {l : TypeLevel} 
     : Type@{l} := {
-      dom : term ;
-      cod : term ;
-      red : [Γ |- A :⇒*: tProd dom cod];
-      domTy : [Γ |- dom];
-      codTy : [Γ ,, dom |- cod];
-      eq : [Γ |- tProd dom cod ≅ tProd dom cod];
-      domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ] ;
-      codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-          [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
-          [ LogRel@{i j k l} l | Δ ||- cod[a .: (ρ >> tRel)]] ;
-      codExt
-        {Δ a b}
-        (ρ : Δ ≤ Γ)
-        (h :  [ |- Δ ])
-        (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
-        [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
-        [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-        [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
-    }.
+    dom : term ;
+    cod : term ;
+    red : [Γ |- A :⇒*: tProd dom cod]< wl >;
+    domTy : [Γ |- dom]< wl >;
+    codTy : [Γ ,, dom |- cod]< wl > ;
+    eq : [Γ |- tProd dom cod ≅ tProd dom cod]< wl > ;
+    domN : nat ;
+    domRed {Δ} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+      (Ninfl : domN <= length wl') :
+      [ |- Δ ]< wl' > -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ]< wl' > ;
+    codomN {Δ} {a} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+        (Ninfl : domN <= length wl')
+        (h : [ |- Δ ]< wl' >)
+        (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >) :
+        nat ;
+    codRed {Δ} {a} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+        (Ninfl : domN <= length wl')
+      (h : [ |- Δ ]< wl' >)
+      (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >)
+      {wl''} (τ' : wl'' ≤ε wl')
+      (Minfl : codomN ρ τ Ninfl h ha <= length wl'') :
+        [ LogRel@{i j k l} l | Δ ||- cod[a .: (ρ >> tRel)]]< wl''> ; 
+    codExt {Δ a b wl'}
+      (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl) (Ninfl : domN <= length wl')
+      (h :  [ |- Δ ]< wl' >)
+      (ha : [ (domRed ρ τ Ninfl h) | Δ ||- a : dom⟨ρ⟩ ]< wl' >) :
+      [ (domRed ρ τ Ninfl h) | Δ ||- b : dom⟨ρ⟩]< wl' > ->
+      [ (domRed ρ τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< wl' > ->
+      forall {wl''} (τ' : wl'' ≤ε wl')
+             (Minfl : codomN ρ τ Ninfl h ha <= length wl''),
+        [ (codRed ρ τ Ninfl h ha τ' Minfl) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< wl'' >    }.
 
   Arguments PiRedTyPack : clear implicits.
 
-  Definition pack@{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
+  Definition pack@{i j k l} {wl Γ A l} (ΠA : PiRedTy@{k} wl Γ A)
     (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA) 
-    : PiRedTyPack@{i j k l} Γ A l.
+    : PiRedTyPack@{i j k l} wl Γ A l.
   Proof.
     destruct ΠA as [dom cod]; destruct ΠAad; cbn in *.
-    unshelve econstructor; [exact dom| exact cod|..].
-    3-6: assumption.
-    * intros; econstructor; now unshelve apply domAd.
-    * intros; econstructor; now unshelve apply codAd.
-    * intros. cbn. eauto.
-  Defined.
+    Print Build_PiRedTyPack.
+    unshelve refine (Build_PiRedTyPack wl Γ A l dom cod _ _ _ _ domN0 _ _ _ _).
+    - intros; econstructor. now unshelve apply domAd.
+    - intros; econstructor; now unshelve apply codAd.
+    - intros.
+      cbn in *.
+  Abort.
     
   Definition toPiRedTy@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
     PiRedTy@{k} Γ A.

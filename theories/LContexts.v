@@ -1,14 +1,13 @@
 Require Import ssreflect.
+Require Import Coq.Arith.EqNat.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils.
 
-Inductive SFalse : SProp := .
-
-Definition LCon := list (prod nat bool).
+Notation LCon := (list (prod nat bool)).
 
 Inductive in_LCon : LCon -> nat -> bool -> Prop :=
-| in_here_l (l : LCon) {d b} : in_LCon (cons (d,b) l) d b
-| in_there_l {l : LCon} {d b d' b'} : in_LCon l d b -> in_LCon (cons (d',b') l) d b.
+| in_here_l (l : LCon) {n b} : in_LCon (cons (n,b) l) n b
+| in_there_l {l : LCon} {n b d} : in_LCon l n b -> in_LCon (cons d l) n b.
 
 Inductive not_in_LCon : LCon -> nat -> Prop :=
 | not_in_nil : forall n, not_in_LCon nil n
@@ -45,20 +44,16 @@ Definition bool_to_term (b : bool) : term :=
   | false => tFalse
   end.
 
-Record SsigT (A : Type) (B : A -> Prop) :=
-  exist {pi1 : A ; pi2 : B pi1}.
-Arguments pi1 [_ _] _.
-Arguments pi2 [_ _] _.
+Record wfLCon :=
+  {pi1 : LCon ; pi2 : wf_LCon pi1}.
 
-Definition wfLCon := SsigT LCon wf_LCon.
+Coercion pi1 : wfLCon >-> LCon.
 
 Lemma notinLConnotinLCon {l n b} : not_in_LCon l n -> in_LCon l n b -> False.
 Proof.
   intros notinl inl.
-  eapply SFalse_ind.
   induction inl.
   - inversion notinl ; subst.
-    eapply False_sind.
     now apply H3.
   - eapply IHinl.
     now inversion notinl ; subst.
@@ -95,13 +90,37 @@ Proof.
   - now inversion inl.
   - inversion inl ; subst.
     + inversion inl' ; subst ; trivial.
-      exfalso ; exact (notinLConnotinLCon H H5).
+      exfalso ; exact (notinLConnotinLCon H H4).
     + inversion inl' ; subst.
-      * exfalso ; exact (notinLConnotinLCon H H5).
-      * exact (IHwfl H5 H6).
+      * exfalso ; exact (notinLConnotinLCon H H4).
+      * exact (IHwfl H4 H5).
 Qed.
 
-
+Lemma decidInLCon l n : (in_LCon l n true) + (in_LCon l n false) + (not_in_LCon l n).
+Proof.
+  induction l.
+  - right.
+    now econstructor.
+  - induction IHl as [IHl | IHl ].
+    + induction IHl as [IHl | IHl].
+      * left ; left ; now econstructor.
+      * left ; right ; now econstructor.
+    + destruct a as [m b].
+      case (eq_nat_decide n m).
+      * intro neqm.
+        rewrite <- (proj1 (eq_nat_is_eq n m) neqm).
+        case b.
+        -- left ; left ; now econstructor.
+        -- left ; right ; now econstructor.
+      * intro noteq.
+        right.
+        econstructor ; try assumption.
+        intro neqm ; rewrite neqm in noteq.
+        eapply noteq.
+        exact (eq_nat_refl _).
+Qed.        
+        
+      
 Definition wfLCons (l : wfLCon) {n : nat} (ne : not_in_LCon (pi1 l) n) (b : bool) : wfLCon.
 Proof.
   exists (cons (n,b) (pi1 l)).
@@ -114,4 +133,43 @@ Definition wfLCons' (l : wfLCon) {n : nat} (d : (not_in_LCon (pi1 l) n) × bool)
 
 Notation " l ',,l' d " := (wfLCons' l d) (at level 20, d at next level).
 
+Definition LCon_le (l l' : LCon) : Prop := forall n b, in_LCon l' n b -> in_LCon l n b.
 
+Definition wfLCon_le (l l' : wfLCon) : Prop :=
+  LCon_le (pi1 l) (pi1 l').
+
+Notation " l ≤ε l' " := (wfLCon_le l l') (at level 40).
+
+Definition wfLCon_le_id l : l ≤ε l := fun n b ne => ne.
+
+Definition wfLCon_le_trans {l l' l''} : l ≤ε l' -> l' ≤ε l'' -> l ≤ε l'' :=
+  fun f f' n b ne => f n b (f' n b ne).
+
+Lemma LCon_le_in_LCon {l l' n b} {ne : not_in_LCon (pi1 l') n} :
+  l ≤ε l' -> in_LCon l n b -> l ≤ε (l' ,,l (ne , b)).
+Proof.
+  intros f inl m b' inl'.
+  destruct l as [l wfl] ; destruct l' as [l' wfl'] ; cbn in *.
+  unfold wfLCon_le in f ; cbn in f.
+  clear wfl wfl'.
+  inversion inl' ; subst.
+  - assumption.
+  - now apply f.
+Qed.
+
+Lemma LCon_le_step {l l' n b} (ne : not_in_LCon (pi1 l') n) :
+  l' ≤ε l -> l' ,,l (ne , b) ≤ε l.
+Proof.
+  intros f m b' inl.
+  apply in_there_l ; now eapply (f m b').
+Qed.
+  
+Lemma LCon_le_up {l l' n b} (ne : not_in_LCon (pi1 l) n) (ne' : not_in_LCon (pi1 l') n) :
+  l' ≤ε l -> l' ,,l (ne' , b) ≤ε (l ,,l (ne , b)).
+Proof.
+  intros f m b' inl.
+  eapply LCon_le_in_LCon.
+  - now eapply LCon_le_step.
+  - now eapply in_here_l.
+  - exact inl.
+Qed.

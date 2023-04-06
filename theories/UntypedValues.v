@@ -189,21 +189,12 @@ Qed.
 *)
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun Γ A => whne A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun Γ A => ∑ B, [ A ⇒* B ] × isType B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun Γ A t => whne t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun Γ A t => ∑ u, [ t ⇒* u ] × whnf u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne l A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun l Γ A => ∑ B, [ A ⇒* B ]< l > × isType l B.
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne l t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun l Γ A t => ∑ u, [ t ⇒* u ]< l > × whnf l u.
 
 End WeakValuesData.
-
-Module StrongValuesData.
-
-#[export] Instance TypeSne {ta} : Notations.TypeNe ta := fun Γ A => sne A.
-#[export] Instance TypeSnf {ta} : Notations.TypeNf ta := fun Γ A => snf A.
-#[export] Instance TermSne {ta} : Notations.TermNe ta := fun Γ A t => sne t.
-#[export] Instance Termsnf {ta} : Notations.TermNf ta := fun Γ A t => snf t.
-
-End StrongValuesData.
 
 Module WeakValuesProperties.
 
@@ -220,7 +211,7 @@ Section Properties.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
-  + intros Γ A HA; exists A; split; [reflexivity|..].
+  + intros l Γ A HA; exists A; split; [reflexivity|..].
     now apply NormalForms.NeType.
   + intros; assumption.
   + intros; assumption.
@@ -233,7 +224,7 @@ Section Properties.
     exists (B⟨ρ⟩); split.
     - now apply credalg_wk.
     - now apply Weakening.isType_ren.
-  + intros Γ A B ? [C [? ?]].
+  + intros l Γ A B ? [C [? ?]].
     exists C; split.
     - transitivity B; [eapply redty_red| ]; eassumption.
     - assumption.
@@ -294,7 +285,7 @@ End Properties.
 
 End WeakValuesProperties.
 
-Module StrongValuesProperties.
+(* Module StrongValuesProperties.
 
 Export StrongValuesData.
 
@@ -343,4 +334,4 @@ Section Properties.
 
 End Properties.
 
-End StrongValuesProperties.
+End StrongValuesProperties.*)

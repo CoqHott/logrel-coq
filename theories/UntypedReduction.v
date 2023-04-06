@@ -229,8 +229,8 @@ Proof.
     1: econstructor.
     now asimpl.
   - cbn.
-    rewrite <- bool_to_term_ren.
-    rewrite <- nat_to_term_ren.
+    rewrite bool_to_term_ren.
+    rewrite nat_to_term_ren.
     now apply alphaRed.
 Qed.
 
@@ -243,7 +243,7 @@ Qed.
 
 (** Derived rules *)
 
-Lemma redalg_app {t t' u} : [t ⇒* t'] -> [tApp t u ⇒* tApp t' u].
+Lemma redalg_app {l t t' u} : [t ⇒* t']< l > -> [tApp t u ⇒* tApp t' u]< l >.
 Proof.
 induction 1.
 + reflexivity.
@@ -251,7 +251,7 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_natElim {P hs hz t t'} : [t ⇒* t'] -> [tNatElim P hs hz t ⇒* tNatElim P hs hz t'].
+Lemma redalg_natElim {l P hs hz t t'} : [t ⇒* t']< l > -> [tNatElim P hs hz t ⇒* tNatElim P hs hz t']< l >.
 Proof.
 induction 1.
 + reflexivity.
@@ -259,7 +259,7 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_natEmpty {P t t'} : [t ⇒* t'] -> [tEmptyElim P t ⇒* tEmptyElim P t'].
+Lemma redalg_natEmpty {l P t t'} : [t ⇒* t']< l > -> [tEmptyElim P t ⇒* tEmptyElim P t']< l >.
 Proof.
 induction 1.
 + reflexivity.

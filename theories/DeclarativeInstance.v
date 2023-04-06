@@ -108,7 +108,13 @@ Section TypingWk.
     - intros l Γ A n ne HAt IHAt HAf IHAf Δ ρ HΔ.
       eapply ϝwfType.
       + eapply IHAt.
-        
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+      + eapply IHAf.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
@@ -153,7 +159,16 @@ Section TypingWk.
     - intros; now constructor.
     - intros; now constructor.
     - intros; now constructor.
-    - admit.
+    - intros * ? ihP ? ihht ? ihhf ? ihb **; cbn.
+      erewrite subst_ren_wk_up; eapply (wfTermBoolElim l).
+      * eapply ihP; econstructor; tea; now econstructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihht.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhf.
+        now erewrite subst_ren_wk_up.
+      * now eapply ihb.
     - intros; now constructor.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up; eapply (wfTermEmptyElim l).
@@ -163,7 +178,16 @@ Section TypingWk.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
-    - admit.
+    - intros l Γ t A n ne HAt IHAt HAf IHAf Δ ρ HΔ.
+      eapply ϝwfTerm.
+      + eapply IHAt.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+      + eapply IHAf.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
     - intros l Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
@@ -178,13 +202,22 @@ Section TypingWk.
     - intros * _ IH ? ρ ?.
       econstructor.
       now eapply IH.
+    - intros l Γ A B n ne HAt IHAt HAf IHAf Δ ρ HΔ.
+      eapply ϝTypeConv.
+      + eapply IHAt.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+      + eapply IHAf.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
     - intros * _ IH ? ρ ?.
       now econstructor ; eapply IH.
     - intros * _ IHA _ IHB ? ρ ?.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - admit.
     - intros l Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
@@ -258,14 +291,59 @@ Section TypingWk.
       * rewrite wk_elimSuccHypTy.
         now eapply ihhs.
       * now eapply ihn.
-    - admit.
-    - admit.
-    - admit.
+    - intros * ? ihP ? ihht ? ihhf ? ihb **; cbn.
+      erewrite subst_ren_wk_up.
+      eapply (TermBoolElimCong l).
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply convtm_meta_conv.
+        1: now eapply ihht.
+        2: reflexivity.
+        now erewrite subst_ren_wk_up.
+      * eapply convtm_meta_conv.
+        1: now eapply ihhf.
+        2: reflexivity.
+        now erewrite subst_ren_wk_up.
+      * now eapply ihb.
+    - intros * ? ihP ? ihht ? ihhf **.
+      erewrite subst_ren_wk_up.
+      eapply (TermBoolElimTrue l); fold ren_term.
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihht.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhf.
+        now erewrite subst_ren_wk_up.
+    - intros * ? ihP ? ihht ? ihhf **.
+      erewrite subst_ren_wk_up.
+      eapply (TermBoolElimFalse l); fold ren_term.
+      * eapply ihP; constructor; tea; now constructor.
+      * eapply typing_meta_conv.
+        1: now eapply ihht.
+        now erewrite subst_ren_wk_up.
+      * eapply typing_meta_conv.
+        1: now eapply ihhf.
+        now erewrite subst_ren_wk_up.
+    - intros ; cbn ; now econstructor.
+    - intros l Γ n b HΓ _ inl * HΔ.
+      cbn ; refold.
+      erewrite wk_bool_to_term ; erewrite wk_nat_to_term.
+      now econstructor.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up.
       eapply (TermEmptyElimCong l).
       * eapply ihP; constructor; tea; now constructor.
       * now eapply ihe.
+    - intros l Γ t u A n ne HAt IHAt HAf IHAf Δ ρ HΔ.
+      eapply ϝTermConv.
+      + eapply IHAt.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+      + eapply IHAf.
+        unshelve eapply (WfContextDecl_trans _ _ HΔ).
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -274,9 +352,6 @@ Section TypingWk.
       now econstructor.
     - intros * _ IHt _ IHt' ? ρ ?.
       now econstructor.
-    - admit.
-    - admit.
-    - admit.
   Qed.
 
 End TypingWk.
@@ -293,62 +368,86 @@ by substitution and injectivity of type constructors, which we get from the logi
 Section Boundaries.
   Import DeclarativeTypingData.
 
-  Definition boundary_ctx_ctx {Γ A} : [|- Γ,, A] -> [|- Γ].
+  Definition boundary_ctx_ctx {l Γ A} : [|- Γ,, A]< l > -> [|- Γ]< l >.
   Proof.
-    now inversion 1.
+    remember (Γ,, A) eqn: H.
+    induction 1.
+    - discriminate.
+    - injection H ; intros ; now subst.
+    - eapply ϝwfCon.
+      + now eapply IHWfContextDecl1. 
+      + now eapply IHWfContextDecl2.
   Qed.
 
-  Definition boundary_ctx_tip {Γ A} : [|- Γ,, A] -> [Γ |- A].
+  Definition boundary_ctx_tip {l Γ A} : [|- Γ,, A]< l > -> [Γ |- A]< l >.
   Proof.
-    now inversion 1.
+    remember (Γ,, A) eqn: H.
+    induction 1.
+    - discriminate.
+    - injection H ; intros ; now subst.
+    - eapply ϝwfType.
+      + now eapply IHWfContextDecl1. 
+      + now eapply IHWfContextDecl2.
   Qed.
 
-  Definition boundary_tm_ctx {Γ} {t A} :
-      [ Γ |- t : A ] -> 
-      [ |- Γ ].
+  Definition boundary_tm_ctx {l Γ} {t A} :
+      [ Γ |- t : A ]< l > -> 
+      [ |- Γ ]< l >.
   Proof.
-    induction 1 ; now eauto using boundary_ctx_ctx.
+    induction 1 ; eauto using boundary_ctx_ctx.
+    eapply ϝwfCon.
+    + now eapply IHTypingDecl1. 
+    + now eapply IHTypingDecl2.
   Qed.
 
-  Definition boundary_ty_ctx {Γ} {A} :
-      [ Γ |- A ] -> 
-      [ |- Γ ].
+  Definition boundary_ty_ctx {l Γ} {A} :
+      [ Γ |- A ]< l > -> 
+      [ |- Γ ]< l >.
   Proof.
-    induction 1; now eauto using boundary_tm_ctx.
+    induction 1 ; eauto using boundary_tm_ctx.
+    eapply ϝwfCon.
+    + now eapply IHWfTypeDecl1. 
+    + now eapply IHWfTypeDecl2.
   Qed.
 
-  Definition boundary_tm_conv_ctx {Γ} {t u A} :
-      [ Γ |- t ≅ u : A ] -> 
-      [ |- Γ ].
+  Definition boundary_tm_conv_ctx {l Γ} {t u A} :
+      [ Γ |- t ≅ u : A ]< l > -> 
+      [ |- Γ ]< l >.
   Proof.
-      induction 1 ; now eauto using boundary_tm_ctx.
+    induction 1 ; eauto using boundary_tm_ctx.
+    eapply ϝwfCon.
+    + now eapply IHConvTermDecl1. 
+    + now eapply IHConvTermDecl2.
   Qed.
 
-  Definition boundary_ty_conv_ctx {Γ} {A B} :
-      [ Γ |- A ≅ B ] -> 
-      [ |- Γ ].
+  Definition boundary_ty_conv_ctx {l Γ} {A B} :
+      [ Γ |- A ≅ B ]< l > -> 
+      [ |- Γ ]< l >.
   Proof.
-    induction 1 ; now eauto using boundary_ty_ctx, boundary_tm_conv_ctx.
+    induction 1 ; eauto using  boundary_ty_ctx, boundary_tm_conv_ctx.
+    eapply ϝwfCon.
+    + now eapply IHConvTypeDecl1. 
+    + now eapply IHConvTypeDecl2.
   Qed.
 
 
-  Definition boundary_red_l {Γ t u K} : 
-    [ Γ |- t ⇒* u ∈ K] ->
-    match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
+  Definition boundary_red_l {l Γ t u K} : 
+    [ Γ |- t ⇒* u ∈ K]< l > ->
+    match K with istype => [ Γ |- t ]< l > | isterm A => [ Γ |- t : A ]< l > end.
   Proof.
     destruct 1; assumption.
   Qed.
 
-  Definition boundary_red_tm_l {Γ t u A} : 
-    [ Γ |- t ⇒* u : A] ->
-    [ Γ |- t : A ].
+  Definition boundary_red_tm_l {l Γ t u A} : 
+    [ Γ |- t ⇒* u : A]< l > ->
+    [ Γ |- t : A ]< l >.
   Proof.
     apply @boundary_red_l with (K := isterm A).
   Qed.
 
-  Definition boundary_red_ty_l {Γ A B} : 
-    [ Γ |- A ⇒* B ] ->
-    [ Γ |- A ].
+  Definition boundary_red_ty_l {l Γ A B} : 
+    [ Γ |- A ⇒* B ]< l > ->
+    [ Γ |- A ]< l >.
   Proof.
     apply @boundary_red_l with (K := istype).
   Qed.
@@ -363,31 +462,33 @@ End Boundaries.
 
 (** ** Inclusion of the various reductions in conversion *)
 
-Definition RedConvC {Γ} {t u : term} {K} :
-    [Γ |- t ⇒* u ∈ K] -> 
-    match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
+Definition RedConvC {l Γ} {t u : term} {K} :
+    [Γ |- t ⇒* u ∈ K]< l > -> 
+    match K with istype => [Γ |- t ≅ u]< l > | isterm A => [Γ |- t ≅ u : A]< l > end.
 Proof.
 apply reddecl_conv.
 Qed.
 
-Definition RedConvTeC {Γ} {t u A : term} :
-    [Γ |- t ⇒* u : A] -> 
-    [Γ |- t ≅ u : A].
+Definition RedConvTeC {l Γ} {t u A : term} :
+    [Γ |- t ⇒* u : A]< l > -> 
+    [Γ |- t ≅ u : A]< l >.
 Proof.
 apply @RedConvC with (K := isterm A).
 Qed.
 
-Definition RedConvTyC {Γ} {A B : term} :
-    [Γ |- A ⇒* B] -> 
-    [Γ |- A ≅ B].
+
+
+Definition RedConvTyC {l Γ} {A B : term} :
+    [Γ |- A ⇒* B]< l > -> 
+    [Γ |- A ≅ B]< l >.
 Proof.
 apply @RedConvC with (K := istype).
 Qed.
 
 (** ** Weakenings of reduction *)
 
-Lemma redtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩].
+Lemma redtmdecl_wk {l Γ Δ t u A} (ρ : Δ ≤ Γ) :
+  [|- Δ ]< l > -> [Γ |- t ⇒* u : A]< l > -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩]< l >.
 Proof.
   intros * ? []; split.
   - now apply typing_wk.
@@ -395,8 +496,8 @@ Proof.
   - now apply typing_wk.
 Qed.
 
-Lemma redtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩].
+Lemma redtydecl_wk {l Γ Δ A B} (ρ : Δ ≤ Γ) :
+  [|- Δ ]< l > -> [Γ |- A ⇒* B]< l > -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩]< l >.
 Proof.
   intros * ? []; split.
   - now apply typing_wk.
@@ -406,10 +507,10 @@ Qed.
 
 (** ** Derived rules for multi-step reduction *)
 
-Lemma redtmdecl_app Γ A B f f' t :
-  [ Γ |- f ⇒* f' : tProd A B ] ->
-  [ Γ |- t : A ] ->
-  [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ].
+Lemma redtmdecl_app l Γ A B f f' t :
+  [ Γ |- f ⇒* f' : tProd A B ]< l > ->
+  [ Γ |- t : A ]< l > ->
+  [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ]< l >.
 Proof.
   intros [] ?; split.
   + now econstructor.
@@ -417,10 +518,10 @@ Proof.
   + econstructor; [tea|now apply TermRefl].
 Qed.
 
-Lemma redtmdecl_conv Γ t u A A' : 
-  [Γ |- t ⇒* u : A] ->
-  [Γ |- A ≅ A'] ->
-  [Γ |- t ⇒* u : A'].
+Lemma redtmdecl_conv l Γ t u A A' : 
+  [Γ |- t ⇒* u : A]< l > ->
+  [Γ |- A ≅ A']< l > ->
+  [Γ |- t ⇒* u : A']< l >.
 Proof.
   intros [] ?; split.
   + now econstructor.
@@ -428,8 +529,8 @@ Proof.
   + now econstructor.
 Qed.
 
-Lemma redtydecl_term Γ A B :
-  [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ].
+Lemma redtydecl_term l Γ A B :
+  [ Γ |- A ⇒* B : U]< l > -> [Γ |- A ⇒* B ]< l >.
 Proof.
   intros []; split.
   + now constructor.
@@ -437,7 +538,7 @@ Proof.
   + now constructor.
 Qed.
 
-#[export] Instance RedTermTrans Γ A : Transitive (red_tm Γ A).
+#[export] Instance RedTermTrans l Γ A : Transitive (red_tm l Γ A).
 Proof.
   intros t u r [] []; split.
   + assumption.
@@ -445,7 +546,7 @@ Proof.
   + now eapply TermTrans.
 Qed.
 
-#[export] Instance RedTypeTrans Γ : Transitive (red_ty Γ).
+#[export] Instance RedTypeTrans l Γ : Transitive (red_ty l Γ).
 Proof.
   intros t u r [] []; split.
   + assumption.
@@ -461,7 +562,8 @@ Module DeclarativeTypingProperties.
   #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
     1-2: now constructor.
-    all: boundary. 
+    all: try boundary.
+    intros ; now eapply ϝwfCon.
   Qed.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
@@ -501,35 +603,29 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - now econstructor.
   - now do 2 econstructor.
-  - now repeat econstructor.
+  - now do 2 econstructor.
+  - now do 2 econstructor.
+  - intros.
+    now eapply ϝTypeConv.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
   Proof.
-  - intros.
+  1:{ intros.
     constructor ; red ; intros.
-    all: now econstructor.
-  - intros.
-    now econstructor.
-  - intros.
-    now eapply typing_wk.
-  - easy.
-  - intros.
-    econstructor.
+    all: now econstructor. }
+  all: intros ; try now econstructor.
+  1: intros; now eapply typing_wk.
+  1: easy.
+  1: { intros.
+    eapply TermConv.
     2: now eapply TypeSym, RedConvTyC.
     eapply TermTrans ; [eapply TermTrans |..].
     2: eassumption.
     2: eapply TermSym.
-    all: now eapply RedConvTeC.
-  - intros. eassumption.
-  - intros.
-    now econstructor.
-  - intros.
-    now econstructor.
-  - now do 2 econstructor.
-  - now do 2 econstructor.
-  - now econstructor.
-  - now do 2 econstructor.
+    all: now eapply RedConvTeC. }
+  intros ;  eassumption.
+  all : try now do 2 econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -547,6 +643,10 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - now econstructor.
   - now econstructor.
+  - econstructor.
+    induction n ; now econstructor.
+  - now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
@@ -560,7 +660,7 @@ Module DeclarativeTypingProperties.
     + eapply redSuccAlg; [constructor|reflexivity].
     + now constructor.
   - intros; split.
-    + repeat (econstructor; tea).
+    + (econstructor; tea) ; econstructor.
       now eapply boundary_tm_ctx.
     + eapply redSuccAlg; [constructor|reflexivity].
     + now constructor.
@@ -569,11 +669,11 @@ Module DeclarativeTypingProperties.
     + eapply redSuccAlg; [constructor|reflexivity].
     + now constructor.
   - intros; now eapply redtmdecl_app.
-  - intros ?????????? []?; split.
+  - intros ??????????? []?; split.
     + repeat (constructor; tea).
     + now eapply redalg_natElim.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
-  - intros ?????? []?; split.
+  - intros ??????? []?; split.
     + repeat (constructor; tea).
     + now eapply redalg_natEmpty.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].

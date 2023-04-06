@@ -137,6 +137,10 @@ Section Definitions.
       | convUniv {Γ} {A B} :
         [ Γ |- A ≅ B : U ]< l > -> 
         [ Γ |- A ≅ B ]< l >
+      | ϝTypeConv {Γ A B n} {ne : not_in_LCon (pi1 l) n} : 
+        [ Γ |- A ≅ B ]< l ,,l (ne, true) > ->
+        [ Γ |- A ≅ B ]< l ,,l (ne, false) > ->
+        [ Γ |- A ≅ B ]< l >
       | TypeSym {Γ} {A B} :
           [ Γ |- A ≅ B ]< l > ->
           [ Γ |- B ≅ A ]< l >
@@ -144,10 +148,6 @@ Section Definitions.
           [ Γ |- A ≅ B]< l > ->
           [ Γ |- B ≅ C]< l > ->
           [ Γ |- A ≅ C]< l >
-      | ϝTyConv {Γ A B n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- A ≅ B ]< l ,,l (ne, true) > ->
-        [ Γ |- A ≅ B ]< l ,,l (ne, false) > ->
-        [ Γ |- A ≅ B ]< l >
   (** **** Conversion of terms *)
   with ConvTermDecl  l : context -> term -> term -> term -> Type :=
       | TermBRed {Γ} {a t A B} :
@@ -206,10 +206,21 @@ Section Definitions.
           [ Γ |- ht : P[tTrue..]]< l > ->
           [ Γ |- hf : P[tFalse..]]< l > ->
           [ Γ |- tBoolElim P ht hf tFalse ≅ ht : P[tFalse..]]< l >
+      | TermAlphaCong {Γ} {n n'} :
+          [ Γ |- n ≅ n' : tNat]< l > ->
+          [ Γ |- tAlpha n ≅ tAlpha n' : tBool]< l >
+      | TypeAlphaConv {Γ n b} :
+        [ |- Γ ]< l > ->
+        in_LCon (pi1 l) n b ->
+        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >
       | TermEmptyElimCong {Γ P P' e e'} :
           [ Γ ,, tEmpty |- P ≅ P']< l > ->
           [ Γ |- e ≅ e' : tEmpty]< l > ->
           [ Γ |- tEmptyElim P e ≅ tEmptyElim P' e' : P[e..]]< l >
+      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 l) n} : 
+        [ Γ |- t ≅ t' : A ]< l ,,l (ne, true) > ->
+        [ Γ |- t ≅ t' : A ]< l ,,l (ne, false) > ->
+        [ Γ |- t ≅ t' : A ]< l >
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ]< l > -> 
           [ Γ |- t ≅ t : A ]< l >
@@ -224,17 +235,6 @@ Section Definitions.
           [ Γ |- t ≅ t' : A ]< l > ->
           [ Γ |- t' ≅ t'' : A ]< l > ->
           [ Γ |- t ≅ t'' : A ]< l >
-      | TermAlphaCong {Γ} {n n'} :
-          [ Γ |- n ≅ n' : tNat]< l > ->
-          [ Γ |- tAlpha n ≅ tAlpha n' : tBool]< l >
-      | TypeAlphaConv {Γ n b} :
-        [ |- Γ ]< l > ->
-        in_LCon (pi1 l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >
-      | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t ≅ t' : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t ≅ t' : A ]< l ,,l (ne, false) > ->
-        [ Γ |- t ≅ t' : A ]< l >
       
   where "[ |- Γ ]< l >" := (WfContextDecl l Γ)
   and   "[ Γ |- T ]< l >" := (WfTypeDecl l Γ T)
@@ -247,20 +247,20 @@ Section Definitions.
 
   Local Coercion isterm : term >-> class.
 
-  Record RedClosureDecl (Γ : context) (A : class) (t u : term) := {
-    reddecl_typ : match A with istype => [Γ |- t] | isterm A => [Γ |- t : A] end;
-    reddecl_red : RedClosureAlg t u;
-    reddecl_conv : match A with istype => [ Γ |- t ≅ u ] | isterm A => [Γ |- t ≅ u : A] end;
+  Record RedClosureDecl (l : wfLCon) (Γ : context) (A : class) (t u : term) := {
+    reddecl_typ : match A with istype => [Γ |- t]< l > | isterm A => [Γ |- t : A]< l > end;
+    reddecl_red : RedClosureAlg (l := l) t u;
+    reddecl_conv : match A with istype => [ Γ |- t ≅ u ]< l > | isterm A => [Γ |- t ≅ u : A]< l > end;
   }.
 
-  Notation "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
+  Notation "[ Γ |- t ⇒* t' ∈ A ]< l >" := (RedClosureDecl l Γ A t t').
 
 End Definitions.
 
-Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
-Definition TypeRedClosure Γ A B := RedClosureDecl Γ istype A B.
+Definition TermRedClosure l Γ A t u := RedClosureDecl l Γ (isterm A) t u.
+Definition TypeRedClosure l Γ A B := RedClosureDecl l Γ istype A B.
 
-Notation "[ Γ |- t ⇒* u ∈ A ]" := (RedClosureDecl Γ A t u).
+Notation "[ Γ |- t ⇒* u ∈ A ]< l >" := (RedClosureDecl l Γ A t u).
 
 (** ** Instances *)
 (** Used for printing (see Notations) and as a support for the generic typing
@@ -353,18 +353,83 @@ Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 Section TypeErasure.
   Import DeclarativeTypingData.
 
-Lemma redtmdecl_red Γ t u A : 
-  [Γ |- t ⇒* u : A] ->
-  [t ⇒* u].
+Lemma redtmdecl_red l Γ t u A : 
+  [Γ |- t ⇒* u : A]< l > ->
+  [t ⇒* u]< l >.
 Proof.
 apply reddecl_red.
 Qed.
 
-Lemma redtydecl_red Γ A B : 
-  [Γ |- A ⇒* B] ->
-  [A ⇒* B].
+Lemma redtydecl_red l Γ A B : 
+  [Γ |- A ⇒* B]< l > ->
+  [A ⇒* B]< l >.
 Proof.
 apply reddecl_red.
 Qed.
 
 End TypeErasure.
+
+
+(** Typing rules behave like presheaves on LContexts **)
+
+Section LConTranslation.
+  Import DeclarativeTypingData.
+  
+  Lemma WfContextDecl_trans {l l'} Γ (f : l' ≤ε l) :
+    [ |- Γ ]< l > -> [ |- Γ ]< l' >
+  with WfTypeDecl_trans {l l'} Γ {A} (f : l' ≤ε l) :
+    [ Γ |- A ]< l > -> [ Γ |- A ]< l' >
+  with TypingDecl_trans {l l'} Γ {t A} (f : l' ≤ε l) :
+    [ Γ |- t : A ]< l > -> [ Γ |- t : A ]< l' >
+  with ConvTypeDecl_trans {l l'} Γ {A B} (f : l' ≤ε l) :
+    [ Γ |- A ≅ B]< l > -> [ Γ |- A ≅ B]< l' >
+  with ConvTermDecl_trans {l l'} Γ {t u A} (f : l' ≤ε l) :
+    [ Γ |- t ≅ u : A ]< l > -> [ Γ |- t ≅ u : A ]< l' >.
+  Proof.
+    intro IHΓ ; revert l' f.
+    - induction IHΓ ; try now econstructor.
+      intros l' f.
+      case (decidInLCon l'.(pi1) n) ; intro H.
+      + induction H ; [eapply IHIHΓ1 | eapply IHIHΓ2 ] ; now eapply LCon_le_in_LCon.
+      + unshelve econstructor ; try assumption.
+        * eapply IHIHΓ1 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHΓ2 ; eapply LCon_le_up ; assumption.
+    - intro IHA ; revert l' f.
+      induction IHA ; try now econstructor.
+      intros l' f.
+      case (decidInLCon l'.(pi1) n) ; intro H.
+      + induction H ; [eapply IHIHA1 | eapply IHIHA2 ] ; now eapply LCon_le_in_LCon.
+      + unshelve eapply ϝwfType ; try assumption.
+        * eapply IHIHA1 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHA2 ; eapply LCon_le_up ; assumption.
+    - intro IHt ; revert l' f.
+      induction IHt ; try now econstructor.
+      intros l' f.
+      case (decidInLCon l'.(pi1) n) ; intro H.
+      + induction H ; [eapply IHIHt1 | eapply IHIHt2 ] ; now eapply LCon_le_in_LCon.
+      + unshelve eapply ϝwfTerm ; try assumption.
+        * eapply IHIHt1 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHt2 ; eapply LCon_le_up ; assumption.
+    - intro IHAB ; revert l' f.
+      induction IHAB ; try now econstructor.
+      intros l' f.
+      case (decidInLCon l'.(pi1) n) ; intro H.
+      + induction H ; [eapply IHIHAB1 | eapply IHIHAB2 ] ; now eapply LCon_le_in_LCon.
+      + unshelve eapply ϝTypeConv ; try assumption.
+        * eapply IHIHAB1 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHAB2 ; eapply LCon_le_up ; assumption.
+    - intro IHtu ; revert l' f.
+      induction IHtu ; try now econstructor.
+      intros l' f.
+      case (decidInLCon l'.(pi1) n) ; intro H.
+      + induction H ; [eapply IHIHtu1 | eapply IHIHtu2 ] ; now eapply LCon_le_in_LCon.
+      + unshelve eapply ϝTermConv ; try assumption.
+        * eapply IHIHtu1 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHtu2 ; eapply LCon_le_up ; assumption.
+Qed.
+      
+      
+    
+
+  
+End LConTranslation.

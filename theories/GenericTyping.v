@@ -113,10 +113,10 @@ Section RedDefinitions.
         by (now rewrite Heq).
   Qed.
 
-  Record well_typed Γ t :=
+  Record well_typed l Γ t :=
   {
     well_typed_ty : term ;
-    well_typed_typed : [Γ |- t : well_typed_ty]
+    well_typed_typed : [Γ |- t : well_typed_ty]< l >
   }.
   
 End RedDefinitions.
@@ -385,7 +385,7 @@ Section GenericTyping.
         [Γ ,, tBool |- P ≅ P']< l > ->
         [Γ |- ht ≅ ht' : P[tTrue..]]< l > ->
         [Γ |- hf ≅ hf' : P[tFalse..]]< l > ->
-        [Γ |- b ~ b' : tNat]< l > ->
+        [Γ |- b ~ b' : tBool]< l > ->
         [Γ |- tBoolElim P ht hf b ~ tBoolElim P' ht' hf' b' : P[b..]]< l > ;
     convneu_alpha {l Γ t u n} :
       [ Γ |- t ~ u : tNat ]< l > ->
@@ -402,68 +402,68 @@ Section GenericTyping.
 
   Class RedTypeProperties :=
   {
-    redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
+    redty_wk {l Γ Δ A B} (ρ : Δ ≤ Γ) :
       [|- Δ ]< l > -> [Γ |- A ⇒* B]< l > -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩]< l > ;
-    redty_sound {Γ A B} : [Γ |- A ⇒* B] -> [A ⇒* B] ;
-    redty_ty_src {Γ A B} : [Γ |- A ⇒* B]< l > -> [Γ |- A]< l > ;
-    redty_term {Γ A B} :
-      [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ] ;
-    redty_refl {Γ A} :
-      [ Γ |- A] ->
-      [Γ |- A ⇒* A] ;
-    redty_trans {Γ} :>
-      Transitive (red_ty Γ) ;
+    redty_sound {l Γ A B} : [Γ |- A ⇒* B]< l > -> [A ⇒* B]< l > ;
+    redty_ty_src {l Γ A B} : [Γ |- A ⇒* B]< l > -> [Γ |- A]< l > ;
+    redty_term {l Γ A B} :
+      [ Γ |- A ⇒* B : U]< l > -> [Γ |- A ⇒* B ]< l > ;
+    redty_refl {l Γ A} :
+      [ Γ |- A]< l > ->
+      [Γ |- A ⇒* A]< l > ;
+    redty_trans {l Γ} :>
+      Transitive (red_ty l Γ) ;
   }.
 
   Class RedTermProperties :=
   {
-    redtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩] ;
-    redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [t ⇒* u] ;
-    redtm_ty_src {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |- t : A] ;
-    redtm_beta {Γ A B t u} :
-      [ Γ |- A ] ->
-      [ Γ ,, A |- t : B ] ->
-      [ Γ |- u : A ] ->
-      [ Γ |- tApp (tLambda A t) u ⇒* t[u..] : B[u..] ] ;
-    redtm_natElimZero {Γ P hz hs} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- tNatElim P hz hs tZero ⇒* hz : P[tZero..]] ;
-    redtm_natElimSucc {Γ P hz hs n} :
-        [Γ ,, tNat |- P ] ->
-        [Γ |- hz : P[tZero..]] ->
-        [Γ |- hs : elimSuccHypTy P] ->
-        [Γ |- n : tNat] ->
-        [Γ |- tNatElim P hz hs (tSucc n) ⇒* tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]] ;
-    redtm_app {Γ A B f f' t} :
-      [ Γ |- f ⇒* f' : tProd A B ] ->
-      [ Γ |- t : A ] ->
-      [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ];
-    redtm_natelim {Γ P hz hs n n'} :
-      [ Γ,, tNat |- P ] ->
-      [ Γ |- hz : P[tZero..] ] ->
-      [ Γ |- hs : elimSuccHypTy P ] ->
-      [ Γ |- n : tNat ] ->
-      [ Γ |- n ⇒* n' : tNat ] ->
-      (forall n, [Γ |- n ⇒* n' : tNat] -> [Γ |- P[n'..] ≅ P[n..]]) ->
-      [ Γ |- tNatElim P hz hs n ⇒* tNatElim P hz hs n' : P[n..] ];
-    redtm_emptyelim {Γ P n n'} :
-      [ Γ,, tEmpty |- P ] ->
-      [ Γ |- n : tEmpty ] ->
-      [ Γ |- n ⇒* n' : tEmpty ] ->
-      (forall n, [Γ |- n ⇒* n' : tEmpty] -> [Γ |- P[n'..] ≅ P[n..]]) ->
-      [ Γ |- tEmptyElim P n ⇒* tEmptyElim P n' : P[n..] ];
-    redtm_conv {Γ t u A A'} : 
-      [Γ |- t ⇒* u : A] ->
-      [Γ |- A ≅ A'] ->
-      [Γ |- t ⇒* u : A'] ;
-    redtm_refl {Γ A t } :
-      [ Γ |- t : A] ->
-      [Γ |- t ⇒* t : A] ;
-    redtm_trans {Γ A} :>
-      Transitive (red_tm Γ A) ;
+    redtm_wk {l Γ Δ t u A} (ρ : Δ ≤ Γ) :
+      [|- Δ ]< l > -> [Γ |- t ⇒* u : A]< l > -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩]< l > ;
+    redtm_sound {l Γ A t u} : [Γ |- t ⇒* u : A]< l > -> [t ⇒* u]< l > ;
+    redtm_ty_src {l Γ A t u} : [Γ |- t ⇒* u : A]< l > -> [Γ |- t : A]< l > ;
+    redtm_beta {l Γ A B t u} :
+      [ Γ |- A ]< l > ->
+      [ Γ ,, A |- t : B ]< l > ->
+      [ Γ |- u : A ]< l > ->
+      [ Γ |- tApp (tLambda A t) u ⇒* t[u..] : B[u..] ]< l > ;
+    redtm_natElimZero {l Γ P hz hs} :
+        [Γ ,, tNat |- P ]< l > ->
+        [Γ |- hz : P[tZero..]]< l > ->
+        [Γ |- hs : elimSuccHypTy P]< l > ->
+        [Γ |- tNatElim P hz hs tZero ⇒* hz : P[tZero..]]< l > ;
+    redtm_natElimSucc {l Γ P hz hs n} :
+        [Γ ,, tNat |- P ]< l > ->
+        [Γ |- hz : P[tZero..]]< l > ->
+        [Γ |- hs : elimSuccHypTy P]< l > ->
+        [Γ |- n : tNat]< l > ->
+        [Γ |- tNatElim P hz hs (tSucc n) ⇒* tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]< l > ;
+    redtm_app {l Γ A B f f' t} :
+      [ Γ |- f ⇒* f' : tProd A B ]< l > ->
+      [ Γ |- t : A ]< l > ->
+      [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ]< l >;
+    redtm_natelim {l Γ P hz hs n n'} :
+      [ Γ,, tNat |- P ]< l > ->
+      [ Γ |- hz : P[tZero..] ]< l > ->
+      [ Γ |- hs : elimSuccHypTy P ]< l > ->
+      [ Γ |- n : tNat ]< l > ->
+      [ Γ |- n ⇒* n' : tNat ]< l > ->
+      (forall n, [Γ |- n ⇒* n' : tNat]< l > -> [Γ |- P[n'..] ≅ P[n..]]< l >) ->
+      [ Γ |- tNatElim P hz hs n ⇒* tNatElim P hz hs n' : P[n..] ]< l >;
+    redtm_emptyelim {l Γ P n n'} :
+      [ Γ,, tEmpty |- P ]< l > ->
+      [ Γ |- n : tEmpty ]< l > ->
+      [ Γ |- n ⇒* n' : tEmpty ]< l > ->
+      (forall n, [Γ |- n ⇒* n' : tEmpty]< l > -> [Γ |- P[n'..] ≅ P[n..]]< l >) ->
+      [ Γ |- tEmptyElim P n ⇒* tEmptyElim P n' : P[n..] ]< l >;
+    redtm_conv {l Γ t u A A'} : 
+      [Γ |- t ⇒* u : A]< l > ->
+      [Γ |- A ≅ A']< l > ->
+      [Γ |- t ⇒* u : A']< l > ;
+    redtm_refl {l Γ A t } :
+      [ Γ |- t : A]< l > ->
+      [Γ |- t ⇒* t : A]< l > ;
+    redtm_trans {l Γ A} :>
+      Transitive (red_tm l Γ A) ;
   }.
 
 End GenericTyping.
@@ -553,18 +553,18 @@ Class GenericTypingProperties `(ta : tag)
   `(RedType ta) `(RedTerm ta) `(TypeNf ta) `(TypeNe ta) `(TermNf ta) `(TermNe ta)
 :=
 {
-  wfc_prop :> WfContextProperties l ;
-  wfty_prop :> WfTypeProperties l ;
-  typ_prop :> TypingProperties l ;
-  convty_prop :> ConvTypeProperties l  ;
-  convtm_prop :> ConvTermProperties l ;
-  convne_prop :> ConvNeuProperties l ;
-  redty_prop :> RedTypeProperties l ;
-  redtm_prop :> RedTermProperties l ;
-  tynf_prop :> TypeNfProperties l;
-  tyne_prop :> TypeNeProperties l;
-  tmnf_prop :> TermNfProperties l;
-  tmne_prop :> TermNeProperties l;
+  wfc_prop :> WfContextProperties ;
+  wfty_prop :> WfTypeProperties ;
+  typ_prop :> TypingProperties ;
+  convty_prop :> ConvTypeProperties ;
+  convtm_prop :> ConvTermProperties ;
+  convne_prop :> ConvNeuProperties ;
+  redty_prop :> RedTypeProperties ;
+  redtm_prop :> RedTermProperties ;
+  tynf_prop :> TypeNfProperties ;
+  tyne_prop :> TypeNeProperties ;
+  tmnf_prop :> TermNfProperties ;
+  tmne_prop :> TermNeProperties ;
 }.
 
 (** Hints for gen_typing *)
@@ -718,8 +718,8 @@ Section GenericConsequences.
     now intros ? -> ->.
   Qed.
 
-  Lemma redtm_meta_conv (Γ : context) (t u u' A A' : term) :
-    [Γ |- t ⇒* u : A] ->
+  Lemma redtm_meta_conv  l (Γ : context) (t u u' A A' : term) :
+    [Γ |- t ⇒* u : A]< l > ->
     A' = A ->
     u' = u ->
     [Γ |- t ⇒* u' : A']< l >.
@@ -769,13 +769,13 @@ Section GenericConsequences.
 
   #[local] Hint Resolve redty_red  redtm_red | 2 : gen_typing.
 
-  Lemma redtywf_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A :⇒*: B] -> [Δ |- A⟨ρ⟩ :⇒*: B⟨ρ⟩].
+  Lemma redtywf_wk {l Γ Δ A B} (ρ : Δ ≤ Γ) :
+      [|- Δ ]< l > -> [Γ |- A :⇒*: B]< l > -> [Δ |- A⟨ρ⟩ :⇒*: B⟨ρ⟩]< l >.
   Proof.
     intros ? []; constructor; gen_typing.
   Qed.
 
-  Lemma redtywf_red {Γ A B} : [Γ |- A :⇒*: B] -> [A ⇒* B].
+  Lemma redtywf_red {l Γ A B} : [Γ |- A :⇒*: B]< l > -> [A ⇒* B]< l >.
   Proof.
     intros []; now eapply redty_red.
   Qed.
@@ -803,8 +803,8 @@ Section GenericConsequences.
       [|- Δ ]< l > -> [Γ |- t :⇒*: u : A]< l > -> [Δ |- t⟨ρ⟩ :⇒*: u⟨ρ⟩ : A⟨ρ⟩]< l >.
   Proof.  intros ? []; constructor; gen_typing. Qed.
 
-  Definition redtmwf_red {Γ t u A} :
-    [Γ |- t :⇒*: u : A] -> [t ⇒* u]< snd Γ >.
+  Definition redtmwf_red {l Γ t u A} :
+    [Γ |- t :⇒*: u : A]< l > -> [t ⇒* u]< l >.
   Proof. intros []; now eapply redtm_red. Qed.
 
   Definition redtmwf_conv {l Γ} {t u A B} :
@@ -915,11 +915,11 @@ Section GenericConsequences.
     now eapply ty_var0.
   Qed.
   
-  Lemma redtm_id_beta {Γ a A} :
-    [Γ |- A] ->
-    [Γ |- A ≅ A] ->
-    [Γ |- a : A] ->
-    [Γ |- tApp (idterm A) a ⇒* a : A].
+  Lemma redtm_id_beta {l Γ a A} :
+    [Γ |- A]< l > ->
+    [Γ |- A ≅ A]< l > ->
+    [Γ |- a : A]< l > ->
+    [Γ |- tApp (idterm A) a ⇒* a : A]< l >.
   Proof.
     intros.
     eapply redtm_meta_conv.
@@ -994,14 +994,14 @@ Section GenericConsequences.
     intros; renToWk; eapply wft_wk; gen_typing.
   Qed.
   
-  Lemma redtm_comp_beta {Γ A B C f g a} :
-    [Γ |- A] ->
-    [Γ |- B] ->
-    [Γ |- C] ->
-    [Γ |- f : arr A B] ->
-    [Γ |- g : arr B C] ->
-    [Γ |- a : A] ->
-    [Γ |- tApp (comp A g f) a ⇒* tApp g (tApp f a) : C].
+  Lemma redtm_comp_beta {l Γ A B C f g a} :
+    [Γ |- A]< l > ->
+    [Γ |- B]< l > ->
+    [Γ |- C]< l > ->
+    [Γ |- f : arr A B]< l > ->
+    [Γ |- g : arr B C]< l > ->
+    [Γ |- a : A]< l > ->
+    [Γ |- tApp (comp A g f) a ⇒* tApp g (tApp f a) : C]< l >.
   Proof.
     intros hA hB hC hf hg ha.
     eapply redtm_meta_conv.
@@ -1016,7 +1016,7 @@ Section GenericConsequences.
     + now asimpl.
   Qed.
 
-  Lemma convtm_comp {Γ A B C f f' g g'} :
+  Lemma convtm_comp {l Γ A B C f f' g g'} :
     [Γ |- A]< l > ->
     [Γ |- B]< l > ->
     [Γ |- C]< l > ->
@@ -1072,6 +1072,7 @@ Section GenericConsequences.
     intros.
     apply (red_whnf (l := l)).
     now eapply redtm_sound.
+    assumption.
   Qed.
 
   Lemma redtmwf_whnf {l Γ t u A} : [Γ |- t :⇒*: u : A]< l > -> whnf l t -> t = u.
@@ -1089,6 +1090,7 @@ Section GenericConsequences.
     intros.
     apply (red_whnf (l := l)).
     now eapply redty_sound.
+    assumption.
   Qed.
 
   Lemma redtywf_whnf {l Γ A B} : [Γ |- A :⇒*: B]< l > -> whnf l A -> A = B.

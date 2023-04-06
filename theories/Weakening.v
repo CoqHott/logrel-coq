@@ -239,8 +239,8 @@ Section RenWhnf.
       all: now econstructor.
   Qed.
     
-
-  Lemma nat_to_term_ren n : nat_to_term n = (nat_to_term n)⟨ρ⟩.
+  
+  Lemma nat_to_term_ren n : (nat_to_term n)⟨ρ⟩ = nat_to_term n.
   Proof.
     induction n.
     - reflexivity.
@@ -248,16 +248,16 @@ Section RenWhnf.
       exact IHn.
   Qed.
 
-  Lemma bool_to_term_ren b : bool_to_term b = (bool_to_term b)⟨ρ⟩.
+  Lemma bool_to_term_ren b : (bool_to_term b)⟨ρ⟩ = bool_to_term b.
   Proof.
     now induction b. 
-  Qed. 
+  Qed.
 
   Lemma alphawhne_ren {l} t :
     alphawhne l t -> alphawhne l (t⟨ρ⟩).
   Proof.
     induction 1; cbn in *.
-    1: rewrite <- (nat_to_term_ren n).
+    1: rewrite (nat_to_term_ren n).
     all: now econstructor.
   Qed.
     
@@ -383,4 +383,25 @@ Lemma wk_elimSuccHypTy {P Γ Δ} A (ρ : Δ ≤ Γ) :
   elimSuccHypTy P⟨wk_up A ρ⟩ = (elimSuccHypTy P)⟨ρ⟩.
 Proof.
   unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
+Qed.
+
+Lemma wk_nSucc {Γ Δ} n t (ρ : Δ ≤ Γ) : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
+Proof.
+  induction n ; cbn.
+  - reflexivity.
+  - revert IHn. bsimpl ; intros.
+    now rewrite IHn.
+Qed.
+
+Lemma wk_nat_to_term {Γ Δ} n (ρ : Δ ≤ Γ) : (nat_to_term n)⟨ρ⟩ = nat_to_term n.
+Proof.
+  induction n.
+  - reflexivity.
+  - cbn ; f_equal.
+    exact IHn.
+Qed.
+
+Lemma wk_bool_to_term {Γ Δ} b (ρ : Δ ≤ Γ) : (bool_to_term b)⟨ρ⟩ = bool_to_term b.
+Proof.
+  now induction b. 
 Qed.
