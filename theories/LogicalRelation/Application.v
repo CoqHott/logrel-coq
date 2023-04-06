@@ -78,7 +78,7 @@ Proof.
   set (h := invLRΠ _) in hΠ.
   epose proof (e := redtywf_whnf (PiRedTyPack.red h) whnf_tProd); 
   symmetry in e; injection e; clear e; 
-  destruct h as [?????? domRed codRed codExt] ; clear RΠ Rtt'; 
+  destruct h as [????? [?? domRed codRed codExt]] ; clear RΠ Rtt'; 
   intros; cbn in *; subst. 
   assert (wfΓ : [|-Γ]) by gen_typing.
   assert [Γ ||-<l> u' : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ] by irrelevance.

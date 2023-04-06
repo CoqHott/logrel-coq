@@ -11,6 +11,58 @@ Set Printing Primitive Projection Parameters.
 
 Set Printing Universes.
 
+
+Lemma transPolyRedEq@{i j k l} {Γ sA sB sC pA pB pC lA lB lC} 
+  (RA : PolyRed@{i j k l} Γ lA sA pA)
+  (RB : PolyRed@{i j k l} Γ lB sB pB)
+  (RC : PolyRed@{i j k l} Γ lC sC pC)
+  (RAB : PolyRedEq RA sB pB) 
+  (RBC : PolyRedEq RB sC pC)
+  (ihdom: forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ])
+    (lB : TypeLevel) (B : term) (pB : LRPack@{k} Δ B)
+    (lrB : LogRel@{i j k l} lB Δ B (LRPack.eqTy pB) (LRPack.redTm pB) (LRPack.eqTm pB))
+    (lC : TypeLevel) (C : term) (pC : LRPack@{k} Δ C)
+    (lrC : LogRel@{i j k l} lC Δ C (LRPack.eqTy pC) (LRPack.redTm pC) (LRPack.eqTm pC))
+    (RAB : [PolyRed.shpRed RA ρ h | Δ ||- _ ≅ B])
+    (RBC : [pB | Δ ||- B ≅ C]), [PolyRed.shpRed RA ρ h | Δ ||- _ ≅ C])
+  (ihcod: forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ])
+    (ha : [PolyRed.shpRed RA ρ h | Δ ||- a : _])
+    (lB : TypeLevel) (B : term) (pB : LRPack@{k} Δ B)
+    (lrB : LogRel@{i j k l} lB Δ B (LRPack.eqTy pB) (LRPack.redTm pB) (LRPack.eqTm pB))
+    (lC : TypeLevel) (C : term) (pC : LRPack@{k} Δ C)
+    (lrC : LogRel@{i j k l} lC Δ C (LRPack.eqTy pC) (LRPack.redTm pC) (LRPack.eqTm pC))
+    (RAB : [PolyRed.posRed RA ρ h ha | Δ ||- _ ≅ B])
+    (RBC : [pB | Δ ||- B ≅ C]),
+  [PolyRed.posRed RA ρ h ha | Δ ||- _ ≅ C])
+   :
+  PolyRedEq RA sC pC.
+Proof.
+  assert (RsAC : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ]),
+    [PolyRed.shpRed (RA : PolyRed Γ lA sA pA) ρ h | Δ ||- sA⟨ρ⟩ ≅ sC⟨ρ⟩]).
+  1:{
+    intros; eapply (ihdom _ _ _ _ sB⟨ρ⟩).
+    1,2: unshelve eapply LRAd.adequate; now eapply PolyRed.shpRed.
+    + eapply (PolyRedEq.shpRed RAB). 
+    + eapply (PolyRedEq.shpRed RBC).
+  }
+  unshelve econstructor; intros.
+  1: eapply RsAC.
+  unshelve eapply (ihcod _ _ _ _ _ _ pB[a .: ρ >> tRel]).
+  5,6: unshelve eapply LRAd.adequate; unshelve eapply PolyRed.posRed.
+  4,5,7,8: tea.
+  1,2: eapply LRTmRedConv; tea.
+  + eapply (PolyRedEq.shpRed RAB). 
+  + eapply RsAC.
+  + eapply (PolyRedEq.posRed RAB).
+  + irrelevanceRefl; unshelve eapply (PolyRedEq.posRed RBC); tea.
+    eapply LRTmRedConv; tea; eapply (PolyRedEq.shpRed RAB).
+Qed.
+
+Ltac inv_red red red' :=
+  let eq := fresh "eq" in
+  unshelve epose proof (eq := redtywf_det _ _ _ _ _ _ red red');
+  [constructor| constructor|]; injection eq; intros ??; clear eq;  subst.
+
 Lemma transEq@{i j k l} {Γ A B C lA lB lC} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]}
   {RB : [LogRel@{i j k l} lB | Γ ||- B]}
@@ -22,54 +74,34 @@ Proof.
   destruct RA as [pA lrA], RB as [pB lrB], RC as [pC lrC]; cbn in *.
   set (sv := combine _ _ _ _ lrA lrB lrC (ShapeViewConv _ _ RAB) (ShapeViewConv _ _ RBC)).
   revert lB B pB lrB lC C pC lrC RAB RBC sv.
-  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| |]; intros ??? lrB;
-  induction lrB as [|?? neB|?? ΠB ΠBad _ _| |]; intros ??? lrC;
-  induction lrC as [| |?? ΠC ΠCad _ _| |]; intros RAB RBC [].
+  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| | |?? PA PAad ihdom ihcod]; intros ??? lrB;
+  induction lrB as [|?? neB|?? ΠB ΠBad _ _| | | ?? PB PBad _ _]; intros ??? lrC;
+  induction lrC as [| |?? ΠC ΠCad _ _| | | ?? PC PCad _ _]; intros RAB RBC [].
   - easy.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
     1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
-  - destruct RAB as [domB codB redB ? domRedEq codRedEq], RBC as [domC codC redC ? domRedEq' codRedEq'].
-    destruct ΠB as [?? redB' ??? domRedB codRedB], ΠC as [?? redC' ??? domRedC codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
-    unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
-    injection eqΠB; intros eqcod eqdom; clear eqΠB;  subst. 
-    unshelve epose proof (eqΠC := redtywf_det _ _ _ _ _ _ redC' redC).  1,2 : constructor.
-    injection eqΠC; intros eqcod eqdom; clear eqΠC;  subst. 
-    assert (domRedAC : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
-      [PiRedTy.domRed ΠA ρ h | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ domC⟨ρ⟩]).
-    { intros. unshelve eapply ihdom.
-      10: now unshelve apply domRedEq'.
-      7: apply domRedEq.
-      6: now unshelve apply domAdC.
-      3: apply domAdB.
-      now apply (PiRedTy.domRed ΠA).
-    }
+  - destruct RAB as [?? redB ??], RBC as [?? redC ??].
+    destruct ΠB as [??? redB' ??], ΠC as [domC codC ? redC' ??].
+    inv_red redB redB'; inv_red redC redC'.
     exists domC codC.
     + eassumption.
     + etransitivity; eassumption.
-    + apply domRedAC.
-    + intros. unshelve eapply ihcod.
-      10:{ 
-        unshelve apply codRedEq'. 1: assumption. 
-        eapply RedTmConv.
-        4: exact ha.
-        * apply (PiRedTy.domAd ΠAad).
-        * apply domAdB.
-        * apply domRedEq.
-      }
-      7: unshelve apply codRedEq.
-      6:{ unshelve apply codAdC. 1: assumption.
-        eapply RedTmConv.
-        4: exact ha.
-        * apply (PiRedTy.domAd ΠAad).
-        * apply domAdC.
-        * apply domRedAC.
-      }
-      3: apply codAdB.
-      now eapply (PiRedTy.codRed ΠA).
+    + eapply (transPolyRedEq@{i j k l} (PolyRed.from ΠAad) (PolyRed.from ΠBad) (PolyRed.from ΠCad)); cbn; tea.
+      * intros * ; eapply ihdom; now eapply (PolyRedPack.shpRed ΠA).
+      * intros *; eapply ihcod; eapply (PolyRedPack.posRed ΠA); tea.
   - destruct RBC; now constructor.
   - destruct RBC; now constructor.
+  - destruct RAB as [?? redB ??], RBC as [?? redC ??].
+    destruct PB as [??? redB' ??], PC as [domC codC ? redC' ??].
+    inv_red redB redB'; inv_red redC redC'.
+    exists domC codC.
+    + eassumption.
+    + etransitivity; eassumption.
+    + eapply (transPolyRedEq@{i j k l} (PolyRed.from PAad) (PolyRed.from PBad) (PolyRed.from PCad)); cbn; tea.
+      * intros * ; eapply ihdom; now eapply (PolyRedPack.shpRed PA).
+      * intros *; eapply ihcod; eapply (PolyRedPack.posRed PA); tea.
 Qed.
 
 
@@ -101,18 +133,17 @@ Qed.
 
 Lemma transEqTermΠ {Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]}
   (ihdom : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (t u v : term),
-  [PiRedTyPack.domRed ΠA ρ h | Δ ||- t ≅ u : (PiRedTyPack.dom ΠA)⟨ρ⟩] ->
-  [PiRedTyPack.domRed ΠA ρ h | Δ ||- u ≅ v : (PiRedTyPack.dom ΠA)⟨ρ⟩] ->
-  [PiRedTyPack.domRed ΠA ρ h | Δ ||- t ≅ v : (PiRedTyPack.dom ΠA)⟨ρ⟩])
+    [PolyRed.shpRed ΠA ρ h | Δ ||- t ≅ u : _] ->
+    [PolyRed.shpRed ΠA ρ h | Δ ||- u ≅ v : _] ->
+    [PolyRed.shpRed ΠA ρ h | Δ ||- t ≅ v : _])
   (ihcod : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
-   (ha : [PiRedTyPack.domRed ΠA ρ h | Δ ||- a : (PiRedTyPack.dom ΠA)⟨ρ⟩])
-   (t u v : term),
-  [PiRedTyPack.codRed ΠA ρ h ha | Δ ||- t ≅ u : (PiRedTyPack.cod ΠA) [a .: ρ >> tRel]] ->
-  [PiRedTyPack.codRed ΠA ρ h ha | Δ ||- u ≅ v : (PiRedTyPack.cod ΠA) [a .: ρ >> tRel]] ->
-  [PiRedTyPack.codRed ΠA ρ h ha | Δ ||- t ≅ v : (PiRedTyPack.cod ΠA) [a .: ρ >> tRel]]) :
-  [Γ ||-Π t ≅ u : A | PiRedTyPack.toPiRedTy ΠA ] ->
-  [Γ ||-Π u ≅ v : A | PiRedTyPack.toPiRedTy ΠA ] ->
-  [Γ ||-Π t ≅ v : A | PiRedTyPack.toPiRedTy ΠA ].
+    (ha : [PolyRed.shpRed ΠA ρ h | Δ ||- a : _]) (t u v : term),
+    [PolyRed.posRed ΠA ρ h ha | Δ ||- t ≅ u : _] ->
+    [PolyRed.posRed ΠA ρ h ha | Δ ||- u ≅ v : _] ->
+    [PolyRed.posRed ΠA ρ h ha | Δ ||- t ≅ v : _]) :
+  [Γ ||-Π t ≅ u : A | ΠA ] ->
+  [Γ ||-Π u ≅ v : A | ΠA ] ->
+  [Γ ||-Π t ≅ v : A | ΠA ].
 Proof.
   intros [tL] [? tR];
   unshelve epose proof (e := redtmwf_det _ _ _ _ _ _ _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
@@ -123,6 +154,37 @@ Proof.
     1: eapply eqApp.
     rewrite e; apply eqApp0.
 Qed.
+
+Lemma transEqTermΣ {Γ lA A t u v} {ΣA : [Γ ||-Σ<lA> A]}
+  (ihdom : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (t u v : term),
+    [PolyRed.shpRed ΣA ρ h | Δ ||- t ≅ u : _] ->
+    [PolyRed.shpRed ΣA ρ h | Δ ||- u ≅ v : _] ->
+    [PolyRed.shpRed ΣA ρ h | Δ ||- t ≅ v : _])
+  (ihcod : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
+    (ha : [PolyRed.shpRed ΣA ρ h | Δ ||- a : _]) (t u v : term),
+    [PolyRed.posRed ΣA ρ h ha | Δ ||- t ≅ u : _] ->
+    [PolyRed.posRed ΣA ρ h ha | Δ ||- u ≅ v : _] ->
+    [PolyRed.posRed ΣA ρ h ha | Δ ||- t ≅ v : _]) :
+  [Γ ||-Σ t ≅ u : A | ΣA ] ->
+  [Γ ||-Σ u ≅ v : A | ΣA ] ->
+  [Γ ||-Σ t ≅ v : A | ΣA ].
+Proof.
+  intros [tL ?? eqfst eqsnd] [? tR ? eqfst' eqsnd'];
+  unshelve epose proof (e := redtmwf_det _ _ _ _ _ _ _ _ (SigRedTm.red redR) (SigRedTm.red redL)); tea.
+  1,2: apply isPair_whnf; apply SigRedTm.isfun.
+  exists tL tR.
+  + etransitivity; tea. now rewrite e.
+  + intros; eapply ihdom ; [eapply eqfst| rewrite e; eapply eqfst'].
+  + intros; eapply ihcod; [eapply eqsnd|].
+    rewrite e. eapply LRTmEqRedConv.
+    2: eapply eqsnd'.
+    eapply PolyRed.posExt.
+    1: eapply (SigRedTm.fstRed tL).
+    eapply LRTmEqSym. rewrite <- e.
+    eapply eqfst.
+    Unshelve. tea.
+Qed.
+
 
 Lemma transNeNfEq {Γ t u v A} :
   [Γ ||-NeNf t ≅ u : A] ->
@@ -201,6 +263,7 @@ Proof.
   - intros * ?????. apply transEqTermΠ; tea.
   - intros ? NA **; now eapply (fst (transEqTermNat NA)).
   - intros ? NA **; now eapply (fst (transEqTermEmpty NA)).
+  - intros * ?????; apply transEqTermΣ; tea.
 Qed.
 
 Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :

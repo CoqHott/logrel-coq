@@ -268,80 +268,140 @@ Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
 Notation "[ R | Γ ||-U t : A | l ]" := (URedTm R Γ t A l) (at level 0, R, Γ, t, A, l at level 50).
 Notation "[ R | Γ ||-U t ≅ u : A | l ]" := (URedTmEq R Γ t u A l) (at level 0, R, Γ, t, u, A, l at level 50).
 
-(** ** Reducibility of product types *)
+(** ** Reducibility of a polynomial A,, B  *)
 
-Module PiRedTy.
+Module PolyRedPack.
 
-  Record PiRedTy@{i} `{ta : tag}
-    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term}
+  (* A polynomial is a pair (shp, pos) of a type of shapes [Γ |- shp] and
+    a dependent type of positions [Γ |- pos] *)
+  (* This should be used as a common entry for Π, Σ, W and M types *)
+
+  Record PolyRedPack@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta}
+    {Γ : context} {shp pos : term}
   : Type (* @ max(Set, i+1) *) := {
-    dom : term ;
-    cod : term ;
-    red : [Γ |- A :⇒*: tProd dom cod];
-    domTy : [Γ |- dom];
-    codTy : [Γ ,, dom |- cod];
-    eq : [Γ |- tProd dom cod ≅ tProd dom cod];
-    domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩ ;
-    codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-        [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
-        LRPack@{i} Δ (cod[a .: (ρ >> tRel)]) ;
-    codExt
+    shpTy : [Γ |- shp];
+    posTy : [Γ ,, shp |- pos];
+    shpRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ shp⟨ρ⟩ ;
+    posRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+        [ (shpRed ρ h) |  Δ ||- a : shp⟨ρ⟩] ->
+        LRPack@{i} Δ (pos[a .: (ρ >> tRel)]) ;
+    posExt
       {Δ a b}
       (ρ : Δ ≤ Γ)
       (h :  [ |- Δ ])
-      (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
-      [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
-      [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-      [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
+      (ha : [ (shpRed ρ h) | Δ ||- a : shp⟨ρ⟩ ]) :
+      [ (shpRed ρ h) | Δ ||- b : shp⟨ρ⟩] ->
+      [ (shpRed ρ h) | Δ ||- a ≅ b : shp⟨ρ⟩] ->
+      [ (posRed ρ h ha) | Δ ||- (pos[a .: (ρ >> tRel)]) ≅ (pos[b .: (ρ >> tRel)]) ]
   }.
 
-  Arguments PiRedTy {_ _ _ _ _}.
+  Arguments PolyRedPack {_ _ _ _}.
 
   (** We separate the recursive "data", ie the fact that we have reducibility data (an LRPack)
   for the domain and codomain, and the fact that these are in the graph of the logical relation.
   This is crucial for Coq to accept the definition, because it makes the nesting simple enough
   to be accepted. We later on show an induction principle that does not have this separation to
   make reasoning easier. *)
-  Record PiRedTyAdequate@{i j} `{ta : tag}
-    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} Γ A}
+  Record PolyRedPackAdequate@{i j} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} {shp pos : term}
+    {Γ : context} {R : RedRel@{i j}}  {PA : PolyRedPack@{i} Γ shp pos}
   : Type@{j} := {
-    domAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (ΠA.(domRed) ρ h);
-    codAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ (ΠA.(domRed) ρ h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ])
-      : LRPackAdequate@{i j} R (ΠA.(codRed) ρ h ha);
+    shpAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (PA.(shpRed) ρ h);
+    posAd {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ PA.(shpRed) ρ h | Δ ||- a : shp⟨ρ⟩ ])
+      : LRPackAdequate@{i j} R (PA.(posRed) ρ h ha);
   }.
 
-  Arguments PiRedTyAdequate {_ _ _ _ _ _ _}.
+  Arguments PolyRedPackAdequate {_ _ _ _ _ _ _}.
 
-End PiRedTy.
+End PolyRedPack.
 
-Export PiRedTy(PiRedTy,Build_PiRedTy,PiRedTyAdequate,Build_PiRedTyAdequate).
-Notation "[ Γ ||-Πd A ]" := (PiRedTy Γ A).
+Export PolyRedPack(PolyRedPack, Build_PolyRedPack, PolyRedPackAdequate, Build_PolyRedPackAdequate).
 
-Module PiRedTyEq.
+Module PolyRedEq.
 
-  Record PiRedTyEq `{ta : tag} `{WfContext ta}
+  Record PolyRedEq `{ta : tag} `{WfContext ta}
+    `{WfType ta} `{ConvType ta} 
+    {Γ : context} {shp pos: term} {PA : PolyRedPack Γ shp pos} {shp' pos' : term}
+  : Type := {
+    shpRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ PA.(PolyRedPack.shpRed) ρ h | Δ ||- shp⟨ρ⟩ ≅ shp'⟨ρ⟩ ];
+    posRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+      (ha : [ PA.(PolyRedPack.shpRed) ρ h | Δ ||- a : shp⟨ρ⟩]) :
+      [ PA.(PolyRedPack.posRed) ρ h ha | Δ ||- pos[a .: (ρ >> tRel)] ≅ pos'[a .: (ρ >> tRel)] ];
+  }.
+
+  Arguments PolyRedEq {_ _ _ _ _ _ _}.
+
+End PolyRedEq.
+
+Export PolyRedEq(PolyRedEq, Build_PolyRedEq).
+(* Nothing for reducibility of terms and reducible conversion of terms  *)
+
+Module ParamRedTyPack.
+
+  Record ParamRedTyPack@{i} {T : term -> term -> term}
+    `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term}
+  : Type (* @ max(Set, i+1) *) := {
+    dom : term ;
+    cod : term ;
+    outTy := T dom cod ;
+    red : [Γ |- A :⇒*: T dom cod];
+    eq : [Γ |- T dom cod ≅ T dom cod];
+    polyRed : PolyRedPack@{i} Γ dom cod
+  }.
+
+  Arguments ParamRedTyPack {_ _ _ _ _ _}.
+
+End ParamRedTyPack.
+
+Export ParamRedTyPack(ParamRedTyPack, Build_ParamRedTyPack, outTy).
+Coercion ParamRedTyPack.polyRed : ParamRedTyPack >-> PolyRedPack.
+Arguments ParamRedTyPack.outTy /.
+
+Module ParamRedTyEq.
+
+  Record ParamRedTyEq {T : term -> term -> term}
+    `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    {Γ : context} {A B : term} {ΠA : PiRedTy Γ A}
+    {Γ : context} {A B : term} {ΠA : ParamRedTyPack (T:=T) Γ A}
   : Type := {
     dom : term;
     cod : term;
-    red : [Γ |- B :⇒*: tProd dom cod];
-    eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ];
-    domRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-      [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ];
-    codRed {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ ΠA.(PiRedTy.domRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]) :
-      [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ];
+    red : [Γ |- B :⇒*: T dom cod ];
+    eq  : [Γ |- T ΠA.(ParamRedTyPack.dom) ΠA.(ParamRedTyPack.cod) ≅ T dom cod ];
+    polyRed : PolyRedEq ΠA dom cod
   }.
 
-  Arguments PiRedTyEq {_ _ _ _ _}.
+  Arguments ParamRedTyEq {_ _ _ _ _ _}.
 
-End PiRedTyEq.
+End ParamRedTyEq.
 
-Export PiRedTyEq(PiRedTyEq,Build_PiRedTyEq).
-Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq Γ A B ΠA).
+Export ParamRedTyEq(ParamRedTyEq,Build_ParamRedTyEq).
+Coercion ParamRedTyEq.polyRed : ParamRedTyEq >-> PolyRedEq.
+
+(** ** Reducibility of product types *)
+
+Definition PiRedTy `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta} := 
+  ParamRedTyPack (T:=tProd).
+
+Definition PiRedTyAdequate@{i j} `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term} (R : RedRel@{i j}) (ΠA : PiRedTy@{i} Γ A)
+  : Type@{j} := PolyRedPackAdequate R ΠA.
+
+(* keep ? *)
+Module PiRedTy := ParamRedTyPack.
+Notation "[ Γ ||-Πd A ]" := (PiRedTy Γ A).
+  
+Definition PiRedTyEq `{ta : tag} 
+  `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+  {Γ : context} {A : term} (ΠA : PiRedTy Γ A) (B : term) :=
+  ParamRedTyEq (T:=tProd) Γ A B ΠA.
+
+(* keep ?*)
+Module PiRedTyEq := ParamRedTyEq.
+Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq (Γ:=Γ) (A:=A) ΠA B).
 
 Module PiRedTm.
 
@@ -356,13 +416,13 @@ Module PiRedTm.
     isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [(ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
-    eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      (hb : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      (eq : [ (ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
-      : [ (ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
+      (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      : [ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]] ;
+    eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΠA.(PolyRedPack.shpRed) ρ h)
+      (ha : [ domRed | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      (hb : [ domRed | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      (eq : [ domRed | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
+      : [ ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
   }.
 
   Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
@@ -383,8 +443,8 @@ Module PiRedTmEq.
     redR : [ Γ ||-Π u : A | ΠA ] ;
     eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     eqApp {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [(ΠA.(PiRedTy.domRed) ρ h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
-      : [ ( ΠA.(PiRedTy.codRed) ρ h ha) | Δ ||-
+      (ha : [ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ] )
+      : [ ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||-
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
   }.
 
@@ -395,6 +455,71 @@ End PiRedTmEq.
 Export PiRedTmEq(PiRedTmEq,Build_PiRedTmEq).
 
 Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq Γ t u A ΠA).
+
+(** ** Reducibility of dependent sum types *)
+
+Definition SigRedTy `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta} := 
+  ParamRedTyPack (T:=tSig).
+
+Definition SigRedTyAdequate@{i j} `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term} (R : RedRel@{i j}) (ΣA : SigRedTy@{i} Γ A)
+  : Type@{j} := PolyRedPackAdequate R ΣA.
+  
+Definition SigRedTyEq `{ta : tag} 
+  `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+  {Γ : context} {A : term} (ΠA : SigRedTy Γ A) (B : term) :=
+  ParamRedTyEq (T:=tSig) Γ A B ΠA.
+
+Module SigRedTm.
+
+  Record SigRedTm `{ta : tag} `{WfContext ta}
+    `{WfType ta} `{ConvType ta} `{RedType ta}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
+    {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t : term}
+  : Type := {
+    nf : term;
+    red : [ Γ |- t :⇒*: nf : ΣA.(outTy) ];
+    isfun : isPair nf;
+    isnf  : Nf[Γ |- nf : ΣA.(outTy) ];
+    refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
+    fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;
+    sndRed  {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ΣA.(PolyRedPack.posRed) ρ h (fstRed ρ h) | Δ ||- tSnd nf⟨ρ⟩ : _] ;
+  }.
+
+  Arguments SigRedTm {_ _ _ _ _ _ _ _ _ _ _}.
+
+End SigRedTm.
+
+Export SigRedTm(SigRedTm,Build_SigRedTm).
+Notation "[ Γ ||-Σ t : A | ΣA ]" := (SigRedTm (Γ:=Γ) (A:=A) ΣA t) (at level 0, Γ, t, A, ΣA at level 50).
+
+Module SigRedTmEq.
+
+  Record SigRedTmEq `{ta : tag} `{WfContext ta}
+    `{WfType ta} `{ConvType ta} `{RedType ta}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
+    {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t u : term}
+  : Type := {
+    redL : [ Γ ||-Σ t : A | ΣA ] ;
+    redR : [ Γ ||-Σ u : A | ΣA ] ;
+    eq : [ Γ |- redL.(SigRedTm.nf) ≅ redR.(SigRedTm.nf) : ΣA.(outTy) ];
+    eqFst {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst redL.(SigRedTm.nf)⟨ρ⟩ ≅ tFst redR.(SigRedTm.nf)⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;
+    eqSnd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (redfstL := redL.(SigRedTm.fstRed) ρ h) :
+      [ΣA.(PolyRedPack.posRed) ρ h redfstL | Δ ||- tSnd redL.(SigRedTm.nf)⟨ρ⟩ ≅ tSnd redR.(SigRedTm.nf)⟨ρ⟩ : _] ;
+  }.
+
+  Arguments SigRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
+
+End SigRedTmEq.
+
+Export SigRedTmEq(SigRedTmEq,Build_SigRedTmEq).
+
+Notation "[ Γ ||-Σ t ≅ u : A | ΣA ]" := (SigRedTmEq (Γ:=Γ) (A:=A) ΣA t u) (at level 0, Γ, t, u, A, ΣA at level 50).
+
+
 
 (** ** Reducibility of neutrals at an arbitrary type *)
 
@@ -732,7 +857,9 @@ Inductive LR@{i j k} `{ta : tag}
   | LRNat {Γ A} (NA : [Γ ||-Nat A]) :
     LR rec Γ A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
   | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
-    LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA).
+    LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA)
+  | LRSig {Γ : context} {A : term} (ΣA : SigRedTy@{j} Γ A) (ΣAad : SigRedTyAdequate@{j k} (LR rec) ΣA) :
+    LR rec Γ A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA).
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -825,111 +952,178 @@ Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
 Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
 
-(** ** Rebundling reducibility of product types *)
+(** ** Rebundling reducibility of Polynomial *)
 
 (** The definition of reducibility of product types in the logical relation, which separates
 the "adequacy" part is not nice to work with. Here we relate it to the more natural one,
 which lets us later on define an induction principle that does not show the separation at all. *)
 
-Module PiRedTyPack.
-Section PiRedTyPack.
+Module PolyRed.
+
+Section PolyRed.
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}
+    {Γ : context} {l : TypeLevel} {shp pos : term}.
+
+  Record PolyRed@{i j k l} : Type@{l} :=
+    {
+      shpTy : [Γ |- shp] ;
+      posTy : [Γ,, shp |- pos] ;
+      shpRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> [ LogRel@{i j k l} l | Δ ||- shp⟨ρ⟩ ] ;
+      posRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+          [ (shpRed ρ h) |  Δ ||- a : shp⟨ρ⟩] ->
+          [ LogRel@{i j k l} l | Δ ||- pos[a .: (ρ >> tRel)]] ;
+      posExt
+        {Δ a b}
+        (ρ : Δ ≤ Γ)
+        (h :  [ |- Δ ])
+        (ha : [ (shpRed ρ h) | Δ ||- a : shp⟨ρ⟩ ]) :
+        [ (shpRed ρ h) | Δ ||- b : shp⟨ρ⟩] ->
+        [ (shpRed ρ h) | Δ ||- a ≅ b : shp⟨ρ⟩] ->
+        [ (posRed ρ h ha) | Δ ||- (pos[a .: (ρ >> tRel)]) ≅ (pos[b .: (ρ >> tRel)]) ]
+    }.
+  
+  Definition from@{i j k l} {PA : PolyRedPack@{k} Γ shp pos} 
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA)
+    : PolyRed@{i j k l}.
+  Proof.
+    unshelve econstructor; intros.
+    - econstructor; now unshelve eapply PolyRedPack.shpAd.
+    - econstructor; unshelve eapply PolyRedPack.posAd; cycle 1; tea.
+    - now eapply PolyRedPack.shpTy.
+    - now eapply PolyRedPack.posTy.
+    - now eapply PolyRedPack.posExt.
+  Defined.
+  
+  Definition toPack@{i j k l} (PA : PolyRed@{i j k l}) : PolyRedPack@{k} Γ shp pos.
+  Proof.
+    unshelve econstructor.
+    - now eapply shpRed.
+    - intros; now eapply posRed.
+    - now eapply shpTy. 
+    - now eapply posTy.
+    - intros; now eapply posExt.
+  Defined. 
+
+  Definition toAd@{i j k l} (PA : PolyRed@{i j k l}) : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) (toPack PA).
+  Proof.
+    unshelve econstructor; intros.
+    - eapply LRAd.adequate; eapply posRed.
+    - eapply LRAd.adequate; eapply shpRed.
+  Defined.
+
+  Lemma eta@{i j k l} (PA : PolyRed@{i j k l}) : from (toAd PA) = PA.
+  Proof. destruct PA; reflexivity. Qed.
+
+  Lemma beta_pack@{i j k l} {PA : PolyRedPack@{k} Γ shp pos} 
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA)
+    : toPack (from PAad) = PA.
+  Proof. destruct PA, PAad; reflexivity. Qed.
+
+  Lemma beta_ad@{i j k l} {PA : PolyRedPack@{k} Γ shp pos} 
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA)
+    : toAd (from PAad) = PAad.
+  Proof. destruct PA, PAad; reflexivity. Qed.
+
+End PolyRed.
+
+Arguments PolyRed : clear implicits.
+Arguments PolyRed {_ _ _ _ _ _ _ _ _ _ _ _ _} _ _ _.
+
+End PolyRed.
+
+Export PolyRed(PolyRed,Build_PolyRed).
+Coercion PolyRed.toPack : PolyRed >-> PolyRedPack.
+
+Module ParamRedTy.
+Section ParamRedTy.
+  Context {T : term -> term -> term} `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}
+    {Γ : context} {l : TypeLevel} {A : term}.
+
+  Record ParamRedTy@{i j k l} : Type@{l} :=
+    {
+      dom : term ;
+      cod : term ;
+      red : [Γ |- A :⇒*: T dom cod] ;
+      outTy := T dom cod ;
+      eq : [Γ |- T dom cod ≅ T dom cod] ;
+      polyRed :> PolyRed@{i j k l} Γ l dom cod
+    }.
+
+  Definition from@{i j k l} {PA : ParamRedTyPack@{k} (T:=T) Γ A}
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA) :
+    ParamRedTy@{i j k l}.
+  Proof.
+    exists (ParamRedTyPack.dom PA) (ParamRedTyPack.cod PA).
+    - eapply ParamRedTyPack.red.
+    - eapply ParamRedTyPack.eq.
+    - now eapply PolyRed.from.
+  Defined.
+
+  Definition toPack@{i j k l} (PA : ParamRedTy@{i j k l}) :
+    ParamRedTyPack@{k} (T:=T) Γ A. 
+  Proof.
+    exists (dom PA) (cod PA).
+    - now eapply red.
+    - now eapply eq.
+    - exact (PolyRed.toPack PA).
+  Defined.
+
+  Definition toAd@{i j k l} (PA : ParamRedTy@{i j k l}) :  
+    PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) (toPack PA) :=
+    PolyRed.toAd PA.
+
+  Lemma eta@{i j k l} (PA : ParamRedTy@{i j k l}) : from (toAd PA) = PA.
+  Proof. destruct PA; reflexivity. Qed.
+
+  Lemma beta_pack@{i j k l} {PA : ParamRedTyPack@{k} (T:=T) Γ A}
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA)
+    : toPack (from PAad) = PA.
+  Proof. destruct PA, PAad; reflexivity. Qed.
+
+  Lemma beta_ad@{i j k l} {PA : ParamRedTyPack@{k} (T:=T) Γ A} 
+    (PAad : PolyRedPackAdequate@{k l} (LogRel@{i j k l} l) PA)
+    : toAd (from PAad) = PAad.
+  Proof. destruct PA, PAad; reflexivity. Qed.
+End ParamRedTy.
+
+Arguments ParamRedTy : clear implicits.
+Arguments ParamRedTy _ {_ _ _ _ _ _ _ _ _ _ _ _ _}.
+
+End ParamRedTy.
+
+(** ** Rebundling reducibility of product and sigma types *)
+
+Export ParamRedTy(ParamRedTy, Build_ParamRedTy, outTy).
+Module PiRedTyPack := ParamRedTy.
+Coercion ParamRedTy.polyRed : ParamRedTy >-> PolyRed.
+Coercion ParamRedTy.toPack : ParamRedTy >-> ParamRedTyPack.
+Notation "[ Γ ||-Π< l > A ]" := (ParamRedTy tProd Γ l A) (at level 0, Γ, l, A at level 50).
+Notation "[ Γ ||-Σ< l > A ]" := (ParamRedTy tSig Γ l A) (at level 0, Γ, l, A at level 50).
+
+Section EvenMoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{TypeNf ta} `{TypeNe ta} `{!RedTerm ta} `{TermNf ta} `{TermNe ta}.
-
-
-  Record PiRedTyPack@{i j k l} {Γ : context} {A : term} {l : TypeLevel} 
-    : Type@{l} := {
-      dom : term ;
-      cod : term ;
-      red : [Γ |- A :⇒*: tProd dom cod];
-      domTy : [Γ |- dom];
-      codTy : [Γ ,, dom |- cod];
-      eq : [Γ |- tProd dom cod ≅ tProd dom cod];
-      domRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ] ;
-      codRed {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
-          [ (domRed ρ h) |  Δ ||- a : dom⟨ρ⟩] ->
-          [ LogRel@{i j k l} l | Δ ||- cod[a .: (ρ >> tRel)]] ;
-      codExt
-        {Δ a b}
-        (ρ : Δ ≤ Γ)
-        (h :  [ |- Δ ])
-        (ha : [ (domRed ρ h) | Δ ||- a : dom⟨ρ⟩ ]) :
-        [ (domRed ρ h) | Δ ||- b : dom⟨ρ⟩] ->
-        [ (domRed ρ h) | Δ ||- a ≅ b : dom⟨ρ⟩] ->
-        [ (codRed ρ h ha) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]
-    }.
-
-  Arguments PiRedTyPack : clear implicits.
-
-  Definition pack@{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
-    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA) 
-    : PiRedTyPack@{i j k l} Γ A l.
-  Proof.
-    destruct ΠA as [dom cod]; destruct ΠAad; cbn in *.
-    unshelve econstructor; [exact dom| exact cod|..].
-    3-6: assumption.
-    * intros; econstructor; now unshelve apply domAd.
-    * intros; econstructor; now unshelve apply codAd.
-    * intros. cbn. eauto.
-  Defined.
-    
-  Definition toPiRedTy@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
-    PiRedTy@{k} Γ A.
-  Proof.
-    destruct ΠA as [dom cod ???? domRed codRed codExt].
-    unshelve econstructor; [exact dom|exact cod|..].
-    3-6: assumption.
-    * intros; now eapply domRed.
-    * intros; now eapply codRed.
-    * intros; now eapply codExt.
-  Defined.
   
-  Definition toPiRedTyAd@{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
-    PiRedTyAdequate (LogRel@{i j k l} l) (toPiRedTy ΠA).
-  Proof.
-    destruct ΠA as [dom cod ???? domRed codRed ?].
-    unshelve econstructor; cbn; intros; [eapply domRed|eapply codRed].
-  Defined.  
-
-  Lemma pack_eta @{i j k l} {Γ A l} (ΠA : PiRedTyPack@{i j k l} Γ A l) :
-    pack _ (toPiRedTyAd ΠA) = ΠA.
-  Proof. destruct ΠA; reflexivity. Qed.
-
-  Lemma pack_beta @{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
-    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA)  :
-    toPiRedTy (pack _ ΠAad) = ΠA.
-  Proof. destruct ΠA; destruct ΠAad; reflexivity. Qed.
-
-  Lemma pack_beta_ad @{i j k l} {Γ A l} (ΠA : PiRedTy@{k} Γ A)
-    (ΠAad : PiRedTyAdequate (LogRel@{i j k l} l) ΠA)  :
-    toPiRedTyAd (pack _ ΠAad) = ΠAad.
-  Proof. destruct ΠA; destruct ΠAad; reflexivity. Qed.
-
-  Definition LRPi'@{i j k l} {l Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l)
+  Definition LRPi'@{i j k l} {l Γ A} (ΠA : ParamRedTy@{i j k l} tProd Γ l A)
     : [ LogRel@{i j k l} l | Γ ||- A ] :=
-    LRbuild (LRPi (LogRelRec l) _ (toPiRedTyAd ΠA)).
+    LRbuild (LRPi (LogRelRec l) _ (ParamRedTy.toAd ΠA)).
 
-  Definition prod@{i j k l} {l Γ A} (ΠA : PiRedTyPack@{i j k l} Γ A l) : term :=
-    tProd (dom ΠA) (cod ΠA).
+  Definition LRSig' @{i j k l} {l Γ A} (ΠA : ParamRedTy@{i j k l} tSig Γ l A)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRSig (LogRelRec l) _ (ParamRedTy.toAd ΠA)).
 
-  Lemma whne_noΠ `{!RedTypeProperties} {Γ A} : [Γ ||-Πd A] -> whne A -> False.
-  Proof.
-    intros [?? r] h.
-    pose proof (UntypedReduction.red_whne _ _ (redtywf_red r) h).
-    subst; inversion h.
-  Qed.
+End EvenMoreDefs.
 
-End PiRedTyPack.
 
-Arguments PiRedTyPack : clear implicits.
-Arguments PiRedTyPack {_ _ _ _ _ _ _ _ _ _ _ _ _} _ _ _.
-
-End PiRedTyPack.
-
-Export PiRedTyPack(PiRedTyPack,Build_PiRedTyPack, LRPi').
-Notation "[ Γ ||-Π< l > A ]" := (PiRedTyPack Γ A l) (at level 0, Γ, l, A at level 50).
+(** ** Folding and unfolding lemmas of the logical relation wrt levels *)
 
 Section LogRelRecFoldLemmas.
   Context `{ta : tag}
@@ -984,6 +1178,9 @@ Section LogRelRecFoldLemmas.
   Qed.
 
 End LogRelRecFoldLemmas.
+
+
+(** ** Properties of reducibility at Nat and Empty *)
 
 Section NatPropProperties.
   Context `{GenericTypingProperties}.

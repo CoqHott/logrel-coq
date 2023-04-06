@@ -11,7 +11,8 @@ Section Reflexivities.
   Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod | ?? [] | ?? []].
+    pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; intros ?? [] **.
+    all: try match goal with H : PolyRedPack _ _ _ |- _ => destruct H; econstructor; tea end.
     all: now econstructor.
   Qed.
 
@@ -53,8 +54,9 @@ Section Reflexivities.
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod| ?? NA | ?? NA].
-    - intros t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
+    pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; 
+      clear Γ A eqTy redTm eqTm lr; intros Γ A.
+    - intros h t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.
@@ -63,16 +65,21 @@ Section Reflexivities.
       1-3,5: eapply RedTyRecBwd; apply (LRbuild@{h i j k} rel).
       1: cbn; easy.
       now eapply TyEqRecBwd.
-    - intros t [].
+    - intros [] t [].
       econstructor ; cbn in *.
       all: eassumption.
-    - intros t [].
+    - intros ???? t [].
       unshelve econstructor ; cbn in *.
       1-2: now econstructor.
       all: cbn.
       all: now eauto.
-    - apply reflNatRedTmEq.
-    - apply reflEmptyRedTmEq. 
+    - intros; now apply reflNatRedTmEq.
+    - intros; now apply reflEmptyRedTmEq.
+    - intros ???? t [].
+      unshelve econstructor ; cbn in *.
+      1-2: now econstructor.
+      all: cbn.
+      all: now eauto.
   Qed.
 
   Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
