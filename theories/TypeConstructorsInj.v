@@ -714,3 +714,59 @@ Proof.
   all: try now econstructor.
   all: now cbn in Hconv.
 Qed.
+
+Lemma nat_isNat Γ t:
+  [Γ |-[de] t : tNat] ->
+  whnf t ->
+  isNat t.
+Proof.
+  intros Hty Hwh.
+  destruct Hwh.
+  all: try now econstructor.
+  all: eapply termGen' in Hty ; cbn in *.
+  all: exfalso.
+  all: prod_hyp_splitter ; try easy.
+  all: subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ tNat] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end.
+  all: try now econstructor.
+  all: now cbn in Hconv.
+Qed.
+
+Lemma empty_isEmpty Γ t:
+  [Γ |-[de] t : tEmpty] ->
+  whnf t ->
+  whne t.
+Proof.
+  intros Hty Hwh.
+  destruct Hwh ; try easy.
+  all: eapply termGen' in Hty ; cbn in *.
+  all: exfalso.
+  all: prod_hyp_splitter ; try easy.
+  all: subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ tEmpty] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end.
+  all: try now econstructor.
+  all: now cbn in Hconv.
+Qed.
+
+Lemma neutral_isNeutral Γ A t :
+  [Γ |-[de] t : A] ->
+  whne A ->
+  whnf t ->
+  whne t.
+Proof.
+  intros (?&Hgen&Hconv)%termGen' HwA Hwh.
+  set (iA := NeType HwA).
+  destruct Hwh ; cbn in * ; try easy.
+  all: exfalso.
+  all: prod_hyp_splitter.
+  all: subst.
+  all: unshelve eapply ty_conv_inj in Hconv ; tea.
+  all: try now econstructor.
+  all: now cbn in Hconv.
+Qed.

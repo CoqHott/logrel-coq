@@ -8,6 +8,13 @@ From LogRel.Substitution Require Import Properties Escape.
 
 Import DeclarativeTypingProperties AlgorithmicTypingData BundledTypingData.
 
+(** ** Small types are large types *)
+
+(** In the generic instance we allow to turn any small type into a type,
+while in the definition of algorithmic typing we only allow it when A is a non-canonical
+type (in which case it has to be small).
+So we need to show admissibility of the more general rule. *)
+
 Lemma algo_typing_small_large Γ A :
   [Γ |-[bn] A : U] ->
   [Γ |-[bn] A].
@@ -74,19 +81,9 @@ Qed.
 
 Import BundledIntermediateData IntermediateTypingProperties.
 
-(** ** Completeness of algorithmic conversion *)
-(** We use the intermediate instance derived in AlgorithmicConvProperties to get this result,
-using the fundamental lemma. *)
-
-Lemma algo_conv_complete Γ A B :
-  [Γ |-[de] A ≅ B] ->
-  [Γ |-[al] A ≅ B].
-Proof.
-  now intros [HΓ ? _ []%escapeEq]%Fundamental.
-Qed.
-
 (** ** Instance *)
-(** Equipped with this equivalence, we easily derive our third instance. *)
+(** Equipped with the equivalence of declarative and algorithmic conversion,
+we easily derive our third instance. *)
 
 Module AlgorithmicTypingProperties.
   Export BundledTypingData AlgorithmicConvProperties.
@@ -101,7 +98,7 @@ Module AlgorithmicTypingProperties.
     1-8: intros_bn.
     - now do 2 constructor.
     - constructor ; tea.
-      now apply typing_sound.
+      now apply algo_typing_sound.
     - now intros ? [].
   Qed.
 
@@ -109,7 +106,7 @@ Module AlgorithmicTypingProperties.
   Proof.
     - intros_bn.
       now eapply algo_typing_wk.
-    - now intros * [? ?%typing_sound]. 
+    - now intros * [? ?%algo_typing_sound]. 
     - intros_bn.
       now econstructor.
     - intros_bn.
@@ -127,7 +124,7 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       + now eapply algo_typing_wk.
       + gen_typing.
-    - intros * [?? ?%typing_sound] ; tea.
+    - intros * [?? ?%algo_typing_sound] ; tea.
       now econstructor.
     - intros_bn.
       + now econstructor.
@@ -172,7 +169,7 @@ Module AlgorithmicTypingProperties.
       + econstructor.
         eapply typing_subst1.
         1: eauto using inf_conv_decl.
-        now eapply typing_sound.
+        now eapply algo_typing_sound.
     - intros_bn.
       1: econstructor.
       gen_typing.
@@ -183,17 +180,17 @@ Module AlgorithmicTypingProperties.
       + econstructor.
         eapply typing_subst1.
         1: eauto using inf_conv_decl.
-        now eapply typing_sound.
+        now eapply algo_typing_sound.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
       symmetry.
       eapply RedConvTyC, subject_reduction_type ; tea.
-      now eapply typing_sound.
+      now eapply algo_typing_sound.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
-      now eapply conv_sound in bun_conv_ty.
+      now eapply algo_conv_sound in bun_conv_ty.
   Qed.
 
   #[export, refine] Instance RedTermAlgProperties :
@@ -264,7 +261,7 @@ Module AlgorithmicTypingProperties.
         now eapply algo_conv_complete.
       + econstructor.
         eapply typing_subst1.
-        all: eapply typing_sound ; tea.
+        all: eapply algo_typing_sound ; tea.
         2: now econstructor.
         econstructor ; tea.
         now eapply algo_conv_complete.
@@ -284,7 +281,7 @@ Module AlgorithmicTypingProperties.
       1: econstructor ; tea.
       + econstructor.
         eapply typing_subst1.
-        all: eapply typing_sound ; tea.
+        all: eapply algo_typing_sound ; tea.
         2: now econstructor.
         econstructor ; tea.
         now eapply algo_conv_complete.
@@ -294,7 +291,7 @@ Module AlgorithmicTypingProperties.
         econstructor ; tea.
         now econstructor. 
     - intros_bn.
-      eapply conv_sound in bun_conv_ty ; tea.
+      eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
       now etransitivity.
     - intros_bn.
@@ -326,11 +323,30 @@ Module AlgorithmicTypingProperties.
 
 End AlgorithmicTypingProperties.
 
+(** ** Consequences *)
+
 Import AlgorithmicTypingProperties.
+
+(** *** Completeness of algorithmic typing *)
 
 Corollary algo_typing_complete Γ A t :
   [Γ |-[de] t : A] ->
   [Γ |-[bn] t : A].
 Proof.
   now intros [_ _ ?%escapeTm]%(Fundamental (ta := bn)).
+Qed.
+
+(** *** Uniqueness of types *)
+
+Lemma type_uniqueness Γ A A' t :
+  [Γ |-[de] t : A] ->
+  [Γ |-[de] t : A'] ->
+  [Γ |-[de] A ≅ A'].
+Proof.
+  intros [?? Hinf]%algo_typing_complete [?? Hinf']%algo_typing_complete.
+  eapply algo_typing_det in Hinf.
+  2: eassumption.
+  subst.
+  etransitivity ; tea.
+  now symmetry.
 Qed.

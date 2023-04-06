@@ -1,7 +1,10 @@
 (** * LogRel.AlgorithmicConvProperties: properties of algorithmic conversion. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
-  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj Normalisation BundledAlgorithmicTyping.
+  GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj Normalisation BundledAlgorithmicTyping Fundamental.
+From LogRel.LogicalRelation Require Import Escape.
+From LogRel.Substitution Require Import Properties Escape.
+
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
@@ -262,13 +265,13 @@ Section AlgoConvConv.
   Let PTyRedEq (Γ : context) (A B : term) := True.
   Let PNeEq (Γ : context) (A t u : term) := forall Γ',
     [|-[de] Γ' ≅ Γ] ->
-    (∑ T, [Γ |-[de] t : T]) ->
-    (∑ T, [Γ |-[de] u : T]) ->
+    (well_typed Γ t) ->
+    (well_typed Γ u) ->
     ∑ A', [Γ' |-[al] t ~ u ▹ A'] × [Γ' |-[de] A' ≅ A].
   Let PNeRedEq (Γ : context) (A t u : term) := forall Γ',
     [|-[de] Γ' ≅ Γ] ->
-    (∑ T, [Γ |-[de] t : T]) ->
-    (∑ T, [Γ |-[de] u : T]) ->
+    (well_typed Γ t) ->
+    (well_typed Γ u) ->
     ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
   Let PTmEq (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
@@ -780,9 +783,9 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1-2: now apply typing_wk.
       now apply algo_conv_wk.
-    - now intros * [??? ?%conv_sound].
+    - now intros * [??? ?%algo_conv_sound].
     - intros_bn.
-      1-2: now eapply typing_sound.
+      1-2: now eapply algo_typing_sound.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty.
       econstructor.
       1-2: now etransitivity.
@@ -797,7 +800,7 @@ Module AlgorithmicConvProperties.
         econstructor.
         * now eapply ctx_refl.
         * symmetry.
-          now eapply conv_sound in bun_conv_ty0.
+          now eapply algo_conv_sound in bun_conv_ty0.
       + now do 2 econstructor.
     - intros_bn.
       all: now do 2 econstructor.
@@ -820,16 +823,16 @@ Qed.
       + now apply ctx_refl.
       + now constructor.
     - intros_bn.
-      all: eapply conv_sound in bun_conv_ty ; tea.
+      all: eapply algo_conv_sound in bun_conv_ty ; tea.
       1-2: now econstructor.
       eapply algo_conv_conv ; tea.
       now apply ctx_refl.
     - intros_bn.
       1-3: now apply typing_wk.
       now apply algo_conv_wk.
-    - now intros * [???? ?%conv_sound]. 
+    - now intros * [???? ?%algo_conv_sound]. 
     - intros_bn.
-      all: eapply typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
+      all: eapply algo_typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
         now gen_typing.
@@ -843,9 +846,9 @@ Qed.
     - intros Γ n n' A [? ? ? ? ? A' Hconvn HconvA].
       assert [Γ |-[de] A] by boundary.
       assert [Γ |-[de] n : A'] by
-        (eapply conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
+        (eapply algo_conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
       assert [Γ |-[de] n' : A'] by
-        (eapply conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
+        (eapply algo_conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
       split ; tea.
       1-2: now gen_typing.
       eapply algo_conv_conv ; tea.
@@ -859,7 +862,7 @@ Qed.
         eapply stability ; tea.
         econstructor.
         1: now apply ctx_refl.
-        eapply conv_sound in bun_conv_tm0 ; tea.
+        eapply algo_conv_sound in bun_conv_tm0 ; tea.
         symmetry.
         now constructor.
       + now do 2 econstructor.
@@ -907,7 +910,7 @@ Qed.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
-      now eapply conv_sound in bun_conv_ty.
+      now eapply algo_conv_sound in bun_conv_ty.
     - intros_bn.
       + destruct bun_conv_ne_conv_l.
         eexists.
@@ -919,6 +922,8 @@ Qed.
       + now apply whne_ren.
       + now apply algo_conv_wk.
       + now apply typing_wk.
+    - intros * [?????? []%algo_conv_sound] ; tea.
+      now econstructor. 
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
       econstructor.
@@ -933,14 +938,14 @@ Qed.
     [? ? ? ? ? ? Hf (?&?&[])%red_ty_compl_prod_r]
     [? ? ? ? Ht].
     econstructor ; tea.
-    + eapply conv_sound in Hf as [Hf] ; tea.
+    + eapply algo_conv_sound in Hf as [Hf] ; tea.
       eapply boundary in Hf as [_ Hf _].
       eexists ; econstructor.
       * econstructor ; tea.
         now eapply RedConvTyC.
       * now econstructor.
     + gen_typing.
-    + eapply conv_sound in Hf as [Hg] ; tea.
+    + eapply algo_conv_sound in Hf as [Hg] ; tea.
       eapply boundary in Hg as [_ _ Hg].
       eexists ; econstructor.
       * econstructor ; tea.
@@ -959,7 +964,7 @@ Qed.
   - intros_bn.
     + eexists.
       econstructor ; tea.
-      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
       eapply boundary in Hconv as [].
       now econstructor.
     + now econstructor.
@@ -967,12 +972,12 @@ Qed.
       econstructor ; tea.
       * econstructor ; tea.
         eapply typing_subst1 ; tea.
-        2: now eapply conv_sound in bun_conv_ty.
+        2: now eapply algo_conv_sound in bun_conv_ty.
         now do 2 econstructor.
       * econstructor ; tea.
         eapply elimSuccHypTy_conv ; tea.
-        now eapply conv_sound in bun_conv_ty.
-      * eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+        now eapply algo_conv_sound in bun_conv_ty.
+      * eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
         eapply boundary in Hconv as [].
         now econstructor.
     + now econstructor.
@@ -982,19 +987,19 @@ Qed.
       now eapply redty_red, red_ty_compl_nat_r.
     + econstructor.
       eapply typing_subst1 ; tea.
-      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
       eapply boundary in Hconv as [].
       now econstructor.
   - intros_bn.
     + eexists.
       econstructor ; tea.
-      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
       eapply boundary in Hconv as [].
       now econstructor.
     + now econstructor.
     + eexists.
       econstructor ; tea.
-      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
       eapply boundary in Hconv as [].
       now econstructor.
     + now econstructor.
@@ -1004,7 +1009,7 @@ Qed.
       now eapply redty_red, red_ty_compl_empty_r.
     + econstructor.
       eapply typing_subst1 ; tea.
-      eapply conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
+      eapply algo_conv_sound in bun_conv_ne_conv as [Hconv _]; tea.
       eapply boundary in Hconv as [].
       now econstructor.
   Qed.
@@ -1050,7 +1055,7 @@ Module IntermediateTypingProperties.
       eapply RedConvTyC, subject_reduction_type ; tea.
     - intros * ? [].
       econstructor ; tea.
-      now eapply conv_sound in bun_conv_ty.
+      now eapply algo_conv_sound in bun_conv_ty.
   Qed.
 
   #[export, refine] Instance ConvTypeIntProperties : ConvTypeProperties (ta := bni) := {}.
@@ -1081,7 +1086,7 @@ Module IntermediateTypingProperties.
         econstructor.
         1: now eapply ctx_refl.
         symmetry.
-        now eapply conv_sound in bun_conv_ty.
+        now eapply algo_conv_sound in bun_conv_ty.
       + now do 2 econstructor.
     - econstructor ; tea.
       1-3: econstructor ; tea.
@@ -1122,7 +1127,7 @@ Module IntermediateTypingProperties.
         1: now eapply ctx_refl.
         symmetry.
         econstructor.
-        now eapply conv_sound in bun_conv_tm.
+        now eapply algo_conv_sound in bun_conv_tm.
       + now do 2 econstructor.
     - intros * ? ? ? ? ? [].
       split ; tea.
@@ -1216,7 +1221,7 @@ Module IntermediateTypingProperties.
     - intros * [] [].
       econstructor ; tea.
       econstructor ; tea.
-      now eapply conv_sound in bun_conv_ty.
+      now eapply algo_conv_sound in bun_conv_ty.
     - intros.
       split.
       + boundary.
@@ -1257,3 +1262,16 @@ Module IntermediateTypingProperties.
   #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.
+
+(** ** Consequence: Completeness of algorithmic conversion  *)
+
+(** We use the intermediate instance derived above, and the fundamental lemma. *)
+
+Import BundledIntermediateData IntermediateTypingProperties.
+
+Lemma algo_conv_complete Γ A B :
+  [Γ |-[de] A ≅ B] ->
+  [Γ |-[al] A ≅ B].
+Proof.
+  now intros [HΓ ? _ []%(escapeEq (ta := bni))]%Fundamental.
+Qed.

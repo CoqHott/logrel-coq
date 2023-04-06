@@ -63,6 +63,11 @@ Inductive isFun : term -> Type :=
   | LamFun {A t} : isFun (tLambda A t)
   | NeFun  {f} : whne f -> isFun f.
 
+Inductive isNat : term -> Type :=
+  | ZeroNat : isNat tZero
+  | SuccNat {t} : isNat (tSucc t)
+  | NeNat {n} : whne n -> isNat n.
+
 Definition isPosType_isType t (i : isPosType t) : isType t :=
   match i with
     | UnivPos => UnivType
@@ -92,7 +97,15 @@ Definition isFun_whnf t (i : isFun t) : whnf t :=
 
 Coercion isFun_whnf : isFun >-> whnf.
 
-#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf : gen_typing.
+Definition isNat_whnf t (i : isNat t) : whnf t :=
+  match i with
+  | ZeroNat => whnf_tZero
+  | SuccNat => whnf_tSucc
+  | NeNat n => whnf_whne n
+  end.
+
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf : gen_typing.
+#[global] Hint Constructors isPosType isType isFun isNat : gen_typing.
 
 (** ** Canonical forms *)
 

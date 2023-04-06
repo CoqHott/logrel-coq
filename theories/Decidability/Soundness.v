@@ -146,39 +146,44 @@ Section CtxAccessCorrect.
 
 End CtxAccessCorrect.
 
-Section ConversionCorrect.
+Section ConversionSound.
 
   Import AlgorithmicTypingData.
 
   #[local]Existing Instance ty_errors.
 
-  #[universes(polymorphic)]Equations conv_correct_type (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term)
+  #[universes(polymorphic)]Definition conv_sound_type
+    (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term)
     (r : result (cstate_output x.π1)) : Type :=
-  conv_correct_type _ (error _) := True ;
-  conv_correct_type (ty_state;Γ;_;T;V) (ok _) :=  [Γ |-[al] T ≅ V] ;
-  conv_correct_type (ty_red_state;Γ;_;T;V) (ok _) := [Γ |-[al] T ≅h V] ;
-  conv_correct_type (tm_state;Γ;A;t;u) (ok _) := [Γ |-[al] t ≅ u : A] ;
-  conv_correct_type (tm_red_state;Γ;A;t;u) (ok _) :=
-    whnf A -> whnf t -> whnf u -> [Γ |-[al] t ≅h u : A] ;
-  conv_correct_type (ne_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~ n ▹ T] ;
-  conv_correct_type (ne_red_state;Γ;_;m;n) (ok T) => [Γ |-[al] m ~h n ▹ T].
+  match x, r with
+  | _, (error _) => True
+  | (ty_state;Γ;_;T;V), (ok _) =>  [Γ |-[al] T ≅ V]
+  | (ty_red_state;Γ;_;T;V), (ok _) => [Γ |-[al] T ≅h V]
+  | (tm_state;Γ;A;t;u), (ok _) => [Γ |-[al] t ≅ u : A]
+  | (tm_red_state;Γ;A;t;u), (ok _) =>
+      whnf A -> whnf t -> whnf u -> [Γ |-[al] t ≅h u : A]
+  | (ne_state;Γ;_;m;n), (ok T) => [Γ |-[al] m ~ n ▹ T]
+  | (ne_red_state;Γ;_;m;n), (ok T) => [Γ |-[al] m ~h n ▹ T] × whnf T
+  end.
 
-  Lemma _conv_correct :
-    funrect conv (fun _ => True) conv_correct_type.
+  Lemma _implem_conv_sound :
+    funrect conv (fun _ => True) conv_sound_type.
   Proof.
     intros x _.
     funelim (conv _) ; cbn.
-    all: intros ; simp conv_correct_type ; try easy ; cbn.
+    all: intros ; simp conv_sound_type ; try easy ; cbn.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
       | |- forall x : result _, _ => intros [|] ; [..|easy] ; cbn
-      | |- _ -> _ => simp conv_correct_type ; intros ?
+      | |- _ -> _ => simp conv_sound_type ; intros ?
       | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
       | s : sort |- _ => destruct s
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
       end).
     all: try solve [now econstructor].
+    - econstructor ; tea.
+      now econstructor.
     - econstructor ; tea.
       now econstructor.
     - econstructor ; tea.
@@ -194,16 +199,16 @@ Section ConversionCorrect.
         now eapply Nat.eqb_eq.
   Qed.
 
-  Corollary conv_correct x r :
+  Corollary implem_conv_sound x r :
     graph conv x r ->
-    conv_correct_type x r.
+    conv_sound_type x r.
   Proof.
     eapply funrect_graph.
-    1: now apply _conv_correct.
+    1: now apply _implem_conv_sound.
     easy.
   Qed.
 
-End ConversionCorrect.
+End ConversionSound.
 
 Section TypingCorrect.
 
@@ -218,29 +223,32 @@ Section TypingCorrect.
     all: inversion 1.
   Qed.
 
-  #[universes(polymorphic)]Equations typing_correct_type (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
+  #[universes(polymorphic)]Definition typing_sound_type
+    (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
     (r : result (tstate_output x.π1)) : Type :=
-  typing_correct_type _ (error _) := True ;
-  typing_correct_type (wf_ty_state;Γ;_;T) (ok _) :=  [Γ |-[al] T] ;
-  typing_correct_type (inf_state;Γ;_;t) (ok T) := [Γ |-[al] t ▹ T] ;
-  typing_correct_type (inf_red_state;Γ;_;t) (ok T) := [Γ |-[al] t ▹h T] ;
-  typing_correct_type (check_state;Γ;T;t) (ok _) := [Γ |-[al] t ◃ T].
+  match x, r with
+  | _, (error _) => True
+  | (wf_ty_state;Γ;_;T), (ok _) => [Γ |-[al] T]
+  | (inf_state;Γ;_;t), (ok T) => [Γ |-[al] t ▹ T]
+  | (inf_red_state;Γ;_;t), (ok T) => [Γ |-[al] t ▹h T]
+  | (check_state;Γ;T;t), (ok _) => [Γ |-[al] t ◃ T]
+  end.
 
-  Lemma typing_correct :
-    funrect typing (fun _ => True) typing_correct_type.
+  Lemma implem_typing_sound :
+    funrect typing (fun _ => True) typing_sound_type.
   Proof.
     intros x _.
     funelim (typing _) ; cbn.
-    all: intros ; simp typing_correct_type ; try easy ; cbn.
+    all: intros ; simp typing_sound_type ; try easy ; cbn.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
-      | |- forall x : result _, _ => intros [|] ; simp typing_correct_type ; try easy ; cbn
-      | |- _ -> _ => simp typing_correct_type ; intros ?
-      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; simp typing_correct_type ; try easy
+      | |- forall x : result _, _ => intros [|] ; simp typing_sound_type ; try easy ; cbn
+      | |- _ -> _ => simp typing_sound_type ; intros ?
+      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; simp typing_sound_type ; try easy
       | s : sort |- _ => destruct s
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
-      | H : graph conv _ _ |- _ => eapply conv_correct in H ; simp conv_correct_type in H
+      | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
       | H : graph ctx_access _ _ |- _ => eapply ctx_access_correct in H
       | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
       end).
