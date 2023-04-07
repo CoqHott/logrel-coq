@@ -111,37 +111,37 @@ End RedImplemSound.
 
 Section CtxAccessCorrect.
 
-  #[universes(polymorphic)]Lemma ctx_access_sound :
-    funrect ctx_access (fun _ => True) (fun '(Γ,n) d => in_ctx Γ n d).
+  Lemma ctx_access_sound Γ n d :
+    ctx_access Γ n = (ok d) ->
+    in_ctx Γ n d.
   Proof.
-    intros ? _.
-    funelim (ctx_access _) ; cbn.
-    - easy.
-    - now econstructor.
-    - split ; try easy.
-      intros.
-      now econstructor.
+    funelim (ctx_access Γ n).
+    all: simp ctx_access ; cbn.
+    - inversion 1.
+    - inversion 1.
+      now constructor.
+    - destruct (ctx_access Γ n') ; cbn.
+      all: inversion 1 ; subst.
+      constructor.
+      now apply H.
   Qed.
 
-  #[universes(polymorphic)]Lemma ctx_access_complete Γ n d :
+  Lemma ctx_access_complete Γ n d :
     in_ctx Γ n d ->
-    graph ctx_access (Γ,n) d.
+    ctx_access Γ n = ok d.
   Proof.
     induction 1.
-    all: unfold graph ; simp ctx_access ; econstructor ; cbn.
-    1: eassumption.
-    econstructor.
+    all: simp ctx_access ; cbn.
+    - reflexivity.
+    - now rewrite IHin_ctx. 
   Qed.
 
   Corollary ctx_access_correct Γ n d :
-    in_ctx Γ n d <~> graph ctx_access (Γ,n) d.
+    in_ctx Γ n d <~> (ctx_access Γ n = ok d).
   Proof.
     split.
     - eapply ctx_access_complete.
-    - intros.
-      eapply (funrect_graph ctx_access (fun _ => True) (fun '(Γ,n) d => _) (Γ,n) d).
-      1: eapply ctx_access_sound.
-      all: easy.
+    - eapply ctx_access_sound.
   Qed.
 
 End CtxAccessCorrect.
@@ -234,7 +234,7 @@ Section TypingCorrect.
   | (check_state;Γ;T;t), (ok _) => [Γ |-[al] t ◃ T]
   end.
 
-  Lemma implem_typing_sound :
+  Lemma _implem_typing_sound :
     funrect typing (fun _ => True) typing_sound_type.
   Proof.
     intros x _.
@@ -249,10 +249,19 @@ Section TypingCorrect.
       | s : sort |- _ => destruct s
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
       | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
-      | H : graph ctx_access _ _ |- _ => eapply ctx_access_correct in H
+      | H : ctx_access _ _ = _ |- _ => eapply ctx_access_correct in H
       | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
       end).
     all: now econstructor.
+  Qed.
+
+  Lemma implem_typing_sound x r:
+    graph typing x r ->
+    typing_sound_type x r.
+  Proof.
+    eapply funrect_graph.
+    1: now apply _implem_typing_sound.
+    easy.
   Qed.
 
 End TypingCorrect.

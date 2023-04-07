@@ -11,35 +11,35 @@ Set Universe Polymorphism.
 
 Import DeclarativeTypingProperties.
 
-Section ConversionComplete.
+Section ConversionTerminates.
 
 Let PTyEq (Γ : context) (A B : term) :=
   forall v B',
-  [Γ |- B'] ->
+  [Γ |-[de] B'] ->
   domain conv (ty_state;Γ;v;A;B').
 Let PTyRedEq (Γ : context) (A B : term) :=
   forall v B',
   isType B' ->
-  [Γ |- B'] ->
+  [Γ |-[de] B'] ->
   domain conv (ty_red_state;Γ;v;A;B').
 Let PNeEq (Γ : context) (A t u : term) :=
   forall v u',
   whne u' ->
-  well_typed Γ u' ->
+  well_typed (ta := de) Γ u' ->
   domain conv (ne_state;Γ;v;t;u').
 Let PNeRedEq (Γ : context) (A t u : term) :=
   forall v u',
   whne u' ->
-  well_typed Γ u' ->
+  well_typed (ta := de) Γ u' ->
   domain conv (ne_red_state;Γ;v;t;u').
 Let PTmEq (Γ : context) (A t u : term) :=
   forall u',
-  [Γ |- u' : A] ->
+  [Γ |-[de] u' : A] ->
   domain conv (tm_state;Γ;A;t;u').
 Let PTmRedEq (Γ : context) (A t u : term) :=
   forall u',
   whnf u' ->
-  [Γ |- u' : A] ->
+  [Γ |-[de] u' : A] ->
   domain conv (tm_red_state;Γ;A;t;u').
 
 Theorem _conv_terminates :
@@ -122,9 +122,8 @@ Proof.
     all: simp conv ; cbn ; try easy.
     destruct (Nat.eqb_spec n n') ; cbn.
     2: easy.
-    split ; [|easy].
-    eexists.
-    now apply ctx_access_correct.
+    erewrite ctx_access_complete ; tea.
+    now econstructor.
   - intros ? ???? A B Hm [IHm []] ? [IHt] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [|m' t'| | ].
@@ -357,8 +356,193 @@ Proof.
     all: boundary.
   Qed.
 
-End ConversionComplete.
+End ConversionTerminates.
 
+Section TypingTerminates.
 
-    
+  Definition lt_state (s s' : typing_state) :=
+    match s, s' with
+    | inf_state, inf_state => False
+    | inf_state, _ => True
+    | inf_red_state, wf_ty_state => True
+    | _, _ => False
+    end.
 
+  Lemma well_founded_lt_state : well_founded lt_state.
+  Proof.
+    intros [].
+    all: repeat (constructor ; intros [] ; cbn ; try easy).
+  Qed.
+
+  #[local]Definition R_aux := lexprod term typing_state term_subterm lt_state.
+
+  #[local]Definition R (x y : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term) :=
+    R_aux
+      (Datatypes.pair (x.π2.π2.π2) x.π1)
+      (Datatypes.pair (y.π2.π2.π2) y.π1).
+  
+  #[local]Lemma R_acc : well_founded R.
+  Proof.
+    intros x.
+    unfold R, R_aux.
+    constructor.
+    intros y h.
+    eapply acc_A_B_lexprod in h.
+  - remember (Datatypes.pair ((y.π2).π2).π2 y.π1) as y' eqn:e.
+    induction h as [y'' h ih] in y, e |- *. subst.
+    constructor. intros [v ρ] hr.
+    eapply ih. 2: reflexivity.
+    assumption.
+  - eapply well_founded_term_subterm.
+  - apply well_founded_lt_state.
+  - apply well_founded_lt_state. 
+  Qed.
+
+Definition wf_input (s : typing_state) Γ : tstate_input s -> Type :=
+  match s with
+  | check_state => fun A => [Γ |-[de] A]
+  | _ => fun _ => True
+  end.
+
+Theorem typing_terminates (s : typing_state) (Γ : context) (v : tstate_input s) (t : term) :
+  [|-[de] Γ] ->
+  wf_input s Γ v ->
+  domain typing (s;Γ;v;t).
+Proof.
+  intros HΓ Hv.
+  set (x := (s;Γ;v;t)).
+  change s with (x.π1) in Hv.
+  change Γ with (x.π2.π1) in HΓ, Hv.
+  change v with (x.π2.π2.π1) in Hv.
+  pose proof (Hacc := R_acc x).
+  clearbody x.
+  clear s Γ v t.
+  induction Hacc as [x H IH] in HΓ, Hv |- * ; cbn in *.
+  apply compute_domain. funelim (typing _) ; cbn in *.
+  - split.
+    + apply IH ; cbn ; try easy.
+      1: now right ; cbn.
+    + intros [|] ; cbn ; [|easy].
+      intros ?%implem_typing_sound%algo_typing_sound ; cbn in * ; tea.
+      split.
+      2: easy.
+      eapply conv_terminates ; tea.
+      boundary.
+  - split.
+    + apply IH ; cbn ; tea.
+      now right.
+    + intros [|] ; cbn ; [|easy].
+      intros ?%implem_typing_sound%algo_typing_sound ; cbn in * ; tea.
+      split.
+      2: easy.
+      eapply wh_red_complete.
+      exists istype.
+      now boundary.
+  - easy.
+  - split.
+    + apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; cbn ; try easy.
+      intros ?%implem_typing_sound%algo_typing_sound ; tea.
+      split ; cbn.
+      2: now intros [[]|] ; cbn.
+      apply IH ; cbn ; tea.
+      1: left ; cbn ; now do 2 econstructor.
+      econstructor ; tea.
+      econstructor.
+      now destruct s.
+  - split.
+    + apply IH ; cbn ; tea.
+     left ; cbn ; now do 2 econstructor.
+    + intros [|] ; cbn ; try easy.
+      intros ?%implem_typing_sound%algo_typing_sound ; tea.
+      split.
+      2: intros [] ; now cbn.
+      apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now econstructor.
+  - split.
+    + apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; cbn ; try easy.
+      intros Hf%implem_typing_sound%algo_typing_sound ; tea.
+      split.
+      2: intros [] ; now cbn.
+      apply IH ; cbn ; tea.
+      1: left ; cbn ; now do 2 econstructor.
+      eapply prod_ty_inv.
+      boundary.
+  - easy.
+  - easy.
+  - split.
+    + apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; now cbn.
+  - split.
+    1:{
+      apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [[]|] ; cbn ; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
+    assert ([|-[de] Γ,, tNat]) by (now econstructor ; [|econstructor]). 
+    split.
+    1:{
+      apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; cbn ; [|easy].
+    intros ?%implem_typing_sound%algo_typing_sound ; tea.
+    split.
+    2: intros [|] ; cbn ; intros _ ; split ; [|intros []| |intros []] ; try easy.
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      eapply typing_subst1 ; tea.
+      now econstructor.
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now eapply elimSuccHypTy_ty.
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now eapply elimSuccHypTy_ty.
+  - easy.
+  - split.
+    1:{
+      apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [[]|] ; cbn ; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
+    assert ([|-[de] Γ,, tEmpty]) by (now econstructor ; [|econstructor]). 
+    split.
+    1:{
+      apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; now cbn.
+  - easy.
+  - easy.
+  - easy.
+  - split.
+    1:{
+      apply IH ; cbn ; tea.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; cbn ; try easy.
+    intros ?%implem_typing_sound%algo_typing_sound ; tea.
+    split ; try easy.
+    apply IH ; cbn ; try easy.
+    1: left ; cbn ; now do 2 econstructor.
+    now econstructor.
+  - easy.
+  - easy.
+  - split.
+    1:{
+      apply IH ; cbn ; tea.
+      right ; now cbn.
+    }
+    intros [[]|] ; now cbn.
+  - easy.
+Qed.
+
+End TypingTerminates.

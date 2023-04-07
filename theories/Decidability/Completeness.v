@@ -374,9 +374,8 @@ Proof.
     unfold graph.
     simp conv.
     rewrite Nat.eqb_refl ; cbn.
-    econstructor.
-    2: now constructor.
-    now eapply ctx_access_correct.
+    erewrite ctx_access_complete ; tea ; cbn.
+    now econstructor.
   - intros * Hm [IHm []] Ht [IHt] **.
     unfold graph.
     simp conv ; cbn.
@@ -512,7 +511,8 @@ Proof.
     1: exact (g tt whnf_tSort).
     now econstructor.
   - repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
-    now eapply ctx_access_correct.
+    erewrite ctx_access_complete ; tea ; cbn.
+    now econstructor.
   - econstructor.
     1: exact (g0 tt whnf_tSort).
     econstructor.
