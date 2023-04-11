@@ -259,6 +259,9 @@ Section GenericTyping.
       [Γ ,,  tEmpty |- P ]< l > ->
       [Γ |- e : tEmpty]< l > ->
       [Γ |- tEmptyElim P e : P[e..]]< l > ;
+    ty_bool {l Γ} :
+        [|-Γ]< l > ->
+        [Γ |- tBool : U]< l > ;
     ty_true {l Γ} :
         [|-Γ]< l > ->
         [Γ |- tTrue : tBool]< l > ;
@@ -521,6 +524,9 @@ Section GenericValues.
       Nf[Γ ,, tEmpty |- P ]< l > ->
       Ne[Γ |- e : tEmpty]< l > ->
       Ne[Γ |- tEmptyElim P e : P[e..]]< l >;
+    tm_ne_alpha {l Γ t n} :
+      Ne[ Γ |- t : tNat ]< l > ->
+      Ne[ Γ |- tAlpha (nSucc n t) : tBool ]< l > ;
   }.
 
   Class TermNfProperties := {
@@ -572,14 +578,14 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_empty | 2 : gen_typing.
-#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim | 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty | 2 : gen_typing.
-#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_bool wft_empty | 2 : gen_typing.
+#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_bool ty_empty ty_zero ty_succ ty_natElim ty_true ty_false ty_boolElim ty_emptyElim | 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_bool convty_empty | 2 : gen_typing.
+#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_bool convtm_empty convtm_zero convtm_succ convtm_true convtm_false convtm_alpha convtm_alphacong | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_boolElim  convneu_alpha convneu_emptyElim | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
-#[export] Hint Resolve ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_empty | 2 : gen_typing.
-#[export] Hint Resolve tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_emptyelim tm_nf_wk | 2 : gen_typing.
+#[export] Hint Resolve ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_bool ty_nf_empty | 2 : gen_typing.
+#[export] Hint Resolve tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_boolelim tm_ne_emptyelim tm_nf_wk tm_ne_alpha | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu ty_ne_term | 4 : gen_typing.
 (* Priority 6 *)

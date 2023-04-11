@@ -249,6 +249,7 @@ Section Properties.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
+  + intros; constructor; assumption.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.

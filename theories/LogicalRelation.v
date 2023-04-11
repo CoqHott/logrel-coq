@@ -284,13 +284,13 @@ Module PiRedTy.
     codTy : [Γ ,, dom |- cod]< l > ;
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< l > ;
     domN : nat ;
-    domRed {Δ} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l') :
+    domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l') :
       [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩ ;
-    codomN {Δ} {a} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l')
+    codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
       (h : [ |- Δ ]< l' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
         nat ;
-    codRed {Δ} {a} (ρ : Δ ≤ Γ) {l'} (τ : l' ≤ε l) (Ninfl : domN <= length l')
+    codRed {Δ} {a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
         (h : [ |- Δ ]< l' >) (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
      forall {l''} (τ' : l'' ≤ε l') (Minfl : codomN ρ τ Ninfl h ha <= length l''),
        LRPack@{i} l'' Δ (cod[a .: (ρ >> tRel)]) ;
@@ -319,7 +319,7 @@ Module PiRedTy.
       domAd {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
         (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >) :
       LRPackAdequate@{i j} R (ΠA.(domRed) ρ τ Ninfl h) ;
-      codAd {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+      codAd {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
         (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l')
@@ -350,13 +350,17 @@ Module PiRedTyEq.
       (Ninfl' : domN <= length l') (h : [ |- Δ ]< l' >) :
       [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ]< l' > ;
       codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
-      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ;
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : domN <= length l')  (h : [ |- Δ ]< l' >) :
+      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > ->
+      nat ;
       codRed {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : domN <= length l') (h : [ |- Δ ]< l' >)
         (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
-        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : codomN ρ τ Ninfl h ha <= length l'') :
+        {l''} (τ' : l'' ≤ε l')
+        (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl' : codomN ρ τ Ninfl Ninfl' h ha <= length l'') :
         [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ]< l'' >;
   }.
 
@@ -379,22 +383,26 @@ Module PiRedTm.
       isfun : isFun l nf ;
       isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)]< l > ;
       refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
-      appN {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
+      redN : nat ;
+      appN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >) :
       [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
-      app {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+      app {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : appN ρ τ Ninfl h ha <= length l'') :
+        (Minfl' : appN ρ τ Ninfl Ninfl' h ha <= length l'') :
       [(ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' > ;
       eq {Δ l' a b} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         (hb : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         (eq : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : appN ρ τ Ninfl h ha <= length l'') :
+        (Minfl' : appN ρ τ Ninfl Ninfl' h ha <= length l'') :
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]< l'' >
   }.
 
@@ -415,14 +423,17 @@ Module PiRedTmEq.
       redL : [ Γ ||-Π t : A | ΠA ]< l > ;
       redR : [ Γ ||-Π u : A | ΠA ]< l > ;
       eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
-      eqappN {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >) :
+      eqN : nat;
+      eqappN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : eqN <= length l') (h : [ |- Δ ]< l' >) :
       [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
-      eqApp {Δ l' a} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l') (h : [ |- Δ ]< l' >)
+      eqApp {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
+        (Ninfl' : eqN <= length l') (h : [ |- Δ ]< l' >)
         (ha : [(ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : eqappN ρ τ Ninfl h ha <= length l'') :
+        (Minfl' : eqappN ρ τ Ninfl Ninfl' h ha <= length l'') :
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||-
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' >
   }.
@@ -1065,15 +1076,15 @@ Section PiRedTyPack.
     codTy : [Γ ,, dom |- cod]< wl > ;
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< wl > ;
     domN : nat ;
-    domRed {Δ} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+    domRed {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
       (Ninfl : domN <= length wl') :
       [ |- Δ ]< wl' > -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ]< wl' > ;
-    codomN {Δ} {a} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+    codomN {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
         (Ninfl : domN <= length wl')
         (h : [ |- Δ ]< wl' >)
         (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >) :
         nat ;
-    codRed {Δ} {a} (ρ : Δ ≤ Γ) {wl'} (τ : wl' ≤ε wl)
+    codRed {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
         (Ninfl : domN <= length wl')
       (h : [ |- Δ ]< wl' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >)

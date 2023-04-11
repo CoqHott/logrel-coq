@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation.Reflexivity: reflexivity of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst LContexts Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Escape.
 
 Set Universe Polymorphism.
@@ -8,27 +8,34 @@ Set Universe Polymorphism.
 Section Reflexivities.
   Context `{GenericTypingProperties}.
 
-  Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
-    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
+  Definition LRTyEqRefl {l wl Γ A eqTy redTm eqTm}
+    (lr : LogRel l wl Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    induction lr as [ ? ? [] | ? ? [] | ? ? [] ? IHdom IHcod | ?? [] | ?? []].
-    all: now econstructor.
+    induction lr as [ ? ? ? [] | ? ? ? [] | ? ? ? [] ? IHdom IHcod | ??? [] | ??? [] | ??? []].
+    all: try now unshelve econstructor.
+    cbn in *.
+    unshelve econstructor ; [exact dom | exact cod | .. ] ; try assumption ; cbn in *.
+    - intros.
+      now eapply (codomN Δ a l' ρ τ Ninfl h).
+    - intros ; eapply IHdom.
+    - intros ; eapply IHcod.
   Qed.
 
-  Corollary LRTyEqRefl_ {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
+  Corollary LRTyEqRefl_ {l wl Γ A} (lr : [ Γ ||-< l > A ]< wl > ) : [ Γ ||-< l > A ≅ A | lr ]< wl >.
   Proof.
     destruct lr as [[] lr].
     cbn in *.
     now eapply LRTyEqRefl.
   Qed.
 
-  Lemma NeNfEqRefl {Γ k A} : [Γ ||-NeNf k : A] -> [Γ ||-NeNf k ≅ k : A].
+  Lemma NeNfEqRefl {wl Γ k A} : [Γ ||-NeNf k : A]< wl > -> [Γ ||-NeNf k ≅ k : A]< wl >.
   Proof.
     intros []; now econstructor.
   Qed.
 
-  Lemma reflNatRedTmEq {Γ A} {NA : [Γ ||-Nat A]} :
-      (forall t : term, [Γ ||-Nat t : A | NA] -> [Γ ||-Nat t ≅ t : A | NA])
+  Lemma reflNatRedTmEq {wl Γ A} {NA : [Γ ||-Nat A]< wl >} :
+    (forall t : term, [Γ ||-Nat t : A | NA]< wl > ->
+                      [Γ ||-Nat t ≅ t : A | NA]< wl >)
     × (forall t : term, NatProp NA t -> NatPropEq NA t t).
   Proof.
     eapply NatRedInduction.
@@ -36,10 +43,24 @@ Section Reflexivities.
     intros; econstructor.
     now eapply NeNfEqRefl.
   Qed.
+  
+  Lemma reflBoolRedTmEq {wl Γ A} {NA : [Γ ||-Bool A]< wl >} :
+    (forall t : term, [Γ ||-Bool t : A | NA]< wl > ->
+                      [Γ ||-Bool t ≅ t : A | NA]< wl >)
+    × (forall t : term, BoolProp NA t -> BoolPropEq NA t t).
+  Proof.
+    split.
+    - intros t Ht ; induction Ht.
+      econstructor ; eauto.
+      destruct prop; econstructor.
+      now eapply NeNfEqRefl.
+    - intros ? [] ;  econstructor. 
+      now eapply NeNfEqRefl.
+  Qed.
 
-  Lemma reflEmptyRedTmEq {Γ A} {NA : [Γ ||-Empty A]} :
-      (forall t : term, [Γ ||-Empty t : A | NA] -> [Γ ||-Empty t ≅ t : A | NA])
-    × (forall t : term, @EmptyProp _ _ _ _ Γ t -> @EmptyPropEq _ _ _ Γ t t).
+  Lemma reflEmptyRedTmEq {wl Γ A} {NA : [Γ ||-Empty A]< wl >} :
+      (forall t : term, [Γ ||-Empty t : A | NA]< wl > -> [Γ ||-Empty t ≅ t : A | NA]< wl >)
+    × (forall t : term, @EmptyProp _ _ _ _ wl Γ t -> @EmptyPropEq _ _ _ wl Γ t t).
   Proof.
     split.
     - intros t Ht. induction Ht.
@@ -50,10 +71,10 @@ Section Reflexivities.
       now eapply NeNfEqRefl.
   Qed.
 
-  Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
+  Definition LRTmEqRefl@{h i j k l} {l wl Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l wl Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    induction lr as [ ? ? h | ? ? [] | ? ? [] IHdom IHcod| ?? NA | ?? NA].
+    induction lr as [ ? ? ? h | ? ? ? [] | ? ? ? [] IHdom IHcod| ??? NA | ??? NA | ??? NA].
     - intros t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
@@ -72,12 +93,13 @@ Section Reflexivities.
       all: cbn.
       all: now eauto.
     - apply reflNatRedTmEq.
+    - apply reflBoolRedTmEq.
     - apply reflEmptyRedTmEq. 
   Qed.
 
-  Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
-      [ Γ ||-< l > t : A | lr ] ->
-      [ Γ ||-< l > t ≅ t : A | lr ].
+  Definition LREqTermRefl_ {l wl Γ A t} (lr : [ Γ ||-< l > A ]< wl > ) : 
+      [ Γ ||-< l > t : A | lr ]< wl > ->
+      [ Γ ||-< l > t ≅ t : A | lr ]< wl >.
   Proof.
     destruct lr as [[] lr].
     cbn in *.

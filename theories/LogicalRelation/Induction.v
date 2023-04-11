@@ -35,7 +35,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
           PiRedTy.domAd :=
             fun (Δ : context) wl' (ρ : Δ ≤ _) (τ : wl' ≤ε wl) Ninfl (h : [  |- Δ]< wl' >) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) ρ τ Ninfl h) ;
           PiRedTy.codAd :=
-            fun (Δ : context) (wl' : wfLCon) (a : term)(ρ : Δ ≤ _) (τ : wl' ≤ε wl)
+            fun (Δ : context) (a : term)  (wl' : wfLCon) (ρ : Δ ≤ _) (τ : wl' ≤ε wl)
                 (Ninfl : _ <= length wl') (h : [ |- Δ ]< wl' >) 
                 (ha : [PiRedTy.domRed ΠA ρ τ Ninfl h | Δ ||- a : _]< wl' >)
                 wl'' (τ' : wl'' ≤ε wl')
