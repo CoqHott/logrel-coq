@@ -919,8 +919,6 @@ Qed.
       + now apply whne_ren.
       + now apply algo_conv_wk.
       + now apply typing_wk.
-    - intros * [?????? []%conv_sound] ; tea.
-      now econstructor. 
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
       econstructor.
@@ -1152,7 +1150,6 @@ Module IntermediateTypingProperties.
     - intros.
       apply convneu_wk ; tea.
       now split.
-    - eauto using (convneu_sound (ta := bn)).
     - intros * [? [[? [-> ]]]]%termGen'.
       econstructor.
       + gen_typing.
