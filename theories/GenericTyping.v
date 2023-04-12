@@ -178,8 +178,10 @@ Section GenericTyping.
     wfc_convty {l Γ A B} : [Γ |- A ≅ B]< l > -> [|- Γ]< l >;
     wfc_convtm {l Γ A t u} : [Γ |- t ≅ u : A]< l > -> [|- Γ]< l >;
     wfc_redty {l Γ A B} : [Γ |- A ⇒* B]< l > -> [|- Γ]< l >;
-    wfc_redtm {l Γ A t u} : [Γ |- t ⇒* u : A]< l > -> [|- Γ]< l >;
+    wfc_redtm {l Γ A t u} : [Γ |- t ⇒* u : A]< l > -> [|- Γ]< l > ;
     wfc_sound {l Γ} : [|- Γ]< l > -> [|-[de] Γ]< l > ;
+    wfc_Ltrans {Γ l l'} (f : l' ≤ε l) :
+    [ |- Γ ]< l > -> [ |- Γ ]< l' >;
     wfc_ϝ {l Γ n} {ne : not_in_LCon (pi1 l) n} : 
         [ |- Γ ]< l ,,l (ne, true) > ->
         [ |- Γ ]< l ,,l (ne, false) > ->
@@ -210,6 +212,8 @@ Section GenericTyping.
     wft_term {l Γ} {A} :
       [ Γ |- A : U ]< l > -> 
       [ Γ |- A ]< l > ;
+    wft_Ltrans {Γ l l' A} (f : l' ≤ε l) :
+    [ Γ |- A ]< l > -> [ Γ |- A ]< l' >;
     wft_ϝ {l Γ A n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- A ]< l ,,l (ne, true) > ->
         [ Γ |- A ]< l ,,l (ne, false) > ->
@@ -279,6 +283,8 @@ Section GenericTyping.
       [Γ |- tBoolElim P ht hf b : P[b..]]< l > ;
     ty_exp {l Γ t A A'} : [Γ |- t : A']< l > -> [Γ |- A ⇒* A']< l > -> [Γ |- t : A]< l > ;
     ty_conv {l Γ t A A'} : [Γ |- t : A']< l > -> [Γ |- A' ≅ A]< l > -> [Γ |- t : A]< l > ;
+    ty_Ltrans {Γ l l' t A} (f : l' ≤ε l) :
+    [ Γ |- t : A ]< l > -> [ Γ |- t : A ]< l' >;
     ty_ϝ {l Γ t A n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- t : A ]< l ,,l (ne, true) > ->
         [ Γ |- t : A ]< l ,,l (ne, false) > ->
@@ -306,7 +312,9 @@ Section GenericTyping.
     convty_bool {l Γ} :
       [|- Γ]< l > -> [Γ |- tBool ≅ tBool]< l > ;
     convty_empty {l Γ} :
-      [|- Γ]< l > -> [Γ |- tEmpty ≅ tEmpty]< l > ;
+    [|- Γ]< l > -> [Γ |- tEmpty ≅ tEmpty]< l > ;
+    convty_Ltrans {Γ l l' A B} (f : l' ≤ε l) :
+    [ Γ |- A ≅ B]< l > -> [ Γ |- A ≅ B]< l' >;
     convty_ϝ {l Γ A B n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- A ≅ B ]< l ,,l (ne, true) > ->
         [ Γ |- A ≅ B ]< l ,,l (ne, false) > ->
@@ -358,7 +366,9 @@ Section GenericTyping.
     convtm_alpha {l Γ n b} :
         [ |- Γ ]< l > ->
         in_LCon (pi1 l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >;
+        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l > ;
+    convtm_Ltrans {Γ l l' t u A} (f : l' ≤ε l) :
+    [ Γ |- t ≅ u : A ]< l > -> [ Γ |- t ≅ u : A ]< l' >;
     convtm_ϝ {l Γ t u A n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- t ≅ u : A ]< l ,,l (ne, true) > ->
         [ Γ |- t ≅ u : A ]< l ,,l (ne, false) > ->
@@ -397,6 +407,8 @@ Section GenericTyping.
         [Γ ,, tEmpty |- P ≅ P']< l > ->
         [Γ |- e ~ e' : tEmpty]< l > ->
         [Γ |- tEmptyElim P e ~ tEmptyElim P' e' : P[e..]]< l > ;
+    convneu_Ltrans {Γ l l' t u A} (f : l' ≤ε l) :
+    [ Γ |- t ~ u : A ]< l > -> [ Γ |- t ~ u : A ]< l' >;
     convneu_ϝ {l Γ t u A n} {ne : not_in_LCon (pi1 l) n} : 
         [ Γ |- t ~ u : A ]< l ,,l (ne, true) > ->
         [ Γ |- t ~ u : A ]< l ,,l (ne, false) > ->
@@ -416,6 +428,8 @@ Section GenericTyping.
       [Γ |- A ⇒* A]< l > ;
     redty_trans {l Γ} :>
       Transitive (red_ty l Γ) ;
+    redty_Ltrans {Γ l l' A B} (f : l' ≤ε l) :
+    [ Γ |- A ⇒* B ]< l > -> [ Γ |- A ⇒* B ]< l' > ;
   }.
 
   Class RedTermProperties :=
@@ -467,6 +481,8 @@ Section GenericTyping.
       [Γ |- t ⇒* t : A]< l > ;
     redtm_trans {l Γ A} :>
       Transitive (red_tm l Γ A) ;
+    redtm_Ltrans {Γ l l' t u A} (f : l' ≤ε l) :
+    [ Γ |- t ⇒* u : A ]< l > -> [ Γ |- t ⇒* u : A ]< l' > ;
   }.
 
 End GenericTyping.

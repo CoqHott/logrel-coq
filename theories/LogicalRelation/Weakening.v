@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Notations Utils BasicAst Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Notations Utils BasicAst LContexts Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
 
 Set Universe Polymorphism.
@@ -7,67 +7,111 @@ Set Universe Polymorphism.
 Section Weakenings.
   Context `{GenericTypingProperties}.
 
-  Lemma wkU {Γ Δ l A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) : [Δ ||-U<l> A⟨ρ⟩].
+  Lemma wkU {wl Γ Δ l A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]< wl >) (h : [Γ ||-U<l> A]< wl >) : [Δ ||-U<l> A⟨ρ⟩]< wl >.
   Proof. destruct h; econstructor; tea; change U with U⟨ρ⟩; gen_typing. Defined.
 
-  Lemma wkΠ  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A])
-    (ihdom : forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] -> [Δ' ||-< l > (PiRedTyPack.dom ΠA)⟨ρ⟩⟨ρ'⟩])
-    (ihcod : forall (a : term), [PiRedTyPack.domRed ΠA ρ wfΔ | _ ||- a : _] ->
-      forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ'] ->
-      [Δ' ||-< l > (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]⟨ρ'⟩]) :
-    [Δ ||-Π< l > A⟨ρ⟩].
+  Lemma wkΠ  {wl Γ Δ A l}
+    (ΠA : [Γ ||-Π< l > A]< wl >)
+    (ρ : Δ ≤ Γ)
+    (wfΔ : [|- Δ]< wl >) :
+    [Δ ||-Π< l > A⟨ρ⟩]< wl >.
+  
+   (* (ihdom : forall Δ' wl' (ρ' : Δ' ≤ Δ)
+                    (τ : wl' ≤ε wl)
+                    (Ninfl : (PiRedTyPack.domN ΠA) <= length wl'),
+        [ |- Δ']< wl' > ->
+        [Δ' ||-< l > (PiRedTyPack.dom ΠA)⟨ρ⟩⟨ρ'⟩]< wl' >)
+    (ihcod : forall wl' (a : term)
+                    (τ : wl' ≤ε wl)
+                    (Ninfl : (PiRedTyPack.domN ΠA) <= length wl')
+                    (wfΔ' : [|- Δ]< wl' >),
+        [PiRedTyPack.domRed ΠA ρ τ Ninfl wfΔ' | _ ||- a : _]< wl' > ->
+      forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ']< wl' > ->
+      [Δ' ||-< l > (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]⟨ρ'⟩]< wl' >)*)
   Proof.
     destruct ΠA as[dom cod];  cbn in *.
-    assert (domRed' : forall Δ' (ρ' : Δ' ≤ Δ), [|- Δ'] -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]).
+    assert (domRed' : forall Δ' wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
+                             (Ninfl : domN <= length wl'),
+               [|- Δ']< wl' > -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]< wl' >).
     {
-      intros ? ρ' ?; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
+      intros ? ? ρ' ??; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
       econstructor; now unshelve eapply domRed.
     }
     set (cod' := cod⟨wk_up dom ρ⟩).
-    assert (codRed' : forall Δ' a (ρ' : Δ' ≤ Δ) (h : [|- Δ']),
-      [domRed' Δ' ρ' h | _ ||- a : _] -> [Δ' ||-< l > cod'[a .: ρ' >> tRel]]).
-    {
-      intros ? a ρ' ?.
-      replace (cod'[a .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel]) by (unfold cod'; now bsimpl).
-      econstructor; unshelve eapply codRed; [assumption|].
+    unshelve refine
+      (let codomN' : forall Δ' a wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
+                             (Ninfl : domN <= length wl')
+                             (h : [|- Δ']< wl' >)
+                             (ha : [domRed' Δ' wl' ρ' τ Ninfl h | _ ||- a : _]< wl' >),
+               nat := _ in _).
+    { intros.
+      unshelve eapply (codomN Δ' a wl' (ρ' ∘w ρ) τ Ninfl h).
       irrelevance.
     }
-    exists (dom ⟨ρ⟩) cod' domRed' codRed'.
+    cbn in *.
+    assert (codRed' : forall Δ' a wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
+                             (Ninfl : domN <= length wl')
+                             (h : [|- Δ']< wl' >)
+                             (ha : [domRed' Δ' wl' ρ' τ Ninfl h | _ ||- a : _]< wl' >)
+                             (wl'' : wfLCon)
+                             (τ' : wl'' ≤ε wl'),
+               codomN' Δ' a wl' _ τ Ninfl h ha <= #|wl''| ->
+               [Δ' ||-< l > cod'[a .: ρ' >> tRel]]< wl'' >).
+    {
+      intros ? a wl' ρ' ??? ? ? ?.
+      replace (cod'[a .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel])
+        by (unfold cod'; now bsimpl).
+      econstructor; unshelve eapply codRed.
+      - exact wl'.
+      - assumption.
+      - assumption.
+      - assumption.
+      - irrelevance.
+      - assumption.
+      - assumption.
+    }
+    exists (dom ⟨ρ⟩) cod' domN domRed' codomN' codRed'.
     + unfold cod'; change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
     + gen_typing.
     + unfold cod'; set (ρ1 := wk_up (dom) ρ); eapply wft_wk; gen_typing.
     + unfold cod'; change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
-    + intros Δ' a b ρ' wfΔ' ???. 
+    + intros Δ' a b wl' ρ' ? ? wfΔ' ??? *. 
       replace (cod'[b .: ρ' >> tRel]) with (cod[ b .: (ρ' ∘w ρ) >> tRel]) by (unfold cod'; now bsimpl).
-      subst cod'; unshelve epose (codExt Δ' a b (ρ' ∘w ρ) wfΔ' _ _ _); irrelevance.
+      subst cod'; unshelve epose (codExt Δ' a b wl' (ρ' ∘w ρ) τ Ninfl wfΔ' _ _ _ _ _ _) ; try irrelevance ; try assumption.
   Defined.
 
-  Lemma wkNat {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Nat A] -> [Δ ||-Nat A⟨ρ⟩].
+  Lemma wkNat {wl Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) : [Γ ||-Nat A]< wl > -> [Δ ||-Nat A⟨ρ⟩]< wl >.
   Proof. 
     intros []; constructor.
     change tNat with tNat⟨ρ⟩.
     gen_typing. 
   Qed.
 
-  Lemma wkEmpty {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Empty A] -> [Δ ||-Empty A⟨ρ⟩].
+  Lemma wkBool {wl Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) : [Γ ||-Bool A]< wl > -> [Δ ||-Bool A⟨ρ⟩]< wl >.
+  Proof. 
+    intros []; constructor.
+    change tBool with tBool⟨ρ⟩.
+    gen_typing. 
+  Qed.
+
+  Lemma wkEmpty {wl Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) : [Γ ||-Empty A]< wl > -> [Δ ||-Empty A⟨ρ⟩]< wl >.
   Proof. 
     intros []; constructor.
     change tEmpty with tEmpty⟨ρ⟩.
     gen_typing. 
   Qed.
 
-  Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
-    [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
+  Lemma wk@{i j k l} {wl Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) :
+    [LogRel@{i j k l} l | Γ ||- A]< wl > -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩]< wl >.
   Proof.
-    intros lrA. revert Δ ρ wfΔ . pattern l, Γ, A, lrA.
-    eapply LR_rect_TyUr@{i j k l l}; clear l Γ A lrA.
+    intros lrA. revert Δ ρ wfΔ . pattern l, wl, Γ, A, lrA.
+    eapply LR_rect_TyUr@{i j k l l}; clear l wl Γ A lrA.
     - intros **. apply LRU_. now eapply wkU.
-    - intros ???[ty]???. apply LRne_.
+    - intros ????[ty]???. apply LRne_.
       exists (ty⟨ρ⟩); [|now apply ty_ne_wk|change U with U⟨ρ⟩] ;gen_typing.
-    - intros ??? ? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ρ wfΔ ΠA).
-      + intros; now apply ihdom.
-      + intros; now eapply ihcod.
+    - intros ????? ihdom ihcod ???. apply LRPi'; eapply (wkΠ ΠA ρ wfΔ).
     - intros; eapply LRNat_; now eapply wkNat.
+    - intros; eapply LRBool_; now eapply wkBool.
     - intros; eapply LREmpty_; now eapply wkEmpty.
   Defined.
 

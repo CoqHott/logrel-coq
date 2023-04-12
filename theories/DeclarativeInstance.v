@@ -563,7 +563,8 @@ Module DeclarativeTypingProperties.
   Proof.
     1-2: now constructor.
     all: try boundary.
-    intros ; now eapply ϝwfCon.
+    2: intros ; now eapply ϝwfCon.
+    intros ; now eapply WfContextDecl_trans.
   Qed.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
@@ -572,6 +573,7 @@ Module DeclarativeTypingProperties.
     - intros.
       now eapply typing_wk.
     - easy.
+    - intros ; now eapply WfTypeDecl_trans.
   Qed.
 
   #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.
@@ -583,6 +585,7 @@ Module DeclarativeTypingProperties.
     - intros.
       econstructor ; tea.
       now apply TypeSym, RedConvTyC.
+    - intros ; now eapply TypingDecl_trans.
   Qed.
 
   #[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := de) := {}.
@@ -605,6 +608,7 @@ Module DeclarativeTypingProperties.
   - now do 2 econstructor.
   - now do 2 econstructor.
   - now do 2 econstructor.
+  - intros ; now eapply ConvTypeDecl_trans.
   - intros.
     now eapply ϝTypeConv.
   Qed.
@@ -626,6 +630,7 @@ Module DeclarativeTypingProperties.
     all: now eapply RedConvTeC. }
   intros ;  eassumption.
   all : try now do 2 econstructor.
+  intros ; now eapply ConvTermDecl_trans.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -646,6 +651,7 @@ Module DeclarativeTypingProperties.
   - econstructor.
     induction n ; now econstructor.
   - now econstructor.
+  - intros ; now eapply ConvTermDecl_trans.
   - now econstructor.
   Qed.
 
@@ -682,6 +688,14 @@ Module DeclarativeTypingProperties.
     + assumption.
     + reflexivity.
     + now econstructor.
+  - intros * ? [].
+    econstructor.
+    1: now eapply TypingDecl_trans.
+    2: now eapply ConvTermDecl_trans.
+    clear reddecl_typ reddecl_conv.
+    induction reddecl_red ; try easy.
+    econstructor ; try easy.
+    now eapply redalg_Ltrans.
   Qed.
 
   #[export, refine] Instance RedTypeDeclProperties : RedTypeProperties (ta := de) := {}.
@@ -696,6 +710,14 @@ Module DeclarativeTypingProperties.
     + assumption.
     + reflexivity.
     + now constructor.
+  - intros * f [].
+    econstructor.
+    + now eapply WfTypeDecl_trans.
+    + clear reddecl_typ reddecl_conv.
+      induction reddecl_red ; try easy.
+      econstructor ; try easy.
+      now eapply redalg_Ltrans.
+    + now eapply ConvTypeDecl_trans.
   Qed.
 
   #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.

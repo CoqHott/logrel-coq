@@ -266,3 +266,8 @@ induction 1.
 + econstructor; [|eassumption].
   now econstructor.
 Qed.
+
+Lemma redalg_Ltrans {l l' t t'} (f : l' ≤ε l) : [ t ⇒ t' ]< l > -> [ t ⇒ t' ]< l' >.
+Proof.
+  intro H ; induction H ; try now econstructor.
+Qed.
