@@ -922,8 +922,6 @@ Qed.
       + now apply whne_ren.
       + now apply algo_conv_wk.
       + now apply typing_wk.
-    - intros * [?????? []%algo_conv_sound] ; tea.
-      now econstructor. 
     - intros * [? ? Hty].
       inversion Hty ; subst ; clear Hty.
       econstructor.
