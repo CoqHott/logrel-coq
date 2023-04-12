@@ -310,7 +310,6 @@ Section GenericTyping.
     convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
-    convneu_sound {Γ A t u} : [Γ |- t ~ u : A] -> [Γ |-[de] t ~ u : A] ;
     convneu_var {Γ n A} :
       [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
     convneu_app {Γ f g t u A B} :

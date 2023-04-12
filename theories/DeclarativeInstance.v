@@ -513,7 +513,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now eapply typing_wk.
-  - easy.
   - intros.
     now econstructor.
   - intros.
