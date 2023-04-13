@@ -145,6 +145,7 @@ Ltac prod_splitter :=
   | |- and3 _ _ _ => split
   | |- and4 _ _ _ _ => split
   | |- and5 _ _ _ _ _ => split
+  | |- _ /\ _ => split
   end.
 
 Ltac prod_hyp_splitter :=

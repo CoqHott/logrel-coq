@@ -101,9 +101,9 @@ Record ConvTermRedBun Γ A t u :=
 Record ConvNeuBun Γ A m n :=
 {
   bun_conv_ne_ctx : [|-[de] Γ] ;
-  bun_conv_ne_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_l : well_typed (ta := de) Γ m ;
   bun_conv_ne_wh_l : whne m ;
-  bun_conv_ne_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_r : well_typed (ta := de) Γ n ;
   bun_conv_ne_wh_r : whne n ;
   bun_conv_ne : [Γ |-[al] m ~ n ▹ A]
 }.
@@ -111,9 +111,9 @@ Record ConvNeuBun Γ A m n :=
 Record ConvNeuRedBun Γ A m n :=
 {
   bun_conv_ne_red_ctx : [|-[de] Γ] ;
-  bun_conv_ne_red_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_red_l : well_typed (ta := de) Γ m ;
   bun_conv_ne_red_wh_l : whne m ;
-  bun_conv_ne_red_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_red_r : well_typed (ta := de) Γ n ;
   bun_conv_ne_red_wh_r : whne n ;
   bun_conv_ne_red : [Γ |-[al] m ~h n ▹ A]
 }.
@@ -121,9 +121,9 @@ Record ConvNeuRedBun Γ A m n :=
 Record ConvNeuConvBun Γ A m n :=
 {
   bun_conv_ne_conv_ctx : [|-[de] Γ] ;
-  bun_conv_ne_conv_l : ∑ T, [Γ |-[de] m : T] ;
+  bun_conv_ne_conv_l : well_typed (ta := de) Γ m ;
   bun_conv_ne_conv_wh_l : whne m ;
-  bun_conv_ne_conv_r : ∑ T, [Γ |-[de] n : T] ;
+  bun_conv_ne_conv_r : well_typed (ta := de) Γ n ;
   bun_conv_ne_conv_wh_r : whne n ;
   bun_conv_ne_conv_ty : term ;
   bun_conv_ne_conv : [Γ |-[al] m ~ n ▹ bun_conv_ne_conv_ty] ;
@@ -273,9 +273,9 @@ Section BundledConv.
     | context [PTyRedEq ?Γ ?A ?B] =>
         constr:([|-[de] Γ] -> [Γ |-[de] A] -> [Γ |-[de] B] -> Hyp)
     | context [PNeEq ?Γ ?A ?t ?u] =>
-        constr:([|-[de] Γ] -> (∑ T, [Γ |-[de] t : T]) -> (∑ T, [Γ |-[de] u : T]) -> Hyp)
+        constr:([|-[de] Γ] -> (well_typed (ta := de) Γ t) -> (well_typed (ta := de) Γ u) -> Hyp)
     | context [PNeRedEq ?Γ ?A ?t ?u] =>
-        constr:([|-[de] Γ] -> (∑ T, [Γ |-[de] t : T]) -> (∑ T, [Γ |-[de] u : T]) -> Hyp)
+        constr:([|-[de] Γ] -> (well_typed (ta := de) Γ t) -> (well_typed (ta := de) Γ u) -> Hyp)
     | context [PTmEq ?Γ ?A ?t ?u] =>
         constr:([|-[de] Γ] -> ([Γ |-[de] t : A]) -> ([Γ |-[de] u : A]) -> Hyp)
     | context [PTmRedEq ?Γ ?A ?t ?u] =>
@@ -418,10 +418,12 @@ Section BundledConv.
         1-4: now inversion neN.
         assumption.
       }
+      assert (well_typed (ta := de) Γ M) by now eexists.
+      assert (well_typed (ta := de) Γ N) by now eexists.
       split ; [now eauto|..].
       do 2 econstructor.
       all: now apply IH.
-    - intros * Hin ? [] _.
+    - intros * Hin ? ? _.
       split ; [now eauto|..].
       split.
       + do 2 constructor ; gen_typing.
@@ -638,13 +640,13 @@ Section ConvSoundness.
     [Γ |-[de] t : A] -> [Γ |-[de] u : A] ->
     [Γ |-[de] t ≅ u : A].
   Let PNeEq (Γ : context) (A : term) (m n : term) :=
-    (∑ T, [Γ |-[de] m : T]) ->
-    (∑ T, [Γ |-[de] n : T]) ->
+    (well_typed (ta := de) Γ m) ->
+    (well_typed (ta := de) Γ n) ->
     [× [Γ |-[de] m ≅ n : A],
       (forall T, [Γ |-[de] m : T] -> [Γ |-[de] A ≅ T]) &
       (forall T, [Γ |-[de] n : T] -> [Γ |-[de] A ≅ T])].
 
-  Theorem conv_sound : AlgoConvInductionConcl PTyEq PTyEq PNeEq PNeEq PTmEq PTmEq.
+  Theorem algo_conv_sound : AlgoConvInductionConcl PTyEq PTyEq PNeEq PNeEq PTmEq PTmEq.
   Proof.
     subst PTyEq PTmEq PNeEq.
     red.
@@ -654,7 +656,7 @@ Section ConvSoundness.
     cycle -1.
     1:{
       repeat (split ; [
-      intros ; apply H' ; tea ; match goal with H : sigT _ |- _ => destruct H | _ => idtac end ; gen_typing 
+      intros ; apply H' ; tea ; match goal with H : well_typed _ _ |- _ => destruct H | _ => idtac end ; gen_typing 
       | ..] ; clear H' ; try destruct H as [H' H]).
       intros ; apply H ; gen_typing. }
     all: now constructor.
@@ -674,7 +676,7 @@ Proof.
   red.
   prod_splitter.
   all: intros * [].
-  all: match goal with H : context [al] |- _ => eapply conv_sound in H end.
+  all: match goal with H : context [al] |- _ => eapply algo_conv_sound in H end.
   all: prod_hyp_splitter.
   all: try eassumption.
   all: now eexists.
@@ -839,7 +841,7 @@ Section BundledTyping.
       destruct IHt as [? IHt] ; eauto.
       split ; [eauto|].
       econstructor ; tea.
-      eapply conv_sound in HA ; tea.
+      eapply algo_conv_sound in HA ; tea.
       now boundary.
   Qed.
 
@@ -872,7 +874,7 @@ Section TypingSoundness.
     [Γ |-[de] A] ->
     [Γ |-[de] t : A].
 
-  Theorem typing_sound : AlgoTypingInductionConcl PTy PInf PInf PCheck.
+  Theorem algo_typing_sound : AlgoTypingInductionConcl PTy PInf PInf PCheck.
   Proof.
     subst PTy PInf PCheck.
     red.
@@ -899,7 +901,7 @@ Proof.
   red.
   prod_splitter.
   all: intros * [].
-  all: match goal with H : context [al] |- _ => eapply typing_sound in H end.
+  all: match goal with H : context [al] |- _ => eapply algo_typing_sound in H end.
   all: prod_hyp_splitter.
   all: now eassumption.
 Qed.
@@ -909,7 +911,7 @@ Lemma bn_typing_sound Γ t A :
 Proof.
   intros [???Hty?].
   econstructor ; tea.
-  now eapply typing_sound in Hty.
+  now eapply algo_typing_sound in Hty.
 Qed.
 
 Corollary inf_conv_decl Γ t A A' :
@@ -918,7 +920,7 @@ Corollary inf_conv_decl Γ t A A' :
 [Γ |-[de] t : A'].
 Proof.
   intros Ht Hconv.
-  apply typing_sound in Ht.
+  apply algo_typing_sound in Ht.
   2: boundary.
   now econstructor.
 Qed.

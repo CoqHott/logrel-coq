@@ -65,5 +65,7 @@ theories/TypeUniqueness.v
 
 theories/Decidability/Functions.v
 theories/Decidability/Soundness.v
+theories/Decidability/Completeness.v
+theories/Decidability/Termination.v
 
 theories/Positivity.v

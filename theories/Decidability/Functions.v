@@ -13,6 +13,7 @@ Set Universe Polymorphism.
 #[local] Hint Resolve MonadId | 10 : typeclass_instances. *)
 
 Inductive errors : Type :=
+  | variable_not_in_context (n : nat) (Γ : context) : errors
   | head_mismatch (T : option term) (t t' : term) : errors
   | variable_mismatch (n n' : nat) : errors
   | destructor_mismatch (t t' : term) : errors
@@ -23,16 +24,16 @@ Inductive errors : Type :=
 #[local]Existing Instance MonadId | 10.
 
 (* #[local] Instance MonadOrecError A B : Monad (fun X => orec A B (result X)) :=
-  MonadTransResult.(mon_trans_mon) _ _.
+  MonadTransResult.(mon_trans_mon) _ _. *)
 Definition MonadError : Monad result :=
   MonadTransResult.(mon_trans_mon) id _.
 
-#[local]Existing Instance MonadError | 1. *)
+#[local]Existing Instance MonadError | 1.
 
-Equations ctx_access : (context × nat) ⇀ term :=
-  ctx_access (ε , _ ) := undefined ; (** The context does not contain the variable! *)
-  ctx_access (_,,d , 0 ) := ret (d⟨↑⟩) ;
-  ctx_access ( Γ,,_ , S n') := d ← rec (Γ,n') ;; ret d⟨↑⟩.
+Equations ctx_access (Γ : context) (n : nat) : result term :=
+  ctx_access ε _ := raise (H := MonadId) (A := term) (variable_not_in_context n ε) ; (** The context does not contain the variable! *)
+  ctx_access (_,,d) 0 := ret (Monad := MonadError) (d⟨↑⟩) ;
+  ctx_access (Γ,,_) (S n') := d ← (ctx_access Γ n') ;; ret d⟨↑⟩.
 
 Definition eq_sort (s s' : sort) : result unit := success (M := id).
 
@@ -325,8 +326,12 @@ Equations conv :
   } ;
   conv (ne_state;Γ;_;tRel n;tRel n')
     with n =? n' :=
-    { | false => raise (variable_mismatch n n')
-      | true => d ← call ctx_access (Γ,n) ;; ret (ok d)
+    { | false := raise (variable_mismatch n n') ;
+      | true with (ctx_access Γ n) := 
+        {
+        | error e => undefined ;
+        | ok d => ret (ok d)
+        }
     } ;
   conv (ne_state;Γ;_;tApp n t ; tApp n' t') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
@@ -419,7 +424,11 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
   } ;
   typing (inf_state;Γ;_;t) with t :=
   {
-    | tRel n := ok <*> call ctx_access (Γ,n) ;
+    | tRel n with (ctx_access Γ n) :=
+        {
+          | error _ := raise (variable_not_in_context n Γ) ;
+          | ok d := ret (ok d)
+        } ;
     | tSort s := raise type_error ;
     | tProd A B :=
         rA ← rec (inf_red_state;Γ;tt;A) ;;
@@ -427,6 +436,7 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
         | ok (tSort sA) =>
             rB ← rec (inf_red_state;Γ,,A;tt;B) ;;
             match rB with
+            | ok (tSort sB) => ret (ok (tSort (sort_of_product sA sB)))
             | ok _ => raise type_error
             | error e => raise e
             end
@@ -510,7 +520,7 @@ Equations typing : ∇ (x : ∑ (c : typing_state) (_ : context) (_ : tstate_inp
     | ok T' => (id (X := result unit)) <*> call conv (ty_state;Γ;tt;T';T)
     end.
 
-#[local] Definition infer (Γ : context) (t : term) : Fueled (result term) := 
+(* #[local] Definition infer (Γ : context) (t : term) : Fueled (result term) := 
   (fueled typing 1000 (inf_state;Γ;tt;t)).
 
 #[local] Definition check (Γ : context) (T t : term) : Fueled (result unit) := 
@@ -538,4 +548,4 @@ Check (eq_refl :
       tZero
     (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
     (tRel 0))))
-  = (Success (ok (tProd tNat tNat)))).
+  = (Success (ok (tProd tNat tNat)))). *)

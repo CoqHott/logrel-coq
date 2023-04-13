@@ -110,8 +110,18 @@ Section RedDefinitions.
 
   Record well_typed Γ t :=
   {
-    well_typed_ty : term ;
-    well_typed_typed : [Γ |- t : well_typed_ty]
+    well_typed_type : term ;
+    well_typed_typed : [Γ |- t : well_typed_type]
+  }.
+
+  Record well_formed Γ t :=
+  {
+    well_formed_class : class ;
+    well_formed_typed :
+    match well_formed_class with
+    | istype => [Γ |- t]
+    | isterm A => [Γ |- t : A]
+    end
   }.
   
 End RedDefinitions.
@@ -774,6 +784,28 @@ Section GenericConsequences.
     intros ???; constructor; tea; gen_typing.
   Qed.
 
+  (** *** Properties of well-typing *)
+
+  Definition well_typed_well_formed Γ t : well_typed Γ t -> well_formed Γ t :=
+  fun w =>
+  {|
+    well_formed_class := isterm (well_typed_type Γ t w) ;
+    well_formed_typed := well_typed_typed Γ t w
+  |}.
+
+  #[nonuniform]Coercion well_typed_well_formed : well_typed >-> well_formed.
+
+  Definition well_formed_well_typed Γ t (w : well_formed Γ t) : (well_typed Γ t + [Γ |- t]) :=
+  (match (well_formed_class _ _ w) as c return
+      (match c with
+      | istype => [Γ |-[ ta ] t]
+      | isterm A => [Γ |-[ ta ] t : A]
+      end -> well_typed Γ t + [Γ |-[ ta ] t])
+  with
+  | istype => inr
+  | isterm A => fun w' => inl {| well_typed_type := A ; well_typed_typed := w' |}
+    end) (well_formed_typed _ _ w).
+
   (** *** Derived typing, reduction and conversion judgements *)
 
   Lemma ty_var0 {Γ A} : 
@@ -1055,6 +1087,6 @@ Section GenericConsequences.
 
 End GenericConsequences.
 
-#[export] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
+#[export] Hint Resolve tyr_wf_l tmr_wf_l well_typed_well_formed : gen_typing.
 #[export] Hint Resolve redtywf_wk redtywf_term redtywf_red redtywf_refl redtmwf_wk redtmwf_app redtmwf_refl redtm_beta redtmwf_red redtmwf_natElimZero | 2 : gen_typing.
 #[export] Hint Resolve  redtmwf_conv | 6 : gen_typing.

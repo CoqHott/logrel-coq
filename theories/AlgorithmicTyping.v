@@ -119,6 +119,7 @@ Section Definitions.
     | wfTypeEmpty {Γ} :
         [Γ |- tEmpty]
     | wfTypeUniv {Γ A} :
+      ~ isCanonical A ->
       [Γ |- A ▹h U] ->
       [Γ |- A]
   (** **** Type inference *)
@@ -445,7 +446,9 @@ Section TypingWk.
     - intros.
       now econstructor.
     - now constructor.
-    - now constructor.
+    - constructor.
+      + now intros ?%isCanonical_ren.
+      + eauto. 
     - intros.
       eapply typing_meta_conv.
       + now econstructor ; eapply in_ctx_wk.
@@ -562,3 +565,86 @@ Section AlgTypingWh.
     all: gen_typing.
   Qed.
 End AlgTypingWh.
+
+(** ** Determinism: there is at most one inferred type *)
+
+Section AlgoTypingDet.
+
+Import AlgorithmicTypingData.
+
+Let PTyEq (Γ : context) (A B : term) := True.
+Let PTyRedEq (Γ : context) (A B : term) := True.
+Let PNeEq (Γ : context) (A t u : term) := 
+  forall A' u', [Γ |-[al] t ~ u' ▹ A'] -> A' = A.
+Let PNeRedEq (Γ : context) (A t u : term) :=
+  forall A' u', [Γ |-[al] t ~h u' ▹ A'] -> A' = A.
+Let PTmEq (Γ : context) (A t u : term) := True.
+Let PTmRedEq (Γ : context) (A t u : term) := True.
+
+Theorem algo_conv_det :
+  AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+Proof.
+  subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
+  apply AlgoConvInduction.
+  all: try easy.
+  - intros * ? * Hconv.
+    inversion Hconv ; subst ; clear Hconv.
+    now eapply in_ctx_inj.
+  - intros * ? IH ? ? ?? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    apply IH in H6.
+    now inversion H6.
+  - intros * ? IH ?????? ?? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    now reflexivity.
+  - intros * ? IH ?? ?? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    now reflexivity.
+  - intros * ? IH ???? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    eapply IH in H2 as ->.
+    now eapply whred_det.
+Qed.
+
+Theorem algo_typing_det :
+  AlgoTypingInductionConcl
+    (fun _ _ => True)
+    (fun Γ A t => forall A', [Γ |-[al] t ▹ A'] -> A' = A)
+    (fun Γ A t => whnf A -> forall A', whnf A' -> [Γ |-[al] t ▹h A'] -> A' = A)
+    (fun _ _ _ => True).
+Proof.
+  apply AlgoTypingInduction.
+  all: try easy.
+  - intros * ? ? Hinf.
+    inversion Hinf ; subst ; clear Hinf.
+    now eapply in_ctx_inj.
+  - intros * ? IHA ? IHB ? Hconv.
+    now inversion Hconv.
+  - intros * ?? ? IHt ? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    eapply IHt in H7 ; subst.
+    now reflexivity.
+  - intros * ? IHf ?? ? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    eapply IHf in H6.
+    2-3:gen_typing.
+    now inversion H6.
+  - intros * Hconv.
+    now inversion Hconv.
+  - intros * Hconv.
+    now inversion Hconv.
+  - intros * ?? ? Hconv.
+    now inversion Hconv.
+  - intros * ? IH ?????? ? Hconv.
+    now inversion Hconv.
+  - intros * Hconv.
+    now inversion Hconv.
+  - intros * ? IH ?? ? Hconv.
+    now inversion Hconv.
+  - intros * ? IH ?? ?? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    eapply IH in H3 ; subst.
+    now eapply whred_det.
+Qed.
+
+End AlgoTypingDet.
