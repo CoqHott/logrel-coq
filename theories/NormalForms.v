@@ -12,12 +12,16 @@ Inductive whnf : term -> Type :=
   | whnf_tZero : whnf tZero
   | whnf_tSucc {n} : whnf (tSucc n)
   | whnf_tEmpty : whnf tEmpty
+  | whnf_tSig {A B} : whnf (tSig A B)
+  | whnf_tPair {A B a b} : whnf (tPair A B a b)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
   | whne_tApp {n t} : whne n -> whne (tApp n t)
   | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
-  | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e).
+  | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
+  | whne_tFst {p} : whne p -> whne (tFst p)
+  | whne_tSnd {p} : whne p -> whne (tSnd p).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
@@ -51,6 +55,7 @@ Inductive isType : term -> Type :=
   | ProdType { A B} : isType (tProd A B)
   | NatType : isType tNat
   | EmptyType : isType tEmpty
+  | SigType {A B} : isType (tSig A B)
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
@@ -68,34 +73,29 @@ Inductive isNat : term -> Type :=
   | SuccNat {t} : isNat (tSucc t)
   | NeNat {n} : whne n -> isNat n.
 
-Definition isPosType_isType t (i : isPosType t) : isType t :=
-  match i with
-    | UnivPos => UnivType
-    | NatPos => NatType
-    | EmptyPos => EmptyType
-    | NePos ne => NeType ne
-  end.
+Inductive isPair : term -> Type :=
+  | PairPair {A B a b} : isPair (tPair A B a b)
+  | NePair {p} : whne p -> isPair p.
+
+Definition isPosType_isType t (i : isPosType t) : isType t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isPosType_isType : isPosType >-> isType.
 
-Definition isType_whnf t (i : isType t) : whnf t :=
-  match i with
-    | UnivType => whnf_tSort
-    | ProdType => whnf_tProd
-    | NatType => whnf_tNat
-    | EmptyType => whnf_tEmpty
-    | NeType ne => whnf_whne ne
-  end.
+Definition isType_whnf t (i : isType t) : whnf t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isType_whnf : isType >-> whnf.
 
-Definition isFun_whnf t (i : isFun t) : whnf t :=
-  match i with
-    | LamFun => whnf_tLambda
-    | NeFun ne => whnf_whne ne
-  end.
+Definition isFun_whnf t (i : isFun t) : whnf t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isFun_whnf : isFun >-> whnf.
+
+Definition isPair_whnf t (i : isPair t) : whnf t.
+Proof. destruct i; now constructor. Defined.
+
+Coercion isPair_whnf : isPair >-> whnf.
 
 Definition isNat_whnf t (i : isNat t) : whnf t :=
   match i with
@@ -104,7 +104,7 @@ Definition isNat_whnf t (i : isNat t) : whnf t :=
   | NeNat n => whnf_whne n
   end.
 
-#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf : gen_typing.
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf isPair_whnf : gen_typing.
 #[global] Hint Constructors isPosType isType isFun isNat : gen_typing.
 
 (** ** Canonical forms *)

@@ -218,29 +218,30 @@ Definition Shelved (A:Type) := A.
 
 (** Opaque econstructor:
   similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals.
-  Provided by Gaetan Gilbert.
+  Provided by Gaetan Gilbert, modified K.M for recursive dependencies
 *)
+Ltac gen_shelved_evar_rec :=
+  repeat match goal with
+      |- context [ ?x ] =>
+        is_evar x;
+        let t := type of x in
+        match t with
+          Shelved ?t' =>
+            (* cast to t' so that we get a name based on the real type in intro
+                instead of "s" based on "Shelved" *)
+            generalize (x:t');
+            try gen_shelved_evar_rec ;
+            intro
+        end
+  end.
+
 Ltac opector :=
   unshelve (econstructor;match goal with |- ?g => change (NotShelved g) end);
-  match goal with |- NotShelved ?g => idtac | |- ?g => change (Shelved g) end;
+  match goal with |- NotShelved ?g => idtac | |- ?g => change (Shelved g) end; revgoals;
   match goal with
-    |- NotShelved ?g =>
-      change g;
-      repeat match goal with
-          |- context [ ?x ] =>
-            is_evar x;
-            let t := type of x in
-            match t with
-              Shelved ?t' =>
-                (* cast to t' so that we get a name based on the real type in intro
-                    instead of "s" based on "Shelved" *)
-                generalize (x:t');
-                intro
-            end
-        end
-  | _ => idtac
-  end;
-  match goal with |- Shelved ?g => change g | _ => idtac end.
+    |- NotShelved ?g => change g; gen_shelved_evar_rec
+    | |- Shelved ?g => change g; gen_shelved_evar_rec
+  end; revgoals.
 
 (** To block and unblock hypotheses from the context 
   (see the tactic escape in LogicalRelations/Escape.v for example)*)
