@@ -22,4 +22,4 @@ coqdoc: $(GLOBFILES) $(VFILES) $(HEADER) $(FOOTER) $(RESOURCES) $(FRONTPAGE)
 .PHONY: coqdoc
 
 clean::
-	$(HIDE)rm -rf $(DOCDIR)
+	$(HIDE)rm -rf $(COQDOCDIR)
