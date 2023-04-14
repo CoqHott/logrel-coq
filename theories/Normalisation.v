@@ -104,6 +104,7 @@ Proof.
   - intros t u v [] []; now split.
 + intros * [] ?; now split.
 + intros * ? []; split; now apply whne_ren.
++ intros * []; assumption.
 + intros; split; constructor.
 + intros * [] ?; split; now constructor.
 + intros * ? ? ? []; split; now constructor.
@@ -327,9 +328,10 @@ Section NeutralConversion.
       3: do 2 econstructor; tea.
       3: eapply (ParamRedTy.red ΣA).
       3: constructor.
-      * eapply neuTerm; tea.
-        2: eapply TermRefl; tea.
-        econstructor; apply algo_conv_wh in Hconv; now destruct Hconv.
+      * assert (whne m).
+        { apply algo_conv_wh in Hconv; now destruct Hconv. }
+        eapply neuTerm; tea; [now econstructor|].
+        split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
     Unshelve. 2,4: tea. 
   Qed.

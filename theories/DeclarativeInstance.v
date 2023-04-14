@@ -547,7 +547,7 @@ Module DeclarativeTypingProperties.
     2: eassumption.
     2: eapply TermSym.
     all: now eapply RedConvTeC.
-  - intros. eassumption.
+  - intros ???? H; apply H.
   - intros.
     now econstructor.
   - intros.
@@ -563,20 +563,21 @@ Module DeclarativeTypingProperties.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
   Proof.
-  - split ; red ; intros.
-    all: now econstructor.
-  - intros.
-    now econstructor.
-  - intros.
-    now eapply typing_wk.
-  - intros.
-    now econstructor.
-  - intros.
-    now econstructor.
-  - now econstructor.
-  - now econstructor.
-  - now econstructor.
-  - now econstructor.
+  - split; red.
+    + intros ?? []; split; tea; now econstructor.
+    + intros ??? [] []; split; tea; now econstructor.
+  - intros ????? [] ?; split; tea; now econstructor.
+  - intros ??????? []; split.
+    + now eapply whne_ren.
+    + now eapply whne_ren.
+    + now eapply typing_wk.
+  - now intros ???? [].
+  - intros ???; split; now econstructor.
+  - intros ??????? [] ?; split; now econstructor.
+  - intros ???????????? []; split; now econstructor.
+  - intros ?????? []; split; now econstructor.
+  - intros ????? []; split; now econstructor.
+  - intros ????? []; split; now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.

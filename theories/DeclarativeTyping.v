@@ -246,6 +246,12 @@ Section Definitions.
 
   Notation "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
 
+  Record ConvNeuConvDecl (Γ : context) (A : term) (t u : term) := {
+    convnedecl_whne_l : whne t;
+    convnedecl_whne_r : whne u;
+    convnedecl_conv : [ Γ |- t ≅ u : A ];
+  }.
+
 End Definitions.
 
 Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
@@ -265,9 +271,8 @@ Module DeclarativeTypingData.
   #[export] Instance InferringRed_Decl : InferringRed de := TypingDecl.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
-  #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvTermDecl.
+  #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvNeuConvDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
-(*   #[export] Instance OneStepRedTerm_Decl : OneStepRedTerm de := OneRedTermDecl. *)
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 
   Ltac fold_decl :=
