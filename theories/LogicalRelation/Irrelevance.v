@@ -698,6 +698,19 @@ Proof.
   now eapply RedTmConv.
 Qed.
 
+Corollary PolyRedEqSym {Γ l l' shp shp' pos pos'}
+  {PA : PolyRed Γ l shp pos}
+  (PA' : PolyRed Γ l' shp' pos') :
+  PolyRedEq PA shp' pos' -> PolyRedEq PA' shp pos.
+Proof.
+  intros []; unshelve econstructor.
+  - intros; eapply LRTyEqSym; eauto.
+  - intros. eapply LRTyEqSym. unshelve eapply posRed; tea.
+    eapply LRTmRedConv; tea.
+    now eapply LRTyEqSym.
+  Unshelve. all: tea.
+Qed.
+
 Corollary TmEqRedConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->

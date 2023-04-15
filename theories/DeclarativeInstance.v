@@ -61,6 +61,18 @@ Proof.
   split ; now econstructor.
 Qed.
 
+Lemma sig_ty_inv Γ A B :
+  [Γ |- tSig A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as (?&[-> ]&_).
+  split ; now econstructor.
+Qed.
+
+
 (** ** Stability by weakening *)
 
 Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
@@ -579,16 +591,16 @@ Module DeclarativeTypingProperties.
   - intros. now eapply boundary_red_tm_l.
   - intros; split.
     + repeat (econstructor; tea).
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; split.
     + repeat (econstructor; tea).
       now eapply boundary_tm_ctx.
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; split.
     + repeat (econstructor; tea).
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; now eapply redtmdecl_app.
   - intros * ??? []; split.
@@ -601,21 +613,19 @@ Module DeclarativeTypingProperties.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
   - intros; split; refold.
     + econstructor; now constructor.
-    + econstructor; [now constructor| reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros * [? r ?]; split; refold.
     + now econstructor.
-    + clear -r; induction r; [reflexivity|].
-      econstructor; tea; now constructor.
+    + now apply redalg_fst.
     + now econstructor.
   - intros; split; refold.
     + econstructor; now constructor.
-    + econstructor; [now constructor| reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros * [? r ?]; split; refold.
     + now econstructor.
-    + clear -r; induction r; [reflexivity|].
-      econstructor; tea; now constructor.
+    + now apply redalg_snd.
     + now econstructor.
   - intros; now eapply redtmdecl_conv.
   - intros; split.

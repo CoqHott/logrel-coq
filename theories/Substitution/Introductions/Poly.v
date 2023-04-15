@@ -49,7 +49,7 @@ Section PolyValidity.
       Unshelve. 1: gen_typing.
       eapply var0; tea; now bsimpl.
   Qed.
-
+  
   Context {l Γ F G} (VΓ : [||-v Γ])
     (VF : [Γ ||-v< l > F | VΓ ])
     (VG : [Γ ,, F ||-v< l > G | validSnoc VΓ VF]).

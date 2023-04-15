@@ -116,6 +116,8 @@ Inductive isCanonical : term -> Type :=
   | can_tNat : isCanonical tNat
   | can_tZero : isCanonical tZero
   | can_tSucc {n} : isCanonical (tSucc n)
-  | can_tEmpty : isCanonical tEmpty.
+  | can_tEmpty : isCanonical tEmpty
+  | can_tSig {A B} : isCanonical (tSig A B)
+  | can_tPair {A B a b}: isCanonical (tPair A B a b).
 
 #[global] Hint Constructors isCanonical : gen_typing.

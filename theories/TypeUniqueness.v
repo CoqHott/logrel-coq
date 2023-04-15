@@ -29,6 +29,16 @@ Section AlgorithmicUnique.
       eapply whred_det in Hred ; tea.
       2-3: gen_typing.
       now inversion Hred.
+    - intros * ? ih ? hty.
+      inversion hty; subst; refold.
+      edestruct ih as [? [r r']]; tea.
+      unshelve epose (e := whred_det _ _ _ _ _ r r'); try constructor.
+      now injection e.
+    - intros * ? ih ? hty.
+      inversion hty; subst; refold.
+      edestruct ih as [? [r r']]; tea.
+      unshelve epose (e := whred_det _ _ _ _ _ r r'); try constructor.
+      injection e; clear e; intros; now subst.
     - intros * _ IHt ? ? Hty'.
       inversion Hty' ; subst ; refold.
       eapply IHt in H0 as ->.

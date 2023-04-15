@@ -517,7 +517,9 @@ Section PairRed.
       all: now eapply reifyTerm.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
+      * constructor.
       * now eapply ty_pair.
+      * constructor.
       * enough [Γ |- tFst (tPair A B a b) ≅ a : A].
         1: transitivity a; tea; now symmetry.
         eapply convtm_exp.
@@ -563,10 +565,22 @@ Section PairRed.
       1: eapply (redTmFwdConv Rp (SigRedTm.red Rp) (isPair_whnf _ (SigRedTm.isfun Rp))).
       assert ([Γ ||-<l> SigRedTm.nf Rp' : _ | RΣ]× [Γ ||-<l> p' ≅ SigRedTm.nf Rp' : _ | RΣ]) as [Rnf' Rpnf'].
       1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp') (isPair_whnf _ (SigRedTm.isfun Rp'))).
-      escape. transitivity p. 
-      1: now symmetry.
-      transitivity p'; tea.
-      now eapply convtm_eta_sig.
+      destruct (fstRed RΣ0 RA Rp) as [[Rfstp Rfsteq] Rfstnf].
+      destruct (fstRed RΣ0 RA Rp') as [[Rfstp' Rfsteq'] Rfstnf'].
+      destruct (sndRed RΣ0 RA Rp RBfst RBfstEq).
+      destruct (sndRed RΣ0 RA Rp' RBfst' RBfstEq').
+      escape.
+      eapply convtm_eta_sig; tea.
+      1,2: now eapply SigRedTm.isfun.
+      + transitivity (tFst p).
+        1: now symmetry.
+        transitivity (tFst p'); tea.
+      + eapply convtm_conv; tea.
+        transitivity (tSnd p).
+        1: now symmetry.
+        transitivity (tSnd p'); tea.
+        eapply convtm_conv; tea.
+        now symmetry.
     - intros; do 2 rewrite wk_fst. 
       irrelevanceRefl. eapply wkTermEq.
       destruct (fstRed RΣ0 RA Rp) as [[Rfstp Rfsteq] Rfstnf].

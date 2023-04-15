@@ -73,6 +73,24 @@ Proof.
     + econstructor.
       1: now econstructor.
       now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? [] ? [] **.
+    econstructor; eauto.
+  - intros * ????? ???? hconv.
+    unshelve eapply ty_conv_inj in hconv.
+    1,2: constructor.
+    cbn in hconv; destruct hconv.
+  - intros * ??? hconv.
+    econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ??? hconv.
+    econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
   - intros * ? [IH] **; subst.
     eapply IH.
     eapply subject_reduction_type ; tea.
@@ -107,6 +125,8 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       now eapply algo_typing_wk.
     - now intros * [? ?%algo_typing_sound]. 
+    - intros_bn.
+      now econstructor.
     - intros_bn.
       now econstructor.
     - intros_bn.
@@ -182,6 +202,28 @@ Module AlgorithmicTypingProperties.
         1: eauto using inf_conv_decl.
         now eapply algo_typing_sound.
     - intros_bn.
+      1: do 2 econstructor; tea.
+      1,2: now eapply (redty_red (ta:=de)), red_ty_compl_univ_r.
+      gen_typing.
+    - intros_bn.
+      1: do 2 (econstructor; tea); now eapply algo_conv_complete.
+      econstructor.
+      2,3: eapply TypeRefl; refold.
+      1,2: boundary.
+      now eapply algo_typing_sound.
+    - intros * [].
+      pose proof bun_inf_conv_conv as [?[?[]]]%red_ty_compl_sig_r .
+      econstructor; tea.
+      do 2 econstructor; tea; now eapply (redty_red (ta:=de)).
+    - intros * [].
+      pose proof bun_inf_conv_conv as [?[?[]]]%red_ty_compl_sig_r .
+      econstructor; tea.
+      1: do 2 econstructor; tea; now eapply (redty_red (ta:=de)).
+      eapply typing_subst1; [|now symmetry].
+      eapply TermConv; refold; [|now symmetry].
+      econstructor. eapply TermRefl.
+      now eapply inf_conv_decl.
+    - intros_bn.
       1: eassumption.
       etransitivity ; tea.
       symmetry.
@@ -203,8 +245,9 @@ Module AlgorithmicTypingProperties.
       now eapply typing_wk.
     - intros * [? []]; assumption.
     - now intros * [].
-    - intros_bn. 2: econstructor; [|reflexivity].
-      all: econstructor ; tea.
+    - intros_bn.
+      2: apply redalg_one_step; now constructor.
+      econstructor ; tea.
       + econstructor.
         1: now do 2 econstructor.
         econstructor ; tea.
@@ -219,7 +262,7 @@ Module AlgorithmicTypingProperties.
         econstructor ; tea.
         1: econstructor.
         now do 2 econstructor.
-      + econstructor; [|reflexivity]; now constructor.
+      + apply redalg_one_step ; now constructor.
     - intros * HP Hz Hs [].
       assert [|-[de] Γ] by (destruct Hz ; boundary).
       split ; tea.
@@ -229,7 +272,7 @@ Module AlgorithmicTypingProperties.
         * do 2 econstructor ; tea.
           now eapply (redty_red (ta := de)), red_ty_compl_nat_r.
         * now do 2 econstructor.
-      + econstructor; [|reflexivity]; now constructor.
+      + apply redalg_one_step; now constructor.
     - intros_bn.
       + eapply red_ty_compl_prod_r in bun_inf_conv_conv0 as (?&?&[]).
         econstructor ; tea.
@@ -242,11 +285,8 @@ Module AlgorithmicTypingProperties.
         * eapply typing_subst1 ; tea.
           econstructor.
           now eapply inf_conv_decl.  
-      + clear -bun_red_tm.
-        induction bun_red_tm ; econstructor.
-        2: eassumption.
-        now econstructor.
-    - intros * [] [] [] [] [] ?.
+      + now apply redalg_app.
+    - intros * [] [] [] [? []].
       assert [Γ |-[al] n ▹h tNat].
       {
         econstructor ; tea.
@@ -265,12 +305,8 @@ Module AlgorithmicTypingProperties.
         2: now econstructor.
         econstructor ; tea.
         now eapply algo_conv_complete.
-      + clear -bun_red_tm.
-        induction bun_red_tm.
-        1: now constructor.
-        econstructor ; tea.
-        now econstructor. 
-    - intros * [] [] [] ?.
+      + now apply redalg_natElim.
+    - intros * [] [?[]].
       assert [Γ |-[al] n ▹h tEmpty].
       {
         econstructor ; tea.
@@ -285,11 +321,46 @@ Module AlgorithmicTypingProperties.
         2: now econstructor.
         econstructor ; tea.
         now eapply algo_conv_complete.
-      + clear -bun_red_tm.
-        induction bun_red_tm.
-        1: now constructor.
-        econstructor ; tea.
-        now econstructor. 
+      + now apply redalg_natEmpty.
+    - intros_bn.
+      2: econstructor; [|reflexivity]; now constructor.
+      econstructor.
+      1: tea.
+      2: eapply TypeRefl; refold; now boundary.
+      do 2 econstructor.
+      1: do 2 (econstructor; tea); now eapply algo_conv_complete.
+      reflexivity.
+    - intros * [? []].
+      pose proof bun_inf_conv_conv as [?[?[]]]%red_ty_compl_sig_r.
+      econstructor; tea.
+      2: now apply redalg_fst.
+      econstructor; tea.
+      do 2 econstructor; tea; now eapply (redty_red (ta:=de)).
+    - intros_bn.
+      2: econstructor; [|reflexivity]; now constructor.
+      econstructor.
+      1: tea.
+      (* 2: eapply TypeRefl; refold; now boundary. *)
+      + do 2 econstructor.
+        2: reflexivity.
+        do 2 (econstructor; tea); now eapply algo_conv_complete.
+      + eapply TypeRefl; eapply typing_subst1.
+        2: now eapply algo_typing_sound.
+        do 2 econstructor.
+        * boundary.
+        * now eapply algo_typing_sound.
+        * now eapply inf_conv_decl.
+        * now eapply inf_conv_decl.
+    - intros * [? []].
+      pose proof bun_inf_conv_conv as [?[?[]]]%red_ty_compl_sig_r.
+      econstructor; tea.
+      2: now apply redalg_snd.
+      econstructor; tea.
+      do 2 econstructor; tea; now eapply (redty_red (ta:=de)).
+      eapply typing_subst1.
+      2: now symmetry.
+      eapply TermRefl; eapply wfTermConv; refold; [|now symmetry].
+      econstructor; now eapply inf_conv_decl.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.

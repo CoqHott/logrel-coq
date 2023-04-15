@@ -403,20 +403,30 @@ Section BundledConv.
     - intros * ?? _.
       split ; [gen_typing|..].
       now econstructor. 
+    - intros * ? IHA ? IHB ? HP HP'.
+      eapply sig_ty_inv in HP as [], HP' as [? HB'].
+      assert [Γ,, A |-[de] B'].
+      { eapply stability ; tea.
+        econstructor.
+        1: now eapply ctx_refl.
+        now eapply IHA.
+      }
+      split ; [gen_typing|..].
+      destruct IHB as [].
+      1-3: gen_typing.
+      now econstructor.
     - intros * Hconv IH ? HM HN.
       assert [Γ |-[de] M : U].
       {
         eapply algo_conv_wh in Hconv as [neM neN].
         inversion HM ; subst ; clear HM.
-        1-4: now inversion neM.
-        assumption.
+        all: solve [now inversion neM| assumption].
       }
       assert [Γ |-[de] N : U].
       {
         eapply algo_conv_wh in Hconv as [neM neN].
         inversion HN ; subst ; clear HN.
-        1-4: now inversion neN.
-        assumption.
+        all: solve [now inversion neN| assumption].
       }
       assert (well_typed (ta := de) Γ M) by now eexists.
       assert (well_typed (ta := de) Γ N) by now eexists.
@@ -516,6 +526,33 @@ Section BundledConv.
         etransitivity.
         1: eapply typing_subst1.
         all: eassumption.
+    - intros * ? ih ? hm hn.
+      pose proof hm as [? [?[[?[?[->]]]]]%termGen'].
+      pose proof hn as [? [?[[?[?[->]]]]]%termGen'].
+      edestruct ih as [? [? ihm ihn]]; tea.
+      1,2: now eexists.
+      split; [eauto| split].
+      + now econstructor.
+      + intros ? [?[[?[?[-> []%ihm%sig_ty_inj]]]]]%termGen'.
+        etransitivity; tea; now symmetry.
+      + intros ? [?[[?[?[-> []%ihn%sig_ty_inj]]]]]%termGen'.
+        etransitivity; tea; now symmetry.
+    - intros * ? ih ? hm hn.
+      pose proof hm as [? [?[[?[?[-> hm']]]]]%termGen'].
+      pose proof hn as [? [?[[?[?[->]]]]]%termGen'].
+      edestruct ih as [? [? ihm ihn]]; tea.
+      1,2: now eexists.
+      split; [eauto| split].
+      + now econstructor.
+      + intros ? [?[[?[?[-> h%ihm]]]]]%termGen'.
+        pose proof h as []%sig_ty_inj.
+        etransitivity; tea.
+        eapply typing_subst1; tea; econstructor; eapply TermConv; tea.
+        refold; now eapply lrefl.
+      + intros ? [?[[?[?[-> h%ihn]]]]]%termGen'.
+        pose proof h as []%sig_ty_inj.
+        etransitivity; tea.
+        eapply typing_subst1; tea; econstructor; eapply TermConv; tea.
     - intros * ? IHm HA ? ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
@@ -595,6 +632,24 @@ Section BundledConv.
       split ; [now gen_typing|..].
       econstructor ; tea.
       now eapply IH ; gen_typing.
+    - intros * ? ihA ? ihB ? hty hty'.
+      pose proof hty as [?[[->]]]%termGen'.
+      pose proof hty' as [?[[->]]]%termGen'.
+      edestruct ihA as []; tea.
+      edestruct ihB as []; tea.
+      1: gen_typing.
+      1: eapply stability1; tea; gen_typing.
+      split ; [eauto|now econstructor].
+    - intros * ??? ihfst ? ihsnd ? hp hq.
+      edestruct ihfst as []; tea.
+      1,2: now econstructor.
+      pose proof hp as []%boundary%sig_ty_inv.
+      edestruct ihsnd as []; tea.
+      1: now econstructor.
+      2: split; [eauto|now econstructor].
+      eapply wfTermConv; [now econstructor|].
+      eapply typing_subst1; [now symmetry|].
+      now eapply TypeRefl.
     - intros * ? IHm ? ? Htym Htyn.
       edestruct IHm as [? [? Hm']].
       1: easy.
@@ -782,7 +837,7 @@ Section BundledTyping.
     intros.
     subst PTy' PInf' PInfRed' PCheck'.
     apply AlgoTypingInduction.
-    1-8: solve [intros ;
+    1-9: solve [intros ;
       repeat unshelve (
         match reverse goal with
           | IH : context [prod] |- _ => destruct IH ; [..|shelve] ; gen_typing
@@ -830,6 +885,27 @@ Section BundledTyping.
       econstructor.
       + now eapply IHP.
       + now eapply IHe.
+    - intros * ? ihA ? ihB ?.
+      edestruct ihA as []; tea.
+      edestruct ihB as [].
+      1: gen_typing.
+      split; [eauto|now econstructor].
+    - intros * ? ihA ? ihB ? iha ? ihb ?.
+      edestruct ihA as []; tea.
+      edestruct ihB as [].
+      1: gen_typing.
+      edestruct iha as []; tea.
+      edestruct ihb as []; tea.
+      1: now eapply typing_subst1.
+      split;[eauto|now econstructor].
+      (* why is that not found by eauto ? *)
+      eapply X16; tea; now split.
+    - intros * ? ih ?.
+      edestruct ih as []; tea.
+      split;[eauto|now econstructor].
+    - intros * ? ih ?.
+      edestruct ih as []; tea.
+      split;[eauto|now econstructor].
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
       split ; [eauto|..].

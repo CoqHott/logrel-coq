@@ -217,3 +217,18 @@ induction 1.
 + econstructor; [|eassumption].
   now econstructor.
 Qed.
+
+Lemma redalg_fst {t t'} : [t ⇒* t'] -> [tFst t ⇒* tFst t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_snd {t t'} : [t ⇒* t'] -> [tSnd t ⇒* tSnd t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_one_step {t t'} : [t ⇒ t'] -> [t ⇒* t'].
+Proof. intros; econstructor;[tea|reflexivity]. Qed.

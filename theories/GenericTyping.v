@@ -342,7 +342,9 @@ Section GenericTyping.
       [Γ |- A] ->
       [Γ ,, A |- B] ->
       [Γ |- p : tSig A B] ->
+      isPair p ->
       [Γ |- p' : tSig A B] ->
+      isPair p' ->
       [Γ |- tFst p ≅ tFst p' : A] ->
       [Γ |- tSnd p ≅ tSnd p' : B[(tFst p)..]] ->
       [Γ |- p ≅ p' : tSig A B] ;
