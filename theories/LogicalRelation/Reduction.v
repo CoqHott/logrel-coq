@@ -25,10 +25,10 @@ Proof.
       constructor; tea; gen_typing.
     + exists t; tea.
   - intros B [dom cod] A ? ihdom ihcod; cbn in *; unshelve eexists.
-    + apply LRPi'; unshelve eexists dom cod _ _; tea; etransitivity; tea.
+    + apply LRPi'; unshelve eexists dom cod; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod; tea; cbn.
-      1,2: intros; apply LRTyEqRefl_.
+      unshelve econstructor;intros; apply LRTyEqRefl_.
   - intros B [red] A ?; unshelve eexists.
     + apply LRNat_; constructor; tea; etransitivity; tea.
       constructor; tea; gen_typing.
@@ -37,6 +37,11 @@ Proof.
     + apply LREmpty_; constructor; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + now constructor.
+  - intros B [dom cod] A ? ihdom ihcod; cbn in *; unshelve eexists.
+    + apply LRSig'; unshelve eexists dom cod; tea; etransitivity; tea.
+      constructor; tea; gen_typing.
+    + unshelve eexists dom cod; tea; cbn.
+      unshelve econstructor;intros; apply LRTyEqRefl_.
 Qed.
 
 
@@ -79,13 +84,13 @@ Proof.
     + exists n; tea; destruct red; constructor; tea; now etransitivity.
     + split; tea; exists n n; tea; destruct red; constructor; tea; now etransitivity. 
   - intros ? ΠA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [f].
-    assert [Γ |- A ≅ PiRedTyPack.prod ΠA]. 1:{
+    assert [Γ |- A ≅ ΠA.(outTy)]. 1:{
       destruct ΠA as [?? []]. cbn in *.
       eapply convty_exp; tea.
       now apply redtywf_refl.
     }
-    assert [Γ |-[ ta ] t ⇒* u : PiRedTyPack.prod ΠA] by now eapply redtm_conv. 
-    assert [Γ |-[ ta ] t : PiRedTyPack.prod ΠA] by (eapply ty_conv; gen_typing).
+    assert [Γ |-[ ta ] t ⇒* u : ΠA.(outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t : ΠA.(outTy)] by (eapply ty_conv; gen_typing).
     unshelve refine (let rt : [LRPi' ΠA | Γ ||- t : A] := _ in _).
     1: exists f; tea; constructor; destruct red; tea; etransitivity; tea.
     split; tea; exists rt ru; tea.
@@ -111,6 +116,17 @@ Proof.
     split; econstructor; tea.
     now eapply reflEmptyRedTmEq.
     Unshelve. 2: tea.
+  - intros ? PA ihdom ihcod ?? ru' ?; pose (ru := ru'); destruct ru' as [p].
+    assert [Γ |- A ≅ PA.(outTy)]. 1:{
+      destruct PA as [?? []]. cbn in *.
+      eapply convty_exp; tea.
+      now apply redtywf_refl.
+    }
+    assert [Γ |-[ ta ] t ⇒* u : PA.(outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t : PA.(outTy)] by (eapply ty_conv; gen_typing).
+    unshelve refine (let rt : [LRSig' PA | Γ ||- t : A] := _ in _).
+    1: unshelve eexists p _; tea; constructor; destruct red; tea; etransitivity; tea.
+    split; tea; exists rt ru; tea; intros; cbn; now apply LREqTermRefl_.
 Qed.
 
 Lemma redwfSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
@@ -152,6 +168,19 @@ Proof.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
+  - intros ??? [?? red] ?? ? red' ?.
+    eapply LRSig'. 
+    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    1: constructor.
+    econstructor; tea.
+    eapply redtywf_refl; gen_typing.
+Qed.
+
+Lemma redFwdConv {Γ l A B} (RA : [Γ ||-<l> A]) : [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B] × [Γ ||-<l> A ≅ B | RA].
+Proof.
+  intros red wh. pose (RB := redFwd RA red wh).
+  destruct (redwfSubst RB red).
+  split; tea; irrelevance.
 Qed.
 
 Lemma redTmFwd {Γ l A t u} {RA : [Γ ||-<l> A]} : 
@@ -187,6 +216,18 @@ Proof.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
     Unshelve. 2: tea.
+  - intros ???????? [? red] red' ?.
+    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    1: now eapply isPair_whnf.
+    econstructor; tea.
+    eapply redtmwf_refl; gen_typing.
+Qed.
+
+Lemma redTmFwdConv {Γ l A t u} {RA : [Γ ||-<l> A]} : 
+  [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
+Proof.
+  intros Rt red wh. pose (Ru := redTmFwd Rt red wh).
+  destruct (redwfSubstTerm RA Ru red); now split.
 Qed.
 
 End Reduction.

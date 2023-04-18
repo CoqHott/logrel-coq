@@ -249,25 +249,27 @@ Proof.
     eapply convtm_eta; tea.
     1,2: eapply PiRedTm.isfun.
     etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
-  - cbn; intros.
-    set (ν := (a .: σ⟨ρ0⟩)).
-    pose (Vν := consWkSubstS VF ρ0 h Vσ ha).
+  - match goal with H : [_ ||-Π f[σ] : _ | _] |- _ => rename H into Rfσ end.
+    match goal with H : [_ ||-Π g[σ] : _ | _] |- _ => rename H into Rgσ end.
+    cbn; intros ?? ρ' h ha.
+    set (ν := (a .: σ⟨ρ'⟩)).
+    pose (Vν := consWkSubstS VF ρ' h Vσ ha).
     instValid Vσ; instValid Vν; escape.
     assert (wfΔF : [|- Δ,, F[σ]]) by gen_typing.
     cbn in *.
-    assert (eq : forall t, t⟨ρ⟩[a .: σ⟨ρ0⟩] = t[σ]⟨ρ0⟩) by (intros; unfold ρ; now bsimpl).
+    assert (eq : forall t, t⟨ρ⟩[a .: σ⟨ρ'⟩] = t[σ]⟨ρ'⟩) by (intros; unfold ρ; now bsimpl).
     do 2 rewrite eq in RVfg.
     eapply transEqTerm; [|eapply transEqTerm].
     2: irrelevance; symmetry; apply consWkEq'.
     + eapply LRTmEqSym; eapply redwfSubstTerm.
-      1: unshelve epose proof (r := PiRedTm.app p ρ0 h ha); irrelevance.
+      1: unshelve epose proof (r := PiRedTm.app Rfσ ρ' h ha); irrelevance.
       eapply redtmwf_appwk; tea.
-      1: exact (PiRedTm.red p).
+      1: exact (PiRedTm.red Rfσ).
       now bsimpl.
     + eapply redwfSubstTerm.
-      1: unshelve epose proof (r := PiRedTm.app p0 ρ0 h ha); irrelevance.
+      1: unshelve epose proof (r := PiRedTm.app Rgσ ρ' h ha); irrelevance.
       eapply redtmwf_appwk; tea.
-      1: exact (PiRedTm.red p0).
+      1: exact (PiRedTm.red Rgσ).
       now bsimpl.
 Qed.
 

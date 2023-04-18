@@ -22,6 +22,7 @@ Section ShapeViews.
       | LRPi _ _ _, LRPi _ _ _ => True
       | LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _ => True
+      | LRSig _ _ _, LRSig _ _ _ => True
       | _, _ => False
     end.
 
@@ -43,7 +44,8 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
     ∑ nf, [Γ |- A :⇒*: nf] × whnf nf.
   Proof.
-    destruct lrA as [?? []| ??[] | ??[]| ??[] | ??[]]; eexists; split; tea; constructor; tea.
+    pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA; eapply LR_rect; intros ??[].
+    all: eexists; split; tea; constructor; tea.
     now eapply ty_ne_whne.
   Defined.
 
@@ -51,10 +53,12 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
     eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf] × whnf nf.
   Proof.
-    destruct lrA as [?? []| ??[] | ??[]| ??[] | ??[]] ; intros []; eexists; split; tea; constructor; tea.
+    pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
+    eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].
+    3,6: intros ??.
+    all: intros []; eexists; split; tea; constructor; tea.
     now eapply ty_ne_whne.
   Defined.
-
 
   Lemma ShapeViewConv@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrB : LogRel@{i' j' k' l'} lB Γ B eqTyB redTmB eqTmB) :
@@ -95,6 +99,7 @@ when showing symmetry or transitivity of the logical relation. *)
       | LRPi _ _ _, LRPi _ _ _, LRPi _ _ _ => True
       | LRNat _ _, LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _, LREmpty _ _ => True
+      | LRSig _ _ _, LRSig _ _ _, LRSig _ _ _ => True
       | _, _, _ => False
     end.
 

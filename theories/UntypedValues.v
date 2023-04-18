@@ -11,12 +11,16 @@ Inductive snf (r : term) : Type :=
   | snf_tZero : [ r ⇒* tZero ] -> snf r
   | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
   | snf_tEmpty : [ r ⇒* tEmpty ] -> snf r
+  | snf_tSig {A B} : [r ⇒* tSig A B] -> snf A -> snf B -> snf r
+  | snf_tPair {A B a b} : [r ⇒* tPair A B a b] -> snf A -> snf B -> snf a -> snf b -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
   | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf P -> snf hz -> snf hs -> sne n -> sne r
   | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
+  | sne_tFst {p} : r = tFst p -> sne p -> sne r
+  | sne_tSnd {p} : r = tSnd p -> sne p -> sne r
 .
 
 Set Elimination Schemes.
@@ -42,8 +46,10 @@ Definition sne_ind
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 :=
-  pair (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12) (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12).
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 :=
+  pair 
+    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16)
+    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -70,55 +76,15 @@ intros t u Hr Hu; destruct Hu.
   - transitivity u; eassumption.
   - assumption.
 + eapply snf_tEmpty; transitivity u; eassumption.
++ eapply snf_tSig.
+  1: transitivity u; eassumption.
+  all: tea.
++ eapply snf_tPair.
+  1: transitivity u; eassumption.
+  all: tea.
 + eapply snf_sne.
   - transitivity u; eassumption.
   - eassumption.
-Qed.
-
-Inductive isSNType : term -> Type :=
-  | UnivType {s} : isSNType (tSort s)
-  | ProdType {A B} : snf A -> snf B -> isSNType (tProd A B)
-  | NeType {A}  : sne A -> isSNType A.
-
-Inductive isSNFun : term -> Type :=
-  | LamFun {A t} : snf A -> snf t -> isSNFun (tLambda A t)
-  | NeFun  {f} : sne f -> isSNFun f.
-
-Lemma isSNType_snf t : isSNType t -> snf t.
-Proof.
-destruct 1.
-+ eapply snf_tSort; reflexivity.
-+ eapply snf_tProd; first[reflexivity|assumption].
-+ eapply snf_sne; first[reflexivity|assumption].
-Qed.
-
-Lemma isSNType_whnf t : isSNType t -> whnf t.
-Proof.
-destruct 1; constructor.
-apply sne_whne; assumption.
-Qed.
-
-Lemma isSNFun_snf t : isSNFun t -> snf t.
-Proof.
-destruct 1.
-+ eapply snf_tLambda; first[reflexivity|assumption].
-+ eapply snf_sne; first[reflexivity|assumption].
-Qed.
-
-Lemma isSNFun_whnf t : isSNFun t -> whnf t.
-Proof.
-destruct 1; constructor.
-apply sne_whne; assumption.
-Qed.
-
-Lemma isSNType_isType t : isSNType t -> isType t.
-Proof.
-destruct 1; constructor; now apply sne_whne.
-Qed.
-
-Lemma isSNFun_isFun t : isSNFun t -> isFun t.
-Proof.
-destruct 1; constructor; now apply sne_whne.
 Qed.
 
 Section RenSnf.
@@ -148,6 +114,12 @@ Section RenSnf.
   + intros r Hr ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tEmpty; eassumption.
+  + intros r A B Hr ???? ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tSig; eauto.
+  + intros r ???? Hr ???????? ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tPair; eauto.
   + intros r n Hr Hn IHn ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_sne; eauto.
@@ -158,6 +130,8 @@ Section RenSnf.
     eapply sne_tNatElim; eauto.
   + intros. subst. cbn.
     eapply sne_tEmptyElim; eauto.
+  + intros r ? -> ???; cbn; eapply sne_tFst; eauto.
+  + intros r ? -> ???; cbn; eapply sne_tSnd; eauto.
   Qed.
 
   Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
@@ -171,16 +145,6 @@ Section RenSnf.
   Qed.
 
 End RenSnf.
-
-Lemma isSNType_ren ρ t : isSNType t -> isSNType (t⟨ρ⟩).
-Proof.
-destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
-Qed.
-
-Lemma isSNFun_ren ρ t : isSNFun t -> isSNFun (t⟨ρ⟩).
-Proof.
-destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
-Qed.
 
 Module WeakValuesData.
 
@@ -224,6 +188,7 @@ Section Properties.
   #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
+  all: try solve [intros; eexists; split; [reflexivity|constructor]].
   + intros Γ Δ A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - now apply credalg_wk.
@@ -232,28 +197,20 @@ Section Properties.
     exists C; split.
     - transitivity B; [eapply redty_red| ]; eassumption.
     - assumption.
-  + exists (tSort set); split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
   #[export] Instance TermWhneProperties : TermNeProperties.
   Proof.
   split.
+  all: try solve [intros; assumption| now constructor].
   + intros; now apply Weakening.whne_ren.
   + intros; eexists; split; [reflexivity|now constructor].
-  + intros; assumption.
-  + intros; assumption.
-  + constructor.
-  + constructor; assumption.
-  + intros; constructor; assumption.
-  + intros; constructor; assumption.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
+  all: try solve [intros; eexists; split; [reflexivity|constructor]].
   + intros Γ Δ t A ρ _ [B [? ?]].
     exists (B⟨ρ⟩); split.
     - now apply credalg_wk.
@@ -263,12 +220,6 @@ Section Properties.
     exists r; split.
     - transitivity u; [eapply redtm_red| ]; eassumption.
     - assumption.
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
   Qed.
 
 End Properties.

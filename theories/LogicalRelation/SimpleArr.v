@@ -8,24 +8,30 @@ Set Printing Primitive Projection Parameters.
 Section SimpleArrow.
   Context `{GenericTypingProperties}.
   
-  Lemma ArrRedTy0 {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-Π<l> arr A B].
+  Lemma shiftPolyRed {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> PolyRed Γ l A B⟨↑⟩.
   Proof.
-    intros RA RB; escape.
-    unshelve econstructor; [exact A| exact B⟨↑⟩|..]; tea.
+    intros; escape; unshelve econstructor.
     - intros; now eapply wk.
-    - cbn; intros.
-      bsimpl; rewrite <- rinstInst'_term.
-      now eapply wk.
-    - eapply redtywf_refl.
-      now eapply wft_simple_arr.
+    - intros; bsimpl; rewrite <- rinstInst'_term; now eapply wk.
+    - now escape.
     - renToWk; eapply wft_wk; gen_typing.
-    - eapply convty_simple_arr; tea.
-      all: now unshelve eapply escapeEq, LRTyEqRefl_.
     - intros; irrelevance0.
       2: replace (subst_term _ _) with B⟨ρ⟩.      
       2: eapply wkEq, LRTyEqRefl_.
       all: bsimpl; now rewrite rinstInst'_term.
       Unshelve. all: tea.
+  Qed.
+
+
+  Lemma ArrRedTy0 {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-Π<l> arr A B].
+  Proof.
+    intros RA RB; escape.
+    unshelve econstructor; [exact A| exact B⟨↑⟩|..]; tea.
+    - eapply redtywf_refl.
+      now eapply wft_simple_arr.
+    - eapply convty_simple_arr; tea.
+      all: now unshelve eapply escapeEq, LRTyEqRefl_.
+    - now eapply shiftPolyRed.
   Qed.
 
   Lemma ArrRedTy {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-<l> arr A B].
@@ -154,7 +160,7 @@ Section SimpleArrow.
     [Γ ||-<l> comp A g f : arr A C | ArrRedTy RA RC].
   Proof.
     intros Rf Rg.
-    normRedΠin ΠAB Rf; normRedΠin ΠBC Rg; normRedΠ ΠAC. 
+    normRedΠin Rf; normRedΠin Rg; normRedΠ ΠAC. 
     assert (h : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) RA (ha : [Δ ||-<l> a : A⟨ρ⟩ | RA]),
       [Δ ||-<l> tApp g⟨ρ⟩ (tApp f⟨ρ⟩ a) : _ | wk ρ wfΔ RC]).
     1:{
@@ -197,8 +203,8 @@ Section SimpleArrow.
     - constructor.
     - apply tm_nf_lam.
       + now eapply reifyType.
-      + change (PiRedTy.dom (PiRedTyPack.toPiRedTy ΠAC)) with A.
-        change (PiRedTy.cod (PiRedTyPack.toPiRedTy ΠAC)) with C⟨↑⟩.
+      + change (PiRedTy.dom ΠAC) with A.
+        change (PiRedTy.cod ΠAC) with C⟨↑⟩.
         pose (ρ := @wk_step Γ Γ A wk_id).
         assert (Hr : forall (t : term), t⟨↑⟩ = t⟨ρ⟩).
         { unfold ρ; bsimpl; reflexivity. }

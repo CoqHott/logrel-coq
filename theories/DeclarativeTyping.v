@@ -35,7 +35,7 @@ Section Definitions.
           [ Γ |- U ] 
       | wfTypeProd {Γ} {A B} : 
           [ Γ |- A ] -> 
-          [Γ ,, (A) |- B ] -> 
+          [Γ ,, A |- B ] -> 
           [ Γ |- tProd A B ]
       | wfTypeNat {Γ} : 
           [|- Γ] ->
@@ -43,6 +43,10 @@ Section Definitions.
       | wfTypeEmpty {Γ} : 
           [|- Γ] ->
           [Γ |- tEmpty]
+      | wfTypeSig {Γ} {A B} : 
+          [ Γ |- A ] -> 
+          [Γ ,, A |- B ] -> 
+          [ Γ |- tSig A B ]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -54,7 +58,7 @@ Section Definitions.
           [ Γ |- tRel n : decl ]
       | wfTermProd {Γ} {A B} :
           [ Γ |- A : U] -> 
-          [Γ ,, (A) |- B : U ] ->
+          [Γ ,, A |- B : U ] ->
           [ Γ |- tProd A B : U ]
       | wfTermLam {Γ} {A B t} :
           [ Γ |- A ] ->        
@@ -86,6 +90,22 @@ Section Definitions.
         [Γ ,, tEmpty |- P ] ->
         [Γ |- e : tEmpty] ->
         [Γ |- tEmptyElim P e : P[e..]]
+      | wfTermSig {Γ} {A B} :
+        [ Γ |- A : U] -> 
+        [Γ ,, A |- B : U ] ->
+        [ Γ |- tSig A B : U ]
+      | wfTermPair {Γ} {A B a b} :
+        [Γ |- A] ->
+        [Γ,, A |- B] ->
+        [Γ |- a : A] -> 
+        [Γ |- b : B[a..]] ->
+        [Γ |- tPair A B a b : tSig A B]
+      | wfTermFst {Γ A B p} :
+        [Γ |- p : tSig A B] ->
+        [Γ |- tFst p : A]
+      | wfTermSnd {Γ A B p} :
+        [Γ |- p : tSig A B] ->
+        [Γ |- tSnd p : B[(tFst p)..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -97,6 +117,11 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ ,, A |- C ≅ D] ->
           [ Γ |- tProd A C ≅ tProd B D]
+      | TypeSigCong {Γ} {A B C D} :
+          [ Γ |- A] ->
+          [ Γ |- A ≅ B] ->
+          [ Γ ,, A |- C ≅ D] ->
+          [ Γ |- tSig A C ≅ tSig B D]
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
@@ -156,6 +181,37 @@ Section Definitions.
           [Γ ,, tEmpty |- P ≅ P'] ->
           [Γ |- e ≅ e' : tEmpty] ->
           [Γ |- tEmptyElim P e ≅ tEmptyElim P' e' : P[e..]]
+      | TermSigCong {Γ} {A A' B B'} :
+          [ Γ |- A : U] ->
+          [ Γ |- A ≅ A' : U ] ->
+          [ Γ ,, A |- B ≅ B' : U ] ->
+          [ Γ |- tSig A B ≅ tSig A' B' : U ]
+      | TermPairEta {Γ} {A B p q} :
+          [Γ |- A] ->
+          [Γ ,, A |- B] ->
+          [Γ |- p : tSig A B] ->
+          [Γ |- q : tSig A B] ->
+          [Γ |- tFst p ≅ tFst q : A] ->
+          [Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] ->
+          [Γ |- p ≅ q : tSig A B]
+      | TermFstCong {Γ A B p p'} :
+        [Γ |- p ≅ p' : tSig A B] ->
+        [Γ |- tFst p ≅ tFst p' : A]
+      | TermFstBeta {Γ A B a b} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ |- a : A] ->
+        [Γ |- b : B[a..]] ->
+        [Γ |- tFst (tPair A B a b) ≅ a : A]
+      | TermSndCong {Γ A B p p'} :
+        [Γ |- p ≅ p' : tSig A B] ->
+        [Γ |- tSnd p ≅ tSnd p' : B[(tFst p)..]]
+      | TermSndBeta {Γ A B a b} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ |- a : A] ->
+        [Γ |- b : B[a..]] ->
+        [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]

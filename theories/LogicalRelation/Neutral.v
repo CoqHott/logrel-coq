@@ -46,6 +46,9 @@ Proof.
   - intros ??? [red] ne.
     rewrite (redtywf_whne red ne) in ne.
     inversion ne.
+  - intros ??? [?? red] ?? ne.
+    rewrite (redtywf_whne red ne) in ne.
+    inversion ne.
 Qed.
 
 Set Printing Primitive Projection Parameters.
@@ -191,21 +194,21 @@ Qed.
 
 Lemma complete_Pi : forall l Γ A (RA : [Γ ||-Π< l > A]),
   (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
-        complete (PiRedTyPack.domRed RA ρ h)) ->
+        complete (PolyRed.shpRed RA ρ h)) ->
   (forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
-          (ha : [PiRedTyPack.domRed RA ρ h | Δ ||- a : (PiRedTyPack.dom RA)⟨ρ⟩]),
-        complete (PiRedTyPack.codRed RA ρ h ha)) ->
+          (ha : [PolyRed.shpRed RA ρ h | Δ ||- a : _]),
+        complete (PolyRed.posRed RA ρ h ha)) ->
   complete (LRPi' RA).
 Proof.
 intros l Γ A ΠA0 ihdom ihcod; split.
 - intros B ΠB.
   assert (tΓ : [|- Γ]) by (destruct ΠA0; gen_typing).
   eapply ty_nf_red; [apply tyr_wf_red, ΠB|].
-  assert [PiRedTyPack.domRed ΠA0 wk_id tΓ | Γ ||- (PiRedTyPack.dom ΠA0)⟨wk_id⟩ ≅ PiRedTyEq.dom ΠB].
-  1: erewrite <- wk_id_ren_on; eapply (PiRedTyEq.domRed ΠB).
+  assert [PolyRed.shpRed ΠA0 wk_id tΓ | Γ ||- _ ≅ PiRedTyEq.dom ΠB].
+  1: erewrite <- wk_id_ren_on; eapply (PolyRedEq.shpRed ΠB).
   eapply ty_nf_prod.
   + now eapply ihdom.
-  + destruct ΠB as [dom cod ?? domRed codRed] ; cbn in *.
+  + destruct ΠB as [dom cod ?? [domRed codRed]] ; cbn in *.
     assert [|- Γ ,, dom]. 1:{
       apply wfc_cons; tea.
       now eapply escapeConv.
@@ -223,18 +226,18 @@ intros l Γ A ΠA0 ihdom ihcod; split.
 - set (ΠA := ΠA0); destruct ΠA0 as [dom cod].
   simpl in ihdom, ihcod.
   assert [Γ |- A ≅ tProd dom cod] by gen_typing.
-  unshelve refine ( let funred : forall n, Ne[Γ |- n : A] -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | PiRedTyPack.toPiRedTy ΠA] := _ in _).
+  unshelve refine ( let funred : forall n, Ne[Γ |- n : A] -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Π n : A | ΠA] := _ in _).
   {
     intros. exists n; cbn.
     * eapply redtmwf_refl ; gen_typing.
     * now eapply NeFun, tm_ne_whne.
     * eapply tm_nf_conv; [| |eassumption].
       + now eapply tm_ne_nf.
-      + now eapply wft_prod.
+      + gen_typing.
     * gen_typing.
     * intros; apply complete_reflect_simpl; [apply ihcod| |..].
       { eapply neu_app_ren; try eassumption.
-        + now apply wft_prod.
+        + gen_typing.
         + now apply (ihdom _ ρ h). }
       1: escape ; now eapply ty_app_ren.
       eapply convneu_app_ren. 1,2: eassumption.
@@ -242,18 +245,18 @@ intros l Γ A ΠA0 ihdom ihcod; split.
       now escape.
     * intros. apply ihcod.
       + eapply neu_app_ren; try eassumption.
-        -- now apply wft_prod.
+        -- gen_typing.
         -- now apply (ihdom _ ρ h).
       + eapply tm_ne_conv.
         - eapply neu_app_ren; try eassumption.
-          -- now apply wft_prod.
+          -- gen_typing.
           -- now apply (ihdom _ ρ h).
-        - now eapply escape, codRed.
-        - symmetry. now unshelve eapply escapeEq, codExt.
+        - now eapply escape, PolyRed.posRed.
+        - symmetry. unshelve eapply escapeEq, PolyRed.posExt; cycle 2; tea.
       + apply escapeTerm in ha; now eapply ty_app_ren.
-      + pose proof (cv := escapeEq _ (codExt _ _ _ ρ _ ha hb eq0)).
-        symmetry in cv; unshelve eapply (ty_conv _ cv).
-        apply escapeTerm in hb; now eapply ty_app_ren.
+      + escape; eapply ty_conv.
+        1: now eapply ty_app_ren.
+        symmetry; unshelve eapply escapeEq, PolyRed.posExt; cycle 2; tea.
       + apply escapeEqTerm in eq0; now eapply convneu_app_ren.
   }
   intros ?????? h.
@@ -265,10 +268,10 @@ intros l Γ A ΠA0 ihdom ihcod; split.
   * gen_typing.
   * intros. apply ihcod; cbn.
     + eapply neu_app_ren; try eassumption.
-      -- now apply wft_prod.
+      -- gen_typing.
       -- now eapply (ihdom _ ρ).
     + eapply neu_app_ren; try eassumption.
-      -- now apply wft_prod.
+      -- gen_typing.
       -- now eapply (ihdom _ ρ).
     + apply escapeTerm in ha; now eapply ty_app_ren.
     + apply escapeTerm in ha; now eapply ty_app_ren.
@@ -281,6 +284,117 @@ intros l Γ A ΠA0 ihdom ihcod; split.
   * eapply tm_nf_red; [now apply tmr_wf_red|].
     assumption.
   * destruct red; gen_typing.
+Qed.
+
+Arguments ParamRedTy.outTy /.
+
+Lemma complete_Sig : forall l Γ A (RA : [Γ ||-Σ< l > A]),
+  (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
+        complete (PolyRed.shpRed RA ρ h)) ->
+  (forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
+          (ha : [PolyRed.shpRed RA ρ h | Δ ||- a : _]),
+        complete (PolyRed.posRed RA ρ h ha)) ->
+  complete (LRSig' RA).
+Proof.
+  intros l Γ A PA ihdom ihcod.
+  assert [Γ |- A ≅ PA.(outTy)] by (destruct PA; cbn in *; gen_typing).
+  assert [Γ |- PA.(outTy)] by (destruct PA; cbn in *; gen_typing). 
+  split.
+  - intros B PB.
+    assert (tΓ : [|- Γ]) by (destruct PA; gen_typing).
+    eapply ty_nf_red; [apply tyr_wf_red, PB|].
+    assert [PolyRed.shpRed PA wk_id tΓ | Γ ||- _ ≅ PiRedTyEq.dom PB].
+    1: erewrite <- wk_id_ren_on; eapply (PolyRedEq.shpRed PB).
+    eapply ty_nf_sig.
+    + now eapply ihdom.
+    + destruct PB as [dom cod ?? [domRed codRed]] ; cbn in *.
+      assert [|- Γ ,, dom]. 1:{
+        apply wfc_cons; tea.
+        now eapply escapeConv.
+      }
+      eapply ihcod.
+      replace cod with cod[tRel 0 .: @wk1 Γ dom >> tRel].
+      2: bsimpl ; rewrite scons_eta' ; now bsimpl.
+      eapply codRed.
+      Unshelve.  1: tea.
+      eapply complete_var0.
+        * eapply ihdom.
+        * symmetry; eapply escapeEq; erewrite <- wk1_ren_on.
+          unshelve eapply domRed. tea.
+        * now eapply escapeConv.
+  - 
+    unshelve refine ( let funred : forall n, Ne[Γ |- n : A] -> [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-Σ n : A | PA] := _ in _).
+    1:{
+      intros n **.
+      assert (hfst : forall Δ (ρ : Δ ≤ Γ) (h : [ |- Δ]), [PolyRedPack.shpRed PA ρ h | Δ ||- tFst n⟨ρ⟩ : _]).
+      1:{
+        intros; eapply complete_reflect_simpl.
+        * eapply ihdom.
+        * rewrite wk_fst; eapply tm_ne_wk; tea.
+          eapply tm_ne_fst; now eapply tm_ne_conv. 
+        * rewrite wk_fst; eapply ty_wk; tea.
+          eapply ty_fst; now eapply ty_conv.
+        * rewrite wk_fst; eapply convneu_wk; tea.
+          eapply convneu_fst; now eapply convneu_conv.
+      }
+      exists n hfst.
+      + eapply redtmwf_refl; now eapply ty_conv.
+      + constructor; now eapply tm_ne_whne.
+      + eapply tm_ne_nf; now eapply tm_ne_conv.
+      + eapply convtm_convneu; now eapply convneu_conv.
+      + intros; irrelevanceRefl.
+        eapply complete_reflect_simpl; [unshelve eapply ihcod|..]; tea.
+        1: eapply hfst.
+        all: rewrite wk_fst; rewrite <- subst_ren_subst_mixed; rewrite wk_snd.
+        * eapply tm_ne_wk; tea; eapply tm_ne_snd; now eapply tm_ne_conv.
+        * eapply ty_wk; tea; eapply ty_snd; now eapply ty_conv.
+        * eapply convneu_wk; tea; eapply convneu_snd; now eapply convneu_conv.
+    }
+    intros.
+    unshelve refine (let Rn :[Γ ||-Σ n : A | PA] := _ in _).
+    1: eapply funred; tea; now eapply lrefl.
+    unshelve refine (let Rn' :[Γ ||-Σ n' : A | PA] := _ in _).
+    1: eapply funred; tea; now eapply urefl.
+    assert (Rnn' : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
+      [PolyRedPack.shpRed PA ρ h | Δ ||- tFst n⟨ρ⟩ ≅ tFst n'⟨ρ⟩ : (ParamRedTyPack.dom PA)⟨ρ⟩]).
+    1:{
+      intros; cbn; eapply ihdom.
+      * rewrite wk_fst; eapply tm_ne_wk; tea.
+        eapply tm_ne_fst; now eapply tm_ne_conv. 
+      * rewrite wk_fst; eapply tm_ne_wk; tea.
+        eapply tm_ne_fst; now eapply tm_ne_conv. 
+      * rewrite wk_fst; eapply ty_wk; tea.
+        eapply ty_fst; now eapply ty_conv.
+      * rewrite wk_fst; eapply ty_wk; tea.
+        eapply ty_fst; now eapply ty_conv.
+      * do 2 rewrite wk_fst; eapply convneu_wk; tea.
+        eapply convneu_fst; now eapply convneu_conv.
+    }
+    assert (hcod : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]), [Δ |- (ParamRedTy.cod PA)[tFst n⟨ρ⟩ .: ρ >> tRel] ]).
+    1: intros; eapply escape; unshelve eapply (PolyRed.posRed PA); tea; eapply Rn.
+    assert (forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
+      [Δ |- (ParamRedTy.cod PA)[tFst n⟨ρ⟩ .: ρ >> tRel] ≅ (ParamRedTy.cod PA)[tFst n'⟨ρ⟩ .: ρ >> tRel]]).
+    1:{
+      intros; eapply escapeEq; unshelve eapply (PolyRed.posExt PA); tea.
+      + eapply Rn.
+      + eapply Rn'.
+      + eapply Rnn'.
+    }
+    split; tea; eexists Rn Rn'.
+    + cbn; eapply convtm_convneu; now eapply convneu_conv.
+    + apply Rnn'.
+    + intros; cbn; eapply ihcod.
+      all: rewrite wk_fst; rewrite !wk_snd.
+      2: eapply tm_ne_conv; [| apply hcod; tea |now symmetry]; rewrite wk_fst.
+      4: eapply ty_conv; [|now symmetry]; rewrite wk_fst.
+      all: rewrite <- subst_ren_subst_mixed.
+      * eapply tm_ne_wk; tea; eapply tm_ne_snd; now eapply tm_ne_conv.
+      * eapply tm_ne_wk; tea; eapply tm_ne_snd ; now eapply tm_ne_conv.
+      * eapply ty_wk; tea; eapply ty_snd; now eapply ty_conv.
+      * eapply ty_wk; tea; eapply ty_snd; now eapply ty_conv.
+      * eapply convneu_wk; tea; eapply convneu_snd; now eapply convneu_conv.
+  - intros a [].
+    eapply tm_nf_conv; [gen_typing| destruct PA; gen_typing |now symmetry].
 Qed.
 
 Lemma complete_Nat {l Γ A} (NA : [Γ ||-Nat A]) : complete (LRNat_ l NA).
@@ -346,6 +460,7 @@ revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
 - now apply complete_Pi.
 - now apply complete_Nat.
 - now apply complete_Empty.
+- now apply complete_Sig.
 Qed.
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :

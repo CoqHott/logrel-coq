@@ -197,7 +197,7 @@ Section GenericTyping.
       [ Γ |- U ] ;
     wft_prod {Γ} {A B} : 
       [ Γ |- A ] -> 
-      [Γ ,, (A) |- B ] -> 
+      [Γ ,, A |- B ] -> 
       [ Γ |- tProd A B ] ;
     wft_nat {Γ} : 
       [|- Γ] ->
@@ -205,6 +205,10 @@ Section GenericTyping.
     wft_empty {Γ} :
       [|- Γ] ->
       [Γ |- tEmpty] ;
+    wft_sig {Γ} {A B} : 
+      [ Γ |- A ] -> 
+      [Γ ,, A |- B ] -> 
+      [ Γ |- tSig A B ] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] -> 
       [ Γ |- A ] ;
@@ -221,7 +225,7 @@ Section GenericTyping.
       [ Γ |- tRel n : decl ] ;
     ty_prod {Γ} {A B} :
         [ Γ |- A : U] -> 
-        [Γ ,, (A) |- B : U ] ->
+        [Γ ,, A |- B : U ] ->
         [ Γ |- tProd A B : U ] ;
     ty_lam {Γ}  {A B t} :
         [ Γ |- A ] ->
@@ -253,6 +257,22 @@ Section GenericTyping.
       [Γ ,,  tEmpty |- P ] ->
       [Γ |- e : tEmpty] ->
       [Γ |- tEmptyElim P e : P[e..]] ;
+    ty_sig {Γ} {A B} :
+        [ Γ |- A : U] -> 
+        [Γ ,, A |- B : U ] ->
+        [ Γ |- tSig A B : U ] ;
+    ty_pair {Γ} {A B a b} :
+        [ Γ |- A ] -> 
+        [Γ ,, A |- B ] ->
+        [Γ |- a : A] ->
+        [Γ |- b : B[a..]] ->
+        [Γ |- tPair A B a b : tSig A B] ;
+    ty_fst {Γ A B p} :
+        [Γ |- p : tSig A B] ->
+        [Γ |- tFst p : A] ;
+    ty_snd {Γ A B p} :
+        [Γ |- p : tSig A B] ->
+        [Γ |- tSnd p : B[(tFst p)..]] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -276,7 +296,11 @@ Section GenericTyping.
     convty_nat {Γ} :
       [|- Γ] -> [Γ |- tNat ≅ tNat] ;
     convty_empty {Γ} :
-      [|- Γ] -> [Γ |- tEmpty ≅ tEmpty]
+      [|- Γ] -> [Γ |- tEmpty ≅ tEmpty] ;
+    convty_sig {Γ A A' B B'} :
+      [Γ |- A] ->
+      [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
+      [Γ |- tSig A B ≅ tSig A' B'] ;
   }.
 
   Class ConvTermProperties :=
@@ -295,6 +319,10 @@ Section GenericTyping.
       [Γ |- A : U] ->
       [Γ |- A ≅ A' : U] -> [Γ,, A |- B ≅ B' : U] ->
       [Γ |- tProd A B ≅ tProd A' B' : U] ;
+    convtm_sig {Γ A A' B B'} :
+      [Γ |- A : U] ->
+      [Γ |- A ≅ A' : U] -> [Γ,, A |- B ≅ B' : U] ->
+      [Γ |- tSig A B ≅ tSig A' B' : U] ;
     convtm_eta {Γ f g A B} :
       [ Γ |- A ] ->
       [ Γ |- f : tProd A B ] ->
@@ -310,6 +338,16 @@ Section GenericTyping.
     convtm_succ {Γ} {n n'} :
         [Γ |- n ≅ n' : tNat] ->
         [Γ |- tSucc n ≅ tSucc n' : tNat] ;
+    convtm_eta_sig {Γ p p' A B} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- p : tSig A B] ->
+      isPair p ->
+      [Γ |- p' : tSig A B] ->
+      isPair p' ->
+      [Γ |- tFst p ≅ tFst p' : A] ->
+      [Γ |- tSnd p ≅ tSnd p' : B[(tFst p)..]] ->
+      [Γ |- p ≅ p' : tSig A B] ;
     convtm_empty {Γ} :
       [|-Γ] -> [Γ |- tEmpty ≅ tEmpty : U] ;
   }.
@@ -336,6 +374,12 @@ Section GenericTyping.
         [Γ ,, tEmpty |- P ≅ P'] ->
         [Γ |- e ~ e' : tEmpty] ->
         [Γ |- tEmptyElim P e ~ tEmptyElim P' e' : P[e..]] ;
+    convneu_fst {Γ A B p p'} :
+      [Γ |- p ~ p' : tSig A B] ->
+      [Γ |- tFst p ~ tFst p' : A] ;
+    convneu_snd {Γ A B p p'} :
+      [Γ |- p ~ p' : tSig A B] ->
+      [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
   }.
 
   Class RedTypeProperties :=
@@ -383,16 +427,30 @@ Section GenericTyping.
       [ Γ,, tNat |- P ] ->
       [ Γ |- hz : P[tZero..] ] ->
       [ Γ |- hs : elimSuccHypTy P ] ->
-      [ Γ |- n : tNat ] ->
       [ Γ |- n ⇒* n' : tNat ] ->
-      (forall n, [Γ |- n ⇒* n' : tNat] -> [Γ |- P[n'..] ≅ P[n..]]) ->
       [ Γ |- tNatElim P hz hs n ⇒* tNatElim P hz hs n' : P[n..] ];
     redtm_emptyelim {Γ P n n'} :
       [ Γ,, tEmpty |- P ] ->
-      [ Γ |- n : tEmpty ] ->
       [ Γ |- n ⇒* n' : tEmpty ] ->
-      (forall n, [Γ |- n ⇒* n' : tEmpty] -> [Γ |- P[n'..] ≅ P[n..]]) ->
       [ Γ |- tEmptyElim P n ⇒* tEmptyElim P n' : P[n..] ];
+    redtm_fst_beta {Γ A B a b} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- a : A] ->
+      [Γ |- b : B[a..]] ->
+      [Γ |- tFst (tPair A B a b) ⇒* a : A] ;
+    redtm_fst {Γ A B p p'} :
+      [Γ |- p ⇒* p' : tSig A B] ->
+      [Γ |- tFst p ⇒* tFst p' : A] ;
+    redtm_snd_beta {Γ A B a b} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- a : A] ->
+      [Γ |- b : B[a..]] ->
+      [Γ |- tSnd (tPair A B a b) ⇒* b : B[(tFst (tPair A B a b))..]] ;
+    redtm_snd {Γ A B p p'} :
+      [Γ |- p ⇒* p' : tSig A B] ->
+      [Γ |- tSnd p ⇒* tSnd p' : B[(tFst p)..]] ;
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -429,6 +487,7 @@ Section GenericValues.
     ty_nf_prod {Γ A B} : Nf[Γ |- A] -> Nf[Γ,, A |- B] -> Nf[Γ |- tProd A B];
     ty_nf_nat {Γ} : [|- Γ] -> Nf[Γ |- tNat];
     ty_nf_empty {Γ} : [|- Γ] -> Nf[Γ |- tEmpty];
+    ty_nf_sig {Γ A B} : Nf[Γ |- A] -> Nf[Γ,, A |- B] -> Nf[Γ |- tSig A B];
    }.
 
   Class TermNeProperties := {
@@ -449,6 +508,12 @@ Section GenericValues.
       Nf[Γ ,, tEmpty |- P ] ->
       Ne[Γ |- e : tEmpty] ->
       Ne[Γ |- tEmptyElim P e : P[e..]];
+    tm_ne_fst {Γ A B p} :
+      Ne[Γ |- p : tSig A B] ->
+      Ne[Γ |- tFst p : A] ;
+    tm_ne_snd {Γ A B p} :
+      Ne[Γ |- p : tSig A B] ->
+      Ne[Γ |- tSnd p : B[(tFst p)..]] ;
   }.
 
   Class TermNfProperties := {
@@ -462,6 +527,10 @@ Section GenericValues.
     tm_nf_zero {Γ} : [|- Γ] -> Nf[Γ |- tZero : tNat];
     tm_nf_succ {Γ t} : Nf[Γ |- t : tNat] -> Nf[Γ |- tSucc t : tNat];
     tm_nf_empty {Γ} : [|- Γ] -> Nf[Γ |- tEmpty : U];
+    tm_nf_sig {Γ A B} : Nf[Γ |- A : U] -> Nf[Γ,, A |- B : U] -> Nf[Γ |- tSig A B : U];
+    tm_nf_pair {Γ A B a b} : 
+      Nf[Γ |- A] -> Nf[Γ,, A |- B] -> 
+      Nf[Γ |- a : A] -> Nf[Γ |- b : B[a..]] -> Nf[Γ |- tPair A B a b : tSig A B];
   }.
 
 End GenericValues.
@@ -496,20 +565,20 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_empty | 2 : gen_typing.
-#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim | 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty | 2 : gen_typing.
-#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_empty wft_sig | 2 : gen_typing.
+#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd | 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty convty_sig | 2 : gen_typing.
+#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
-#[export] Hint Resolve ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_empty | 2 : gen_typing.
-#[export] Hint Resolve tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_emptyelim tm_nf_wk | 2 : gen_typing.
+#[export] Hint Resolve ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_empty ty_nf_sig | 2 : gen_typing.
+#[export] Hint Resolve tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_emptyelim tm_ne_fst tm_ne_snd tm_nf_wk | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu ty_ne_term | 4 : gen_typing.
 (* Priority 6 *)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 #[export] Hint Resolve ty_ne_nf ty_nf_red ty_ne_whne tm_ne_whne tm_ne_conv tm_nf_conv tm_nf_red | 6 : gen_typing.
-#[export] Hint Resolve tm_nf_prod tm_nf_lam tm_nf_nat tm_nf_zero tm_nf_succ tm_nf_empty | 6 : gen_typing.
+#[export] Hint Resolve tm_nf_prod tm_nf_lam tm_nf_nat tm_nf_zero tm_nf_succ tm_nf_empty tm_nf_sig tm_nf_pair | 6 : gen_typing.
 
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)
@@ -773,7 +842,6 @@ Section GenericConsequences.
     unshelve eapply (redtmwf_wk ρ _ redtu).
     gen_typing.
   Qed.
-
 
   Lemma redtmwf_natElimZero {Γ P hz hs} :
     [Γ ,, tNat |- P ] ->

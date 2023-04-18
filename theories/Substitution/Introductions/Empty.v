@@ -58,40 +58,6 @@ Proof.
     + constructor; eapply redtywf_refl; gen_typing.
 Qed.
 
-Lemma red_emptyElimSubst {Γ l P n n'} :
-  [|- Γ] ->
-  [Γ ,, tEmpty |- P] ->
-  [Γ |- n :⇒*: n' : tEmpty ] ->
-  forall (RN : [Γ ||-<l> tEmpty]),
-  [Γ ||-<l> n' : tEmpty | RN] ->
-  (forall t t',
-    [Γ ||-<l> t : tEmpty | RN] ->
-    [Γ ||-<l> t' : tEmpty | RN] ->
-    [Γ ||-<l> t ≅ t' : tEmpty | RN] ->
-    [Γ |- P[t..] ≅ P[t'..]]) -> 
-  [Γ |- tEmptyElim P n :⇒*: tEmptyElim P n' : P[n..]].
-Proof.
-    intros hΓ hp red rN rn' congP.
-    generalize (tmr_wf_red _ _ _ _ red).
-    escape.
-    assert ([rN | Γ ||- n : tEmpty]).
-    { now eapply redwfSubstTerm. }
-    assert ([ Γ |- P[n..] ≅ P[n'..]]).
-    { apply congP; [assumption|assumption|].
-      now eapply redwfSubstTerm. }
-    intros.
-    econstructor.
-    - eapply ty_conv; [|now symmetry].
-      escape; apply ty_emptyElim; tea.
-    - apply redtm_emptyelim; tea.
-      + now eapply redtm_ty_src.
-      + intros u Hu.
-        assert ([Γ |-[ ta ] u :⇒*: n' : tEmpty]).
-        { now constructor. }
-        apply congP; [eassumption| |].
-        * eapply redwfSubstTerm; [exact rn'|assumption].
-        * now eapply LRTmEqSym, redwfSubstTerm.
-Qed.
 
 (* TODO: move *)
 Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
@@ -144,14 +110,14 @@ Section EmptyElimRed.
         econstructor; tea.
         eapply redtmwf_refl; gen_typing.
       }
-      eapply redwfSubstTerm.
+      eapply redSubstTerm.
       + eapply LRTmRedConv. 
         2: unshelve eapply ih; tea.
         eapply RPext. 
         2: eapply LRTmEqSym.
         1,2: eapply redwfSubstTerm; tea.
-      + eapply red_emptyElimSubst; tea.
-        intros; eapply escapeEq; now eapply RPext.
+      + eapply redtm_emptyelim; tea.
+        cbn; gen_typing.
     - intros ? [] ?.
       apply reflect.
       + apply completeness.
@@ -161,8 +127,7 @@ Section EmptyElimRed.
       + now eapply ty_emptyElim.
       + eapply convneu_emptyElim; tea.
         { eapply escapeEq, LRTyEqRefl_. }
-    Unshelve.
-        1: tea. 2: tea.
+    Unshelve. all: tea.
   Qed.
 
   Lemma emptyElimRed : forall n (Rn : [Γ ||-<l> n : _ | RN]), [Γ ||-<l> tEmptyElim P n : _ | RPpt _ Rn ].

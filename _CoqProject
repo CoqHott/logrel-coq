@@ -46,12 +46,14 @@ theories/Substitution/Reduction.v
 theories/Substitution/SingleSubst.v
 theories/Substitution/Introductions/Application.v
 theories/Substitution/Introductions/Universe.v
+theories/Substitution/Introductions/Poly.v
 theories/Substitution/Introductions/Pi.v
 theories/Substitution/Introductions/Lambda.v
 theories/Substitution/Introductions/SimpleArr.v
 theories/Substitution/Introductions/Var.v
 theories/Substitution/Introductions/Nat.v
 theories/Substitution/Introductions/Empty.v
+theories/Substitution/Introductions/Sigma.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v

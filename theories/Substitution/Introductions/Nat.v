@@ -127,43 +127,6 @@ Proof.
   constructor; intros; cbn; instValid Vσ; now unshelve eapply succRedEq.
 Qed.
 
-Lemma red_natElimSubst {Γ l P hz hs n n'} :
-  [|- Γ] ->
-  [Γ ,, tNat |- P] ->
-  [Γ |- hz : P[tZero..]] ->
-  [Γ |- hs : elimSuccHypTy P] ->
-  [Γ |- n :⇒*: n' : tNat ] ->
-  forall (RN : [Γ ||-<l> tNat]),
-  [Γ ||-<l> n' : tNat | RN] ->
-  (forall t t',
-    [Γ ||-<l> t : tNat | RN] ->
-    [Γ ||-<l> t' : tNat | RN] ->
-    [Γ ||-<l> t ≅ t' : tNat | RN] ->
-    [Γ |- P[t..] ≅ P[t'..]]) -> 
-  [Γ |- tNatElim P hz hs n :⇒*: tNatElim P hz hs n' : P[n..]].
-Proof.
-  intros hΓ hp hhz hhs red rN rn' congP.
-  generalize (tmr_wf_red _ _ _ _ red).
-  escape.
-  assert ([rN | Γ ||- n : tNat]).
-  { now eapply redwfSubstTerm. }
-  assert ([ Γ |- P[n..] ≅ P[n'..]]).
-  { apply congP; [assumption|assumption|].
-    now eapply redwfSubstTerm. }
-  intros.
-  econstructor.
-  - eapply ty_conv; [|now symmetry].
-    escape; apply ty_natElim; tea.
-  - apply redtm_natelim; tea.
-    + now eapply redtm_ty_src.
-    + intros u Hu.
-      assert ([Γ |-[ ta ] u :⇒*: n' : tNat]).
-      { now constructor. }
-      apply congP; [eassumption| |].
-      * eapply redwfSubstTerm; [exact rn'|assumption].
-      * now eapply LRTmEqSym, redwfSubstTerm.
-Qed.
-
 Lemma arr_subst_eq {A B σ} : (arr A B)[σ] = arr A[σ] B[σ].
 Proof. now bsimpl. Qed.
 
@@ -233,14 +196,14 @@ Section NatElimRed.
         econstructor; tea.
         eapply redtmwf_refl; gen_typing.
       }
-      eapply redwfSubstTerm.
+      eapply redSubstTerm.
       + eapply LRTmRedConv. 
         2: unshelve eapply ih; tea.
         eapply RPext. 
         2: eapply LRTmEqSym.
         1,2: eapply redwfSubstTerm; tea.
-      + eapply red_natElimSubst; tea.
-        intros; eapply escapeEq; now eapply RPext.
+      + eapply redtm_natelim; tea.
+        cbn; gen_typing.
     - intros. 
       eapply redSubstTerm.
       2: eapply redtm_natElimZero; tea.
@@ -266,7 +229,6 @@ Section NatElimRed.
         { eapply escapeEqTerm; now eapply LREqTermRefl_. }
         { eapply escapeEqTerm; now eapply LREqTermRefl_. }
     Unshelve.
-    * tea.
     * eapply ArrRedTy; now eapply RPpt.
     * rewrite arr_subst_eq. eapply ArrRedTy.
       2: rewrite liftSubst_singleSubst_eq; cbn.

@@ -40,6 +40,36 @@ Proof.
 Qed.
   
 
+Record equivPolyRed@{i j k l i' j' k' l' v}
+  {Γ l l' shp shp' pos pos'}
+  {PA : PolyRed@{i j k l} Γ l shp pos}
+  {PA' : PolyRed@{i' j' k' l'} Γ l' shp' pos'} :=
+  {
+    eqvShp : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
+          equivLRPack@{k k' v} (PolyRed.shpRed PA ρ wfΔ) (PolyRed.shpRed PA' ρ wfΔ) ;
+    eqvPos : forall {Δ a} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ])
+          (ha : [PolyRed.shpRed PA ρ wfΔ| Δ ||- a : _])
+          (ha' : [PolyRed.shpRed PA' ρ wfΔ | Δ ||- a : _]),
+          equivLRPack@{k k' v} 
+            (PolyRed.posRed PA ρ wfΔ ha)
+            (PolyRed.posRed PA' ρ wfΔ ha')
+  }.
+
+Arguments equivPolyRed : clear implicits.
+Arguments equivPolyRed {_ _ _ _ _ _ _} _ _.
+
+Lemma equivPolyRedSym@{i j k l i' j' k' l' v}
+  {Γ l l' shp shp' pos pos'}
+  {PA : PolyRed@{i j k l} Γ l shp pos}
+  {PA' : PolyRed@{i' j' k' l'} Γ l' shp' pos'} :
+  equivPolyRed@{i j k l i' j' k' l' v} PA PA' ->
+  equivPolyRed@{i' j' k' l' i j k l v} PA' PA.
+Proof.
+  intros eqv; unshelve econstructor; intros.
+  - eapply symLRPack; eapply eqv.(eqvShp).
+  - eapply symLRPack; eapply eqv.(eqvPos).
+Qed.
+
 
 (** *** Lemmas for product types *)
 
@@ -50,32 +80,22 @@ avoid having to basically duplicate their proofs. *)
 Section ΠIrrelevanceLemmas.
 Universe i j k l i' j' k' l' v.
 Context {Γ lA A lA' A'} 
-  (ΠA : PiRedTyPack@{i j k l} Γ A lA) 
-  (ΠA' : PiRedTyPack@{i' j' k' l'} Γ A' lA')
+  (ΠA : ParamRedTy@{i j k l} tProd Γ lA A) 
+  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
-  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
-  (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA']).
-
-Context (eqvDom : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
-          equivLRPack@{k k' v} (domRed Δ ρ wfΔ) (domRed' Δ ρ wfΔ))
-        (eqvCod : forall {Δ a} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ])
-          (ha : [domRed Δ ρ wfΔ| Δ ||- a : _])
-          (ha' : [domRed' Δ ρ wfΔ | Δ ||- a : _]),
-          equivLRPack@{k k' v} (codRed Δ a ρ wfΔ ha) (codRed' Δ a ρ wfΔ ha')).
+  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy)])
+  (eqv : equivPolyRed ΠA ΠA').
 
 Lemma ΠIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
 Proof.
-  intros [] ; cbn in *; econstructor.
+  intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
   - now gen_typing.
   - cbn; etransitivity; [|tea]; now symmetry.
-  - intros ; now apply eqvDom.
-  - intros; cbn; unshelve eapply eqvCod.
+  - intros; now apply eqv.(eqvShp).
+  - intros; cbn; unshelve eapply eqv.(eqvPos).
     2: eauto.
-    now eapply eqvDom.
+    now eapply eqv.(eqvShp).
 Qed.
 
 Lemma ΠIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
@@ -83,14 +103,14 @@ Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
   - apply (tm_nf_conv isnf).
-    + destruct ΠA'; simpl in *; now apply wft_prod.
+    + destruct ΠA'; simpl in *; gen_typing.
     + apply eqPi.
   - now eapply convtm_conv.
-  - intros; unshelve eapply eqvCod.
+  - intros; unshelve eapply eqv.(eqvPos).
     2: now auto.
-    now apply eqvDom.
-  - intros; unshelve eapply eqvCod, eq.
-    all: now eapply eqvDom.
+    now apply eqv.(eqvShp).
+  - intros; unshelve eapply eqv.(eqvPos), eq.
+    all: now eapply eqv.(eqvShp).
 Defined.
 
 Lemma ΠIrrelevanceTmEq t u : [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA'].
@@ -98,39 +118,95 @@ Proof.
   intros [] ; cbn in *; unshelve econstructor.
   1,2: now eapply ΠIrrelevanceTm.
   - now eapply convtm_conv.
-  - intros; unshelve eapply eqvCod.
+  - intros; unshelve eapply eqv.(eqvPos).
     2: now auto.
-    now apply eqvDom.
+    now apply eqv.(eqvShp).
 Qed.
 
 End ΠIrrelevanceLemmas.
 
 Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
   {Γ lA A lA' A'} 
-  (ΠA : PiRedTyPack@{i j k l} Γ A lA) 
-  (ΠA' : PiRedTyPack@{i' j' k' l'} Γ A' lA')
+  (ΠA : ParamRedTy@{i j k l} tProd Γ lA A) 
+  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (domRed := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
-  (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
-  (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
-  (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA'])
-  (eqvDom : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
-          equivLRPack@{k k' v} (domRed Δ ρ wfΔ) (domRed' Δ ρ wfΔ))
-  (eqvCod : forall {Δ a} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ])
-          (ha : [Δ ||-<lA> a : _| domRed Δ ρ wfΔ])
-          (ha' : [Δ ||-<lA'> a : _| domRed' Δ ρ wfΔ ]),
-          equivLRPack@{k k' v} (codRed Δ a ρ wfΔ ha) (codRed' Δ a ρ wfΔ ha'))
+  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy) ])
+  (eqv : equivPolyRed ΠA ΠA')
   : equivLRPack@{k k' v} RA RA'.
 Proof.
-  pose proof (eqvDom' := fun Δ ρ wfΔ => symLRPack (@eqvDom Δ ρ wfΔ)).
-  pose proof (eqvCod' := fun Δ a ρ wfΔ ha ha' => symLRPack (@eqvCod Δ a ρ wfΔ ha ha')).
+  pose proof (equivPolyRedSym eqv).
   constructor.
   - split; now apply ΠIrrelevanceTyEq.
   - split; now apply ΠIrrelevanceTm.
   - split; now apply ΠIrrelevanceTmEq.
 Qed.
+
+
+(** *** Lemmas for dependent sum types *)
+
+Section ΣIrrelevanceLemmas.
+Universe i j k l i' j' k' l' v.
+Context {Γ lA A lA' A'} 
+  (ΣA : ParamRedTy@{i j k l} tSig Γ lA A) 
+  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
+  (RA := LRSig' ΣA)
+  (RA' := LRSig' ΣA')
+  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy)])
+  (eqv : equivPolyRed ΣA ΣA').
+
+Lemma ΣIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
+Proof.
+  intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
+  - now gen_typing.
+  - cbn; etransitivity; [|tea]; now symmetry.
+  - intros; now apply eqv.(eqvShp).
+  - intros; cbn; unshelve eapply eqv.(eqvPos).
+    2: eauto.
+    now eapply eqv.(eqvShp).
+Qed.
+
+Lemma ΣIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
+Proof.
+  intros []; cbn in *; unshelve econstructor; tea.
+  - intros; unshelve eapply eqv.(eqvShp); now auto.
+  - now eapply redtmwf_conv.
+  - apply (tm_nf_conv isnf).
+    + destruct ΣA'; simpl in *; gen_typing.
+    + apply eqSig.
+  - now eapply convtm_conv.
+  - intros; unshelve eapply eqv.(eqvPos); now auto.
+Defined.
+
+Lemma ΣIrrelevanceTmEq t u : [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA'].
+Proof.
+  intros [] ; cbn in *; unshelve econstructor.
+  1,2: now eapply ΣIrrelevanceTm.
+  - now eapply convtm_conv.
+  - intros; unshelve eapply eqv.(eqvShp); auto.
+  - intros; unshelve eapply eqv.(eqvPos); auto.
+Qed.
+
+End ΣIrrelevanceLemmas.
+
+Lemma ΣIrrelevanceLRPack@{i j k l i' j' k' l' v}
+  {Γ lA A lA' A'} 
+  (ΣA : ParamRedTy@{i j k l} tSig Γ lA A) 
+  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
+  (RA := LRSig' ΣA)
+  (RA' := LRSig' ΣA')
+  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy) ])
+  (eqv : equivPolyRed ΣA ΣA')
+  : equivLRPack@{k k' v} RA RA'.
+Proof.
+  pose proof (equivPolyRedSym eqv).
+  constructor.
+  - split; now apply ΣIrrelevanceTyEq.
+  - split; now apply ΣIrrelevanceTm.
+  - split; now apply ΣIrrelevanceTmEq.
+Qed.
+
+
 
 (** *** Irrelevance for neutral types *)
 
@@ -318,72 +394,110 @@ Lemma LRIrrelevantPreds {lA lA'}
   eqTyA A' ->
   equivLRPack@{k k' v} RA RA'.
 Proof.
-  pose proof (fun Γ l0 ltA ltA' => fst (IH l0 ltA ltA') Γ) as IHty.
-  pose proof (fun Γ l0 ltA ltA' => snd (IH l0 ltA ltA') Γ) as IHeq.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA]
+  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod]
     in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
-  - destruct lrA' as [? ? h2 | | | |]; try solve [destruct s] ; clear s.
+  - destruct lrA' ; try solve [destruct s] ; clear s.
     now apply UnivIrrelevanceLRPack.
-  - destruct lrA' as [|? A' neA'| | |] ; try solve [destruct s] ; clear s.
-    exact (NeIrrelevanceLRPack lA lA' neA neA' he).
-  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
-    pose (PA := PiRedTyPack.pack ΠA HAad).
-    pose (PA' := PiRedTyPack.pack ΠA' HAad').
-    destruct he as [dom0 cod0 ?? domRed codRed], ΠA' as [dom1 cod1];
+  - destruct lrA'  ; try solve [destruct s] ; clear s.
+    now unshelve eapply NeIrrelevanceLRPack.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| | |] ; try solve [destruct s] ; clear s.
+    pose (PA := ParamRedTy.from HAad).
+    pose (PA' := ParamRedTy.from HAad').
+    destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
     assert (tProd dom0 cod0 = tProd dom1 cod1) as ePi
     by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
-    eapply (ΠIrrelevanceLRPack PA PA').
+    eapply (ΠIrrelevanceLRPack PA PA'); [|unshelve econstructor].
     + eassumption.
     + intros; unshelve eapply IHdom.
-      1: eapply (LRAd.adequate (PiRedTyPack.domRed PA' _ _)).
+      2: eapply (LRAd.adequate (PolyRed.shpRed PA' _ _)).
       eapply domRed.
     + intros; unshelve eapply IHcod.
-      1: eapply (LRAd.adequate (PiRedTyPack.codRed PA' _ _ _)).
+      2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
-  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
-    apply (NatIrrelevanceLRPack (lA:=lA) (lA':=lA')).
-  - destruct lrA' as [| | ? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
-    apply (EmptyIrrelevanceLRPack (lA:=lA) (lA':=lA')).
+  - destruct lrA' ; try solve [destruct s] ; clear s.
+    now unshelve eapply NatIrrelevanceLRPack.
+  - destruct lrA' ; try solve [destruct s] ; clear s.
+    now unshelve eapply EmptyIrrelevanceLRPack.
+  - destruct lrA' as [| | | | |? A' ΠA' HAad'] ; try solve [destruct s] ; clear s.
+    pose (PA := ParamRedTy.from HAad).
+    pose (PA' := ParamRedTy.from HAad').
+    destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
+    assert (tSig dom0 cod0 = tSig dom1 cod1) as ePi
+    by (eapply whredty_det ; gen_typing).
+    inversion ePi ; subst ; clear ePi.
+    eapply (ΣIrrelevanceLRPack PA PA'); [|unshelve econstructor].
+    + eassumption.
+    + intros; unshelve eapply IHdom.
+      2: eapply (LRAd.adequate (PolyRed.shpRed PA' _ _)).
+      eapply domRed.
+    + intros; unshelve eapply IHcod.
+      2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
+      eapply codRed.
 Qed.
 
 
+Lemma LRIrrelevantCumPolyRed {lA}
+  (IH : IHStatement lA lA)
+  (Γ : context) (shp pos : term)
+  (PA : PolyRed@{i j k l} Γ lA shp pos)
+  (IHshp : forall (Δ : context) (ρ : Δ ≤ Γ), [ |-[ ta ] Δ] -> [Δ ||-< lA > shp⟨ρ⟩])
+  (IHpos : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
+          [PolyRed.shpRed PA ρ h | _ ||- a : _] ->
+          [Δ ||-< lA > pos[a .: ρ >> tRel]]) :
+  PolyRed@{i' j' k' l'} Γ lA shp pos.
+Proof.
+  unshelve econstructor.
+  + exact IHshp.
+  + intros Δ a ρ tΔ ra. eapply IHpos.
+    pose (shpRed := PA.(PolyRed.shpRed) ρ tΔ).
+    destruct (LRIrrelevantPreds IH _ _ _
+             (LRAd.adequate shpRed)
+             (LRAd.adequate (IHshp Δ ρ tΔ))
+             (LRTyEqRefl_ shpRed)) as [_ irrTmRed _].
+    now eapply (snd (irrTmRed a)).
+  + now destruct PA.
+  + now destruct PA.
+  + cbn. intros Δ a b ρ tΔ ra rb rab.
+    set (p := LRIrrelevantPreds _ _ _ _ _ _ _).
+    destruct p as [_ irrTmRed irrTmEq].
+    pose (ra' := snd (irrTmRed a) ra).
+    pose (posRed := PA.(PolyRed.posRed) ρ tΔ ra').
+    destruct (LRIrrelevantPreds IH _ _ _
+                (LRAd.adequate posRed)
+                (LRAd.adequate (IHpos Δ a ρ tΔ ra'))
+                (LRTyEqRefl_ posRed)) as [irrTyEq _ _].
+    eapply (fst (irrTyEq (pos[b .: ρ >> tRel]))).
+    eapply PolyRed.posExt.
+    1: exact (snd (irrTmRed b) rb).
+    exact (snd (irrTmEq a b) rab).
+Qed.
+
+
+Set Printing Universes.
 Lemma LRIrrelevantCumTy {lA}
   (IH : IHStatement lA lA)
   (Γ : context) (A : term)
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
   intros [ [] lrA ] ; cbn in lrA.
-  induction lrA as [? ? [l1 lt1] | ? | ? A [] [] IHdom IHcod|?? NEA|?? NEA].
+  induction lrA as [? ? [l1 lt1] | ? | ? A [] ? IHdom IHcod|?? NEA|?? NEA| ?? [] ? IHdom IHcod].
   - eapply LRU_. econstructor ; tea.
   - eapply LRne_. exact neA.
-  - cbn in *. eapply LRPi'. unshelve econstructor.
-    6: eassumption.
-    4,5,6: tea.
-    + exact IHdom.
-    + intros Δ a ρ tΔ ra. eapply IHcod.
-      destruct (LRIrrelevantPreds IH Δ (dom⟨ρ⟩) (dom⟨ρ⟩)
-                  (domAd Δ ρ tΔ) (IHdom Δ ρ tΔ : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHdom Δ ρ tΔ))
-                  (LRTyEqRefl (domAd Δ ρ tΔ))) as [_ irrTmRed _].
-      eapply (snd (irrTmRed a)). exact ra.
-    + cbn. intros Δ a b ρ tΔ ra rb rab.
-      destruct (LRIrrelevantPreds IH Δ (dom⟨ρ⟩) (dom⟨ρ⟩)
-                  (domAd Δ ρ tΔ) (IHdom Δ ρ tΔ : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHdom Δ ρ tΔ))
-                  (LRTyEqRefl (domAd Δ ρ tΔ))) as [_ irrTmRed irrTmEq].
-      destruct (LRIrrelevantPreds IH Δ (cod[a .: ρ >> tRel]) (cod[a .: ρ >> tRel])
-                  (codAd Δ a ρ tΔ (snd (irrTmRed a) ra))
-                  (IHcod Δ a ρ tΔ (snd (irrTmRed a) ra)
-                    : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHcod Δ a ρ tΔ (snd (irrTmRed a) ra)))
-                  (LRTyEqRefl (codAd Δ a ρ tΔ (snd (irrTmRed a) ra))))
-        as [irrTyEq _ _].
-      eapply (fst (irrTyEq (cod[b .: ρ >> tRel]))).
-      eapply codExt.
-      exact (snd (irrTmRed b) rb).
-      exact (snd (irrTmEq a b) rab).
+  - cbn in *. eapply LRPi'; unshelve econstructor.
+    3,4: tea.
+    unshelve eapply LRIrrelevantCumPolyRed; tea.
+    1: now eapply PolyRed.from.
+    intros; now eapply IHcod.
   - now eapply LRNat_.
   - now eapply LREmpty_.
+  - cbn in *. eapply LRSig'; unshelve econstructor.
+    3,4: tea.
+    unshelve eapply LRIrrelevantCumPolyRed; tea.
+    1: now eapply PolyRed.from.
+    intros; now eapply IHcod.
 Qed.
 
 
@@ -391,6 +505,16 @@ Lemma IrrRec0 : IHStatement zero zero.
 Proof.
   intros ? ltA; inversion ltA.
 Qed.
+
+(** Safety check: we did not add constraints we did not mean to *)
+Fail Fail Constraint i < i'.
+Fail Fail Constraint i' < i.
+Fail Fail Constraint j < j'.
+Fail Fail Constraint j' < j.
+Fail Fail Constraint k < k'.
+Fail Fail Constraint k' < k.
+Fail Fail Constraint l < l'.
+Fail Fail Constraint l' < l.
 
 End LRIrrelevantInductionStep.
 
@@ -574,6 +698,19 @@ Proof.
   now eapply RedTmConv.
 Qed.
 
+Corollary PolyRedEqSym {Γ l l' shp shp' pos pos'}
+  {PA : PolyRed Γ l shp pos}
+  (PA' : PolyRed Γ l' shp' pos') :
+  PolyRedEq PA shp' pos' -> PolyRedEq PA' shp pos.
+Proof.
+  intros []; unshelve econstructor.
+  - intros; eapply LRTyEqSym; eauto.
+  - intros. eapply LRTyEqSym. unshelve eapply posRed; tea.
+    eapply LRTmRedConv; tea.
+    now eapply LRTyEqSym.
+  Unshelve. all: tea.
+Qed.
+
 Corollary TmEqRedConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
@@ -633,6 +770,13 @@ Proof.
     intros t u [? ? ? ? ? ? ? prop]. destruct prop. econstructor; eauto.
     2: econstructor; now eapply NeNfEqSym.
     symmetry; eassumption.
+  - intros * ihshp ihpos * []; unshelve econstructor; tea.
+    1: now symmetry.
+    + intros; now eapply ihshp.
+    + intros; eapply ihpos.
+      eapply LRTmEqRedConv.
+      2: eapply eqSnd.
+      now eapply PolyRed.posExt.
 Qed.
 
 End Irrelevances.

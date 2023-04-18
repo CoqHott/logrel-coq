@@ -30,6 +30,10 @@ Section Definitions.
       [Γ |- tNat ≅h tNat]
     | typeEmptyConvAlg {Γ} :
       [Γ |- tEmpty ≅h tEmpty]
+    | typeSigCongAlg {Γ A B A' B'} :
+      [ Γ |- A ≅ A'] ->
+      [ Γ ,, A |- B ≅ B'] ->
+      [ Γ |- tSig A B ≅h tSig A' B']
     | typeNeuConvAlg {Γ M N T} :
       [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
@@ -56,6 +60,12 @@ Section Definitions.
       [Γ |- e ~h e' ▹ tEmpty] ->
       [Γ ,, tEmpty |- P ≅ P'] ->
       [Γ |- tEmptyElim P e ~ tEmptyElim P' e' ▹ P[e..]]
+    | neuFstCongAlg {Γ m n A B} :
+      [ Γ |- m ~h n ▹ tSig A B ] ->
+      [ Γ |- tFst m ~ tFst n ▹ A ]
+    | neuSndCongAlg {Γ m n A B} :
+      [ Γ |- m ~h n ▹ tSig A B ] ->
+      [ Γ |- tSnd m ~ tSnd n ▹ B[(tFst m)..] ]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -91,6 +101,16 @@ Section Definitions.
       whnf g ->
       [ Γ,, A |- eta_expand f ≅ eta_expand g : B] -> 
       [ Γ |- f ≅h g : tProd A B]
+    | termSigCongAlg {Γ A B A' B'} :
+      [ Γ |- A ≅ A' : U] ->
+      [ Γ ,, A |- B ≅ B' : U] ->
+      [ Γ |- tSig A B ≅h tSig A' B' : U]
+    | termPairConvAlg {Γ : context} {p q A B} :
+      whnf p ->
+      whnf q ->
+      [ Γ |- tFst p ≅ tFst q : A] -> 
+      [ Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] -> 
+      [ Γ |- p ≅h q : tSig A B]
     | termNeuConvAlg {Γ m n T P} :
       [Γ |- m ~ n ▹ T] ->
       isPosType P ->
@@ -118,6 +138,10 @@ Section Definitions.
       [Γ |- tNat]
     | wfTypeEmpty {Γ} :
         [Γ |- tEmpty]
+    | wfTypeSig {Γ A B} :
+      [Γ |- A ] ->
+      [Γ,, A |- B] ->
+      [Γ |- tSig A B]
     | wfTypeUniv {Γ A} :
       ~ isCanonical A ->
       [Γ |- A ▹h U] ->
@@ -129,7 +153,7 @@ Section Definitions.
       [Γ |- tRel n ▹ decl]
     | infProd {Γ} {A B} :
       [ Γ |- A ▹h U] -> 
-      [Γ ,, (A) |- B ▹h U ] ->
+      [Γ ,, A |- B ▹h U ] ->
       [ Γ |- tProd A B ▹ U ]
     | infLam {Γ} {A B t} :
       [ Γ |- A] ->
@@ -158,6 +182,22 @@ Section Definitions.
       [Γ |- e ▹h tEmpty] ->
       [Γ ,, tEmpty |- P ] ->
       [Γ |- tEmptyElim P e ▹ P[e..]]
+    | infSig {Γ} {A B} :
+      [ Γ |- A ▹h U] -> 
+      [Γ ,, A |- B ▹h U ] ->
+      [ Γ |- tSig A B ▹ U ]
+    | infPair {Γ A B a b} :
+      [ Γ |- A] -> 
+      [Γ ,, A |- B] ->
+      [Γ |- a ◃ A] ->
+      [Γ |- b ◃ B[a..]] ->
+      [Γ |- tPair A B a b ▹ tSig A B]
+    | infFst {Γ A B p} :
+      [Γ |- p ▹h tSig A B] ->
+      [Γ |- tFst p ▹ A]
+    | infSnd {Γ A B p} :
+      [Γ |- p ▹h tSig A B] ->
+      [Γ |- tSnd p ▹ B[(tFst p)..]]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -355,6 +395,10 @@ Section TypingWk.
       now econstructor.
     - intros.
       now econstructor.
+    - intros * ??? IHB ? *; do 2 rewrite <- wk_sig.
+      econstructor.
+      1: eauto.
+      now eapply IHB.
     - intros.
       now econstructor.  
     - intros * ? ? ?.
@@ -390,7 +434,12 @@ Section TypingWk.
       + eauto.
       + now eapply (IHP _ (wk_up tEmpty ρ)).
       + now bsimpl.
-      + now bsimpl. 
+      + now bsimpl.
+    - intros * ? IH *; cbn.
+      econstructor; now eapply IH.
+    - intros ??? A? ? IH *; cbn.
+      rewrite (subst_ren_wk_up (A:=A)).
+      econstructor; now eapply IH.
     - intros.
       econstructor.
       + eauto.
@@ -415,9 +464,20 @@ Section TypingWk.
       1-2: gen_typing.
       specialize IH with(ρ := wk_up _ ρ).
       cbn in *.
-      asimpl.
-      repeat (rewrite renRen_term in IH).
+      assert (eq: forall t, t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨up_ren ρ⟩) by now asimpl.
+      do 2 rewrite eq.
       apply IH.
+    - intros * ??? IHB *. 
+      do 2 rewrite <- wk_sig.
+      econstructor.
+      1: now eauto.
+      now eapply IHB.
+    - intros * ??? IHfst ? IHsnd *.
+      rewrite <- wk_sig.
+      econstructor.
+      1,2: gen_typing.
+      1: eauto.
+      rewrite wk_fst, <- subst_ren_wk_up; eauto.
     - intros.
       econstructor.
       + eauto.
@@ -446,6 +506,11 @@ Section TypingWk.
     - intros.
       now econstructor.
     - now constructor.
+    - intros * ? ? ? IHB **.
+      rewrite <-wk_sig.
+      econstructor.
+      + now eauto.
+      + now eapply IHB.
     - constructor.
       + now intros ?%isCanonical_ren.
       + eauto. 
@@ -493,7 +558,21 @@ Section TypingWk.
       1: econstructor.
       + eauto.
       + eapply IHP with (ρ := wk_up _ ρ).
-      + now bsimpl.        
+      + now bsimpl. 
+    - intros * ??? IHB *.
+      rewrite <- wk_sig.
+      econstructor; eauto.
+    - intros * ???????? *.
+      rewrite <- wk_pair, <-wk_sig.
+      econstructor.
+      1-3: now eauto.
+      rewrite <- subst_ren_wk_up; eauto.
+    - intros * ?? *.
+      rewrite <- wk_fst; now econstructor.
+    - intros ? A ?? ? IH *.
+      rewrite <- wk_snd, (subst_ren_wk_up (A:=A)).
+      econstructor.
+      now eapply IH.
     - intros.
       econstructor.
       + eauto.
@@ -566,6 +645,7 @@ Section AlgTypingWh.
   Qed.
 End AlgTypingWh.
 
+
 (** ** Determinism: there is at most one inferred type *)
 
 Section AlgoTypingDet.
@@ -600,6 +680,14 @@ Proof.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     now reflexivity.
+  - intros * ? IH ?? Hconv.
+    inversion Hconv; subst; clear Hconv; refold.
+    apply IH in H3.
+    now inversion H3.
+  - intros * ? IH ?? Hconv.
+    inversion Hconv; subst; clear Hconv; refold.
+    apply IH in H3.
+    now inversion H3.
   - intros * ? IH ???? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
@@ -641,6 +729,18 @@ Proof.
     now inversion Hconv.
   - intros * ? IH ?? ? Hconv.
     now inversion Hconv.
+  - intros * ? IH ??? Hconv.
+    now inversion Hconv.
+  - intros * ????????? Hconv.
+    now inversion Hconv.
+  - intros * ? IH ? Hconv.
+    inversion Hconv; subst; refold.
+    apply IH in H3; try constructor.
+    now inversion H3.
+  - intros * ? IH ? Hconv.
+    inversion Hconv; subst; refold.
+    apply IH in H3; try constructor.
+    now inversion H3.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H3 ; subst.

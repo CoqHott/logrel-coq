@@ -20,9 +20,19 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tNatElim P hz hs tZero ⇒ hz ]
 | natElimSucc {P hz hs n} :
     [ tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
-| termRedEmptyElimAlg {P e e'} :
+| emptyElimSubst {P e e'} :
     [e ⇒ e'] ->
     [tEmptyElim P e ⇒ tEmptyElim P e']        
+| fstSubst {p p'} :
+    [ p ⇒ p'] ->
+    [ tFst p ⇒ tFst p']
+| fstPair {A B a b} :
+    [ tFst (tPair A B a b) ⇒ a ]
+| sndSubst {p p'} :
+    [ p ⇒ p'] ->
+    [ tSnd p ⇒ tSnd p']
+| sndPair {A B a b} :
+    [ tSnd (tPair A B a b) ⇒ b ]
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
@@ -71,7 +81,7 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3,6: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  2,3,6,7,9: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
   all: inversion nf; subst; inv_whne; subst; now inv_whne.
 Qed.
 
@@ -105,6 +115,16 @@ Proof.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst.
     f_equal; eauto.
+  - inversion red'; subst; clear red'.
+    1: f_equal; now eapply IHred.
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; try reflexivity.
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; clear red'.
+    1: f_equal; now eapply IHred.
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; try reflexivity.
+    exfalso; eapply whnf_nored; tea; constructor.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -156,7 +176,7 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5,6: cbn; asimpl; now econstructor.
+  2-5,6-10: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
@@ -197,3 +217,18 @@ induction 1.
 + econstructor; [|eassumption].
   now econstructor.
 Qed.
+
+Lemma redalg_fst {t t'} : [t ⇒* t'] -> [tFst t ⇒* tFst t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_snd {t t'} : [t ⇒* t'] -> [tSnd t ⇒* tSnd t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_one_step {t t'} : [t ⇒ t'] -> [t ⇒* t'].
+Proof. intros; econstructor;[tea|reflexivity]. Qed.

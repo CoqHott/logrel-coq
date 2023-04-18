@@ -115,21 +115,6 @@ Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
 
 #[global] Hint Resolve well_wk : core.
 
-Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
-
-Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
-  {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
-
-Definition wk_up {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,  A⟨wk_to_ren ρ⟩) ≤ (Δ ,, A) :=
-  {| wk := _wk_up ρ ; well_wk := well_up A ρ ρ |}.
-
-Definition wk_id {Γ} : Γ ≤ Γ :=
-  {| wk := _wk_id Γ ; well_wk := well_wk_id Γ |}.
-
-Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
-  {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
-Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
-
 (** ** Instances: how to rename by a weakening. *)
 
 #[global] Instance Ren1_wk {Y Z : Type} `(ren : Ren1 (nat -> nat) Y Z) :
@@ -154,6 +139,24 @@ Ltac change_well_wk :=
     change ren_term with (@ren1 _ _ _ Ren1_well_wk) in *.
 
 Smpl Add 10 change_well_wk : refold.
+
+
+(** Constructors of well-typed weakenings *)
+
+Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
+
+Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
+  {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
+
+Definition wk_up {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,  A⟨ρ⟩) ≤ (Δ ,, A) :=
+  {| wk := _wk_up ρ ; well_wk := well_up A ρ ρ |}.
+
+Definition wk_id {Γ} : Γ ≤ Γ :=
+  {| wk := _wk_id Γ ; well_wk := well_wk_id Γ |}.
+
+Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
+  {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
+Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
 
 
 (** ** The ubiquitous operation of adding one variable at the end of a context *)
@@ -259,6 +262,13 @@ Section RenWhnf.
     now eapply whne_ren.
   Qed.
 
+  Lemma isPair_ren f : isPair f -> isPair (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
   Lemma isCanonical_ren t : isCanonical t <~> isCanonical (t⟨ρ⟩).
   Proof.
     split.
@@ -290,6 +300,11 @@ Section RenWlWhnf.
   Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
+  Qed.
+
+  Lemma isPair_ren_wl f : isPair f -> isPair (f⟨ρ⟩).
+  Proof.
+    apply isPair_ren. 
   Qed.
 
   Lemma isCanonical_ren_wl t : isCanonical t <~> isCanonical (t⟨ρ⟩).
@@ -341,6 +356,20 @@ Ltac bsimpl := check_no_evars;
 
 (** Lemmas for easier rewriting *)
 
+Lemma subst_ren_wk_up {Γ Δ P A n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_subst_mixed {Γ Δ P n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P[n⟨ρ⟩ .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_ren_subst {Γ Δ Ξ P A n}  (ρ : Γ ≤ Δ) (ρ' : Δ ≤ Ξ) : 
+  P[n .: ρ ∘w ρ' >> tRel] = P⟨wk_up A ρ'⟩[n .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma wk_comp_ren_on {Γ Δ Ξ} (H : term) (ρ1 : Γ ≤ Δ) (ρ2 : Δ ≤ Ξ) :
+  H⟨ρ2⟩⟨ρ1⟩ = H⟨ρ1 ∘w ρ2⟩.
+Proof. now bsimpl. Qed.
+
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
 
@@ -361,3 +390,18 @@ Lemma wk_elimSuccHypTy {P Γ Δ} A (ρ : Δ ≤ Γ) :
 Proof.
   unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
 Qed.
+
+Lemma wk_prod {A B Γ Δ} (ρ : Δ ≤ Γ) : tProd A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tProd A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_sig {A B Γ Δ} (ρ : Δ ≤ Γ) : tSig A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tSig A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_pair {A B a b Γ Δ} (ρ : Δ ≤ Γ) : tPair A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ b⟨ρ⟩ = (tPair A B a b)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_fst {p Γ Δ} (ρ : Δ ≤ Γ) : tFst p⟨ρ⟩ = (tFst p)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
+Proof. now cbn. Qed.

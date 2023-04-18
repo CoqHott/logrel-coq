@@ -32,6 +32,11 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tEmpty => T = U
     | tEmptyElim P e =>
       [× T = P[e..], [Γ,, tEmpty |- P] & [Γ |- e : tEmpty]]
+    | tSig A B => [× T = U, [Γ |- A : U] & [Γ ,, A |- B : U]]
+    | tPair A B a b =>
+     [× T = tSig A B, [Γ |- A], [Γ,, A |- B], [Γ |- a : A] & [Γ |- b : B[a..]]]
+    | tFst p => ∑ A B, T = A × [Γ |- p : tSig A B]
+    | tSnd p => ∑ A B, T = B[(tFst p)..] × [Γ |- p : tSig A B]
   end.
 
 Lemma termGen Γ t A :
@@ -56,10 +61,19 @@ Proof.
   split ; now econstructor.
 Qed.
 
-(** ** Stability by weakening *)
+Lemma sig_ty_inv Γ A B :
+  [Γ |- tSig A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as (?&[-> ]&_).
+  split ; now econstructor.
+Qed.
 
-Lemma subst_ren_wk_up {Γ Δ P A} {ρ : Γ ≤ Δ}: forall n, P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
-Proof. intros; now bsimpl. Qed.
+
+(** ** Stability by weakening *)
 
 Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
 Proof. now asimpl. Qed.
@@ -92,6 +106,9 @@ Section TypingWk.
       now constructor.
     - intros; now constructor.
     - intros; now constructor.
+    - intros ?????? ih ** ; rewrite <- wk_sig.
+      constructor; eauto.
+      eapply ih; constructor; eauto.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -140,6 +157,21 @@ Section TypingWk.
       erewrite subst_ren_wk_up; eapply wfTermEmptyElim.
       * eapply ihP; econstructor; tea; now econstructor.
       * now eapply ihe.
+    - intros ???? ih1 ? ih2 ** ; rewrite <- wk_sig; cbn.
+      constructor.
+      1: now eapply ih1.
+      eapply ih2 ; constructor; eauto.
+      now constructor.
+    - intros ?????? ihA ? ihB ? iha ? ihb **.
+      rewrite <- wk_sig; rewrite <- wk_pair.
+      constructor; eauto.
+      1: eapply ihB; constructor; eauto.
+      rewrite <- subst_ren_wk_up. 
+      now eapply ihb.
+    - intros; cbn; econstructor; eauto.
+    - intros ????? ih **.
+      unshelve erewrite subst_ren_wk_up; tea.
+      econstructor; now eapply ih.
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -152,6 +184,9 @@ Section TypingWk.
       + eapply IHBB' with (ρ := wk_up _ ρ).
         econstructor ; tea.
         now eapply IHA.
+    - intros ?????????? ih **.
+      do 2 rewrite <- wk_sig; constructor; eauto.
+      eapply ih; constructor; eauto.
     - intros * _ IHA ? ρ ?.
       eapply TypeRefl.
       now eapply IHA.
@@ -242,6 +277,27 @@ Section TypingWk.
       eapply TermEmptyElimCong.
       * eapply ihP; constructor; tea; now constructor.
       * now eapply ihe.
+    - intros * ????? ih ** ; do 2 rewrite <- wk_sig.
+      constructor; eauto.
+      eapply ih; constructor; tea; constructor; eauto.
+    - intros * ??? ihB **. rewrite <- wk_sig.
+      constructor; eauto.
+      1: eapply ihB; constructor; eauto.
+      1,2: rewrite wk_sig; eauto.
+      rewrite wk_fst, <- subst_ren_wk_up; eauto.
+    - intros * ? ih **. econstructor; now eapply ih.
+    - intros * ??? ihB ** ; rewrite <- wk_fst; rewrite <- wk_pair; constructor; eauto.
+      1: eapply ihB; constructor; eauto.
+      rewrite <- subst_ren_wk_up; eauto.
+    - intros * ? ih **.
+      unshelve erewrite subst_ren_wk_up; tea; cbn.
+      econstructor; now eapply ih.
+    - intros * ??? ihB **. 
+      rewrite <- wk_snd; rewrite <- wk_pair.
+      unshelve erewrite subst_ren_wk_up.
+      2:constructor; eauto.
+      1: eapply ihB; constructor; eauto.
+      rewrite <- subst_ren_wk_up; eauto.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -475,6 +531,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - now do 2 econstructor.
   - now repeat econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
@@ -499,9 +556,12 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now econstructor.
+  - intros.
+    now econstructor.
   - now do 2 econstructor.
   - now do 2 econstructor.
   - now econstructor.
+  - intros. econstructor; tea.
   - now do 2 econstructor.
   Qed.
 
@@ -519,6 +579,8 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - now econstructor.
   - now econstructor.
+  - now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
@@ -529,26 +591,42 @@ Module DeclarativeTypingProperties.
   - intros. now eapply boundary_red_tm_l.
   - intros; split.
     + repeat (econstructor; tea).
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; split.
     + repeat (econstructor; tea).
       now eapply boundary_tm_ctx.
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; split.
     + repeat (econstructor; tea).
-    + eapply redSuccAlg; [constructor|reflexivity].
+    + eapply redalg_one_step; constructor.
     + now constructor.
   - intros; now eapply redtmdecl_app.
-  - intros ?????????? []?; split.
+  - intros * ??? []; split.
     + repeat (constructor; tea).
     + now eapply redalg_natElim.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
-  - intros ?????? []?; split.
+  - intros * ? []; split.
     + repeat (constructor; tea).
     + now eapply redalg_natEmpty.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
+  - intros; split; refold.
+    + econstructor; now constructor.
+    + eapply redalg_one_step; constructor.
+    + now constructor.
+  - intros * [? r ?]; split; refold.
+    + now econstructor.
+    + now apply redalg_fst.
+    + now econstructor.
+  - intros; split; refold.
+    + econstructor; now constructor.
+    + eapply redalg_one_step; constructor.
+    + now constructor.
+  - intros * [? r ?]; split; refold.
+    + now econstructor.
+    + now apply redalg_snd.
+    + now econstructor.
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.

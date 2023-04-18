@@ -4,8 +4,8 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
   GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
 From LogRel Require Import LogicalRelation Validity Fundamental DeclarativeSubst.
-From LogRel.LogicalRelation Require Import Escape Neutral Induction.
-From LogRel.Substitution Require Import Escape.
+From LogRel.LogicalRelation Require Import Escape Irrelevance Neutral Induction NormalRed.
+From LogRel.Substitution Require Import Escape Poly.
 
 Set Printing Primitive Projection Parameters.
 
@@ -21,6 +21,7 @@ Section TypeConstructors.
       | NatType, NatType => True
       | EmptyType, EmptyType => True
       | NeType _, NeType _ => [Γ |- T ≅ T' : U]
+      | @SigType A B, @SigType A' B' => [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B']
       | _, _ => False
     end.
 
@@ -55,6 +56,10 @@ Section TypeConstructors.
       now constructor.
     - destruct Hconv as [red].
       eexists ; split.
+      1: apply red.
+      now constructor.
+    - destruct Hconv as [?? red].
+      eexists; split.
       1: apply red.
       now constructor.
   Qed.
@@ -94,58 +99,32 @@ Section TypeConstructors.
       + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
       + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
       + apply ty_ne_whne in ne, ne'; inversion ne.
+      + apply ty_ne_whne in ne, ne'; inversion ne.
+      + apply ty_ne_whne in ne, ne'; inversion ne.
       + destruct nfT'.
         * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
         * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
         * apply ty_ne_whne in ne, ne'; inversion ne'.
-        * apply ty_ne_whne in ne, ne'; inversion ne'; gen_typing.
-        * apply ty_ne_whne in ne, ne'. inversion ne.
-      + destruct nfT'.
-        * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
-        * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
         * apply ty_ne_whne in ne, ne'; inversion ne'.
         * apply ty_ne_whne in ne, ne'; inversion ne'; gen_typing.
         * apply ty_ne_whne in ne, ne'. cbn. gen_typing.
     - assert [|- Γ] by (apply escape in HT' ; boundary).
-      rewrite <- (PiRedTyPack.pack_beta ΠA ΠAad) in *.
-      remember (PiRedTyPack.pack ΠA ΠAad) as ΠA' eqn:Heq in *.
+      rewrite <- (ParamRedTy.beta_pack ΠAad) in *.
+      remember (ParamRedTy.from ΠAad) as ΠA' eqn:Heq in *.
       clear ΠA ΠAad Heq.
       destruct ΠA' as [dom cod red], Hconv as [dom' cod' red'] ; cbn in *.
       assert (T = tProd dom cod) as HeqT by (apply red_whnf ; gen_typing). 
       assert (T' = tProd dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
       destruct nfT.
-      1,3,4: congruence.
+      1,3,4,5: congruence.
       2: subst ; exfalso ; gen_typing.
       destruct nfT'.
-      1,3,4: congruence.
+      1,3,4,5: congruence.
       2: subst ; exfalso ; gen_typing.
       inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
       cbn.
-      assert [Γ |-[ de ] dom' ≅ dom].
-      {
-        symmetry.
-        replace dom with (dom⟨wk_id (Γ := Γ)⟩) by now bsimpl.
-        replace dom' with (dom'⟨wk_id (Γ := Γ)⟩) by now bsimpl.
-        now unshelve now eapply LogicalRelation.Escape.escapeEq.
-      }
-      split ; tea.
-      replace cod with (cod[tRel 0 .: (wk1 (Γ := Γ) dom') >> tRel ])
-        by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-      replace cod' with (cod'[tRel 0 .: (wk1 (Γ := Γ) dom') >> tRel ])
-        by (bsimpl ; rewrite scons_eta' ; now bsimpl).
-      assert [ |-[ de ] Γ,, dom'].
-      {
-        econstructor ; tea.
-        eapply prod_ty_inv.
-        now gen_typing.
-      }
-      (unshelve now eapply LogicalRelation.Escape.escapeEq) ; tea.
-      apply neuTerm.
-      1: econstructor; reflexivity.
-      2: econstructor.
-      1,2: eapply wfTermConv.
-      2,4: eapply typing_wk; tea.
-      1,2: rewrite wk1_ren_on; constructor; tea; constructor.
+      destruct (polyRedEqId (normRedΠ0 (invLRΠ HT')) (PolyRedEqSym _ polyRed0)).
+      split; now escape.
     - destruct Hconv.
       assert (T' = tNat) as HeqT' by (eapply redtywf_whnf ; gen_typing).
       assert (T = tNat) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
@@ -162,6 +141,23 @@ Section TypeConstructors.
         * econstructor.
         * exfalso; subst; inversion w.
       + exfalso; subst; inversion w.
+    - assert [|- Γ] by (apply escape in HT' ; boundary).
+      rewrite <- (ParamRedTy.beta_pack ΣAad) in *.
+      remember (ParamRedTy.from ΣAad) as ΣA' eqn:Heq in *.
+      clear ΣA ΣAad Heq.
+      destruct ΣA' as [dom cod red], Hconv as [dom' cod' red'] ; cbn in *.
+      assert (T = tSig dom cod) as HeqT by (apply red_whnf ; gen_typing). 
+      assert (T' = tSig dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
+      destruct nfT.
+      1-4: congruence.
+      2: subst; inv_whne.
+      destruct nfT'.
+      1-4: congruence.
+      2: subst ; inv_whne.
+      inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
+      cbn.
+      destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed0)).
+      split; now escape.
   Qed.
 
   Corollary red_ty_compl_univ_l Γ T :
@@ -270,6 +266,41 @@ Section TypeConstructors.
     now eassumption.
   Qed.
 
+  Corollary red_ty_compl_sig_l Γ A B T :
+    [Γ |- tSig A B ≅ T] ->
+    ∑ A' B', [× [Γ |- T ⇒* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
+  Proof.
+    intros HT.
+    pose proof HT as HT'.
+    unshelve eapply red_ty_complete in HT as (T''&[? nfT]).
+    2: econstructor.
+    assert [Γ |- tSig A B ≅ T''] as Hconv by 
+      (etransitivity ; [eassumption|now eapply RedConvTyC]).
+    unshelve eapply ty_conv_inj in Hconv.
+    1: constructor.
+    1: assumption.
+    destruct nfT, Hconv.
+    do 2 eexists ; split.
+    all: eassumption.
+  Qed.
+  
+  Corollary red_ty_compl_sig_r Γ A B T :
+    [Γ |- T ≅ tSig A B] ->
+    ∑ A' B', [× [Γ |- T ⇒* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
+  Proof.
+    intros; eapply red_ty_compl_sig_l; now symmetry.
+  Qed.
+
+  Corollary sig_ty_inj Γ A B  A' B' :
+    [Γ |- tSig A B ≅ tSig A' B'] ->
+    [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B'].
+  Proof.
+    intros Hty.
+    unshelve eapply ty_conv_inj in Hty.
+    1-2: constructor.
+    now eassumption.
+  Qed.
+
 End TypeConstructors.
 
 Section Boundary.
@@ -313,12 +344,24 @@ Section Boundary.
     - intros; gen_typing.
     - intros.
       now eapply typing_subst1.
+    - intros; gen_typing.
+    - intros. now eapply sig_ty_inv.
+    - intros.
+      eapply typing_subst1.
+      + now econstructor.
+      + now eapply sig_ty_inv.
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
       eapply stability1.
       3: now symmetry.
       all: eassumption.
+    - intros * ? _ ? [] ? []; split.
+      1: gen_typing.
+      constructor; tea.
+      eapply stability1. 
+      3: now symmetry.
+      all: tea.
     - intros * ? [].
       split.
       all: now econstructor.
@@ -379,12 +422,39 @@ Section Boundary.
         assert [Γ |-[de] tEmpty ≅ tEmpty] by now constructor.
         1: eapply ty_emptyElim; tea; eapply ty_conv; tea. 
         * symmetry; now eapply typing_subst1.
+    - intros * ??? [] ? []; split; tea.
+      1: gen_typing.
+      constructor; tea.
+      eapply stability1.
+      3: symmetry; gen_typing.
+      all: gen_typing.
+    - intros * ? []; split; tea.
+      1: now eapply sig_ty_inv.
+      all: gen_typing.
+    - intros * ? _ ? _ ????; split; tea.
+      now do 2 econstructor.
+    - intros * ? []; split; tea.
+      1: eapply typing_subst1; [gen_typing| now eapply sig_ty_inv].
+      1: gen_typing.
+      econstructor. 1: now econstructor.
+      symmetry; eapply typing_subst1.
+      1: now eapply TermFstCong.
+      econstructor; now eapply sig_ty_inv.
+    - intros * ? _ ? _ ????.
+      assert [Γ |- tFst (tPair A B a b) : A] by now do 2 econstructor.
+      assert [Γ |- tFst (tPair A B a b) ≅ a : A] by now econstructor.
+      split.
+      + eapply typing_subst1; tea.
+      + now do 2 econstructor.
+      + econstructor; tea.
+        symmetry; eapply typing_subst1; tea.
+        now econstructor.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
-      split ; gen_typing.
-    - intros * ? [] ? [].
-      split ; gen_typing.
+      split; gen_typing.
+    - intros * ?[]?[].
+      split; gen_typing.
   Qed.
 
 End Boundary.
@@ -607,6 +677,28 @@ Proof.
     econstructor.
     1: now econstructor.
     now eapply IHHred.
+  - apply termGen' in Hty as [? [[?[?[->]]]]].
+    eapply TermConv; tea ; refold.
+    now econstructor.
+  - apply termGen' in Hty as [?[[?[?[-> h]]]]].
+    apply termGen' in h as [?[[->] u]].
+    destruct (sig_ty_inj _ _ _ _ _ u).
+    eapply TermConv; refold.
+    2: etransitivity;[|tea]; now symmetry.
+    econstructor; tea.
+  - apply termGen' in Hty as [? [[?[?[->]]]]].
+    eapply TermConv; tea ; refold.
+    now econstructor.
+  - apply termGen' in Hty as [?[[?[?[-> h]]]]].
+    apply termGen' in h as [?[[->] u]].
+    destruct (sig_ty_inj _ _ _ _ _ u).
+    assert [Γ |- B[(tFst (tPair A0 B a b))..] ≅ A].
+    1:{ etransitivity; tea. eapply typing_subst1; tea.
+      eapply TermConv; refold. 2: now symmetry.
+      eapply TermRefl; refold; gen_typing.
+    }
+    eapply TermConv; tea; refold.
+    now econstructor.
   Qed.
 
 
@@ -690,7 +782,7 @@ Lemma type_isType Γ A :
   isType A.
 Proof.
   intros [] ; refold.
-  1-4: econstructor.
+  1-5: econstructor.
   intros.
   now eapply Uterm_isType.
 Qed.
