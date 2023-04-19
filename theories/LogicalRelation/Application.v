@@ -1,6 +1,6 @@
 
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
+From LogRel Require Import Utils BasicAst Notations LContexts Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction NormalRed.
 
 Set Universe Polymorphism.
@@ -15,26 +15,26 @@ Context `{GenericTypingProperties}.
 Set Printing Primitive Projection Parameters.
 
 Section AppTerm.
-  Context {Γ t u F G l l' l''}
-    (hΠ : [Γ ||-Π<l> tProd F G])
-    {RF : [Γ ||-<l'> F]}
-    (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)])
-    (Ru : [Γ ||-<l'> u : F | RF])
-    (RGu : [Γ ||-<l''> G[u..]]).
+  Context {wl Γ t u F G l l' l''}
+    (hΠ : [Γ ||-Π<l> tProd F G]< wl >)
+    {RF : [Γ ||-<l'> F]< wl >}
+    (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)]< wl >)
+    (Ru : [Γ ||-<l'> u : F | RF]< wl >)
+    (RGu : [Γ ||-<l''> G[u..]]< wl >).
 
-  Lemma app_id : [Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu].
+  Lemma app_id : [Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
   Proof.
     assert (wfΓ := wfc_wft (escape RF)).
     replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
-    irrelevance0.  2: eapply (PiRedTm.app Rt).
+    irrelevance0.  2: unshelve eapply (PiRedTm.app Rt).
     cbn; now bsimpl.
     Unshelve. 1: eassumption.
     cbn; irrelevance0; tea; now bsimpl.
   Qed.
 
   Lemma appTerm0 :
-      [Γ ||-<l''> tApp t u : G[u..] | RGu]
-      × [Γ ||-<l''> tApp t u ≅ tApp (PiRedTm.nf Rt) u : G[u..] | RGu].
+      [Γ ||-<l''> tApp t u : G[u..] | RGu]< wl >
+      × [Γ ||-<l''> tApp t u ≅ tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
   Proof.
     eapply redwfSubstTerm.
     1: unshelve eapply app_id; tea.
@@ -46,13 +46,13 @@ Section AppTerm.
 
 End AppTerm.
 
-Lemma appTerm {Γ t u F G l}
-  (RΠ : [Γ ||-<l> tProd F G])
-  {RF : [Γ ||-<l> F]}
-  (Rt : [Γ ||-<l> t : tProd F G | RΠ])
-  (Ru : [Γ ||-<l> u : F | RF])
-  (RGu : [Γ ||-<l> G[u..]]) : 
-  [Γ ||-<l> tApp t u : G[u..]| RGu].
+Lemma appTerm {wl Γ t u F G l}
+  (RΠ : [Γ ||-<l> tProd F G]< wl >)
+  {RF : [Γ ||-<l> F]< wl >}
+  (Rt : [Γ ||-<l> t : tProd F G | RΠ]< wl >)
+  (Ru : [Γ ||-<l> u : F | RF]< wl >)
+  (RGu : [Γ ||-<l> G[u..]]< wl >) : 
+  [Γ ||-<l> tApp t u : G[u..]| RGu]< wl >.
 Proof.  
   unshelve eapply appTerm0.
   7:irrelevance.
@@ -62,33 +62,33 @@ Proof.
 Qed.
 
 
-Lemma appcongTerm {Γ t t' u u' F G l l'}
-  (RΠ : [Γ ||-<l> tProd F G]) 
-  {RF : [Γ ||-<l'> F]}
-  (Rtt' : [Γ ||-<l> t ≅ t' : tProd F G | RΠ])
-  (Ru : [Γ ||-<l'> u : F | RF])
-  (Ru' : [Γ ||-<l'> u' : F | RF])
-  (Ruu' : [Γ ||-<l'> u ≅ u' : F | RF ])
-  (RGu : [Γ ||-<l'> G[u..]])
+Lemma appcongTerm {wl Γ t t' u u' F G l l'}
+  (RΠ : [Γ ||-<l> tProd F G]< wl >) 
+  {RF : [Γ ||-<l'> F]< wl >}
+  (Rtt' : [Γ ||-<l> t ≅ t' : tProd F G | RΠ]< wl >)
+  (Ru : [Γ ||-<l'> u : F | RF]< wl >)
+  (Ru' : [Γ ||-<l'> u' : F | RF]< wl >)
+  (Ruu' : [Γ ||-<l'> u ≅ u' : F | RF ]< wl >)
+  (RGu : [Γ ||-<l'> G[u..]]< wl >)
    :
-    [Γ ||-<l'> tApp t u ≅ tApp t' u' : G[u..] | RGu].
+    [Γ ||-<l'> tApp t u ≅ tApp t' u' : G[u..] | RGu]< wl >.
 Proof.
   set (hΠ := invLRΠ RΠ); pose (RΠ' := LRPi' (normRedΠ0 hΠ)).
-  assert [Γ ||-<l> t ≅ t' : tProd F G | RΠ'] as [Rt Rt' ? eqApp] by irrelevance.
+  assert [Γ ||-<l> t ≅ t' : tProd F G | RΠ']< wl > as [Rt Rt' ? eqApp] by irrelevance.
   set (h := invLRΠ _) in hΠ.
   epose proof (e := redtywf_whnf (PiRedTyPack.red h) whnf_tProd); 
   symmetry in e; injection e; clear e; 
   destruct h as [?????? domRed codRed codExt] ; clear RΠ Rtt'; 
   intros; cbn in *; subst. 
-  assert (wfΓ : [|-Γ]) by gen_typing.
-  assert [Γ ||-<l> u' : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ] by irrelevance.
-  assert [Γ ||-<l> u : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ] by irrelevance.
-  assert (RGu' : [Γ ||-<l> G[u'..]]).
+  assert (wfΓ : [|-Γ]< wl >) by gen_typing.
+  assert [Γ ||-<l> u' : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ]< wl > by irrelevance.
+  assert [Γ ||-<l> u : F⟨@wk_id Γ⟩ | domRed _ (@wk_id Γ) wfΓ]< wl > by irrelevance.
+  assert (RGu' : [Γ ||-<l> G[u'..]]< wl >).
   1:{
     replace G[u'..] with G[u' .: @wk_id Γ >> tRel] by now bsimpl.
     now eapply (codRed _ u' (@wk_id Γ)).
   }
-  assert (RGuu' : [Γ ||-<l>  G [u'..] ≅ G[u..]  | RGu']).
+  assert (RGuu' : [Γ ||-<l>  G [u'..] ≅ G[u..]  | RGu']< wl >).
   1:{
     replace G[u..] with G[u .: @wk_id Γ >> tRel] by now bsimpl.
     irrelevance0.

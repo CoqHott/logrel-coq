@@ -42,7 +42,7 @@ when showing symmetry or transitivity of the logical relation. *)
 
   Lemma red_whnf@{i j k l} {wl Γ A lA eqTyA redTmA eqTmA}
     (lrA : LogRel@{i j k l} lA wl Γ A eqTyA redTmA eqTmA) : 
-    ∑ nf, [Γ |- A :⇒*: nf]< wl > × whnf wl nf.
+    ∑ nf, [Γ |- A :⇒*: nf]< wl > × whnf nf.
   Proof.
     destruct lrA as [??? []| ??? [] | ??? []| ??? [] | ??? [] | ??? []];
       eexists; split; tea; constructor; tea.
@@ -51,7 +51,7 @@ when showing symmetry or transitivity of the logical relation. *)
 
   Lemma eqTy_red_whnf@{i j k l} {wl Γ A lA eqTyA redTmA eqTmA B}
     (lrA : LogRel@{i j k l} lA wl Γ A eqTyA redTmA eqTmA) : 
-    eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf]< wl > × whnf wl nf.
+    eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf]< wl > × whnf nf.
   Proof.
     destruct lrA as [??? []| ???[] | ???[]| ???[] | ???[] | ???[]] ; intros []; eexists; split; tea; constructor; tea.
     now eapply ty_ne_whne.

@@ -259,14 +259,14 @@ Section Inversions.
     `{!TypeNeProperties}.
 
   Lemma invLR {wl Γ l A A'}
-    (lr : [Γ ||-<l> A]< wl >) (r : [A ⇒* A']< wl >) (w : isType wl A') :
+    (lr : [Γ ||-<l> A]< wl >) (r : [A ⇒* A']< wl >) (w : isType A') :
     match w return Type with
-    | UnivType _ => [Γ ||-U<l> A]< wl >
-    | ProdType _ => [Γ ||-Π<l> A]< wl >
-    | NatType _ => [Γ ||-Nat A]< wl >
-    | BoolType _ => [Γ ||-Bool A]< wl >
-    | EmptyType _ => [Γ ||-Empty A]< wl >
-    | NeType _ _ => [Γ ||-ne A]< wl >
+    | UnivType => [Γ ||-U<l> A]< wl >
+    | ProdType => [Γ ||-Π<l> A]< wl >
+    | NatType => [Γ ||-Nat A]< wl >
+    | BoolType => [Γ ||-Bool A]< wl >
+    | EmptyType => [Γ ||-Empty A]< wl >
+    | NeType _ => [Γ ||-ne A]< wl >
     end.
   Proof.
     revert A' r w.
@@ -283,7 +283,7 @@ Section Inversions.
       exfalso.
       gen_typing.
     - intros * ? A' red whA.
-      enough ({w' & whA = NeType _ w'}) as [? ->] by easy.
+      enough ({w' & whA = NeType w'}) as [? ->] by easy.
       destruct neA as [A'' redA neA''].
       apply ty_ne_whne in neA''.
       assert (A' = A'') as <-.
@@ -329,19 +329,19 @@ Section Inversions.
   Lemma invLRU {wl Γ l} : [Γ ||-<l> U]< wl > -> [Γ ||-U<l> U]< wl >.
   Proof.
     intros.
-    now unshelve eapply (invLR _ redIdAlg (UnivType wl)).
+    now unshelve eapply (invLR _ redIdAlg (UnivType)).
   Qed.
 
-  Lemma invLRne {wl Γ l A} : whne wl A -> [Γ ||-<l> A]< wl > -> [Γ ||-ne A]< wl >.
+  Lemma invLRne {wl Γ l A} : whne A -> [Γ ||-<l> A]< wl > -> [Γ ||-ne A]< wl >.
   Proof.
     intros.
-    now unshelve eapply  (invLR _ redIdAlg (NeType _ _)).
+    now unshelve eapply  (invLR _ redIdAlg (NeType _)).
   Qed.
 
   Lemma invLRΠ {wl Γ l dom cod} : [Γ ||-<l> tProd dom cod]< wl > -> [Γ ||-Π<l> tProd dom cod]< wl >.
   Proof.
     intros.
-    now unshelve eapply  (invLR _ redIdAlg (ProdType _)).
+    now unshelve eapply  (invLR _ redIdAlg (ProdType)).
   Qed.
 
   (* invLRNat is useless *)

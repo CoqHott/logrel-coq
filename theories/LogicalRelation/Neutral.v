@@ -1,3 +1,4 @@
+Require Import PeanoNat.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations LContexts Context NormalForms UntypedReduction Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Reflexivity Irrelevance Escape.
@@ -32,7 +33,7 @@ Proof.
 Defined.
 
 
-Lemma neElim {wl Γ l K} : [Γ ||-<l> K]< wl > -> whne wl K -> [Γ ||-ne K]< wl >.
+Lemma neElim {wl Γ l K} : [Γ ||-<l> K]< wl > -> whne K -> [Γ ||-ne K]< wl >.
 Proof.
   intros h; pattern l,wl,Γ,K,h; eapply LR_rect_TyUr;
   clear l wl Γ K h.
@@ -107,16 +108,42 @@ Proof.
 Qed.
 
 Record complete {l wl Γ A} (RA : [Γ ||-<l> A]< wl >) := {
-  reifyTyConv : forall B, [Γ ||-<l> A ≅ B | RA]< wl > -> Nf[Γ |- B]< wl >;
+  reifyTyConvN :
+    forall B,
+      [Γ ||-<l> A ≅ B | RA]< wl > -> nat ;
+  reifyTyConv :
+    forall B (convB : [Γ ||-<l> A ≅ B | RA]< wl >)
+           (wl' : wfLCon) (τ : wl' ≤ε wl)
+           (Ninfl : reifyTyConvN B convB  <= length wl'),
+        Nf[Γ |- B]< wl' > ;
   reflect : forall n n',
     Ne[Γ |- n : A]< wl > ->
     Ne[Γ |- n' : A]< wl > ->
     [Γ |- n : A]< wl > ->
     [Γ |- n' : A]< wl > ->
     [Γ |- n ~ n' : A]< wl > ->
-    [Γ ||-<l> n : A | RA]< wl > × [Γ ||-<l> n ≅ n' : A| RA]< wl >;
-  reify : forall a, [Γ ||-<l> a : A | RA]< wl > -> Nf[ Γ |- a : A]< wl >;
-}.
+    [Γ ||-<l> n : A | RA]< wl > × [Γ ||-<l> n ≅ n' : A| RA]< wl > ;
+  reifyN : forall a, [Γ ||-<l> a : A | RA]< wl > -> nat ;
+  reify : forall a (ha : [Γ ||-<l> a : A | RA]< wl >)
+                 (wl' : wfLCon) (τ : wl' ≤ε wl)
+                 (Ninfl : reifyN a ha  <= length wl'),
+                   Nf[ Γ |- a : A]< wl' > ;
+  }.
+
+(*Record complete  {l wl Γ A} (RA : [Γ ||-<l> A]< wl >) := {
+  reifyTyConv :
+    forall B (convB : [Γ ||-<l> A ≅ B | RA]< wl >),
+        Nf[Γ |- B]< wl > ;
+  reflect : forall n n',
+    Ne[Γ |- n : A]< wl > ->
+    Ne[Γ |- n' : A]< wl > ->
+    [Γ |- n : A]< wl > ->
+    [Γ |- n' : A]< wl > ->
+    [Γ |- n ~ n' : A]< wl > ->
+    [Γ ||-<l> n : A | RA]< wl > × [Γ ||-<l> n ≅ n' : A| RA]< wl > ;
+  reify : forall a (ha : [Γ ||-<l> a : A | RA]< wl >),
+      Nf[ Γ |- a : A]< wl > ;
+    }.*)
 
 Lemma complete_reflect_simpl {l wl Γ A} (RA : [Γ ||-<l> A]< wl >) (c : complete RA) :
   forall n, Ne[Γ |- n : A]< wl > -> [Γ |- n : A]< wl > -> [Γ |- n ~ n : A]< wl > -> [Γ ||-<l> n : A | RA]< wl >.
@@ -144,34 +171,48 @@ Qed.
 
 Lemma complete_U : forall l wl Γ A (RA : [Γ ||-U< l > A]< wl >), complete (LRU_ RA).
 Proof.
-intros l wl Γ A h0; split.
-- intros ? [].
-  eapply ty_nf_red, ty_nf_sort; gen_typing.
-- intros ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
-  assert [Γ |- A ≅ U]< wl > by (destruct h0; gen_typing); split.
-  2: unshelve econstructor.
-  1-3: now apply neU.
-  + eapply RedTyRecBwd, neu. 2,3: try gen_typing.
-    eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
-  + cbn. gen_typing.
-  + eapply RedTyRecBwd; apply neu. 2, 3: gen_typing.
-    eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
-  + eapply TyEqRecBwd. eapply neuEq. all: try gen_typing.
-    all: eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
-- intros a [a' Hr Ha].
-  assert ([Γ |-[ ta ] U ≅ A]< wl >).
-  { destruct h0; gen_typing. }
-  eapply tm_nf_conv; [|eassumption].
-  + eapply tm_nf_red; [eapply tmr_wf_red|]; eassumption.
+  intros l wl Γ A h0.
+  unshelve econstructor.
+  - exact (fun _ _ => 0).
+  - exact (fun _ _ => 0).
+  - intros ? [] ???.
+    eapply ty_nf_red, ty_nf_sort ; gen_typing.
+  - intros ?? ???? h; pose proof (lrefl h); pose proof (urefl h).
+    assert [Γ |- A ≅ U]< wl > by (destruct h0; gen_typing); split.
+    2: unshelve econstructor.
+    1-3: now apply neU.
+    + eapply RedTyRecBwd, neu. 2,3: try gen_typing.
+      eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
+    + cbn. gen_typing.
+    + eapply RedTyRecBwd; apply neu. 2, 3: gen_typing.
+      eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
+    + eapply TyEqRecBwd. eapply neuEq. all: try gen_typing.
+      all: eapply ty_ne_term, tm_ne_conv; tea; gen_typing.
+  - intros a [a' Hr Ha] ???.
+    assert ([Γ |-[ ta ] U ≅ A]< wl >).
+    { destruct h0; gen_typing. }
+    eapply tm_nf_conv ; try easy.
+    + eapply tm_nf_red; [eapply tmr_wf_red|].
+      gen_typing.
+      eapply tm_nf_red.
+      now gen_typing.
+      eapply tm_nf_Ltrans ; [ | eassumption].
+      assumption.
+    + eapply convty_Ltrans ; [ | eassumption].
+      assumption.
 Qed.
 
 Lemma complete_ne : forall l wl Γ A (RA : [Γ ||-ne A]< wl >), complete (LRne_ l RA).
 Proof.
-intros l wl Γ A h0; split.
-- intros ? [].
-  eapply ty_nf_red; [|now apply ty_ne_nf].
-  gen_typing.
-- destruct h0 as [B []]; intros ** ; assert ([Γ |- A ≅ B]< wl >) by gen_typing ; split.
+  intros l wl Γ A h0. unshelve econstructor.
+  - exact (fun _ _ => 0).
+  - exact (fun _ _ => 0).
+  - intros ? [] ???.
+    eapply ty_nf_red.
+    eapply redty_Ltrans ; try now destruct red.
+    now eapply ty_nf_Ltrans ; try now apply ty_ne_nf.
+  - destruct h0 as [B []]; intros ** ; assert ([Γ |- A ≅ B]< wl >) by gen_typing ;
+      split.
   + exists n; cbn.
     * eapply redtmwf_refl ; gen_typing.
     * now eapply tm_ne_conv.
@@ -180,17 +221,19 @@ intros l wl Γ A h0; split.
     1,2: eapply redtmwf_refl ; eapply ty_conv; gen_typing.
     1,2: now eapply tm_ne_conv.
     gen_typing.
-- intros a [a' Hr Hne].
+- intros a [a' Hr Hne] ???.
   assert ([Γ |-[ ta ] neRedTy.ty h0 ≅ A]< wl >).
   { destruct h0; simpl in *; symmetry.
     eapply convty_exp; [now apply tyr_wf_red| |].
     all: gen_typing. }
+  eapply tm_nf_Ltrans.
+  eassumption.
   eapply tm_nf_conv; [|eassumption].
   + eapply tm_nf_red; [now apply tmr_wf_red|].
     now apply tm_ne_nf.
 Qed.
 
-Lemma complete_Pi : forall l wl Γ A (RA : [Γ ||-Π< l > A]< wl >),
+(*Lemma complete_Pi : forall l wl Γ A (RA : [Γ ||-Π< l > A]< wl >),
   (forall (Δ : context) (wl' : wfLCon) (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
           (Ninfl : (PiRedTyPack.domN RA) <= length wl')
           (h : [ |-[ ta ] Δ]< wl' >),
@@ -207,11 +250,86 @@ Lemma complete_Pi : forall l wl Γ A (RA : [Γ ||-Π< l > A]< wl >),
   complete (LRPi' RA).
 Proof.
   intros l wl Γ A ΠA0 ihdom ihcod.
-  split.
-- intros B ΠB.
-  assert (tΓ : [|- Γ]< wl >) by (destruct ΠA0; gen_typing).
-  eapply ty_nf_red; [apply tyr_wf_red, ΠB|].
+  unshelve esplit.
+  - intros B ΠB.
+    exact (max (PiRedTyPack.domN ΠA0) (PiRedTyEq.domN ΠB)).
+  - admit.
+  - intros B ΠB ???.
+    assert (tΓ : [|- Γ]< wl >) by (destruct ΠA0; gen_typing).
+(*      eapply ty_nf_red ; try now apply tyr_wf_red, ΠB.
+    
+    eapply ty_nf_prod.
+    * Search le minus 0.
+      remember (max (PiRedTyPack.domN ΠA0) (PiRedTyEq.domN ΠB) - length wl) as m.
+      revert wl tΓ ΠA0 ΠB ihdom ihcod Heqm.
+      induction m ; intros.
+      unshelve eapply ihdom.
+      -- exact wk_id.
+      -- now eapply wfLCon_le_id.
+      -- eapply Nat.max_lub_l.
+         eapply Nat.sub_0_le.
+         now erewrite <- Heqm.
+      -- assumption.
+      -- erewrite <- wk_id_ren_on; eapply (PiRedTyEq.domRed ΠB).
+         eapply Nat.max_lub_r.
+         eapply Nat.sub_0_le.
+         now erewrite <- Heqm.
+      -- assert (ty_nf_ϝ : forall A n (ne : not_in_LCon (pi1 wl) n), 
+                    Nf[ Γ |- A ]< wl ,,l (ne, true) > ->
+                    Nf[ Γ |- A ]< wl ,,l (ne, false) > ->
+                    Nf[ Γ |- A ]< wl > ).
+         admit.
+         assert (not_in_LCon wl 0) as Hyp.
+         admit.
+         unshelve eapply ty_nf_ϝ.
+         ++ exact 0.
+         ++ assumption.
+         ++ pose (test := IHm (wl,,l (Hyp, true))
+                            (wfc_Ltrans (LCon_le_step _ (wfLCon_le_id _)) tΓ)).
+            eapply test.
+         eapply Nat.sub_0_le.
+         generalize (PiRedTyEq.domN ΠB).
+         clear ihdom ihcod ΠA0 ΠB A B tΓ.
+         intro n.
+         remember (n - #|wl|) as m.
+         revert wl Heqm.
+         induction m.
+         
+         ++ reflexivity.
+         ++ intros.
+         (* Faire autant de splits que néccessaire pour que domN A et domN B
+            soient < length wl *)
+         eapply ty_nf_prod.
+
+  
+    unshelve refine (max (max (PiRedTyPack.domN ΠA0) (PiRedTyEq.domN ΠB)) _).
+    unshelve eapply ihdom.
+  - intros B ΠB.
+    exact (PiRedTyPack.domN ΠA0).
+  - cbn ; intros B ΠB * f Ninfl.
+    assert (tΓ : [|- Γ]< wl >) by (destruct ΠA0; gen_typing).*)
+    eapply ty_nf_red.
+    + eapply redty_Ltrans ; try easy.
+      apply tyr_wf_red, ΠB.
+    + eapply ty_nf_prod.
+      * destruct (ihdom Γ wl' (wk_id) τ (Nat.max_lub_l _ _ _ Ninfl) (wfc_Ltrans τ tΓ)).
+        cbn in *.
+        unshelve eapply ihdom.
+        -- exact wl'.
+        -- exact wk_id.
+        -- assumption.
+        -- now eapply Nat.max_lub_l.
+        -- now eapply wfc_Ltrans.
+        -- erewrite <- wk_id_ren_on.
+           eapply (PiRedTyEq.domRed ΠB) ; now eapply Nat.max_lub_r.
+        -- now eapply wfLCon_le_id.
+        -- cbn.
+            assert (forall (wl' : wfLCon) (τ : wl' ≤ε wl)
+                 (Ninfl : (PiRedTyPack.domN ΠA0) <= length wl'),
+                 [PiRedTyPack.domRed ΠA0 wk_id τ Ninfl (wfc_Ltrans τ tΓ) | Γ ||- (PiRedTyPack.dom ΠA0)⟨wk_id⟩ ≅ PiRedTyEq.dom ΠB]< wl >).
+  1: erewrite <- wk_id_ren_on; eapply (PiRedTyEq.domRed ΠB).
   eapply ty_nf_prod.
+  + now eapply ihdom.
   + unshelve eapply ihdom.
     * exact wk_id.
     * now eapply wfLCon_le_id.
@@ -416,5 +534,5 @@ Proof.
   1: now eapply completeness.
   apply LRTyEqRefl_.
 Qed.
-
+*)
 End Neutral.
