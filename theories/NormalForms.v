@@ -4,74 +4,80 @@ From LogRel Require Import Utils BasicAst Context LContexts.
 
 (** ** Weak-head normal forms and neutrals. *)
 
-Inductive whne (l : wfLCon) : term -> Type :=
-  | whne_tRel {v} : whne l (tRel v)
-  | whne_tApp {n t} : whne l n -> whne l (tApp n t)
-  | whne_tNatElim {P hz hs n} : whne l n -> whne l (tNatElim P hz hs n)
-  | whne_tBoolElim {P hz hs n} : whne l n -> whne l (tBoolElim P hz hs n)
-  | whne_tEmptyElim {P e} : whne l e -> whne l (tEmptyElim P e)
-  | whne_containsne {n t} : whne l t -> whne l (tAlpha (nSucc n t)).
+Inductive whne : term -> Type :=
+  | whne_tRel {v} : whne (tRel v)
+  | whne_tApp {n t} : whne n -> whne (tApp n t)
+  | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
+  | whne_tBoolElim {P hz hs n} : whne n -> whne (tBoolElim P hz hs n)
+  | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
+  | whne_containsne {n t} : whne t -> whne (tAlpha (nSucc n t)).
 
-Inductive alphawhne (l : wfLCon) : term -> Type :=
-  | alphawhne_base {n} : not_in_LCon (pi1 l) n -> alphawhne l (tAlpha (nat_to_term n))
-  | alphawhne_tApp {n t} : alphawhne l n -> alphawhne l (tApp n t)
-  | alphawhne_tNatElim {P hz hs n} : alphawhne l n -> alphawhne l (tNatElim P hz hs n)
-  | alphawhne_tBoolElim {P hz hs n} : alphawhne l n -> alphawhne l (tBoolElim P hz hs n)
-  | alphawhne_tEmptyElim {P e} : alphawhne l e -> alphawhne l (tEmptyElim P e)
-  | alphawhne_alpha {t} : alphawhne l t -> alphawhne l (tAlpha t).
+Inductive alphawhne (l : wfLCon) (n : nat) : term -> Type :=
+  | alphawhne_base :
+    not_in_LCon (pi1 l) n ->
+    alphawhne l n (tAlpha (nat_to_term n))
+  | alphawhne_tApp {t u} : alphawhne l n t -> alphawhne l n (tApp t u)
+  | alphawhne_tNatElim {P hz hs t} : alphawhne l n t -> alphawhne l n (tNatElim P hz hs t)
+  | alphawhne_tBoolElim {P hz hs t} :
+    alphawhne l n t ->
+    alphawhne l n (tBoolElim P hz hs t)
+  | alphawhne_tEmptyElim {P e} : alphawhne l n e -> alphawhne l n (tEmptyElim P e)
+  | alphawhne_alpha {t} : alphawhne l n t -> alphawhne l n (tAlpha t).
                                            
 
-Inductive whnf (l : wfLCon) : term -> Type :=
-  | whnf_tSort {s} : whnf l (tSort s)
-  | whnf_tProd {A B} : whnf l (tProd A B)
-  | whnf_tLambda {A t} : whnf l (tLambda A t)
-  | whnf_tNat : whnf l tNat
-  | whnf_tZero : whnf l tZero
-  | whnf_tSucc {n} : whnf l (tSucc n)
-  | whnf_tBool : whnf l tBool
-  | whnf_tTrue : whnf l tTrue
-  | whnf_tFalse : whnf l tFalse
-  | whnf_tEmpty : whnf l tEmpty
-  | whnf_whne {n} : whne l n -> whnf l n
-  | whnf_tAlpha {n} : alphawhne l n -> whnf l n.
+Inductive whnf : term -> Type :=
+  | whnf_tSort {s} : whnf (tSort s)
+  | whnf_tProd {A B} : whnf (tProd A B)
+  | whnf_tLambda {A t} : whnf (tLambda A t)
+  | whnf_tNat : whnf tNat
+  | whnf_tZero : whnf tZero
+  | whnf_tSucc {n} : whnf (tSucc n)
+  | whnf_tBool : whnf tBool
+  | whnf_tTrue : whnf tTrue
+  | whnf_tFalse : whnf tFalse
+  | whnf_tEmpty : whnf tEmpty
+  | whnf_whne {n} : whne n -> whnf n.
+(*  | whnf_tAlpha {n} : alphawhne l n -> whnf l n.*)
   
 #[global] Hint Constructors whne whnf : gen_typing.
 
 Ltac inv_whne :=
   repeat lazymatch goal with
-    | H : whne _ _ |- _ =>
-    try solve [inversion H] ; block H
+    | H : whne _ |- _ =>
+        try solve [inversion H] ; block H
+    | H : alphawhne _ _ _ |- _ =>
+        try solve [inversion H] ; block H
   end; unblock.
 
-Lemma neSort {l} s : whne l (tSort s) -> False.
+Lemma neSort s : whne (tSort s) -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma nePi {l} A B : whne l (tProd A B) -> False.
+Lemma nePi A B : whne (tProd A B) -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma neLambda {l} A t : whne l (tLambda A t) -> False.
+Lemma neLambda A t : whne (tLambda A t) -> False.
 Proof.
   inversion 1.
 Qed.
 
-Lemma containsnewhnf {l n} t : whne l t -> whnf l (nSucc n t).
+Lemma containsnewhnf {n} t : whne t -> whnf (nSucc n t).
 Proof.
   intro H.
   induction n ; cbn ; now econstructor.
 Qed.
 
 
-Lemma nenattoterm {l n} : whne l (nat_to_term n) -> False.
+Lemma nenattoterm {n} : whne (nat_to_term n) -> False.
 Proof.
   intro H.
   induction n ; cbn in * ; inversion H.
 Qed.
 
-Lemma containsnenattoterm {l n} : whne l (tAlpha (nat_to_term n)) -> False.
+Lemma containsnenattoterm {n} : whne (tAlpha (nat_to_term n)) -> False.
 Proof.
   intro H ; inversion H ; subst ; clear H.
   revert n0 H0.
@@ -87,7 +93,7 @@ Proof.
       now eapply tSucc_inj.
 Qed.
 
-Lemma whnfnattoterm {l} t : whnf l (nat_to_term t).
+Lemma whnfnattoterm t : whnf (nat_to_term t).
 Proof.
   induction t  ; cbn ; now econstructor.
 Qed.
@@ -96,54 +102,75 @@ Qed.
 
 (** ** Restricted classes of normal forms *)
 
-Inductive isType l : term -> Type :=
-  | UnivType {s} : isType l (tSort s)
-  | ProdType { A B} : isType l (tProd A B)
-  | NatType : isType l tNat
-  | BoolType : isType l tBool
-  | EmptyType : isType l tEmpty
-  | NeType {A}  : whne l A -> isType l A.
+Inductive isType : term -> Type :=
+  | UnivType {s} : isType (tSort s)
+  | ProdType { A B} : isType (tProd A B)
+  | NatType : isType tNat
+  | BoolType : isType tBool
+  | EmptyType : isType tEmpty
+  | NeType {A}  : whne A -> isType A.
 
-Inductive isPosType l : term -> Type :=
-  | UnivPos {s} : isPosType l (tSort s)
-  | NatPos : isPosType l tNat
-  | BoolPos : isPosType l tBool
-  | EmptyPos : isPosType l tEmpty
-  | NePos {A}  : whne l A -> isPosType l A.
+Inductive isPosType : term -> Type :=
+  | UnivPos {s} : isPosType (tSort s)
+  | NatPos : isPosType tNat
+  | BoolPos : isPosType tBool
+  | EmptyPos : isPosType tEmpty
+  | NePos {A}  : whne A -> isPosType A.
 
-Inductive isFun l : term -> Type :=
-  | LamFun {A t} : isFun l (tLambda A t)
-  | NeFun  {f} : whne l f -> isFun l f.
+Inductive isFun : term -> Type :=
+  | LamFun {A t} : isFun (tLambda A t)
+  | NeFun  {f} : whne f -> isFun f.
 
-Definition isPosType_isType {l} t (i : isPosType l t) : isType l t :=
+Definition isPosType_isType t (i : isPosType t) : isType t :=
   match i with
-    | UnivPos _ => UnivType _
-    | NatPos _ => NatType _
-    | BoolPos _ => BoolType _
-    | EmptyPos _ => EmptyType _
-    | NePos _ ne => NeType _ ne
+    | UnivPos => UnivType
+    | NatPos => NatType
+    | BoolPos => BoolType
+    | EmptyPos => EmptyType
+    | NePos ne => NeType ne
   end.
 
 Coercion isPosType_isType : isPosType >-> isType.
 
-Definition isType_whnf {l} t (i : isType l t) : whnf l t :=
+Definition isType_whnf t (i : isType t) : whnf t :=
   match i with
-    | UnivType _ => whnf_tSort _
-    | ProdType _ => whnf_tProd _
-    | NatType _ => whnf_tNat _
-    | BoolType _ => whnf_tBool _
-    | EmptyType _ => whnf_tEmpty _
-    | NeType _ ne => whnf_whne _ ne
+    | UnivType => whnf_tSort
+    | ProdType => whnf_tProd
+    | NatType => whnf_tNat
+    | BoolType => whnf_tBool
+    | EmptyType => whnf_tEmpty
+    | NeType ne => whnf_whne ne
   end.
 
 Coercion isType_whnf : isType >-> whnf.
 
-Definition isFun_whnf {l} t (i : isFun l t) : whnf l t :=
+Definition isFun_whnf t (i : isFun t) : whnf t :=
   match i with
-    | LamFun _ => whnf_tLambda _
-    | NeFun _ ne => whnf_whne _ ne
+    | LamFun => whnf_tLambda
+    | NeFun ne => whnf_whne ne
   end.
 
 Coercion isFun_whnf : isFun >-> whnf.
 
 #[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf : gen_typing.
+
+
+(*Lemma whne_Ltrans {l l' t} (f : l' ≤ε l) :
+  whne t -> whne l' t.
+Proof.
+  intro H ; induction H ; try now econstructor.
+Qed.*)
+
+
+Lemma alphawhne_Ltrans {l l' n t} (f : l' ≤ε l) :
+  alphawhne l n t -> not_in_LCon l' n -> alphawhne l' n t.
+Proof.
+  intros H notinl' ; induction H ; try now econstructor.
+Qed.
+
+Lemma alphawhne_notinLCon {l n t} :
+  alphawhne l n t -> not_in_LCon l n.
+Proof.
+  intro Hyp.
+  induction Hyp ; easy.
+Qed.

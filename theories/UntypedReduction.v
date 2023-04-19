@@ -66,11 +66,11 @@ Inductive RedClosureAlg {l} : term -> term -> Type :=
 (** *** Weak-head normal forms do not reduce *)
 
 Ltac inv_whne :=
-  match goal with | [ H : whne _ _ |- _ ] => inversion H
-             | [ H : alphawhne _ _ |- _ ] => inversion H end.
+  match goal with | [ H : whne _ |- _ ] => inversion H
+             | [ H : alphawhne _ _ _ |- _ ] => inversion H end.
 
 Lemma whne_nored {l} n u :
-  whne l n -> [ n ⇒ u]< l > -> False.
+  whne n -> [ n ⇒ u]< l > -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
@@ -88,40 +88,39 @@ Proof.
     * apply (IHn n0) ; now apply tSucc_inj.
 Qed.
 
-Lemma alphawhne_nored {l} n u :
-  alphawhne l n -> [ n ⇒ u]< l > -> False.
+Lemma alphawhne_nored {l n} t u :
+  alphawhne l n t -> [ t ⇒ u]< l > -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
   all: inversion ne ; subst ; clear ne.
   2: auto.
-  9:{ induction n0 ; now inversion red. }
+  9:{ induction n ; now inversion red. }
   all: try now inv_whne.
   - eapply notinLConnotinLCon.
     exact H0.
     rewrite (nattoterminj H) ; exact i.
-  - clear i. induction n ; cbn in *.
+  - clear i. induction n0 ; cbn in *.
     + now inv_whne.
     + now inv_whne.
 Qed.
 
 Lemma whnf_nored {l} n u :
-  whnf l n -> [n ⇒ u]< l > -> False.
+  whnf n -> [n ⇒ u]< l > -> False.
 Proof.
   intros nf red.
   induction red in nf |- *.
   2,3,6,7: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
   all: inversion nf; subst; try inv_whne; subst; try now inv_whne ; subst.
   - apply IHred. now eapply containsnewhnf.
-  - apply IHred.
-    now eapply whnfnattoterm.
-  - now eapply alphawhne_nored.
   - now eapply containsnenattoterm.
+(*  - now eapply whnfnattoterm.
+  - now eapply alphawhne_nored.
   - eapply notinLConnotinLCon.
     exact H1.
     rewrite (nattoterminj H0).
     exact i.
-  - induction n ; now inv_whne.
+  - induction n ; now inv_whne.*)
 Qed.
 
 (** *** Determinism of reduction *)
@@ -172,7 +171,7 @@ Proof.
       rewrite (nattoterminj H) in H0 ; assumption.
 Qed.
 
-Lemma red_whne {l} t u : [t ⇒* u]< l > -> whne l t -> t = u.
+Lemma red_whne {l} t u : [t ⇒* u]< l > -> whne t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -180,7 +179,15 @@ Proof.
   eauto using whne_nored.
 Qed.
 
-Lemma red_whnf {l} t u : [t ⇒* u]< l > -> whnf l t -> t = u.
+Lemma red_alphawhne {l n} t u : [t ⇒* u]< l > -> alphawhne l n t -> t = u.
+Proof.
+  intros [] ?.
+  1: reflexivity.
+  exfalso.
+  eauto using alphawhne_nored.
+Qed.
+
+Lemma red_whnf {l} t u : [t ⇒* u]< l > -> whnf t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -188,8 +195,29 @@ Proof.
   eauto using whnf_nored.
 Qed.
 
+Lemma whne_alphawhne_noconf {l n} t : whne t -> alphawhne l n t -> False.
+Proof.
+  intros whnet alphat.
+  induction whnet ; try (inversion alphat ; subst ; discriminate) ; try now inversion alphat.
+  inversion alphat ; subst.
+  - eapply containsnenattoterm.
+    rewrite H.
+    now econstructor.
+  - induction n0.
+    + easy.
+    + now inversion H0.
+Qed.
+  
+Lemma whnf_alphawhne_noconf {l n} t : whnf t -> alphawhne l n t -> False.
+Proof.
+  intros wht alphat.
+  inversion wht ; subst.
+  all: try (inversion alphat ; discriminate).
+  now eapply whne_alphawhne_noconf.
+Qed.
+  
 Lemma whred_red_det {l} t u u' :
-  whnf l u ->
+  whnf u ->
   [t ⇒* u]< l > -> [t ⇒* u']< l > ->
   [u' ⇒* u]< l >.
 Proof.
@@ -204,7 +232,7 @@ Proof.
 Qed.
 
 Corollary whred_det {l} t u u' :
-  whnf l u -> whnf l u' ->
+  whnf u -> whnf u' ->
   [t ⇒* u]< l > -> [t ⇒* u']< l > ->
   u = u'.
 Proof.
@@ -267,7 +295,50 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_Ltrans {l l' t t'} (f : l' ≤ε l) : [ t ⇒ t' ]< l > -> [ t ⇒ t' ]< l' >.
+Lemma red_Ltrans {l l' t t'} (f : l' ≤ε l) : [ t ⇒ t' ]< l > -> [ t ⇒ t' ]< l' >.
 Proof.
   intro H ; induction H ; try now econstructor.
 Qed.
+
+Lemma redalg_Ltrans {l l' t t'} (f : l' ≤ε l) : [ t ⇒* t' ]< l > -> [ t ⇒* t' ]< l' >.
+Proof.
+  intros H. induction H ; try now econstructor.
+  econstructor ; try eassumption.
+  now eapply red_Ltrans.
+Qed.
+
+
+Lemma red_Linversion {l l' t t'} (f : l' ≤ε l) (red : [ t ⇒ t' ]< l' >) :
+  ([ t ⇒ t' ]< l >) + (∑ n, alphawhne l n t).
+Proof.
+  induction red ; try (left ; now econstructor).
+  all: try (induction IHred as [ | [m Hyp]] ; [left | right ; exists m ] ; now econstructor).
+  case (decidInLCon l n) as [ [inl | inl] | notinl ].
+  + left ; econstructor.
+    erewrite uniqueinLCon ; try easy.
+    now destruct l'.
+  + left ; econstructor.
+    erewrite uniqueinLCon ; try easy.
+    now destruct l'.
+  + right.
+    exists n.
+    now econstructor.
+Qed.
+
+Lemma redalg_Linversion {l l' t t'} (f : l' ≤ε l) (red : [ t ⇒* t' ]< l' >) :
+  ([ t ⇒* t' ]< l >) + (∑ t'' , ∑ n, [ t ⇒* t'' ]< l > × alphawhne l n t'').
+Proof.
+  induction red.
+  - left ; now econstructor.
+  - destruct IHred as [ | [t'' [n [H1 H2]]]].
+    + case (red_Linversion f o) ; [intros Hyp | intros [n Hyp]].
+      * left ; now econstructor.
+      * right.
+        exists t ; exists n ; split ; easy.
+    + case (red_Linversion f o) ; [intros Hyp | intros [m Hyp]].
+      * right.
+        exists t'' ; exists n ; split ; try easy.
+        now econstructor.
+      * right.
+        exists t ; exists m ; split ; easy.
+Qed.        

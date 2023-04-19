@@ -38,13 +38,13 @@ Section RedDefinitions.
   Record TypeRedWhnf l (Γ : context) (A B : term) : Type :=
     {
       tyred_whnf_red :> [ Γ |- A ⇒* B ]< l > ;
-      tyred_whnf_whnf :> whnf l B
+      tyred_whnf_whnf :> whnf B
     }.
 
   Record TermRedWhnf l (Γ : context) (A t u : term) : Type :=
     {
       tmred_whnf_red :> [ Γ |- t ⇒* u : A ]< l > ;
-      tmred_whnf_whnf :> whnf l u
+      tmred_whnf_whnf :> whnf u
     }.
 
   Record TypeConvWf l (Γ : context) (A B : term) : Type :=
@@ -340,9 +340,9 @@ Section GenericTyping.
     convtm_eta {l Γ f g A B} :
       [ Γ |- A ]< l > ->
       [ Γ |- f : tProd A B ]< l > ->
-      isFun l f ->
+      isFun f ->
       [ Γ |- g : tProd A B ]< l > ->
-      isFun l g ->
+      isFun g ->
       [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ]< l > ->
       [ Γ |- f ≅ g : tProd A B ]< l > ;
     convtm_nat {l Γ} :
@@ -498,26 +498,34 @@ Section GenericValues.
     ty_ne_wk {l Γ Δ A} (ρ : Δ ≤ Γ) :
       [|- Δ]< l > -> Ne[Γ |- A]< l > -> Ne[Δ |- A⟨ρ⟩]< l >;
     ty_ne_nf {l Γ A} : Ne[Γ |- A]< l > -> Nf[Γ |- A]< l >;
-    ty_ne_whne {l Γ A} : Ne[Γ |- A]< l > -> whne l A;
+    ty_ne_whne {l Γ A} : Ne[Γ |- A]< l > -> whne A;
     ty_ne_term {l Γ A} : Ne[Γ |- A : U]< l > -> Ne[Γ |- A]< l >;
+    ty_ne_Ltrans {Γ l l' A} (f : l' ≤ε l) :
+    Ne[ Γ |- A ]< l > -> Ne[ Γ |- A ]< l' > ;
   }.
 
   Class TypeNfProperties := {
     ty_nf_wk {l Γ Δ A} (ρ : Δ ≤ Γ) :
-      [|- Δ]< l > -> Nf[Γ |- A]< l > -> Nf[Δ |- A⟨ρ⟩]< l >;
-    ty_nf_red {l Γ A B} : [Γ |- A ⇒* B]< l > -> Nf[Γ |- B]< l > -> Nf[Γ |- A]< l >;
-    ty_nf_sort {l Γ} : [|- Γ]< l > -> Nf[Γ |- U]< l >;
-    ty_nf_prod {l Γ A B} : Nf[Γ |- A]< l > -> Nf[Γ,, A |- B]< l > -> Nf[Γ |- tProd A B]< l >;
+      [|- Δ]< l > -> Nf[Γ |- A]< l > -> Nf[Δ |- A⟨ρ⟩]< l > ;
+    ty_nf_red {l Γ A B} : [Γ |- A ⇒* B]< l > ->
+                          Nf[Γ |- B]< l > -> Nf[Γ |- A]< l >;
+    ty_nf_sort {l Γ} : [|- Γ]< l > -> Nf[Γ |- U]< l > ;
+    ty_nf_prod {l Γ A B} :
+      Nf[Γ |- A]< l > ->
+      Nf[Γ,, A |- B]< l > ->
+      Nf[Γ |- tProd A B]< l > ;
     ty_nf_nat {l Γ} : [|- Γ]< l > -> Nf[Γ |- tNat]< l >;
     ty_nf_bool {l Γ} : [|- Γ]< l > -> Nf[Γ |- tBool]< l >;
     ty_nf_empty {l Γ} : [|- Γ]< l > -> Nf[Γ |- tEmpty]< l >;
+    ty_nf_Ltrans {Γ l l' A} (f : l' ≤ε l) :
+    Nf[ Γ |- A ]< l > -> Nf[ Γ |- A ]< l' > ;
    }.
 
   Class TermNeProperties := {
     tm_ne_wk {l Γ Δ n A} (ρ : Δ ≤ Γ) :
       [|- Δ ]< l > -> Ne[Γ |- n : A]< l > -> Ne[Δ |- n⟨ρ⟩ : A⟨ρ⟩]< l >;
     tm_ne_nf {l Γ n A} : Ne[Γ |- n : A]< l > -> Nf[Γ |- n : A]< l >;
-    tm_ne_whne {l Γ n A} : Ne[Γ |- n : A]< l > -> whne l n;
+    tm_ne_whne {l Γ n A} : Ne[Γ |- n : A]< l > -> whne n;
     tm_ne_conv {l Γ n A B} : Ne[Γ |- n : A]< l > -> [Γ |- A ≅ B]< l > -> Ne[Γ |- n : B]< l >;
     tm_ne_rel {l Γ A} : [Γ |- A]< l > -> Ne[Γ,, A |- tRel 0 : A⟨↑⟩]< l > ;
     tm_ne_app {l Γ n t A B} :
@@ -543,6 +551,12 @@ Section GenericValues.
     tm_ne_alpha {l Γ t n} :
       Ne[ Γ |- t : tNat ]< l > ->
       Ne[ Γ |- tAlpha (nSucc n t) : tBool ]< l > ;
+    tm_ne_Ltrans {Γ l l' t A} (f : l' ≤ε l) :
+      Ne[ Γ |- t : A ]< l > -> Ne[ Γ |- t : A ]< l' > ;
+    tm_ne_ϝ {l Γ u A n} {ne : not_in_LCon (pi1 l) n} : 
+        Ne[ Γ |- u : A ]< l ,,l (ne, true) > ->
+        Ne[ Γ |- u : A ]< l ,,l (ne, false) > ->
+        Ne[ Γ |- u : A ]< l > 
   }.
 
   Class TermNfProperties := {
@@ -558,8 +572,17 @@ Section GenericValues.
     tm_nf_bool {l Γ} : [|- Γ]< l > -> Nf[Γ |- tBool : U]< l >;
     tm_nf_true {l Γ} : [|- Γ]< l > -> Nf[Γ |- tTrue : tBool]< l > ;
     tm_nf_false {l Γ} : [|- Γ]< l > -> Nf[Γ |- tFalse : tBool]< l > ;
-    tm_nf_alpha {l Γ n} : [|- Γ]< l > -> alphawhne l n -> Nf[Γ |- tAlpha n : tBool]< l > ;                
+    (*tm_nf_alpha {l Γ n} :
+      [|- Γ]< l >
+      -> alphawhne l n ->
+      Nf[Γ |- tAlpha n : tBool]< l > ;*)                
     tm_nf_empty {l Γ} : [|- Γ]< l > -> Nf[Γ |- tEmpty : U]< l >;
+    tm_nf_Ltrans {Γ l l' t A} (f : l' ≤ε l) :
+        Nf[ Γ |- t : A ]< l > -> Nf[ Γ |- t : A ]< l' > ;
+    tm_nf_ϝ {l Γ u A n} {ne : not_in_LCon (pi1 l) n} : 
+        Nf[ Γ |- u : A ]< l ,,l (ne, true) > ->
+        Nf[ Γ |- u : A ]< l ,,l (ne, false) > ->
+        Nf[ Γ |- u : A ]< l > 
   }.
 
 End GenericValues.
@@ -605,7 +628,7 @@ Class GenericTypingProperties `(ta : tag)
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu ty_ne_term | 4 : gen_typing.
 (* Priority 6 *)
-#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_Ltrans redty_Ltrans redtm_conv | 6 : gen_typing.
 #[export] Hint Resolve ty_ne_nf ty_nf_red ty_ne_whne tm_ne_whne tm_ne_conv tm_nf_conv tm_nf_red | 6 : gen_typing.
 #[export] Hint Resolve tm_nf_prod tm_nf_lam tm_nf_nat tm_nf_zero tm_nf_succ tm_nf_empty | 6 : gen_typing.
 
@@ -1089,7 +1112,7 @@ Section GenericConsequences.
 
   (** *** Lifting determinism properties from untyped reduction to typed reduction. *)
 
-  Lemma redtm_whnf {l Γ t u A} : [Γ |- t ⇒* u : A]< l > -> whnf l t -> t = u.
+  Lemma redtm_whnf {l Γ t u A} : [Γ |- t ⇒* u : A]< l > -> whnf t -> t = u.
   Proof.
     intros.
     apply (red_whnf (l := l)).
@@ -1097,17 +1120,17 @@ Section GenericConsequences.
     assumption.
   Qed.
 
-  Lemma redtmwf_whnf {l Γ t u A} : [Γ |- t :⇒*: u : A]< l > -> whnf l t -> t = u.
+  Lemma redtmwf_whnf {l Γ t u A} : [Γ |- t :⇒*: u : A]< l > -> whnf t -> t = u.
   Proof.
     intros []; now eapply redtm_whnf.
   Qed.
 
-  Lemma redtmwf_whne {l Γ t u A} : [Γ |- t :⇒*: u : A]< l > -> whne l t -> t = u.
+  Lemma redtmwf_whne {l Γ t u A} : [Γ |- t :⇒*: u : A]< l > -> whne t -> t = u.
   Proof.
     intros ? ?%whnf_whne; now eapply redtmwf_whnf.
   Qed.
 
-  Lemma redty_whnf {l Γ A B} : [Γ |- A ⇒* B]< l > -> whnf l A -> A = B.
+  Lemma redty_whnf {l Γ A B} : [Γ |- A ⇒* B]< l > -> whnf A -> A = B.
   Proof.
     intros.
     apply (red_whnf (l := l)).
@@ -1115,18 +1138,18 @@ Section GenericConsequences.
     assumption.
   Qed.
 
-  Lemma redtywf_whnf {l Γ A B} : [Γ |- A :⇒*: B]< l > -> whnf l A -> A = B.
+  Lemma redtywf_whnf {l Γ A B} : [Γ |- A :⇒*: B]< l > -> whnf A -> A = B.
   Proof.
     intros []; now eapply redty_whnf.
   Qed.
 
-  Lemma redtywf_whne {l Γ A B} : [Γ |- A :⇒*: B]< l > -> whne l A -> A = B.
+  Lemma redtywf_whne {l Γ A B} : [Γ |- A :⇒*: B]< l > -> whne A -> A = B.
   Proof.
     intros ? ?%whnf_whne; now eapply redtywf_whnf.
   Qed.
 
   Lemma redtmwf_det l Γ t u u' A A' :
-    whnf l u -> whnf l u' ->
+    whnf u -> whnf u' ->
     [Γ |- t :⇒*: u : A]< l > -> [Γ |- t :⇒*: u' : A']< l > ->
     u = u'.
   Proof.
@@ -1136,7 +1159,7 @@ Section GenericConsequences.
   Qed.
 
   Lemma redtywf_det l Γ A B B' :
-    whnf l B -> whnf l B' ->
+    whnf B -> whnf B' ->
     [Γ |- A :⇒*: B]< l > -> [Γ |- A :⇒*: B']< l > ->
     B = B'.
   Proof.

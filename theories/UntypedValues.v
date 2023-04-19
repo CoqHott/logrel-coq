@@ -1,5 +1,6 @@
+Require Import Coq.Arith.EqNat.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction GenericTyping.
+From LogRel Require Import Utils BasicAst Notations LContexts Context NormalForms UntypedReduction Weakening GenericTyping.
 (*
 Unset Elimination Schemes.
 
@@ -186,13 +187,61 @@ Lemma isSNFun_ren l ρ t : isSNFun l t -> isSNFun l (t⟨ρ⟩).
 Proof.
 destruct 1; cbn; constructor; first [apply sne_ren|apply snf_ren]; assumption.
 Qed.
-*)
+ *)
+
+Inductive DTypeWhnf (l : wfLCon) (A : term) : Type :=
+| Typesnf (B : term) (red : [ A ⇒* B ]< l >) (typeB : isType B) :
+  DTypeWhnf l A
+| digammaTypeNf {n} {ne : not_in_LCon (pi1 l) n}
+    (leftHyp : DTypeWhnf (l ,,l (ne, true)) A)
+    (rightHyp : DTypeWhnf (l ,,l (ne, false)) A) :
+  DTypeWhnf l A.
+
+Inductive DTermWhnf (l : wfLCon) (t : term) : Type :=
+| Termsnf (u : term) (red : [ t ⇒* u ]< l >) (whnfu : whnf u) :
+  DTermWhnf l t
+| digammaTermNf {n} {ne : not_in_LCon (pi1 l) n}
+    (leftHyp : DTermWhnf (l ,,l (ne, true)) t)
+    (rightHyp : DTermWhnf (l ,,l (ne, false)) t) :
+  DTermWhnf l t.
+
+Lemma DTermWhnf_Ltrans {l l' t} (f : l' ≤ε l) : DTermWhnf l t -> DTermWhnf l' t.
+Proof.
+  intro Hyp.
+  revert l' f.
+  induction Hyp ; intros.
+  - eapply Termsnf ; try eassumption.
+    now eapply redalg_Ltrans.
+  - case (decidInLCon l' n) as [ [inl' | inl'] | notinl'].
+    + eapply IHHyp1.
+      now eapply LCon_le_in_LCon.
+    + eapply IHHyp2.
+      now eapply LCon_le_in_LCon.
+    + eapply (@digammaTermNf _ _ _ notinl' ).
+      * eapply IHHyp1.
+        now apply LCon_le_up.
+      * eapply IHHyp2.
+        now apply LCon_le_up.
+Qed.
+
+(*Lemma DTermWhnf_BackLtrans {l n b} {ne :  not_in_LCon (pi1 l) n} {t u} :
+  [ t ⇒* u ]< l > -> DTermWhnf (l ,,l (ne , b)) t -> DTermWhnf l t.
+Proof.
+  intros red WH.
+  revert red.
+  remember (l ,,l (ne,b)).
+  induction WH ; subst.
+  - *)
+
+  
 Module WeakValuesData.
 
-#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne l A.
-#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := fun l Γ A => ∑ B, [ A ⇒* B ]< l > × isType l B.
-#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne l t.
-#[export] Instance TermWhnf {ta} : Notations.TermNf ta := fun l Γ A t => ∑ u, [ t ⇒* u ]< l > × whnf l u.
+#[export] Instance TypeWhne {ta} : Notations.TypeNe ta := fun l Γ A => whne A.
+#[export] Instance TypeWhnf {ta} : Notations.TypeNf ta := 
+  fun l Γ A => DTypeWhnf l A. (*∑ B, [ A ⇒* B ]< l > × isType l B.*)
+#[export] Instance TermWhne {ta} : Notations.TermNe ta := fun l Γ A t => whne t.
+#[export] Instance TermWhnf {ta} : Notations.TermNf ta :=
+  fun l Γ A t => DTermWhnf l t. (* ∑ u, [ t ⇒* u ]< l > × whnf l u.*)
 
 End WeakValuesData.
 
@@ -211,28 +260,67 @@ Section Properties.
   Proof.
   split.
   + intros; now apply Weakening.whne_ren.
-  + intros l Γ A HA; exists A; split; [reflexivity|..].
-    now apply NormalForms.NeType.
+  + intros l Γ A HA.
+    unshelve eapply Typesnf.
+    * exact A.
+    * econstructor.
+    * now apply NormalForms.NeType.
   + intros; assumption.
   + intros; assumption.
+  + intros * f Hyp.
+    induction  Hyp ; try now econstructor.
   Qed.
 
   #[export] Instance TypeWhnfProperties : TypeNfProperties.
   Proof.
   split.
-  + intros l Γ Δ A ρ _ [B [? ?]].
-    exists (B⟨ρ⟩); split.
-    - now apply credalg_wk.
-    - now apply Weakening.isType_ren.
-  + intros l Γ A B ? [C [? ?]].
-    exists C; split.
-    - transitivity B; [eapply redty_red| ]; eassumption.
-    - assumption.
-  + exists (tSort set); split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
+  - intros l Γ Δ A ρ _ BHyp.
+    induction BHyp.
+    + unshelve eapply Typesnf. 
+      * exact (B⟨ρ⟩).
+      * now apply credalg_wk.
+      * now apply Weakening.isType_ren.
+    + now eapply digammaTypeNf.
+  - intros l Γ A B ? CHyp.
+    induction CHyp as [ ? B C | ? ? n ne ].
+    + unshelve eapply Typesnf.
+      * exact C.
+      * transitivity B ; [eapply redty_red| ]; eassumption.
+      * assumption.
+    + eapply digammaTypeNf.
+      * eapply IHCHyp1.
+        eapply redty_Ltrans ; try eassumption.
+        -- apply LCon_le_step.
+           now apply wfLCon_le_id.
+      * eapply IHCHyp2.
+        eapply redty_Ltrans ; try eassumption.
+        -- apply LCon_le_step.
+           now apply wfLCon_le_id.
+  - intros. unshelve eapply Typesnf.
+    + exact (tSort set).
+    + reflexivity.
+    + constructor.
+  - intros; eapply Typesnf ; [reflexivity|constructor].
+  - intros; eapply Typesnf; [reflexivity|constructor].
+  - intros; eapply Typesnf; [reflexivity|constructor].
+  - intros; eapply Typesnf; [reflexivity|constructor].
+  - intros * f Hyp ; revert l' f.
+    induction Hyp ; intros.
+    + eapply Typesnf.
+      * now eapply redalg_Ltrans.
+      * inversion typeB ; subst ; try now econstructor.
+    + case (decidInLCon l' n).
+      * intros [ inl' | inl'].
+        -- eapply IHHyp1.
+           now eapply LCon_le_in_LCon.
+        -- eapply IHHyp2.
+           now eapply LCon_le_in_LCon.
+      * intro notinl'.
+        unshelve eapply digammaTypeNf ; [ exact n | exact notinl' | ..].
+        -- eapply IHHyp1.
+           now eapply LCon_le_up.
+        -- eapply IHHyp2.
+           now eapply LCon_le_up.
   Qed.
 
   #[export] Instance TermWhneProperties : TermNeProperties.
@@ -241,7 +329,7 @@ Section Properties.
   + intros; apply Weakening.whne_ren.
     destruct ρ ; clear H1.
     now induction well_wk. 
-  + intros; eexists; split; [reflexivity|now constructor].
+  + intros; eapply Termsnf; [reflexivity|now constructor].
   + intros; assumption.
   + intros; assumption.
   + constructor.
@@ -250,36 +338,49 @@ Section Properties.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
   + intros; constructor; assumption.
+  + intros * f Hyp.
+    induction Hyp ; try now econstructor.
+  + intros. clear H2.
+    induction H1 ; try now econstructor.
   Qed.
 
   #[export] Instance TermWhnfProperties : TermNfProperties.
   Proof.
   split.
-  + intros l Γ Δ t A ρ _ [B [? ?]].
-    exists (B⟨ρ⟩); split.
-    - apply credalg_wk.
-      destruct ρ ; clear w.
-      now induction well_wk.   
-    - apply Weakening.whnf_ren.
-      destruct ρ ; clear r.
-      now induction well_wk.   
-  + intros; assumption.
-  + intros l Γ t u A ? [r [? ?]].
-    exists r; split.
-    - transitivity u; [eapply redtm_red| ]; eassumption.
-    - assumption.
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity|constructor].
-  + intros; eexists; split; [reflexivity| ].
+  - intros l Γ Δ t A ρ _ Hyp.
+    induction Hyp.
+    + eapply Termsnf.
+      * now apply credalg_wk.
+      * now apply whnf_ren.
+    + now eapply digammaTermNf.
+  - intros; assumption.
+  - intros l Γ t u A ? Hyp.
+    induction Hyp as [ ? u v | ? ? n ne ].
+    + eapply Termsnf ; try eassumption.
+      transitivity u ; [eapply redtm_red| ]; eassumption.
+    + eapply digammaTermNf.
+      * apply IHHyp1.
+        eapply redtm_Ltrans ; try eassumption.
+        eapply LCon_le_step ; now apply wfLCon_le_id.
+      * apply IHHyp2.
+        eapply redtm_Ltrans ; try eassumption.
+        eapply LCon_le_step ; now apply wfLCon_le_id.
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+(*  + intros; eexists; split; [reflexivity| ].
     apply whnf_tAlpha.
-    now constructor.
-  + intros; eexists; split; [reflexivity|constructor].
+    now constructor.*)
+    - intros; eapply Termsnf ; [reflexivity|constructor].
+    - intros* f Hyp.
+      now eapply DTermWhnf_Ltrans.
+    - intros * HL HR.
+      now eapply digammaTermNf.
   Qed.
 
 End Properties.
