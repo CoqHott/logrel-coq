@@ -255,6 +255,20 @@ Reserved Notation "[ Γ ||-< k >  t : A | R ]< l >" (at level 0, Γ, l, k, t, A,
 (** The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is reducible *)
 Reserved Notation "[ Γ ||-< k > t ≅ u : A | R ]< l >" (at level 0, Γ, l, k, t, u, A, R at level 50).
 
+
+(** The universe is reducible in Γ at level l *)
+Reserved Notation "W[ Γ ||-< k >U]< l >" (at level 0, Γ, l, k at level 50).
+(** The type A is reducible as a Π type in Γ at level l *)
+Reserved Notation "W[ Γ ||-< k >Π  A ]< l >" (at level 0, Γ, l, k, A at level 50).
+(** The type A is reducible in Γ at level l *)
+Reserved Notation "W[ Γ ||-< k >  A ]< l >" (at level 0, Γ, l, k, A at level 50).
+(** The types A and B are reducibly convertible in Γ at level l, given the proof R that A is reducible *)
+Reserved Notation "W[ Γ ||-< k >  A ≅ B | R ]< l >" (at level 0, Γ, l, k, A, B, R at level 50).
+(** The term t is reducible at type A and level l in Γ, given the proof R that A is reducible *)
+Reserved Notation "W[ Γ ||-< k >  t : A | R ]< l >" (at level 0, Γ, l, k, t, A, R at level 50).
+(** The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is reducible *)
+Reserved Notation "W[ Γ ||-< k > t ≅ u : A | R ]< l >" (at level 0, Γ, l, k, t, u, A, R at level 50).
+
 (** The type A is reducible in Γ at level 0*)
 Reserved Notation "[ Γ ||-<0>  A ]< l >" (at level 0, Γ, l, A at level 50).
 (** The types A and B are reducibly convertible in Γ at level 0, given the proof R that A is reducible *)

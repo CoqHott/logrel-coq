@@ -240,7 +240,7 @@ Module URedTm.
   : Type@{j} := {
     te : term;
     red : [ Γ |- t :⇒*: te : U ]< wl >;
-    type : isType wl te;
+    type : isType  te;
     val : Nf[Γ |- te : U]< wl >;
     eqr : [Γ |- te ≅ te : U]< wl >;
     rel : [rec R.(URedTy.lt) | Γ ||- t ]< wl > ;
@@ -380,7 +380,7 @@ Module PiRedTm.
   : Type := {
       nf : term;
       red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
-      isfun : isFun l nf ;
+      isfun : isFun nf ;
       isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)]< l > ;
       refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
       redN : nat ;
@@ -999,12 +999,45 @@ Section MoreDefs.
 
   
   Print LR.
-  Record WLogRel@{i j k l} wl Γ A (l : TypeLevel) :=
+  Record WLogRel@{i j k l} (l : TypeLevel) wl Γ A :=
     { WN : nat ;
       WRed {wl'} (τ : wl' ≤ε wl) (Ninfl : WN <= length wl') :
-      [ |- Γ ]< wl' > ->
       [ LogRel@{i j k l} l | Γ ||- A ]< wl' > ;
-      }.
+    }.
+  Arguments WN [_ _ _ _] _.
+  Arguments WRed [_ _ _ _ _ _] _.
+
+  Record WLogRelEq@{i j k l} (l : TypeLevel) wl Γ A B (wlrA : WLogRel@{i j k l} l wl Γ A) :=
+    { WNEq : nat ;
+      WRedEq {wl'} (τ : wl' ≤ε wl)
+        (Ninfl : wlrA.(WN) <= length wl')
+        (Ninfl' : WNEq <= length wl') :
+      [ LogRel l | Γ ||- A ≅ B | wlrA.(WRed) τ Ninfl ]< wl' >;
+    }.
+  Arguments WNEq [_ _ _ _ _] _.
+  Arguments WRedEq [_ _ _ _ _ _ _] _.
+
+  
+  Record WLogRelTm@{i j k l} (l : TypeLevel) wl Γ t A (wlrA : WLogRel@{i j k l} l wl Γ A) :=
+    { WNTm : nat ;
+      WRedTm {wl'} (τ : wl' ≤ε wl)
+        (Ninfl : wlrA.(WN) <= length wl')
+        (Ninfl' : WNTm <= length wl') :
+      [ LogRel l | Γ ||- t : A | wlrA.(WRed) τ Ninfl ]< wl' >;
+    }.
+  Arguments WNTm [_ _ _ _ _] _.
+  Arguments WRedTm [_ _ _ _ _ _ _] _.
+
+  Record WLogRelTmEq@{i j k l} (l : TypeLevel) wl Γ t u A (wlrA : WLogRel@{i j k l} l wl Γ A) :=
+    { WNTmEq : nat ;
+      WRedTmEq {wl'} (τ : wl' ≤ε wl)
+        (Ninfl : wlrA.(WN) <= length wl')
+        (Ninfl' : WNTmEq <= length wl') :
+      [ LogRel l | Γ ||- t ≅ u : A | wlrA.(WRed) τ Ninfl ]< wl' >;
+    }.
+  Arguments WNTmEq [_ _ _ _ _ _] _.
+  Arguments WRedTmEq [_ _ _ _ _ _ _ _] _.
+  
   
   Definition LRbuild@{i j k l} {wl Γ l A rEq rTe rTeEq} :
     LR@{j k l} (LogRelRec@{i j k} l) wl Γ A rEq rTe rTeEq -> [ LogRel l | Γ ||- A ]< wl > :=
@@ -1042,8 +1075,17 @@ Section MoreDefs.
     : [LogRel@{i j k l} l | Γ ||- A]< wl > :=
     LRbuild (LREmpty (LogRelRec l) NA).
 
-End MoreDefs.
   
+
+End MoreDefs.
+Arguments WN [_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WRed [ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WNEq [_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WRedEq [ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WNTm [_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WRedTm [ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WNTmEq [_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
+Arguments WRedTmEq [ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _] _.
 (** To be explicit with universe levels use the rhs, e.g
    [ LogRel@{i j k l} l | Γ ||- A] or [ LogRel0@{i j k} ||- Γ ||- A ≅ B | RA ]
  *)
@@ -1051,6 +1093,11 @@ Notation "[ Γ ||-< l > A ]< wl >" := [ LogRel l | Γ ||- A ]< wl >.
 Notation "[ Γ ||-< l > A ≅ B | RA ]< wl >" := [ LogRel l | Γ ||- A ≅ B | RA ]< wl >.
 Notation "[ Γ ||-< l > t : A | RA ]< wl >" := [ LogRel l | Γ ||- t : A | RA ]< wl >.
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]< wl >" := [ LogRel l | Γ ||- t ≅ u : A | RA ]< wl >.
+
+Notation "W[ Γ ||-< l > A ]< wl >" := (WLogRel l wl Γ A).
+Notation "W[ Γ ||-< l > A ≅ B | RA ]< wl >" := (WLogRelEq l wl Γ A B RA).
+Notation "W[ Γ ||-< l > t : A | RA ]< wl >" := (WLogRelTm l wl Γ t A RA).
+Notation "W[ Γ ||-< l > t ≅ u : A | RA ]< wl >" := (WLogRelTmEq l wl Γ t u A RA).
 
 (** ** Rebundling reducibility of product types *)
 
@@ -1161,7 +1208,7 @@ Section PiRedTyPack.
   Definition prod@{i j k l} {wl l Γ A} (ΠA : PiRedTyPack@{i j k l} wl Γ A l) : term :=
     tProd (dom ΠA) (cod ΠA).
 
-  Lemma whne_noΠ `{!RedTypeProperties} {wl Γ A} : [Γ ||-Πd A]< wl > -> whne wl A -> False.
+  Lemma whne_noΠ `{!RedTypeProperties} {wl Γ A} : [Γ ||-Πd A]< wl > -> whne A -> False.
   Proof.
     intros [?? r] h.
     pose proof (UntypedReduction.red_whne _ _ (redtywf_red r) h).
@@ -1234,10 +1281,10 @@ End LogRelRecFoldLemmas.
 
 Section NatPropProperties.
   Context `{GenericTypingProperties}.
-  Lemma NatProp_whnf {wl Γ A t} {NA : [Γ ||-Nat A]< wl >} : NatProp NA t -> whnf wl t.
+  Lemma NatProp_whnf {wl Γ A t} {NA : [Γ ||-Nat A]< wl >} : NatProp NA t -> whnf t.
   Proof.  intros [ | | ? []]; now (econstructor; eapply tm_ne_whne). Qed.
 
-  Lemma NatPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Nat A]< wl >} : NatPropEq NA t u -> whnf wl t × whnf wl u.
+  Lemma NatPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Nat A]< wl >} : NatPropEq NA t u -> whnf t × whnf u.
   Proof.  intros [ | | ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
 
 End NatPropProperties.
@@ -1245,20 +1292,20 @@ End NatPropProperties.
 
 Section BoolPropProperties.
   Context `{GenericTypingProperties}.
-  Lemma BoolProp_whnf {wl Γ A t} {NA : [Γ ||-Bool A]< wl >} : BoolProp NA t -> whnf wl t.
+  Lemma BoolProp_whnf {wl Γ A t} {NA : [Γ ||-Bool A]< wl >} : BoolProp NA t -> whnf t.
   Proof.  intros [ | | ? []]; now (econstructor; eapply tm_ne_whne). Qed.
 
-  Lemma BoolPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Bool A]< wl >} : BoolPropEq NA t u -> whnf wl t × whnf wl u.
+  Lemma BoolPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Bool A]< wl >} : BoolPropEq NA t u -> whnf t × whnf u.
   Proof.  intros [ | | ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
 
 End BoolPropProperties.
 
 Section EmptyPropProperties.
   Context `{GenericTypingProperties}.
-  Lemma EmptyProp_whnf {wl Γ A t} {NA : [Γ ||-Empty A]< wl >} : @EmptyProp _ _ _ _ wl Γ t -> whnf wl t.
+  Lemma EmptyProp_whnf {wl Γ A t} {NA : [Γ ||-Empty A]< wl >} : @EmptyProp _ _ _ _ wl Γ t -> whnf t.
   Proof.  intros [ ? []]; now (econstructor; eapply tm_ne_whne). Qed.
 
-  Lemma EmptyPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Empty A]< wl >} : @EmptyPropEq _ _ _ wl Γ t u -> whnf wl t × whnf wl u.
+  Lemma EmptyPropEq_whnf {wl Γ A t u} {NA : [Γ ||-Empty A]< wl >} : @EmptyPropEq _ _ _ wl Γ t u -> whnf t × whnf u.
   Proof.  intros [ ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
 
 End EmptyPropProperties.

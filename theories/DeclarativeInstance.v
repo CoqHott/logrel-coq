@@ -695,7 +695,7 @@ Module DeclarativeTypingProperties.
     clear reddecl_typ reddecl_conv.
     induction reddecl_red ; try easy.
     econstructor ; try easy.
-    now eapply redalg_Ltrans.
+    now eapply red_Ltrans.
   Qed.
 
   #[export, refine] Instance RedTypeDeclProperties : RedTypeProperties (ta := de) := {}.
@@ -716,7 +716,7 @@ Module DeclarativeTypingProperties.
     + clear reddecl_typ reddecl_conv.
       induction reddecl_red ; try easy.
       econstructor ; try easy.
-      now eapply redalg_Ltrans.
+      now eapply red_Ltrans.
     + now eapply ConvTypeDecl_trans.
   Qed.
 
