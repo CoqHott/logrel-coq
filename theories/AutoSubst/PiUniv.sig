@@ -19,3 +19,8 @@ tSig : term -> (bind term in term) -> term
 tPair : term -> (bind term in term) -> term -> term -> term
 tFst : term -> term
 tSnd : term -> term
+
+tList : term -> term
+tNil : term -> term
+tCons : term -> term -> term -> term
+tMap : term -> term -> term -> term -> term

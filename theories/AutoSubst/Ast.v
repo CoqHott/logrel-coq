@@ -20,7 +20,11 @@ Inductive term : Type :=
   | tSig : term -> term -> term
   | tPair : term -> term -> term -> term -> term
   | tFst : term -> term
-  | tSnd : term -> term.
+  | tSnd : term -> term
+  | tList : term -> term
+  | tNil : term -> term
+  | tCons : term -> term -> term -> term
+  | tMap : term -> term -> term -> term -> term.
 
 Lemma congr_tSort {s0 : sort} {t0 : sort} (H0 : s0 = t0) :
   tSort s0 = tSort t0.
@@ -120,6 +124,39 @@ Proof.
 exact (eq_trans eq_refl (ap (fun x => tSnd x) H0)).
 Qed.
 
+Lemma congr_tList {s0 : term} {t0 : term} (H0 : s0 = t0) :
+  tList s0 = tList t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => tList x) H0)).
+Qed.
+
+Lemma congr_tNil {s0 : term} {t0 : term} (H0 : s0 = t0) : tNil s0 = tNil t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => tNil x) H0)).
+Qed.
+
+Lemma congr_tCons {s0 : term} {s1 : term} {s2 : term} {t0 : term} {t1 : term}
+  {t2 : term} (H0 : s0 = t0) (H1 : s1 = t1) (H2 : s2 = t2) :
+  tCons s0 s1 s2 = tCons t0 t1 t2.
+Proof.
+exact (eq_trans
+         (eq_trans (eq_trans eq_refl (ap (fun x => tCons x s1 s2) H0))
+            (ap (fun x => tCons t0 x s2) H1))
+         (ap (fun x => tCons t0 t1 x) H2)).
+Qed.
+
+Lemma congr_tMap {s0 : term} {s1 : term} {s2 : term} {s3 : term} {t0 : term}
+  {t1 : term} {t2 : term} {t3 : term} (H0 : s0 = t0) (H1 : s1 = t1)
+  (H2 : s2 = t2) (H3 : s3 = t3) : tMap s0 s1 s2 s3 = tMap t0 t1 t2 t3.
+Proof.
+exact (eq_trans
+         (eq_trans
+            (eq_trans (eq_trans eq_refl (ap (fun x => tMap x s1 s2 s3) H0))
+               (ap (fun x => tMap t0 x s2 s3) H1))
+            (ap (fun x => tMap t0 t1 x s3) H2))
+         (ap (fun x => tMap t0 t1 t2 x) H3)).
+Qed.
+
 Lemma upRen_term_term (xi : nat -> nat) : nat -> nat.
 Proof.
 exact (up_ren xi).
@@ -151,6 +188,13 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
         (ren_term xi_term s2) (ren_term xi_term s3)
   | tFst s0 => tFst (ren_term xi_term s0)
   | tSnd s0 => tSnd (ren_term xi_term s0)
+  | tList s0 => tList (ren_term xi_term s0)
+  | tNil s0 => tNil (ren_term xi_term s0)
+  | tCons s0 s1 s2 =>
+      tCons (ren_term xi_term s0) (ren_term xi_term s1) (ren_term xi_term s2)
+  | tMap s0 s1 s2 s3 =>
+      tMap (ren_term xi_term s0) (ren_term xi_term s1) (ren_term xi_term s2)
+        (ren_term xi_term s3)
   end.
 
 Lemma up_term_term (sigma : nat -> term) : nat -> term.
@@ -190,6 +234,14 @@ term :=
         (subst_term sigma_term s3)
   | tFst s0 => tFst (subst_term sigma_term s0)
   | tSnd s0 => tSnd (subst_term sigma_term s0)
+  | tList s0 => tList (subst_term sigma_term s0)
+  | tNil s0 => tNil (subst_term sigma_term s0)
+  | tCons s0 s1 s2 =>
+      tCons (subst_term sigma_term s0) (subst_term sigma_term s1)
+        (subst_term sigma_term s2)
+  | tMap s0 s1 s2 s3 =>
+      tMap (subst_term sigma_term s0) (subst_term sigma_term s1)
+        (subst_term sigma_term s2) (subst_term sigma_term s3)
   end.
 
 Lemma upId_term_term (sigma : nat -> term)
@@ -242,6 +294,17 @@ subst_term sigma_term s = s :=
         (idSubst_term sigma_term Eq_term s3)
   | tFst s0 => congr_tFst (idSubst_term sigma_term Eq_term s0)
   | tSnd s0 => congr_tSnd (idSubst_term sigma_term Eq_term s0)
+  | tList s0 => congr_tList (idSubst_term sigma_term Eq_term s0)
+  | tNil s0 => congr_tNil (idSubst_term sigma_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (idSubst_term sigma_term Eq_term s0)
+        (idSubst_term sigma_term Eq_term s1)
+        (idSubst_term sigma_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (idSubst_term sigma_term Eq_term s0)
+        (idSubst_term sigma_term Eq_term s1)
+        (idSubst_term sigma_term Eq_term s2)
+        (idSubst_term sigma_term Eq_term s3)
   end.
 
 Lemma upExtRen_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -299,6 +362,17 @@ ren_term xi_term s = ren_term zeta_term s :=
         (extRen_term xi_term zeta_term Eq_term s3)
   | tFst s0 => congr_tFst (extRen_term xi_term zeta_term Eq_term s0)
   | tSnd s0 => congr_tSnd (extRen_term xi_term zeta_term Eq_term s0)
+  | tList s0 => congr_tList (extRen_term xi_term zeta_term Eq_term s0)
+  | tNil s0 => congr_tNil (extRen_term xi_term zeta_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (extRen_term xi_term zeta_term Eq_term s0)
+        (extRen_term xi_term zeta_term Eq_term s1)
+        (extRen_term xi_term zeta_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (extRen_term xi_term zeta_term Eq_term s0)
+        (extRen_term xi_term zeta_term Eq_term s1)
+        (extRen_term xi_term zeta_term Eq_term s2)
+        (extRen_term xi_term zeta_term Eq_term s3)
   end.
 
 Lemma upExt_term_term (sigma : nat -> term) (tau : nat -> term)
@@ -357,6 +431,17 @@ subst_term sigma_term s = subst_term tau_term s :=
         (ext_term sigma_term tau_term Eq_term s3)
   | tFst s0 => congr_tFst (ext_term sigma_term tau_term Eq_term s0)
   | tSnd s0 => congr_tSnd (ext_term sigma_term tau_term Eq_term s0)
+  | tList s0 => congr_tList (ext_term sigma_term tau_term Eq_term s0)
+  | tNil s0 => congr_tNil (ext_term sigma_term tau_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (ext_term sigma_term tau_term Eq_term s0)
+        (ext_term sigma_term tau_term Eq_term s1)
+        (ext_term sigma_term tau_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (ext_term sigma_term tau_term Eq_term s0)
+        (ext_term sigma_term tau_term Eq_term s1)
+        (ext_term sigma_term tau_term Eq_term s2)
+        (ext_term sigma_term tau_term Eq_term s3)
   end.
 
 Lemma up_ren_ren_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -423,6 +508,19 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
       congr_tFst (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+  | tList s0 =>
+      congr_tList (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+  | tNil s0 =>
+      congr_tNil (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s2)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s3)
   end.
 
 Lemma up_ren_subst_term_term (xi : nat -> nat) (tau : nat -> term)
@@ -491,6 +589,19 @@ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
       congr_tFst (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+  | tList s0 =>
+      congr_tList (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+  | tNil s0 =>
+      congr_tNil (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s2)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s3)
   end.
 
 Lemma up_subst_ren_term_term (sigma : nat -> term) (zeta_term : nat -> nat)
@@ -579,6 +690,23 @@ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
   | tSnd s0 =>
       congr_tSnd
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+  | tList s0 =>
+      congr_tList
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+  | tNil s0 =>
+      congr_tNil
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s2)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s3)
   end.
 
 Lemma up_subst_subst_term_term (sigma : nat -> term) (tau_term : nat -> term)
@@ -669,6 +797,23 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
   | tSnd s0 =>
       congr_tSnd
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+  | tList s0 =>
+      congr_tList
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+  | tNil s0 =>
+      congr_tNil
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s2)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s3)
   end.
 
 Lemma renRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat) (s : term)
@@ -794,6 +939,17 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
         (rinst_inst_term xi_term sigma_term Eq_term s3)
   | tFst s0 => congr_tFst (rinst_inst_term xi_term sigma_term Eq_term s0)
   | tSnd s0 => congr_tSnd (rinst_inst_term xi_term sigma_term Eq_term s0)
+  | tList s0 => congr_tList (rinst_inst_term xi_term sigma_term Eq_term s0)
+  | tNil s0 => congr_tNil (rinst_inst_term xi_term sigma_term Eq_term s0)
+  | tCons s0 s1 s2 =>
+      congr_tCons (rinst_inst_term xi_term sigma_term Eq_term s0)
+        (rinst_inst_term xi_term sigma_term Eq_term s1)
+        (rinst_inst_term xi_term sigma_term Eq_term s2)
+  | tMap s0 s1 s2 s3 =>
+      congr_tMap (rinst_inst_term xi_term sigma_term Eq_term s0)
+        (rinst_inst_term xi_term sigma_term Eq_term s1)
+        (rinst_inst_term xi_term sigma_term Eq_term s2)
+        (rinst_inst_term xi_term sigma_term Eq_term s3)
   end.
 
 Lemma rinstInst'_term (xi_term : nat -> nat) (s : term) :
@@ -1018,6 +1174,15 @@ Fixpoint allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
            (and (allfv_term p_term s2) (and (allfv_term p_term s3) True)))
   | tFst s0 => and (allfv_term p_term s0) True
   | tSnd s0 => and (allfv_term p_term s0) True
+  | tList s0 => and (allfv_term p_term s0) True
+  | tNil s0 => and (allfv_term p_term s0) True
+  | tCons s0 s1 s2 =>
+      and (allfv_term p_term s0)
+        (and (allfv_term p_term s1) (and (allfv_term p_term s2) True))
+  | tMap s0 s1 s2 s3 =>
+      and (allfv_term p_term s0)
+        (and (allfv_term p_term s1)
+           (and (allfv_term p_term s2) (and (allfv_term p_term s3) True)))
   end.
 
 Lemma upAllfvTriv_term_term {p : nat -> Prop} (H : forall x, p x) :
@@ -1077,6 +1242,17 @@ Fixpoint allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
               (conj (allfvTriv_term p_term H_term s3) I)))
   | tFst s0 => conj (allfvTriv_term p_term H_term s0) I
   | tSnd s0 => conj (allfvTriv_term p_term H_term s0) I
+  | tList s0 => conj (allfvTriv_term p_term H_term s0) I
+  | tNil s0 => conj (allfvTriv_term p_term H_term s0) I
+  | tCons s0 s1 s2 =>
+      conj (allfvTriv_term p_term H_term s0)
+        (conj (allfvTriv_term p_term H_term s1)
+           (conj (allfvTriv_term p_term H_term s2) I))
+  | tMap s0 s1 s2 s3 =>
+      conj (allfvTriv_term p_term H_term s0)
+        (conj (allfvTriv_term p_term H_term s1)
+           (conj (allfvTriv_term p_term H_term s2)
+              (conj (allfvTriv_term p_term H_term s3) I)))
   end.
 
 Lemma upAllfvImpl_term_term {p : nat -> Prop} {q : nat -> Prop}
@@ -1271,6 +1447,82 @@ allfv_term p_term s -> allfv_term q_term s :=
            match HP with
            | conj HP _ => HP
            end) I
+  | tList s0 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end) I
+  | tNil s0 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end) I
+  | tCons s0 s1 s2 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_term p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end)
+           (conj
+              (allfvImpl_term p_term q_term H_term s2
+                 match HP with
+                 | conj _ HP =>
+                     match HP with
+                     | conj _ HP => match HP with
+                                    | conj HP _ => HP
+                                    end
+                     end
+                 end) I))
+  | tMap s0 s1 s2 s3 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_term p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end)
+           (conj
+              (allfvImpl_term p_term q_term H_term s2
+                 match HP with
+                 | conj _ HP =>
+                     match HP with
+                     | conj _ HP => match HP with
+                                    | conj HP _ => HP
+                                    end
+                     end
+                 end)
+              (conj
+                 (allfvImpl_term p_term q_term H_term s3
+                    match HP with
+                    | conj _ HP =>
+                        match HP with
+                        | conj _ HP =>
+                            match HP with
+                            | conj _ HP =>
+                                match HP with
+                                | conj HP _ => HP
+                                end
+                            end
+                        end
+                    end) I)))
   end.
 
 Lemma upAllfvRenL_term_term (p : nat -> Prop) (xi : nat -> nat) :
@@ -1461,6 +1713,77 @@ allfv_term (funcomp p_term xi_term) s :=
         (allfvRenL_term p_term xi_term s0 match H with
                                           | conj H _ => H
                                           end) I
+  | tList s0 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  | tNil s0 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  | tCons s0 s1 s2 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenL_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenL_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end) I))
+  | tMap s0 s1 s2 s3 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenL_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenL_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end)
+              (conj
+                 (allfvRenL_term p_term xi_term s3
+                    match H with
+                    | conj _ H =>
+                        match H with
+                        | conj _ H =>
+                            match H with
+                            | conj _ H => match H with
+                                          | conj H _ => H
+                                          end
+                            end
+                        end
+                    end) I)))
   end.
 
 Lemma upAllfvRenR_term_term (p : nat -> Prop) (xi : nat -> nat) :
@@ -1653,6 +1976,77 @@ allfv_term p_term (ren_term xi_term s) :=
         (allfvRenR_term p_term xi_term s0 match H with
                                           | conj H _ => H
                                           end) I
+  | tList s0 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  | tNil s0 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  | tCons s0 s1 s2 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenR_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenR_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end) I))
+  | tMap s0 s1 s2 s3 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenR_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenR_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end)
+              (conj
+                 (allfvRenR_term p_term xi_term s3
+                    match H with
+                    | conj _ H =>
+                        match H with
+                        | conj _ H =>
+                            match H with
+                            | conj _ H => match H with
+                                          | conj H _ => H
+                                          end
+                            end
+                        end
+                    end) I)))
   end.
 
 End Allfv.
