@@ -146,6 +146,12 @@ Section CtxAccessCorrect.
 
 End CtxAccessCorrect.
 
+Ltac funelim_conv :=
+  funelim (conv _); 
+    [ funelim (conv_ty _) | funelim (conv_ty_red _) | 
+      funelim (conv_tm _) | funelim (conv_tm_red _) | 
+      funelim (conv_ne _) | funelim (conv_ne_red _) ].
+
 Section ConversionSound.
 
   Import AlgorithmicTypingData.
@@ -153,8 +159,8 @@ Section ConversionSound.
   #[local]Existing Instance ty_errors.
 
   #[universes(polymorphic)]Definition conv_sound_type
-    (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term)
-    (r : result (cstate_output x.π1)) : Type :=
+    (x : conv_full_dom)
+    (r : conv_full_cod x) : Type :=
   match x, r with
   | _, (error _) => True
   | (ty_state;Γ;_;T;V), (ok _) =>  [Γ |-[al] T ≅ V]
@@ -170,7 +176,7 @@ Section ConversionSound.
     funrect conv (fun _ => True) conv_sound_type.
   Proof.
     intros x _.
-    funelim (conv _) ; cbn.
+    funelim_conv ; cbn.
     all: intros ; simp conv_sound_type ; try easy ; cbn.
     all: repeat (
       match goal with
@@ -180,16 +186,14 @@ Section ConversionSound.
       | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
       | s : sort |- _ => destruct s
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+      | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
       end).
     all: try solve [now econstructor].
     - econstructor ; tea.
       now econstructor.
     - econstructor ; tea.
-      now econstructor.
-    - econstructor ; tea.
-      prod_hyp_splitter.
-      destruct H0 ; simp build_nf_view3 in Heq ; try solve [inversion Heq].
-      all: now econstructor.
+      destruct H ; simp build_nf_view3 build_ty_view1 in Heq ; try solve [inversion Heq].
+      all: try now econstructor.
     - eapply convne_meta_conv.
       2: reflexivity.
       + econstructor.
@@ -197,6 +201,7 @@ Section ConversionSound.
       + f_equal.
         symmetry.
         now eapply Nat.eqb_eq.
+    - split; tea. now econstructor.
   Qed.
 
   Corollary implem_conv_sound x r :

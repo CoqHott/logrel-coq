@@ -278,22 +278,32 @@ Definition cstate_output (c : conv_state) : Type :=
   | ne_state | ne_red_state => term
   end.
 
-Equations conv :
-  ∇ (x : ∑ (c : conv_state) (_ : context) (_ : cstate_input c) (_ : term), term),
-  (result (cstate_output (x.π1))) :=
-  conv (ty_state;Γ;_;T;V) :=
+Definition conv_dom (c : conv_state) :=
+  ∑ (_ : context) (_ : cstate_input c) (_ : term), term.
+Definition conv_full_dom := ∑ (c : conv_state), conv_dom c.
+Definition conv_cod (c : conv_state) := result (cstate_output c).
+Definition conv_full_cod (x : conv_full_dom) := conv_cod (x.π1).
+Definition conv_stmt (c : conv_state) := forall x0 : conv_dom c, orec conv_full_dom conv_full_cod (conv_cod c).
+
+Equations conv_ty : conv_stmt ty_state :=
+  | (Γ;inp;T;V) :=
     T' ← call wh_red T ;;
     V' ← call wh_red V ;;
-    id <*> rec (ty_red_state;Γ;tt;T';V') ;
-  conv (ty_red_state;Γ;_;T;T') with (build_nf_ty_view2 T T') :=
+    r ← rec (ty_red_state;Γ;tt;T';V') ;;
+    ret (A:=conv_full_cod (ty_state;Γ;inp;T;V)) r.
+
+Equations conv_ty_red : conv_stmt ty_red_state :=
+  | (Γ;inp;T;T') with (build_nf_ty_view2 T T') :=
   {
     | ty_sorts s s' :=
-        ret (eq_sort s s') ;
+        ret (A:=conv_full_cod (ty_red_state;Γ;inp;tSort s;tSort s')) (eq_sort s s') ;
     | ty_prods A A' B B' :=
       r ← rec (ty_state;Γ;tt;A;A') ;;
       match r with
       | error e => raise e
-      | ok _ => id <*> rec (ty_state;(Γ,,A);tt;B;B')
+      | ok _ => 
+        r ← rec (ty_state;(Γ,,A);tt;B;B') ;; 
+        ret (A:=conv_full_cod (ty_red_state;Γ;inp;tProd A B;tProd A' B')) r
       end ;
     | ty_nats := success ;
     | ty_emptys := success ;
@@ -301,7 +311,8 @@ Equations conv :
       r ← rec (ty_state;Γ;tt;A;A') ;;
       match r with
       | error e => raise e
-      | ok _ => id <*> rec (ty_state;(Γ,,A);tt;B;B')
+      | ok _ => r ← rec (ty_state;(Γ,,A);tt;B;B') ;;
+        ret (A:=conv_full_cod (ty_red_state;Γ;inp;tSig A B;tSig A' B')) r
       end ;
     | ty_neutrals _ _ :=
         r ← rec (ne_state;Γ;tt;T;T') ;;
@@ -311,20 +322,27 @@ Equations conv :
         end ;
     | ty_mismatch _ _ := raise (head_mismatch None T T') ;
     | ty_anomaly _ _ := undefined ;
-  } ;
-  conv (tm_state;Γ;A;t;u) :=
+  }.
+
+Equations conv_tm : conv_stmt tm_state :=
+  | (Γ;A;t;u) :=
     A' ← call wh_red A ;;
     t' ← call wh_red t ;;
     u' ← call wh_red u ;;
-    id <*> rec (tm_red_state;Γ;A';t';u') ;
-  conv (tm_red_state;Γ;A;t;u) with (build_nf_view3 A t u) :=
+    r ← rec (tm_red_state;Γ;A';t';u') ;;
+    (* Coq does not infer the "right" type here *)
+    ret (A:=conv_full_cod (tm_state;Γ;A;t;u)) r.
+
+Equations conv_tm_red : conv_stmt tm_red_state :=
+  | (Γ;A;t;u) with (build_nf_view3 A t u) :=
   {
     | types s (ty_sorts s1 s2) := undefined ;
     | types s (ty_prods A A' B B') :=
       r ← rec (tm_state;Γ;tSort s;A;A') ;;
       match r with
       | error e => raise e
-      | ok _ => id <*> rec (tm_state;Γ,,A;tSort s;B;B') 
+      | ok _ => r ← rec (tm_state;Γ,,A;tSort s;B;B') ;;
+        ret (A:=conv_full_cod (tm_red_state;Γ;tSort s;tProd A B;tProd A' B')) r
       end ;
     | types _ ty_nats := success ;
     | types _ ty_emptys := success ;
@@ -332,7 +350,8 @@ Equations conv :
       r ← rec (tm_state;Γ;tSort s;A;A') ;;
       match r with
       | error e => raise e
-      | ok _ => id <*> rec (tm_state;Γ,,A;tSort s;B;B') 
+      | ok _ => r ← rec (tm_state;Γ,,A;tSort s;B;B') ;;
+        ret (A:=conv_full_cod (tm_red_state;Γ;tSort s;tSig A B;tSig A' B')) r
       end ;
     | types _ (ty_neutrals _ _) := 
         r ← rec (ne_state;Γ;tt;t;u) ;;
@@ -343,14 +362,17 @@ Equations conv :
     | types s (ty_mismatch _ _) := raise (head_mismatch (Some (tSort s)) t u) ;
     | types _ (ty_anomaly _ _) := undefined ;
     | functions A B t u :=
-        id <*> rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) ;
+        r ← rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) ;;
+        ret (A:=conv_full_cod (tm_red_state;Γ;tProd A B;t;u)) r ;
     | zeros := success ;
     | succs t' u' :=
-        id <*> rec (tm_state;Γ;tNat;t';u') ;
+        r ← rec (tm_state;Γ;tNat;t';u') ;;
+        ret (A:=conv_full_cod (tm_red_state;Γ;tNat; tSucc t'; tSucc u')) r ;
     | pairs A B t u :=
         r ← rec (tm_state;Γ;A;tFst t; tFst u) ;;  
         match r with
-        | ok _ => id <*> rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u)
+        | ok _ => r ← rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) ;;
+          ret (A:=conv_full_cod (tm_red_state;Γ;tSig A B;t;u)) r
         | error e => raise e
         end ;
     | neutrals _ _ _ := 
@@ -361,28 +383,30 @@ Equations conv :
         end ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
     | anomaly _ _ _ := undefined ;
-  } ;
-  conv (ne_state;Γ;_;tRel n;tRel n')
+  }.
+
+Equations conv_ne : conv_stmt ne_state :=
+  | (Γ;inp;tRel n;tRel n')
     with n =? n' :=
     { | false := raise (variable_mismatch n n') ;
       | true with (ctx_access Γ n) := 
         {
         | error e => undefined ;
-        | ok d => ret (ok d)
+        | ok d => ret (A:=conv_full_cod (ne_state;Γ;inp;tRel n; tRel n')) (ok d)
         }
     } ;
-  conv (ne_state;Γ;_;tApp n t ; tApp n' t') :=
+  | (Γ;inp;tApp n t ; tApp n' t') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
     | error e => raise e
     | (ok (tProd A B)) => r ← rec (tm_state;Γ;A;t;t') ;;
       match r with
       | error e => raise e
-      | ok _ => ret (ok B[t..])
+      | ok _ => ret (A:=conv_full_cod (ne_state;Γ;inp;tApp n t; tApp n' t')) (ok B[t..])
       end
     | (ok _) => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
     end ;
-  conv (ne_state;Γ;_;tNatElim P hz hs n;tNatElim P' hz' hs' n') :=
+  | (Γ;inp;tNatElim P hz hs n;tNatElim P' hz' hs' n') :=
     rn ← rec (ne_red_state;Γ;tt;n;n') ;;
     match rn with
     | error e => raise e
@@ -394,13 +418,13 @@ Equations conv :
             rz ← rec (tm_state;Γ;P[tZero..];hz;hz') ;;
             rs ← rec (tm_state;Γ;elimSuccHypTy P;hs;hs') ;;
             match rz, rs with
-            | ok _, ok _ => ret (ok P[n..])
+            | ok _, ok _ => ret (A:=conv_full_cod (ne_state;Γ;inp;tNatElim P hz hs n;tNatElim P' hz' hs' n')) (ok P[n..])
             | _, _ => raise conv_error
             end
         end
     | ok _ => undefined
     end ;
-  conv (ne_state;Γ;_;tEmptyElim P n;tEmptyElim P' n') :=
+  | (Γ;inp;tEmptyElim P n;tEmptyElim P' n') :=
     rn ← rec (ne_red_state;Γ;tt;n;n') ;;
     match rn with
     | error e => raise e
@@ -408,31 +432,42 @@ Equations conv :
         rP ← rec (ty_state;(Γ,,tEmpty);tt;P;P') ;;
         match rP with
         | error e => raise e
-        | ok _ => ret (ok P[n..])
+        | ok _ => ret (A:=conv_full_cod (ne_state;Γ;inp;tEmptyElim P n;tEmptyElim P' n')) (ok P[n..])
         end
     | ok _ => undefined
     end ;
-  conv (ne_state; Γ; _ ; tFst n; tFst n') :=
+  | ( Γ; inp ; tFst n; tFst n') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
     | error e => raise e
-    | (ok (tSig A B)) => ret (ok A)
+    | (ok (tSig A B)) => ret (A:=conv_full_cod (ne_state;Γ; inp; tFst n; tFst n')) (ok A)
     | (ok _) => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
     end ;
-  conv (ne_state; Γ; _ ; tSnd n; tSnd n') :=
+  | ( Γ; inp ; tSnd n; tSnd n') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
     | error e => raise e
-    | (ok (tSig A B)) => ret (ok (B[(tFst n)..]))
+    | (ok (tSig A B)) => ret (A:=conv_full_cod (ne_state;Γ; inp; tSnd n; tSnd n')) (ok (B[(tFst n)..]))
     | (ok _) => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
     end ;
-  conv (ne_state;Γ;_;n;n') := raise (destructor_mismatch n n') ;
-  conv (ne_red_state;Γ;_;t;u) :=
+  | (Γ;_;n;n') := raise (destructor_mismatch n n').
+
+Equations conv_ne_red : conv_stmt ne_red_state :=
+  | (Γ;inp;t;u) :=
     Ainf ← rec (ne_state;Γ;tt;t;u) ;;
     match Ainf with
     | error e => raise e
-    | ok Ainf' => A' ← call wh_red Ainf' ;; ret (ok A')
+    | ok Ainf' => A' ← call wh_red Ainf' ;; 
+      ret (A:=conv_full_cod (ne_red_state;Γ; inp; t; u)) (ok A')
     end.
+
+Equations conv : ∇ (x : conv_full_dom), conv_full_cod x :=
+  | (ty_state; Γ ; inp ; T; V) := conv_ty (Γ; inp; T; V);
+  | (ty_red_state; Γ ; inp ; T; V) := conv_ty_red (Γ; inp; T; V);
+  | (tm_state; Γ ; inp ; T; V) := conv_tm (Γ; inp; T; V);
+  | (tm_red_state; Γ ; inp ; T; V) := conv_tm_red (Γ; inp; T; V);
+  | (ne_state; Γ ; inp ; T; V) := conv_ne (Γ; inp; T; V);
+  | (ne_red_state; Γ ; inp ; T; V) := conv_ne_red (Γ; inp; T; V).
 
 Variant typing_state : Type :=
   | inf_state (** inference *)

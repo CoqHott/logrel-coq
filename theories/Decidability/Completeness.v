@@ -343,7 +343,7 @@ Proof.
   apply BundledConvInduction.
   - intros * ?? Hconv [IH] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty ; cbn.
     repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
     + eapply wh_red_complete_whnf_ty ; tea.
       eapply algo_conv_wh in Hconv as [].
@@ -354,7 +354,7 @@ Proof.
     + exact (IH tt). (* eapply fails with universe issues? *)
   - intros * HA [IHA] HB [IHB] ** ; cbn in *.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
     1: exact (IHA tt).
     econstructor.
@@ -362,19 +362,19 @@ Proof.
     now econstructor.
   - intros ; cbn in *.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     econstructor.
   - intros.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     econstructor.
   - intros.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     econstructor.
   - intros * HA [IHA] HB [IHB] **; cbn in *.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
     1: exact (IHA tt).
     econstructor.
@@ -382,7 +382,7 @@ Proof.
     now econstructor.
   - intros * HM [IHM []] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ty_red ; cbn.
     rewrite whne_ty_view2.
     2-3: now eapply algo_conv_wh in HM as [].
     cbn.
@@ -391,13 +391,13 @@ Proof.
     now constructor.
   - intros **.
     unfold graph.
-    simp conv.
+    simp conv conv_ne.
     rewrite Nat.eqb_refl ; cbn.
     erewrite ctx_access_complete ; tea ; cbn.
     now econstructor.
   - intros * Hm [IHm []] Ht [IHt] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ne ; cbn.
     econstructor.
     1: exact (IHm tt).
     cbn.
@@ -406,7 +406,7 @@ Proof.
     now constructor.
   - intros * ? [IHn []] ? [IHP] ? [IHz] ? [IHs] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ne ; cbn.
     econstructor.
     1: exact (IHn tt).
     econstructor.
@@ -418,7 +418,7 @@ Proof.
     now econstructor.
   - intros * ? [IHe []] ? [IHP] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ne ; cbn.
     econstructor.
     1: exact (IHe tt).
     econstructor.
@@ -426,19 +426,19 @@ Proof.
     now econstructor.
   - intros * ? [IH []] **.
     unfold graph.
-    simp conv; cbn.
+    simp conv conv_ne; cbn.
     econstructor.
     1: exact (IH tt).
     econstructor.
   - intros * ? [IH []] **.
     unfold graph.
-    simp conv; cbn.
+    simp conv conv_ne; cbn.
     econstructor.
     1: exact (IH tt).
     econstructor.
   - intros * ? [IHm []] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_ne_red ; cbn.
     econstructor.
     1: exact (IHm tt).
     econstructor.
@@ -447,17 +447,17 @@ Proof.
     boundary.
   - intros * ??? []%algo_conv_wh [IHt'] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm ; cbn.
     repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
     + eapply wh_red_complete_whnf_ty ; tea.
       1: boundary.
       now gen_typing.
     + now eapply wh_red_complete_whnf_tm.
     + now eapply wh_red_complete_whnf_tm.
-    + apply IHt'. 
+    + apply IHt'.
   - intros * ? [IHA] ? [IHB] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm_red ; cbn.
     econstructor.
     1: exact IHA.
     econstructor.
@@ -465,31 +465,32 @@ Proof.
     now constructor.
   - intros.
     unfold graph.
-    simp conv.
+    simp conv conv_tm_red.
     constructor.
   - intros.
     unfold graph.
-    simp conv.
+    simp conv conv_tm_red.
     constructor.
   - intros * ? [IHt] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm_red; cbn.
+    (* change (conv_full_cod (tm_state; Γ; tNat; t; t')) with (conv_full_cod (tm_red_state; Γ; tNat; tSucc t; tSucc t')). *)
     econstructor.
     1: exact IHt.
     now constructor.
   - intros.
     unfold graph.
-    simp conv.
+    simp conv conv_tm_red.
     now constructor.
   - intros * ?? ? [IHf] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm_red ; cbn.
     econstructor.
     1: exact IHf.
     now constructor.
   - intros * ? [IHA] ? [IHB] **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm_red ; cbn.
     econstructor.
     1: exact IHA.
     econstructor.
@@ -497,7 +498,7 @@ Proof.
     now constructor.
   - intros * ??? [ihFst] ? [ihSnd] **.
     unfold graph.
-    simp conv; cbn.
+    simp conv conv_tm_red ; cbn.
     econstructor.
     1: exact ihFst.
     econstructor.
@@ -505,7 +506,7 @@ Proof.
     now constructor.
   - intros * ? [IHm []] wP **.
     unfold graph.
-    simp conv ; cbn.
+    simp conv conv_tm_red ; cbn.
     unshelve erewrite whne_nf_view3 ; tea.
     2-3: now eapply algo_conv_wh in H as [].
     destruct wP ; cbn.
