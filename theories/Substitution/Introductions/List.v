@@ -1,3 +1,4 @@
+
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeTyping DeclarativeInstance Validity.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction Application Universe NormalRed SimpleArr.
@@ -355,16 +356,16 @@ Admitted.
 Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
 Proof. now bsimpl. Qed.
 
-Lemma mapValid {Γ A B f x l}
+Lemma mapValid {Γ A B f x i}
   {VΓ : [||-v Γ]}
-  {VA : [Γ ||-v<l> A | VΓ]}
-  {VB : [Γ ||-v<l> B | VΓ]}
-  {VLA : [Γ ||-v<l> tList A | VΓ]}
-  {VLB : [Γ ||-v<l> tList B | VΓ]}
-  {VFAB : [Γ ||-v<l> arr A B | VΓ]}
-  (Vf : [Γ ||-v<l> f : arr A B | VΓ | VFAB ])
-  (Vx : [Γ ||-v<l> x : tList A | VΓ | VLA ]) :
-  [Γ ||-v<l> tMap A B f x : tList B | VΓ | VLB].
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VB : [Γ ||-v<i> B | VΓ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {VLB : [Γ ||-v<i> tList B | VΓ]}
+  {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  (Vf : [Γ ||-v<i> f : arr A B | VΓ | VFAB ])
+  (Vx : [Γ ||-v<i> x : tList A | VΓ | VLA ]) :
+  [Γ ||-v<i> tMap A B f x : tList B | VΓ | VLB].
 Proof.
   split; intros.
   - instValid Vσ.
@@ -389,13 +390,118 @@ Proof.
     + change [normList RVLA | Δ ||- x[σ] ≅ x[σ'] : _]. irrelevance.
 Qed.
 
-(* TODO: also missing cong valid! *)
-(* TODO: and then the equations (tMap A A' f l ≅ l when f ≅ id  *)
+Lemma mapCongValid {Γ A A' B B' f f' x x' i}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VA' : [Γ ||-v<i> A' | VΓ]}
+  {VAA' : [Γ ||-v<i> A ≅ A' | VΓ | VA ]}
+  {VB : [Γ ||-v<i> B | VΓ]}
+  {VB' : [Γ ||-v<i> B' | VΓ]}
+  {VBB' : [Γ ||-v<i> B ≅ B' | VΓ | VB ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {VLA' : [Γ ||-v<i> tList A' | VΓ]}
+  {VLB : [Γ ||-v<i> tList B | VΓ]}
+  {VLB' : [Γ ||-v<i> tList B' | VΓ]}
+  {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  {VFAB' : [Γ ||-v<i> arr A' B' | VΓ]}
+  {Vf : [Γ ||-v<i> f : arr A B | VΓ | VFAB ]}
+  {Vf' : [Γ ||-v<i> f' : arr A' B' | VΓ | VFAB' ]}
+  {Vff' : [Γ ||-v<i> f ≅ f' : arr A B | VΓ | VFAB ]}
+  {Vx : [Γ ||-v<i> x : tList A | VΓ | VLA ]}
+  {Vx' : [Γ ||-v<i> x' : tList A' | VΓ | VLA' ]}
+  {Vxx' : [Γ ||-v<i> x ≅ x' : tList A | VΓ | VLA ]} :
+  [Γ ||-v<i> tMap A B f x ≅ tMap A' B' f' x' : tList B | VΓ | VLB].
+Proof.
+  split. intros.
+  instValid Vσ.
+  unshelve eapply (fst (mapEqRedAux _ _)) ; tea ; fold subst_term.
+  all: admit.
+  (* + now eapply invLRList. *)
+  (* + now eapply invLRList. *)
+  (* + admit. *)
+  (* + admit. *)
+Admitted.
 
-(* mutual induction on listRed/listProp *)
+Lemma mapRedNilValid {Γ A B f i}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VB : [Γ ||-v<i> B | VΓ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {VLB : [Γ ||-v<i> tList B | VΓ]}
+  {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  {Vf : [Γ ||-v<i> f : arr A B | VΓ | VFAB ]} :
+  [Γ ||-v<i> tMap A B f (tNil A) ≅ tNil B : tList B | VΓ | VLB].
+Proof.
+Admitted.
+
+Lemma mapRedConsValid {Γ A B f hd tl i}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VB : [Γ ||-v<i> B | VΓ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {VLB : [Γ ||-v<i> tList B | VΓ]}
+  {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  {Vf : [Γ ||-v<i> f : arr A B | VΓ | VFAB ]} :
+  [Γ ||-v<i> tMap A B f (tCons A hd tl) ≅ tCons B (tApp f hd) (tMap A B f tl) : tList B | VΓ | VLB].
+Proof.
+Admitted.
+
+Lemma mapRedCompValid {Γ A B C f g l l' i}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VB : [Γ ||-v<i> B | VΓ]}
+  {VC : [Γ ||-v<i> C | VΓ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {VLB : [Γ ||-v<i> tList B | VΓ]}
+  {VLC : [Γ ||-v<i> tList C | VΓ]}
+  {VFBC : [Γ ||-v<i> arr B C | VΓ]}
+  {VFAB' : [Γ ||-v<i> arr A B | VΓ]}
+  {Vf : [Γ ||-v<i> f : arr B C | VΓ | VFBC ]}
+  {Vg : [Γ ||-v<i> g : arr A B | VΓ | VFAB' ]}
+  {Vl : [Γ ||-v<i> l : tList A | VΓ | VLA ]}
+  {Vl' : [Γ ||-v<i> l' : tList A | VΓ | VLA ]} :
+  [Γ ||-v<i> tMap B C f (tMap A B g l') ≅ tMap A C (comp A f g) l' : tList C | VΓ | VLC].
+Proof.
+Admitted.
 
 
+Lemma mapRedIdAux {Γ A i}
+  {RA : [Γ ||-<i> A]}
+  {LA : [Γ ||-List<i> tList A]}
+  (LA' := normList0 LA : [Γ ||-List<i> tList A])
+  (RLA :=  LRList' LA' : [Γ ||-<i> tList A] )
+  {RFAA : [Γ ||-<i> arr A A]}
+  (Rid: [Γ ||-<i> (idterm A) : arr A A | RFAA]) :
+  (forall l (Rx: ListRedTm _ _ LA' l),
+        [Γ ||-<i> tMap A A (idterm A) l : tList A | RLA] ×
+        [Γ ||-<i> tMap A A (idterm A) l ≅ l : tList A | RLA])
+    ×
+    (forall l (Rx: ListProp _ _ LA' l),
+        [Γ ||-<i> tMap A A (idterm A) l : tList A | RLA] ×
+          [Γ ||-<i> tMap A A (idterm A) l ≅ l : tList A | RLA]).
+Proof.
+  escape.
+  intros.
+  apply ListRedInduction.
+Admitted.
 
-
+Lemma mapRedIdValid {Γ A l' l i}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<i> A | VΓ]}
+  {VLA : [Γ ||-v<i> tList A | VΓ]}
+  {Vl : [Γ ||-v<i> l : tList A | VΓ | VLA ]}
+  {Vl' : [Γ ||-v<i> l' : tList A | VΓ | VLA ]}
+  {Vll' : [Γ ||-v<i> l ≅ l' : tList A | VΓ | VLA ]} :
+  [Γ ||-v<i> tMap A A (idterm A) l ≅ l' : tList A | VΓ | VLA].
+Proof.
+  split; intros.
+  instValid Vσ.
+  cbn in *. change (tLambda _ _) with (idterm A[σ]).
+  eapply transEqTerm. 2: eassumption.
+  unshelve epose (snd (fst (mapRedIdAux _) _ _)).
+  10: irrelevance.
+  3: now apply invLRList.
+  all: admit.
+Admitted.
 
 End List.
