@@ -500,8 +500,12 @@ Proof.
   eapply transEqTerm. 2: eassumption.
   unshelve epose (snd (fst (mapRedIdAux _) _ _)).
   10: irrelevance.
-  3: now apply invLRList.
-  all: admit.
-Admitted.
+  all: tea.
+  - now apply invLRList.
+  - now apply ArrRedTy.
+  - apply idred.
+  - change [normList RVLA | Δ ||- l[σ] : (tList A)[σ]].
+    irrelevance.
+Qed.
 
 End List.
