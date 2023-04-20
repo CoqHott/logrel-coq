@@ -694,6 +694,20 @@ Proof.
   revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
 Qed.
 
+Corollary WLRTyEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' wl Γ A
+  (lrA : WLogRel@{i j k l} lA wl Γ A)
+  (lrA' : WLogRel@{i' j' k' l'} lA' wl Γ A) :
+  forall B, W[Γ ||-< lA > A ≅ B | lrA]< wl > -> W[Γ ||-< lA' > A ≅ B | lrA']< wl >.
+Proof.
+  intros B [].
+  exists (max lrA.(WN) WNEq).
+  intros.
+  eapply LRTyEqIrrelevantCum.
+  unshelve eapply WRedEq ; try assumption.
+  + now eapply Nat.max_lub_l.
+  + now eapply Nat.max_lub_r.
+Qed.
+
 Corollary RedTmIrrelevantCum wl Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA wl Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' wl Γ A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
@@ -725,6 +739,19 @@ Proof.
   revert lrA'; rewrite <- e; now apply LRTmRedIrrelevantCum.
 Qed.
 
+Corollary WLRTmRedIrrelevantCum@{i j k l i' j' k' l'} lA lA' wl Γ A
+  (lrA : WLogRel@{i j k l} lA wl Γ A)
+  (lrA' : WLogRel@{i' j' k' l'} lA' wl Γ A) :
+  forall t, W[Γ ||-< lA > t : A | lrA]< wl > ->
+            W[Γ ||-< lA' > t : A | lrA']< wl >.
+Proof.
+  intros t [].
+  exists (max lrA.(WN) WNTm).
+  intros ; eapply LRTmRedIrrelevantCum.
+  unshelve eapply WRedTm ; try assumption.
+  + now eapply Nat.max_lub_l.
+  + now eapply Nat.max_lub_r.
+Qed.
 
 Corollary TmEqIrrelevantCum wl Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA wl Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' wl Γ A eqTyA' redTmA' eqTmA') :
@@ -757,6 +784,20 @@ Proof.
   revert lrA'; rewrite <- e; now apply LRTmEqIrrelevantCum.
 Qed.
 
+Corollary WLRTmEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' wl Γ A
+  (lrA : WLogRel@{i j k l} lA wl Γ A)
+  (lrA' : WLogRel@{i' j' k' l'} lA' wl Γ A) :
+  forall t u, W[Γ ||-< lA > t ≅ u : A | lrA]< wl > ->
+              W[Γ ||-< lA' > t ≅ u : A | lrA']< wl >.
+Proof.
+  intros t u [].
+  exists (max lrA.(WN) WNTmEq).
+  intros ; eapply LRTmEqIrrelevantCum.
+  unshelve eapply WRedTmEq ; try assumption.
+  + now eapply Nat.max_lub_l.
+  + now eapply Nat.max_lub_r.
+Qed.
+  
 
 
 Corollary TyEqSym wl Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}

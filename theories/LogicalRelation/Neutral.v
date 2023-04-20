@@ -8,7 +8,11 @@ Set Universe Polymorphism.
 Section Neutral.
 Context `{GenericTypingProperties}.
 
-Definition neu {l wl Γ A} : Ne[Γ |- A]< wl > -> [Γ |- A]< wl > -> [ Γ |- A ~ A : U]< wl > -> [Γ ||-<l> A]< wl >.
+Definition neu {l wl Γ A} :
+  Ne[Γ |- A]< wl > ->
+  [Γ |- A]< wl > ->
+  [ Γ |- A ~ A : U]< wl > ->
+  [Γ ||-<l> A]< wl >.
 Proof.
   intros neA wtyA reflA. apply LRne_.
   exists A; [gen_typing|..]; assumption.
@@ -169,7 +173,8 @@ Proof.
 Qed.
 
 
-Lemma complete_U : forall l wl Γ A (RA : [Γ ||-U< l > A]< wl >), complete (LRU_ RA).
+Lemma complete_U : forall l wl Γ A (RA : [Γ ||-U< l > A]< wl >),
+    complete (LRU_ RA).
 Proof.
   intros l wl Γ A h0.
   unshelve econstructor.
@@ -202,7 +207,8 @@ Proof.
       assumption.
 Qed.
 
-Lemma complete_ne : forall l wl Γ A (RA : [Γ ||-ne A]< wl >), complete (LRne_ l RA).
+Lemma complete_ne : forall l wl Γ A (RA : [Γ ||-ne A]< wl >),
+    complete (LRne_ l RA).
 Proof.
   intros l wl Γ A h0. unshelve econstructor.
   - exact (fun _ _ => 0).

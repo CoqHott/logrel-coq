@@ -144,7 +144,37 @@ Proof.
   - destruct RBC; now constructor.
 Qed.
 
+Lemma WtransEq@{i j k l} {wl Γ A B C lA lB lC} 
+  {RA : WLogRel@{i j k l} lA wl Γ A}
+  {RB : WLogRel@{i j k l} lB wl Γ B}
+  {RC : WLogRel@{i j k l} lC wl Γ C}
+  (RAB : W[Γ ||-< lA > A ≅ B | RA]< wl >)
+   (RBC : W[Γ ||-< lB > B ≅ C | RB]< wl >) :
+  W[Γ ||-<lA> A ≅ C | RA]< wl >.
+Proof.
+  destruct RAB as [WNAB WRedEqAB].
+  destruct RBC as [WNBC WRedEqBC].
+  exists (max (max RB.(WN) RC.(WN)) (max WNAB WNBC)).
+  intros.
+  eapply (transEq (B := B)).
+  - unshelve eapply WRedEqAB.
+    eapply Nat.max_lub_l.
+    now eapply Nat.max_lub_r.
+  - unshelve eapply WRedEqBC ; try assumption.
+    + eapply Nat.max_lub_l.
+      now eapply Nat.max_lub_l.
+    + eapply Nat.max_lub_r.
+      now eapply Nat.max_lub_r.
+      Unshelve.
+      * exact lC.
+      * unshelve eapply RC.(WRed) ; try assumption.
+        eapply Nat.max_lub_r.
+        now eapply Nat.max_lub_l.
+Qed.    
 
+  
+
+  
 Lemma transEqTermU@{h i j k} {wl Γ l UU t u v} {h : [Γ ||-U<l> UU]< wl >} :
   [LogRelRec@{i j k} l | Γ ||-U t ≅ u : UU| h]< wl > ->
   [LogRelRec@{i j k} l | Γ ||-U u ≅ v : UU| h]< wl > ->

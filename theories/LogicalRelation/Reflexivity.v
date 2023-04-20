@@ -1,4 +1,5 @@
 (** * LogRel.LogicalRelation.Reflexivity: reflexivity of the logical relation. *)
+Require Import PeanoNat.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst LContexts Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Escape.
@@ -28,6 +29,14 @@ Section Reflexivities.
     now eapply LRTyEqRefl.
   Qed.
 
+  Corollary WLRTyEqRefl_ {l wl Γ A} (lr : W[ Γ ||-< l > A ]< wl > ) : W[ Γ ||-< l > A ≅ A | lr ]< wl >.
+  Proof.
+    destruct lr.
+    exists WN.
+    intros.
+    eapply LRTyEqRefl_.
+  Qed.
+  
   Lemma NeNfEqRefl {wl Γ k A} : [Γ ||-NeNf k : A]< wl > -> [Γ ||-NeNf k ≅ k : A]< wl >.
   Proof.
     intros []; now econstructor.
@@ -105,5 +114,17 @@ Section Reflexivities.
     cbn in *.
     now eapply LRTmEqRefl.
   Qed.
+
+  Corollary WLREqTermRefl_ {l wl Γ A t} (lr : W[ Γ ||-< l > A ]< wl > ) : 
+      W[ Γ ||-< l > t : A | lr ]< wl > ->
+      W[ Γ ||-< l > t ≅ t : A | lr ]< wl >.
+  Proof.
+    intros [].
+    destruct lr.
+    exists WNTm.
+    intros.
+    eapply LREqTermRefl_.
+    now eapply WRedTm.
+  Qed.    
 
 End Reflexivities.

@@ -46,7 +46,23 @@ Proof.
     + now constructor.
 Qed.
 
-
+Lemma WredSubst {wl Γ A B l} :
+  W[Γ ||-<l> B]< wl > ->
+  [Γ |- A ⇒* B]< wl > ->
+  ∑ (RA : W[Γ ||-<l> A]< wl >), W[Γ ||-<l> A ≅ B | RA]< wl >.
+Proof.
+  intros [] ?.
+  unshelve econstructor.
+  - exists WN.
+    intros.
+    eapply redSubst.
+    + eapply WRed ; try assumption.
+    + now eapply redty_Ltrans.
+  - exists WN.
+    cbn ; intros.
+    now destruct (redSubst (WRed wl' τ Ninfl) (redty_Ltrans τ H14)).
+Qed.   
+    
 Lemma redwfSubst {wl Γ A B l} :
   [Γ ||-<l> B]< wl > ->
   [Γ |- A :⇒*: B]< wl > ->
@@ -130,6 +146,24 @@ Proof.
     Unshelve. 2: tea.
 Qed.
 
+Lemma WredSubstTerm {wl Γ A t u l}
+  (RA : W[Γ ||-<l> A]< wl >) :
+  W[Γ ||-<l> u : A | RA]< wl > ->
+  [Γ |- t ⇒* u : A ]< wl > ->
+  W[Γ ||-<l> t : A | RA]< wl > × W[Γ ||-<l> t ≅ u : A | RA]< wl >.
+Proof.
+  intros [] ?.
+  split ; exists WNTm.
+  - intros.
+    eapply redSubstTerm.
+    + now eapply WRedTm.
+    + now eapply redtm_Ltrans.
+  - intros.
+    eapply redSubstTerm.
+    + now eapply WRedTm.
+    + now eapply redtm_Ltrans.
+Qed.
+
 Lemma redwfSubstTerm {wl Γ A t u l} (RA : [Γ ||-<l> A]< wl >) :
   [Γ ||-<l> u : A | RA]< wl > ->
   [Γ |- t :⇒*: u : A ]< wl > ->
@@ -139,7 +173,11 @@ Proof.
 Qed.
 
 
-Lemma redFwd {wl Γ l A B} : [Γ ||-<l> A]< wl > -> [Γ |- A :⇒*: B]< wl > -> whnf B -> [Γ ||-<l> B]< wl >.
+Lemma redFwd {wl Γ l A B} :
+  [Γ ||-<l> A]< wl > ->
+  [Γ |- A :⇒*: B]< wl > ->
+  whnf B ->
+  [Γ ||-<l> B]< wl >.
 Proof.
   intros RA; revert B; pattern l, wl, Γ, A, RA; apply LR_rect_TyUr; clear l wl Γ A RA.
   - intros ???? [??? red] ? red' ?. 
@@ -177,8 +215,29 @@ Proof.
     eapply redtywf_refl; gen_typing.
 Qed.
 
+Lemma WredFwd {wl Γ l A B} :
+  W[Γ ||-<l> A]< wl > ->
+  [Γ |- A :⇒*: B]< wl > ->
+  whnf B ->
+  W[Γ ||-<l> B]< wl >.
+Proof.
+  intros [] red whB.
+  exists WN ; intros.
+  unshelve eapply redFwd.
+  - exact A.
+  - now eapply WRed.
+  - unshelve econstructor.
+    + now eapply wft_Ltrans ; destruct red.
+    + now eapply redty_Ltrans ; destruct red.
+  - assumption.
+Qed.
+
+
 Lemma redTmFwd {wl Γ l A t u} {RA : [Γ ||-<l> A]< wl >} : 
-  [Γ ||-<l> t : A | RA]< wl > -> [Γ |- t :⇒*: u : A]< wl > -> whnf u -> [Γ ||-<l> u : A | RA]< wl >.
+  [Γ ||-<l> t : A | RA]< wl > ->
+  [Γ |- t :⇒*: u : A]< wl > ->
+  whnf u ->
+  [Γ ||-<l> u : A | RA]< wl >.
 Proof.
   revert t u; pattern l,wl, Γ,A,RA; apply LR_rect_TyUr; clear l wl Γ A RA.
   - intros ??????? [? red] red' ?.
@@ -216,5 +275,20 @@ Proof.
     eapply redtmwf_refl; gen_typing.
     Unshelve. 2: tea.
 Qed.
+
+Lemma WredTmFwd {wl Γ l A t u} {RA : W[Γ ||-<l> A]< wl >} : 
+  W[Γ ||-<l> t : A | RA]< wl > ->
+  [Γ |- t :⇒*: u : A]< wl > ->
+  whnf u ->
+  W[Γ ||-<l> u : A | RA]< wl >.
+Proof.
+  intros [] [wfA red] whu.
+  exists WNTm ; intros.
+  eapply redTmFwd ; try assumption.
+  - now eapply WRedTm.
+  - econstructor.
+    + now eapply ty_Ltrans.
+    + now eapply redtm_Ltrans.
+Qed.  
 
 End Reduction.

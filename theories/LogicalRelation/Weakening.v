@@ -15,19 +15,6 @@ Section Weakenings.
     (ρ : Δ ≤ Γ)
     (wfΔ : [|- Δ]< wl >) :
     [Δ ||-Π< l > A⟨ρ⟩]< wl >.
-  
-   (* (ihdom : forall Δ' wl' (ρ' : Δ' ≤ Δ)
-                    (τ : wl' ≤ε wl)
-                    (Ninfl : (PiRedTyPack.domN ΠA) <= length wl'),
-        [ |- Δ']< wl' > ->
-        [Δ' ||-< l > (PiRedTyPack.dom ΠA)⟨ρ⟩⟨ρ'⟩]< wl' >)
-    (ihcod : forall wl' (a : term)
-                    (τ : wl' ≤ε wl)
-                    (Ninfl : (PiRedTyPack.domN ΠA) <= length wl')
-                    (wfΔ' : [|- Δ]< wl' >),
-        [PiRedTyPack.domRed ΠA ρ τ Ninfl wfΔ' | _ ||- a : _]< wl' > ->
-      forall Δ' (ρ' : Δ' ≤ Δ), [ |- Δ']< wl' > ->
-      [Δ' ||-< l > (PiRedTyPack.cod ΠA)[a .: ρ >> tRel]⟨ρ'⟩]< wl' >)*)
   Proof.
     destruct ΠA as[dom cod];  cbn in *.
     assert (domRed' : forall Δ' wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
@@ -115,6 +102,17 @@ Section Weakenings.
     - intros; eapply LREmpty_; now eapply wkEmpty.
   Defined.
 
+  Corollary Wwk@{i j k l} {wl Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) :
+    WLogRel@{i j k l} l wl Γ A ->
+    WLogRel@{i j k l} l wl Δ A⟨ρ⟩.
+  Proof.
+    intros [].
+    exists WN ; intros.
+    eapply wk.
+    - now eapply wfc_Ltrans.
+    - now eapply WRed.
+  Defined.
+  
   Definition wkΠ' {wl Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) (ΠA : [Γ ||-Π< l > A]< wl >) :=
     (*let ihdom Δ' (ρ' : Δ' ≤ Δ) (h : [ |- Δ']) := wk ρ' h (PiRedTyPack.domRed ΠA ρ wfΔ) in
     let ihcod a (ha : [PiRedTyPack.domRed ΠA ρ wfΔ | _ ||- a : _]) Δ' (ρ' : Δ' ≤ Δ) (h : [ |- Δ']) :=
@@ -169,8 +167,20 @@ Section Weakenings.
     - intros * []; constructor.
       change tEmpty with tEmpty⟨ρ⟩; gen_typing.
   Qed.
-    
 
+  Lemma WwkEq@{i j k l} {wl Γ Δ A B l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]< wl >)
+    (lrA : WLogRel@{i j k l} l wl Γ A) : 
+    W[ Γ ||-< l > A ≅ B | lrA]< wl > ->
+    W[ Δ ||-< l > A⟨ρ⟩ ≅ B⟨ρ⟩ | Wwk@{i j k l} ρ wfΔ lrA]< wl >.
+  Proof.
+    intros [].
+    exists WNEq.
+    intros.
+    unshelve eapply wkEq.
+    now eapply WRedEq.
+  Qed.
+
+  
   (* TODO: use program or equivalent to have only the first field non-opaque *)
   Lemma wkΠTerm {wl Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]< wl >) (ΠA : [Γ ||-Π< l > A]< wl >) 
     (ΠA' := wkΠ' ρ wfΔ ΠA) : 
@@ -249,6 +259,18 @@ Section Weakenings.
         now eapply wkNeNf.
   Qed.
 
+  Lemma WwkTerm@{i j k l} {wl Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]< wl >)
+    (lrA : WLogRel@{i j k l} l wl Γ A) : 
+    W[ Γ ||-< l > t : A | lrA]< wl > ->
+    W[ Δ ||-< l > t⟨ρ⟩ : A⟨ρ⟩ | Wwk@{i j k l} ρ wfΔ lrA]< wl >.
+  Proof.
+    intros [].
+    exists WNTm.
+    intros.
+    eapply wkTerm.
+    now eapply WRedTm.
+  Qed.
+  
   Lemma wkUTerm {wl Γ Δ l A t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]< wl >) (h : [Γ ||-U<l> A]< wl >) :
     [LogRelRec l| Γ ||-U t : A | h ]< wl > -> [LogRelRec l | Δ||-U t⟨ρ⟩ : A⟨ρ⟩ | wkU ρ wfΔ h]< wl >.
   Proof.

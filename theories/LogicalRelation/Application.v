@@ -17,13 +17,57 @@ Set Printing Primitive Projection Parameters.
 Section AppTerm.
   Context {wl Γ t u F G l l' l''}
     (hΠ : [Γ ||-Π<l> tProd F G]< wl >)
-    {RF : [Γ ||-<l'> F]< wl >}
+    {RF : W[Γ ||-<l'> F]< wl >}
     (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)]< wl >)
-    (Ru : [Γ ||-<l'> u : F | RF]< wl >)
-    (RGu : [Γ ||-<l''> G[u..]]< wl >).
+    (Ru : W[Γ ||-<l'> u : F | RF]< wl >)
+    (RGu : W[Γ ||-<l''> G[u..]]< wl >).
 
-  Lemma app_id : [Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
+  Definition AppTy : W[Γ ||-<l> G[u..]]< wl >.
   Proof.
+    clear Rt RGu.
+    destruct Ru ; destruct RF ; cbn in *.
+    destruct hΠ ; cbn in *.
+    exists (max WN WNTm).
+    intros.
+    assert ([Γ ||-< l > cod[u..] ]< wl' >).
+    - pose (q := codRed Γ u wl' wk_id τ).
+      cbn in q.
+      replace (cod[u..]) with (cod[u .: _wk_id Γ >> tRel]) by now bsimpl.
+      unshelve eapply q.
+      
+      eapply codRed.
+    
+    
+  Lemma app_id : W[Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
+  Proof.
+    exists (PiRedTyPack.domN  hΠ ).
+    intros.
+    replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
+    irrelevance0.  2: unshelve eapply (PiRedTm.app Rt).
+    cbn; now bsimpl.
+    - exact wl'.
+    - assumption.
+    - assumption.
+    - eapply wfc_Ltrans.
+      2: exact (wfc_wft (escape RF)).
+      assumption.
+    - irrelevance0.
+      2:{ unshelve eapply LRTm_Ltrans.
+          exact l'.
+          exact wl.
+          all: try eassumption.}
+      cbn.
+      now bsimpl.
+    - now eapply wfLCon_le_id.
+    - cbn.
+      unfold NormalRed.normRedΠ0_obligation_7.
+      cbn.
+         eassumption.
+         eassumption.}
+      Unshelve.
+      cbn.
+      now bsimpl.
+    
     assert (wfΓ := wfc_wft (escape RF)).
     replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
     irrelevance0.  2: unshelve eapply (PiRedTm.app Rt).
