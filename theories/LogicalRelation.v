@@ -118,7 +118,6 @@ Module neRedTy.
   : Set := {
     ty : term;
     red : [ Γ |- A :⇒*: ty];
-    ne : Ne[ Γ |- ty];
     eq : [ Γ |- ty ~ ty : U] ;
   }.
 
@@ -137,7 +136,6 @@ Module neRedTyEq.
   : Set := {
     ty   : term;
     red  : [ Γ |- B :⇒*: ty];
-    ne : Ne[ Γ |- ty];
     eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
   }.
 
@@ -157,7 +155,6 @@ Module neRedTm.
   : Set := {
     te  : term;
     red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
-    ne : Ne[ Γ |- te : R.(neRedTy.ty)];
     eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
   }.
 
@@ -180,8 +177,6 @@ Module neRedTmEq.
     termR     : term;
     redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
     redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
-    whneL : Ne[Γ |- termL : R.(neRedTy.ty) ];
-    whneR : Ne[Γ |- termR : R.(neRedTy.ty) ];
     eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
   }.
 
@@ -240,7 +235,6 @@ Module URedTm.
     te : term;
     red : [ Γ |- t :⇒*: te : U ];
     type : isType te;
-    val : Nf[Γ |- te : U];
     eqr : [Γ |- te ≅ te : U];
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
   }.
@@ -413,7 +407,6 @@ Module PiRedTm.
     nf : term;
     red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     isfun : isFun nf;
-    isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)];
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
@@ -480,7 +473,6 @@ Module SigRedTm.
     nf : term;
     red : [ Γ |- t :⇒*: nf : ΣA.(outTy) ];
     isfun : isPair nf;
-    isnf  : Nf[Γ |- nf : ΣA.(outTy) ];
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;
@@ -526,7 +518,6 @@ Notation "[ Γ ||-Σ t ≅ u : A | ΣA ]" := (SigRedTmEq (Γ:=Γ) (A:=A) ΣA t u
 Module NeNf.
   Record RedTm `{ta : tag} `{Typing ta} `{ConvNeuConv ta} `{TermNe ta} {Γ k A} : Set :=
     {
-      ne : Ne[Γ |- k : A];
       ty : [Γ |- k : A] ;
       refl : [Γ |- k ~ k : A]
     }.
@@ -534,8 +525,6 @@ Module NeNf.
 
   Record RedTmEq `{ta : tag} `{ConvNeuConv ta} `{TermNe ta} {Γ k l A} : Set :=
     {
-      neL : Ne[Γ |- k : A];
-      neR : Ne[Γ |- l : A];
       conv : [Γ |- k ~ l : A]
     }.
 
@@ -1185,20 +1174,20 @@ End LogRelRecFoldLemmas.
 Section NatPropProperties.
   Context `{GenericTypingProperties}.
   Lemma NatProp_whnf {Γ A t} {NA : [Γ ||-Nat A]} : NatProp NA t -> whnf t.
-  Proof.  intros [ | | ? []]; now (econstructor; eapply tm_ne_whne). Qed.
+  Proof.  intros [ | | ? []]; now (econstructor; eapply convneu_whne). Qed.
 
   Lemma NatPropEq_whnf {Γ A t u} {NA : [Γ ||-Nat A]} : NatPropEq NA t u -> whnf t × whnf u.
-  Proof.  intros [ | | ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
+  Proof.  intros [ | | ? ? []]; split; econstructor; eapply convneu_whne; first [eassumption|symmetry; eassumption]. Qed.
 
 End NatPropProperties.
 
 Section EmptyPropProperties.
   Context `{GenericTypingProperties}.
   Lemma EmptyProp_whnf {Γ A t} {NA : [Γ ||-Empty A]} : @EmptyProp _ _ _ _ Γ t -> whnf t.
-  Proof.  intros [ ? []]; now (econstructor; eapply tm_ne_whne). Qed.
+  Proof.  intros [ ? []]; now (econstructor; eapply convneu_whne). Qed.
 
   Lemma EmptyPropEq_whnf {Γ A t u} {NA : [Γ ||-Empty A]} : @EmptyPropEq _ _ _ Γ t u -> whnf t × whnf u.
-  Proof.  intros [ ? ? []]; split; now (econstructor; eapply tm_ne_whne). Qed.
+  Proof.  intros [ ? ? []]; split; econstructor; eapply convneu_whne; first [eassumption|symmetry; eassumption]. Qed.
 
 End EmptyPropProperties.
 

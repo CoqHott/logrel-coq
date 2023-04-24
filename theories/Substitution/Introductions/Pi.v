@@ -129,7 +129,6 @@ Section PiTmValidity.
     econstructor; cbn.
     - apply redtmwf_refl; cbn in *; now eapply ty_prod.
     - constructor.
-    - apply tm_nf_prod; now eapply reifyTerm.
     - now eapply convtm_prod.
     - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ Vσ));
       unshelve eapply univValid; tea; try irrValid.

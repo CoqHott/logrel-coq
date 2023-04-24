@@ -55,7 +55,7 @@ Definition normLambda {Γ F F' G t l RΠ}
 Solve All Obligations with
   intros;
   pose proof (e := redtmwf_whnf (PiRedTm.red Rlam) whnf_tLambda);
-  destruct Rlam as [????? app eqq]; cbn in *; subst;
+  destruct Rlam as [???? app eqq]; cbn in *; subst;
   first [eapply app | now eapply eqq| eassumption].
 
 #[program]
@@ -66,7 +66,7 @@ Definition normPair {Γ F F' G G' f g l RΣ}
 Solve All Obligations with
   intros;
   pose proof (e := redtmwf_whnf (SigRedTm.red Rp) whnf_tPair);
-  destruct Rp as [????? fstRed sndRed]; cbn in *; subst;
+  destruct Rp as [???? fstRed sndRed]; cbn in *; subst;
   first [eapply fstRed | irrelevanceRefl; now unshelve eapply sndRed| eassumption].
 
 

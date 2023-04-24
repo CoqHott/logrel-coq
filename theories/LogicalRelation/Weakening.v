@@ -64,7 +64,9 @@ Section Weakenings.
     eapply LR_rect_TyUr@{i j k l l}; clear l Γ A lrA.
     - intros **. apply LRU_. now eapply wkU.
     - intros ???[ty]???. apply LRne_.
-      exists (ty⟨ρ⟩); [|now apply ty_ne_wk|change U with U⟨ρ⟩] ;gen_typing.
+      exists (ty⟨ρ⟩).
+      + gen_typing.
+      + change U with U⟨ρ⟩; apply convneu_wk; gen_typing.
     - intros; apply LRPi'; now eapply wkΠ.
     - intros; eapply LRNat_; now eapply wkNat.
     - intros; eapply LREmpty_; now eapply wkEmpty.
@@ -103,7 +105,6 @@ Section Weakenings.
     - intros ?? ????? ? [] ; constructor; change U with U⟨ρ⟩; gen_typing.
     - intros * [ty].
       exists ty⟨ρ⟩.
-      2: now apply ty_ne_wk, ne.
       1: gen_typing.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ?? * []; rewrite wkΠ_eq ; eexists.
@@ -134,8 +135,7 @@ Section Weakenings.
     exists (t⟨ρ⟩); try change (tProd _ _) with (ΠA.(outTy)⟨ρ⟩).
     + now eapply redtmwf_wk.
     + apply isFun_ren; assumption.
-    + now apply tm_nf_wk.
-    + eapply convtm_wk; eassumption.
+    + now apply convtm_wk.
     + intros ? a ρ' ??.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
       irrelevance0.
@@ -151,7 +151,7 @@ Section Weakenings.
   Lemma wkNeNf {Γ Δ k A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
     [Γ ||-NeNf k : A] -> [Δ ||-NeNf k⟨ρ⟩ : A⟨ρ⟩].
   Proof.
-    intros []; constructor. 1:apply tm_ne_wk. all: gen_typing.
+    intros []; constructor. all: gen_typing.
   Qed.  
   
   Lemma wkΣTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) 
@@ -166,7 +166,6 @@ Section Weakenings.
       cbn; symmetry; apply wk_comp_ren_on.
     + now eapply redtmwf_wk.
     + apply isPair_ren; assumption.
-    + now apply tm_nf_wk.
     + eapply convtm_wk; eassumption.
     + intros ? ρ' ?;  irrelevance0.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.
@@ -179,14 +178,13 @@ Section Weakenings.
     revert t Δ ρ wfΔ. pattern l, Γ, A, lrA.
     eapply LR_rect_TyUr; clear l Γ A lrA.
     - intros ?????? ρ ? [te]; exists te⟨ρ⟩;  try change U with U⟨ρ⟩.
-      1, 4: gen_typing.
-      apply isType_ren; assumption.
-      now apply tm_nf_wk.
-      apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
+      + gen_typing.
+      + apply isType_ren; assumption.
+      + now apply convtm_wk.
+      + apply RedTyRecBwd ; apply wk; [assumption|]; now apply (RedTyRecFwd h).
     - intros ?????? ρ ? [te]. exists te⟨ρ⟩; cbn.
       + now eapply redtmwf_wk.
-      + apply tm_ne_wk; assumption.
-      + eapply convneu_wk; eassumption.
+      + apply convneu_wk; assumption.
     - intros; now apply wkΠTerm. 
     - intros??? NA t ? ρ wfΔ; revert t; pose (NA' := wkNat ρ wfΔ NA).
       set (G := _); enough (h : G × (forall t, NatProp NA t -> NatProp NA' t⟨ρ⟩)) by apply h.
@@ -217,17 +215,17 @@ Section Weakenings.
     [LogRelRec l| Γ ||-U t : A | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ : A⟨ρ⟩ | wkU ρ wfΔ h].
   Proof.
     intros [te]. exists te⟨ρ⟩; change U with U⟨ρ⟩.
-    1, 4: gen_typing.
-    apply isType_ren; assumption.
-    now apply tm_nf_wk.
-    destruct l; [destruct (elim (URedTy.lt h))|cbn].
-    eapply (wk (l:=zero)); eassumption.
+    - gen_typing.
+    - apply isType_ren; assumption.
+    - now apply convtm_wk.
+    - destruct l; [destruct (elim (URedTy.lt h))|cbn].
+      eapply (wk (l:=zero)); eassumption.
   Defined.
 
   Lemma wkNeNfEq {Γ Δ k k' A} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) : 
     [Γ ||-NeNf k ≅ k' : A] -> [Δ ||-NeNf k⟨ρ⟩ ≅ k'⟨ρ⟩ : A⟨ρ⟩].
   Proof.
-    intros []; constructor. 1,2: apply tm_ne_wk. all: gen_typing.
+    intros []; constructor. gen_typing.
   Qed.  
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
@@ -246,8 +244,7 @@ Section Weakenings.
       + apply TyEqRecBwd. eapply wkEq. now apply TyEqRecFwd.
     - intros ??????? ρ ? [tL tR].
       exists (tL⟨ρ⟩) (tR⟨ρ⟩); cbn.
-      1,2: now eapply redtmwf_wk. 
-      1,2: apply tm_ne_wk; assumption.
+      1,2: now eapply redtmwf_wk.
       now eapply convneu_wk.
     - intros * ?? * []; rewrite wkΠ_eq. 
       unshelve econstructor; cbn; try rewrite wk_prod.

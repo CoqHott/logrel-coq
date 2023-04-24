@@ -236,7 +236,7 @@ Section NeutralConversion.
       1-2: reflexivity.
       econstructor.
       1: eassumption.
-      econstructor; eapply (ty_ne_whne ne).
+      econstructor; eapply (convneu_whne eq).
     - intros ? ? ? ΠA IHdom IHcod m n mty Hconv ; cbn in *.
       destruct ΠA  as [????? []]; cbn in *.
       econstructor.
@@ -330,7 +330,7 @@ Section NeutralConversion.
       3: constructor.
       * assert (whne m).
         { apply algo_conv_wh in Hconv; now destruct Hconv. }
-        eapply neuTerm; tea; [now econstructor|].
+        eapply neuTerm; tea.
         split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
     Unshelve. 2,4: tea. 

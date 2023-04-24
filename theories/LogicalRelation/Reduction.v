@@ -147,7 +147,7 @@ Proof.
   - intros ??? [? red] ? red' ?.
     eapply LRne_.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
-    1: constructor; now eapply ty_ne_whne.
+    1: constructor; now eapply convneu_whne.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
   - intros ??? [?? red] ?? ? red' ?.
@@ -197,7 +197,7 @@ Proof.
     now eapply RedTyRecFwd.
   - intros ??? ??? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
-    1: constructor; now eapply tm_ne_whne.
+    1: constructor; now eapply convneu_whne.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.

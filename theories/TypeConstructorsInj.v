@@ -44,7 +44,7 @@ Section TypeConstructors.
     - destruct Hconv as [? red].
       eexists ; split.
       1: apply red.
-      apply ty_ne_whne in ne.
+      symmetry in eq; apply convneu_whne in eq.
       now constructor.
     - destruct Hconv as [?? red].
       eexists ; split.
@@ -96,18 +96,18 @@ Section TypeConstructors.
       assert (T' = nT') as <- by
         (apply red_whnf ; gen_typing).
       destruct nfT.
-      + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
-      + apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
-      + apply ty_ne_whne in ne, ne'; inversion ne.
-      + apply ty_ne_whne in ne, ne'; inversion ne.
-      + apply ty_ne_whne in ne, ne'; inversion ne.
+      + apply convneu_whne in ne, ne'; exfalso ; gen_typing.
+      + apply convneu_whne in ne, ne'; exfalso ; gen_typing.
+      + apply convneu_whne in ne, ne'; inversion ne.
+      + apply convneu_whne in ne, ne'; inversion ne.
+      + apply convneu_whne in ne, ne'; inversion ne.
       + destruct nfT'.
-        * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
-        * apply ty_ne_whne in ne, ne'; exfalso ; gen_typing.
-        * apply ty_ne_whne in ne, ne'; inversion ne'.
-        * apply ty_ne_whne in ne, ne'; inversion ne'.
-        * apply ty_ne_whne in ne, ne'; inversion ne'; gen_typing.
-        * apply ty_ne_whne in ne, ne'. cbn. gen_typing.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'; gen_typing.
+        * cbn. gen_typing.
     - assert [|- Γ] by (apply escape in HT' ; boundary).
       rewrite <- (ParamRedTy.beta_pack ΠAad) in *.
       remember (ParamRedTy.from ΠAad) as ΠA' eqn:Heq in *.

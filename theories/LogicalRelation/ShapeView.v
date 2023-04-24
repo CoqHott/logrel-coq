@@ -46,7 +46,7 @@ when showing symmetry or transitivity of the logical relation. *)
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA; eapply LR_rect; intros ??[].
     all: eexists; split; tea; constructor; tea.
-    now eapply ty_ne_whne.
+    now eapply convneu_whne.
   Defined.
 
   Lemma eqTy_red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA B}
@@ -57,7 +57,7 @@ when showing symmetry or transitivity of the logical relation. *)
     eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].
     3,6: intros ??.
     all: intros []; eexists; split; tea; constructor; tea.
-    now eapply ty_ne_whne.
+    eapply convneu_whne; now symmetry.
   Defined.
 
   Lemma ShapeViewConv@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA B lB eqTyB redTmB eqTmB}
@@ -71,8 +71,9 @@ when showing symmetry or transitivity of the logical relation. *)
     pose proof (h := redtywf_det _ _ _ _ (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
     revert eqAB x y h. 
     destruct lrA; destruct lrB; intros []; cbn; try easy; try discriminate.
-    all: try now (intros e; rewrite e in ne; apply ty_ne_whne in ne; inversion ne).
-    all: try now (intros e; destruct neA as [? ? ne]; rewrite <- e in ne; apply ty_ne_whne in ne; inversion ne).
+
+    all: try now (intros e; destruct neA as [? ? ne]; subst; apply convneu_whne in ne; inversion ne).
+    all: try now (intros e; subst; symmetry in eq; apply convneu_whne in eq; inversion eq).
   Qed.
 
 (** ** More properties *)

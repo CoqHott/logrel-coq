@@ -56,7 +56,7 @@ Section Reflexivities.
   Proof.
     pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; 
       clear Γ A eqTy redTm eqTm lr; intros Γ A.
-    - intros h t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
+    - intros h t [? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.

@@ -43,7 +43,6 @@ Proof.
   econstructor.
   + eapply redtmwf_refl; gen_typing.
   + constructor.
-  + now apply tm_nf_empty.
   + gen_typing.
   + now eapply (emptyRed (l:= zero)).
 Defined.
@@ -121,8 +120,6 @@ Section EmptyElimRed.
     - intros ? [] ?.
       apply reflect.
       + apply completeness.
-      + eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + now eapply ty_emptyElim.
       + now eapply ty_emptyElim.
       + eapply convneu_emptyElim; tea.
@@ -207,10 +204,6 @@ Section EmptyElimRedEq.
         gen_typing.
       }
       eapply neuTermEq.
-      + eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_conv; [| |symmetry; eassumption].
-        * eapply tm_ne_emptyelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-        * now eapply escape.
       + eapply ty_emptyElim; tea.
       + eapply ty_conv. 
         1: eapply ty_emptyElim; tea.

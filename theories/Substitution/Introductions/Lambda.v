@@ -80,9 +80,6 @@ Proof.
   exists (tLambda F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
   + constructor.
-  + apply tm_nf_lam.
-    - now apply reifyType in RVF.
-    - now apply reifyTerm in RVt.
   + eapply convtm_eta; tea. 
     1,2: now constructor.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])

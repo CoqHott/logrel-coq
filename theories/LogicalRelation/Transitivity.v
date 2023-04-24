@@ -78,10 +78,10 @@ Proof.
   induction lrB as [|?? neB|?? ΠB ΠBad _ _| | | ?? PB PBad _ _]; intros ??? lrC;
   induction lrC as [| |?? ΠC ΠCad _ _| | | ?? PC PCad _ _]; intros RAB RBC [].
   - easy.
-  - destruct RAB as [tB red], RBC as [tC]; exists tC. 1,2: assumption.
+  - destruct RAB as [tB red], RBC as [tC]; exists tC. assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
-    1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
+    1,2 : eapply whnf_whne, convneu_whne. all: first [eassumption|symmetry; eassumption].
   - destruct RAB as [?? redB ??], RBC as [?? redC ??].
     destruct ΠB as [??? redB' ??], ΠC as [domC codC ? redC' ??].
     inv_red redB redB'; inv_red redC redC'.
@@ -127,7 +127,7 @@ Proof.
   intros [tL] [? tR]; exists tL tR; tea.
   etransitivity; tea.
   unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ redR redL0); tea.
-  all: now eapply whnf_whne, tm_ne_whne.
+  all: eapply whnf_whne, convneu_whne; first [eassumption|symmetry; eassumption].
 Qed.
 
 
@@ -215,9 +215,9 @@ Proof.
   - intros * ? ih ? uv.
     inversion uv ; subst.
     + econstructor; now eapply ih.
-    + match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; apply tm_ne_whne in neL; inv_whne end.
+    + match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; apply convneu_whne in conv; inv_whne end.
   - intros ?? tu ? uv; inversion uv; subst.
-    1,2: destruct tu; apply tm_ne_whne in neR; inv_whne.
+    1,2: destruct tu; symmetry in conv; apply convneu_whne in conv; inv_whne.
     econstructor; now eapply transNeNfEq.
 Qed.
 
