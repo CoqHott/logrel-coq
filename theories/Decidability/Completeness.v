@@ -10,6 +10,7 @@ From PartialFun Require Import Monad PartialFun.
 Set Universe Polymorphism.
 
 Import DeclarativeTypingProperties.
+Import IndexedDefinitions.
 
 Equations Derive NoConfusion Subterm for term.
 
@@ -352,6 +353,7 @@ Proof.
       eapply algo_conv_wh in Hconv as [].
       gen_typing.
     + exact (IH tt). (* eapply fails with universe issues? *)
+    + cbn; econstructor.
   - intros * HA [IHA] HB [IHB] ** ; cbn in *.
     unfold graph.
     simp conv conv_ty_red ; cbn.
@@ -447,14 +449,15 @@ Proof.
     boundary.
   - intros * ??? []%algo_conv_wh [IHt'] **.
     unfold graph.
-    simp conv conv_tm ; cbn.
-    repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
+    simp conv conv_tm ; cbn -[PFun_instance_1].
+    repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn -[PFun_instance_1].
     + eapply wh_red_complete_whnf_ty ; tea.
       1: boundary.
       now gen_typing.
     + now eapply wh_red_complete_whnf_tm.
     + now eapply wh_red_complete_whnf_tm.
-    + apply IHt'.
+    + exact IHt'.
+    + cbn; econstructor.
   - intros * ? [IHA] ? [IHB] **.
     unfold graph.
     simp conv conv_tm_red ; cbn.
@@ -550,7 +553,7 @@ Proof.
   all: intros.
   all: prod_hyp_splitter.
   all: unfold graph in *.
-  all: simp typing ; cbn.
+  all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
   (* Well formed types *)
   1-5:repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
   - unshelve erewrite can_ty_view1_small ; tea.

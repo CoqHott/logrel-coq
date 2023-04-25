@@ -10,6 +10,7 @@ From PartialFun Require Import Monad PartialFun.
 Set Universe Polymorphism.
 
 Import DeclarativeTypingProperties.
+Import IndexedDefinitions.
 
 Section ConversionTerminates.
 
@@ -56,7 +57,7 @@ Proof.
     intros A''; split.
     1: eapply wh_red_complete ; now exists istype.
     intros B'' ; split.
-    2: easy.
+    2: intros x; destruct x; cbn; easy.
     assert [Γ |- B''].
     {
       eapply boundary_red_ty_r, subject_reduction_type.
@@ -80,10 +81,11 @@ Proof.
     apply prod_ty_inv in HtyB' as [].
     split.
     2: intros [] ; cbn ; [|easy].
-    2: intros Hconv%implem_conv_sound%algo_conv_sound ; tea ; split ; [|easy].
+    2: intros Hconv%implem_conv_sound%algo_conv_sound ; tea ; split .
     + now apply (IHA tt A'').
     + apply (IHB tt B'').
       now eapply stability1.
+    + intros x; destruct x; cbn; easy.
   - intros * ??? ? ? wB' ?.
     apply compute_domain.
     simp conv conv_ty_red.
@@ -110,11 +112,12 @@ Proof.
     2: now rewrite (whne_ty_view1 wB') ; cbn.
     apply sig_ty_inv in HtyB' as [].
     split.
-    2: intros [] ; cbn ; [|easy].
-    2: intros Hconv%implem_conv_sound%algo_conv_sound ; tea ; split ; [|easy].
+    2: intros x; destruct x ; cbn ; [|easy].
+    2: intros Hconv%implem_conv_sound%algo_conv_sound ; tea ; split.
     + now apply (IHA tt A'').
     + apply (IHB tt B'').
       now eapply stability1.
+    + intros x; destruct x; cbn; easy.
   - intros * HM [IHM []] ??? ? ? wB' Hty.
     apply compute_domain.
     simp conv conv_ty_red.
@@ -272,7 +275,7 @@ Proof.
       1: boundary.
       eapply subject_reduction_type in redA as [] ; refold ; tea.
       now boundary.
-    + easy.
+    + intros x; destruct x; cbn; easy.
   - intros * ? [IHA] ? [IHB] ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
@@ -290,7 +293,7 @@ Proof.
       eapply stability1 ; tea.
       1-2: boundary.
       now constructor.
-    + now intros []. 
+    + intros x; destruct x; now cbn.
   - intros * ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
@@ -327,7 +330,7 @@ Proof.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 ; cbn.
     split.
-    2: easy.
+    2: intros x; destruct x; now cbn.
     specialize (IHf (eta_expand u')).
     apply IHf.
     now eapply typing_eta'.
@@ -348,7 +351,7 @@ Proof.
       eapply stability1 ; tea.
       1-2: boundary.
       now constructor.
-    + now intros []. 
+    + intros x; destruct x; now cbn.
   - intros * ?? ? [ihFst] ? [ihSnd] ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
@@ -357,7 +360,7 @@ Proof.
     intros [T|]; cbn; [|easy].
     intros ?%implem_conv_sound%algo_conv_sound.
     2,3: now econstructor.
-    split; [|easy].
+    split; [|intros x; destruct x; now cbn].
     apply (ihSnd (tSnd u')).
     eapply wfTermConv; refold; [now econstructor|].
     symmetry. eapply typing_subst1; tea.
@@ -487,7 +490,118 @@ Proof.
   clearbody x.
   clear s Γ v t.
   induction Hacc as [x H IH] in HΓ, Hv |- * ; cbn in *.
-  apply compute_domain. funelim (typing _) ; cbn in *.
+  apply compute_domain. funelim_typing ; cbn in *; try easy.
+  all: match goal with 
+      | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst
+  end.
+
+  - split.
+    + apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; cbn ; try easy.
+      intros ?%implem_typing_sound%algo_typing_sound ; tea.
+      split ; cbn.
+      2: now intros [[]|] ; cbn.
+      apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      econstructor ; tea.
+      econstructor.
+      now destruct s.
+  - split.
+    + apply IH ; cbn ; try easy.
+     left ; cbn ; now do 2 econstructor.
+    + intros [|] ; cbn ; try easy.
+      intros ?%implem_typing_sound%algo_typing_sound ; tea.
+      split.
+      2: intros [] ; now cbn.
+      apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now econstructor.
+  - split.
+    + apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; cbn ; try easy.
+      intros Hf%implem_typing_sound%algo_typing_sound ; tea.
+      split.
+      2: intros [] ; now cbn.
+      apply IH ; cbn ; tea.
+      1: left ; cbn ; now do 2 econstructor.
+      eapply prod_ty_inv.
+      boundary.
+  - split.
+    + apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    + intros [[]|] ; now cbn.
+  - split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [[]|] ; cbn ; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
+    set (Γ' := _ ,, tNat).
+    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]). 
+    split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; cbn ; [|easy].
+    intros ?%implem_typing_sound%algo_typing_sound ; tea.
+    split.
+    2: intros [|] ; cbn ; intros _ ; split; [|intros []] ; try (cbn ; easy).
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      eapply typing_subst1 ; tea.
+      now econstructor.
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now eapply elimSuccHypTy_ty.
+  - split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [[]|] ; cbn ; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
+    set (Γ' := _ ,, tEmpty).
+    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]). 
+    split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; now cbn.
+  - split.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea; split.
+    set (Γ' := _ ,, _); assert [|-[de] Γ'] by (econstructor; tea; destruct s; now econstructor).
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; try easy.
+  - split.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; try easy.
+    intros HA%implem_typing_sound%algo_typing_sound ; tea.
+    set (Γ' := _ ,, _); assert [|-[de] Γ'] by (econstructor; tea; destruct s; now econstructor).
+    split.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; try easy.
+    intros HB%implem_typing_sound%algo_typing_sound ; tea; split.
+    1: apply IH ; cbn ; tea; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; try easy.
+    intros Ha%implem_typing_sound%algo_typing_sound ; tea; split.
+    match goal with
+    | _ : [ ?Γ |-[de] _ : _] |- _ => assert [Γ|-[de] B[a..]] by now eapply typing_subst1
+    end.
+    1: apply IH ; cbn ; tea; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; easy.
+  - split.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; easy.
+  - split.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
+    intros [[]|]; cbn; easy.
   - split.
     + apply IH ; cbn ; try easy.
       1: now right ; cbn.
@@ -498,8 +612,8 @@ Proof.
       eapply conv_terminates ; tea.
       boundary.
   - split.
-    + apply IH ; cbn ; tea.
-      now right.
+    + apply IH ; cbn ; try easy.
+      right; now cbn.
     + intros [|] ; cbn ; [|easy].
       intros ?%implem_typing_sound%algo_typing_sound ; cbn in * ; tea.
       split.
@@ -507,147 +621,33 @@ Proof.
       eapply wh_red_complete.
       exists istype.
       now boundary.
-  - easy.
   - split.
-    + apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    + intros [[]|] ; cbn ; try easy.
-      intros ?%implem_typing_sound%algo_typing_sound ; tea.
-      split ; cbn.
-      2: now intros [[]|] ; cbn.
-      apply IH ; cbn ; tea.
-      1: left ; cbn ; now do 2 econstructor.
-      econstructor ; tea.
-      econstructor.
-      now destruct s.
-  - split.
-    + apply IH ; cbn ; tea.
-     left ; cbn ; now do 2 econstructor.
-    + intros [|] ; cbn ; try easy.
-      intros ?%implem_typing_sound%algo_typing_sound ; tea.
-      split.
-      2: intros [] ; now cbn.
+    1:{
       apply IH ; cbn ; try easy.
-      1: left ; cbn ; now do 2 econstructor.
-      now econstructor.
-  - split.
-    + apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    + intros [[]|] ; cbn ; try easy.
-      intros Hf%implem_typing_sound%algo_typing_sound ; tea.
-      split.
-      2: intros [] ; now cbn.
-      apply IH ; cbn ; tea.
-      1: left ; cbn ; now do 2 econstructor.
-      eapply prod_ty_inv.
-      boundary.
-  - easy.
-  - easy.
-  - split.
-    + apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    + intros [[]|] ; now cbn.
-  - split.
-    1:{
-      apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    }
-    intros [[]|] ; cbn ; try easy.
-    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
-    assert ([|-[de] Γ,, tNat]) by (now econstructor ; [|econstructor]). 
-    split.
-    1:{
-      apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    }
-    intros [|] ; cbn ; [|easy].
-    intros ?%implem_typing_sound%algo_typing_sound ; tea.
-    split.
-    2: intros [|] ; cbn ; intros _ ; split ; [|intros []| |intros []] ; try easy.
-    + apply IH ; cbn ; try easy.
-      1: left ; cbn ; now do 2 econstructor.
-      eapply typing_subst1 ; tea.
-      now econstructor.
-    + apply IH ; cbn ; try easy.
-      1: left ; cbn ; now do 2 econstructor.
-      now eapply elimSuccHypTy_ty.
-    + apply IH ; cbn ; try easy.
-      1: left ; cbn ; now do 2 econstructor.
-      now eapply elimSuccHypTy_ty.
-  - easy.
-  - split.
-    1:{
-      apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    }
-    intros [[]|] ; cbn ; try easy.
-    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
-    assert ([|-[de] Γ,, tEmpty]) by (now econstructor ; [|econstructor]). 
-    split.
-    1:{
-      apply IH ; cbn ; tea.
-      left ; cbn ; now do 2 econstructor.
-    }
-    intros [|] ; now cbn.
-  - split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; try easy.
-    intros Hn%implem_typing_sound%algo_typing_sound ; tea; split.
-    assert [|-[de] Γ ,, A] by (econstructor; tea; destruct s; now econstructor).
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; try easy.
-  - split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; try easy.
-    intros HA%implem_typing_sound%algo_typing_sound ; tea.
-    assert [|-[de] Γ ,, A] by now econstructor.
-    split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; try easy.
-    intros HB%implem_typing_sound%algo_typing_sound ; tea; split.
-    1: apply IH ; cbn ; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; try easy.
-    intros Ha%implem_typing_sound%algo_typing_sound ; tea; split.
-    assert [Γ |-[de] B[a..]] by now eapply typing_subst1.
-    1: apply IH ; cbn ; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; easy.
-  - split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; easy.
-  - split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
-    intros [[]|]; cbn; easy.
-  - easy.
-  - easy.
-  - easy.
-  - split.
-    1:{
-      apply IH ; cbn ; tea.
       left ; cbn ; now do 2 econstructor.
     }
     intros [|] ; cbn ; try easy.
     intros ?%implem_typing_sound%algo_typing_sound ; tea.
-    split ; try easy.
+    split.
+    2: intros []; now cbn.
     apply IH ; cbn ; try easy.
     1: left ; cbn ; now do 2 econstructor.
     now econstructor.
-  - easy.
-  - easy.
   - split.
-    1: apply IH; cbn; tea; left; cbn; now do 2 econstructor.
+    1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
     intros [|] ; cbn ; try easy.
     intros ?%implem_typing_sound%algo_typing_sound ; tea.
-    split ; try easy.
+    split.
+    2: intros []; now cbn.
     apply IH ; cbn ; try easy.
     1: left ; cbn ; now do 2 econstructor.
     now econstructor.
   - split.
     1:{
-      apply IH ; cbn ; tea.
+      apply IH ; cbn ; try easy.
       right ; now cbn.
     }
     intros [[]|] ; now cbn.
-  - easy.
 Qed.
 
 End TypingTerminates.

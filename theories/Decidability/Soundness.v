@@ -8,6 +8,7 @@ From LogRel.Decidability Require Import Functions.
 From PartialFun Require Import Monad PartialFun.
 
 Import DeclarativeTypingProperties.
+Import IndexedDefinitions.
 
 Set Universe Polymorphism.
 
@@ -215,6 +216,13 @@ Section ConversionSound.
 
 End ConversionSound.
 
+Ltac funelim_typing :=
+  funelim (typing _); 
+    [ funelim (typing_inf _) | 
+      funelim (typing_check _) |
+      funelim (typing_inf_red _) | 
+      funelim (typing_wf_ty _) ].
+
 Section TypingCorrect.
 
   Import AlgorithmicTypingData.
@@ -239,11 +247,12 @@ Section TypingCorrect.
   | (check_state;Γ;T;t), (ok _) => [Γ |-[al] t ◃ T]
   end.
 
+
   Lemma _implem_typing_sound :
     funrect typing (fun _ => True) typing_sound_type.
   Proof.
     intros x _.
-    funelim (typing _) ; cbn.
+    funelim_typing ; cbn.
     all: intros ; simp typing_sound_type ; try easy ; cbn.
     all: repeat (
       match goal with
@@ -256,6 +265,7 @@ Section TypingCorrect.
       | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
       | H : ctx_access _ _ = _ |- _ => eapply ctx_access_correct in H
       | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
+      | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst 
       end).
     all: now econstructor.
   Qed.
