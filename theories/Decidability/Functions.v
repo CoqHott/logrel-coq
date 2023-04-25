@@ -324,18 +324,11 @@ Notation M := (errrec (singleton_store wh_red) (A:=conv_full_dom) (B:=conv_full_
 
 Definition conv_stmt (c : conv_state) := forall x0 : conv_dom c, M (cstate_output c).
 
-Definition eta (c : conv_full_dom) (m : M0 (conv_full_cod c)) :
-  M (cstate_output c.π1) :=
-  r ← m ;;[M] ret (A:=cstate_output c.π1) r.
-
-Notation "m ::: c" := (eta c m) (at level 90, c at level 50).
-(* Notation "m ::: c" := (m : @errrec conv_full_dom conv_full_cod (cstate_output c.π1)) (at level 90, c at level 50). *)
-
 Equations conv_ty : conv_stmt ty_state :=
   | (Γ;inp;T;V) :=
     T' ← call_single wh_red T ;;[M0]
     V' ← call_single wh_red V ;;[M0]
-    rec (ty_red_state;Γ;tt;T';V') ::: (ty_state;Γ;inp;T;V).
+    id <*> rec (ty_red_state;Γ;tt;T';V').
 
 Equations conv_ty_red : conv_stmt ty_red_state :=
   | (Γ;inp;T;T') with (build_nf_ty_view2 T T') :=
@@ -343,12 +336,12 @@ Equations conv_ty_red : conv_stmt ty_red_state :=
     | ty_sorts s s' := ret (eq_sort s s') ;
     | ty_prods A A' B B' :=
         rec (ty_state;Γ;tt;A;A') ;;
-        rec (ty_state;(Γ,,A);tt;B;B') ::: (ty_red_state;Γ;inp;tProd A B;tProd A' B') ;
+        rec (ty_state;(Γ,,A);tt;B;B') (* ::: (ty_red_state;Γ;inp;tProd A B;tProd A' B') ;*) ;
     | ty_nats := success ;
     | ty_emptys := success ;
     | ty_sigs A A' B B' :=
         rec (ty_state;Γ;tt;A;A') ;;
-        rec (ty_state;(Γ,,A);tt;B;B') ::: (ty_red_state;Γ;inp;tSig A B;tSig A' B') ;
+        rec (ty_state;(Γ,,A);tt;B;B') (* ::: (ty_red_state;Γ;inp;tSig A B;tSig A' B') ;*) ;
       | ty_neutrals _ _ :=
           rec (ne_state;Γ;tt;T;T') ;; success (M:=irec _ _ _) ;
     | ty_mismatch _ _ := raise (head_mismatch None T T') ;
@@ -360,7 +353,7 @@ Equations conv_tm : conv_stmt tm_state :=
     A' ← call_single wh_red A ;;[M0]
     t' ← call_single wh_red t ;;[M0]
     u' ← call_single wh_red u ;;[M0]
-    rec (tm_red_state;Γ;A';t';u') ::: (tm_state;Γ;A;t;u).
+    id <*> rec (tm_red_state;Γ;A';t';u'). 
 
 Equations conv_tm_red : conv_stmt tm_red_state :=
   | (Γ;A;t;u) with (build_nf_view3 A t u) :=
@@ -368,38 +361,97 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | types s (ty_sorts s1 s2) := undefined ;
     | types s (ty_prods A A' B B') :=
       rec (tm_state;Γ;tSort s;A;A') ;;
-      rec (tm_state;Γ,,A;tSort s;B;B') ::: (tm_red_state;Γ;tSort s;tProd A B;tProd A' B') ;
+      rec (tm_state;Γ,,A;tSort s;B;B') (* ::: (tm_red_state;Γ;tSort s;tProd A B;tProd A' B') ;*) ;
     | types _ ty_nats := success ;
     | types _ ty_emptys := success ;
     | types s (ty_sigs A A' B B') :=
         rec (tm_state;Γ;tSort s;A;A') ;;
-        rec (tm_state;Γ,,A;tSort s;B;B') ::: (tm_red_state;Γ;tSort s;tSig A B;tSig A' B') ;
+        rec (tm_state;Γ,,A;tSort s;B;B') (* ::: (tm_red_state;Γ;tSort s;tSig A B;tSig A' B') ;*) ;
     | types _ (ty_neutrals _ _) :=
         rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | types s (ty_mismatch _ _) := raise (head_mismatch (Some (tSort s)) t u) ;
     | types _ (ty_anomaly _ _) := undefined ;
     | functions A B t u :=
-        rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) ::: (tm_red_state;Γ;tProd A B;t;u) ;
+        rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) (* ::: (tm_red_state;Γ;tProd A B;t;u) ;*) ;
     | zeros := success ;
     | succs t' u' :=
-        rec (tm_state;Γ;tNat;t';u') ::: (tm_red_state;Γ;tNat; tSucc t'; tSucc u') ;
+        rec (tm_state;Γ;tNat;t';u') ;
     | pairs A B t u :=
         rec (tm_state;Γ;A;tFst t; tFst u) ;;
-        rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) ::: (tm_red_state;Γ;tSig A B;t;u) ;
+        rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) (* ::: (tm_red_state;Γ;tSig A B;t;u) ;*) ;
     | neutrals _ _ _ :=
       rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
     | anomaly _ _ _ := undefined ;
   }.
 
-Equations conv_ne : conv_stmt ne_state :=
+Equations to_neutral_diag (t u : term) : option (ne_view1 t × ne_view1 u) :=
+  | t, u with build_nf_view1 t, build_nf_view1 u =>
+  {
+    | nf_view1_ne te, nf_view1_ne ue => Some (te, ue)
+    | _ , _ => None
+  }.
+
+Time Equations conv_ne : conv_stmt ne_state :=
+  | (Γ;inp; t; t') with t, t', to_neutral_diag t t' :=
+  {
+    | _, _, Some (ne_view1_rel n, ne_view1_rel n') with n =? n' :=
+    { | false := raise (variable_mismatch n n') ;
+      | true with (ctx_access Γ n) := 
+        {
+        | error e => undefined ;
+        | ok d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
+        }
+    } ;
+    | _, _, Some (ne_view1_dest n (eApp t), ne_view1_dest n' (eApp t')) =>
+      T ← rec (ne_red_state;Γ;tt;n;n') ;;
+      match T with
+      | tProd A B => 
+        rec (tm_state;Γ;A;t;t') ;; ret B[t..]
+      |  _ => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
+      end ;
+    | _, _, Some (ne_view1_dest n (eNatElim P hz hs), ne_view1_dest n' (eNatElim P' hz' hs')) =>
+      rn ← rec (ne_red_state;Γ;tt;n;n') ;;
+      match rn with
+      | tNat =>
+          rec (ty_state;(Γ,,tNat);tt;P;P') ;;
+          rec (tm_state;Γ;P[tZero..];hz;hz') ;;
+          rec (tm_state;Γ;elimSuccHypTy P;hs;hs') ;;
+          ret P[n..]
+      | _ => undefined
+      end ;
+    | _, _, Some (ne_view1_dest n (eEmptyElim P), ne_view1_dest n' (eEmptyElim P')) =>
+      rn ← rec (ne_red_state;Γ;tt;n;n') ;;
+      match rn with
+      | tEmpty =>
+          rec (ty_state;(Γ,,tEmpty);tt;P;P') ;;
+          ret P[n..]
+      | _ => undefined
+      end ;
+    | _, _, Some (ne_view1_dest n eFst, ne_view1_dest n' eFst) =>
+      T ← rec (ne_red_state;Γ;tt;n;n') ;;
+      match T with
+      | tSig A B => ret A 
+      | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
+      end ;
+    | _, _, Some (ne_view1_dest n eSnd, ne_view1_dest n' eSnd) =>
+      T ← rec (ne_red_state;Γ;tt;n;n') ;;
+      match T with
+      | tSig A B => ret B[(tFst n)..]
+      | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
+      end ; 
+    | w, w', _ => raise (destructor_mismatch w w')
+  }.
+  
+
+Time Equations conv_ne_alt : conv_stmt ne_state :=
   | (Γ;inp;tRel n;tRel n')
     with n =? n' :=
     { | false := raise (variable_mismatch n n') ;
       | true with (ctx_access Γ n) := 
         {
         | error e => undefined ;
-        | ok d => ret d ::: (ne_state;Γ;inp;tRel n; tRel n')
+        | ok d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
         }
     } ;
   | (Γ;inp;tApp n t ; tApp n' t') :=
@@ -433,7 +485,7 @@ Equations conv_ne : conv_stmt ne_state :=
   | ( Γ; inp ; tFst n; tFst n') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
-    | tSig A B => ret A ::: (ne_state;Γ; inp; tFst n; tFst n')
+    | tSig A B => ret A (* ::: (ne_state;Γ; inp; tFst n; tFst n')*)
     | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
     end ;
   | ( Γ; inp ; tSnd n; tSnd n') :=
@@ -448,7 +500,7 @@ Equations conv_ne : conv_stmt ne_state :=
 Equations conv_ne_red : conv_stmt ne_red_state :=
   | (Γ;inp;t;u) :=
     Ainf ← rec (ne_state;Γ;tt;t;u) ;;
-    ecall tt Ainf ::: (ne_red_state;Γ; inp; t; u).
+    ecall tt Ainf.
 
 Equations conv : ∇[singleton_store wh_red] (x : conv_full_dom), conv_full_cod x :=
   | (ty_state; Γ ; inp ; T; V) := conv_ty (Γ; inp; T; V);
