@@ -43,18 +43,24 @@ Variant ty_entry : term -> Type :=
   | eProd A B : ty_entry (tProd A B)
   | eNat : ty_entry tNat
   | eEmpty : ty_entry tEmpty
-  | eSig A B : ty_entry (tSig A B).
+  | eSig A B : ty_entry (tSig A B)
+  | eList A : ty_entry (tList A).
 
 Variant nat_entry : term -> Type :=
   | eZero : nat_entry tZero
   | eSucc t : nat_entry (tSucc t).
+
+Variant list_entry : term -> Type :=
+  | eNil A : list_entry (tNil A)
+  | eCons A hd tl : list_entry (tCons A hd tl).
 
 Variant dest_entry : Type :=
   | eEmptyElim (P : term)
   | eNatElim (P : term) (hs hz : term)
   | eApp (u : term)
   | eFst
-  | eSnd.
+  | eSnd
+  | eMap (A B f : term).
 
 Definition zip1 (t : term) (e : dest_entry) : term :=
   match e with
@@ -63,6 +69,7 @@ Definition zip1 (t : term) (e : dest_entry) : term :=
     | eApp u => (tApp t u)
     | eFst => tFst t
     | eSnd => tSnd t
+    | eMap A B f => tMap A B f t
   end.
 
 Variant tm_view1 : term -> Type :=
@@ -71,6 +78,7 @@ Variant tm_view1 : term -> Type :=
   | tm_view1_rel n : tm_view1 (tRel n)
   | tm_view1_nat {t} : nat_entry t -> tm_view1 t
   | tm_view1_sig A B a b : tm_view1 (tPair A B a b)
+  | tm_view1_list {t} : list_entry t -> tm_view1 t
   | tm_view1_dest t (s : dest_entry) : tm_view1 (zip1 t s).
 
 Definition build_tm_view1 t : tm_view1 t :=
@@ -90,6 +98,10 @@ Definition build_tm_view1 t : tm_view1 t :=
   | tPair A B a b => tm_view1_sig A B a b
   | tFst t => tm_view1_dest t eFst
   | tSnd t => tm_view1_dest t eSnd
+  | tList A => tm_view1_type (eList A)
+  | tNil A => tm_view1_list (eNil A)
+  | tCons A hd tl => tm_view1_list (eCons A hd tl)
+  | tMap A B f l => tm_view1_dest l (eMap A B f)
   end.
 
 Variant ne_view1 : term -> Type :=
@@ -101,6 +113,7 @@ Variant nf_view1 : term -> Type :=
   | nf_view1_fun A t : nf_view1 (tLambda A t)
   | nf_view1_nat {t} : nat_entry t -> nf_view1 t
   | nf_view1_sig A B a b : nf_view1 (tPair A B a b)
+  | nf_view1_list {t} : list_entry t -> nf_view1 t
   | nf_view1_ne {t} : ne_view1 t -> nf_view1 t.
 
 Definition build_nf_view1 t : nf_view1 t :=
@@ -120,6 +133,10 @@ Definition build_nf_view1 t : nf_view1 t :=
   | tPair A B a b => nf_view1_sig A B a b
   | tFst t => nf_view1_ne (ne_view1_dest t eFst)
   | tSnd t => nf_view1_ne (ne_view1_dest t eSnd)
+  | tList A => nf_view1_type (eList A)
+  | tNil A => nf_view1_list (eNil A)
+  | tCons A hd tl => nf_view1_list (eCons A hd tl)
+  | tMap A B f l => nf_view1_ne (ne_view1_dest l (eMap A B f))
   end.
 
 Variant ty_view1 : term -> Type :=
@@ -132,7 +149,10 @@ Definition build_ty_view1 t : ty_view1 t :=
   | tm_view1_type e => ty_view1_ty e
   | tm_view1_rel n => ty_view1_small (ne_view1_rel n)
   | tm_view1_dest t s => ty_view1_small (ne_view1_dest t s)
-  | tm_view1_fun _ _ | tm_view1_nat _ | tm_view1_sig _ _ _ _ => ty_view1_anomaly
+  | tm_view1_fun _ _ 
+  | tm_view1_nat _ 
+  | tm_view1_sig _ _ _ _ 
+  | tm_view1_list _ => ty_view1_anomaly
   end.
 
 Definition stack := list dest_entry.
@@ -167,6 +187,10 @@ Equations wh_red_stack : term × stack ⇀[empty_store] term :=
   wh_red_stack (?(tPair A B a b),cons eFst π)               (tm_view1_sig A B a b) := id <*> rec (a , π) ;
   wh_red_stack (?(tPair A B a b),cons eSnd π)               (tm_view1_sig A B a b) := id <*> rec (b , π) ;
   wh_red_stack (?(tPair A B a b),cons _ π)                  (tm_view1_sig A B a b) := undefined ;
+  wh_red_stack (t               , nil)                      (tm_view1_list _) := ret t ;
+  wh_red_stack (?(tNil A)       , cons (eMap _ B _) π)      (tm_view1_list (eNil A)) := ret (tNil B) ;
+  wh_red_stack (?(tCons A hd tl), cons (eMap _ B f) π)      (tm_view1_list (eCons A hd tl)) := ret (tCons B (tApp f hd) (tMap A B f tl)) ;
+  wh_red_stack (t               , cons _ _)                 (tm_view1_list _) := undefined;
   wh_red_stack (t               ,nil)                       (tm_view1_type _) := ret t ;
   wh_red_stack (t               ,cons s _)                  (tm_view1_type _) := undefined.
 
@@ -197,6 +221,7 @@ Inductive nf_ty_view2 : term -> term -> Type :=
   | ty_nats : nf_ty_view2 tNat tNat
   | ty_emptys : nf_ty_view2 tEmpty tEmpty
   | ty_sigs (A A' B B' : term) : nf_ty_view2 (tSig A B) (tSig A' B')
+  | ty_lists (A A' : term) : nf_ty_view2 (tList A) (tList A')
   | ty_neutrals (n n' : term) : nf_ty_view2 n n'
   | ty_mismatch (t u : term) : nf_ty_view2 t u
   | ty_anomaly (t u : term) : nf_ty_view2 t u.
@@ -214,6 +239,8 @@ Equations build_nf_ty_view2 (A A' : term) : nf_ty_view2 A A' :=
         ty_emptys;
     | ty_view1_ty (eSig A B), ty_view1_ty (eSig A' B') :=
         ty_sigs A A' B B'
+    |ty_view1_ty (eList A), ty_view1_ty (eList A') :=
+        ty_lists A A'
     | ty_view1_small _, ty_view1_small _ :=
         ty_neutrals _ _ ;
     (** Mismatching sorts *)
@@ -233,6 +260,8 @@ Inductive nf_view3 : term -> term -> term -> Type :=
 | functions A B t t' : nf_view3 (tProd A B) t t'
 | zeros : nf_view3 tNat tZero tZero
 | succs t t' : nf_view3 tNat (tSucc t) (tSucc t')
+| nils A A1 A2 : nf_view3 (tList A) (tNil A1) (tNil A2) (* Constraints on types ? *)
+| conss A A1 A2 hd1 hd2 tl1 tl2 : nf_view3 (tList A) (tCons A1 hd1 tl1) (tCons A2 hd2 tl2) (* Constraints on types ? *)
 | pairs A B t t' : nf_view3 (tSig A B) t t'
 | neutrals (A n n' : term) : nf_view3 A n n'
 | mismatch (A t u : term) : nf_view3 A t u
@@ -269,6 +298,22 @@ Equations build_nf_view3 T t t' : nf_view3 T t t' :=
   }
   (** Pairs *)
   | ty_view1_ty (eSig A B) := pairs A B _ _ ;
+  (** Lists *)
+  | ty_view1_ty (eList A) with (build_nf_view1 t), (build_nf_view1 t') :=
+  {
+    | nf_view1_list (eNil A1), nf_view1_list (eNil A2) :=
+      nils A A1 A2
+    | nf_view1_list (eCons A1 hd1 tl1), nf_view1_list (eCons A2 hd2 tl2) :=
+      conss A A1 A2 hd1 hd2 tl1 tl2
+    | nf_view1_ne _, nf_view1_ne _ := neutrals _ _ _ ;
+    | nf_view1_list _, nf_view1_list _ :=
+        mismatch _ _ _ ;
+    | nf_view1_ne _, nf_view1_list _ :=
+        mismatch _ _ _ ;
+    | nf_view1_list _, nf_view1_ne _ :=
+        mismatch _ _ _ ;
+    | _, _ := anomaly _ _ _ ;
+  } 
   (** Neutral type *)
   | ty_view1_small _ := neutrals _ _ _ ;
   (** The type is not a type *)
@@ -344,6 +389,8 @@ Equations conv_ty_red : conv_stmt ty_red_state :=
         rec (ty_state;(Γ,,A);tt;B;B') (* ::: (ty_red_state;Γ;inp;tSig A B;tSig A' B') ;*) ;
       | ty_neutrals _ _ :=
           rec (ne_state;Γ;tt;T;T') ;; success (M:=irec _ _ _) ;
+    | ty_lists A A' :=
+      rec (ty_state;Γ;tt;A;A') ;
     | ty_mismatch _ _ := raise (head_mismatch None T T') ;
     | ty_anomaly _ _ := undefined ;
   }.
@@ -367,6 +414,8 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | types s (ty_sigs A A' B B') :=
         rec (tm_state;Γ;tSort s;A;A') ;;
         rec (tm_state;Γ,,A;tSort s;B;B') (* ::: (tm_red_state;Γ;tSort s;tSig A B;tSig A' B') ;*) ;
+    | types _ (ty_lists A A') := 
+        rec (tm_state;Γ;tSort s; A; A') ;
     | types _ (ty_neutrals _ _) :=
         rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | types s (ty_mismatch _ _) := raise (head_mismatch (Some (tSort s)) t u) ;
@@ -379,6 +428,14 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | pairs A B t u :=
         rec (tm_state;Γ;A;tFst t; tFst u) ;;
         rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) (* ::: (tm_red_state;Γ;tSig A B;t;u) ;*) ;
+    | nils A A1 A2 :=
+      rec (ty_state;Γ;tt;A;A1) ;;
+      rec (ty_state;Γ;tt;A;A2)
+    | conss A A1 A2 hd1 hd2 tl1 tl2 => 
+      rec (ty_state;Γ;tt;A;A1) ;;
+      rec (ty_state;Γ;tt;A;A2) ;;
+      rec (tm_state;Γ;A;hd1;hd2) ;;
+      rec (tm_state;Γ;tList A; tl1; tl2)
     | neutrals _ _ _ :=
       rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
@@ -440,6 +497,10 @@ Time Equations conv_ne : conv_stmt ne_state :=
       | tSig A B => ret B[(tFst n)..]
       | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
       end ; 
+    | w, w', Some (ne_view1_dest _ (eMap _ _ _), _) =>
+      undefined
+    | w, w', Some (_ , ne_view1_dest _ (eMap _ _ _)) =>
+      undefined
     | w, w', _ => raise (destructor_mismatch w w')
   }.
   
@@ -492,9 +553,10 @@ Time Equations conv_ne_alt : conv_stmt ne_state :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
     | tSig A B => ret B[(tFst n)..]
-      (* ret (B[(tFst n)..]) ::: (ne_state;Γ; inp; tSnd n; tSnd n') *)
     | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
     end ; 
+  | (Γ; _; tMap A B f n; n') := undefined ;
+  | (Γ; _; n; tMap A' B' f' n') := undefined ;
   | (Γ;_;n;n') := raise (destructor_mismatch n n').
 
 Equations conv_ne_red : conv_stmt ne_red_state :=
