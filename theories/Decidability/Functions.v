@@ -175,21 +175,21 @@ Arguments rec {_ _ _ _ _ _}.
 Equations wh_red_stack : term × stack ⇀[empty_store] term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
   wh_red_stack (?(tRel n)       ,π)                         (tm_view1_rel n) := ret (zip (tRel n) π) ;
-  wh_red_stack (?(zip1 t s)     ,π)                         (tm_view1_dest t s) := id <*> rec (t,cons s π) ;
+  wh_red_stack (?(zip1 t s)     ,π)                         (tm_view1_dest t s) := rec (t,cons s π) ;
   wh_red_stack (?(tLambda A t)  ,nil)                       (tm_view1_fun A t) := ret (tLambda A t) ;
-  wh_red_stack (?(tLambda A t)  ,cons (eApp u) π)           (tm_view1_fun A t) := id <*> rec (t[u..], π) ;
+  wh_red_stack (?(tLambda A t)  ,cons (eApp u) π)           (tm_view1_fun A t) := rec (t[u..], π) ;
   wh_red_stack (_               ,cons _ _)                  (tm_view1_fun _ _) := undefined ;
   wh_red_stack (t               ,nil)                       (tm_view1_nat _) := ret t ;
-  wh_red_stack (?(tZero)        ,cons (eNatElim _ hz _) π)  (tm_view1_nat eZero) := id <*> rec (hz,π) ;
-  wh_red_stack (?(tSucc t)      ,cons (eNatElim P hz hs) π) (tm_view1_nat (eSucc t)) := id <*> rec (hs ,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
+  wh_red_stack (?(tZero)        ,cons (eNatElim _ hz _) π)  (tm_view1_nat eZero) := rec (hz,π) ;
+  wh_red_stack (?(tSucc t)      ,cons (eNatElim P hz hs) π) (tm_view1_nat (eSucc t)) := rec (hs ,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
   wh_red_stack (t               ,cons _ _)                  (tm_view1_nat _) := undefined ;
   wh_red_stack (?(tPair A B a b),nil)                       (tm_view1_sig A B a b) := ret (tPair A B a b) ;
-  wh_red_stack (?(tPair A B a b),cons eFst π)               (tm_view1_sig A B a b) := id <*> rec (a , π) ;
-  wh_red_stack (?(tPair A B a b),cons eSnd π)               (tm_view1_sig A B a b) := id <*> rec (b , π) ;
+  wh_red_stack (?(tPair A B a b),cons eFst π)               (tm_view1_sig A B a b) := rec (a , π) ;
+  wh_red_stack (?(tPair A B a b),cons eSnd π)               (tm_view1_sig A B a b) := rec (b , π) ;
   wh_red_stack (?(tPair A B a b),cons _ π)                  (tm_view1_sig A B a b) := undefined ;
   wh_red_stack (t               , nil)                      (tm_view1_list _) := ret t ;
-  wh_red_stack (?(tNil A)       , cons (eMap _ B _) π)      (tm_view1_list (eNil A)) := ret (tNil B) ;
-  wh_red_stack (?(tCons A hd tl), cons (eMap _ B f) π)      (tm_view1_list (eCons A hd tl)) := ret (tCons B (tApp f hd) (tMap A B f tl)) ;
+  wh_red_stack (?(tNil A)       , cons (eMap _ B _) π)      (tm_view1_list (eNil A)) := rec (tNil B, π) ;
+  wh_red_stack (?(tCons _ hd tl), cons (eMap A B f) π)      (tm_view1_list (eCons _ hd tl)) := rec (tCons B (tApp f hd) (tMap A B f tl), π) ;
   wh_red_stack (t               , cons _ _)                 (tm_view1_list _) := undefined;
   wh_red_stack (t               ,nil)                       (tm_view1_type _) := ret t ;
   wh_red_stack (t               ,cons s _)                  (tm_view1_type _) := undefined.
@@ -429,13 +429,13 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
         rec (tm_state;Γ;A;tFst t; tFst u) ;;
         rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) (* ::: (tm_red_state;Γ;tSig A B;t;u) ;*) ;
     | nils A A1 A2 :=
-      rec (ty_state;Γ;tt;A;A1) ;;
-      rec (ty_state;Γ;tt;A;A2)
+      rec (ty_state;Γ;tt;A1;A2) ;;
+      rec (ty_state;Γ;tt;A1;A)
     | conss A A1 A2 hd1 hd2 tl1 tl2 => 
-      rec (ty_state;Γ;tt;A;A1) ;;
-      rec (ty_state;Γ;tt;A;A2) ;;
-      rec (tm_state;Γ;A;hd1;hd2) ;;
-      rec (tm_state;Γ;tList A; tl1; tl2)
+      rec (ty_state;Γ;tt;A1;A2) ;;
+      rec (ty_state;Γ;tt;A1;A) ;;
+      rec (tm_state;Γ;A1;hd1;hd2) ;;
+      rec (tm_state;Γ;tList A1; tl1; tl2)
     | neutrals _ _ _ :=
       rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
@@ -448,6 +448,26 @@ Equations to_neutral_diag (t u : term) : option (ne_view1 t × ne_view1 u) :=
     | nf_view1_ne te, nf_view1_ne ue => Some (te, ue)
     | _ , _ => None
   }.
+
+Fixpoint extract_map_arg (t : term) : term :=
+  match t with
+  | tMap B A f l => extract_map_arg l
+  | k => k
+  end.
+
+Definition conv_ne_map (Γ: context) (w w' : term) : M (cstate_output ne_state) :=
+  T ← rec (ne_red_state;Γ;tt; extract_map_arg w;extract_map_arg w');;
+  match T with
+  | tList A =>
+    let r := compact_map A w in
+    let r' := compact_map A w' in
+    rec (ty_state;Γ;tt;r.(Map.tgtTy);r'.(Map.tgtTy)) ;;
+    rec (tm_state;Γ;arr A r.(Map.tgtTy);r.(Map.fn);r'.(Map.fn)) ;;
+    ret (tList r.(Map.tgtTy))
+  | _ => undefined
+  end.
+
+
 
 Time Equations conv_ne : conv_stmt ne_state :=
   | (Γ;inp; t; t') with t, t', to_neutral_diag t t' :=
@@ -497,14 +517,12 @@ Time Equations conv_ne : conv_stmt ne_state :=
       | tSig A B => ret B[(tFst n)..]
       | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
       end ; 
-    | w, w', Some (ne_view1_dest _ (eMap _ _ _), _) =>
-      undefined
-    | w, w', Some (_ , ne_view1_dest _ (eMap _ _ _)) =>
-      undefined
+    | w, w', Some (ne_view1_dest _ (eMap _ _ _), _) => conv_ne_map Γ w w' 
+    | w, w', Some (_ , ne_view1_dest _ (eMap _ _ _)) => conv_ne_map Γ w w'
     | w, w', _ => raise (destructor_mismatch w w')
   }.
   
-
+(* 
 Time Equations conv_ne_alt : conv_stmt ne_state :=
   | (Γ;inp;tRel n;tRel n')
     with n =? n' :=
@@ -557,7 +575,7 @@ Time Equations conv_ne_alt : conv_stmt ne_state :=
     end ; 
   | (Γ; _; tMap A B f n; n') := undefined ;
   | (Γ; _; n; tMap A' B' f' n') := undefined ;
-  | (Γ;_;n;n') := raise (destructor_mismatch n n').
+  | (Γ;_;n;n') := raise (destructor_mismatch n n'). *)
 
 Equations conv_ne_red : conv_stmt ne_red_state :=
   | (Γ;inp;t;u) :=
@@ -644,6 +662,8 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
     | ty_view1_ty (eSig A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
         id <*> rec (wf_ty_state;Γ,,A;tt;B) ;
+    | ty_view1_ty (eList A) :=
+      rec (wf_ty_state;Γ;tt;A)
     | ty_view1_small _ :=
         r ← rec (inf_red_state;Γ;tt;T) ;;[M]
         match r with
@@ -740,6 +760,26 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
       | tSig A B => ret (B[(tFst u)..])
       | _ => raise (M:=M0) type_error
       end ;
+    | tList A :=
+      rA ← rec (inf_red_state;Γ;tt;A) ;;
+      match rA with
+      | tSort s => ret (tSort s)
+      | _ => raise (M:=M0) type_error
+      end
+    | tNil A :=
+      rec (wf_ty_state;Γ;tt;A) ;;
+      ret (tList A)
+    | tCons A hd tl :=
+      rec (wf_ty_state;Γ;tt;A) ;;
+      rec (check_state;Γ;A;hd) ;;
+      rec (check_state;Γ;tList A;tl) ;;
+      ret (tList A)
+    | tMap A B f l :=
+      rec (wf_ty_state;Γ;tt;A) ;;
+      rec (wf_ty_state;Γ;tt;B) ;;
+      rec (check_state;Γ;arr A B;f) ;;
+      rec (check_state;Γ;tList A;l) ;;
+      ret (tList B)
   }.
 
   Equations typing_inf_red : typing_stmt inf_red_state :=

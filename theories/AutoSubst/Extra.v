@@ -67,3 +67,27 @@ Qed.
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
+
+
+
+(** Flattening of map on lists; used in AlgorithmicTyping and Functions *)
+
+Module Map.
+  (** Quadruple of terms collecting the data of accumulated maps 
+      The record needs to be negative so that we can use it in the 
+      rule neuMapCompact *)
+  #[projections(primitive)]
+  Record data : Set := 
+    mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
+End Map.
+
+Definition is_map t :=
+  match t with | tMap _ _ _ _ => true | _ => false end.
+
+Fixpoint compact_map (A t : term) : Map.data :=
+  match t with
+  | tMap B A f l => 
+    let r := compact_map B l in
+    Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
+  | k => Map.mk A A (idterm A) k
+  end.

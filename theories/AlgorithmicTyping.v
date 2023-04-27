@@ -3,31 +3,12 @@ From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping.
 
-Module Map.
-  (** Quadruple of terms collecting the data of accumulated maps 
-      The record needs to be negative so that we can use it in the 
-      rule neuMapCompact *)
-  #[projections(primitive)]
-  Record data : Set := 
-    mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
-End Map.
-
 Section Definitions.
 
   (** We locally disable typing notations to be able to use them in the definition
   here before declaring the right instance. *)
   Close Scope typing_scope.
 
-  Definition is_map t :=
-    match t with | tMap _ _ _ _ => true | _ => false end.
-
-  Fixpoint compact_map (A t : term) : Map.data :=
-    match t with
-    | tMap B A f l => 
-      let r := compact_map B l in
-      Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
-    | k => Map.mk A A (idterm A) k
-    end.
 
     Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
     Proof. now destruct t. Qed.

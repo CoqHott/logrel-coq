@@ -1,5 +1,5 @@
 (** * LogRel.Decidability.Completeness: the inductive predicates imply the implementation answer positively. *)
-From Coq Require Import Nat Lia Arith.
+From Coq Require Import Nat Lia Arith ssrbool.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
@@ -13,6 +13,18 @@ Import DeclarativeTypingProperties.
 Import IndexedDefinitions.
 
 Equations Derive NoConfusion Subterm for term.
+
+(* The combinator rec throws in a return branch with a type 
+  necessarily convertible to the result type, but the syntactic 
+  mismatch between the 2 types prevents `rec_graph` from `apply`ing.
+  This tactic fixes the type in the return branch to what's expected
+  syntactically. *)
+Ltac patch_rec_ret :=
+  try (unfold rec;
+  match goal with 
+  | |- orec_graph _ (_rec _ (fun _ : ?Bx => _)) ?hBa => 
+    let Ba := type of hBa in change Bx with Ba
+  end).
 
 
 Section RedImplemComplete.
@@ -99,6 +111,12 @@ Section RedImplemComplete.
       intros; eapply Hsubst.
       eapply TermConv; refold; tea.
       now econstructor.
+    - cbn in H.
+      eapply IHπ in H as [T [[?[[]]]%termGen' Hsubst]]; subst.
+      eexists; split; tea.
+      intros; eapply Hsubst.
+      eapply TermConv; refold; tea.
+      econstructor; tea; now (eapply TypeRefl + eapply TermRefl).
   Qed.
 
   Lemma isType_ty Γ T t :
@@ -139,6 +157,16 @@ Section RedImplemComplete.
       end
     end.
 
+  Ltac termInvContradictionList Hty := 
+    eapply termGen' in Hty; cbn in Hty; prod_hyp_splitter; subst;
+    now match goal with 
+    | [H : [_ |-[de] _ : tList _] |- _] =>
+      eapply termGen' in H; cbn in H; prod_hyp_splitter; subst;
+      now match goal with
+      | [H : [_ |-[de] _ ≅ tList _] |- _] => unshelve eapply ty_conv_inj in H; first [constructor | easy]
+      end
+    end.
+
   Lemma wh_red_stack_complete Γ t π :
     well_typed Γ (zip t π) ->
     domain wh_red_stack (t,π).
@@ -151,7 +179,7 @@ Section RedImplemComplete.
     apply compute_domain. funelim (wh_red_stack z).
     all: simpl.
     all: try easy.
-    all: try solve [ cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *; termInvContradiction Hty].
+    all: try solve [ cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *; termInvContradiction Hty + termInvContradictionList Hty].
     - cbn in * ; eapply well_typed_zip in Hty as [? [? _]] ; cbn in *.
       eapply zip1_notType ; tea.
       all: now eapply isType_tm_view1.
@@ -166,53 +194,67 @@ Section RedImplemComplete.
         eapply well_typed_zip in Hty as (?&[??Hu]).
         eapply Hu, RedConvTeC, subject_reduction ; tea.
         now do 2 econstructor.
-  - split ; [|easy].
-    eapply IH.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in *; split; [|easy].
-    eapply IH.
-    + do 2 red; cbn.
-      left; constructor; eapply zip_ored; constructor.
-    + cbn. 
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in *; split; [|easy].
-    eapply IH.
-    + do 2 red; cbn.
-      left; constructor; eapply zip_ored; constructor.
-    + cbn. 
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    2: eassumption.
-    red. red. cbn.
-    right.
-    econstructor.
-    destruct s ; cbn ; now constructor.
+    - split ; [|easy].
+      eapply IH.
+      + red. red. cbn.
+        left.
+        constructor.
+        eapply zip_ored.
+        now econstructor.
+      + cbn in *.
+        eapply well_typed_zip in Hty as (?&[??Hu]).
+        eapply Hu, RedConvTeC, subject_reduction ; tea.
+        now do 2 econstructor.
+    - cbn in *.
+      split ; [|easy].
+      eapply IH ; cbn in *.
+      + red. red. cbn.
+        left.
+        constructor.
+        eapply zip_ored.
+        now econstructor.
+      + cbn in *.
+        eapply well_typed_zip in Hty as (?&[??Hu]).
+        eapply Hu, RedConvTeC, subject_reduction ; tea.
+        now do 2 econstructor.
+    - cbn in *; split; [|easy].
+      eapply IH.
+      + do 2 red; cbn.
+        left; constructor; eapply zip_ored; constructor.
+      + cbn. 
+        eapply well_typed_zip in Hty as (?&[??Hu]).
+        eapply Hu, RedConvTeC, subject_reduction ; tea.
+        now do 2 econstructor.
+    - cbn in *; split; [|easy].
+      eapply IH.
+      + do 2 red; cbn.
+        left; constructor; eapply zip_ored; constructor.
+      + cbn. 
+        eapply well_typed_zip in Hty as (?&[??Hu]).
+        eapply Hu, RedConvTeC, subject_reduction ; tea.
+        now do 2 econstructor.
+    - cbn in *; split ; [| easy].
+      eapply IH; cbn.
+      + do 2 red; cbn.
+        left; constructor; eapply zip_ored; constructor.
+      + eapply well_typed_zip in Hty as [? [? Hu]].
+        eapply Hu, RedConvTeC, subject_reduction; tea.
+        now do 2 econstructor.
+    - cbn in *; split; [|easy].
+      eapply IH; cbn.
+      + do 2 red; cbn.
+        left; constructor; eapply zip_ored; constructor.
+      + eapply well_typed_zip in Hty as [? [? Hu]].
+        eapply Hu, RedConvTeC, subject_reduction; tea.
+        now do 2 econstructor.
+    - cbn in *.
+      split ; [|easy].
+      eapply IH ; cbn in *.
+      2: eassumption.
+      red. red. cbn.
+      right.
+      econstructor.
+      destruct s ; cbn ; now constructor.
   Qed.
 
   Corollary wh_red_complete Γ t :
@@ -226,8 +268,8 @@ Section RedImplemComplete.
     all: rewrite (wh_red_equation_1 t) ; cbn.
     all: split ; [|easy].
     - eapply wh_red_stack_complete ; tea.
-    - inversion w ; subst ; clear w.
-      6: eapply wh_red_stack_complete ; now econstructor.
+    - inversion w ; subst ; clear w; cycle -1.
+      1: eapply wh_red_stack_complete ; now econstructor.
       all: econstructor ; cbn ; red.
       all: simp wh_red_stack ; cbn.
       all: now econstructor.
@@ -298,6 +340,7 @@ Definition whne_ne_view1 {N} (w : whne N) : ne_view1 N :=
   | whne_tEmptyElim _ => ne_view1_dest _ (eEmptyElim _)
   | whne_tFst _ => ne_view1_dest _ eFst
   | whne_tSnd _ => ne_view1_dest _ eSnd
+  | whne_tMap _ => ne_view1_dest _ (eMap _ _ _) 
   end.
 
 Lemma whne_ty_view1 {N} (w : whne N) : build_ty_view1 N = ty_view1_small (whne_ne_view1 w).
@@ -334,24 +377,13 @@ Proof.
   - unshelve erewrite whne_nf_view1 ; tea.
     cbn.
     now rewrite (whne_nf_view1 wn).
+  - unshelve erewrite whne_nf_view1; tea.
+    cbn; now rewrite (whne_nf_view1 wn).
   - unshelve erewrite whne_ty_view1 ; tea.
     reflexivity.
 Qed.
 
 Arguments PFun_instance_1 : simpl never.
-
-
-(* The combinator rec throws in a return branch with a type 
-  necessarily convertible to the result type, but the syntactic 
-  mismatch between the 2 types prevents `rec_graph` from `apply`ing.
-  This tactic fixes the type in the return branch to what's expected
-  syntactically. *)
-Ltac patch_rec_ret :=
-  try (unfold rec;
-  match goal with 
-  | |- orec_graph _ (_rec _ (fun _ : ?Bx => _)) ?hBa => 
-    let Ba := type of hBa in change Bx with Ba
-  end).
 
 Lemma implem_conv_complete :
   BundledConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
@@ -396,6 +428,11 @@ Proof.
     1: exact (IHA tt).
     cbn; patch_rec_ret; econstructor.
     1: exact (IHB tt).
+    now econstructor.
+  - intros * HA [IHA] **; cbn in *.
+    unfold graph; simp conv conv_ty_red; cbn.
+    patch_rec_ret; econstructor.
+    1: exact (IHA tt).
     now econstructor.
   - intros * HM [IHM []] **.
     unfold graph.
@@ -453,6 +490,22 @@ Proof.
     econstructor.
     1: exact (IH tt).
     econstructor.
+  - intros * hmap hlst [conv_lst []] htgt [conv_tgt] hfn [conv_fn] **.
+    inversion hlst as [????? h]; subst.
+    apply algo_conv_wh in h as [wh%compact_map_whne wh'%compact_map_whne].
+    assert (h : forall b: bool, b <-> Bool.Is_true b)
+    by (intros []; split; cbn; easy). 
+    apply h in hmap as [hl%h| hl'%h]%Bool.orb_prop_elim; clear h.
+    1: inversion wh; subst; try discriminate.
+    2: inversion wh'; subst; try discriminate.
+    1,2: unfold graph; simp conv conv_ne; cbn; simp to_neutral_diag.
+    1: rewrite (whne_nf_view1 wh'); cbn in *.
+    2: rewrite (whne_nf_view1 wh); destruct wh; cbn -[conv_ne_map].
+    all: patch_rec_ret; econstructor;
+      [do 2 rewrite <- extract_map_arg_compact in conv_lst; exact (conv_lst tt)|];
+      cbn; patch_rec_ret; econstructor; [exact (conv_tgt tt)|];
+      cbn; patch_rec_ret; econstructor; [exact conv_fn|];
+      now constructor.
   - intros * ? [IHm []] **.
     unfold graph.
     simp conv conv_ne_red ; cbn.
@@ -521,6 +574,27 @@ Proof.
     cbn; patch_rec_ret; econstructor.
     1: exact ihSnd.
     now constructor.
+  - intros * ? [ihA] **.
+    unfold graph.
+    simp conv conv_tm_red ; cbn.
+    patch_rec_ret; econstructor.
+    1: exact ihA.
+    now constructor.
+  - intros * ? [ihA'] ? [ihAT] **.
+    unfold graph.
+    simp conv conv_tm_red; cbn.
+    patch_rec_ret; econstructor.
+    1: exact (ihA' tt).
+    cbn; patch_rec_ret; econstructor.
+    1: exact (ihAT tt).
+    now constructor.
+  - intros * ? [ihA'] ? [ihAT] ? [ihhd] ? [ihtl] **.
+    unfold graph; simp conv conv_tm_red; cbn.
+    patch_rec_ret; econstructor; [exact (ihA' tt)|].
+    patch_rec_ret; econstructor; [exact (ihAT tt)|].
+    patch_rec_ret; econstructor; [exact ihhd|].
+    patch_rec_ret; econstructor; [exact ihtl|].
+    now constructor.
   - intros * ? [IHm []] wP **.
     unfold graph.
     simp conv conv_tm_red ; cbn.
@@ -545,6 +619,7 @@ all: try solve [case c ; constructor].
 - eapply (ne_view1_dest _ (eEmptyElim _)).
 - eapply (ne_view1_dest _ eFst).
 - eapply (ne_view1_dest _ eSnd).
+- eapply (ne_view1_dest _ (eMap _ _ _)).
 Defined.
 
 Lemma can_ty_view1_small T (c : ~ isCanonical T) :
@@ -569,7 +644,7 @@ Proof.
   all: unfold graph in *.
   all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
   (* Well formed types *)
-  1-5:repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
+  1-6:repeat match goal with | |- orec_graph typing _ _ => patch_rec_ret ; econstructor ; try eauto ; cbn end.
   - unshelve erewrite can_ty_view1_small ; tea.
     cbn.
     econstructor.
@@ -637,6 +712,21 @@ Proof.
   - econstructor.
     1: exact (g tt whnf_tSig).
     econstructor.
+  - econstructor.
+    1: exact (g tt whnf_tSort).
+    econstructor.
+  - econstructor.
+    1: exact (g tt).
+    constructor.
+  - econstructor; [exact (g1 tt)|].
+    econstructor; [exact g0|].
+    econstructor; [exact g|].
+    constructor.
+  - econstructor; [exact (g2 tt)|].
+    econstructor; [exact (g1 tt)|].
+    econstructor; [exact g0|].
+    econstructor; [exact g|].
+    constructor.
   - econstructor.
     1: exact (g v).
     cbn.

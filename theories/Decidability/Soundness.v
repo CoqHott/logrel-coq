@@ -35,12 +35,12 @@ Lemma red_stack_sound :
 Proof.
   intros ? _.
   funelim (wh_red_stack _).
-  all: cbn ; econstructor ; try eauto.
+  all: cbn; try split; try easy.
   all: intros v ?.
   all: etransitivity ; [..|eassumption].
   all: eapply zip_red.
   all: econstructor ; [..|reflexivity].
-  all: now econstructor.
+  all: try now econstructor.
 Qed.
 
 Lemma stack_ne n π :
@@ -70,6 +70,15 @@ Proof.
   all: split ; [ now econstructor | intros H' ; inversion H'].
 Qed.
 
+Lemma whnf_tm_view1_list t e :
+  build_tm_view1 t = tm_view1_list e ->
+  whnf t × ~ whne t.
+Proof.
+  intros H.
+  destruct e ; cbn.
+  all: split ; [ now econstructor | intros H' ; inversion H'].
+Qed.
+
 Lemma red_stack_whnf :
 funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => whnf t').
 Proof.
@@ -80,6 +89,7 @@ Proof.
   - econstructor. eapply stack_ne.
     now econstructor.
   - now eapply whnf_tm_view1_nat.
+  - now eapply whnf_tm_view1_list.
 Qed.
 
 Corollary _red_sound :
@@ -173,28 +183,64 @@ Section ConversionSound.
   | (ne_red_state;Γ;_;m;n), (ok T) => [Γ |-[al] m ~h n ▹ T] × whnf T
   end.
 
+  Lemma extract_map_arg_compact t : forall A, extract_map_arg t = (compact_map A t).(Map.lst).
+  Proof. induction t; intros; cbn; reflexivity+ eauto. Qed.
+
+  Lemma is_map_compact_tgtTy {A t} B : is_map t = true ->
+    (compact_map A t).(Map.tgtTy) = (compact_map B t).(Map.tgtTy).
+  Proof.
+    destruct t; cbn; try discriminate; reflexivity.
+  Qed.
+
+  Ltac map_conv_ne := 
+    match goal with 
+    | |- [_ |-[al] ?t ~ ?t' ▹ tList ?C ] =>
+      set (r := compact_map C t);
+      set (r' := compact_map C t');
+      change (tList C) with (tList r.(Map.tgtTy))
+    end; econstructor; cbn.
+
   Lemma _implem_conv_sound :
     funrect conv (fun _ => True) conv_sound_type.
   Proof.
     intros x _.
-    funelim_conv ; cbn.
-    all: intros ; simp conv_sound_type ; try easy ; cbn.
+    funelim_conv ; cbn; try easy.
+    all: intros ; simp conv_sound_type; cbn.
+    all: match goal with
+      | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
+    end.
+    all: repeat match goal with
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+    end.
+    all: unfold conv_full_cod, conv_cod.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
       | |- forall x : result _, _ => intros [|] ; [..|easy] ; cbn
       | |- _ -> _ => simp conv_sound_type ; intros ?
-      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
+      | |- orec_ind_stepT _ _ _ (match ?t with | _ => _ end) =>
+        destruct t; cbn; try easy
       | s : sort |- _ => destruct s
-      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
-      | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
       end).
     all: try solve [now econstructor].
+    all: try (map_conv_ne ; try rewrite <- extract_map_arg_compact; now cbn).
     - econstructor ; tea.
       now econstructor.
-    - econstructor ; tea.
-      destruct H ; simp build_nf_view3 build_ty_view1 in Heq ; try solve [inversion Heq].
-      all: try now econstructor.
+    - match goal with
+      | |- [ _ |-[al] _ ≅h _ : ?X ] =>
+        match goal with | H : whnf X |- _ => 
+          econstructor ; tea; destruct H ; 
+          simp build_nf_view3 build_ty_view1 in Heq ; 
+          try solve [inversion Heq];
+          econstructor ; tea
+        end
+      end.
+    - match goal with 
+      | |- [_ |-[al] ?t ~ ?t' ▹ tList ?C ] =>
+        set (r := compact_map c t);
+        set (r' := compact_map c t');
+        replace (tList C) with (tList r.(Map.tgtTy))
+      end; econstructor; cbn; repeat rewrite <- extract_map_arg_compact; try now cbn.
     - eapply convne_meta_conv.
       2: reflexivity.
       + econstructor.
@@ -202,7 +248,11 @@ Section ConversionSound.
       + f_equal.
         symmetry.
         now eapply Nat.eqb_eq.
-    - split; tea. now econstructor.
+    - match goal with
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+      end.
+      split; tea.
+      now econstructor.
   Qed.
 
   Corollary implem_conv_sound x r :

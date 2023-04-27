@@ -93,20 +93,15 @@ Proof.
       now eapply redty_red, red_ty_compl_univ_r.
   - intros * ? [ih] **.
     econstructor; eauto.
-  - intros * ? [_ ] **.
-    econstructor.
-    + intros Hcan; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros * ? [_ ] **.
-    econstructor.
-    + intros Hcan; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros * ? [_ ] **.
-    econstructor.
+  - intros * ? [_ ] ? hconv.
+    unshelve eapply ty_conv_inj in hconv.
+    1,2: constructor.
+    destruct hconv.
+  - intros * ? [_ ] ????? hconv.
+    unshelve eapply ty_conv_inj in hconv.
+    1,2: constructor.
+    destruct hconv.
+  - econstructor.
     + intros Hcan; inversion Hcan.
     + econstructor.
       1: now econstructor.
