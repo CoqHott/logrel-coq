@@ -939,6 +939,17 @@ Section GenericConsequences.
     eapply ty_lam; tea.
     now eapply ty_var0.
   Qed.
+
+  Lemma ty_id' {Γ A} : 
+    [Γ |- A] ->
+    [Γ |- idterm A : arr A A].
+  Proof.
+    intros.
+    (* eapply ty_conv. *)
+    (* 2: eapply convty_simple_arr; cycle 1; tea. *)
+    eapply ty_lam; tea.
+    now eapply ty_var0.
+  Qed.
   
   Lemma redtm_id_beta {Γ a A} :
     [Γ |- A] ->
