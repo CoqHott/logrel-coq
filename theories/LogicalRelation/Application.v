@@ -23,17 +23,17 @@ Section AppTerm.
     (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)]< wl >)
     (RuN : nat)
     (Ru : forall wl' (τ : wl' ≤ε wl)
-        (Ninfl : AllInLCon RFN wl')
-        (Ninfl' : AllInLCon RuN wl'),
+                 (Ninfl : AllInLCon RFN wl')
+                 (Ninfl' : AllInLCon RuN wl'),
         [Γ ||-<l'> u : F | RF wl' τ Ninfl ]< wl' >)
     (RGu : W[Γ ||-<l''> G[u..]]< wl >).
-
+  
   Definition AppTyN : nat.
   Proof.
     clear Rt RGu.
     destruct hΠ ; cbn in * ; clear hΠ.
-     refine (max (max domN RFN) (max RuN _)).
-     unshelve refine (Max_Bar _ _ _).
+    refine (max (max domN RFN) (max RuN _)).
+    unshelve refine (Max_Bar _ _ _).
     + assumption.
     + exact (max (max domN RFN) RuN).
     + intros.
@@ -272,6 +272,38 @@ Qed.
   
 
 End AppTerm.
+
+(*Lemma test {wl Γ F G l}
+  (RΠ : W[Γ ||-<l> tProd F G]< wl >)
+  : [Γ ||-Πd tProd F G ]< wl >.
+Proof.
+  destruct RΠ.
+  unshelve econstructor.
+  - exact F.
+  - exact G.
+  - refine (max WN _).
+    unshelve eapply Max_Bar.
+    + exact wl.
+    + exact WN.
+    + intros * tau allinl.
+      refine (PiRedTyPack.domN _).
+      eapply invLRΠ.
+      exact (WRed wl' tau allinl).
+  - intros * tau allinl delta.
+    pose proof (zref := fun inf => (invLRΠ (WRed l' tau (AllInLCon_le _ _ (Nat.max_lub_l WN _ _ inf) _ allinl)))).
+    pose (q:= fun inf => PiRedTyPack.domRed (wl' := l') (Δ := Δ) (invLRΠ (WRed l' tau inf))).
+    cbn in q.
+    assert (forall inf, LRPack l' Δ (PiRedTyPack.dom (invLRΠ (WRed l' tau inf)))⟨ρ⟩).
+    intros inf.
+    eapply q ; try eassumption.
+    now eapply wfLCon_le_id.
+    admit.
+    
+    unfold q.
+    
+      pose (t:= PiRedTyPack.domN (invLRΠ q)).*)
+      
+  
 
 Lemma appTerm {wl Γ t u F G l}
   (RΠ : W[Γ ||-<l> tProd F G]< wl >)
