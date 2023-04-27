@@ -1,4 +1,4 @@
-
+Require Import PeanoNat.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations LContexts Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeInstance.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction NormalRed.
@@ -17,78 +17,275 @@ Set Printing Primitive Projection Parameters.
 Section AppTerm.
   Context {wl Γ t u F G l l' l''}
     (hΠ : [Γ ||-Π<l> tProd F G]< wl >)
-    {RF : W[Γ ||-<l'> F]< wl >}
+    {RFN : nat}
+    {RF : forall wl' (τ : wl' ≤ε wl) (Ninfl : AllInLCon RFN wl'),
+        [Γ ||-<l'> F]< wl' > }
     (Rt : [Γ ||-<l> t : tProd F G | LRPi' (normRedΠ0 hΠ)]< wl >)
-    (Ru : W[Γ ||-<l'> u : F | RF]< wl >)
+    (RuN : nat)
+    (Ru : forall wl' (τ : wl' ≤ε wl)
+        (Ninfl : AllInLCon RFN wl')
+        (Ninfl' : AllInLCon RuN wl'),
+        [Γ ||-<l'> u : F | RF wl' τ Ninfl ]< wl' >)
     (RGu : W[Γ ||-<l''> G[u..]]< wl >).
 
-  Definition AppTy : W[Γ ||-<l> G[u..]]< wl >.
+  Definition AppTyN : nat.
   Proof.
     clear Rt RGu.
-    destruct Ru ; destruct RF ; cbn in *.
-    destruct hΠ ; cbn in *.
-    exists (max WN WNTm).
-    intros.
-    assert ([Γ ||-< l > cod[u..] ]< wl' >).
-    - pose (q := codRed Γ u wl' wk_id τ).
-      cbn in q.
-      replace (cod[u..]) with (cod[u .: _wk_id Γ >> tRel]) by now bsimpl.
-      unshelve eapply q.
-      
-      eapply codRed.
-    
-    
-  Lemma app_id : W[Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
+    destruct hΠ ; cbn in * ; clear hΠ.
+     refine (max (max domN RFN) (max RuN _)).
+     unshelve refine (Max_Bar _ _ _).
+    + assumption.
+    + exact (max (max domN RFN) RuN).
+    + intros.
+      unshelve eapply codomN.
+      * assumption.
+      * exact u.
+      * exact wl'.
+      * exact wk_id.
+      * assumption.
+      * eapply AllInLCon_le ; [ | eassumption].
+        eapply Nat.max_lub_l.
+        now eapply Nat.max_lub_l.
+      * eapply wfc_Ltrans ; try eassumption.
+        exact (wfc_wft domTy).
+      * abstract (irrelevance0 ; [ | unshelve eapply Ru ; try eassumption ;
+                           eapply AllInLCon_le ;
+                           [ eapply Nat.max_lub_r ; now eapply Nat.max_lub_l |
+                             eassumption | now eapply Nat.max_lub_r |
+                             eassumption]] ;
+                  assert (tProd dom cod = tProd F G) as ePi
+                     by (eapply whredty_det ; gen_typing) ; 
+                  inversion ePi ; subst ; 
+                  now bsimpl).
+  Defined.
+Print AppTyN.  
+  Definition AppTy : W[Γ ||-<l> G[u..]]< wl >.
   Proof.
-    exists (PiRedTyPack.domN  hΠ ).
+    exists AppTyN.
+    clear Rt RGu.
+    pose proof (r:= PiRedTyPack.red hΠ). 
+   assert (tProd (PiRedTyPack.dom hΠ) (PiRedTyPack.cod hΠ) = tProd F G) as ePi
+        by (eapply whredty_det ; gen_typing) ; clear r.
+    inversion ePi ; subst ; clear ePi.
+    pose proof (wfΓ := wfc_wft (PiRedTyPack.domTy hΠ)).
+    intros.
+    replace ((PiRedTyPack.cod hΠ)[u..]) with ((PiRedTyPack.cod hΠ)[u .: _wk_id Γ >> tRel]) by now bsimpl.
+    unshelve eapply ((PiRedTyPack.codRed hΠ) wk_id τ) ; unfold AppTyN in *.
+    * unfold AppTyN in *.
+      eapply AllInLCon_le ; [ | eassumption].
+      unfold AppTyN.
+      eapply Nat.max_lub_l ; now eapply Nat.max_lub_l.
+    * exact (wfc_Ltrans τ wfΓ).
+    * irrelevance0 ; [ | unshelve eapply Ru ; try eassumption ;
+                         eapply AllInLCon_le ;
+                         [ eapply Nat.max_lub_r ; now eapply Nat.max_lub_l |
+                           eassumption | eapply Nat.max_lub_l ; now eapply Nat.max_lub_r |
+                           eassumption]] ; now bsimpl.
+    * now eapply wfLCon_le_id.
+    * cbn.
+      eapply AllInLCon_le ; [ | eassumption].
+      etransitivity.
+      2:{eapply Nat.max_lub_r.
+         eapply Nat.max_lub_r.
+         reflexivity. }
+      etransitivity.
+      2:{ unshelve eapply Max_Bar_le.
+          + exact wl'.
+          + assumption.
+          + eapply AllInLCon_le ; [ | eassumption].
+            eapply Nat.max_le_compat_l.
+            now eapply Nat.max_lub_l.
+          + intros.
+            eapply ((PiRedTyPack.codomN_Ltrans hΠ)) ; try eassumption.
+      }
+        eapply (PiRedTyPack.codomN_Ltrans hΠ).
+        now eapply wfLCon_le_id.
+Defined.              
+
+  Definition app_idN : nat.
+  Proof.
+    refine (max (max (max RFN RuN) (max (PiRedTyPack.domN hΠ) (PiRedTm.redN Rt))) _).
+    unshelve eapply Max_Bar.
+    - exact wl.
+    - exact (max (max RFN RuN) (max (PiRedTyPack.domN hΠ) (PiRedTm.redN Rt))).
+    - intros.
+      unshelve eapply (PiRedTm.appN Rt).
+      + assumption.
+      + exact u.
+      + exact wl'.
+      + now eapply wk_id.
+      + assumption.
+      + eapply AllInLCon_le ; [ | eassumption].
+        eapply Nat.max_lub_l ; now eapply Nat.max_lub_r.
+      + eapply wfc_Ltrans ; try eassumption.
+        exact (wfc_wft (PiRedTyPack.domTy hΠ)).
+      + eapply AllInLCon_le ; [ | eassumption].
+        eapply Nat.max_lub_r ; now eapply Nat.max_lub_r.
+      + abstract (irrelevance0 ;
+                  [ | unshelve eapply Ru ; try eassumption ;
+                      eapply AllInLCon_le ;
+                      [ eapply Nat.max_lub_l ; now eapply Nat.max_lub_l |
+                        eassumption |
+                        eapply Nat.max_lub_r ; now eapply Nat.max_lub_l |
+                        eassumption]] ;
+                  now bsimpl).
+Defined.
+  
+  Lemma app_id_aux : W[Γ ||-<l> tApp (PiRedTm.nf Rt) u : G[u..] | AppTy]< wl >.
+  Proof.
+    clear RGu.
+    exists app_idN.
     intros.
     replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
     irrelevance0.  2: unshelve eapply (PiRedTm.app Rt).
     cbn; now bsimpl.
     - exact wl'.
     - assumption.
-    - assumption.
-    - eapply wfc_Ltrans.
-      2: exact (wfc_wft (escape RF)).
-      assumption.
+    - eapply AllInLCon_le ; [ | exact Ninfl'].
+      unfold app_idN ; cbn.
+      eapply Nat.max_lub_l ; eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+    - eapply wfc_Ltrans ; try eassumption.
+      exact (wfc_wft (PiRedTyPack.domTy hΠ)).
     - irrelevance0.
       2:{ unshelve eapply LRTm_Ltrans.
-          exact l'.
-          exact wl.
-          all: try eassumption.}
-      cbn.
+          + exact l'.
+          + exact wl'.
+          + eapply RF ; try eassumption.
+            eapply AllInLCon_le ; [ | exact Ninfl].
+            cbn ; unfold AppTyN.
+            eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+          + now eapply wfLCon_le_id.
+          + eapply Ru.
+            eapply AllInLCon_le ; [ | exact Ninfl].
+            cbn ; unfold AppTyN.
+            eapply Nat.max_lub_l ; now eapply Nat.max_lub_r.
+      }
       now bsimpl.
     - now eapply wfLCon_le_id.
+    - cbn ; unfold NormalRed.normRedΠ0_obligation_7.
+      cbn.
+      eapply AllInLCon_le ; [ | exact Ninfl].
+      etransitivity.
+      2:{eapply Nat.max_lub_r.
+         eapply Nat.max_lub_r.
+         cbn ; unfold AppTyN.
+         reflexivity. }
+      etransitivity.
+      2:{ unshelve eapply Max_Bar_le.
+          + exact wl'.
+          + assumption.
+          + eapply AllInLCon_le ; [ | exact Ninfl].
+            cbn ; unfold AppTyN.
+            eapply Nat.max_le_compat_l.
+            now eapply Nat.max_lub_l.
+          + intros.
+            eapply ((PiRedTyPack.codomN_Ltrans hΠ)) ; try eassumption.
+      }
+      eapply (PiRedTyPack.codomN_Ltrans hΠ).
+      now eapply wfLCon_le_id.
+    - eapply AllInLCon_le ; [ | exact Ninfl'].
+      unfold app_idN ; cbn.
+      eapply Nat.max_lub_r ; eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
     - cbn.
-      unfold NormalRed.normRedΠ0_obligation_7.
+      eapply AllInLCon_le ; [ | eassumption].
+      etransitivity.
+      2:{unfold app_idN.
+         eapply Nat.max_lub_r.
+         reflexivity. }
+      etransitivity.
+      2:{ unshelve eapply Max_Bar_le.
+          + exact wl'.
+          + assumption.
+          + eapply AllInLCon_le ; [ | eassumption].
+            unfold app_idN ; cbn.
+            eapply Nat.max_lub_l.
+            eapply Nat.max_le_compat_l.
+            now econstructor.
+          + intros.
+            eapply (PiRedTm.appN_Ltrans Rt) ; try eassumption.
+      }
       cbn.
-         eassumption.
-         eassumption.}
+      eapply (PiRedTm.appN_Ltrans Rt) ; try eassumption.
+      now eapply wfLCon_le_id.
       Unshelve.
-      cbn.
-      now bsimpl.
-    
-    assert (wfΓ := wfc_wft (escape RF)).
-    replace (PiRedTm.nf _) with (PiRedTm.nf Rt)⟨@wk_id Γ⟩ by now bsimpl.
-    irrelevance0.  2: unshelve eapply (PiRedTm.app Rt).
-    cbn; now bsimpl.
-    Unshelve. 1: eassumption.
-    cbn; irrelevance0; tea; now bsimpl.
+      + exact l'.
+      + eapply RF ; try eassumption.
+        cbn in *.
+        unfold AppTyN in Ninfl.
+        eapply AllInLCon_le ; [ | exact Ninfl].
+        eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+Qed.        
+
+  Lemma app_id : W[Γ ||-<l''> tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
+  Proof.
+    eapply WLRTmRedIrrelevantCum.
+    exact app_id_aux.
   Qed.
 
-  Lemma appTerm0 :
-      [Γ ||-<l''> tApp t u : G[u..] | RGu]< wl >
-      × [Γ ||-<l''> tApp t u ≅ tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
+  Lemma WappTerm0 :
+      W[Γ ||-<l''> tApp t u : G[u..] | RGu]< wl >
+      × W[Γ ||-<l''> tApp t u ≅ tApp (PiRedTm.nf Rt) u : G[u..] | RGu]< wl >.
   Proof.
-    eapply redwfSubstTerm.
-    1: unshelve eapply app_id; tea.
-    escape.
-    eapply redtmwf_app.
-    1: apply Rt.
-    easy.
+    Print redwfSubstTerm.
+    split.
+    - destruct app_id.
+      exists (max (max RuN WNTm) RFN).
+      intros.
+      eapply redwfSubstTerm.
+      + eapply WRedTm ; try eassumption.
+        eapply AllInLCon_le ; [ | exact Ninfl'].
+        eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+      + escape.
+        eapply redtmwf_app.
+        split.
+        * eapply ty_Ltrans ; try eassumption.
+          apply Rt.
+        * eapply redtm_Ltrans ; try eassumption.
+          apply Rt.
+        * eapply escapeTerm.
+          unshelve eapply Ru ; try eassumption.
+          eapply AllInLCon_le ; [ | exact Ninfl'].
+          now eapply Nat.max_lub_r.
+          eapply AllInLCon_le ; [ | exact Ninfl'].
+          eapply Nat.max_lub_l ; now eapply Nat.max_lub_l.
+    - destruct app_id.
+      exists (max (max RuN WNTm) RFN).
+      intros.
+      eapply redwfSubstTerm.
+      + eapply WRedTm ; try eassumption.
+        eapply AllInLCon_le ; [ | exact Ninfl'].
+        eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+      + escape.
+        eapply redtmwf_app.
+        split.
+        * eapply ty_Ltrans ; try eassumption.
+          apply Rt.
+        * eapply redtm_Ltrans ; try eassumption.
+          apply Rt.
+        * eapply escapeTerm.
+          unshelve eapply Ru ; try eassumption.
+          eapply AllInLCon_le ; [ | exact Ninfl'].
+          now eapply Nat.max_lub_r.
+          eapply AllInLCon_le ; [ | exact Ninfl'].
+          eapply Nat.max_lub_l ; now eapply Nat.max_lub_l.
   Qed.
+  
 
 End AppTerm.
+
+Lemma appTerm {wl Γ t u F G l}
+  (RΠ : W[Γ ||-<l> tProd F G]< wl >)
+  {RF : W[Γ ||-<l> F]< wl >}
+  (Rt : W[Γ ||-<l> t : tProd F G | RΠ]< wl >)
+  (Ru : W[Γ ||-<l> u : F | RF]< wl >)
+  (RGu : W[Γ ||-<l> G[u..]]< wl >) : 
+  W[Γ ||-<l> tApp t u : G[u..]| RGu]< wl >.
+Proof.
+  unshelve eapply WappTerm0.
+  Print invLRΠ.
+  8: irrelevance.
+
+
 
 Lemma appTerm {wl Γ t u F G l}
   (RΠ : [Γ ||-<l> tProd F G]< wl >)

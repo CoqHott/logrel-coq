@@ -18,16 +18,16 @@ Section Weakenings.
   Proof.
     destruct ΠA as[dom cod];  cbn in *.
     assert (domRed' : forall Δ' wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
-                             (Ninfl : domN <= length wl'),
+                             (Ninfl : AllInLCon domN wl'),
                [|- Δ']< wl' > -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]< wl' >).
     {
       intros ? ? ρ' ??; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
-      econstructor; now unshelve eapply domRed.
+      econstructor ; now unshelve eapply domRed.
     }
     set (cod' := cod⟨wk_up dom ρ⟩).
     unshelve refine
       (let codomN' : forall Δ' a wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
-                             (Ninfl : domN <= length wl')
+                             (Ninfl : AllInLCon domN wl')
                              (h : [|- Δ']< wl' >)
                              (ha : [domRed' Δ' wl' ρ' τ Ninfl h | _ ||- a : _]< wl' >),
                nat := _ in _).
@@ -37,12 +37,12 @@ Section Weakenings.
     }
     cbn in *.
     assert (codRed' : forall Δ' a wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
-                             (Ninfl : domN <= length wl')
+                             (Ninfl : AllInLCon domN wl')
                              (h : [|- Δ']< wl' >)
                              (ha : [domRed' Δ' wl' ρ' τ Ninfl h | _ ||- a : _]< wl' >)
                              (wl'' : wfLCon)
                              (τ' : wl'' ≤ε wl'),
-               codomN' Δ' a wl' _ τ Ninfl h ha <= #|wl''| ->
+               AllInLCon (codomN' Δ' a wl' _ τ Ninfl h ha) wl'' ->
                [Δ' ||-< l > cod'[a .: ρ' >> tRel]]< wl'' >).
     {
       intros ? a wl' ρ' ??? ? ? ?.
@@ -62,6 +62,7 @@ Section Weakenings.
     + gen_typing.
     + unfold cod'; set (ρ1 := wk_up (dom) ρ); eapply wft_wk; gen_typing.
     + unfold cod'; change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
+    + intros ; now eapply codomN_Ltrans.
     + intros Δ' a b wl' ρ' ? ? wfΔ' ??? *. 
       replace (cod'[b .: ρ' >> tRel]) with (cod[ b .: (ρ' ∘w ρ) >> tRel]) by (unfold cod'; now bsimpl).
       subst cod'; unshelve epose (codExt Δ' a b wl' (ρ' ∘w ρ) τ Ninfl wfΔ' _ _ _ _ _ _) ; try irrelevance ; try assumption.
@@ -155,6 +156,8 @@ Section Weakenings.
         unshelve eapply ihdom; try eassumption.
         * now eapply wfc_Ltrans.
         * now eapply domRed.
+      + intros ; cbn in *.
+        now eapply codomN_Ltrans.
       + intros ? a wl' ρ' ?????????.
         replace (_[_ .: ρ' >> tRel]) with (cod[ a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
         irrelevance0.
@@ -199,6 +202,8 @@ Section Weakenings.
     - apply isFun_ren; assumption.
     - now apply tm_nf_wk.
     - eapply convtm_wk; eassumption.
+    - cbn in * ; intros.
+      now eapply appN_Ltrans.
     - intros ? a ? ρ' * ?.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
       irrelevance0.
@@ -317,6 +322,7 @@ Section Weakenings.
         subst X. 
         irrelevance.
       + now eapply convtm_wk.
+      + intros ; now eapply eqappN_Ltrans.
       + intros ? a ? ρ' * ?. 
         replace (_ ⟨ ρ' ⟩) with (PiRedTm.nf redL) ⟨ρ' ∘w ρ⟩ by now bsimpl.
         replace (_ ⟨ ρ' ⟩) with (PiRedTm.nf redR) ⟨ρ' ∘w ρ⟩ by now bsimpl.

@@ -874,6 +874,15 @@ Section GenericConsequences.
     intros ??? [] []; unshelve econstructor; try etransitivity; tea.
   Qed.
 
+  Lemma redtmwf_Ltrans {l l' Γ t u A} (f : l' ≤ε l) :
+    [Γ |- t :⇒*: u : A]< l > -> [Γ |- t :⇒*: u : A]< l' >.
+  Proof.
+    intros [].
+    split.
+    + now eapply ty_Ltrans.
+    + now eapply redtm_Ltrans.
+  Qed.
+    
   Lemma redtmwf_app {l Γ A B f f' t} :
     [ Γ |- f :⇒*: f' : tProd A B ]< l > ->
     [ Γ |- t : A ]< l > ->

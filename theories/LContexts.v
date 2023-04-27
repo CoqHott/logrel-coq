@@ -18,14 +18,6 @@ Inductive wf_LCon : LCon -> Type :=
 | wf_nil : wf_LCon nil
 | wf_cons : forall {l n b}, wf_LCon l -> not_in_LCon l n -> wf_LCon (cons (n,b) l).
 
-Definition le_LCon l l' : Type :=
-  forall n b, in_LCon l n b -> in_LCon l' n b.
-
-Definition le_LCon_refl l : le_LCon l l := fun n b ne => ne.
-
-Definition le_LCon_trans {l l' l''} :
-  le_LCon l l' -> le_LCon l' l'' -> le_LCon l l'' :=
-  fun le le' n b ne => le' n b (le n b ne).
 
 
 
@@ -97,9 +89,42 @@ Proof.
       * exact (IHwfl H3 H4).
 Qed.
 
-Lemma decidInLCon l n : (in_LCon l n true) + (in_LCon l n false) + (not_in_LCon l n).
+Fixpoint decidInLCon l n :
+  (in_LCon l n true) + (in_LCon l n false) + (not_in_LCon l n).
 Proof.
-  induction l.
+  unshelve refine (match l with
+                   | nil => _
+                   | cons (m, b) q => _
+                   end).
+  - right.
+    now econstructor.
+  - unshelve refine
+      (match (decidInLCon q n) with
+       | inl IHl => _
+       | inr IHl => _
+       end).
+    + unshelve refine
+      (match IHl with
+       | inl IHl => _
+       | inr IHl => _
+       end).
+      * left ; left ; now econstructor.
+      * left ; right ; now econstructor.
+    + case (eq_nat_decide n m).
+      * intro neqm.
+        rewrite <- (proj1 (eq_nat_is_eq n m) neqm).
+        case b.
+        -- left ; left ; now econstructor.
+        -- left ; right ; now econstructor.
+      * intro noteq.
+        right.
+        econstructor ; try assumption.
+        intro neqm ; rewrite neqm in noteq.
+        eapply noteq.
+        exact (eq_nat_refl _).
+Defined.
+Print decidInLCon.
+(*  induction l.
   - right.
     now econstructor.
   - induction IHl as [IHl | IHl ].
@@ -119,7 +144,7 @@ Proof.
         intro neqm ; rewrite neqm in noteq.
         eapply noteq.
         exact (eq_nat_refl _).
-Qed.        
+Defined.        *)
         
       
 Definition wfLCons (l : wfLCon) {n : nat} (ne : not_in_LCon (pi1 l) n) (b : bool) : wfLCon.
@@ -134,7 +159,8 @@ Definition wfLCons' (l : wfLCon) {n : nat} (d : (not_in_LCon (pi1 l) n) × bool)
 
 Notation " l ',,l' d " := (wfLCons' l d) (at level 20, d at next level).
 
-Definition LCon_le (l l' : LCon) : Type := forall n b, in_LCon l' n b -> in_LCon l n b.
+Definition LCon_le (l l' : LCon) : Type :=
+  forall n b, in_LCon l' n b -> in_LCon l n b.
 
 Definition wfLCon_le (l l' : wfLCon) : Type :=
   LCon_le (pi1 l) (pi1 l').
@@ -175,7 +201,236 @@ Proof.
   - exact inl.
 Qed.
 
+Definition AllInLCon (n : nat) (l : wfLCon) : Type :=
+  forall (m : nat), m < n -> (in_LCon l m true) + (in_LCon l m false).
 
+Lemma AllInLCon_le (n m : nat) (ninfm : n <= m) (l : wfLCon) :
+  AllInLCon m l -> AllInLCon n l.
+Proof.
+  intros allinl k kinfm.
+  unshelve refine (allinl k _).
+  now eapply Nat.lt_le_trans.
+Qed.
+
+Lemma AllInLCon_S (n : nat) b l :
+  AllInLCon n l -> in_LCon l n b -> AllInLCon (S n) l.
+Proof.
+  intros allinl ninl m minfSn.
+  case (Compare_dec.le_lt_eq_dec m n).
+  - now eapply Arith_prebase.lt_n_Sm_le.
+  - intro minfn ; clear minfSn.
+    now eapply allinl.
+  - intro eq.
+    rewrite eq.
+    induction b.
+    + now left.
+    + now right.
+Qed.
+  
+
+Fixpoint Lack_n (l : wfLCon) (n : nat) : list nat :=
+  match n with
+  | 0 => nil
+  | S k => match decidInLCon l k with
+            | inl a => Lack_n l k
+            | inr b => cons k (Lack_n l k)
+           end
+  end.
+Print List.In.
+Fixpoint In {A : Type} (a : A) (l : list A) {struct l} : Type :=
+  match l with
+  | nil => False
+  | (b :: m)%list => (b = a) + In a m
+  end.
+
+Definition Incl {A : Type} (l l' : list A) : Type :=
+  forall a : A, In a l -> In a l'.
+
+Lemma Incl_nil {A} : forall (l : list A), Incl l nil -> l = nil.
+Proof.
+  intros.
+  induction l.
+  - reflexivity.
+  - pose proof (t := X a (inl (eq_refl _))).
+    now inversion t.
+Qed.
+  
+Lemma Lack_n_notinLCon (n m : nat) (l : wfLCon) :
+  In m (Lack_n l n) -> not_in_LCon l m.
+Proof.
+  revert m l.
+  induction n.
+  - intros.
+    now exfalso.
+  - intros.
+    unfold Lack_n in X.
+    destruct (decidInLCon l n) ; fold Lack_n in X.
+    + cbn in *.
+      now eapply IHn.
+    + destruct X.
+      * now rewrite <- e.
+      * now eapply IHn.
+Qed.
+
+Lemma Lack_n_minfn (n m : nat) (l : wfLCon) :
+  In m (Lack_n l n) -> m < n.
+Proof.
+  induction n.
+  - intros ; exfalso.
+    now inversion X.
+  - intro inm.
+    cbn in *.
+    destruct (decidInLCon l n).
+    + etransitivity.
+      now eapply IHn.
+      now eapply Nat.lt_succ_diag_r.
+    + cbn in inm.
+      destruct inm.
+      * rewrite e.
+        now eapply Nat.lt_succ_diag_r.
+      * etransitivity.
+        now eapply IHn.
+        now eapply Nat.lt_succ_diag_r.
+Qed.
+
+
+Lemma notinLCon_Lack_n (n m : nat) (l : wfLCon) :
+  m < n -> not_in_LCon l m -> In m (Lack_n l n).
+Proof.
+  induction n.
+  - intros ; simpl.
+    now inversion H.
+  - intros ; simpl.
+    destruct (Compare_dec.le_lt_eq_dec _ _  H).
+    + eapply Arith_prebase.lt_S_n_stt in l0.
+      destruct (decidInLCon l n).
+      * now eapply IHn.
+      * right.
+        now eapply IHn.
+    + injection e ; intros ; subst ; clear e.
+      destruct (decidInLCon l n).
+      * exfalso.
+        destruct s ; now eapply notinLConnotinLCon.
+      * left ; reflexivity.
+Qed.
+      
+  
+Print List.incl.
+Lemma Lack_n_Lcon_le (n : nat) (l l' : wfLCon) :
+  l' ≤ε l -> Incl (Lack_n l' n) (Lack_n l n).
+Proof.
+  intros f.
+  induction n ; intros m inm.
+  - now exfalso.
+  - pose proof (Lack_n_minfn _ _ _ inm) as minfSn.
+    pose proof (notinl' := Lack_n_notinLCon _ _ _ inm).
+    eapply notinLCon_Lack_n ; try eassumption.
+    destruct (decidInLCon l m) ; try assumption.
+    exfalso.
+    destruct s ; eapply notinLConnotinLCon ; try eassumption.
+    all: now eapply f.
+Qed.
+
+Lemma Lack_n_le (n m : nat) (l : wfLCon) :
+  n <= m -> Incl (Lack_n l n) (Lack_n l m).
+Proof.
+  intro ninfm.
+  induction n.
+  - intros k ink.
+    inversion ink.
+  - cbn.
+    destruct (decidInLCon l n).
+    + eapply IHn.
+      now eapply Le.le_Sn_le_stt.
+    + intros k ink.
+      destruct ink.
+      * subst.
+        eapply notinLCon_Lack_n ; try assumption.
+      * eapply IHn ; try assumption.
+        now eapply Le.le_Sn_le_stt.
+Qed.
+
+
+    
+
+Lemma Lack_n_Sn_eq (n m : nat) (l : wfLCon) (q : list nat) :
+  Lack_n l (S n) = cons m q -> not_in_LCon l n ->  n = m.
+Proof.
+  revert m.
+  induction n ; intros m Heq notinl.
+  - cbn in *.
+    destruct (decidInLCon l 0).
+    + exfalso ; now inversion Heq.
+    + now inversion Heq.
+  - cbn in *.
+    destruct (decidInLCon l (S n)).
+    + destruct s ; exfalso ; eapply notinLConnotinLCon ; eassumption.
+    + now inversion Heq.
+Qed.
+
+  
+Lemma Lack_n_add (n m : nat) (l : wfLCon) (me : not_in_LCon l m)
+  (q : list nat) (b : bool) :
+  cons m q = Lack_n l n -> Lack_n (l ,,l (me, b)) n = q.
+Proof.
+  intros Heq.
+  unfold Lack_n.
+  revert q m me Heq.
+  induction n ; intros.
+  - exfalso.
+    now inversion Heq.
+  - fold Lack_n in *.
+    pose proof (t:= Lack_n_Sn_eq _ _ _ _ (eq_sym Heq)).
+    destruct l as [l wfl].
+    cbn in *.
+    remember (decidInLCon l n) as rem.
+    destruct rem as [ [s | s] | s].
+    + cbn in *.
+      subst. now eapply IHn.
+    + subst. now eapply IHn.
+    + assert (forall (m : nat) (e : m = m), e = eq_refl _).
+      * clear n l wfl b IHn q m me s Heqrem Heq t.
+        refine (fix f m :=
+                  match m as m0 return forall e : m0 = m0, e = eq_refl _ with
+                | 0 => fun e => match e with
+                         | eq_refl _ => eq_refl _
+                       end
+                  | S k => _
+                  end).
+        admit.
+      * pose proof (t' := t s) ; clear t.
+        subst.
+        destruct eq_nat_decide.
+        rewrite (H m (proj1 (eq_nat_is_eq m m) e)).
+        cbn.
+        destruct b.
+        -- eapply IHn.
+Admitted.     
+
+  
+Lemma Lack_nil_AllInLCon (n : nat) (l : wfLCon) :
+  Lack_n l n = nil -> AllInLCon n l.
+Proof.
+  induction n.
+  - intros eq0 m minf0.
+    exfalso.
+    now inversion minf0.
+  - intro Hyp ; cbn in *.
+    destruct (decidInLCon l n).
+    + intros m minfn.
+      case (Compare_dec.le_lt_eq_dec _ _ minfn).
+      * intros hyp.
+        eapply IHn.
+        assumption.
+        now eapply Arith_prebase.lt_S_n_stt.
+      * intro eqSnm.
+        injection eqSnm ; intros eqnm.
+        now rewrite eqnm.
+    + exfalso.
+      now inversion Hyp.
+Qed.
+
+    
 Fixpoint RemoveElt {l : LCon} {n b} (ne : in_LCon l n b) : LCon
   := match ne with
      | in_here_l l => l
@@ -252,4 +507,114 @@ Lemma newElt_newElt (l : LCon) (n : nat) :
 Proof.
   pose proof (newElt_newElt_aux l 0).
   now rewrite Nat.max_0_r in H.
+Qed.
+
+Fixpoint Max_Bar_aux
+  (wl : wfLCon) (n : nat) (q : list nat) :
+  forall (e : q = Lack_n wl n)
+         (P : forall wl', wl' ≤ε wl -> AllInLCon n wl' -> nat),
+    nat.
+Proof.
+  revert wl.
+  refine (match q with
+          | nil => _
+          | cons a q => _
+          end) ; intros.
+  - refine (P wl _ _).
+    now eapply wfLCon_le_id.
+    eapply Lack_nil_AllInLCon.
+    now symmetry.
+  - refine (max _ _).
+    + unshelve eapply Max_Bar_aux.
+      * unshelve eapply wfLCons ; [exact wl | exact a | | exact true].
+        eapply Lack_n_notinLCon.
+        rewrite <- e.
+        now left.
+      * exact n.
+      * exact q.
+      * symmetry.
+        now eapply Lack_n_add.
+      * intros * τ allinl.
+        refine (P wl' _ allinl).
+        eapply wfLCon_le_trans ; try eassumption.
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+    + unshelve refine (Max_Bar_aux _ n q _ _).
+      * unshelve eapply wfLCons ; [exact wl | exact a | | exact false].
+        eapply Lack_n_notinLCon.
+        rewrite <- e.
+        now left.
+      * symmetry.
+        now eapply Lack_n_add.
+      * intros * τ allinl.
+        refine (P wl' _ allinl).
+        eapply wfLCon_le_trans ; try eassumption.
+        eapply LCon_le_step.
+        now eapply wfLCon_le_id.
+Defined.        
+
+Definition Max_Bar (wl : wfLCon) (n : nat)
+  (P: forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat) : nat :=
+  Max_Bar_aux wl n (Lack_n wl n) eq_refl P.
+
+Lemma Max_Bar_aux_le (wl : wfLCon) (n : nat)
+  (q : list nat)
+  (e : q = Lack_n wl n)
+  (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
+  (Pe : forall (wl' wl'' : wfLCon)
+               (τ : wl' ≤ε wl) (τ' : wl'' ≤ε wl),
+      wl'' ≤ε wl' ->
+      forall (ne : AllInLCon n wl') (ne' : AllInLCon n wl''),
+        P wl'' τ' ne' <= P wl' τ ne)
+  (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl') :
+  P wl' τ ne <= Max_Bar_aux wl n q e P.
+Proof.
+  revert wl wl' ne e τ P Pe.
+  induction q ; intros.
+  - cbn.
+    now eapply Pe.
+  - cbn.
+    edestruct (ne a).
+    + unshelve eapply Lack_n_minfn.
+      exact wl.
+      rewrite <- e.
+      now left.
+    + etransitivity.
+      2: now eapply Nat.max_lub_l.
+      etransitivity.
+      2:{ unshelve eapply IHq.
+          * exact wl'.
+          * eapply LCon_le_in_LCon ; eassumption. 
+          * assumption.
+          * intros.
+            now eapply Pe.
+      }
+      eapply Pe.
+      now eapply wfLCon_le_id.
+    + etransitivity.
+      2: now eapply Nat.max_lub_r.
+      etransitivity.
+      2:{ unshelve eapply IHq.
+          * exact wl'.
+          * eapply LCon_le_in_LCon ; eassumption. 
+          * assumption.
+          * intros.
+            now eapply Pe.
+      }
+      eapply Pe.
+      now eapply wfLCon_le_id.
+Qed.
+
+Lemma Max_Bar_le (wl : wfLCon) (n : nat)
+  (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
+  (Pe : forall (wl' wl'' : wfLCon)
+               (τ : wl' ≤ε wl) (τ' : wl'' ≤ε wl),
+      wl'' ≤ε wl' ->
+      forall (ne : AllInLCon n wl') (ne' : AllInLCon n wl''),
+        P wl'' τ' ne' <= P wl' τ ne)
+  (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl') :
+  P wl' τ ne <= Max_Bar wl n P.
+Proof.
+  unfold Max_Bar.
+  now eapply Max_Bar_aux_le.
 Qed.

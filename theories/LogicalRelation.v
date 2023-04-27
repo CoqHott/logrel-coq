@@ -284,24 +284,33 @@ Module PiRedTy.
     codTy : [Γ ,, dom |- cod]< l > ;
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< l > ;
     domN : nat ;
-    domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l') :
+    domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l') :
       [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩ ;
-    codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
+    codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
       (h : [ |- Δ ]< l' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
-        nat ;
-    codRed {Δ} {a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
+      nat ;
+    codomN_Ltrans {Δ a l' l''} 
+      (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (τ' : l'' ≤ε l)
+      (Ninfl : AllInLCon domN l')
+      (Ninfl' : AllInLCon domN l'')
+      (h : [ |- Δ ]< l' >)
+      (h' : [ |- Δ ]< l'' >)
+      (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >)
+      (ha' : [ (domRed ρ τ' Ninfl' h') |  Δ ||- a : dom⟨ρ⟩]< l'' >):
+    l'' ≤ε l' -> codomN ρ τ' Ninfl' h' ha' <=  codomN ρ τ Ninfl h ha ;
+    codRed {Δ} {a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
         (h : [ |- Δ ]< l' >) (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
-     forall {l''} (τ' : l'' ≤ε l') (Minfl : codomN ρ τ Ninfl h ha <= length l''),
+     forall {l''} (τ' : l'' ≤ε l') (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) l''),
        LRPack@{i} l'' Δ (cod[a .: (ρ >> tRel)]) ;
     codExt
       {Δ a b l'}
-      (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : domN <= length l')
+      (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
       (h :  [ |- Δ ]< l' >)
       (ha : [ (domRed ρ τ Ninfl h) | Δ ||- a : dom⟨ρ⟩ ]< l' >) :
       [ (domRed ρ τ Ninfl h) | Δ ||- b : dom⟨ρ⟩]< l' > ->
       [ (domRed ρ τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< l' > ->
-      forall {l''} (τ' : l'' ≤ε l') (Minfl : codomN ρ τ Ninfl h ha <= length l''),
+      forall {l''} (τ' : l'' ≤ε l') (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) l''),
       [ (codRed ρ τ Ninfl h ha τ' Minfl) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< l'' >
   }.
 
@@ -317,13 +326,13 @@ Module PiRedTy.
     {l : wfLCon} {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} l Γ A}
   : Type@{j} := {
       domAd {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >) :
+        (Ninfl : AllInLCon ΠA.(domN) l') (h : [ |- Δ ]< l' >) :
       LRPackAdequate@{i j} R (ΠA.(domRed) ρ τ Ninfl h) ;
       codAd {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(domN) <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : AllInLCon ΠA.(domN) l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l')
-        (Minfl : ΠA.(codomN) ρ τ Ninfl h ha <= length l'')
+        (Minfl : AllInLCon (ΠA.(codomN) ρ τ Ninfl h ha) l'')
       : LRPackAdequate@{i j} R (ΠA.(codRed) ρ τ Ninfl h ha τ' Minfl);
   }.
 
@@ -346,21 +355,32 @@ Module PiRedTyEq.
       eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ]< l > ;
       domN : nat ;
       domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-      (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-      (Ninfl' : domN <= length l') (h : [ |- Δ ]< l' >) :
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+      (Ninfl' : AllInLCon domN l') (h : [ |- Δ ]< l' >) :
       [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ]< l' > ;
       codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : domN <= length l')  (h : [ |- Δ ]< l' >) :
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon domN l')  (h : [ |- Δ ]< l' >) :
       [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > ->
       nat ;
+      codomN_Ltrans {Δ a l' l''}
+        (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (τ' : l'' ≤ε l)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon ΠA.(PiRedTy.domN) l'')
+        (Minfl : AllInLCon domN l')
+        (Minfl' : AllInLCon domN l'')
+        (h : [ |- Δ ]< l' >)
+        (h' : [ |- Δ ]< l'' >)
+        (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
+        (ha' : [ ΠA.(PiRedTy.domRed) ρ τ' Ninfl' h' | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l'' >):
+      l'' ≤ε l' -> codomN ρ τ' Ninfl' Minfl' h' ha' <=  codomN ρ τ Ninfl Minfl h ha ;
       codRed {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : domN <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon domN l') (h : [ |- Δ ]< l' >)
         (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
         {l''} (τ' : l'' ≤ε l')
-        (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : codomN ρ τ Ninfl Ninfl' h ha <= length l'') :
+        (Minfl : AllInLCon (ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha) l'')
+        (Minfl' : AllInLCon (codomN ρ τ Ninfl Ninfl' h ha) l'') :
         [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ]< l'' >;
   }.
 
@@ -385,24 +405,37 @@ Module PiRedTm.
       refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
       redN : nat ;
       appN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >) :
-      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon redN l') (h : [ |- Δ ]< l' >) :
+      [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ;
+      appN_Ltrans {Δ a l' l''}
+        (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (τ' : l'' ≤ε l)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon ΠA.(PiRedTy.domN) l'')
+        (Minfl : AllInLCon redN l')
+        (Minfl' : AllInLCon redN l'')
+        (h : [ |- Δ ]< l' >)
+        (h' : [ |- Δ ]< l'' >)
+        (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
+        (ha' : [ ΠA.(PiRedTy.domRed) ρ τ' Ninfl' h' | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l'' >):
+      l'' ≤ε l' -> appN ρ τ' Ninfl' Minfl' h' ha' <=  appN ρ τ Ninfl Minfl h ha ; 
       app {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon redN l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
-        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : appN ρ τ Ninfl Ninfl' h ha <= length l'') :
+        {l''} (τ' : l'' ≤ε l')
+        (Minfl : AllInLCon (ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha) l'')
+        (Minfl' : AllInLCon (appN ρ τ Ninfl Ninfl' h ha) l'') :
       [(ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' > ;
       eq {Δ l' a b} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : redN <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon redN l') (h : [ |- Δ ]< l' >)
         (ha : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         (hb : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
         (eq : [ (ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
-        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : appN ρ τ Ninfl Ninfl' h ha <= length l'') :
+        {l''} (τ' : l'' ≤ε l')
+        (Minfl : AllInLCon (ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha) l'')
+        (Minfl' : AllInLCon (appN ρ τ Ninfl Ninfl' h ha) l'') :
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]< l'' >
   }.
 
@@ -425,15 +458,27 @@ Module PiRedTmEq.
       eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
       eqN : nat;
       eqappN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : eqN <= length l') (h : [ |- Δ ]< l' >) :
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon eqN l') (h : [ |- Δ ]< l' >) :
       [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' > -> nat ; 
+      eqappN_Ltrans {Δ a l' l''}
+        (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (τ' : l'' ≤ε l)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon ΠA.(PiRedTy.domN) l'')
+        (Minfl : AllInLCon eqN l')
+        (Minfl' : AllInLCon eqN l'')
+        (h : [ |- Δ ]< l' >)
+        (h' : [ |- Δ ]< l'' >)
+        (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >)
+        (ha' : [ ΠA.(PiRedTy.domRed) ρ τ' Ninfl' h' | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l'' >):
+      l'' ≤ε l' -> eqappN ρ τ' Ninfl' Minfl' h' ha' <=  eqappN ρ τ Ninfl Minfl h ha ;
       eqApp {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : ΠA.(PiRedTy.domN) <= length l')
-        (Ninfl' : eqN <= length l') (h : [ |- Δ ]< l' >)
+        (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
+        (Ninfl' : AllInLCon eqN l') (h : [ |- Δ ]< l' >)
         (ha : [(ΠA.(PiRedTy.domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
-        {l''} (τ' : l'' ≤ε l') (Minfl : ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha <= length l'')
-        (Minfl' : eqappN ρ τ Ninfl Ninfl' h ha <= length l'') :
+        {l''} (τ' : l'' ≤ε l')
+        (Minfl : AllInLCon (ΠA.(PiRedTy.codomN) ρ τ Ninfl h ha) l'')
+        (Minfl' : AllInLCon (eqappN ρ τ Ninfl Ninfl' h ha) l'') :
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||-
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' >
   }.
@@ -1001,7 +1046,7 @@ Section MoreDefs.
   Print LR.
   Record WLogRel@{i j k l} (l : TypeLevel) wl Γ A :=
     { WN : nat ;
-      WRed {wl'} (τ : wl' ≤ε wl) (Ninfl : WN <= length wl') :
+      WRed {wl'} (τ : wl' ≤ε wl) (Ninfl : AllInLCon WN wl') :
       [ LogRel@{i j k l} l | Γ ||- A ]< wl' > ;
     }.
   Arguments WN [_ _ _ _] _.
@@ -1010,8 +1055,8 @@ Section MoreDefs.
   Record WLogRelEq@{i j k l} (l : TypeLevel) wl Γ A B (wlrA : WLogRel@{i j k l} l wl Γ A) :=
     { WNEq : nat ;
       WRedEq {wl'} (τ : wl' ≤ε wl)
-        (Ninfl : wlrA.(WN) <= length wl')
-        (Ninfl' : WNEq <= length wl') :
+        (Ninfl : AllInLCon wlrA.(WN) wl')
+        (Ninfl' : AllInLCon WNEq wl') :
       [ LogRel l | Γ ||- A ≅ B | wlrA.(WRed) τ Ninfl ]< wl' >;
     }.
   Arguments WNEq [_ _ _ _ _] _.
@@ -1021,8 +1066,8 @@ Section MoreDefs.
   Record WLogRelTm@{i j k l} (l : TypeLevel) wl Γ t A (wlrA : WLogRel@{i j k l} l wl Γ A) :=
     { WNTm : nat ;
       WRedTm {wl'} (τ : wl' ≤ε wl)
-        (Ninfl : wlrA.(WN) <= length wl')
-        (Ninfl' : WNTm <= length wl') :
+        (Ninfl : AllInLCon wlrA.(WN) wl')
+        (Ninfl' : AllInLCon WNTm wl') :
       [ LogRel l | Γ ||- t : A | wlrA.(WRed) τ Ninfl ]< wl' >;
     }.
   Arguments WNTm [_ _ _ _ _] _.
@@ -1031,8 +1076,8 @@ Section MoreDefs.
   Record WLogRelTmEq@{i j k l} (l : TypeLevel) wl Γ t u A (wlrA : WLogRel@{i j k l} l wl Γ A) :=
     { WNTmEq : nat ;
       WRedTmEq {wl'} (τ : wl' ≤ε wl)
-        (Ninfl : wlrA.(WN) <= length wl')
-        (Ninfl' : WNTmEq <= length wl') :
+        (Ninfl : AllInLCon wlrA.(WN) wl')
+        (Ninfl' : AllInLCon WNTmEq wl') :
       [ LogRel l | Γ ||- t ≅ u : A | wlrA.(WRed) τ Ninfl ]< wl' >;
     }.
   Arguments WNTmEq [_ _ _ _ _ _] _.
@@ -1124,28 +1169,38 @@ Section PiRedTyPack.
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< wl > ;
     domN : nat ;
     domRed {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-      (Ninfl : domN <= length wl') :
+      (Ninfl : AllInLCon domN wl') :
       [ |- Δ ]< wl' > -> [ LogRel@{i j k l} l | Δ ||- dom⟨ρ⟩ ]< wl' > ;
     codomN {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-        (Ninfl : domN <= length wl')
-        (h : [ |- Δ ]< wl' >)
-        (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >) :
-        nat ;
+      (Ninfl : AllInLCon domN wl')
+      (h : [ |- Δ ]< wl' >)
+      (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >) :
+      nat ;
+    codomN_Ltrans {Δ a l' l''}
+      (ρ : Δ ≤ Γ) (τ : l' ≤ε wl) (τ' : l'' ≤ε wl)
+      (Ninfl : AllInLCon domN l')
+      (Ninfl' : AllInLCon domN l'')
+      (h : [ |- Δ ]< l' >)
+      (h' : [ |- Δ ]< l'' >)
+      (ha : [ domRed ρ τ Ninfl h | Δ ||- a : dom⟨ρ⟩]< l' >)
+      (ha' : [ domRed ρ τ' Ninfl' h' | Δ ||- a : dom⟨ρ⟩]< l'' >):
+      l'' ≤ε l' -> codomN ρ τ' Ninfl' h' ha' <=  codomN ρ τ Ninfl h ha ;
     codRed {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-        (Ninfl : domN <= length wl')
+      (Ninfl : AllInLCon domN wl')
       (h : [ |- Δ ]< wl' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< wl' >)
       {wl''} (τ' : wl'' ≤ε wl')
-      (Minfl : codomN ρ τ Ninfl h ha <= length wl'') :
+      (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) wl'') :
         [ LogRel@{i j k l} l | Δ ||- cod[a .: (ρ >> tRel)]]< wl''> ; 
     codExt {Δ a b wl'}
-      (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl) (Ninfl : domN <= length wl')
+      (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl) 
+      (Ninfl : AllInLCon domN wl')
       (h :  [ |- Δ ]< wl' >)
       (ha : [ (domRed ρ τ Ninfl h) | Δ ||- a : dom⟨ρ⟩ ]< wl' >) :
       [ (domRed ρ τ Ninfl h) | Δ ||- b : dom⟨ρ⟩]< wl' > ->
       [ (domRed ρ τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< wl' > ->
       forall {wl''} (τ' : wl'' ≤ε wl')
-             (Minfl : codomN ρ τ Ninfl h ha <= length wl''),
+             (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) wl''),
         [ (codRed ρ τ Ninfl h ha τ' Minfl) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< wl'' >    }.
 
   Arguments PiRedTyPack : clear implicits.
@@ -1155,35 +1210,29 @@ Section PiRedTyPack.
     : PiRedTyPack@{i j k l} wl Γ A l.
   Proof.
     destruct ΠA as [dom cod]; destruct ΠAad; cbn in *.
-    Print Build_PiRedTyPack.
-    unshelve refine (Build_PiRedTyPack wl Γ A l dom cod _ _ _ _ domN0 _ _ _ _).
-    - intros; econstructor. now unshelve apply domAd.
-    - unshelve refine codomN0.
-    - intros ; econstructor ; eapply codAd.
-    - assumption.
-    - assumption.
-    - assumption.
-    - assumption.
-    - cbn in *.
-      now eapply codExt0.
+    unshelve refine (Build_PiRedTyPack wl Γ A l dom cod _ _ _ _ domN0 _ _ _ _ _).
+    1:intros; econstructor ; now unshelve apply domAd.
+    2: now intros ; econstructor ; eapply codAd.
+    all: eassumption.
   Defined.
   
   Definition toPiRedTy@{i j k l} {wl Γ A l} (ΠA : PiRedTyPack@{i j k l} wl Γ A l) :
     PiRedTy@{k} wl Γ A.
   Proof.
-    destruct ΠA as [dom cod ????? domRed codomN codRed codExt].
+    destruct ΠA as [dom cod ????? domRed codomN codomN_Ltrans codRed codExt].
     unshelve econstructor; [exact dom|exact cod|..].
     1,5-8: assumption.
     * intros; now eapply domRed.
     * intros; now eapply codomN.
     * intros; now eapply codRed.
+    * intros ; now eapply codomN_Ltrans.
     * intros; now eapply codExt.
   Defined.
   
   Definition toPiRedTyAd@{i j k l} {wl Γ A l} (ΠA : PiRedTyPack@{i j k l} wl Γ A l) :
     PiRedTyAdequate (LogRel@{i j k l} l) (toPiRedTy ΠA).
   Proof.
-    destruct ΠA as [dom cod ????? domRed codomN codRed ?].
+    destruct ΠA as [dom cod ????? domRed codomN codomN_Ltrans codRed ?].
     unshelve econstructor; cbn; intros; [eapply domRed|eapply codRed].
   Defined.  
 

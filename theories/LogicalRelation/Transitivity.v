@@ -31,8 +31,10 @@ Proof.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ _ red red').
     1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
-  - destruct RAB as [domB codB redB ? domRedEqN domRedEq codRedEqN codRedEq], RBC as [domC codC redC ? domRedN' domRedEq' codRedN' codRedEq'].
-    destruct ΠB as [?? redB' ??? domRedBN domRedB codRedBN codRedB], ΠC as [?? redC' ??? domRedCN domRedC codRedCN codRedC], ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
+  - destruct RAB as [domB codB redB ? domRedEqN domRedEq codRedEqN codRedEqN_Ltrans codRedEq], RBC as [domC codC redC ? domRedN' domRedEq' codRedN' codRedN_Ltrans' codRedEq'].
+    destruct ΠB as [?? redB' ??? domRedBN domRedB codRedBN codRedBN_Ltrans codRedB],
+        ΠC as [?? redC' ??? domRedCN domRedC codRedCN codRedCN_Ltrans codRedC],
+          ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
     unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ _ redB' redB) ;
     [ constructor | constructor | .. ].
     injection eqΠB; intros eqcod eqdom; clear eqΠB;  subst. 
@@ -41,11 +43,11 @@ Proof.
     injection eqΠC; intros eqcod eqdom; clear eqΠC;  subst. 
     assert (domRedAC : forall (Δ : context) (wl' : wfLCon) (ρ : Δ ≤ Γ)
                               (τ : wl' ≤ε wl)
-                              (Ninfl : (PiRedTy.domN ΠA) <= length wl')
-                              (Ninfl' : (domRedBN) <= length wl')
-                              (Ninfl'' : (domRedN') <= length wl')
-                              (Ninfl''' : (domRedCN) <= length wl')
-                              (Ninfl''' : domRedEqN <= length wl')
+                              (Ninfl : AllInLCon (PiRedTy.domN ΠA) wl')
+                              (Ninfl' : AllInLCon domRedBN wl')
+                              (Ninfl'' : AllInLCon domRedN' wl')
+                              (Ninfl''' : AllInLCon domRedCN wl')
+                              (Ninfl''' : AllInLCon domRedEqN wl')
                               (h : [ |-[ ta ] Δ]< wl' >),
       [PiRedTy.domRed ΠA ρ τ Ninfl h | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ domC⟨ρ⟩]< wl' >).
     { intros. unshelve eapply ihdom.
@@ -63,65 +65,90 @@ Proof.
     + intros.
       unshelve eapply (max (max _ _) (max _ _)).
       1:{ unshelve eapply codRedBN ; try assumption.
-          * now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
           * eapply RedTmConv.
             now eapply (PiRedTy.domAd ΠAad).
             3: eassumption.
             eapply domAdB.
             eapply domRedEq.
+            eapply AllInLCon_le ; try eassumption.
             now eapply Nat.max_lub_r ; eapply Nat.max_lub_r. }
       { unshelve eapply codRedN' ; try assumption.
-        + now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
-        + now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
+        + eapply AllInLCon_le ; try eassumption.
+          now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
+        + eapply AllInLCon_le ; try eassumption.
+          now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
         + eapply RedTmConv.
           now eapply (PiRedTy.domAd ΠAad).
           3: eassumption.
           eapply domAdB.
           eapply domRedEq.
+          eapply AllInLCon_le ; try eassumption.
           now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
       }
       { unshelve eapply codRedEqN ; try assumption ;
-          now eapply Nat.max_lub_r ; eapply Nat.max_lub_r. }
+          eapply AllInLCon_le ; try eassumption.
+        now eapply Nat.max_lub_r ; eapply Nat.max_lub_r. }
       { unshelve eapply codRedCN ; try assumption.
-        + now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
+        + eapply AllInLCon_le ; try eassumption.
+          now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
         + eapply RedTmConv.
           now eapply (PiRedTy.domAd ΠAad).
           3: eassumption.
           eapply domAdC.
           eapply domRedAC.
-          * now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
-          * now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
-          * now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
-          * now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
         }
     + eassumption.
     + etransitivity; eassumption.
-    + intros ; eapply domRedAC.
+    + intros ; eapply domRedAC ; eapply AllInLCon_le ; try eassumption.
       * now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
       * now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
       * now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
       * now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
+    + intros ; cbn in *.
+      unshelve eapply Nat.max_le_compat.
+      * unshelve eapply Nat.max_le_compat.
+        -- now eapply codRedBN_Ltrans.
+        -- now eapply codRedN_Ltrans'.
+      * unshelve eapply Nat.max_le_compat.
+        -- now eapply codRedEqN_Ltrans.
+        -- now eapply codRedCN_Ltrans.        
     + intros. unshelve eapply ihcod.
       10:{ unshelve eapply codRedEq' ; [exact l' | ..] ; try assumption.
-           + now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
+           3-5 : eapply AllInLCon_le ; try eassumption.
+           + eapply AllInLCon_le ; try eassumption.
+             now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
            + eapply RedTmConv.
              4: exact ha.
              * apply (PiRedTy.domAd ΠAad).
              * apply domAdB.
              * apply domRedEq.
+               eapply AllInLCon_le ; try eassumption.
                now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
            + now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
            + now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
            + now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
       }
       7:{ unshelve eapply codRedEq.
-          * now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
-          * now eapply Nat.max_lub_l; eapply Nat.max_lub_r. }
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
+          * eapply AllInLCon_le ; try eassumption.
+            now eapply Nat.max_lub_l; eapply Nat.max_lub_r. }
       6:{ unshelve apply codAdC. 1: exact l'.
           assumption.
 (*          now eapply wfLCon_le_trans.*)
           cbn in Minfl'.
 (*          etransitivity.*)
+          eapply AllInLCon_le ; try eassumption.
           now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
           assumption.
            { eapply RedTmConv.
@@ -129,12 +156,14 @@ Proof.
             + apply (PiRedTy.domAd ΠAad).
             + apply domAdC.
             + apply domRedAC.
+              all: eapply AllInLCon_le ; try eassumption.
             * now eapply Nat.max_lub_l ; eapply Nat.max_lub_l.
             * now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
             * now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
             * now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
            }
            assumption.
+           eapply AllInLCon_le ; try eassumption.
            now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
       }
       3: apply codAdB.
@@ -158,18 +187,22 @@ Proof.
   intros.
   eapply (transEq (B := B)).
   - unshelve eapply WRedEqAB.
-    eapply Nat.max_lub_l.
-    now eapply Nat.max_lub_r.
+    eapply AllInLCon_le.
+    eapply Nat.max_lub_l ; now eapply Nat.max_lub_r.
+    eassumption.
   - unshelve eapply WRedEqBC ; try assumption.
-    + eapply Nat.max_lub_l.
-      now eapply Nat.max_lub_l.
-    + eapply Nat.max_lub_r.
-      now eapply Nat.max_lub_r.
+    + eapply AllInLCon_le.
+      eapply Nat.max_lub_l ; now eapply Nat.max_lub_l.
+      eassumption.
+    + eapply AllInLCon_le.
+      eapply Nat.max_lub_r ; now eapply Nat.max_lub_r.
+      eassumption.
       Unshelve.
       * exact lC.
       * unshelve eapply RC.(WRed) ; try assumption.
-        eapply Nat.max_lub_r.
-        now eapply Nat.max_lub_l.
+        eapply AllInLCon_le.
+        eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
+        eassumption.
 Qed.    
 
   
@@ -202,16 +235,17 @@ Qed.
 
 Lemma transEqTermΠ {wl Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]< wl >}
   (ihdom : forall (Δ : context) wl' (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-                  (Ninfl : PiRedTyPack.domN ΠA  <= length wl') (h : [ |-[ ta ] Δ]< wl' >) (t u v : term),
+                  (Ninfl : AllInLCon (PiRedTyPack.domN ΠA) wl')
+                  (h : [ |-[ ta ] Δ]< wl' >) (t u v : term),
   [PiRedTyPack.domRed ΠA ρ τ Ninfl h | Δ ||- t ≅ u : (PiRedTyPack.dom ΠA)⟨ρ⟩]< wl' > ->
   [PiRedTyPack.domRed ΠA ρ τ Ninfl h  | Δ ||- u ≅ v : (PiRedTyPack.dom ΠA)⟨ρ⟩]< wl' > ->
   [PiRedTyPack.domRed ΠA ρ τ Ninfl h  | Δ ||- t ≅ v : (PiRedTyPack.dom ΠA)⟨ρ⟩]< wl' >)
   (ihcod : forall (Δ : context) wl' (a : term) (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-                  (Ninfl : PiRedTyPack.domN ΠA  <= length wl')
+                  (Ninfl : AllInLCon (PiRedTyPack.domN ΠA) wl')
                   (h : [ |-[ ta ] Δ]< wl' >)
                   (ha : [PiRedTyPack.domRed ΠA ρ τ Ninfl h | Δ ||- a : (PiRedTyPack.dom ΠA)⟨ρ⟩]< wl' >)
                   {wl''} (τ' : wl'' ≤ε wl')
-                  (Minfl : _ <= length wl'')
+                  (Minfl : AllInLCon _ wl'')
                   (t u v : term),
   [PiRedTyPack.codRed ΠA ρ τ Ninfl h ha τ' Minfl | Δ ||- t ≅ u : (PiRedTyPack.cod ΠA) [a .: ρ >> tRel]]< wl'' > ->
   [PiRedTyPack.codRed ΠA ρ τ Ninfl h ha τ' Minfl | Δ ||- u ≅ v : (PiRedTyPack.cod ΠA) [a .: ρ >> tRel]]< wl'' > ->
@@ -230,18 +264,27 @@ Proof.
   - intros.
     unshelve refine (max _ _).
     + unshelve eapply eqappN ; try assumption.
+      eapply AllInLCon_le ; try eassumption.
       now eapply Nat.max_lub_l.
     + unshelve eapply eqappN0 ; try assumption.
+      eapply AllInLCon_le ; try eassumption.
       now eapply Nat.max_lub_r.
   - etransitivity; tea.
     now rewrite e.
+  - intros.
+    unshelve eapply Nat.max_le_compat.
+    + now eapply eqappN_Ltrans.
+    + now eapply eqappN_Ltrans0.
   - intros. eapply ihcod.
     1: eapply eqApp.
-    + now eapply Nat.max_lub_l.
+    + eapply AllInLCon_le ; try eassumption.
+      now eapply Nat.max_lub_l.
     + rewrite e.
       unshelve eapply eqApp0.
-      * now eapply Nat.max_lub_r.
-      * now eapply Nat.max_lub_r.
+      * eapply AllInLCon_le ; try eassumption.
+        now eapply Nat.max_lub_r.
+      * eapply AllInLCon_le ; try eassumption.
+        now eapply Nat.max_lub_r.
 Qed.
 
 Lemma transNeNfEq {wl Γ t u v A} :

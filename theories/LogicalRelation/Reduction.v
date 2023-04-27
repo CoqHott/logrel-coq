@@ -28,10 +28,12 @@ Proof.
     + apply LRPi'; unshelve eexists dom cod _ _ _ _; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod _ _; tea; cbn.
-      2,3: intros; apply LRTyEqRefl_.
+      2,4: intros; apply LRTyEqRefl_.
       intros ; unshelve eapply codomN.
       6: exact Ninfl.
-      all: assumption.
+      all: try assumption.
+      intros. cbn.
+      now eapply codomN_Ltrans.
   - intros B [red] A ?; unshelve eexists.
     + apply LRNat_; constructor; tea; etransitivity; tea.
       constructor; tea; gen_typing.

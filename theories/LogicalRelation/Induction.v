@@ -36,10 +36,10 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
             fun (Δ : context) wl' (ρ : Δ ≤ _) (τ : wl' ≤ε wl) Ninfl (h : [  |- Δ]< wl' >) => LR_embedding l_ (ΠAad.(PiRedTy.domAd) ρ τ Ninfl h) ;
           PiRedTy.codAd :=
             fun (Δ : context) (a : term)  (wl' : wfLCon) (ρ : Δ ≤ _) (τ : wl' ≤ε wl)
-                (Ninfl : _ <= length wl') (h : [ |- Δ ]< wl' >) 
+                (Ninfl : AllInLCon _  wl') (h : [ |- Δ ]< wl' >) 
                 (ha : [PiRedTy.domRed ΠA ρ τ Ninfl h | Δ ||- a : _]< wl' >)
                 wl'' (τ' : wl'' ≤ε wl')
-                (Minfl : _ <= length wl'')  =>
+                (Minfl : AllInLCon _ wl'')  =>
             LR_embedding l_ (ΠAad.(PiRedTy.codAd) ρ τ Ninfl h ha τ' Minfl)
         |}
     in
@@ -59,15 +59,15 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
   Notation PiHyp P wl Γ ΠA HAad G :=
     ((forall {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ]< wl' >),
         P (HAad.(PiRedTy.domAd) ρ τ Ninfl h)) ->
      (forall {Δ wl' a} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ ]< wl' >) 
              (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< wl' >)
              {wl''} (τ' : wl'' ≤ε wl')
-             (Minfl : _ <= length wl''),
+             (Minfl : AllInLCon _ wl''),
          P (HAad.(PiRedTy.codAd) ρ τ Ninfl h ha τ' Minfl)) -> G).
         
   Theorem LR_rect@{i j k o}
@@ -114,15 +114,15 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
   
   Notation PiHypLogRel P wl Γ ΠA G :=
     ((forall {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ]< wl' >),
          P (ΠA.(PiRedTyPack.domRed) ρ τ Ninfl h).(LRAd.adequate)) ->
     (forall {Δ wl' a} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ ]< wl' >) 
              (ha : [ Δ ||-< _ > a : ΠA.(PiRedTyPack.dom)⟨ρ⟩ |  ΠA.(PiRedTyPack.domRed) ρ τ Ninfl h ]< wl' >)
              {wl''} (τ' : wl'' ≤ε wl')
-             (Minfl : _ <= length wl''),
+             (Minfl : AllInLCon _ wl''),
         P (ΠA.(PiRedTyPack.codRed) ρ τ Ninfl h ha τ' Minfl).(LRAd.adequate)) -> G).
 
 
@@ -172,14 +172,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) wl (Γ : context) (A : term)
             (ΠA : PiRedTyPack@{i j k l} wl Γ A l),
         (forall {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ ]< wl' >),
             P (ΠA.(PiRedTyPack.domRed) ρ τ Ninfl h)) ->
         (forall {Δ wl' a} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ ]< wl' >)
              (ha : [ ΠA.(PiRedTyPack.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTyPack.dom)⟨ρ⟩ ]< wl' >) {wl''} (τ' : wl'' ≤ε wl')
-             (Minfl : _ <= length wl''),
+             (Minfl : AllInLCon _ wl''),
             P (ΠA.(PiRedTyPack.codRed) ρ τ Ninfl h ha τ' Minfl)) ->
         P (LRPi' ΠA)) ->
 
@@ -200,15 +200,15 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
   Notation PiHyp0 wl P Γ ΠA HAad G :=
     ((forall {Δ wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-             (Ninfl : _ <= length wl')
+             (Ninfl : AllInLCon _ wl')
              (h : [ |- Δ]< wl' >),
          P (HAad.(PiRedTy.domAd) ρ τ Ninfl h)) ->
       (forall {Δ wl' a} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
-              (Ninfl : _ <= length wl')
+              (Ninfl : AllInLCon _ wl')
               (h : [ |- Δ ]< wl' >) 
               (ha : [ ΠA.(PiRedTy.domRed) ρ τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< wl' >)
              {wl''} (τ' : wl'' ≤ε wl')
-             (Minfl : _ <= length wl''),
+             (Minfl : AllInLCon _ wl''),
         P (HAad.(PiRedTy.codAd) ρ τ Ninfl h ha τ' Minfl)) -> G).
 
   

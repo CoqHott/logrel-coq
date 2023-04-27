@@ -19,7 +19,8 @@ Section Reflexivities.
     - intros.
       now eapply (codomN Δ a l' ρ τ Ninfl h).
     - intros ; eapply IHdom.
-    - intros ; eapply IHcod.
+    - intros ; now eapply codomN_Ltrans.
+    - intros ; now eapply IHcod.
   Qed.
 
   Corollary LRTyEqRefl_ {l wl Γ A} (lr : [ Γ ||-< l > A ]< wl > ) : [ Γ ||-< l > A ≅ A | lr ]< wl >.

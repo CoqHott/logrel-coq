@@ -28,44 +28,45 @@ Section Escapes.
     - intros ???? []; gen_typing.
   Qed.
 
-  Lemma Wescape {l wl Γ A} : W[ Γ ||-< l > A ]< wl > -> [Γ |- A]< wl >.
+  Lemma Wescape {l wl Γ A} :
+    W[ Γ ||-< l > A ]< wl > -> [Γ |- A]< wl >.
   Proof.
     intros [].
-    remember (WN - length wl).
-    revert wl Heqn WRed.
-    induction n.
-    - intros.
-      eapply escape.
+    remember (Lack_n wl WN) as q.
+    revert wl Heqq WRed.
+    induction q ; intros.
+    - eapply escape.
       eapply WRed.
       + now eapply wfLCon_le_id.
-      + eapply PeanoNat.Nat.sub_0_le.
-        now rewrite Heqn.
-    - intros.
-      unshelve eapply wft_ϝ.
-      + exact (LCon_newElt wl).
-      + now eapply newElt_newElt.
-      + eapply IHn.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
+      + eapply Lack_nil_AllInLCon.
+        now symmetry.
+    - unshelve eapply wft_ϝ.
+      + exact a.
+      + unshelve eapply Lack_n_notinLCon.
+        exact WN.
+        rewrite <- Heqq.
+        cbn.
+        now left.
+      + eapply IHq.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * f allinl.
           eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-      + eapply IHn.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
+      + eapply IHq.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * f allinl.
           eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
   Qed.
-         
+  
   Lemma escapeEq {l wl Γ A B} (lr : [Γ ||-< l > A]< wl >) :
       [ Γ ||-< l > A ≅ B | lr ]< wl > ->
       [Γ |- A ≅ B]< wl >.
@@ -90,49 +91,48 @@ Section Escapes.
   Proof.
     intros [].
     destruct lr as [WN WRed].
-    remember ((max WN WNEq) - length wl).
-    revert wl Heqn WRed WRedEq.
-    induction n ; intros.
-    - eapply escapeEq.
-      unshelve eapply WRedEq.
-      + now eapply wfLCon_le_id.
-      + etransitivity.
-        eapply Nat.le_max_l.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
-      + etransitivity.
-        eapply Nat.le_max_r.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
+    remember (Lack_n wl (max WN WNEq)) as q.
+    revert wl Heqq WRed WRedEq.
+    induction q ; intros.
+    - unshelve eapply escapeEq ; [assumption | ..].
+      1: eapply WRed ; [now eapply wfLCon_le_id | ..].
+      2: eapply WRedEq.
+      all: eapply Lack_nil_AllInLCon ;
+        eapply Incl_nil ;
+        rewrite Heqq ;
+        eapply Lack_n_le.
+      1: now eapply Nat.le_max_l.
+      now eapply Nat.le_max_r.
     - unshelve eapply convty_ϝ.
-      + exact (LCon_newElt wl).
-      + now eapply newElt_newElt.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+      + exact a.
+      + unshelve eapply Lack_n_notinLCon.
+        exact (max WN WNEq).
+        rewrite <- Heqq.
+        now left.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedEq.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedEq ; try eassumption.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedEq.
-Qed.
-
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedEq ; try eassumption.
+  Qed.
+  
   Definition escapeTerm {l wl Γ t A} (lr : [Γ ||-< l > A ]< wl >) :
     [Γ ||-< l > t : A | lr ]< wl > ->
     [Γ |- t : A]< wl >.
@@ -153,51 +153,50 @@ Qed.
     W[Γ ||-< l > t : A | lr ]< wl > ->
     [Γ |- t : A]< wl >.
   Proof.
-   intros [].
+    intros [].
     destruct lr as [WN WRed].
-    remember ((max WN WNTm) - length wl).
-    revert wl Heqn WRed WRedTm.
-    induction n ; intros.
-    - eapply escapeTerm.
-      unshelve eapply WRedTm.
-      + now eapply wfLCon_le_id.
-      + etransitivity.
-        eapply Nat.le_max_l.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
-      + etransitivity.
-        eapply Nat.le_max_r.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
+    remember (Lack_n wl (max WN WNTm)) as q.
+    revert wl Heqq WRed WRedTm.
+    induction q ; intros.
+    - unshelve eapply escapeTerm ; [assumption | ..].
+      1: eapply WRed ; [now eapply wfLCon_le_id | ..].
+      2: eapply WRedTm.
+      all: eapply Lack_nil_AllInLCon ;
+        eapply Incl_nil ;
+        rewrite Heqq ;
+        eapply Lack_n_le.
+      1: now eapply Nat.le_max_l.
+      now eapply Nat.le_max_r.
     - unshelve eapply ty_ϝ.
-      + exact (LCon_newElt wl).
-      + now eapply newElt_newElt.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+      + exact a.
+      + unshelve eapply Lack_n_notinLCon.
+        exact (max WN WNTm).
+        rewrite <- Heqq.
+        now left.
+      + unshelve eapply IHq.
+        * intros * f allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedTm.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedTm ; try eassumption.
+      + unshelve eapply IHq.
+        * intros * f allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedTm.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedTm ; try eassumption.
   Qed.
-  
+   
   Definition escapeEqTerm {l wl Γ t u A} (lr : [Γ ||-< l > A ]< wl >) :
     [Γ ||-< l > t ≅ u : A | lr ]< wl > ->
     [Γ |- t ≅ u : A]< wl >.
@@ -226,48 +225,48 @@ Qed.
   Proof.
     intros [].
     destruct lr as [WN WRed].
-    remember ((max WN WNTmEq) - length wl).
-    revert wl Heqn WRed WRedTmEq.
-    induction n ; intros.
-    - eapply escapeEqTerm.
-      unshelve eapply WRedTmEq.
-      + now eapply wfLCon_le_id.
-      + etransitivity.
-        eapply Nat.le_max_l.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
-      + etransitivity.
-        eapply Nat.le_max_r.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
+    remember (Lack_n wl (max WN WNTmEq)) as q.
+    revert wl Heqq WRed WRedTmEq.
+    induction q ; intros.
+    - unshelve eapply escapeEqTerm ; [assumption | ..].
+      1: eapply WRed ; [now eapply wfLCon_le_id | ..].
+      2: eapply WRedTmEq.
+      all: eapply Lack_nil_AllInLCon ;
+        eapply Incl_nil ;
+        rewrite Heqq ;
+        eapply Lack_n_le.
+      1: now eapply Nat.le_max_l.
+      now eapply Nat.le_max_r.
     - unshelve eapply convtm_ϝ.
-      + exact (LCon_newElt wl).
-      + now eapply newElt_newElt.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+      + exact a.
+      + unshelve eapply Lack_n_notinLCon.
+        exact (max WN WNTmEq).
+        rewrite <- Heqq.
+        now left.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedTmEq.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedTmEq ; try eassumption.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedTmEq.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedTmEq ; try eassumption.
   Qed.
+  
   
   Lemma escapeConv {l wl Γ A} (RA : [Γ ||-<l> A]< wl >) :
     forall B,
@@ -290,48 +289,50 @@ Qed.
   Proof.
     intros B [].
     destruct RA as [WN WRed].
-    remember ((max WN WNEq) - length wl).
-    revert wl Heqn WRed WRedEq.
-    induction n ; intros.
-    - eapply escapeConv.
-      unshelve eapply WRedEq.
-      + now eapply wfLCon_le_id.
-      + etransitivity.
-        eapply Nat.le_max_l.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
-      + etransitivity.
-        eapply Nat.le_max_r.
-        eapply Nat.sub_0_le.
-        now rewrite Heqn.
+    remember (Lack_n wl (max WN WNEq)) as q.
+    revert wl Heqq WRed WRedEq.
+    induction q ; intros.
+    - unshelve eapply escapeConv ; [assumption | exact A | ..].
+      1: eapply WRed ; [now eapply wfLCon_le_id | ..].
+      2: eapply WRedEq.
+      all: eapply Lack_nil_AllInLCon ;
+        eapply Incl_nil ;
+        rewrite Heqq ;
+        eapply Lack_n_le.
+      1: now eapply Nat.le_max_l.
+      now eapply Nat.le_max_r.
     - unshelve eapply wft_ϝ.
-      + exact (LCon_newElt wl).
-      + now eapply newElt_newElt.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+      + exact a.
+      + unshelve eapply Lack_n_notinLCon.
+        exact (max WN WNEq).
+        rewrite <- Heqq.
+        now left.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedEq.
-      + unshelve eapply IHn.
-        * intros.
-          unshelve eapply WRed ; try eassumption.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedEq ; try eassumption.
+      + unshelve eapply IHq.
+        * intros * allinl.
+          eapply WRed ; try eassumption.
           eapply wfLCon_le_trans ; try eassumption.
           eapply LCon_le_step.
           now eapply wfLCon_le_id.
-        * cbn.
-          erewrite PeanoNat.Nat.sub_succ_r.
-          rewrite <- Heqn.
-          reflexivity.
-        * intros.
-          now unshelve eapply WRedEq.
+        * symmetry.
+          eapply Lack_n_add.
+          now symmetry.
+        * intros * allinl.
+          now eapply WRedEq ; try eassumption.
   Qed.
+
+
+    
 
   
   
