@@ -627,6 +627,31 @@ Proof.
   exact (LRIrrelevantPreds@{i j k l i' j' k' l'} IrrRec Γ A A' lrA lrA').
 Qed.
 
+Theorem LRIrrelevantPack@{i j k l} 
+  (Γ : context) (A A' : term) {lA lA'} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
+  (RA' : [ LogRel@{i j k l} lA' | Γ ||- A' ])
+  (RAA' : [Γ ||-<lA> A ≅ A' | RA]) :
+  equivLRPack@{v v v} RA RA'.
+Proof.
+  pose proof (LRIrrelevantCum@{i j k l i j k l} Γ A A' (LRAd.adequate RA) (LRAd.adequate RA') RAA') as [].
+  constructor; eauto.
+Defined.
+
+Theorem LRTransEq@{i j k l} 
+  (Γ : context) (A B C : term) {lA lB} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
+  (RB : [ LogRel@{i j k l} lB | Γ ||- B ])
+  (RAB : [Γ ||-<lA> A ≅ B | RA])
+  (RBC : [Γ ||-<lB> B ≅ C | RB]) :
+  [Γ ||-<lA> A ≅ C | RA].
+Proof.
+  pose proof (LRIrrelevantPack Γ A B RA RB RAB) as [h _ _].
+  now apply h.
+Defined.
+
+
+
 Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
   {Γ : context} {A : term}
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
