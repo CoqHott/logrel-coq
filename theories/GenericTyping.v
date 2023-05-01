@@ -426,7 +426,7 @@ Section GenericTyping.
       [Γ |- B ≅ B'] ->
       [Γ |- f ≅ f' : arr A B] ->
       [Γ |- l ~ l' : tList A] ->
-      [Γ |- tMap A B f l ≅ tMap A' B' f' l' : tList B] ;
+      [Γ |- tMap A B f l ~ tMap A' B' f' l' : tList B] ;
   }.
 
   Class RedTypeProperties :=
