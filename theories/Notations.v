@@ -197,6 +197,10 @@ Reserved Notation "[ K | Γ ||- A ≅ B | R ]" (at level 0, K, Γ, A, B, R at le
 Reserved Notation "[ K | Γ ||- t : A | R ]"  (at level 0, K, Γ, t, A, R at level 50).
 (** The terms t and u are reducibly convertible at type A in Γ, given the proof R than A is reducible, according to the kit K *)
 Reserved Notation "[ K | Γ ||- t ≅ u : A | R ]" (at level 0, K, Γ, t, u, A, R at level 50).
+(** The stack π is reducible at type A in Γ, given the proof R than A is reducible, according to the kit K *)
+Reserved Notation "[ K | Γ ||- π <:> A | R ]"  (at level 0, K, Γ, π, A, R at level 50).
+(** The stacks π and π' are reducibly convertible at type A in Γ, given the proof R than A is reducible, according to the kit K *)
+Reserved Notation "[ K | Γ ||- π ≅ π' <:> A | R ]" (at level 0, K, Γ, π, π', A, R at level 50).
 
 (** The types A and B are reducibly equal in Γ, according to the pack P for Γ and A *)
 Reserved Notation "[ P | Γ ||- A ≅ B ]" (at level 0, P, Γ, A, B at level 50).
@@ -204,6 +208,10 @@ Reserved Notation "[ P | Γ ||- A ≅ B ]" (at level 0, P, Γ, A, B at level 50)
 Reserved Notation "[ P | Γ ||- t : A ]" (at level 0, P, Γ, t, A at level 50).
 (** The terms t and u are reducibly equal at type A in Γ, according to the pack P *)
 Reserved Notation "[ P | Γ ||- t ≅ u : A ]" (at level 0, P, Γ, t, u, A at level 50).
+(** The stacks π is reducible at type A in Γ, according to the pack P *)
+Reserved Notation "[ P | Γ ||- π <:> A ]" (at level 0, P, Γ, π, A at level 50).
+(** The stacks π and π' are reducibly equal at type A in Γ, according to the pack P *)
+Reserved Notation "[ P | Γ ||- π ≅ π' <:> A ]" (at level 0, P, Γ, π, π', A at level 50).
 
 (** Set level l is (strictly) smaller than type level l' *)
 Reserved Notation "l << l'" (at level 70, l' at next level).

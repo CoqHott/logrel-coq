@@ -1,6 +1,7 @@
 (** * LogRel.LogicalRelation: Definition of the logical relation *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Stacks
+Weakening GenericTyping.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -30,6 +31,8 @@ Ltac logrel := eauto with logrel.
   (term -> Type@{i})         ->
   (term -> Type@{i})         ->
   (term -> term -> Type@{i}) ->
+  (stack -> Type@{i}) ->
+  (stack -> stack -> Type@{i}) ->
   Type@{j}.
 
 (** An LRPack contains the data corresponding to the codomain of RedRel seen as a functional relation. *)
@@ -41,6 +44,8 @@ Module LRPack.
     eqTy : term -> Type@{i};
     redTm : term -> Type@{i};
     eqTm :  term -> term -> Type@{i};
+    redSt : stack -> Type@{i} ;
+    eqSt : stack -> stack -> Type@{i} ;
   }.
 
   Arguments LRPack : clear implicits.
@@ -52,11 +57,13 @@ Export LRPack(LRPack,Build_LRPack).
 Notation "[ P | Γ ||- A ≅ B ]" := (@LRPack.eqTy Γ A P B).
 Notation "[ P | Γ ||- t : A ]" := (@LRPack.redTm Γ A P t).
 Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A P t u).
+Notation "[ P | Γ ||- π <:> A ]" := (@LRPack.redSt Γ A P π).
+Notation "[ P | Γ ||- π ≅ π' <:> A ]" := (@LRPack.eqSt Γ A P π π').
 
 (** An LRPack is adequate wrt. a RedRel when its three unpacked components are. *)
 Definition LRPackAdequate@{i j} {Γ : context} {A : term}
   (R : RedRel@{i j}) (P : LRPack@{i} Γ A) : Type@{j} :=
-  R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm).
+  R Γ A P.(LRPack.eqTy) P.(LRPack.redTm) P.(LRPack.eqTm) P.(LRPack.redSt) P.(LRPack.eqSt).
 
 Arguments LRPackAdequate _ _ /.
 
@@ -82,9 +89,9 @@ Coercion LRAd.adequate : LRAdequate >-> LRPackAdequate.
 (* TODO : update these for LRAdequate *)
 
 Notation "[ R | Γ ||- A ]"              := (@LRAdequate Γ A R).
-Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eqTy) B).
+(* Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eqTy) B).
 Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.redTm) t).
-Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(@LRAd.pack Γ A R).(LRPack.eqTm) t u).
+Notation "[ R | Γ ||- t ≅ u : A | RA ]" := (RA.(@LRAd.pack Γ A R).(LRPack.eqTm) t u). *)
 
 (** ** Universe levels *)
 
@@ -110,38 +117,82 @@ Definition elim {l : TypeLevel} (h : l << zero) : False :=
 
 (** ** Reducibility of neutral types *)
 
-Module neRedTy.
+Module neRedPack.
 
-  Record neRedTy `{ta : tag}
-    `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
-    {Γ : context} {A : term}
-  : Set := {
-    ty : term;
-    red : [ Γ |- A :⇒*: ty];
-    ne : Ne[ Γ |- ty];
-    eq : [ Γ |- ty ~ ty : U] ;
+  Record neRedPack@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{RedType ta}
+    {Γ : context} {n : nat} {π : stack}
+  : Type (* @ max(Set, i+1) *) := {
+    varTy : term ;
+    varTyped : in_ctx Γ n varTy ;
+    varRed {Δ} (ρ : Δ ≤ Γ) : [ |- Δ ] -> LRPack@{i} Δ varTy⟨ρ⟩ ;
+    envRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : [ (varRed ρ h) | Δ ||- π <:> varTy⟨ρ⟩]
   }.
 
-  Arguments neRedTy {_ _ _ _ _}.
+  Arguments neRedPack {_ _ _ _}.
+
+  Record neRedPackAdequate@{i j} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{RedType ta}
+    {Γ : context} {n : nat} {π : stack} {R : RedRel@{i j}} {nA : neRedPack@{i} Γ n π} : Type@{j} := {
+      varAd {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) : LRPackAdequate@{i j} R (nA.(varRed) ρ h)
+    }.
+
+  Arguments neRedPackAdequate {_ _ _ _}.
+
+End neRedPack.
+
+Export neRedPack(neRedPack, Build_neRedPack, neRedPackAdequate, Build_neRedPackAdequate).
+
+Module neRedPackEq.
+
+  Record neRedPackEq@{i} `{ta : tag}
+    `{WfContext ta}
+    `{WfType ta} `{RedType ta}
+    {Γ : context} {n n' : nat} {π π' : stack} {P : neRedPack@{i} Γ n π} :=
+  {
+    varEq : n = n' ;
+    stEq {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
+      [ (P.(neRedPack.varRed) ρ h) | Δ ||- π ≅ π' <:> P.(neRedPack.varTy)⟨ρ⟩ ] ;
+  }.
+
+  Arguments neRedPackEq {_ _ _ _}.
+
+End neRedPackEq.
+
+Export neRedPackEq(neRedPackEq, Build_neRedPackEq).
+
+Module neRedTy.
+
+  Record neRedTy@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{RedType ta}
+    {Γ : context} {A : term}
+  : Type := {
+    var : nat ;
+    env : stack ;
+    red : [Γ |- A :⇒*: zip (tRel var) env ] ;
+    neRed : neRedPack@{i} Γ var env ;
+  }.
+
+  Arguments neRedTy {_ _ _ _}.
 
 End neRedTy.
 
 Export neRedTy(neRedTy, Build_neRedTy).
-Notation "[ Γ ||-ne A ]" := (neRedTy Γ A).
+Coercion neRedTy.neRed : neRedTy >-> neRedPack.
 
 Module neRedTyEq.
 
   Record neRedTyEq `{ta : tag}
-    `{WfType ta} `{ConvNeuConv ta} `{RedType ta} `{TypeNe ta}
-    {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
+    `{WfContext ta} `{WfType ta} `{RedType ta}
+    {Γ : context} {A B : term} {neA : neRedTy Γ A}
   : Set := {
-    ty   : term;
-    red  : [ Γ |- B :⇒*: ty];
-    ne : Ne[ Γ |- ty];
-    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
+    var : nat ;
+    env : stack ;
+    red  : [ Γ |- B :⇒*: zip (tRel var) env];
+    eq  : neRedPackEq Γ neA.(neRedTy.var) var neA.(neRedTy.env) env neA;
   }.
 
-  Arguments neRedTyEq {_ _ _ _ _}.
+  Arguments neRedTyEq {_ _ _ _}.
 
 End neRedTyEq.
 
@@ -151,14 +202,13 @@ Notation "[ Γ ||-ne A ≅ B | R ]" := (neRedTyEq Γ A B R).
 Module neRedTm.
 
   Record neRedTm `{ta : tag}
-    `{WfType ta} `{RedType ta} `{TypeNe ta}
-    `{Typing ta} `{ConvNeuConv ta} `{ConvType ta} `{RedTerm ta} `{TermNe ta}
-    {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
+    `{WfContext ta} `{WfType ta} `{RedType ta}
+    `{Typing ta} `{ConvType ta} `{RedTerm ta}
+    {Γ : context} {t A : term}
   : Set := {
-    te  : term;
-    red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
-    ne : Ne[ Γ |- te : R.(neRedTy.ty)];
-    eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
+    var  : nat ;
+    env : stack ;
+    red  : [ Γ |- t :⇒*: zip (tRel var) env : A];
   }.
 
   Arguments neRedTm {_ _ _ _ _ _ _ _ _}.
