@@ -13,6 +13,7 @@ theories/Context.v
 theories/Notations.v
 
 theories/NormalForms.v
+theories/Stacks.v
 theories/Weakening.v
 theories/UntypedReduction.v
 theories/UntypedValues.v

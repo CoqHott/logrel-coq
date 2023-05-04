@@ -2,7 +2,7 @@
 From Coq Require Import Nat Lia Arith.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
+From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms Stacks.
 From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation AlgorithmicTypingProperties.
 From LogRel.Decidability Require Import Functions Soundness.
 From PartialFun Require Import Monad PartialFun.
@@ -103,25 +103,21 @@ Section RedImplemComplete.
 
   Lemma isType_ty Γ T t :
     [Γ |- t : T] ->
-    isType t ->
-    ~ whne t ->
+    ty_entry t ->
     [Γ |- U ≅ T].
   Proof.
-    intros Hty HisT Hne.
-    all: inversion HisT ; subst ; clear HisT ; cycle -1.
-    1: now exfalso.
-    all: clear Hne.
+    intros Hty HisT.
+    all: inversion HisT ; subst ; clear HisT.
     all: eapply termGen' in Hty as (?&[]&?); subst.
     all: eassumption.
   Qed.
 
   Lemma zip1_notType Γ T t π :
-    isType t ->
-    ~ whne t ->
+    ty_entry t ->
     [Γ |- zip1 t π : T] ->
     False.
   Proof.
-    intros Ht Ht' Hty.
+    intros Ht Hty.
     destruct π ; cbn in * ;
       eapply termGen' in Hty as (?&[]&?) ; subst ; prod_hyp_splitter ;
       match goal with H : [_ |-[de] t : _] |- _ => (unshelve eapply isType_ty, ty_conv_inj in H) end ; tea.
@@ -154,7 +150,7 @@ Section RedImplemComplete.
     all: try solve [ cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *; termInvContradiction Hty].
     - cbn in * ; eapply well_typed_zip in Hty as [? [? _]] ; cbn in *.
       eapply zip1_notType ; tea.
-      all: now eapply isType_tm_view1.
+      all: now eapply isType_entry.
     - split ; [|easy].
       eapply IH.
       + red. red. cbn.
@@ -290,30 +286,27 @@ Let PTmEq (Γ : context) (A t u : term) :=
 Let PTmRedEq (Γ : context) (A t u : term) :=
   graph conv (tm_red_state;Γ;A;t;u) (ok tt).
 
-Definition whne_ne_view1 {N} (w : whne N) : ne_view1 N :=
-  match w with
-  | whne_tRel => ne_view1_rel _
-  | whne_tApp _ => ne_view1_dest _ (eApp _)
-  | whne_tNatElim _ => ne_view1_dest _ (eNatElim _ _ _)
-  | whne_tEmptyElim _ => ne_view1_dest _ (eEmptyElim _)
-  | whne_tFst _ => ne_view1_dest _ eFst
-  | whne_tSnd _ => ne_view1_dest _ eSnd
-  end.
-
-Lemma whne_ty_view1 {N} (w : whne N) : build_ty_view1 N = ty_view1_small (whne_ne_view1 w).
+Lemma whne_ty_view1 {N} (w : whne N) :
+  ∑ w, build_ty_view1 N = ty_view1_small w.
 Proof.
-  now destruct w.
+  destruct w.
+  all: eexists ; cbn.
+  all: reflexivity.
 Qed.
 
-Lemma whne_nf_view1 {N} (w : whne N) : build_nf_view1 N = nf_view1_ne (whne_ne_view1 w).
+Lemma whne_nf_view1 {N} (w : whne N) :
+  ∑ w, build_nf_view1 N = nf_view1_ne w.
 Proof.
-  now destruct w.
+  destruct w.
+  all: eexists ; cbn.
+  all: reflexivity.
 Qed.
 
-Lemma whne_ty_view2 {M N} (wM : whne M) (wN : whne N) : build_nf_ty_view2 M N = ty_neutrals M N.
+Lemma whne_ty_view2 {M N} (wM : whne M) (wN : whne N) :
+  build_nf_ty_view2 M N = ty_neutrals M N.
 Proof.
   simp build_nf_ty_view2.
-  unshelve erewrite ! whne_ty_view1 ; tea.
+  apply whne_ty_view1 in wM as [? ->], wN as [? ->] ; cbn.
   now reflexivity.
 Qed.
 
@@ -328,14 +321,14 @@ Proof.
   destruct wP ; cbn.
   - rewrite whne_ty_view2 ; cbn ; tea.
     reflexivity.
-  - unshelve erewrite whne_nf_view1 ; tea.
-    cbn.
-    now rewrite (whne_nf_view1 wn).
-  - unshelve erewrite whne_nf_view1 ; tea.
-    cbn.
-    now rewrite (whne_nf_view1 wn).
-  - unshelve erewrite whne_ty_view1 ; tea.
-    reflexivity.
+  - apply whne_nf_view1 in wm as [? ->] ; cbn.
+    apply whne_nf_view1 in wn as [? ->] ; cbn.
+    easy.
+  - apply whne_nf_view1 in wm as [? ->] ; cbn.
+    apply whne_nf_view1 in wn as [? ->] ; cbn.
+    easy.
+  - apply whne_ty_view1 in w as [? ->] ; cbn.
+    easy.
 Qed.
 
 Arguments PFun_instance_1 : simpl never.
@@ -533,7 +526,7 @@ Qed.
 End ConversionComplete.
 
 Section TypingComplete.
-
+(* 
 Definition isCanonical_ty_view1 t (c : ~ isCanonical t) : ne_view1 t.
 Proof.
 revert c.
@@ -545,14 +538,14 @@ all: try solve [case c ; constructor].
 - eapply (ne_view1_dest _ (eEmptyElim _)).
 - eapply (ne_view1_dest _ eFst).
 - eapply (ne_view1_dest _ eSnd).
-Defined.
+Defined. *)
 
 Lemma can_ty_view1_small T (c : ~ isCanonical T) :
-  build_ty_view1 T = ty_view1_small (isCanonical_ty_view1 T c).
+  ∑ c', build_ty_view1 T = ty_view1_small c'.
 Proof.
   destruct T ; cbn.
   all: try solve [case c ; constructor].
-  all: reflexivity.
+  all: eexists ; reflexivity.
 Qed.
 
 Let PTy Γ A := forall v, graph typing (wf_ty_state;Γ;v;A) (ok tt).
@@ -570,7 +563,7 @@ Proof.
   all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
   (* Well formed types *)
   1-5:repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
-  - unshelve erewrite can_ty_view1_small ; tea.
+  - destruct (can_ty_view1_small _ H) as [? ->].
     cbn.
     econstructor.
     1: exact (g tt whnf_tSort).

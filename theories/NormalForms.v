@@ -121,3 +121,28 @@ Inductive isCanonical : term -> Type :=
   | can_tPair {A B a b}: isCanonical (tPair A B a b).
 
 #[global] Hint Constructors isCanonical : gen_typing.
+
+Definition isCanonical_whnf t (i : isCanonical t) : whnf t.
+Proof.
+  case i ; intros ; constructor.
+Defined.
+
+#[global] Hint Resolve isCanonical_whnf : gen_typing.
+
+Lemma whnf_can_whne t :
+  whnf t <~> (isCanonical t) + whne t.
+Proof.
+  split.
+  - intros [] ; cycle -1.
+    1: now right.
+    all: left ; constructor.
+  - intros [[]|].
+    all: now constructor.
+Qed.
+
+Lemma can_whne t :
+  isCanonical t -> whne t -> False.
+Proof.
+  intros [].
+  all: now inversion 1.
+Qed.

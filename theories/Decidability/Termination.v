@@ -77,7 +77,7 @@ Proof.
     simp conv conv_ty_red.
     destruct wB' as [|A'' B''| | | |? wB'].
     all: simp build_nf_ty_view2 ; cbn ; try easy.
-    2: now rewrite (whne_ty_view1 wB') ; cbn.
+    2: now destruct (whne_ty_view1 wB') as [? ->] ; cbn.
     apply prod_ty_inv in HtyB' as [].
     split.
     2: intros [] ; cbn ; [|easy].
@@ -91,25 +91,25 @@ Proof.
     simp conv conv_ty_red.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
-    match goal with H : whne _ |- _ => now rewrite (whne_ty_view1 H) ; cbn end.
+    match goal with H : whne _ |- _ => now destruct (whne_ty_view1 H) as [? ->] ; cbn end.
   - intros * ??? ? ? wB' ?.
     apply compute_domain.
     simp conv conv_ty_red.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
-    match goal with H : whne _ |- _ => now rewrite (whne_ty_view1 H) ; cbn end.
+    match goal with H : whne _ |- _ => now destruct (whne_ty_view1 H) as [? ->] ; cbn end.
   - intros * ??? ? ? wB' ?.
     apply compute_domain.
     simp conv conv_ty_red.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
-    match goal with H : whne _ |- _ => now rewrite (whne_ty_view1 H) ; cbn end.
+    match goal with H : whne _ |- _ => now destruct (whne_ty_view1 H) as [? ->] ; cbn end.
   - intros * ? [IHA] ? [IHB] ? []%sig_ty_inv []%sig_ty_inv ? B' wB' HtyB'.
     apply compute_domain.
     simp conv conv_ty_red.
     destruct wB' as [| | | | A'' B'' |? wB'].
     all: simp build_nf_ty_view2 ; cbn ; try easy.
-    2: now rewrite (whne_ty_view1 wB') ; cbn.
+    2: now destruct (whne_ty_view1 wB') as [? ->] ; cbn.
     apply sig_ty_inv in HtyB' as [].
     split.
     2: intros x; destruct x ; cbn ; [|easy].
@@ -124,7 +124,7 @@ Proof.
     eapply algo_conv_wh in HM as [].
     destruct wB'.
     1-5: simp build_nf_ty_view2 ; cbn.
-    1-5: now unshelve erewrite whne_ty_view1 ; cbn.
+    1-5: match goal with H : whne _ |- _ => now destruct (whne_ty_view1 H) as [? ->] ; cbn end.
     erewrite whne_ty_view2 ; tea.
     split.
     2: intros [|] ; cbn ; easy.
@@ -281,7 +281,7 @@ Proof.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
     destruct wu' as [ | A'' B'' | | | | ? wu'] ; cycle -1.
-    1: rewrite (whne_ty_view1 wu').
+    1: destruct (whne_ty_view1 wu') as [? ->] ; cbn.
     all: cbn ; try easy.
     eapply termGen' in Hty as (?&[]&?) ; subst.
     split.
@@ -299,21 +299,21 @@ Proof.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
     destruct wu' as [ | | | | | ? wu'] ; cycle -1.
-    1: rewrite (whne_ty_view1 wu').
+    1: destruct (whne_ty_view1 wu') as [? ->] ; cbn.
     all: now cbn.
   - intros * ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply nat_isNat in wu' ; tea.
     destruct wu' as [ | | ? wu'] ; cycle -1.
-    1: rewrite (whne_nf_view1 wu').
+    1: destruct (whne_nf_view1 wu') as [? ->] ; cbn.
     all: now cbn.
   - intros * ? [IHt] ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply nat_isNat in wu' ; tea.
     destruct wu' as [ | u' | ? wu'] ; cycle -1.
-    1: rewrite (whne_nf_view1 wu').
+    1: destruct (whne_nf_view1 wu') as [? ->] ; cbn.
     all: cbn ; try easy.
     split.
     2: now intros [|] ; cbn.
@@ -324,7 +324,7 @@ Proof.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
     destruct wu' as [ | | | | | ? wu'] ; cycle -1.
-    1: rewrite (whne_ty_view1 wu').
+    1: destruct (whne_ty_view1 wu') as [? ->] ; cbn.
     all: now cbn.
   - intros * ?? ? [IHf] ??? u' wu' Hty.
     apply compute_domain.
@@ -339,7 +339,7 @@ Proof.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
     destruct wu' as [ |  | | | A'' B'' | ? wu'] ; cycle -1.
-    1: rewrite (whne_ty_view1 wu').
+    1: destruct (whne_ty_view1 wu') as [? ->] ; cbn.
     all: cbn ; try easy.
     eapply termGen' in Hty as (?&[]&?) ; subst.
     split.
@@ -369,44 +369,39 @@ Proof.
   - intros * Hm [IHm []] Hpos ??? u' wu' Hu'.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3.
-    eapply algo_conv_wh in Hm as [].
-    destruct Hpos as [[]| | | ].
+    eapply algo_conv_wh in Hm as [wm wn].
+    destruct Hpos as [[]| | | ? wP' ].
     + cbn.
       simp build_nf_ty_view2.
-      unshelve erewrite whne_ty_view1 ; tea.
-      cbn.
+      1: destruct (whne_ty_view1 wm) as [? ->] ; cbn.
       eapply Uterm_isType in wu' ; tea.
       destruct wu' as [ | | | | | u' wu'] ; cbn ; try easy.
-      rewrite (whne_ty_view1 wu').
-      cbn.
+      destruct (whne_ty_view1 wu') as [? ->] ; cbn.
       split.
       2: now intros [] ; cbn.
       eapply (IHm tt u') ; tea.
       now eexists.
     + cbn.
-      unshelve erewrite whne_nf_view1 ; tea.
-      cbn.
+      destruct (whne_nf_view1 wm) as [? ->] ; cbn.
       eapply nat_isNat in wu' ; tea.
       inversion wu'  as [| | u'' wu'' ] ; subst ; clear wu'.
       all: cbn ; try easy.
-      rewrite (whne_nf_view1 wu'').
+      1: destruct (whne_nf_view1 wu'') as [? ->] ; cbn.
       cbn.
       split.
       2: now intros [] ; cbn.
       eapply (IHm tt u') ; tea.
       now eexists.
     + cbn.
-      unshelve erewrite whne_nf_view1 ; tea.
+      destruct (whne_nf_view1 wm) as [? ->] ; cbn.
       cbn.
       eapply empty_isEmpty in wu' ; tea.
-      rewrite (whne_nf_view1 wu').
-      cbn.
+      1: destruct (whne_nf_view1 wu') as [? ->] ; cbn.
       split.
       2: now intros [] ; cbn.
       apply (IHm tt u') ; tea.
       now eexists.
-    + unshelve erewrite whne_ty_view1 ; tea.
-      cbn.
+    + destruct (whne_ty_view1 wP') as [? ->] ; cbn.
       eapply neutral_isNeutral in wu' ; tea.
       split.
       2: now intros [] ; cbn.

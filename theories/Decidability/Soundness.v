@@ -2,7 +2,7 @@
 From Coq Require Import Nat Lia Arith.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
+From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms Stacks.
 From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation.
 From LogRel.Decidability Require Import Functions.
 From PartialFun Require Import Monad PartialFun.
@@ -43,43 +43,17 @@ Proof.
   all: now econstructor.
 Qed.
 
-Lemma stack_ne n π :
-  whne n -> whne (zip n π).
-Proof.
-  intros Hne.
-  induction π as [|[]] in n, Hne |- * ; cbn.
-  1: eassumption.
-  all: eapply IHπ ; now econstructor.
-Qed.
-
-Lemma isType_tm_view1 t e :
-  build_tm_view1 t = tm_view1_type e ->
-  isType t × ~ whne t.
-Proof.
-  intros H.
-  destruct e ; cbn.
-  all: split ; [ now econstructor | intros H' ; inversion H'].
-Qed.
-
-Lemma whnf_tm_view1_nat t e :
-  build_tm_view1 t = tm_view1_nat e ->
-  whnf t × ~ whne t.
-Proof.
-  intros H.
-  destruct e ; cbn.
-  all: split ; [ now econstructor | intros H' ; inversion H'].
-Qed.
-
 Lemma red_stack_whnf :
 funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => whnf t').
 Proof.
   intros ? _.
   funelim (wh_red_stack _).
-  all: cbn ; try solve [constructor ; eauto]. 
-  - now eapply isType_whnf, isType_tm_view1.
-  - econstructor. eapply stack_ne.
+  all: cbn ; try solve [constructor ; eauto].
+  - now apply isType_whnf, isType_entry.
+  - econstructor.
+    eapply zip_whne.
     now econstructor.
-  - now eapply whnf_tm_view1_nat.
+  - now eapply isNat_whnf, isNat_entry.
 Qed.
 
 Corollary _red_sound :
@@ -229,13 +203,6 @@ Section TypingCorrect.
 
   #[local]Existing Instance ty_errors.
 
-  Lemma ty_view1_small_can T n : build_ty_view1 T = ty_view1_small n -> ~ isCanonical T.
-  Proof.
-    destruct T ; cbn.
-    all: inversion 1.
-    all: inversion 1.
-  Qed.
-
   #[universes(polymorphic)]Definition typing_sound_type
     (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
     (r : result (tstate_output x.π1)) : Type :=
@@ -246,7 +213,6 @@ Section TypingCorrect.
   | (inf_red_state;Γ;_;t), (ok T) => [Γ |-[al] t ▹h T]
   | (check_state;Γ;T;t), (ok _) => [Γ |-[al] t ◃ T]
   end.
-
 
   Lemma _implem_typing_sound :
     funrect typing (fun _ => True) typing_sound_type.
@@ -264,7 +230,8 @@ Section TypingCorrect.
       | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
       | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
       | H : ctx_access _ _ = _ |- _ => eapply ctx_access_correct in H
-      | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
+      | H : context [build_ty_view1] |- _ => clear H
+      | H : ne_view1 _ |- _ => apply ne_view1_can in H
       | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst 
       end).
     all: now econstructor.

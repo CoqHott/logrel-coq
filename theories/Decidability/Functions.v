@@ -2,7 +2,7 @@
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Stacks Context DeclarativeTyping NormalForms.
 From PartialFun Require Import Monad PartialFun.
 
 Import MonadNotations.
@@ -38,33 +38,6 @@ Equations ctx_access (Γ : context) (n : nat) : result term :=
 
 Definition eq_sort (s s' : sort) : result unit := success (M := id).
 
-Variant ty_entry : term -> Type :=
-  | eSort s : ty_entry (tSort s)
-  | eProd A B : ty_entry (tProd A B)
-  | eNat : ty_entry tNat
-  | eEmpty : ty_entry tEmpty
-  | eSig A B : ty_entry (tSig A B).
-
-Variant nat_entry : term -> Type :=
-  | eZero : nat_entry tZero
-  | eSucc t : nat_entry (tSucc t).
-
-Variant dest_entry : Type :=
-  | eEmptyElim (P : term)
-  | eNatElim (P : term) (hs hz : term)
-  | eApp (u : term)
-  | eFst
-  | eSnd.
-
-Definition zip1 (t : term) (e : dest_entry) : term :=
-  match e with
-    | eEmptyElim P => (tEmptyElim P t)
-    | eNatElim P hs hz => (tNatElim P hs hz t) 
-    | eApp u => (tApp t u)
-    | eFst => tFst t
-    | eSnd => tSnd t
-  end.
-
 Variant tm_view1 : term -> Type :=
   | tm_view1_type {t} : ty_entry t -> tm_view1 t
   | tm_view1_fun A t : tm_view1 (tLambda A t)
@@ -95,6 +68,13 @@ Definition build_tm_view1 t : tm_view1 t :=
 Variant ne_view1 : term -> Type :=
   | ne_view1_rel n : ne_view1 (tRel n)
   | ne_view1_dest t s : ne_view1 (zip1 t s).
+
+Lemma ne_view1_can t :
+  ne_view1 t -> ~ (isCanonical t).
+Proof.
+  intros [?|? []] i.
+  all : inversion i.
+Qed.
 
 Variant nf_view1 : term -> Type :=
   | nf_view1_type {t} : ty_entry t -> nf_view1 t
@@ -133,14 +113,6 @@ Definition build_ty_view1 t : ty_view1 t :=
   | tm_view1_rel n => ty_view1_small (ne_view1_rel n)
   | tm_view1_dest t s => ty_view1_small (ne_view1_dest t s)
   | tm_view1_fun _ _ | tm_view1_nat _ | tm_view1_sig _ _ _ _ => ty_view1_anomaly
-  end.
-
-Definition stack := list dest_entry.
-
-Fixpoint zip t (π : stack) :=
-  match π with
-  | nil => t
-  | cons s π => zip (zip1 t s) π
   end.
 
 Definition empty_store : forall (x: False), match x return Set with end :=
