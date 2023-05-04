@@ -272,36 +272,330 @@ Qed.
   
 
 End AppTerm.
+Set Primitive Projections.
+Record Sig (A : Type) (B : A -> Type) : Type :=
+  { wit : A ;
+    prf : B wit
+  }.
 
-(*Lemma test {wl Γ F G l}
+Arguments wit [_ _] _.
+Arguments prf [_ _] _.
+
+(*Record helpTy {Γ F G l} (WN : nat) (wl : wfLCon) :=
+  { wl'' : wfLCon ;
+    redPi :  [Γ ||-Π< l > tProd F G ]< wl'' > ;
+    ub : wl'' ≤ε wl ;
+    ne : AllInLCon WN wl'' ;
+  }.
+
+Arguments wl'' [_ _ _ _ _ _] _.
+Arguments redPi [_ _ _ _ _ _] _.
+Arguments ub [_ _ _ _ _ _] _.
+Arguments ne [_ _ _ _ _ _] _.*)
+
+Record helpTy2 {Γ F G l} (wl : wfLCon) (WN : nat)
+  :=
+  { f : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      wfLCon;
+    ub : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      f wl' tau ne ≤ε wl ;
+    lesser : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      wl' ≤ε f wl' tau ne ;
+    ne : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      AllInLCon WN (f wl' tau ne) ;
+    dom2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      term ;
+    cod2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      term ;
+    red2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      [Γ |-[ ta ] tProd F G :⇒*: tProd (dom2 wl' tau ne) (cod2 wl' tau ne) ]< (f wl' tau ne) > ;
+    domTy2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      [Γ |-[ ta ] (dom2 wl' tau ne) ]< (f wl' tau ne) > ;
+    codTy2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      [Γ ,, (dom2 wl' tau ne) |-[ ta ] (cod2 wl' tau ne) ]< (f wl' tau ne) > ;
+    eq2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+      [Γ |-[ ta ] tProd (dom2 wl' tau ne) (cod2 wl' tau ne) ≅
+             tProd (dom2 wl' tau ne) (cod2 wl' tau ne)]< (f wl' tau ne) > ;
+    domN2 : nat ;
+    domRed2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+    forall (Δ : context) (l' : wfLCon) (ρ : Δ ≤ Γ),
+           l' ≤ε (f wl' tau ne) ->
+           AllInLCon (domN2) l' -> [ |-[ ta ] Δ ]< l' > ->
+           [Δ ||-< l > (dom2 wl' tau ne)⟨ρ⟩ ]< l' > ;
+    codomN2 : forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+    forall (Δ : context) (a : term) (l' : wfLCon) (ρ : Δ ≤ Γ)
+             (τ : l' ≤ε (f wl' tau ne))
+             (Ninfl : AllInLCon (domN2) l') (h : [ |-[ ta ] Δ ]< l' >),
+      [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l' > -> nat ;
+    codomN2_Ltrans :
+    forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+    forall (Δ : context) (a : term) (l' l'' : wfLCon) 
+           (ρ : Δ ≤ Γ)
+           (τ : l' ≤ε (f wl' tau ne))
+           (τ' : l'' ≤ε (f wl' tau ne))
+           (Ninfl : AllInLCon (domN2) l')
+           (Ninfl' : AllInLCon (domN2) l'')
+           (h : [ |-[ ta ] Δ ]< l' >) (h' : [ |-[ ta ] Δ ]< l'' >)
+           (ha : [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l' >)
+           (ha' : [domRed2 wl' tau ne Δ l'' ρ τ' Ninfl' h' | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l'' >),
+      l'' ≤ε l' ->
+      codomN2 wl' tau ne Δ a l'' ρ τ' Ninfl' h' ha' <=
+        codomN2 wl' tau ne Δ a l' ρ τ Ninfl h ha ;
+    codomN2_Ltrans' :
+    forall (wl' wl'' : wfLCon) (tau : wl' ≤ε wl) (tau' : wl'' ≤ε wl)
+           (ne : AllInLCon WN wl') (ne' : AllInLCon WN wl''),
+    forall (Δ : context) (a : term) (l': wfLCon) 
+           (ρ : Δ ≤ Γ)
+           (τ : l' ≤ε (f wl' tau ne))
+           (τ' : l' ≤ε (f wl'' tau' ne'))
+           (Ninfl : AllInLCon domN2 l')
+           (h : [ |-[ ta ] Δ ]< l' >)
+           (ha : [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l' >)
+           (ha' : [domRed2 wl'' tau' ne' Δ l' ρ τ' Ninfl h | Δ ||- a : (dom2 wl'' tau' ne')⟨ρ⟩ ]< l' >),
+      wl'' ≤ε wl' ->
+      codomN2 wl'' tau' ne' Δ a l' ρ τ' Ninfl h ha' <=
+        codomN2 wl' tau ne Δ a l' ρ τ Ninfl h ha ;
+    codRed2 :
+    forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+    forall (Δ : context) (a : term) (l' : wfLCon) (ρ : Δ ≤ Γ)
+             (τ : l' ≤ε (f wl' tau ne))
+             (Ninfl : AllInLCon (domN2) l')
+             (h : [ |-[ ta ] Δ ]< l' >)
+             (ha : [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l' >) 
+             (l'' : wfLCon),
+      l'' ≤ε l' ->
+      AllInLCon (codomN2 wl' tau ne Δ a l' ρ τ Ninfl h ha) l'' ->
+      [Δ ||-< l > (cod2 wl' tau ne)[a .: ρ >> tRel] ]< l'' > ;
+    codExt2 :
+    forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+    forall (Δ : context) (a b : term) (l' : wfLCon) (ρ : Δ ≤ Γ)
+             (τ : l' ≤ε (f wl' tau ne))
+             (Ninfl : AllInLCon domN2 l')
+             (h : [ |-[ ta ] Δ ]< l' >)
+             (ha : [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a : (dom2 wl' tau ne)⟨ρ⟩ ]< l' >),
+           [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- b : (dom2 wl' tau ne)⟨ρ⟩ ]< l' > ->
+           [domRed2 wl' tau ne Δ l' ρ τ Ninfl h | Δ ||- a ≅ b : (dom2 wl' tau ne)⟨ρ⟩ ]< l' > ->
+           forall (l'' : wfLCon) (τ' : l'' ≤ε l')
+             (Minfl : AllInLCon (codomN2 wl' tau ne Δ a l' ρ τ Ninfl h ha) l''),
+             [codRed2 wl' tau ne Δ a l' ρ τ Ninfl h ha l'' τ' Minfl |
+               Δ ||- (cod2 wl' tau ne)[a .: ρ >> tRel] ≅
+                 (cod2 wl' tau ne)[b .: ρ >> tRel] ]< l'' > ;
+  }.
+
+Definition help {wl Γ F G l} (WN : nat)
+  (WRed : forall wl' : wfLCon, wl' ≤ε wl ->
+                               AllInLCon WN wl' ->
+                               [Γ ||-Π< l > tProd F G ]< wl' >) :
+  helpTy2 (Γ := Γ) (F := F) (G := G) (l := l) wl WN.
+Proof.
+  unshelve econstructor.
+  - intros wl' τ Ninfl.
+    exact (Bar_lub wl wl' WN τ Ninfl).
+  - intros.
+    refine (PiRedTyPack.dom _).
+    unshelve eapply WRed.
+    unshelve eapply Bar_lub_ub ; try eassumption.
+    unshelve eapply Bar_lub_AllInLCon.
+  - intros.
+    refine (PiRedTyPack.cod _).
+    unshelve eapply WRed.
+    unshelve eapply Bar_lub_ub ; try eassumption.
+    unshelve eapply Bar_lub_AllInLCon.
+  - intros.
+    unshelve eapply Max_Bar.
+    + exact wl.
+    + exact WN.
+    + intros * tau Ninfl.
+      refine (PiRedTyPack.domN _).
+      unshelve eapply WRed ; try eassumption.
+  - cbn.
+    intros * τ Ninfl h.
+    refine (PiRedTyPack.domRed _ _ _ _ _) ; try eassumption.
+    eapply AllInLCon_le ; [ | exact Ninfl].
+    unshelve eapply
+      (Max_Bar_Bar_lub _ _ (fun wl'0 tau0 Ninfl0 =>
+                              PiRedTyPack.domN (WRed wl'0 tau0 Ninfl0))).
+    abstract (intros ;
+              rewrite (AllInLCon_Irrel _ _ ne1 ne') ;
+              now rewrite (wfLCon_le_Irrel _ _ τ0 τ')).
+  - cbn.
+    intros * ha.
+    refine (PiRedTyPack.codomN _ _ _ _ _ _) ; try eassumption.
+  - cbn.
+    intros * τ' Minfl.
+    refine (PiRedTyPack.codRed _ _ _ _ _ _ _ _) ; try eassumption.
+  - cbn.
+    intros.
+    now eapply Bar_lub_ub.
+  - cbn ; intros.
+    now eapply Bar_lub_smaller.
+  - cbn ; intros.
+    now eapply Bar_lub_AllInLCon.
+  - cbn.
+    intros.
+    refine (PiRedTyPack.red _) ; try eassumption.
+  - cbn.
+    intros.
+    refine (PiRedTyPack.domTy _) ; try eassumption.
+  - cbn.
+    intros.
+    refine (PiRedTyPack.codTy _) ; try eassumption.
+  - cbn.
+    intros.
+    refine (PiRedTyPack.eq _) ; try eassumption.
+  - cbn.
+    intros * τ''.
+    eapply (PiRedTyPack.codomN_Ltrans _) ; try eassumption.
+  - cbn ; intros.
+    assert ((Bar_lub wl wl'' WN tau' ne') = (Bar_lub wl wl' WN tau ne0)) as eq0.
+    + now eapply Bar_lub_eq.
+    + revert τ' ha ha' .
+      generalize (AllInLCon_le
+                    (PiRedTyPack.domN
+          (WRed (Bar_lub wl wl'' WN tau' ne') (Bar_lub_ub wl wl'' WN tau' ne')
+             (Bar_lub_AllInLCon wl wl'' WN tau' ne')))
+                    (Max_Bar wl WN
+                       (fun (wl'0 : wfLCon) (tau0 : wl'0 ≤ε wl) (Ninfl0 : AllInLCon WN wl'0) =>
+           PiRedTyPack.domN (WRed wl'0 tau0 Ninfl0)))
+                    (Max_Bar_Bar_lub wl WN
+                       (fun (wl'0 : wfLCon) (tau0 : wl'0 ≤ε wl) (Ninfl0 : AllInLCon WN wl'0) =>
+                          PiRedTyPack.domN (WRed wl'0 tau0 Ninfl0)) (help_subproof wl Γ F G l WN WRed) wl''
+                       tau' ne' (Bar_lub_ub wl wl'' WN tau' ne') (Bar_lub_AllInLCon wl wl'' WN tau' ne'))
+                    l' Ninfl).
+      generalize (AllInLCon_le
+       (PiRedTyPack.domN
+          (WRed (Bar_lub wl wl' WN tau ne0) (Bar_lub_ub wl wl' WN tau ne0)
+             (Bar_lub_AllInLCon wl wl' WN tau ne0)))
+       (Max_Bar wl WN
+          (fun (wl'0 : wfLCon) (tau0 : wl'0 ≤ε wl) (Ninfl0 : AllInLCon WN wl'0) =>
+           PiRedTyPack.domN (WRed wl'0 tau0 Ninfl0)))
+       (Max_Bar_Bar_lub wl WN
+          (fun (wl'0 : wfLCon) (tau0 : wl'0 ≤ε wl) (Ninfl0 : AllInLCon WN wl'0) =>
+           PiRedTyPack.domN (WRed wl'0 tau0 Ninfl0)) (help_subproof wl Γ F G l WN WRed) wl'
+          tau ne0 (Bar_lub_ub wl wl' WN tau ne0) (Bar_lub_AllInLCon wl wl' WN tau ne0)) l'
+       Ninfl).
+    generalize (Bar_lub_ub wl wl'' WN tau' ne').
+    generalize (Bar_lub_AllInLCon wl wl'' WN tau' ne').
+    rewrite eq0.
+    cbn.
+    intros a0 w.
+    rewrite (AllInLCon_Irrel _ _ a0 (Bar_lub_AllInLCon wl wl' WN tau ne0)).
+    rewrite (wfLCon_le_Irrel _ _ w (Bar_lub_ub wl wl' WN tau ne0)).
+    intros.
+    eapply PiRedTyPack.codomN_Ltrans.
+    now eapply wfLCon_le_id.
+  - cbn ; intros * hb hab *.
+    eapply (PiRedTyPack.codExt _) ; try eassumption.
+Qed.
+
+Lemma test {wl Γ F G l}
   (RΠ : W[Γ ||-<l> tProd F G]< wl >)
   : [Γ ||-Πd tProd F G ]< wl >.
 Proof.
   destruct RΠ.
+  destruct (help _ (fun wl' tau Ninfl => invLRΠ (WRed wl' tau Ninfl))).
+  assert (forall (wl' : wfLCon) (tau : wl' ≤ε wl) (ne : AllInLCon WN wl'),
+             tProd F G = tProd (dom3 wl' tau ne) (cod3 wl' tau ne)) as ePi.
+  intros.
+  1:{ now eapply whredty_det ; gen_typing . }
   unshelve econstructor.
   - exact F.
   - exact G.
-  - refine (max WN _).
-    unshelve eapply Max_Bar.
-    + exact wl.
-    + exact WN.
-    + intros * tau allinl.
-      refine (PiRedTyPack.domN _).
-      eapply invLRΠ.
-      exact (WRed wl' tau allinl).
-  - intros * tau allinl delta.
-    pose proof (zref := fun inf => (invLRΠ (WRed l' tau (AllInLCon_le _ _ (Nat.max_lub_l WN _ _ inf) _ allinl)))).
-    pose (q:= fun inf => PiRedTyPack.domRed (wl' := l') (Δ := Δ) (invLRΠ (WRed l' tau inf))).
-    cbn in q.
-    assert (forall inf, LRPack l' Δ (PiRedTyPack.dom (invLRΠ (WRed l' tau inf)))⟨ρ⟩).
-    intros inf.
-    eapply q ; try eassumption.
-    now eapply wfLCon_le_id.
-    admit.
-    
-    unfold q.
-    
-      pose (t:= PiRedTyPack.domN (invLRΠ q)).*)
+  - exact (max WN domN3).
+  - intros * ? ? h.
+    eapply LRCumulative'.
+    2: {unshelve eapply domRed3 ; try eassumption.
+        + eapply AllInLCon_le ; [ | exact Ninfl].
+          now eapply Nat.le_max_l.
+        + now eapply lesser0.
+        + eapply AllInLCon_le ; [ | exact Ninfl].
+          now eapply Nat.le_max_r. }
+    + abstract
+        (specialize ePi with l' τ (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl) ;
+         now inversion ePi).
+  - cbn.
+    intros.
+    unshelve eapply codomN3 ; try eassumption.
+     + eapply AllInLCon_le ; [ | exact Ninfl].
+          now eapply Nat.le_max_l.
+     + now eapply lesser0.
+     + eapply AllInLCon_le ; [ | exact Ninfl].
+       now eapply Nat.le_max_r.
+     + irrelevance0.
+       2: exact ha.
+       exact (eq_sym (test_subproof wl Γ F G WN dom3 cod3 domN3 ePi Δ l' ρ τ Ninfl)).
+  - cbn.
+    intros.
+    eapply LRCumulative'.
+    2:{ unshelve eapply codRed3.
+        4 : exact τ.
+        9 : exact τ'.
+        all : try eassumption. }
+    abstract
+      (pose proof (ePi' := ePi l' τ (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl)) ; now inversion ePi').
+  - econstructor.
+    2: eapply redty_refl .
+    all: unshelve eapply wft_ϝ_Bar ; try exact WN.
+    all: intros * f allinl.
+    all: unshelve eapply wft_Ltrans ; try exact (f0 wl' f allinl).
+    all: try now eapply lesser0.
+    all: destruct (red3 wl' f allinl).
+    all: now eapply redty_ty_src.
+  - unshelve eapply wft_ϝ_Bar ; try exact WN.
+    intros * f allinl.
+    unshelve eapply wft_Ltrans ; try exact (f0 wl' f allinl).
+    1: now eapply lesser0.
+    replace F with (dom3 wl' f allinl).
+    1: now eapply domTy3.
+    abstract
+        (specialize ePi with wl' f allinl ;
+         now inversion ePi).
+  - unshelve eapply wft_ϝ_Bar ; try exact WN.
+    intros * f allinl.
+    unshelve eapply wft_Ltrans ; try exact (f0 wl' f allinl).
+    1: now eapply lesser0.
+    replace F with (dom3 wl' f allinl).
+    replace G with (cod3 wl' f allinl).
+    1: now eapply codTy3.
+    all: abstract
+        (specialize ePi with wl' f allinl ;
+         now inversion ePi).
+  - unshelve eapply convty_ϝ_Bar ; try exact WN.
+    intros * f allinl.
+    unshelve eapply convty_Ltrans ; try exact (f0 wl' f allinl).
+    1: now eapply lesser0.
+    replace (tProd F G) with (tProd (dom3 wl' f allinl) (cod3 wl' f allinl)).
+    1: now eapply eq3.
+    now eapply (eq_sym (ePi _ _ _)).
+  - cbn ; intros.
+    etransitivity.
+    + unshelve eapply codomN2_Ltrans'0 ; [exact l' | ..].
+      all: try eassumption.
+      * eapply AllInLCon_le ; [ | exact Ninfl ].
+        now eapply Nat.le_max_l.
+      * eapply wfLCon_le_trans ; try eassumption.
+        now eapply lesser0.
+      * irrelevance0.
+        2: eassumption.
+        abstract
+        (pose proof (ePi' := ePi l' τ (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl)) ;
+         now inversion ePi').
+    + eapply codomN2_Ltrans0.
+      assumption.
+  - cbn.
+    intros * hb hab *.
+    pose (q:= codExt3 l' τ (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl) Δ a b l' ρ (lesser0 l' τ
+                                                                                                                  (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl))
+                (AllInLCon_le domN3 (Init.Nat.max WN domN3) (Nat.le_max_r WN domN3) l' Ninfl)).
+    pose proof (ePi' := ePi l' τ (AllInLCon_le WN (Init.Nat.max WN domN3) (Nat.le_max_l WN domN3) l' Ninfl)) ; inversion ePi' ; subst.
+    irrelevance0.
+    2:{ unshelve eapply codExt3.
+        9 : irrelevance0 ; [ | exact hb] ; reflexivity.
+        8: irrelevance0 ; [ | exact hab] ; reflexivity.
+        all: try eassumption.
+    }
+    reflexivity.
+Qed.
       
   
 

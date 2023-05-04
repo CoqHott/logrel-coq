@@ -5,13 +5,14 @@ From LogRel Require Import Utils.
 
 Notation LCon := (list (prod nat bool)).
 
-Inductive in_LCon : LCon -> nat -> bool -> Type :=
+Inductive in_LCon : LCon -> nat -> bool -> Prop :=
 | in_here_l (l : LCon) {n b} : in_LCon (cons (n,b) l) n b
 | in_there_l {l : LCon} {n b d} : in_LCon l n b -> in_LCon (cons d l) n b.
 
-Inductive not_in_LCon : LCon -> nat -> Type :=
+
+Inductive not_in_LCon : LCon -> nat -> Prop :=
 | not_in_nil : forall n, not_in_LCon nil n
-| not_in_there : forall {l n m b}, n <> m -> not_in_LCon l n
+| not_in_there : forall {l n m b}, ((n = m) -> False) -> not_in_LCon l n
                                  -> not_in_LCon (cons (m,b) l) n.
 
 Inductive wf_LCon : LCon -> Type :=
@@ -46,7 +47,7 @@ Proof.
   intros notinl inl.
   induction inl.
   - inversion notinl ; subst.
-    now apply H3.
+    easy.
   - eapply IHinl.
     now inversion notinl ; subst.
 Qed.
@@ -203,6 +204,11 @@ Qed.
 
 Definition AllInLCon (n : nat) (l : wfLCon) : Type :=
   forall (m : nat), m < n -> (in_LCon l m true) + (in_LCon l m false).
+
+
+Axiom AllInLCon_Irrel : forall n wl (ne ne' : AllInLCon n wl), ne = ne'.
+Axiom wfLCon_le_Irrel : forall wl wl' (ne ne' : wl' ≤ε wl), ne = ne'.
+
 
 Lemma AllInLCon_le (n m : nat) (ninfm : n <= m) (l : wfLCon) :
   AllInLCon m l -> AllInLCon n l.
@@ -431,7 +437,7 @@ Proof.
 Qed.
 
     
-Fixpoint RemoveElt {l : LCon} {n b} (ne : in_LCon l n b) : LCon
+(*Fixpoint RemoveElt {l : LCon} {n b} (ne : in_LCon l n b) : LCon
   := match ne with
      | in_here_l l => l
      | @in_there_l l n b d ne => cons d (RemoveElt ne)
@@ -478,7 +484,7 @@ Proof.
   induction wfl ; intros.
   - now eapply le_0_n.
   -
-Admitted.
+Admitted.*)
 
 Fixpoint LCon_newElt (l : LCon) : nat :=
   match l with
@@ -618,3 +624,210 @@ Proof.
   unfold Max_Bar.
   now eapply Max_Bar_aux_le.
 Qed.
+
+Fixpoint Bar_lub_aux (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+         (Hyp : AllInLCon n wl')
+         (q : list nat) :
+  forall (e : q = Lack_n wl n), wfLCon.
+Proof.
+  refine (match q with
+          | nil => _
+          | cons a q' => _
+          end).
+  - exact (fun _ => wl).
+  - intros e.
+    assert (a < n).
+    abstract (refine (Lack_n_minfn _ _ _ _) ;
+              erewrite <- e ;
+              now left).
+    destruct (Hyp a H).
+    + unshelve eapply Bar_lub_aux.
+      * refine (wfLCons _ _ true).
+        eapply Lack_n_notinLCon.
+        erewrite <- e.
+        now left.
+      * exact wl'.
+      * exact n.
+      * exact q'.
+      * now eapply LCon_le_in_LCon.
+      * assumption.
+      * symmetry.
+        now eapply Lack_n_add.
+    + unshelve eapply Bar_lub_aux.
+      * refine (wfLCons _ _ false).
+        eapply Lack_n_notinLCon.
+        erewrite <- e.
+        now left.
+      * exact wl'.
+      * exact n.
+      * exact q'.
+      * now eapply LCon_le_in_LCon.
+      * assumption.
+      * symmetry.
+        now eapply Lack_n_add.
+Defined.
+
+Definition Bar_lub (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') : wfLCon.
+Proof.
+  eapply Bar_lub_aux ; try eassumption.
+  reflexivity.
+Defined.
+
+Lemma Bar_lub_eq (wl wl' wl'' : wfLCon) (n : nat)
+  (f : wl' ≤ε wl) (f' : wl'' ≤ε wl) (f'': wl'' ≤ε wl')
+  (Hyp : AllInLCon n wl') (Hyp' : AllInLCon n wl'')
+  (q : list nat) (e : q = Lack_n wl n) :
+  (Bar_lub_aux wl wl'' n f' Hyp' q e) = (Bar_lub_aux wl wl' n f Hyp q e).
+Proof.
+  revert wl wl' wl'' f f' f'' Hyp Hyp' e.
+  induction q ; intros.
+  - reflexivity.
+  - cbn.
+    destruct (Hyp' a (Bar_lub_aux_subproof wl n a q e)). 
+    + destruct (Hyp a (Bar_lub_aux_subproof wl n a q e)).
+      * now eapply IHq.
+      * exfalso.
+        change (match true with | true => False | _ => True end).
+        erewrite (uniqueinLCon _ i).
+        2: now eapply f''.
+        easy.
+    + destruct (Hyp a (Bar_lub_aux_subproof wl n a q e)).
+      * exfalso.
+        change (match true with | true => False | _ => True end).
+        erewrite <- (uniqueinLCon _ i).
+        2: now eapply f''.
+        easy.
+      * now eapply IHq.
+        Unshelve.
+        all: now destruct wl''.
+Qed.
+
+
+
+Lemma Bar_lub_smaller_aux (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') (q : list nat) (e : q = Lack_n wl n):
+  wl' ≤ε (Bar_lub_aux wl wl' n f Hyp q e).
+Proof.
+  revert wl f e.
+  induction q ; intros.
+  - assumption.
+  - cbn.
+    destruct (Hyp a (Bar_lub_aux_subproof wl n a q e)).
+    + now eapply IHq.
+    + now eapply IHq.
+Qed.
+
+Lemma Bar_lub_smaller (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') :
+  wl' ≤ε (Bar_lub wl wl' n f Hyp).
+Proof.
+  unfold Bar_lub ; eapply Bar_lub_smaller_aux.
+Qed.
+
+
+Lemma Bar_lub_ub_aux (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') (q : list nat) (e : q = Lack_n wl n) :
+  (Bar_lub_aux wl wl' n f Hyp q e) ≤ε wl.
+Proof.
+  revert wl f e.
+  induction q ; intros.
+  - now eapply wfLCon_le_id.
+  - cbn.
+    destruct (Hyp a (Bar_lub_aux_subproof wl n a q e)).
+    + eapply wfLCon_le_trans.
+      eapply IHq.
+      eapply LCon_le_step.
+      now eapply wfLCon_le_id.
+    + eapply wfLCon_le_trans.
+      eapply IHq.
+      eapply LCon_le_step.
+      now eapply wfLCon_le_id.
+Qed.
+
+Lemma Bar_lub_ub (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') :
+  (Bar_lub wl wl' n f Hyp) ≤ε wl.
+Proof.
+  unfold Bar_lub ; eapply Bar_lub_ub_aux.
+Qed.
+  
+Lemma Bar_lub_AllInLCon_aux (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') (q : list nat) (e : q = Lack_n wl n) :
+  AllInLCon n (Bar_lub_aux wl wl' n f Hyp q e).
+Proof.
+  revert wl f e.
+  induction q ; intros.
+  - cbn.
+    now eapply Lack_nil_AllInLCon.
+  - cbn.
+    destruct (Hyp a (Bar_lub_aux_subproof wl n a q e)).
+    + now eapply IHq.
+    + now eapply IHq.
+Qed.
+
+Lemma Bar_lub_AllInLCon
+  (wl wl' : wfLCon) (n : nat) (f : wl' ≤ε wl)
+  (Hyp : AllInLCon n wl') :
+  AllInLCon n (Bar_lub wl wl' n f Hyp).
+Proof.
+  unfold Bar_lub ; eapply Bar_lub_AllInLCon_aux.
+Qed.
+
+
+Lemma Max_Bar_Bar_lub_aux (wl : wfLCon) (n : nat)
+  (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
+  (Pe : forall wl' (τ τ' : wl' ≤ε wl) (ne ne' : AllInLCon n wl'),
+      P wl' τ ne = P wl' τ' ne')
+  (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl')
+   q e f allinBar_lub :
+  P (Bar_lub_aux wl wl' n τ ne q e) f allinBar_lub <= Max_Bar_aux wl n q e P.
+Proof.
+  revert wl P Pe τ e f allinBar_lub.
+  induction q ; intros.
+  - cbn in *.
+    now erewrite (Pe wl (wfLCon_le_id wl) f _ allinBar_lub).
+  - cbn in *.
+    destruct (ne a (Bar_lub_aux_subproof wl n a q e)).
+    + etransitivity.
+      2: { eapply Nat.max_lub_l.
+           reflexivity.
+      }
+      etransitivity.
+      2:{ unshelve eapply IHq.
+          + now eapply LCon_le_in_LCon.
+          + eapply Bar_lub_ub_aux.
+          + eapply Bar_lub_AllInLCon_aux.
+          + intros.
+            unshelve eapply Pe.
+      }
+      eapply Nat.eq_le_incl.
+      eapply Pe.
+    + etransitivity.
+      2: { eapply Nat.max_lub_r.
+           reflexivity.
+      }
+      etransitivity.
+      2:{ unshelve eapply IHq.
+          + now eapply LCon_le_in_LCon.
+          + eapply Bar_lub_ub_aux.
+          + eapply Bar_lub_AllInLCon_aux.
+          + intros.
+            unshelve eapply Pe.
+      }
+      eapply Nat.eq_le_incl.
+      eapply Pe.
+Qed.      
+
+Lemma Max_Bar_Bar_lub (wl : wfLCon) (n : nat)
+  (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
+  (Pe : forall wl' (τ τ' : wl' ≤ε wl) (ne ne' : AllInLCon n wl'),
+      P wl' τ ne = P wl' τ' ne')
+  (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl')
+  f allinBar :
+  P (Bar_lub wl wl' n τ ne) f allinBar <= Max_Bar wl n P.
+Proof.
+  unfold Bar_lub ; unfold Max_Bar ; cbn.
+  now eapply Max_Bar_Bar_lub_aux.
+Qed.
+

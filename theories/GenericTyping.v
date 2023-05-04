@@ -1195,6 +1195,134 @@ Section GenericConsequences.
     all: now eapply redty_sound.
   Qed.
 
+  Lemma wfc_ϝ_Bar {wl Γ} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [|- Γ]< wl' >) :
+    [|- Γ]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply wfc_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+  
+  Lemma wft_ϝ_Bar {wl Γ A} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [Γ |- A]< wl' >) :
+    [Γ |- A]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply wft_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+  
+  Lemma ty_ϝ_Bar {wl Γ t A} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [Γ |- t :A]< wl' >) :
+    [Γ |- t : A]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply ty_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+
+  Lemma convty_ϝ_Bar {wl Γ A B} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [Γ |- A ≅ B]< wl' >) :
+    [Γ |- A ≅ B]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply convty_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+
+  Lemma convtm_ϝ_Bar {wl Γ t u A} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [Γ |- t ≅ u : A]< wl' >) :
+    [Γ |- t ≅ u : A]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply convtm_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+
+  Lemma convneu_ϝ_Bar {wl Γ t u A} (n : nat)
+    (Hyp : forall wl' : wfLCon,
+        wl' ≤ε wl -> AllInLCon n wl' -> [Γ |- t ~ u : A]< wl' >) :
+    [Γ |- t ~ u : A]< wl >.
+  Proof.
+    remember (Lack_n wl n) as q.
+    revert wl Heqq Hyp.
+    induction q ; intros.
+    - eapply Hyp.
+      + now eapply wfLCon_le_id.
+      + now eapply Lack_nil_AllInLCon.
+    - unshelve eapply convneu_ϝ ;
+        [ exact a | eapply Lack_n_notinLCon ;
+                    rewrite <- Heqq ; now left | | ].
+      all: eapply IHq ; [symmetry ; now eapply Lack_n_add |
+                      intros ; eapply Hyp ; try eassumption ;
+                      eapply wfLCon_le_trans ; try eassumption;
+                      eapply LCon_le_step;
+                      now eapply wfLCon_le_id].
+  Qed.
+  
+  
+  
 End GenericConsequences.
 
 #[export] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
