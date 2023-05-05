@@ -777,16 +777,15 @@ Qed.
 
 Lemma Max_Bar_Bar_lub_aux (wl : wfLCon) (n : nat)
   (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
-  (Pe : forall wl' (τ τ' : wl' ≤ε wl) (ne ne' : AllInLCon n wl'),
-      P wl' τ ne = P wl' τ' ne')
   (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl')
    q e f allinBar_lub :
   P (Bar_lub_aux wl wl' n τ ne q e) f allinBar_lub <= Max_Bar_aux wl n q e P.
 Proof.
-  revert wl P Pe τ e f allinBar_lub.
+  revert wl P τ e f allinBar_lub.
   induction q ; intros.
   - cbn in *.
-    now erewrite (Pe wl (wfLCon_le_id wl) f _ allinBar_lub).
+    erewrite (AllInLCon_Irrel _ _ allinBar_lub (Lack_nil_AllInLCon n wl (eq_sym e))).
+    now erewrite (wfLCon_le_Irrel _ _ f (wfLCon_le_id _)).
   - cbn in *.
     destruct (ne a (Bar_lub_aux_subproof wl n a q e)).
     + etransitivity.
@@ -798,11 +797,11 @@ Proof.
           + now eapply LCon_le_in_LCon.
           + eapply Bar_lub_ub_aux.
           + eapply Bar_lub_AllInLCon_aux.
-          + intros.
-            unshelve eapply Pe.
       }
       eapply Nat.eq_le_incl.
-      eapply Pe.
+      unshelve erewrite (AllInLCon_Irrel _ _ allinBar_lub).
+      2: erewrite (wfLCon_le_Irrel _ _ f).
+      2: reflexivity.
     + etransitivity.
       2: { eapply Nat.max_lub_r.
            reflexivity.
@@ -812,19 +811,18 @@ Proof.
           + now eapply LCon_le_in_LCon.
           + eapply Bar_lub_ub_aux.
           + eapply Bar_lub_AllInLCon_aux.
-          + intros.
-            unshelve eapply Pe.
       }
       eapply Nat.eq_le_incl.
-      eapply Pe.
+      erewrite (AllInLCon_Irrel _ _ allinBar_lub).
+      erewrite (wfLCon_le_Irrel _ _ f).
+      reflexivity.
 Qed.      
 
 Lemma Max_Bar_Bar_lub (wl : wfLCon) (n : nat)
   (P : forall wl' : wfLCon, wl' ≤ε wl -> AllInLCon n wl' -> nat)
-  (Pe : forall wl' (τ τ' : wl' ≤ε wl) (ne ne' : AllInLCon n wl'),
-      P wl' τ ne = P wl' τ' ne')
   (wl' : wfLCon) (τ : wl' ≤ε wl) (ne : AllInLCon n wl')
-  f allinBar :
+  (f : Bar_lub wl wl' n τ ne ≤ε wl)
+  (allinBar : AllInLCon n (Bar_lub wl wl' n τ ne)) :
   P (Bar_lub wl wl' n τ ne) f allinBar <= Max_Bar wl n P.
 Proof.
   unfold Bar_lub ; unfold Max_Bar ; cbn.
