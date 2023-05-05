@@ -19,7 +19,6 @@ Section Reflexivities.
     - intros.
       now eapply (codomN Δ a l' ρ τ Ninfl h).
     - intros ; eapply IHdom.
-    - intros ; now eapply codomN_Ltrans.
     - intros ; now eapply IHcod.
   Qed.
 

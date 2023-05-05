@@ -31,9 +31,9 @@ Proof.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ _ red red').
     1,2 : eapply whnf_whne, ty_ne_whne. all: eassumption.
-  - destruct RAB as [domB codB redB ? domRedEqN domRedEq codRedEqN codRedEqN_Ltrans codRedEq], RBC as [domC codC redC ? domRedN' domRedEq' codRedN' codRedN_Ltrans' codRedEq'].
-    destruct ΠB as [?? redB' ??? domRedBN domRedB codRedBN codRedBN_Ltrans codRedB],
-        ΠC as [?? redC' ??? domRedCN domRedC codRedCN codRedCN_Ltrans codRedC],
+  - destruct RAB as [domB codB redB ? domRedEqN domRedEq codRedEqN codRedEq], RBC as [domC codC redC ? domRedN' domRedEq' codRedN' codRedEq'].
+    destruct ΠB as [?? redB' ??? domRedBN domRedB codRedBN codRedB],
+        ΠC as [?? redC' ??? domRedCN domRedC codRedCN codRedC],
           ΠBad as [domAdB codAdB], ΠCad as [domAdC codAdC]; cbn in *.
     unshelve epose proof (eqΠB := redtywf_det _ _ _ _ _ _ _ redB' redB) ;
     [ constructor | constructor | .. ].
@@ -114,14 +114,6 @@ Proof.
       * now eapply Nat.max_lub_r ; eapply Nat.max_lub_l.
       * now eapply Nat.max_lub_l ; eapply Nat.max_lub_r.
       * now eapply Nat.max_lub_r ; eapply Nat.max_lub_r.
-    + intros ; cbn in *.
-      unshelve eapply Nat.max_le_compat.
-      * unshelve eapply Nat.max_le_compat.
-        -- now eapply codRedBN_Ltrans.
-        -- now eapply codRedN_Ltrans'.
-      * unshelve eapply Nat.max_le_compat.
-        -- now eapply codRedEqN_Ltrans.
-        -- now eapply codRedCN_Ltrans.        
     + intros. unshelve eapply ihcod.
       10:{ unshelve eapply codRedEq' ; [exact l' | ..] ; try assumption.
            3-5 : eapply AllInLCon_le ; try eassumption.
@@ -271,10 +263,6 @@ Proof.
       now eapply Nat.max_lub_r.
   - etransitivity; tea.
     now rewrite e.
-  - intros.
-    unshelve eapply Nat.max_le_compat.
-    + now eapply eqappN_Ltrans.
-    + now eapply eqappN_Ltrans0.
   - intros. eapply ihcod.
     1: eapply eqApp.
     + eapply AllInLCon_le ; try eassumption.

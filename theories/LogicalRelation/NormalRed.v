@@ -71,18 +71,13 @@ Obligation 7.
   subst.
   now irrelevance.
 Defined.
-Obligation 8.
-  destruct h as [??????? domRed codomN ? codRed codExt] ; 
-    intros; cbn in *.
-  now eapply codomN_Ltrans.
-Defined.
 
-Obligation 9.
+Obligation 8.
   intros;
   assert (wΠ : whnf (tProd F G)) by constructor.
   pose proof (e := redtywf_whnf (PiRedTyPack.red h) wΠ).
   symmetry in e; injection e; clear e.
-  destruct h as [??????? domRed codomN ? codRed codExt] ; 
+  destruct h as [??????? domRed codomN codRed codExt] ; 
     intros; cbn in *.
   subst.
   unshelve eapply codRed ;[exact wl' |..] ; tea.
@@ -93,7 +88,7 @@ Next Obligation.
   assert (wΠ : whnf (tProd F G)) by constructor.
   pose proof (e := redtywf_whnf (PiRedTyPack.red h) wΠ).
   symmetry in e; injection e; clear e.
-  destruct h as [??????? domRed codomN ? codRed codExt] ; 
+  destruct h as [??????? domRed codomN codRed codExt] ; 
     intros; cbn in *.
   subst.
   irrelevance0 ; try reflexivity.
@@ -119,16 +114,11 @@ Obligation 6.
     destruct Rlam as [??????? app eqq]; cbn in *.
   unshelve eapply appN ; try eassumption ; subst ; try eassumption.
 Defined.
-Obligation 7.
-  intros;
-    destruct Rlam as  [???????? app eqq].
-  unshelve eapply appN_Ltrans ; try assumption.
-Defined.
 
 Solve All Obligations with
   intros;
   pose proof (e := redtmwf_whnf (PiRedTm.red Rlam) whnf_tLambda);
-  destruct Rlam as [???????? app eqq]; cbn in *; try exact redN ; subst;
+  destruct Rlam as [??????? app eqq]; cbn in *; try exact redN ; subst;
 first [eapply app ; eassumption | now eapply eqq| eassumption].
   
 

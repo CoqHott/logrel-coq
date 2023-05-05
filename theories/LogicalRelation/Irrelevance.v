@@ -61,8 +61,6 @@ Context {wl Γ lA A lA' A'}
   (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (codomN := @PiRedTyPack.codomN _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA)
   (codomN' := @PiRedTyPack.codomN _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA')
-  (codomN_Ltrans := @PiRedTyPack.codomN_Ltrans _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA)
-  (codomN_Ltrans' := @PiRedTyPack.codomN_Ltrans _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA')
   (codRed := (@PiRedTyPack.codRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
   (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA']< wl >).
@@ -84,7 +82,7 @@ Context
           (ha : [domRed Δ wl' ρ τ Ninfl wfΔ| Δ ||- a : _]< wl' >)
           (ha' : [domRed' Δ wl' ρ τ Ninfl' wfΔ | Δ ||- a : _]< wl' >),
       nat)
-  (eqvCodN_Ltrans : forall {Δ a wl' wl''} (ρ : Δ ≤ Γ)
+(*  (eqvCodN_Ltrans : forall {Δ a wl' wl''} (ρ : Δ ≤ Γ)
                    (τ : wl' ≤ε wl) (τ' : wl'' ≤ε wl)
                    (Ninfl : AllInLCon domN wl')
                    (Ninfl' : AllInLCon domN wl'')
@@ -100,7 +98,7 @@ Context
           (ha2' : [domRed' Δ wl'' ρ τ' Minfl' wfΔ' | Δ ||- a : _]< wl'' >),
        wl'' ≤ε wl' ->
       (eqvCodN ρ τ' Ninfl' Minfl' Kinfl' wfΔ' ha' ha2') <=
-        (eqvCodN ρ τ Ninfl Minfl Kinfl wfΔ ha ha2))
+        (eqvCodN ρ τ Ninfl Minfl Kinfl wfΔ ha ha2))*)
    (eqvCod : forall {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
                     (Ninfl : AllInLCon domN wl')
                     (Ninfl' : AllInLCon domN' wl')
@@ -160,12 +158,6 @@ Proof.
       eapply Nat.max_lub_l.
       now eapply Nat.max_lub_l.
       eassumption.
-  - intros. cbn in *.
-    unshelve eapply Nat.max_le_compat.
-    + unshelve eapply Nat.max_le_compat.
-      * now eapply codomN_Ltrans.
-      * now eapply codomN_Ltrans0.
-    + now eapply eqvCodN_Ltrans.
   - intros ; cbn in *.
     unshelve eapply eqvCod ; cbn in *.
     + eapply AllInLCon_le ; try eassumption.
@@ -231,12 +223,6 @@ Proof.
   - apply (tm_nf_conv isnf).
     + destruct ΠA'; simpl in * ; apply eqPi.
   - now eapply convtm_conv.
-  - intros ; cbn in *.
-    unshelve eapply Nat.max_le_compat.
-    + unshelve eapply Nat.max_le_compat.
-      * now eapply appN_Ltrans.
-      * now eapply codomN_Ltrans.
-    + now eapply eqvCodN_Ltrans.
   - intros; unshelve eapply eqvCod.
     + eapply AllInLCon_le ; try eassumption.
       eapply Nat.max_lub_r.
@@ -300,12 +286,6 @@ Proof.
         eapply AllInLCon_le ; try eassumption.
         now eapply Nat.max_lub_r.
   - now eapply convtm_conv.
-  - intros ; cbn in *.
-    unshelve eapply Nat.max_le_compat.
-    + unshelve eapply Nat.max_le_compat.
-      * now eapply eqappN_Ltrans.
-      * now eapply codomN_Ltrans.
-    + now eapply eqvCodN_Ltrans.
   - intros; unshelve eapply eqvCod.
     + eapply AllInLCon_le ; try eassumption.
       eapply Nat.max_lub_r ; now eapply Nat.max_lub_l.
@@ -339,8 +319,6 @@ Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
   (domRed' := (@PiRedTyPack.domRed _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (codomN := @PiRedTyPack.codomN _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA)
   (codomN' := @PiRedTyPack.codomN _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA')
-  (codomN_Ltrans := @PiRedTyPack.codomN_Ltrans _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA)
-  (codomN_Ltrans' := @PiRedTyPack.codomN_Ltrans _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA')
   (codRed := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA))
   (codRed' := (@PiRedTyPack.codRed  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ΠA'))
   (eqPi : [Γ |- PiRedTyPack.prod ΠA ≅ PiRedTyPack.prod ΠA']< wl >)
@@ -360,7 +338,7 @@ Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
           (ha : [domRed Δ wl' ρ τ Ninfl wfΔ| Δ ||- a : _]< wl' >)
           (ha' : [domRed' Δ wl' ρ τ Ninfl' wfΔ | Δ ||- a : _]< wl' >),
       nat)
-  (eqvCodN_Ltrans : forall {Δ a wl' wl''} (ρ : Δ ≤ Γ)
+(*  (eqvCodN_Ltrans : forall {Δ a wl' wl''} (ρ : Δ ≤ Γ)
                    (τ : wl' ≤ε wl) (τ' : wl'' ≤ε wl)
                    (Ninfl : AllInLCon domN wl')
                    (Ninfl' : AllInLCon domN wl'')
@@ -376,7 +354,7 @@ Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
           (ha2' : [domRed' Δ wl'' ρ τ' Minfl' wfΔ' | Δ ||- a : _]< wl'' >),
       wl'' ≤ε wl' ->
       (eqvCodN ρ τ' Ninfl' Minfl' Kinfl' wfΔ' ha' ha2') <=
-        (eqvCodN ρ τ Ninfl Minfl Kinfl wfΔ ha ha2))
+        (eqvCodN ρ τ Ninfl Minfl Kinfl wfΔ ha ha2))*)
    (eqvCod : forall {Δ a wl'} (ρ : Δ ≤ Γ) (τ : wl' ≤ε wl)
                     (Ninfl : AllInLCon domN wl')
                     (Ninfl' : AllInLCon domN' wl')
@@ -644,7 +622,7 @@ Proof.
     destruct lrA' as [| | ? ? A' ΠA' HAad' | | |] ; try solve [destruct s] ; clear s.
     pose (PA := PiRedTyPack.pack ΠA HAad).
     pose (PA' := PiRedTyPack.pack ΠA' HAad').
-    destruct he as [dom0 cod0 ??? domRed ? ? codRed], ΠA' as [dom1 cod1].
+    destruct he as [dom0 cod0 ??? domRed ? codRed], ΠA' as [dom1 cod1].
     assert (tProd dom0 cod0 = tProd dom1 cod1) as ePi
     by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
@@ -656,9 +634,8 @@ Proof.
       intros; unshelve eapply IHdom.
       1: now eapply (LRAd.adequate (PiRedTyPack.domRed PA' _ _ _ _)).
       now eapply domRed.
-    + intros ; cbn in *.
-      now eapply codomN_Ltrans.
-    + intros; unshelve eapply IHcod.
+    + cbn ; intros.
+      unshelve eapply IHcod.
       1: eapply (LRAd.adequate (PiRedTyPack.codRed PA' _ _ _ _ _ _ _)).
       now eapply codRed. 
   - destruct lrA' as [| | ? A' ΠA' HAad'| | |] ; try solve [destruct s] ; clear s.
@@ -694,8 +671,6 @@ Proof.
     + intros Δ a wl' ρ τ Ninfl tΔ ra.
       now eapply IHcod.
     + assumption.
-    + cbn ; intros.
-      now eapply codomN_Ltrans.
     + cbn. intros Δ a b wl' ρ τ Ninfl tΔ ra rb rab wl'' τ' Minfl.
       destruct (LRIrrelevantPreds IH wl' Δ (dom⟨ρ⟩) (dom⟨ρ⟩)
                   (domAd  Δ wl' ρ τ Ninfl tΔ) (IHdom  Δ wl' ρ τ Ninfl tΔ : LRPackAdequate (LogRel@{i' j' k' l'} lA) (IHdom  Δ wl' ρ τ Ninfl tΔ))
@@ -1008,8 +983,6 @@ Proof.
     + assumption.
     + assumption.
     + symmetry; eassumption.
-    + cbn in * ; intros.
-      now eapply eqappN_Ltrans.
     + intros. apply ihcod. now eapply eqApp.
   - intros ???? NA.
     set (G := _); enough (h : G × (forall t u, NatPropEq NA t u -> NatPropEq NA u t)) by apply h.
@@ -1074,7 +1047,6 @@ Proof.
     + now eapply wft_Ltrans.
     + now eapply wft_Ltrans.
     + now eapply convty_Ltrans.
-    + cbn. intros ; now eapply codomN_Ltrans.
     + intros ; now eapply codExt.
     + cbn in *.
       econstructor.
