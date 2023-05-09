@@ -242,30 +242,45 @@ Proof.
   now eapply consRed'.
 Qed.
 
-Lemma consEqRed {Γ A A' hd hd' tl tl' l}
+Lemma consEqRed {Γ A A' P P' hd hd' tl tl' l}
   (RA: [Γ ||-< l > A])
   (RA': [Γ ||-< l > A'])
   (RLA: [Γ ||-< l > tList A]) 
   (RLA': [Γ ||-< l > tList A']) :
+  [Γ |- P] ->
+  [Γ |- P'] ->
   [RA | Γ ||- A ≅ A'] ->
+  [RA | Γ ||- A ≅ P] ->
+  [RA' | Γ ||- A' ≅ P'] ->
   [RA | Γ ||- hd : A] ->
   [RA' | Γ ||- hd' : A'] ->
   [RA | Γ ||- hd ≅ hd' : A] ->
   [RLA | Γ ||- tl ≅ tl' : tList A] ->
   [RLA | Γ ||- tl : tList A] ->
   [RLA' | Γ ||- tl' : tList A'] ->
-  [RLA | Γ ||- tCons A hd tl ≅ tCons A' hd' tl' : tList A ].
+  [RLA | Γ ||- tCons P hd tl ≅ tCons P' hd' tl' : tList A ].
 Proof.
-  intros. escape.
-  enough [ normList RLA | Γ ||- tCons A hd tl ≅ tCons A' hd' tl' : _] by irrelevance.
+  intros; escape.
+  assert [normList RLA | Γ ||- tList A ≅ tList A' ]
+    by now unshelve eapply listEqRed.
+  enough [ normList RLA | Γ ||- tCons P hd tl ≅ tCons P' hd' tl' : _] by irrelevance.
   unshelve econstructor.
+  - now eapply consRed'.
   - eapply consRed'; tea.
-    eapply LRTyEqRefl_.
-  - eapply consRed'; tea.
-    + eapply LRTmRedConv; tea. eapply LRTyEqSym; tea.
-    + eapply LRTmRedConv; tea. unshelve eapply listEqRed; tea. eapply LRTyEqSym; tea.
-  - eapply convtm_cons ; tea.
+    + eapply LRTransEq; [| tea]; tea.
+    + eapply LRTmRedConv; tea.
+      now eapply LRTyEqSym.
+    + eapply LRTmRedConv; tea. 
+      now eapply LRTyEqSym.
+  - cbn. eapply convtm_conv.
+    1: eapply convtm_cons.
+    + etransitivity; tea; etransitivity; tea; now symmetry.
+    + now eapply convtm_conv.
+    + eapply convtm_conv; tea.
+      now eapply convty_list.
+    + symmetry; now eapply convty_list.
   - econstructor; tea; cbn; try solve [ irrelevance | eapply LRTyEqRefl_ ].
+    1: eapply LRTransEq; [| tea]; irrelevance.
     change [normList RLA | Γ ||- tl ≅ tl' : tList A].
     irrelevance.
 Qed.
