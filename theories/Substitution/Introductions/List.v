@@ -28,7 +28,7 @@ Defined.
 
 
 Lemma listEqRed {Γ A A' l}
-  (RA: [Γ ||-<l> A]) (RA': [Γ ||-<l> A'])
+  (RA: [Γ ||-<l> A]) (RA': [Γ |- A'])
   (RLA: [Γ ||-<l> tList A])
   :
   [Γ ||-<l> A ≅ A' | RA] -> [Γ ||-<l> tList A ≅ tList A' | RLA ].
@@ -36,7 +36,7 @@ Proof.
   intros.
   enough ([ normList RLA | Γ ||- tList A ≅ tList A']) by irrelevance.
   econstructor.
-  - eapply redtywf_refl. escape. gen_typing.
+  - eapply redtywf_refl. now eapply wft_list.
   - cbn. eapply convty_list. escape. assumption.
   - irrelevance.
 Defined.
@@ -48,7 +48,7 @@ Proof.
     now eapply validTy.
   + eapply listEqRed ; tea.
     (* now eapply validTyExt. *)
-    1-2: now instAllValid vσ vσ' vσσ'.
+    1-2: now instAllValid vσ vσ' vσσ' ; escape.
 Defined.
 
 Lemma listCongValid {l Γ A A'} (VΓ : [||-v Γ])
@@ -60,7 +60,7 @@ Proof.
   constructor; intros.
   pose (h:=validTy VA _ Vσ).
   eapply listEqRed; tea.
-  1-2: now instValid Vσ.
+  1-2: now instValid Vσ; escape.
 Qed.
 
 (* this is a copy paste from Nat.v *)
@@ -118,7 +118,7 @@ Proof.
       now eapply UnivEq'.
     + refine (LRTyEqIrrelevantCum@{i j k l h i j k } _ _ _ _ _ _ _ _).
       eapply (listEqRed (l:=zero)); tea.
-      1: now eapply UnivEq'.
+      1: now eapply escape; eapply UnivEq'.
       now eapply UnivEqEq.
       Unshelve.
       1: irrelevanceCum.
@@ -245,10 +245,9 @@ Qed.
 Lemma consEqRed {Γ A A' hd hd' tl tl' l}
   (RA: [Γ ||-< l > A])
   (RA': [Γ ||-< l > A'])
-  (RLA: [Γ ||-< l > tList A])
+  (RLA: [Γ ||-< l > tList A]) 
   (RLA': [Γ ||-< l > tList A']) :
   [RA | Γ ||- A ≅ A'] ->
-  [RLA | Γ ||- tList A ≅ tList A'] ->
   [RA | Γ ||- hd : A] ->
   [RA' | Γ ||- hd' : A'] ->
   [RA | Γ ||- hd ≅ hd' : A] ->
@@ -264,7 +263,7 @@ Proof.
     eapply LRTyEqRefl_.
   - eapply consRed'; tea.
     + eapply LRTmRedConv; tea. eapply LRTyEqSym; tea.
-    + eapply LRTmRedConv; tea. eapply LRTyEqSym; tea.
+    + eapply LRTmRedConv; tea. unshelve eapply listEqRed; tea. eapply LRTyEqSym; tea.
   - eapply convtm_cons ; tea.
   - econstructor; tea; cbn; try solve [ irrelevance | eapply LRTyEqRefl_ ].
     change [normList RLA | Γ ||- tl ≅ tl' : tList A].
@@ -335,12 +334,40 @@ Proof.
       * now eapply simple_appTerm.
       * intuition.
     + eapply redtm_map_cons; tea.
-      * now eapply escapeEq. 
+      * now eapply escapeEq.
       * now eapply escapeTerm.
-      * eapply escapeTerm.
-        admit.
-  - intros.
-    admit.
+      * change [LRList' LA' | Γ ||- tl : _ ] in l0.
+        now eapply escapeTerm.
+
+  - intros. cbn.
+    eapply redSubstTerm.
+    + enough [normList RLB | Γ ||- tMap A B f l0 : tList B] by irrelevance.
+      econstructor.
+      * cbn. apply redtmwf_refl. apply ty_map; tea.
+        match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+      * { cbn.
+          Check r. (* check Neutral.v ; neuTerm *)
+          admit.
+
+
+          (* 1-2: now eapply escapeEq; apply LRTyEqRefl_. *)
+          (* 2: now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end. *)
+          (* now eapply escapeEqTerm; apply LREqTermRefl_. *)
+        }
+      * { constructor. cbn. constructor.
+          - apply tm_ne_map; try solve [ eapply reifyType; tea | eapply reifyTerm; tea ].
+            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+          - apply ty_map; tea.
+            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+          - eapply convneu_map; try solve [ eapply escapeEq; eapply LRTyEqRefl_
+                                          | eapply escapeEqTerm; eapply LREqTermRefl_; tea ].
+            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => destruct H end.
+        }
+    + apply redtm_refl ; apply ty_map ; tea.
+      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+
+      Unshelve.
+      all: tea.
 Admitted.
 
 Lemma mapEqRedAux {Γ A A' B B' f f' l}
@@ -366,8 +393,9 @@ Lemma mapEqRedAux {Γ A A' B B' f f' l}
   (forall x x' (Rxx': ListRedTmEq _ _ LA_ x x'),
         [Γ ||-<l> tMap A B f x ≅ tMap A' B' f' x' : tList B | RLB])
     ×
-    (forall x x' (Rxx': ListPropEq _ _ LA_ x x'),
+    (forall x x' (Rxx': ListPropEq _ _ LA_ x x'), 
           [Γ ||-<l> tMap A B f x ≅ tMap A' B' f' x' : tList B | RLB]).
+Proof.
   apply ListRedEqInduction.
   - intros.
     unshelve eapply LREqTermHelper.
@@ -395,13 +423,10 @@ Lemma mapEqRedAux {Γ A A' B B' f f' l}
       econstructor ; tea.
       irrelevance.
     + unshelve eapply mapRedAux ; tea.
-      constructor; tea. 
-      eapply transEq.
+      constructor; tea.
+      unshelve eapply LRTransEq.
+      5: eassumption.
       eapply LRTyEqSym ; tea.
-      eassumption.
-      Unshelve.
-      all: tea.
-      admit.
     + cbn. escape. eapply nilEqRed; tea.
       eapply LRTyEqRefl_.
   - intros.
@@ -557,26 +582,49 @@ Lemma mapPropRedIdAux {Γ A i}
 Proof.
   apply ListRedInduction.
   - intros.
-    eapply transEqTerm.
-    + eapply mapRedAux. eassumption.
-    + eapply transEqTerm. 1: eassumption.
+    eapply transEqTerm; cycle 1.
+    + eapply transEqTerm. 1: now eassumption.
       eapply LRTmEqSym.
       eapply redTmFwdConv; tea. 1: now econstructor.
       now eapply ListProp_whnf.
+    + unshelve eapply mapRedAux; tea.
   - intros. eapply nilEqRed ; tea.
     + now escape.
     + eapply LRTyEqRefl_.
-  - intros. eapply consEqRed ; tea.
-    + eapply listEqRed. 1: admit. eassumption.
+  - intros. eapply consEqRed ; tea. (* TODO: a problem with hypotheses?? modify consEqRed!!! *)
     + eapply simple_appTerm; tea.
     + now eapply LRTmRedConv.
-    + admit.
-    + eapply transEqTerm. 2: eassumption.
-      admit.
-    + admit.
-    + admit.
-  - (* just reconstruct *)
-    admit.
+    + eapply redSubstTerm. 1: now irrelevance.
+      apply redtm_id_beta.
+      * escape ; tea.
+      * unshelve eapply escapeEq ; tea.
+        eapply LRTyEqRefl_.
+      * unshelve eapply escapeTerm ; tea.
+        irrelevance.
+    + eapply transEqTerm. 2: now eassumption.
+      now unshelve eapply mapRedAux.
+    + unshelve eapply (fst (mapRedAux _)) ; tea.
+      change [LRList' LA' | Γ ||- tl : _ ] in l.
+      change [LRList' (normList0 LA') | Γ ||- tl : _ ].
+      irrelevance.
+    + change [LRList' LA' | Γ ||- tl : _ ] in l.
+      eapply LRTmRedConv.
+      2: eassumption.
+      now eapply listEqRed.
+  - intros.
+    eapply neuTermEq.
+    + apply tm_ne_map.
+      1-2: now eapply reifyType.
+      * now eapply reifyTerm.
+      * now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + eapply ty_map; escape; tea.
+      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + apply convneu_map_id. 1: now escape; tea.
+      now eapply NeNf.refl.
+
+    Unshelve.
 Admitted.
 
 Lemma mapRedIdValid {Γ A l' l i}
