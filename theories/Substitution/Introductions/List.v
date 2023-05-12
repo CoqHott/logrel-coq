@@ -245,7 +245,7 @@ Qed.
 Lemma consEqRed {Γ A A' P P' hd hd' tl tl' l}
   (RA: [Γ ||-< l > A])
   (RA': [Γ ||-< l > A'])
-  (RLA: [Γ ||-< l > tList A]) 
+  (RLA: [Γ ||-< l > tList A])
   (RLA': [Γ ||-< l > tList A']) :
   [Γ |- P] ->
   [Γ |- P'] ->
@@ -270,7 +270,7 @@ Proof.
     + eapply LRTransEq; [| tea]; tea.
     + eapply LRTmRedConv; tea.
       now eapply LRTyEqSym.
-    + eapply LRTmRedConv; tea. 
+    + eapply LRTmRedConv; tea.
       now eapply LRTyEqSym.
   - cbn. eapply convtm_conv.
     1: eapply convtm_cons.
@@ -419,9 +419,11 @@ Lemma mapEqRedAux {Γ A A' B B' f f' l}
   (forall x x' (Rxx': ListRedTmEq _ _ LA_ x x'),
         [Γ ||-<l> tMap A B f x ≅ tMap A' B' f' x' : tList B | RLB])
     ×
-    (forall x x' (Rxx': ListPropEq _ _ LA_ x x'), 
+    (forall x x' (Rxx': ListPropEq _ _ LA_ x x'),
         [ LRList' LA_ | _ ||- x : _ ] ->
+        ListProp _ _ LA_ x ->
         [ LRList' LA_ | _ ||- x' : _ ] ->
+        ListProp _ _ LA_ x' ->
           [Γ ||-<l> tMap A B f x ≅ tMap A' B' f' x' : tList B | RLB]).
 Proof.
   apply ListRedEqInduction.
@@ -431,8 +433,10 @@ Proof.
       apply X.
       - eapply redTmFwd. exact Rt.
         1-2: admit.
+      - admit.
       - eapply redTmFwd. exact Ru.
         1-2: admit.
+      - admit.
     }
     3: now unshelve eapply mapRedAux.
     4: eassumption. 1: eassumption.
@@ -466,12 +470,18 @@ Proof.
 
   - intros.
     eapply LREqTermHelper.
-    + unshelve eapply (fst (mapRedAux _)); tea.
-      change [ LRList' (normList0 LA_) | Γ ||- tCons P hd tl : _ ].
-      irrelevance.
-    + unshelve eapply (fst (mapRedAux _)); tea.
-      change [ LRList' (normList0 LA'_) | Γ ||- tCons P' hd' tl' : _ ].
-      eapply LRTmRedConv; tea.
+    + unshelve eapply (snd (mapRedAux _)); tea.
+      eapply ListIrrelevanceTm. 4: now eassumption.
+      all: admit.
+    + unshelve eapply (snd (mapRedAux _)); tea.
+      eapply ListIrrelevanceTm. 4: now eassumption.
+      all: admit.
+      (* * eapply transEq; tea; eapply LRTyEqSym; tea. *)
+      (* * eapply transEq. 2: tea. tea. irrelevance. *)
+      (* * eapply LRTmRedConv; tea. irrelevance. *)
+      (* * eapply LRTmRedConv; tea. eapply LRTyEqSym. eassumption. *)
+      (* * eapply LRTmEqRedConv; tea. irrelevance. *)
+      (* * eapply LRTmEqRedConv; tea. eapply LRTyEqSym. eassumption. *)
     + tea.
     + admit.
   - intros.
@@ -494,8 +504,12 @@ Proof.
       * { eapply convneu_map.
           - eapply escapeEq. eapply LRTyEqRefl_.
           - cbn. eapply escapeEq. eapply LRTyEqRefl_.
-          - cbn. admit.
-          - admit.
+          - eapply escapeEqTerm.
+            eapply LREqTermRefl_; tea.
+          - eapply convneu_conv. 2: eapply escapeEq; tea.
+            match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
+            cbn in *.
+            etransitivity. 1-2: admit.
         }
       * { constructor. constructor.
           - eapply tm_ne_map.
