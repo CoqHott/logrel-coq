@@ -498,7 +498,6 @@ Module DeclarativeTypingProperties.
     all: try now econstructor.
     - intros.
       now eapply typing_wk.
-    - easy.
   Qed.
 
   #[export, refine] Instance TypingDeclProperties : TypingProperties (ta := de) := {}.
@@ -506,7 +505,6 @@ Module DeclarativeTypingProperties.
     all: try (intros; now econstructor).
     - intros.
       now eapply typing_wk.
-    - easy. 
     - intros.
       econstructor ; tea.
       now apply TypeSym, RedConvTyC.
@@ -520,7 +518,6 @@ Module DeclarativeTypingProperties.
     all: now econstructor.
   - intros.
     now apply typing_wk.
-  - easy.
   - intros.
     eapply TypeTrans ; [eapply TypeTrans | ..].
     2: eassumption.
@@ -543,7 +540,6 @@ Module DeclarativeTypingProperties.
     now econstructor.
   - intros.
     now eapply typing_wk.
-  - easy.
   - intros.
     econstructor.
     2: now eapply TypeSym, RedConvTyC.

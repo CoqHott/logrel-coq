@@ -1,7 +1,7 @@
 (** * LogRel.GenericTyping: the generic interface of typing used to build the logical relation. *)
 From Coq Require Import CRelationClasses ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction.
 
 (** In order to factor the work, the logical relation is defined over a generic
 notion of typing (and conversion),
@@ -168,8 +168,6 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 
 Section GenericTyping.
 
-  Import DeclarativeTypingData.
-
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
@@ -184,14 +182,12 @@ Section GenericTyping.
     wfc_convtm {Γ A t u} : [Γ |- t ≅ u : A] -> [|- Γ];
     wfc_redty {Γ A B} : [Γ |- A ⇒* B] -> [|- Γ];
     wfc_redtm {Γ A t u} : [Γ |- t ⇒* u : A] -> [|- Γ];
-    wfc_sound {Γ} : [|- Γ] -> [|-[de] Γ]
   }.
 
   Class WfTypeProperties :=
   {
     wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A] -> [Δ |- A⟨ρ⟩] ;
-    wft_sound {Γ A} : [Γ |- A] -> [Γ |-[de] A] ;
     wft_U {Γ} : 
       [ |- Γ ] ->
       [ Γ |- U ] ;
@@ -218,7 +214,6 @@ Section GenericTyping.
   {
     ty_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t : A] -> [Δ |- t⟨ρ⟩ : A⟨ρ⟩] ;
-    ty_sound {Γ A t} : [Γ |- t : A] -> [Γ |-[de] t : A] ;
     ty_var {Γ} {n decl} :
       [   |- Γ ] ->
       in_ctx Γ n decl ->
@@ -283,7 +278,6 @@ Section GenericTyping.
     convty_equiv {Γ} :> PER (conv_type Γ) ;
     convty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ≅ B] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩] ;
-    convty_sound {Γ A B} : [Γ |- A ≅ B] -> [Γ |-[de] A ≅ B] ;
     convty_exp {Γ A A' B B'} :
       [Γ |- A ⇒* A'] -> [Γ |- B ⇒* B'] ->
       [Γ |- A' ≅ B'] -> [Γ |- A ≅ B] ;
@@ -309,7 +303,6 @@ Section GenericTyping.
     convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
     convtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩] ;
-    convtm_sound {Γ A t u} : [Γ |- t ≅ u : A] -> [Γ |-[de] t ≅ u : A] ;
     convtm_exp {Γ A A' t t' u u'} :
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
