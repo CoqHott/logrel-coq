@@ -503,54 +503,30 @@ Proof.
         Unshelve. all: tea.
 
   - intros.
-    enough [normList RLB | Γ ||- tMap A B f l0 ≅ tMap A' B' f' l' : tList B] by irrelevance.
-    unshelve econstructor.
-    + change [normList RLB | Γ ||- tMap A B f l0 : _ ].
-      unshelve eapply (fst (mapRedAux _)); tea.
-      change [LRList' (normList0 LA_) | Γ ||- l0 : tList A].
-      match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-      irrelevance.
-    + enough [normList RLB' | Γ ||- tMap A' B' f' l' : _ ].
-      1:{
-        change [normList RLB | Γ ||- tMap A' B' f' l' : _ ].
-        eapply LRTmRedConv. 1: eapply LRTyEqSym ; tea.
-        eassumption.
-      }
-      econstructor.
-      * eapply redtm_refl. apply ty_map; escape; tea.
-        unshelve eapply ty_conv. 2-3: tea.
-      * { apply convtm_convneu. eapply convneu_map.
-          - eapply escapeEq. eapply LRTyEqRefl_.
-          - cbn. eapply escapeEq. eapply LRTyEqRefl_.
-          - eapply escapeEqTerm.
-            eapply LREqTermRefl_; tea.
-          - eapply convneu_conv. 2: eapply escapeEq; tea.
-            match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-            etransitivity; tea. now symmetry.
-        }
-      * { constructor. constructor.
-          - eapply tm_ne_map.
-            1-2: now eapply reifyType.
-            1: now eapply reifyTerm.
-            eapply tm_ne_conv; escape; tea.
-            now eapply NeNf.neR.
-            eapply escape.
-            exact (LRList' LA'_).
-          - eapply ty_map; escape; tea.
-            eapply ty_conv; escape; tea.
-          - eapply convneu_map.
-            + eapply escapeEq. eapply LRTyEqRefl_.
-            + eapply escapeEq. eapply LRTyEqRefl_.
-            + eapply escapeEqTerm. now eapply LREqTermRefl_.
-            + eapply convneu_conv. 2: now eapply escapeEq.
-              match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-              etransitivity; tea. now symmetry.
-        }
-    + admit.
-    + admit.
-      Unshelve. all: admit.
-        (* Typeclasses -> typed vs untyped reduction *)
-Admitted.
+    apply neuTermEq.
+    + apply tm_ne_map.
+      1-2: now eapply reifyType.
+      * now eapply reifyTerm.
+      * now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
+    + eapply tm_ne_conv. 3: symmetry; now escape.
+      eapply tm_ne_map.
+      1-2: now eapply reifyType.
+      * now eapply reifyTerm.
+      * eapply tm_ne_conv.
+        1: eapply NeNf.neR ; eassumption.
+        1: eapply wft_list; now escape.
+        1: now escape.
+      * eapply wft_list; now escape.
+    + eapply ty_map.
+      all: now escape.
+    + eapply ty_conv. 2: symmetry; now escape.
+      eapply ty_map.
+      1-3: try now escape.
+      eapply ty_conv. 1-2: now escape.
+    + eapply convneu_map.
+      1-3: now escape.
+      now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
+Qed.
 
 (* TODO: move; also wk_arr vs arr_wk *)
 Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
