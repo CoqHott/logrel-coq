@@ -432,11 +432,13 @@ Proof.
     8: {
       apply X.
       - eapply redTmFwd. exact Rt.
-        1-2: admit.
-      - admit.
+        + destruct Rt. assumption.
+        + eapply ListProp_whnf; destruct Rt. eassumption.
+      - destruct Rt; assumption.
       - eapply redTmFwd. exact Ru.
-        1-2: admit.
-      - admit.
+        + destruct Ru. assumption.
+        + eapply ListProp_whnf; destruct Ru. eassumption.
+      - destruct Ru; assumption.
     }
     3: now unshelve eapply mapRedAux.
     4: eassumption. 1: eassumption.
@@ -455,35 +457,54 @@ Proof.
     2: destruct Ru; reflexivity.
     now unshelve eapply mapRedAux.
   - intros.
-    eapply LREqTermHelper.
-    3: eassumption.
-    + unshelve eapply mapRedAux ; tea.
-      econstructor ; tea.
-      irrelevance.
-    + unshelve eapply mapRedAux ; tea.
-      constructor; tea.
-      unshelve eapply LRTransEq.
-      5: eassumption.
-      eapply LRTyEqSym ; tea.
-    + cbn. escape. eapply nilEqRed; tea.
-      eapply LRTyEqRefl_.
+    unshelve eapply LREqTermHelper.
+    7: eassumption.
+    4:{ unshelve eapply mapRedAux ; tea.
+        econstructor ; tea.
+        irrelevance.
+    }
+    3:{ unshelve eapply mapRedAux ; tea.
+        constructor; tea.
+        unshelve eapply LRTransEq.
+        5: eassumption.
+        eapply LRTyEqSym ; tea.
+    }
+    1: tea.
+    cbn. escape. eapply nilEqRed; tea.
+    eapply LRTyEqRefl_.
 
   - intros.
     eapply LREqTermHelper.
     + unshelve eapply (snd (mapRedAux _)); tea.
-      eapply ListIrrelevanceTm. 4: now eassumption.
-      all: admit.
+      unshelve eapply ListIrrelevanceTm. 7: now eassumption.
+      * unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+      * unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+      * constructor. all: intuition.
+        all: irrelevance.
     + unshelve eapply (snd (mapRedAux _)); tea.
-      eapply ListIrrelevanceTm. 4: now eassumption.
-      all: admit.
-      (* * eapply transEq; tea; eapply LRTyEqSym; tea. *)
-      (* * eapply transEq. 2: tea. tea. irrelevance. *)
-      (* * eapply LRTmRedConv; tea. irrelevance. *)
-      (* * eapply LRTmRedConv; tea. eapply LRTyEqSym. eassumption. *)
-      (* * eapply LRTmEqRedConv; tea. irrelevance. *)
-      (* * eapply LRTmEqRedConv; tea. eapply LRTyEqSym. eassumption. *)
+      unshelve eapply ListIrrelevanceTm. 7: now eassumption.
+      all: try now escape.
+      (* TODO: help! *)
+      admit.
     + tea.
-    + admit.
+    + cbn; dependent inversion X5; subst; cbn.
+      2: destruct r as [?%tm_ne_whne]; inv_whne.
+      dependent inversion X7; subst; cbn.
+      2: destruct r0 as [?%tm_ne_whne]; inv_whne.
+      eapply consEqRed. 3: eassumption.
+      all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
+      * now eapply simple_appTerm.
+      * eapply simple_appTerm; tea.
+        eapply LRTmRedConv; tea. irrelevance.
+      * now eapply simple_appcongTerm.
+      * eapply (fst (mapRedAux _)); tea.
+      * unshelve eapply (fst (mapRedAux _)); tea.
+        change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
+        eapply LRTmRedConv; tea.
+        Unshelve. all: tea.
+        (* TODO: help! *)
+        admit.
+
   - intros.
     enough [normList RLB | Γ ||- tMap A B f l0 ≅ tMap A' B' f' l' : tList B] by irrelevance.
     unshelve econstructor.
@@ -508,7 +529,6 @@ Proof.
             eapply LREqTermRefl_; tea.
           - eapply convneu_conv. 2: eapply escapeEq; tea.
             match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-            cbn in *.
             etransitivity. 1-2: admit.
         }
       * { constructor. constructor.
@@ -529,6 +549,7 @@ Proof.
               match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
               etransitivity; tea. now symmetry.
         }
+
 
         all: admit.
 Admitted.
