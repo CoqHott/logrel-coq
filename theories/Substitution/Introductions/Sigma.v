@@ -134,7 +134,6 @@ Section SigInjValid.
     + unshelve eapply (PolyRed.posExt p wk_id wfΔ); tea.
       1: irrelevance0; [|exact (validHead Vσ)]; now rewrite wk_id_ren_on.
       irrelevance0; [|exact (eqHead Vσσ')]; now rewrite wk_id_ren_on.
-    Unshelve. 2: now eapply h.
   Qed.
   
 End SigInjValid.
@@ -602,7 +601,7 @@ Section PairRed.
       eapply LRTyEqSym.
       eapply transEq; tea.
       now eapply LRTyEqSym.
-      Unshelve. 1,4: tea.
+      Unshelve. 1: tea.
   Qed.
 
   Lemma subst_sig {A B σ} : (tSig A B)[σ] = (tSig A[σ] B[up_term_term σ]).
@@ -669,7 +668,6 @@ Section PairRed.
     eapply LRTmEqRedConv; cycle 1.
     + now eapply LRTmEqSym.
     + eapply LRTyEqSym; eapply transEq; cycle 1; tea.
-    Unshelve. 2: tea.
   Qed.
 
 

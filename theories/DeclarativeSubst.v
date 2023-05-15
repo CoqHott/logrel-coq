@@ -42,19 +42,9 @@ Proof.
     2: unshelve eapply VA ; tea ; irrValid.
     cbn.
     unshelve eapply transEq.
-    6: now apply Vconv.
-    1-2: shelve.
-    + unshelve eapply validTy.
-      4: eapply VB.
-      1: eassumption.
-      irrValid.
-    + unshelve eapply validTy.
-      4: eapply VB.
-      1: eassumption.
-      irrValid.
-    + unshelve irrelevanceRefl.
-      2-3: unshelve eapply VB ; tea.
-      all: irrValid.
+    4: now apply Vconv.
+    2-3: unshelve eapply VB ; tea.
+    all: irrValid.
   - intros * Ht * HΔ Hσ.
     unshelve eapply Fundamental_subst_conv in Hσ as [].
     1,3: boundary.

@@ -145,11 +145,11 @@ Proof.
 Qed.
 
 Lemma transValidEq {Γ l A B C} {VΓ : [||-v Γ]}
-  {VA : [Γ ||-v<l> A | VΓ]} {VB : [Γ ||-v<l> B | VΓ]} (VC : [Γ ||-v<l> C | VΓ]):
+  {VA : [Γ ||-v<l> A | VΓ]} {VB : [Γ ||-v<l> B | VΓ]} :
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ C | VΓ | VB] -> [Γ ||-v<l> A ≅ C | VΓ | VA].
 Proof.
   constructor; intros; eapply transEq; now eapply validTyEq.
-  Unshelve. all: tea. now eapply validTy.
+  Unshelve. all: tea.
 Qed.
 
 Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :

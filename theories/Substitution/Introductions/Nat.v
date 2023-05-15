@@ -272,7 +272,7 @@ Section NatElimRedEq.
   Proof.
     intros. eapply transEq; [| eapply LRTyEqSym ]; eapply RPQext; cycle 1; tea.
     now eapply LREqTermRefl_.
-    Unshelve. 3,4: eauto. tea.
+    Unshelve. 2,3: eauto.
   Qed.
 
   Lemma natElimRedAuxLeft : @natRedElimStmt _ _ P hs hz NN RPpt.
@@ -286,7 +286,7 @@ Section NatElimRedEq.
     eapply natElimRedAux; tea.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
       now eapply LREqTermRefl_.
-    Unshelve. 2: eauto. all:tea.
+    Unshelve. all:tea.
   Qed.
 
   Lemma natElimRedEqAux :
@@ -547,9 +547,6 @@ Proof.
     1,2: unshelve econstructor; [now bsimpl| now cbn].
     unshelve econstructor; [|now cbn].
     bsimpl. eapply reflSubst.
-    Unshelve. 1: tea.
-    eapply validTy; tea.
-    unshelve econstructor; [| now cbn]; now bsimpl.
 Qed.
 
 Lemma elimSuccHypTyCongValid {Γ l P P'}

@@ -154,7 +154,7 @@ Section EmptyElimRedEq.
   Proof.
     intros. eapply transEq; [| eapply LRTyEqSym ]; eapply RPQext; cycle 1; tea.
     now eapply LREqTermRefl_.
-    Unshelve. 3,4: eauto. tea.
+    Unshelve. 2,3: eauto.
   Qed.
 
   Lemma emptyElimRedAuxLeft : @emptyRedElimStmt _ _ P NN RPpt.
@@ -168,7 +168,7 @@ Section EmptyElimRedEq.
     eapply emptyElimRedAux; tea.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
       now eapply LREqTermRefl_.
-    Unshelve. 2: eauto. all:tea.
+    Unshelve. all:tea.
   Qed.
 
   Lemma emptyElimRedEqAux :
@@ -316,9 +316,6 @@ Proof.
     1,2: unshelve econstructor; [now bsimpl| now cbn].
     unshelve econstructor; [|now cbn].
     bsimpl. eapply reflSubst.
-    Unshelve. 1: tea.
-    eapply validTy; tea.
-    unshelve econstructor; [| now cbn]; now bsimpl.
 Qed.
 
 End Empty.
