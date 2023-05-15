@@ -222,10 +222,11 @@ Section GenericTyping.
         [ Γ |- A : U] -> 
         [Γ ,, A |- B : U ] ->
         [ Γ |- tProd A B : U ] ;
-    ty_lam {Γ}  {A B t} :
+    ty_lam {Γ}  {A A' B t} :
         [ Γ |- A ] ->
-        [ Γ ,, A |- t : B ] -> 
-        [ Γ |- tLambda A t : tProd A B] ;
+        [ Γ ,, A |- t : B ] ->
+        A' =o A ->
+        [ Γ |- tLambda A' t : tProd A B] ;
     ty_app {Γ}  {f a A B} :
         [ Γ |- f : tProd A B ] -> 
         [ Γ |- a : A ] -> 
@@ -398,11 +399,12 @@ Section GenericTyping.
       [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩] ;
     redtm_sound {Γ A t u} : [Γ |- t ⇒* u : A] -> [t ⇒* u] ;
     redtm_ty_src {Γ A t u} : [Γ |- t ⇒* u : A] -> [Γ |- t : A] ;
-    redtm_beta {Γ A B t u} :
+    redtm_beta {Γ A A' B t u} :
       [ Γ |- A ] ->
       [ Γ ,, A |- t : B ] ->
       [ Γ |- u : A ] ->
-      [ Γ |- tApp (tLambda A t) u ⇒* t[u..] : B[u..] ] ;
+      A' =o A ->
+      [ Γ |- tApp (tLambda A' t) u ⇒* t[u..] : B[u..] ] ;
     redtm_natElimZero {Γ P hz hs} :
         [Γ ,, tNat |- P ] ->
         [Γ |- hz : P[tZero..]] ->
@@ -832,16 +834,16 @@ Section GenericConsequences.
   #[local]
   Hint Resolve ty_simple_app : gen_typing.
   
-  Lemma ty_id {Γ A B C} : 
+  Lemma ty_id {Γ A} :
     [Γ |- A] ->
-    [Γ |- A ≅ B] ->
-    [Γ |- A ≅ C] ->
-    [Γ |- idterm A : arr B C].
+    [Γ |- A ≅ A] ->
+    [Γ |- idterm : arr A A].
   Proof.
     intros.
     eapply ty_conv.
-    2: eapply convty_simple_arr; cycle 1; tea.
-    eapply ty_lam; tea.
+    2: now eapply convty_simple_arr.
+    eapply ty_lam ; tea.
+    2: easy.
     now eapply ty_var0.
   Qed.
   
@@ -849,49 +851,39 @@ Section GenericConsequences.
     [Γ |- A] ->
     [Γ |- A ≅ A] ->
     [Γ |- a : A] ->
-    [Γ |- tApp (idterm A) a ⇒* a : A].
+    [Γ |- tApp idterm a ⇒* a : A].
   Proof.
     intros.
     eapply redtm_meta_conv.
     1: eapply redtm_beta; tea.
     + now eapply ty_var0.
+    + easy. 
     + cbn; now bsimpl.
     + now asimpl.
   Qed.
 
-  Lemma convtm_id {Γ A A' B C} : 
-    [|- Γ] ->
+  Lemma convtm_id {Γ A} : 
     [Γ |- A] ->
-    [Γ |- A'] ->
-    [Γ |- A ≅ A'] ->
-    [Γ |- A ≅ B] ->
-    [Γ |- A ≅ C] ->
-    [Γ |- idterm A ≅ idterm A' : arr B C].
+    [Γ |- A ≅ A] ->
+    [Γ |- idterm ≅ idterm : arr A A].
   Proof.
     intros.
-    assert [Γ |- A ≅ A] by (etransitivity; tea; now symmetry).
-    eapply convtm_conv.
-    2: eapply convty_simple_arr; cycle 1; tea.
-    eapply convtm_eta; tea.
-    { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: constructor.
-    1,2: eapply ty_id; tea; now symmetry.
     assert [|- Γ,, A] by gen_typing.
-    assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk. 
-    eapply convtm_exp.
-    - eapply redty_refl; now renToWk.
-    - cbn. eapply redtm_id_beta.
+    assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk.
+    eapply convtm_eta ; tea.
+    5: eapply convtm_exp.
+    - now apply ty_id.
+    - now constructor.
+    - now apply ty_id.
+    - now constructor.
+    - eapply redty_refl.
+      now renToWk.
+    - eapply redtm_id_beta.
       3: now eapply ty_var0.
       1,2: renToWk; tea; now eapply convty_wk.
-    - cbn. 
-      assert [Γ,, A |- A'⟨↑⟩ ≅ A⟨↑⟩]
-        by (renToWk; symmetry; now eapply convty_wk). 
-      eapply redtm_conv; tea.
-      eapply redtm_id_beta.
-      1: renToWk; now eapply wft_wk.
-      1: now eapply lrefl.
-      eapply ty_conv. 2: now symmetry.
-      now eapply ty_var0.
+    - eapply redtm_id_beta.
+      3: now eapply ty_var0.
+      1,2: renToWk; tea; now eapply convty_wk.
     - eapply convtm_convneu. eapply convneu_var.
       now eapply ty_var0.
   Qed.
@@ -902,10 +894,11 @@ Section GenericConsequences.
     [Γ |- C] ->
     [Γ |- g : arr A B] ->
     [Γ |- f : arr B C] ->
-    [Γ |- comp A f g : arr A C].
+    [Γ |- comp f g : arr A C].
   Proof.
     intros tyA tyB **. 
     eapply ty_lam; tea.
+    2: easy.
     assert [|- Γ,, A] by gen_typing.
     pose (r := @wk1 Γ A).
     eapply ty_simple_app; renToWk.
@@ -933,11 +926,12 @@ Section GenericConsequences.
     [Γ |- f : arr A B] ->
     [Γ |- g : arr B C] ->
     [Γ |- a : A] ->
-    [Γ |- tApp (comp A g f) a ⇒* tApp g (tApp f a) : C].
+    [Γ |- tApp (comp g f) a ⇒* tApp g (tApp f a) : C].
   Proof.
     intros hA hB hC hf hg ha.
     eapply redtm_meta_conv.
-    1: eapply redtm_beta; tea.
+    1: eapply redtm_beta ; cycle -2 ; tea.
+    + easy. 
     + eapply ty_simple_app.
       4: eapply ty_simple_app.
       1,2,4,5: eapply wft_wk1; [gen_typing|].
@@ -958,7 +952,7 @@ Section GenericConsequences.
     [Γ |- g : arr B C] ->
     [Γ |- g' : arr B C] ->
     [Γ,, A |-[ ta ] tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) ≅ tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩] ->
-    [Γ |- comp A g f ≅ comp A g' f' : arr A C].
+    [Γ |- comp g f ≅ comp g' f' : arr A C].
   Proof.
     assert (eq : forall t: term, t⟨↑⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ↑⟩) by (intros; now asimpl).
     intros.

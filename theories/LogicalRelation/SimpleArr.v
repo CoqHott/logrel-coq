@@ -38,14 +38,14 @@ Section SimpleArrow.
   Proof. intros; eapply LRPi'; now eapply ArrRedTy0. Qed.
 
   Lemma idred {Γ l A} (RA : [Γ ||-<l> A]) :
-    [Γ ||-<l> idterm A : arr A A | ArrRedTy RA RA].
+    [Γ ||-<l> idterm : arr A A | ArrRedTy RA RA].
   Proof.
     normRedΠ ΠAA.
     pose proof (LRTyEqRefl_ RA).
     escape.
     assert (h : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) RA (ha : [Δ ||-<l> a : A⟨ρ⟩ | RA]),
-      [Δ ||-<l> tApp (idterm A)⟨ρ⟩ a : A⟨ρ⟩| RA] ×
-      [Δ ||-<l> tApp (idterm A)⟨ρ⟩ a ≅ a : A⟨ρ⟩| RA]
+      [Δ ||-<l> tApp idterm⟨ρ⟩ a : A⟨ρ⟩| RA] ×
+      [Δ ||-<l> tApp idterm⟨ρ⟩ a ≅ a : A⟨ρ⟩| RA]
     ).
     1:{
       intros; cbn; escape.
@@ -154,7 +154,7 @@ Section SimpleArrow.
     (RC : [Γ ||-<l> C]) :
     [Γ ||-<l> f : arr A B | ArrRedTy RA RB] ->
     [Γ ||-<l> g : arr B C | ArrRedTy RB RC] ->
-    [Γ ||-<l> comp A g f : arr A C | ArrRedTy RA RC].
+    [Γ ||-<l> comp g f : arr A C | ArrRedTy RA RC].
   Proof.
     intros Rf Rg.
     normRedΠin Rf; normRedΠin Rg; normRedΠ ΠAC. 
@@ -178,8 +178,8 @@ Section SimpleArrow.
     }
     escape.
     assert (beta : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) RA (ha : [Δ ||-<l> a : A⟨ρ⟩ | RA]),
-      [Δ ||-<l> tApp (comp A g f)⟨ρ⟩ a : _ | wk ρ wfΔ RC] ×
-      [Δ ||-<l> tApp (comp A g f)⟨ρ⟩ a ≅ tApp g⟨ρ⟩ (tApp f⟨ρ⟩ a) : _ | wk ρ wfΔ RC]).
+      [Δ ||-<l> tApp (comp g f)⟨ρ⟩ a : _ | wk ρ wfΔ RC] ×
+      [Δ ||-<l> tApp (comp g f)⟨ρ⟩ a ≅ tApp g⟨ρ⟩ (tApp f⟨ρ⟩ a) : _ | wk ρ wfΔ RC]).
     1:{
       intros; cbn. 
       assert (eq : forall t : term, t⟨↑⟩⟨upRen_term_term ρ⟩ = t⟨ρ⟩⟨↑⟩) by (intros; now asimpl).

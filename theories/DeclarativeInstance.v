@@ -21,7 +21,7 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
   match t with
     | tRel n => ∑ decl, [× T = decl, [|- Γ]& in_ctx Γ n decl]
     | tProd A B =>  [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
-    | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A] & [Γ,, A |- t : B]]
+    | tLambda A' t => ∑ A B, [× T = tProd A B, [Γ |- A], A' =o A & [Γ,, A |- t : B]]
     | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
     | tSort _ => False
     | tNat => T = U
@@ -125,12 +125,12 @@ Section TypingWk.
       econstructor ; tea.
       econstructor.
       now eapply IHA.
-    - intros * _ IHA _ IHt ? ρ ?.
+    - intros * _ IHA _ IHt ? ? ρ ?.
       econstructor.
-      1: now eapply IHA.
-      eapply IHt with (ρ := wk_up _ ρ).
-      econstructor ; tea.
-      now eapply IHA.
+      + now eapply IHA.
+      + eapply IHt with (ρ := wk_up _ ρ).
+        now econstructor.
+      + eauto. 
     - intros * _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -199,15 +199,15 @@ Section TypingWk.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - intros Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
+    - intros Γ u t A A' B _ IHA _ IHt _ IHu ? ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
       1: econstructor.
       + now eapply IHA.
       + eapply IHt with (ρ := wk_up _ ρ).
-        econstructor ; tea.
-        now eapply IHA.
-      + now eapply IHu.
+        now econstructor.
+      + easy.
+      + easy.
       + now asimpl.
       + now asimpl. 
     - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
@@ -588,8 +588,8 @@ Module DeclarativeTypingProperties.
   - intros. now eapply boundary_red_tm_l.
   - intros; split.
     + repeat (econstructor; tea).
-    + eapply redalg_one_step; constructor.
-    + now constructor.
+    + eapply redalg_one_step; constructor. 
+    + now econstructor.
   - intros; split.
     + repeat (econstructor; tea).
       now eapply boundary_tm_ctx.

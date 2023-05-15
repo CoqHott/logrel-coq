@@ -60,10 +60,11 @@ Section Definitions.
           [ Γ |- A : U] -> 
           [Γ ,, A |- B : U ] ->
           [ Γ |- tProd A B : U ]
-      | wfTermLam {Γ} {A B t} :
-          [ Γ |- A ] ->        
-          [ Γ ,, A |- t : B ] -> 
-          [ Γ |- tLambda A t : tProd A B]
+      | wfTermLam {Γ} {A A' B t} :
+          [ Γ |- A ] ->
+          [ Γ ,, A |- t : B ] ->
+          A' =o A ->
+          [ Γ |- tLambda A' t : tProd A B]
       | wfTermApp {Γ} {f a A B} :
           [ Γ |- f : tProd A B ] -> 
           [ Γ |- a : A ] -> 
@@ -137,11 +138,12 @@ Section Definitions.
           [ Γ |- A ≅ C]
   (** **** Conversion of terms *)
   with ConvTermDecl : context -> term -> term -> term -> Type :=
-      | TermBRed {Γ} {a t A B} :
+      | TermBRed {Γ} {a t A A' B} :
               [ Γ |- A ] ->
               [ Γ ,, A |- t : B ] ->
               [ Γ |- a : A ] ->
-              [ Γ |- tApp (tLambda A t) a ≅ t[a..] : B[a..] ]
+              A' =o A ->
+              [ Γ |- tApp (tLambda A' t) a ≅ t[a..] : B[a..] ]
       | TermPiCong {Γ} {A B C D} :
           [ Γ |- A : U] ->
           [ Γ |- A ≅ B : U ] ->

@@ -11,10 +11,6 @@ From LogRel Require Import Utils BasicAst.
 Declare Scope asubst_scope.
 Delimit Scope asubst_scope with asub.
 
-Arguments funcomp {X Y Z}%type_scope (g f)%function_scope.
-
-Notation "f >> g" := (funcomp g f) (at level 50) : function_scope.
-
 Notation "s .: sigma" := (scons s sigma) (at level 55, sigma at next level, right associativity) : asubst_scope.
 
 Notation "s ⟨ xi1 ⟩" := (ren1 xi1 s) (at level 7, left associativity, format "s ⟨ xi1 ⟩") : asubst_scope.
@@ -56,8 +52,8 @@ Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.
 
 Notation arr A B := (tProd A B⟨↑⟩).
-Notation comp A f g := (tLambda A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
-Notation idterm A  := (tLambda A (tRel 0)).
+Notation comp f g := (tLambda None (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
+Notation idterm := (tLambda None (tRel 0)).
 
 Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
 Proof.

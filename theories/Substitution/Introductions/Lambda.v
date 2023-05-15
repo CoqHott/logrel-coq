@@ -13,13 +13,11 @@ Section LambdaValid.
 Context `{GenericTypingProperties}.
 
 
-
-
-
-Context {Γ F G l} {VΓ : [||-v Γ]} (VF : [Γ ||-v<l> F | VΓ]) 
+Context {Γ F F' G l} {VΓ : [||-v Γ]} (VF : [Γ ||-v<l> F | VΓ]) 
   (VΓF := validSnoc VΓ VF)
   (VG : [Γ ,, F ||-v<l> G | VΓF])
-  (VΠFG := PiValid VΓ VF VG).
+  (VΠFG := PiValid VΓ VF VG)
+  (VFF' : F' =o F).
 
 
 Lemma consWkEq {Δ Ξ} σ (ρ : Δ ≤ Ξ) a Z : Z[up_term_term σ]⟨wk_up F[σ] ρ⟩[a..] = Z[a .: σ⟨ρ⟩].
@@ -34,8 +32,8 @@ Lemma lamBetaRed {t} (Vt : [Γ ,, F ||-v<l> t : G | VΓF | VG])
   (RFσ : [Δ0 ||-<l> F[σ]⟨ρ⟩]) 
   (ha : [RFσ | _ ||- a : _])
   (RGσ : [Δ0 ||-<l> G[up_term_term σ][a .: ρ >> tRel]]) :
-    [_ ||-<l> tApp (tLambda F t)[σ]⟨ρ⟩ a : _ | RGσ] × 
-    [_ ||-<l> tApp (tLambda F t)[σ]⟨ρ⟩ a ≅ t[a .: σ⟨ρ⟩] : _ | RGσ].
+    [_ ||-<l> tApp (tLambda F' t)[σ]⟨ρ⟩ a : _ | RGσ] × 
+    [_ ||-<l> tApp (tLambda F' t)[σ]⟨ρ⟩ a ≅ t[a .: σ⟨ρ⟩] : _ | RGσ].
 Proof.
   pose proof (Vσa := consWkSubstS VF ρ wfΔ0 Vσ ha); instValid Vσa.
   pose proof (VσUp :=  liftSubstS' VF Vσ).
@@ -43,15 +41,16 @@ Proof.
   irrelevance0. 1: now rewrite consWkEq'.
   eapply redwfSubstTerm; tea.
   constructor; tea.
-  do 2 rewrite <- consWkEq.
-  eapply redtm_beta; tea.
+  do 2 rewrite <- consWkEq ; cbn.
+  eapply redtm_beta ; tea.
+  2: easy.
   fold subst_term; renToWk;  eapply ty_wk; tea.
   eapply wfc_cons; tea; eapply wft_wk; tea.
 Qed.
 
 Lemma betaValid {t a} (Vt : [Γ ,, F ||-v<l> t : G | VΓF | VG]) 
   (Va : [Γ ||-v<l> a : F | VΓ | VF]) :
-  [Γ ||-v<l> tApp (tLambda F t) a ≅ t[a..] : G[a..] | VΓ | substS VG Va].
+  [Γ ||-v<l> tApp (tLambda F' t) a ≅ t[a..] : G[a..] | VΓ | substS VG Va].
 Proof.
   constructor; intros. instValid Vσ.
   pose (Vσa := consSubstS _ _ Vσ _ RVa). instValid Vσa.
@@ -64,32 +63,39 @@ Proof.
   1: rewrite <- eq; rewrite eq'; irrelevance.
   constructor; tea.
   * do 2 (rewrite <- eq; rewrite eq'); tea.
-  * eapply redtm_beta; tea.
+  * cbn.
+    eapply redtm_beta ; cycle 1 ; tea.
+    easy.
     Unshelve. 2:rewrite <- eq; now rewrite eq'.
 Qed.
 
 Lemma lamValid0 {t} (Vt : [Γ ,, F ||-v<l> t : G | VΓF | VG]) 
   {Δ σ} (wfΔ : [ |-[ ta ] Δ]) (Vσ : [VΓ | Δ ||-v σ : Γ | wfΔ]) :
-  [validTy VΠFG wfΔ Vσ | Δ ||- (tLambda F t)[σ] : (tProd F G)[σ]].
+  [validTy VΠFG wfΔ Vσ | Δ ||- (tLambda F' t)[σ] : (tProd F G)[σ]].
 Proof.
   pose proof (VσUp :=  liftSubstS' VF Vσ).
   instValid Vσ. instValid VσUp. escape.
   pose (RΠ := normRedΠ RVΠFG); refold.
-  enough [RΠ | Δ ||- (tLambda F t)[σ] : (tProd F G)[σ]] by irrelevance.
-  assert [Δ |- (tLambda F t)[σ] : (tProd F G)[σ]] by (escape; cbn; gen_typing).
-  exists (tLambda F t)[σ]; intros; cbn in *.
+  enough [RΠ | Δ ||- (tLambda F' t)[σ] : (tProd F G)[σ]] by irrelevance.
+  assert [Δ |- (tLambda F' t)[σ] : (tProd F G)[σ]].
+  {
+    escape ; cbn.
+    now eapply ty_lam.
+  }
+  exists (tLambda F' t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
   + constructor.
   + eapply convtm_eta; tea. 
     1,2: now constructor.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
     by (intro; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
-    assert [Δ,, F[σ] |-[ ta ] tApp (tLambda F[σ] t[up_term_term σ])⟨S⟩ (tRel 0) ⇒*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
+    assert [Δ,, F[σ] |-[ ta ] tApp (tLambda (option_map (subst_term σ) F') t[up_term_term σ])⟨S⟩ (tRel 0) ⇒*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
     {
-      rewrite (eqσ G). eapply redtm_beta.
+      rewrite (eqσ G) ; cbn. eapply redtm_beta ; cycle -1.
+      * easy. 
       * renToWk; eapply wft_wk; tea; gen_typing.
       * renToWk; eapply ty_wk; tea.
-        eapply wfc_cons; [gen_typing | eapply wft_wk; gen_typing].
+        eapply wfc_cons ; [gen_typing | eapply wft_wk ; tea ; gen_typing].
       * fold ren_term; refine (ty_var _ (in_here _ _)); gen_typing.
     }
     eapply convtm_exp; tea.
@@ -117,7 +123,7 @@ Qed.
 
 Lemma lamValid {t} (Vt : [Γ ,, F ||-v<l> t : G | VΓF | VG])
    :
-    [Γ ||-v<l> tLambda F t : tProd F G | VΓ | VΠFG ].
+    [Γ ||-v<l> tLambda F' t : tProd F G | VΓ | VΠFG ].
 Proof.
   opector. 1: now apply lamValid0.
   intros.
@@ -127,44 +133,45 @@ Proof.
   pose proof (VσσUp := liftSubstSEq' VF Vσσ').
   instAllValid Vσ Vσ' Vσσ';  instValid VσUp'; instAllValid VσUp VσUprea VσσUp.
   pose (RΠ := normRedΠ RVΠFG); refold.
-  enough [RΠ | Δ ||- (tLambda F t)[σ] ≅ (tLambda F t)[σ'] : (tProd F G)[σ]] by irrelevance.
+  enough [RΠ | Δ ||- (tLambda F' t)[σ] ≅ (tLambda F' t)[σ'] : (tProd F G)[σ]] by irrelevance.
   unshelve econstructor.
-  - change [RΠ | Δ ||- (tLambda F t)[σ] : (tProd F G)[σ]].
+  - change [RΠ | Δ ||- (tLambda F' t)[σ] : (tProd F G)[σ]].
     eapply normLambda.
     epose (lamValid0 Vt wfΔ Vσ).
     irrelevance.
-  - change [RΠ | Δ ||- (tLambda F t)[σ'] : (tProd F G)[σ]].
+  - change [RΠ | Δ ||- (tLambda F' t)[σ'] : (tProd F G)[σ]].
     eapply normLambda.
     eapply LRTmRedConv.
     2: epose (lamValid0 Vt wfΔ Vσ'); irrelevance.
     eapply LRTyEqSym. eapply (validTyExt VΠFG); tea.
     Unshelve. 2: now eapply validTy.
   - refold; cbn; escape.
-    eapply convtm_eta; tea. 
+    eapply convtm_eta; tea ; cbn. 
     2,4: now constructor.
-    + gen_typing.
-    + eapply ty_conv; [gen_typing| now symmetry].
+    + now apply ty_lam.
+    + eapply ty_conv; [..| now symmetry].
+      cbn.
+      now apply ty_lam.
     + assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
       by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
       eapply convtm_exp. 
       * now eapply redty_refl.
-      * rewrite (eqσ σ G). eapply redtm_beta.
+      * rewrite (eqσ σ G) ; cbn. eapply redtm_beta.
+        4: easy.
         -- renToWk; eapply wft_wk; tea; gen_typing.
         -- renToWk; eapply ty_wk; tea.
            eapply wfc_cons; [gen_typing | eapply wft_wk; gen_typing].
         -- fold ren_term; refine (ty_var _ (in_here _ _)); gen_typing.
       * eapply redtm_conv.  2: now symmetry.
-        rewrite (eqσ σ' G). eapply redtm_beta.
+        rewrite (eqσ σ' G) ; cbn. eapply redtm_beta.
+        4: easy.
         -- renToWk; eapply wft_wk; tea; gen_typing.
         -- renToWk; eapply ty_wk; tea.
            eapply wfc_cons; [gen_typing | eapply wft_wk; gen_typing].
         -- fold ren_term. eapply ty_conv.
            refine (ty_var _ (in_here _ _)). 1: gen_typing.
            cbn; renToWk; eapply convty_wk; tea; gen_typing.
-      * fold ren_term. 
-        set (x := ren_term _ _); change x with (t[up_term_term σ]⟨upRen_term_term S⟩); clear x.
-        set (x := ren_term _ _); change x with (t[up_term_term σ']⟨upRen_term_term S⟩); clear x.
-        do 2 rewrite <- eqσ ; eapply escapeEqTerm; now eapply validTmExt.
+      * do 2 rewrite <- eqσ ; eapply escapeEqTerm; now eapply validTmExt.
   - refold; cbn; intros.
     pose proof (Vσa := consWkSubstS VF ρ h Vσ ha).
     assert (ha' : [ _||-<l> a : _| wk ρ h RVF0]).

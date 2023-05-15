@@ -6,7 +6,8 @@ Unset Elimination Schemes.
 Inductive snf (r : term) : Type :=
   | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
   | snf_tProd {A B} : [ r ⇒* tProd A B ] -> snf A -> snf B -> snf r
-  | snf_tLambda {A t} : [ r ⇒* tLambda A t ] -> snf A -> snf t -> snf r
+  | snf_tLambda_some {A t} : [ r ⇒* tLambda (Some A) t ] -> snf A -> snf t -> snf r
+  | snf_tLambda_none {t} : [ r ⇒* tLambda None t ] -> snf t -> snf r
   | snf_tNat : [ r ⇒* tNat ] -> snf r
   | snf_tZero : [ r ⇒* tZero ] -> snf r
   | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
@@ -46,10 +47,10 @@ Definition sne_ind
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 :=
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 :=
   pair 
-    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16)
-    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16).
+    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17)
+    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -65,9 +66,12 @@ intros t u Hr Hu; destruct Hu.
   - transitivity u; eassumption.
   - assumption.
   - assumption.
-+ eapply snf_tLambda.
++ eapply snf_tLambda_some.
   - transitivity u; eassumption.
   - assumption.
+  - assumption.
++ eapply snf_tLambda_none.
+  - transitivity u; eassumption.
   - assumption.
 + eapply snf_tNat; transitivity u; eassumption.
 + eapply snf_tZero.
@@ -101,7 +105,10 @@ Section RenSnf.
     eapply snf_tProd; eauto.
   + intros r A t Hr HA IHA Ht IHt ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
-    eapply snf_tLambda; eauto.
+    eapply snf_tLambda_some ; eauto.
+  + intros r t Hr Ht IHt ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_tLambda_none ; eauto.
   + intros r Hr ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tNat; eassumption.

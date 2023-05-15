@@ -17,6 +17,9 @@ Notation "`=2`" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at le
 Infix "=2" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 70).
 Infix "<~>" := iffT (at level 90).
 
+Arguments funcomp {X Y Z}%type_scope (g f)%function_scope.
+Notation "f >> g" := (funcomp g f) (at level 50) : function_scope.
+
 (** Since we work a lot with type-level propositions,
 we override the notation for negation from the
 standard library. **)
@@ -131,7 +134,36 @@ Section ReflexiveTransitiveClosure.
   Defined.
 End ReflexiveTransitiveClosure.
 
+(** ** Definitions for option *)
 
+#[universes(polymorphic)]Inductive
+  on_some {A : Type} (P : A -> Type) : option A -> Type :=
+    | on_some_none : on_some P None
+    | on_some_some a : P a -> on_some P (Some a).
+
+#[global] Hint Constructors on_some : core.
+
+Notation "x =o y" := (on_some (fun x' => x' = y) x)  (at level 70, no associativity) : type_scope.
+
+Lemma option_map_on_some {A B : Type} {f : A -> B} {P : B -> Type} {a : option A} :
+  on_some P (option_map f a) <~> on_some (f >> P) a.
+Proof.
+  destruct a ; cbn.
+  all: split.
+  all: intros H ; inversion_clear H.
+  all: now constructor.
+Qed.
+
+Lemma option_map_eq {A B : Type} {f : A -> B} {a : option A} {a' : A} :
+  a =o a' -> (option_map f a) =o (f a').
+Proof.
+  intros H.
+  inversion_clear H ; cbn.
+  all: constructor.
+  now f_equal.
+Qed.
+
+#[global] Hint Resolve option_map_on_some option_map_eq : core.
 
 (** ** Tactics *)
 

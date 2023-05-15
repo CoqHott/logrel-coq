@@ -193,12 +193,15 @@ Section Fundamental.
     all:tea.
   Qed.
 
-  Lemma FundTmLambda : forall (Γ : context) (A B t : term),
+  Lemma FundTmLambda : forall (Γ : context) (A : term) (A' : option term) (B t : term),
     FundTy Γ A ->
-    FundTm (Γ,, A) B t -> FundTm Γ (tProd A B) (tLambda A t).
+    FundTm (Γ,, A) B t ->
+    A' =o A ->
+    FundTm Γ (tProd A B) (tLambda A' t).
   Proof.
-    intros * [] []; econstructor.
-    eapply lamValid; irrValid.
+    intros * [] [] ? ; econstructor.
+    eapply lamValid ; tea.
+    irrValid.
     Unshelve. all: irrValid.
   Qed.
 
@@ -263,17 +266,21 @@ Section Fundamental.
     now eapply univEqValid.
   Qed.
 
-  Lemma FundTmEqBRed : forall (Γ : context) (a t A B : term),
+  Lemma FundTmEqBRed : forall (Γ : context) (a t A : term) (A' : option term) (B : term),
     FundTy Γ A ->
     FundTm (Γ,, A) B t ->
-    FundTm Γ A a -> FundTmEq Γ B[a..] (tApp (tLambda A t) a) t[a..].
+    FundTm Γ A a ->
+    A' =o A ->
+    FundTmEq Γ B[a..] (tApp (tLambda A' t) a) t[a..].
   Proof.
-    intros * [] [] []; econstructor.
-    - eapply appValid. eapply lamValid. irrValid.
+    intros * [] [] [] ? ; econstructor.
+    - eapply appValid. eapply lamValid ; tea. irrValid.
     - unshelve epose (substSTm _ _).
       8-12: irrValid.
       tea.
-    - unshelve epose (betaValid VA _ _ _). 2,5-7:irrValid.
+    - unshelve epose (betaValid VA _ _ _ _).
+      4: eassumption.
+      2,5-6:irrValid.
       Unshelve. all: tea; try irrValid.
   Qed.
 
@@ -730,7 +737,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTyEqUniv.
   + intros; now apply FundTyEqSym.
   + intros; now eapply FundTyEqTrans.
-  + intros; now apply FundTmEqBRed.
+  + intros; now eapply FundTmEqBRed.
   + intros; now apply FundTmEqPiCong.
   + intros; now eapply FundTmEqAppCong.
   + intros; now apply FundTmEqFunExt.
