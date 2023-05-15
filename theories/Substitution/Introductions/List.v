@@ -624,13 +624,14 @@ Proof.
   + now eapply invLRList.
   + now eapply invLRList.
   + irrelevance.
-  + admit.
-  + admit.
-  + cbn. admit.
-  + admit.
-  + admit.
-  + admit.
-Admitted.
+  + now apply ArrRedTy.
+  + now apply ArrRedTy.
+  + cbn. irrelevance.
+  + cbn. irrelevance.
+  + cbn. irrelevance.
+  + cbn. change [normList RVLA | Δ ||- x[σ] ≅ x'[σ] : _].
+    irrelevance.
+Qed.
 
 Lemma mapRedNilValid {Γ A B f i}
   {VΓ : [||-v Γ]}
@@ -645,16 +646,15 @@ Proof.
   split. intros.
   instValid Vσ.
   cbn.
-  epose (snd (mapRedAux _) (tNil A[σ]) _).
-  (* 6: exact RVB. *)
-  (* 4: { *)
-  (*   now eapply invLRList. *)
-  (* } *)
-  (* 7: { *)
-  (*   constructor. *)
-  (*   - escape; tea. *)
-  (*   - cbn. irrelevance. *)
-  (* } *)
+  unshelve epose (X := snd (mapRedAux _) (tNil A[σ]) _).
+  12:{
+    constructor.
+    - escape. eassumption.
+    - cbn. eapply LRTyEqRefl_.
+  }
+  10: now apply X.
+  all: solve [ tea | now apply invLRList | now rewrite<- subst_arr ].
+(* Qed. TODO: Ooops! *)
 Admitted.
 
 Lemma mapRedConsValid {Γ A B f hd tl i}
@@ -664,11 +664,26 @@ Lemma mapRedConsValid {Γ A B f hd tl i}
   {VLA : [Γ ||-v<i> tList A | VΓ]}
   {VLB : [Γ ||-v<i> tList B | VΓ]}
   {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  {Vhd : [Γ ||-v<i> hd : A | VΓ | VA ]}
+  {Vcons : [Γ ||-v<i> tl : tList A | VΓ | VLA ]}
   {Vf : [Γ ||-v<i> f : arr A B | VΓ | VFAB ]} :
   [Γ ||-v<i> tMap A B f (tCons A hd tl) ≅ tCons B (tApp f hd) (tMap A B f tl) : tList B | VΓ | VLB].
 Proof.
-  (* should be a simple consequence of mapRedAux? *)
-  (* NOTE: missing hypotheses on hd and tl *)
+  split. intros.
+  instValid Vσ.
+  cbn.
+  unshelve epose (X := snd (mapRedAux _) (tCons A[σ] hd[σ] tl[σ]) _).
+  12:{
+    constructor.
+    - now escape.
+    - eapply LRTyEqRefl_.
+    - irrelevance.
+    - enough (X : [normList RVLA | Δ ||- tl[σ] : _]) by exact X.
+      irrelevance.
+  }
+  8: now eapply X.
+  all: solve [ tea | now rewrite<- subst_arr ].
+(* Qed. *)
 Admitted.
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
