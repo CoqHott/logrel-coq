@@ -484,8 +484,7 @@ Proof.
     + unshelve eapply (snd (mapRedAux _)); tea.
       unshelve eapply ListIrrelevanceTm. 7: now eassumption.
       all: try now escape.
-      (* TODO: help! *)
-      admit.
+      * eapply LRIrrelevantPack. irrelevance.
     + tea.
     + cbn; dependent inversion X5; subst; cbn.
       2: destruct r as [?%tm_ne_whne]; inv_whne.
@@ -502,8 +501,6 @@ Proof.
         change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
         eapply LRTmRedConv; tea.
         Unshelve. all: tea.
-        (* TODO: help! *)
-        admit.
 
   - intros.
     enough [normList RLB | Γ ||- tMap A B f l0 ≅ tMap A' B' f' l' : tList B] by irrelevance.
@@ -522,14 +519,14 @@ Proof.
       econstructor.
       * eapply redtm_refl. apply ty_map; escape; tea.
         unshelve eapply ty_conv. 2-3: tea.
-      * { eapply convneu_map.
+      * { apply convtm_convneu. eapply convneu_map.
           - eapply escapeEq. eapply LRTyEqRefl_.
           - cbn. eapply escapeEq. eapply LRTyEqRefl_.
           - eapply escapeEqTerm.
             eapply LREqTermRefl_; tea.
           - eapply convneu_conv. 2: eapply escapeEq; tea.
             match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-            etransitivity. 1-2: admit.
+            etransitivity; tea. now symmetry.
         }
       * { constructor. constructor.
           - eapply tm_ne_map.
@@ -549,9 +546,10 @@ Proof.
               match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
               etransitivity; tea. now symmetry.
         }
-
-
-        all: admit.
+    + admit.
+    + admit.
+      Unshelve. all: admit.
+        (* Typeclasses -> typed vs untyped reduction *)
 Admitted.
 
 (* TODO: move; also wk_arr vs arr_wk *)
@@ -653,9 +651,10 @@ Proof.
     - cbn. eapply LRTyEqRefl_.
   }
   10: now apply X.
-  all: solve [ tea | now apply invLRList | now rewrite<- subst_arr ].
-(* Qed. TODO: Ooops! *)
-Admitted.
+  all: try solve [ tea | now apply invLRList ].
+  + rewrite <- subst_arr. exact RVFAB.
+  + irrelevance.
+Qed.
 
 Lemma mapRedConsValid {Γ A B f hd tl i}
   {VΓ : [||-v Γ]}
@@ -682,9 +681,10 @@ Proof.
       irrelevance.
   }
   8: now eapply X.
-  all: solve [ tea | now rewrite<- subst_arr ].
-(* Qed. *)
-Admitted.
+  all: tea.
+  + rewrite <- subst_arr. exact RVFAB.
+  + irrelevance.
+Qed.
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VΓ : [||-v Γ]}
