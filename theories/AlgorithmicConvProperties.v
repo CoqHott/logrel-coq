@@ -918,7 +918,6 @@ Module AlgorithmicConvProperties.
     - intros_bn.
       1-2: now apply typing_wk.
       now apply algo_conv_wk.
-    - now intros * [??? ?%algo_conv_sound].
     - intros_bn.
       1-2: now eapply algo_typing_sound.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty.
@@ -974,7 +973,6 @@ Qed.
     - intros_bn.
       1-3: now apply typing_wk.
       now apply algo_conv_wk.
-    - now intros * [???? ?%algo_conv_sound]. 
     - intros_bn.
       all: eapply algo_typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
@@ -1229,7 +1227,6 @@ Module IntermediateTypingProperties.
     1-2: now econstructor.
     1-2: gen_typing.
     1-4: intros * [] ; gen_typing.
-    easy.
   Qed.
 
   #[export, refine] Instance WfTypeIntProperties : WfTypeProperties (ta := bni) := {}.
@@ -1240,7 +1237,6 @@ Module IntermediateTypingProperties.
   #[export, refine] Instance TypingIntProperties : TypingProperties (ta := bni) := {}.
   Proof.
     all: unfold_bni.
-    - gen_typing.
     - gen_typing.
     - gen_typing.
     - gen_typing.
@@ -1273,7 +1269,6 @@ Module IntermediateTypingProperties.
     - intros * ? ?.
       apply convty_wk ; tea.
       now split.
-    - eauto using (convty_sound (ta := bn)).
     - intros * [] [] [] ; econstructor.
       1-3: eassumption.
       inversion bun_conv_ty ; subst ; clear bun_conv_ty ; refold.
@@ -1321,7 +1316,6 @@ Module IntermediateTypingProperties.
     - intros.
       apply (convtm_wk (ta := bn)) ; tea.
       now econstructor.
-    - eauto using (convtm_sound (ta := bn)).
     - intros * [] [] [] [].
       econstructor ; tea.
       + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.

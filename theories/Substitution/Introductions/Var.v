@@ -1,7 +1,7 @@
 (** * LogRel.Introductions.Var : Validity of variables. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
-  DeclarativeTyping DeclarativeInstance GenericTyping LogicalRelation Validity.
+  GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
 

@@ -117,14 +117,12 @@ Module AlgorithmicTypingProperties.
     - now do 2 constructor.
     - constructor ; tea.
       now apply algo_typing_sound.
-    - now intros ? [].
   Qed.
 
   #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := bn) := {}.
   Proof.
     - intros_bn.
       now eapply algo_typing_wk.
-    - now intros * [? ?%algo_typing_sound]. 
     - intros_bn.
       now econstructor.
     - intros_bn.
@@ -144,8 +142,6 @@ Module AlgorithmicTypingProperties.
     - intros_bn.
       + now eapply algo_typing_wk.
       + gen_typing.
-    - intros * [?? ?%algo_typing_sound] ; tea.
-      now econstructor.
     - intros_bn.
       + now econstructor.
       + constructor.

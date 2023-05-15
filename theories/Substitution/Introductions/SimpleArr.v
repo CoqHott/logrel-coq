@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
-  DeclarativeTyping GenericTyping LogicalRelation Validity.
+  GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
 From LogRel.Substitution.Introductions Require Import Universe Pi Application.
