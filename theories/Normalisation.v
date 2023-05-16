@@ -93,7 +93,7 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? []; split; now eapply WN_exp.
 + intros * []; split; now apply WN_whnf, whnf_whne.
-+ intros * ? ? ? ? ? []; split; now apply WN_isFun.
++ intros * ? ? ? ? ? ? []; split; now apply WN_isFun.
 + intros; split; now apply WN_isPair.
 Qed.
 
