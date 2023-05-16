@@ -136,9 +136,7 @@ all: try now intros; eassumption.
 + intros; reflexivity.
 Qed.
 
-Export UntypedValues.WeakValuesProperties.
-
-#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ := {}.
 
 End Nf.
 

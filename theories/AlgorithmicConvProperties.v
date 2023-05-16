@@ -1515,9 +1515,7 @@ Module IntermediateTypingProperties.
       now etransitivity.
   Qed.
 
-  Export UntypedValues.WeakValuesProperties.
-
-  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.
 

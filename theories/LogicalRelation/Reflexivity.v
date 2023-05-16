@@ -40,7 +40,7 @@ Section Reflexivities.
 
   Lemma reflEmptyRedTmEq {Γ A} {NA : [Γ ||-Empty A]} :
       (forall t : term, [Γ ||-Empty t : A | NA] -> [Γ ||-Empty t ≅ t : A | NA])
-    × (forall t : term, @EmptyProp _ _ _ _ Γ t -> @EmptyPropEq _ _ _ Γ t t).
+    × (forall t : term, @EmptyProp _ _ _ Γ t -> @EmptyPropEq _ _ Γ t t).
   Proof.
     split.
     - intros t Ht. induction Ht.

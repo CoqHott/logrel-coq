@@ -485,7 +485,7 @@ Qed.
 (** ** Bundling the properties together in an instance *)
 
 Module DeclarativeTypingProperties.
-  Export DeclarativeTypingData UntypedValues.WeakValuesProperties.
+  Export DeclarativeTypingData.
 
   #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := de) := {}.
   Proof.
@@ -645,6 +645,6 @@ Module DeclarativeTypingProperties.
     + now constructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

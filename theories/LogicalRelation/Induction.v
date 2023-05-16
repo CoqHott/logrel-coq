@@ -21,7 +21,7 @@ Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!TypeNf ta} `{!TypeNe ta} `{!RedTerm ta} `{!TermNf ta} `{!TermNe ta}.
+    `{!RedType ta} `{!RedTerm ta}.
 
 (** ** Embedding *)
 
@@ -180,8 +180,8 @@ Section Inversions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!TypeNf ta} `{!TypeNe ta} `{!RedTerm ta} `{!TermNf ta} `{!TermNe ta} `{!RedTypeProperties}
-    `{!TypeNeProperties} `{!ConvNeuProperties}.
+    `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}
+    `{!ConvNeuProperties}.
 
 
   Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') :
