@@ -28,26 +28,6 @@ Proof.
 Defined.
 
 
-Lemma neElim {Γ l K} : [Γ ||-<l> K] -> whne K -> [Γ ||-ne K].
-Proof.
-  intros h; pattern l,Γ,K,h; eapply LR_rect_TyUr;
-  clear l Γ K h.
-  - intros ??? [??? r] ne; pose proof (redtywf_whne r  ne); subst; inversion ne.
-  - intros; assumption.
-  - intros ??? [?? red] ?? ne ; cbn in *.
-    rewrite (redtywf_whne red ne) in ne.
-    inversion ne.
-  - intros ??? [red] ne.
-    rewrite (redtywf_whne red ne) in ne.
-    inversion ne.
-  - intros ??? [red] ne.
-    rewrite (redtywf_whne red ne) in ne.
-    inversion ne.
-  - intros ??? [?? red] ?? ne.
-    rewrite (redtywf_whne red ne) in ne.
-    inversion ne.
-Qed.
-
 Set Printing Primitive Projection Parameters.
 
 
