@@ -425,10 +425,96 @@ Definition AlgoTypingInductionConcl :=
     let t' := remove_steps t in
     exact t').
 
+Scheme 
+    ConvTypeAlg_rect_dep := Induction for ConvTypeAlg Sort Type with
+    ConvTypeRedAlg_rect_dep := Induction for ConvTypeRedAlg Sort Type with
+    ConvNeuAlg_rect_dep := Induction for ConvNeuAlg Sort Type with
+    ConvNeuRedAlg_rect_dep := Induction for ConvNeuRedAlg Sort Type with
+    ConvTermAlg_rect_dep := Induction for ConvTermAlg Sort Type with
+    ConvTermRedAlg_rect_dep := Induction for ConvTermRedAlg Sort Type.
+
+Scheme
+    WfTypeAlg_rect_dep := Induction for WfTypeAlg Sort Type with
+    InferAlg_rect_dep := Induction for InferAlg Sort Type with
+    InferRedAlg_rect_dep := Induction for InferRedAlg Sort Type with
+    CheckAlg_rect_dep := Induction for CheckAlg Sort Type.
+
+Combined Scheme _AlgoConvDepInduction from
+    ConvTypeAlg_rect_dep,
+    ConvTypeRedAlg_rect_dep,
+    ConvNeuAlg_rect_dep,
+    ConvNeuRedAlg_rect_dep,
+    ConvTermAlg_rect_dep,
+    ConvTermRedAlg_rect_dep.
+
+Combined Scheme _AlgoTypingDepInduction from
+    WfTypeAlg_rect_dep,
+    InferAlg_rect_dep,
+    InferRedAlg_rect_dep,
+    CheckAlg_rect_dep.
+
+Let _AlgoConvDepInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _AlgoConvDepInduction);
+      refold ;
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let AlgoConvDepInductionType :=
+  ltac: (let ind := eval cbv delta [_AlgoConvDepInductionType] zeta
+    in _AlgoConvDepInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+Lemma AlgoConvDepInduction : AlgoConvDepInductionType.
+Proof.
+  intros PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq **.
+  pose proof (_AlgoConvDepInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
+  destruct H as [?[?[?[?[?]]]]] ; cycle -1.
+  1: by_prod_splitter.
+  all: assumption.
+Qed.
+
+Let _AlgoTypingDepInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _AlgoTypingDepInduction);
+      refold ;
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let AlgoTypingDepInductionType :=
+  ltac: (let ind := eval cbv delta [_AlgoTypingDepInductionType] zeta
+    in _AlgoTypingDepInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+Lemma AlgoTypingDepInduction : AlgoTypingDepInductionType.
+Proof.
+  intros PTy PInf PInfRed PCheck **.
+  pose proof (_AlgoTypingDepInduction PTy PInf PInfRed PCheck) as H.
+  destruct H as [?[?[?]]] ; cycle -1.
+  1: by_prod_splitter.
+  all: assumption.
+Qed.
+
+Definition AlgoConvDepInductionConcl :=
+  ltac:(
+    let t := eval cbv delta [AlgoConvDepInductionType] beta in AlgoConvDepInductionType in
+    let t' := remove_steps t in
+    exact t').
+
+Definition AlgoTypingDepInductionConcl :=
+  ltac:(
+    let t := eval cbv delta [AlgoTypingDepInductionType] beta in AlgoTypingDepInductionType in
+    let t' := remove_steps t in
+    exact t').
+
 End InductionPrinciples.
 
 Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
 Arguments AlgoTypingInductionConcl PTy PInf PInfRed PCheck : rename.
+Arguments AlgoConvDepInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
+Arguments AlgoTypingDepInductionConcl PTy PInf PInfRed PCheck : rename.
 
 (** ** Stability by weakening *)
 
