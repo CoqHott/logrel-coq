@@ -1351,7 +1351,7 @@ Module IntermediateTypingProperties.
         econstructor.
         now eapply algo_conv_sound in bun_conv_tm.
       + now do 2 econstructor.
-    - intros * ? ? ? ? ? [].
+    - intros * ? ? ? ? ? ? [].
       split ; tea.
       + gen_typing.
       + boundary.

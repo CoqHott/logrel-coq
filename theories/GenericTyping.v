@@ -318,6 +318,7 @@ Section GenericTyping.
       [Γ |- tSig A B ≅ tSig A' B' : U] ;
     convtm_eta {Γ f g A B} :
       [ Γ |- A ] ->
+      [ Γ,, A |- B ] ->
       [ Γ |- f : tProd A B ] ->
       isFun f ->
       [ Γ |- g : tProd A B ] ->
@@ -937,6 +938,7 @@ Section GenericConsequences.
   Qed.
 
   Lemma convtm_id {Γ A A' B C} : 
+    [|- Γ] ->
     [Γ |- A] ->
     [Γ |- A'] ->
     [Γ |- A ≅ A'] ->
@@ -949,6 +951,7 @@ Section GenericConsequences.
     eapply convtm_conv.
     2: eapply convty_simple_arr; cycle 1; tea.
     eapply convtm_eta; tea.
+    { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
     2,4: constructor.
     1,2: eapply ty_id; tea; now symmetry.
     assert [|- Γ,, A] by gen_typing.
@@ -1024,6 +1027,7 @@ Section GenericConsequences.
   Qed.
 
   Lemma convtm_comp {Γ A B C f f' g g'} :
+    [|- Γ] ->
     [Γ |- A] ->
     [Γ |- B] ->
     [Γ |- C] ->
@@ -1037,6 +1041,7 @@ Section GenericConsequences.
     assert (eq : forall t: term, t⟨↑⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ↑⟩) by (intros; now asimpl).
     intros.
     eapply convtm_eta; tea.
+    { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
     2,4: constructor.
     1,2: eapply ty_comp.
     4,5,9,10: tea.

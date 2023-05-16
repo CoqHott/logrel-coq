@@ -62,7 +62,8 @@ Section SimpleArrow.
       + eapply reifyType, RA.
       + apply tm_ne_nf, tm_ne_rel.
         gen_typing.
-    - now eapply convtm_id.
+    - eapply convtm_id; tea.
+      eapply wfc_wft; now escape.
     - intros; cbn; irrelevance0.
       2: now eapply h.
       bsimpl; now rewrite rinstInst'_term.
@@ -220,6 +221,7 @@ Section SimpleArrow.
       do 2 erewrite <- wk1_ren_on.
       eapply h.
       eapply var0; now bsimpl.
+      { now eapply wfc_ty. }
       Unshelve. 1: gen_typing.
       eapply wk; tea; gen_typing.
     - intros; cbn.
