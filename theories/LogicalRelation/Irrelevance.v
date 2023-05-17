@@ -102,10 +102,8 @@ Lemma ΠIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
 Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
-  - apply (tm_nf_conv isnf).
-    + destruct ΠA'; simpl in *; gen_typing.
-    + apply eqPi.
-  - now eapply convtm_conv.
+  - eapply (convtm_conv refl).
+    apply eqPi.
   - intros; unshelve eapply eqv.(eqvPos).
     2: now auto.
     now apply eqv.(eqvShp).
@@ -171,9 +169,6 @@ Proof.
   intros []; cbn in *; unshelve econstructor; tea.
   - intros; unshelve eapply eqv.(eqvShp); now auto.
   - now eapply redtmwf_conv.
-  - apply (tm_nf_conv isnf).
-    + destruct ΣA'; simpl in *; gen_typing.
-    + apply eqSig.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.
 Defined.
@@ -221,34 +216,29 @@ Lemma NeIrrelevanceLRPack@{i j k l i' j' k' l' v}
 Proof.
   destruct neA as [ty], neA' as [ty'], eqAA' as [ty0']; cbn in *.
   assert (ty0' = ty'); [|subst].
-  { eapply redtywf_det; tea; constructor; now eapply ty_ne_whne. }
+  { eapply redtywf_det; tea; constructor; eapply convneu_whne; first [eassumption|symmetry; eassumption]. }
   assert [Γ |- ty ≅ ty'] as convty by gen_typing.
   split.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
     all: etransitivity ; [| tea]; tea; now symmetry.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
-    1,4: now eapply redtmwf_conv.
-    all: try match goal with |- Ne[ _ |- _ : _] => destruct red, red1; now eapply tm_ne_conv; first [eassumption|symmetry; eassumption|gen_typing] end.
-    all: now eapply convneu_conv.
+    1,3: now eapply redtmwf_conv.
+    all: now eapply convneu_conv; first [eassumption|symmetry; eassumption|gen_typing].
   + intros ??; split; intros []; econstructor; cbn in *.
-    1-2,6-7: now eapply redtmwf_conv.
-    all: tea.
-    all: try match goal with |- Ne[ _ |- _ : _] => destruct red, red1; now eapply tm_ne_conv; first [eassumption|symmetry; eassumption|gen_typing] end.
-    all: now eapply convneu_conv.
+    1-2,4-5: now eapply redtmwf_conv.
+    all: now eapply convneu_conv; first [eassumption|symmetry; eassumption|gen_typing].
 Qed.
 
 (** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
 
 Lemma NeNfconv {Γ k A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
 Proof.
-  intros ?? []; econstructor; tea. 2,3: gen_typing.
-  now eapply tm_ne_conv.
+  intros ?? []; econstructor; tea. all: gen_typing.
 Qed.
 
 Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
 Proof.
-  intros ?? []; econstructor; tea. 3: gen_typing.
-  all: now eapply tm_ne_conv.
+  intros ?? []; econstructor; tea. gen_typing.
 Qed.
 
 
@@ -359,8 +349,8 @@ Proof.
   + intros; cbn; split; intros []; now constructor.
   + intros ?; destruct (IHty Γ t) as [tfwd tbwd]; split; intros [];
       unshelve econstructor.
-    7: now apply tfwd.
-    11: now apply tbwd.
+    6: now apply tfwd.
+    9: now apply tbwd.
     all : tea.
   + cbn ; intros ? ?;
     destruct (IHty Γ t) as [tfwd tbwd];
@@ -755,7 +745,6 @@ Proof.
     all: eapply LogRelRec_unfold; eapply LRAd.adequate; eassumption.
   - intros * []. unshelve econstructor.
     3,4: eassumption.
-    1,2: eassumption.
     symmetry; eassumption.
   - intros * ihdom ihcod * []. unshelve econstructor.
     1,2: eassumption.

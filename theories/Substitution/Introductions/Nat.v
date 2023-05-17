@@ -42,7 +42,6 @@ Proof.
   econstructor.
   + eapply redtmwf_refl; gen_typing.
   + constructor.
-  + now apply tm_nf_nat.
   + gen_typing.
   + now eapply (natRed (l:= zero)).
 Defined.
@@ -106,7 +105,7 @@ Proof.
   intros RSn; inversion RSn; subst. 
   unshelve epose proof (redtmwf_whnf red _). 1: constructor.
   subst. inversion prop; subst; tea.
-  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; apply tm_ne_whne in ne; inv_whne end.
+  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; apply convneu_whne in refl; inv_whne end.
 Qed.
 
 Lemma succValid {Γ l n} (VΓ : [||-v Γ]) 
@@ -220,8 +219,6 @@ Section NatElimRed.
     - intros ? [] ?.
       apply reflect.
       + apply completeness.
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + now eapply ty_natElim.
       + now eapply ty_natElim.
       + eapply convneu_natElim; tea.
@@ -348,9 +345,6 @@ Section NatElimRedEq.
         gen_typing.
       }
       eapply neuTermEq.
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_conv; [|now eapply escape|symmetry; eassumption].
-        eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + eapply ty_natElim; tea.
       + eapply ty_conv. 
         1: eapply ty_natElim; tea.

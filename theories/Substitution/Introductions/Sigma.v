@@ -173,7 +173,6 @@ Section SigTmValidity.
     econstructor; cbn.
     - apply redtmwf_refl; cbn in *; now eapply ty_sig.
     - constructor.
-    - apply tm_nf_sig; now eapply reifyTerm.
     - now eapply convtm_sig.
     - cbn. unshelve refine (LRCumulative (SigRed _ _ _ tΔ Vσ));
       unshelve eapply univValid; tea; try irrValid.
@@ -512,9 +511,6 @@ Section PairRed.
     + eapply redtmwf_refl; cbn.
       eapply ty_pair; tea.
     + constructor.
-    + eapply tm_nf_pair.
-      1,2: now eapply reifyType.
-      all: now eapply reifyTerm.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
       * constructor.

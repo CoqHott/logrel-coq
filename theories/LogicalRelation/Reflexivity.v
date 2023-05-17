@@ -40,7 +40,7 @@ Section Reflexivities.
 
   Lemma reflEmptyRedTmEq {Γ A} {NA : [Γ ||-Empty A]} :
       (forall t : term, [Γ ||-Empty t : A | NA] -> [Γ ||-Empty t ≅ t : A | NA])
-    × (forall t : term, @EmptyProp _ _ _ _ Γ t -> @EmptyPropEq _ _ _ Γ t t).
+    × (forall t : term, @EmptyProp _ _ _ Γ t -> @EmptyPropEq _ _ Γ t t).
   Proof.
     split.
     - intros t Ht. induction Ht.
@@ -56,7 +56,7 @@ Section Reflexivities.
   Proof.
     pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; 
       clear Γ A eqTy redTm eqTm lr; intros Γ A.
-    - intros h t [? ? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
+    - intros h t [? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
       (* Need an additional universe level h < i *)
       assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
       unshelve econstructor.

@@ -104,6 +104,7 @@ Proof.
   - intros t u v [] []; now split.
 + intros * [] ?; now split.
 + intros * ? []; split; now apply whne_ren.
++ intros * []; assumption.
 + intros; split; constructor.
 + intros * [] ?; split; now constructor.
 + intros * ? ? ? []; split; now constructor.
@@ -135,9 +136,7 @@ all: try now intros; eassumption.
 + intros; reflexivity.
 Qed.
 
-Export UntypedValues.WeakValuesProperties.
-
-#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ := {}.
 
 End Nf.
 
@@ -235,7 +234,7 @@ Section NeutralConversion.
       1-2: reflexivity.
       econstructor.
       1: eassumption.
-      econstructor; eapply (ty_ne_whne ne).
+      econstructor; eapply (convneu_whne eq).
     - intros ? ? ? ΠA IHdom IHcod m n mty Hconv ; cbn in *.
       destruct ΠA  as [????? []]; cbn in *.
       econstructor.
@@ -327,9 +326,10 @@ Section NeutralConversion.
       3: do 2 econstructor; tea.
       3: eapply (ParamRedTy.red ΣA).
       3: constructor.
-      * eapply neuTerm; tea.
-        2: eapply TermRefl; tea.
-        econstructor; apply algo_conv_wh in Hconv; now destruct Hconv.
+      * assert (whne m).
+        { apply algo_conv_wh in Hconv; now destruct Hconv. }
+        eapply neuTerm; tea.
+        split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
     Unshelve. 2,4: tea. 
   Qed.

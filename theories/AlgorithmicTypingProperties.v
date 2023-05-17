@@ -384,9 +384,7 @@ Module AlgorithmicTypingProperties.
       now etransitivity.
   Qed.
 
-  Export UntypedValues.WeakValuesProperties.
-
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
 

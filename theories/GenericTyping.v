@@ -352,6 +352,7 @@ Section GenericTyping.
     convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
+    convneu_whne {Γ A t u} : [Γ |- t ~ u : A] -> whne t;
     convneu_var {Γ n A} :
       [Γ |- tRel n : A] -> [Γ |- tRel n ~ tRel n : A] ;
     convneu_app {Γ f g t u A B} :
@@ -458,77 +459,6 @@ Section GenericTyping.
 
 End GenericTyping.
 
-Section GenericValues.
-
-  Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-    `{!RedType ta} `{!RedTerm ta} `{TypeNf ta} `{TypeNe ta} `{TermNf ta} `{TermNe ta}.
-
-  Class TypeNeProperties := {
-    ty_ne_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
-      [|- Δ] -> Ne[Γ |- A] -> Ne[Δ |- A⟨ρ⟩];
-    ty_ne_nf {Γ A} : Ne[Γ |- A] -> Nf[Γ |- A];
-    ty_ne_whne {Γ A} : Ne[Γ |- A] -> whne A;
-    ty_ne_term {Γ A} : Ne[Γ |- A : U] -> Ne[Γ |- A];
-  }.
-
-  Class TypeNfProperties := {
-    ty_nf_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
-      [|- Δ] -> Nf[Γ |- A] -> Nf[Δ |- A⟨ρ⟩];
-    ty_nf_red {Γ A B} : [Γ |- A ⇒* B] -> Nf[Γ |- B] -> Nf[Γ |- A];
-    ty_nf_sort {Γ} : [|- Γ] -> Nf[Γ |- U];
-    ty_nf_prod {Γ A B} : Nf[Γ |- A] -> Nf[Γ,, A |- B] -> Nf[Γ |- tProd A B];
-    ty_nf_nat {Γ} : [|- Γ] -> Nf[Γ |- tNat];
-    ty_nf_empty {Γ} : [|- Γ] -> Nf[Γ |- tEmpty];
-    ty_nf_sig {Γ A B} : Nf[Γ |- A] -> Nf[Γ,, A |- B] -> Nf[Γ |- tSig A B];
-   }.
-
-  Class TermNeProperties := {
-    tm_ne_wk {Γ Δ n A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> Ne[Γ |- n : A] -> Ne[Δ |- n⟨ρ⟩ : A⟨ρ⟩];
-    tm_ne_nf {Γ n A} : Ne[Γ |- n : A] -> Nf[Γ |- n : A];
-    tm_ne_whne {Γ n A} : Ne[Γ |- n : A] -> whne n;
-    tm_ne_conv {Γ n A B} : Ne[Γ |- n : A] -> [Γ |- B] -> [Γ |- A ≅ B] -> Ne[Γ |- n : B];
-    tm_ne_rel {Γ A} : [Γ |- A] -> Ne[Γ,, A |- tRel 0 : A⟨↑⟩];
-    tm_ne_app {Γ n t A B} : Ne[Γ |- n : tProd A B] -> Nf[Γ |- t : A] -> Ne[Γ |- tApp n t : B[t..]];
-    tm_ne_natelim {Γ P hz hs n} :
-      Nf[Γ ,, tNat |- P ] ->
-      Nf[Γ |- hz : P[tZero..]] ->
-      Nf[Γ |- hs : elimSuccHypTy P] ->
-      Ne[Γ |- n : tNat] ->
-      Ne[Γ |- tNatElim P hz hs n : P[n..]];
-    tm_ne_emptyelim {Γ P e} :
-      Nf[Γ ,, tEmpty |- P ] ->
-      Ne[Γ |- e : tEmpty] ->
-      Ne[Γ |- tEmptyElim P e : P[e..]];
-    tm_ne_fst {Γ A B p} :
-      Ne[Γ |- p : tSig A B] ->
-      Ne[Γ |- tFst p : A] ;
-    tm_ne_snd {Γ A B p} :
-      Ne[Γ |- p : tSig A B] ->
-      Ne[Γ |- tSnd p : B[(tFst p)..]] ;
-  }.
-
-  Class TermNfProperties := {
-    tm_nf_wk {Γ Δ t A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> Nf[Γ |- t : A] -> Nf[Δ |- t⟨ρ⟩ : A⟨ρ⟩];
-    tm_nf_conv {Γ t A B} : Nf[Γ |- t : A] -> [Γ |- B] -> [Γ |- A ≅ B] -> Nf[Γ |- t : B];
-    tm_nf_red {Γ t u A} : [Γ |- t ⇒* u : A] -> Nf[Γ |- u : A] -> Nf[Γ |- t : A];
-    tm_nf_prod {Γ A B} : Nf[Γ |- A : U] -> Nf[Γ,, A |- B : U] -> Nf[Γ |- tProd A B : U];
-    tm_nf_lam {Γ A B t} : Nf[Γ |- A] -> Nf[Γ,, A |- t : B] -> Nf[Γ |- tLambda A t : tProd A B];
-    tm_nf_nat {Γ} : [|- Γ] -> Nf[Γ |- tNat : U];
-    tm_nf_zero {Γ} : [|- Γ] -> Nf[Γ |- tZero : tNat];
-    tm_nf_succ {Γ t} : Nf[Γ |- t : tNat] -> Nf[Γ |- tSucc t : tNat];
-    tm_nf_empty {Γ} : [|- Γ] -> Nf[Γ |- tEmpty : U];
-    tm_nf_sig {Γ A B} : Nf[Γ |- A : U] -> Nf[Γ,, A |- B : U] -> Nf[Γ |- tSig A B : U];
-    tm_nf_pair {Γ A B a b} : 
-      Nf[Γ |- A] -> Nf[Γ,, A |- B] -> 
-      Nf[Γ |- a : A] -> Nf[Γ |- b : B[a..]] -> Nf[Γ |- tPair A B a b : tSig A B];
-  }.
-
-End GenericValues.
-
 (** This class bundles together the various predicate and relations, and their
 properties all together. Most of the logical relation is constructed over an
 abstract instance of this class. *)
@@ -537,7 +467,7 @@ Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
   `(RedType ta) `(RedTerm ta)
-  `(RedType ta) `(RedTerm ta) `(TypeNf ta) `(TypeNe ta) `(TermNf ta) `(TermNe ta)
+  `(RedType ta) `(RedTerm ta)
 :=
 {
   wfc_prop :> WfContextProperties ;
@@ -548,10 +478,6 @@ Class GenericTypingProperties `(ta : tag)
   convne_prop :> ConvNeuProperties ;
   redty_prop :> RedTypeProperties ;
   redtm_prop :> RedTermProperties ;
-  tynf_prop :> TypeNfProperties;
-  tyne_prop :> TypeNeProperties;
-  tmnf_prop :> TermNfProperties;
-  tmne_prop :> TermNeProperties;
 }.
 
 (** Hints for gen_typing *)
@@ -565,14 +491,10 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig | 2 : gen_typing.
 #[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
-#[export] Hint Resolve ty_ne_wk ty_nf_wk ty_nf_sort ty_nf_prod ty_nf_nat ty_nf_empty ty_nf_sig | 2 : gen_typing.
-#[export] Hint Resolve tm_ne_wk tm_ne_rel tm_ne_app tm_ne_natelim tm_ne_emptyelim tm_ne_fst tm_ne_snd tm_nf_wk | 2 : gen_typing.
 (* Priority 4 *)
-#[export] Hint Resolve wft_term convty_term convtm_convneu ty_ne_term | 4 : gen_typing.
+#[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 (* Priority 6 *)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
-#[export] Hint Resolve ty_ne_nf ty_nf_red ty_ne_whne tm_ne_whne tm_ne_conv tm_nf_conv tm_nf_red | 6 : gen_typing.
-#[export] Hint Resolve tm_nf_prod tm_nf_lam tm_nf_nat tm_nf_zero tm_nf_succ tm_nf_empty tm_nf_sig tm_nf_pair | 6 : gen_typing.
 
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)

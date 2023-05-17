@@ -58,10 +58,6 @@ Section SimpleArrow.
     - eapply redtmwf_refl.
       now eapply ty_id.
     - constructor.
-    - apply tm_nf_lam.
-      + eapply reifyType, RA.
-      + apply tm_ne_nf, tm_ne_rel.
-        gen_typing.
     - eapply convtm_id; tea.
       eapply wfc_wft; now escape.
     - intros; cbn; irrelevance0.
@@ -202,18 +198,6 @@ Section SimpleArrow.
     - eapply redtmwf_refl.
       eapply ty_comp; cycle 2; tea.
     - constructor.
-    - apply tm_nf_lam.
-      + now eapply reifyType.
-      + change (PiRedTy.dom ΠAC) with A.
-        change (PiRedTy.cod ΠAC) with C⟨↑⟩.
-        pose (ρ := @wk_step Γ Γ A wk_id).
-        assert (Hr : forall (t : term), t⟨↑⟩ = t⟨ρ⟩).
-        { unfold ρ; bsimpl; reflexivity. }
-        do 3 rewrite Hr.
-        eapply reifyTerm.
-        unshelve refine (h _ (tRel 0) ρ _ (wk _ _ RA) _).
-        1,2: gen_typing.
-        apply var0; [|tea]; unfold ρ; bsimpl; reflexivity.
     - cbn. eapply convtm_comp; cycle 3; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.
