@@ -6,6 +6,16 @@ Import DeclarativeTypingProperties AlgorithmicTypingData.
 
 (** ** Definition of bundled algorithmic typing *)
 
+Definition bn : tag.
+Proof.
+constructor.
+Qed.
+
+Definition bni : tag.
+Proof.
+constructor.
+Qed.
+
 (** The idea of these definitions is to put together an algorithmic derivation with the
 pre-conditions that ensure it is sensible. Indeed, for instance [Γ |-[al] A] does not
 re-check that Γ is well-typed: in the algorithm, this information is instead maintained as

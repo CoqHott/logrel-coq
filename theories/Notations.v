@@ -2,14 +2,13 @@
 From LogRel Require Import Utils BasicAst Context.
 From LogRel.AutoSubst Require Import Ast.
 
-(** We have four families of definitions: the declarative ones (tagged de), the algorithmic ones (tagged al), and the bundled ones, which package an algorithmic typing derivation with its preconditions (tagged bn).
-The bundled intermediate (bni) family uses algorithmic conversion but declarative typing (somewhat similar to the original formalization), while bn uses algorithmic typing and conversion.
+(** We have several families of definitions. We discriminate them by using an opaque tag as a phantom type.
 
 All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input only,
 ideally wisely in cases where there is only one instance at hand. The tagged one is used systematically in printing,
 and can be used in input when disambiguation is desired. *)
 
-Variant tag := | de | al | bn | bni.
+Variant tag := mkTag.
 Inductive class := istype | isterm : term -> class.
 
 Declare Scope typing_scope.

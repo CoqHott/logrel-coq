@@ -46,7 +46,10 @@ Qed.
 
 Module Nf.
 
-Definition nf := de.
+Definition nf : tag.
+Proof.
+constructor.
+Qed.
 
 #[export] Instance WfContextNf : WfContext nf := fun Γ => True.
 #[export] Instance WfTypeNf : WfType nf := fun Γ A => True.
