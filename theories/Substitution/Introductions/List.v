@@ -662,6 +662,130 @@ Proof.
   + irrelevance.
 Qed.
 
+
+Definition ListProp_of_mapProp {Γ l} (A B f x: term)
+  (RA: [Γ ||-<l> A])
+  (RLA : [Γ ||-List<l> tList A])
+  (RB: [Γ ||-<l> B])
+  (RLB : [Γ ||-List<l> tList B])
+  (RAB : [Γ ||-<l> arr A B ])
+  (Rf: [RAB | Γ ||- f : arr A B])
+  (p : ListProp _ _ (normList0 RLA) x) :
+  ListProp _ _ (normList0 RLB) (mapProp A B f x p).
+Proof.
+  destruct p as [ | | x].
+  - cbn. constructor. 1: now escape.
+    eapply LRTyEqRefl_.
+  - cbn. constructor. 1: now escape.
+    + eapply LRTyEqRefl_.
+    + eapply simple_appTerm; tea.
+    + change [LRList' (normList0 RLB) | Γ ||- tMap A B f tl : _ ].
+      unshelve eapply (fst (mapRedAux _)); tea.
+  - constructor.
+    constructor; cbn in *.
+    + eapply tm_ne_map.
+      1-2: now eapply reifyType.
+      1: now eapply reifyTerm.
+      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + eapply ty_map.
+      1-3: now escape.
+      now eapply NeNf.ty.
+    + eapply convneu_map.
+      1-2: now unshelve eapply escapeEq ; solve [ eapply LRTyEqRefl_ | tea ].
+      1: now unshelve eapply escapeEqTerm ; solve [ now eapply LREqTermRefl_ | tea ].
+      now eapply NeNf.refl.
+Defined.
+
+Lemma mapPropRedCompAux {Γ A B C f g i}
+  {RA : [Γ ||-<i> A]}
+  {RB : [Γ ||-<i> B]}
+  {RC : [Γ ||-<i> C]}
+  {LA : [Γ ||-List<i> tList A]}
+  (LA' := normList0 LA : [Γ ||-List<i> tList A])
+  (RLA :=  LRList' LA' : [Γ ||-<i> tList A] )
+  {LB : [Γ ||-List<i> tList B]}
+  (LB' := normList0 LB : [Γ ||-List<i> tList B])
+  (RLB :=  LRList' LB' : [Γ ||-<i> tList B] )
+  {LC : [Γ ||-List<i> tList C]}
+  (LC' := normList0 LC : [Γ ||-List<i> tList C])
+  (RLC :=  LRList' LC' : [Γ ||-<i> tList C] )
+  {RFBC : [Γ ||-<i> arr B C]}
+  {RFAB : [Γ ||-<i> arr A B]}
+  {RFAC : [Γ ||-<i> arr A C]}
+  (Rf: [Γ ||-<i> f : arr B C | RFBC])
+  (Rg: [Γ ||-<i> g : arr A B | RFAB])
+  (Rcomp: [Γ ||-<i> comp A f g : arr A C | RFAC]) :
+  (forall l (Rx: ListRedTm _ _ LA' l),
+      [Γ ||-<i> tMap B C f (tMap A B g (ListRedTm.nf Rx)) ≅ tMap A C (comp A f g) (ListRedTm.nf Rx) : tList C | RLC]) ×
+   (forall l (Rx: ListProp _ _ LA' l),
+       [Γ ||-<i> mapProp B C f _ (ListProp_of_mapProp A _ g _ RA LA RB LB _ Rg Rx) ≅ mapProp A C (comp A f g) l Rx : tList C | RLC]).
+Proof.
+  apply ListRedInduction.
+  - intros.
+    unshelve eapply LREqTermHelper.
+    8: eassumption.
+    5: apply LRTyEqRefl_.
+    1: tea.
+    + eapply transEqTerm; cycle 1.
+      * unshelve eapply (snd (mapRedAux _)); tea.
+      * unshelve eapply (fst (mapEqRedAux _ _)); tea.
+        all: try solve [ eapply LRTyEqRefl_ | now eapply LREqTermRefl_ ].
+        change [ LRList' (normList0 LB') | Γ ||-
+                                  tMap A B g (ListRedTm.nf (Build_ListRedTm nf red eq prop))
+                                  ≅
+                                  mapProp A B g nf prop : _ ].
+        unshelve eapply (snd (mapRedAux _)); tea.
+    + unshelve eapply (snd (mapRedAux _)); tea.
+  - intros. cbn.
+    change [ LRList' LC' | Γ ||- tNil C ≅ tNil C : _ ].
+    unshelve eapply nilEqRed; tea; solve [ now escape | eapply LRTyEqRefl_ ].
+  - intros. cbn.
+    change [ LRList' LC' | Γ ||- tCons C (tApp f (tApp g hd)) (tMap B C f (tMap A B g tl)) ≅
+                             tCons C (tApp (comp A f g) hd) (tMap A C (comp A f g) tl) : _ ].
+    unshelve eapply consEqRed; try eapply LRTyEqRefl_; tea; try now escape.
+    + eapply simple_appTerm; tea.
+      eapply simple_appTerm; tea.
+    + eapply simple_appTerm; tea.
+    + admit.
+    + admit.
+    + unshelve eapply (fst (mapRedAux _)); tea.
+      change [ LRList' (normList0 LB') | Γ ||- tMap A B g tl : _ ].
+      unshelve eapply (fst (mapRedAux _)); tea.
+      change [ LRList' (normList0 LA') | Γ ||- tl : _ ].
+      change [ LRList' LA' | Γ ||- tl : _ ] in l.
+      irrelevance.
+    + unshelve eapply (fst (mapRedAux _)); tea.
+      change [ LRList' (normList0 LA') | Γ ||- tl : _ ].
+      change [ LRList' LA' | Γ ||- tl : _ ] in l.
+      irrelevance.
+  - intros. cbn.
+    change [ LRList' LC' | Γ ||- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l : _ ].
+    eapply neuTermEq.
+    + eapply tm_ne_map.
+      1-2: now eapply reifyType.
+      1: now eapply reifyTerm.
+      eapply tm_ne_map.
+      1-2: now eapply reifyType.
+      1: now eapply reifyTerm.
+      match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + eapply tm_ne_map.
+      1-2: now eapply reifyType.
+      1: admit.
+      match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+    + eapply ty_map.
+      1-3: now escape.
+      eapply ty_map.
+      1-3: now escape.
+      now eapply NeNf.ty.
+    + eapply ty_map.
+      1-2: now escape.
+      1: admit.
+      now eapply NeNf.ty.
+    + eapply convneu_map_comp.
+      1-5: now escape.
+      now eapply NeNf.refl.
+Admitted.
+
 Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VΓ : [||-v Γ]}
   {VA : [Γ ||-v<i> A | VΓ]}
@@ -671,13 +795,43 @@ Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VLB : [Γ ||-v<i> tList B | VΓ]}
   {VLC : [Γ ||-v<i> tList C | VΓ]}
   {VFBC : [Γ ||-v<i> arr B C | VΓ]}
-  {VFAB' : [Γ ||-v<i> arr A B | VΓ]}
+  {VFAB : [Γ ||-v<i> arr A B | VΓ]}
+  {VFAC : [Γ ||-v<i> arr A C | VΓ]}
   {Vf : [Γ ||-v<i> f : arr B C | VΓ | VFBC ]}
-  {Vg : [Γ ||-v<i> g : arr A B | VΓ | VFAB' ]}
+  {Vg : [Γ ||-v<i> g : arr A B | VΓ | VFAB ]}
   {Vl : [Γ ||-v<i> l : tList A | VΓ | VLA ]}
   {Vl' : [Γ ||-v<i> l' : tList A | VΓ | VLA ]} :
   [Γ ||-v<i> tMap B C f (tMap A B g l') ≅ tMap A C (comp A f g) l' : tList C | VΓ | VLC].
 Proof.
+  split; intros.
+  instValid Vσ.
+  unshelve eapply LREqTermHelper.
+  8:{
+    epose (fst (mapPropRedCompAux _ _ _) _ _).
+    irrelevance.
+  }
+  all: refold.
+  5: eapply LRTyEqRefl_.
+  1: eassumption.
+  - cbn.
+    unshelve eapply (fst (mapEqRedAux _ _)).
+    all: try solve [ now eapply LRTyEqRefl_ ].
+    all: try solve [ tea | eapply invLRList; tea | now eapply ArrRedTy ].
+    + admit.
+    + admit.
+    + eapply LREqTermRefl_. admit.
+    + admit. (* unshelve eapply (fst (mapRedAux _)).  *)
+  - unshelve eapply (fst (mapEqRedAux _ _)); tea. (* have to apply a congruence for composition? *)
+    all: try solve [ now eapply LRTyEqRefl_ ].
+    all: try solve [ tea | eapply invLRList; tea | now eapply ArrRedTy ].
+    all: refold.
+    4:{
+      epose (fst (mapRedAux _)); tea.
+      admit.
+    }
+    + admit.
+    + admit.
+    + admit.
 Admitted.
 
 Lemma mapPropRedIdAux {Γ A i}
