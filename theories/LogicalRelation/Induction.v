@@ -50,6 +50,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     | LRNat _ NA => LRNat _ NA
     | LREmpty _ NA => LREmpty _ NA
     | LRSig _ PA PAad => LRSig _ PA (embedPolyAd PAad)
+    | LRList _ LA LAad => LRList _ LA {| ListRedTyPack.parAd := LR_embedding l_ LAad.(ListRedTyPack.parAd) |}
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -82,12 +83,18 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (Γ : context) (A : term) (ΠA : SigRedTy@{j} Γ A) (HAad : SigRedTyAdequate (LR rec) ΠA),
       PolyHyp P Γ ΠA HAad (P (LRSig rec ΠA HAad))) ->
 
+    (forall Γ A (LA : ListRedTyPack@{j} Γ A) (LAad : ListRedTyAdequate (LR rec) LA),
+        P (LAad.(ListRedTyPack.parAd)) ->
+        (* PiHyp P Γ (LA.(ListRedTyPack.arrParRed))
+          (LAad.(ListRedTyPack.arrParAd)) *)
+          (P (LRList rec LA LAad))) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros HU Hne HPi HNat HEmpty HSig.
+    intros HU Hne HPi HNat HEmpty HSig HList.
     fix HRec 6.
     destruct lr.
     - eapply HU.
@@ -97,6 +104,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     - eapply HNat.
     - eapply HEmpty.
     - eapply HSig.
+      all: intros; eapply HRec.
+    - eapply HList.
       all: intros; eapply HRec.
   Defined.
 
@@ -129,14 +138,20 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypLogRel P Γ ΠA (P (LRSig' ΠA).(LRAd.adequate ))) ->
 
+    (forall l Γ A (LA : ListRedTy@{i j k l} Γ A l),
+        P (LA.(ListRedTy.parRed).(LRAd.adequate)) ->
+        (* PiHypLogRel P Γ (LA.(ListRedTy.arrParRed)) *)
+          (P (LRList' LA).(LRAd.adequate))) ->
+
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
       (rTeEq  : term -> term -> Type@{k}) (lr : LR@{j k l} (LogRelRec@{i j k} l) Γ t rEq rTe rTeEq),
       P lr.
   Proof.
-    intros ?? HPi ?? HSig **; eapply LR_rect@{j k l o}.
+    intros ?? HPi ?? HSig HList **; eapply LR_rect@{j k l o}.
     1,2,4,5: auto.
     - intros; eapply (HPi _ _ _ (ParamRedTy.from HAad)); eauto.
     - intros; eapply (HSig _ _ _ (ParamRedTy.from HAad)); eauto.
+    - intros. eapply (HList _ _ _ (ListRedTy.from LAad)); tea.
   Defined.
 
   Notation PolyHypTyUr P Γ ΠA G :=
@@ -164,10 +179,14 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
 
+    (forall l Γ A (LA : ListRedTy@{i j k l} Γ A l),
+      P LA.(ListRedTy.parRed) ->
+      P (LRList' LA)) ->
+
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
   Proof.
-    intros HU Hne HPi HNat HEmpty HSig l Γ A lr.
+    intros HU Hne HPi HNat HEmpty HSig HList l Γ A lr.
     apply (LR_rect_LogRelRec@{i j k l o} (fun l Γ A _ _ _ lr => P l Γ A (LRbuild lr))).
     all: auto.
   Defined.
@@ -191,6 +210,7 @@ Section Inversions.
     | NatType => [Γ ||-Nat A]
     | EmptyType => [Γ ||-Empty A]
     | SigType => [Γ ||-Σ<l> A]
+    | ListType => [Γ ||-List<l> A]
     | NeType _ => [Γ ||-ne A]
     end.
   Proof.
@@ -252,6 +272,12 @@ Section Inversions.
         eapply whred_det.
         1-3: gen_typing.
         eapply redty_red, redA.
+    - intros ??? LA _ A' red whA.
+      enough (∑ P, A' = tList P) as [? ->].
+      + dependent inversion whA; subst; tea.
+        inv_whne.
+      + destruct LA as [? redA]; eexists.
+        eapply whred_det; tea; gen_typing.
   Qed.
 
   Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U<l> U].
@@ -279,5 +305,10 @@ Section Inversions.
   Qed.
 
   (* invLRNat is useless *)
+
+  Lemma invLRList {Γ l A} : [Γ ||-<l> tList A] -> [Γ ||-List<l> tList A].
+  Proof.
+    intros; now unshelve eapply (invLR _ redIdAlg ListType).
+  Qed.
 
 End Inversions.

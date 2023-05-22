@@ -69,6 +69,15 @@ Solve All Obligations with
   destruct Rp as [???? fstRed sndRed]; cbn in *; subst;
   first [eapply fstRed | irrelevanceRefl; now unshelve eapply sndRed| eassumption].
 
+#[program]
+Definition normList0 {Γ l A} (LA : [Γ ||-List<l> tList A]) : [Γ ||-List<l> tList A] :=
+  {| ListRedTy.par := A |}.
+Solve All Obligations with 
+  intros; destruct LA as [? red]; pose proof (e := redtywf_whnf red whnf_tList); 
+  injection e; intros; subst; clear e; tea.
+
+Definition normList {Γ l A} (LA : [Γ ||-<l> tList A]) : [Γ ||-<l> tList A] :=
+  LRList' (normList0 (invLRList LA)).
 
 End Normalization.
 

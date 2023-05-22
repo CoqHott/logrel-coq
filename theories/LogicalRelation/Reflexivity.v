@@ -51,6 +51,24 @@ Section Reflexivities.
       now eapply NeNfEqRefl.
   Qed.
 
+  Lemma ListRedTmEqRefl0 {Γ A l} (LA : [Γ ||-List<l> A])
+    (ih : forall t : term,
+          [ListRedTyPack.parRed LA | Γ ||- t : ListRedTyPack.par LA] ->
+          [ListRedTyPack.parRed LA | Γ ||- t ≅ t : ListRedTyPack.par LA]) :
+    (forall t : term, ListRedTm Γ A LA t -> ListRedTmEq Γ A LA t t)
+    × (forall t : term, ListProp Γ A LA t -> ListPropEq Γ A LA t t).
+  Proof.
+    eapply ListRedInduction.
+    1,2,3: intros **.
+    all: try now econstructor.
+    1:{
+      pose (Rt := Build_ListRedTm nf red eq prop).
+      exists Rt Rt ; tea.
+    }
+    intros. econstructor; tea.
+    now eapply NeNfEqRefl.
+  Defined.
+
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
@@ -80,6 +98,7 @@ Section Reflexivities.
       1-2: now econstructor.
       all: cbn.
       all: now eauto.
+    - intros LA LAad IHPar. now eapply (ListRedTmEqRefl0 (ListRedTy.from LAad) IHPar).
   Qed.
 
   Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
@@ -89,6 +108,14 @@ Section Reflexivities.
     destruct lr as [[] lr].
     cbn in *.
     now eapply LRTmEqRefl.
+  Qed.
+
+  Lemma ListRedTmEqRefl {Γ A l} (LA : [Γ ||-List<l> A]) :
+    (forall t : term, ListRedTm Γ A LA t -> ListRedTmEq Γ A LA t t)
+    × (forall t : term, ListProp Γ A LA t -> ListPropEq Γ A LA t t).
+  Proof.
+    apply ListRedTmEqRefl0; intros.
+    now eapply LREqTermRefl_.
   Qed.
 
 End Reflexivities.

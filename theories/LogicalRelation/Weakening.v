@@ -57,6 +57,20 @@ Section Weakenings.
     gen_typing. 
   Qed.
 
+  Lemma wkList  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ])
+    (LA : [Γ ||-List< l > A])
+    (ih : [Δ ||-< l > (ListRedTy.par LA)⟨ρ⟩])
+    :
+    [Δ ||-List< l > A⟨ρ⟩].
+  Proof.
+    destruct LA as [ty].
+    exists (ty ⟨ρ⟩).
+    + change (tList _) with ((tList ty)⟨ρ⟩) ; gen_typing.
+    + gen_typing.
+    + change (tList _) with ((tList ty)⟨ρ⟩) ; gen_typing.
+    + assumption.
+  Defined.
+
   Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
     [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
   Proof.
@@ -71,7 +85,14 @@ Section Weakenings.
     - intros; eapply LRNat_; now eapply wkNat.
     - intros; eapply LREmpty_; now eapply wkEmpty.
     - intros; apply LRSig'; now eapply wkΣ.
+    - intros ??? ? ih ???. apply LRList'. eapply (wkList ρ wfΔ LA).
+      now eapply ih.
   Defined.
+
+  Definition wkList' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ])
+    (LA : [Γ ||-List< l > A]) :=
+    let ih := (wk ρ wfΔ (ListRedTy.parRed LA)) in
+    wkList ρ wfΔ LA ih.
 
   Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
     wk ρ wfΔ (LRPi' ΠA) = LRPi' (wkΠ ρ wfΔ ΠA).
@@ -123,6 +144,15 @@ Section Weakenings.
       + rewrite wk_sig.
         replace (tSig _ _) with (ΠA.(outTy)⟨ρ⟩) by (cbn; now bsimpl).
         now eapply convty_wk.
+    - intros * ih * [ty].
+      exists (ty⟨ρ⟩).
+      + change (tList _) with ((tList ty)⟨ρ⟩) ; gen_typing.
+      + cbn.
+        change (tList ?ty⟨ρ⟩) with ((tList ty)⟨ρ⟩).
+        now eapply convty_wk.
+      + cbn in *.
+        intros; irrelevanceRefl.
+        now unshelve apply ih.
   Qed.
 
   (* TODO: use program or equivalent to have only the first field non-opaque *)
@@ -172,6 +202,35 @@ Section Weakenings.
       rewrite <- wk_comp_ren_on; cbn; now rewrite <- wk_up_ren_subst.
   Defined.
 
+  Lemma wkListTerm {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
+    (ih: forall (t : term),
+        [ListRedTy.parRed LA | Γ ||- t : ListRedTy.par LA] ->
+        [wk ρ wfΔ (ListRedTy.parRed LA) | Δ ||- t⟨ρ⟩ : (ListRedTy.par LA)⟨ρ⟩])
+    (LA' := wkList' ρ wfΔ LA) :
+    (forall u, [Γ ||-<l> u : A | LRList' LA] ->
+          [Δ ||-<l> u⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
+      × (forall u, ListProp Γ A LA u -> ListProp Δ A⟨ρ⟩ LA' u⟨ρ⟩).
+  Proof.
+    eapply ListRedInduction.
+    - intros. econstructor.
+      + cbn. change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+        now eapply redtmwf_wk.
+      + cbn. change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+        now eapply convtm_wk.
+      + assumption.
+    - intros. econstructor.
+      + now eapply wft_wk.
+      + cbn. now eapply wkEq.
+    - intros. econstructor.
+      + now eapply wft_wk.
+      + now eapply wkEq.
+      + fold ren_term. now apply ih.
+      + eassumption.
+    - intros. econstructor.
+      cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+      now eapply wkNeNf.
+  Defined.
+
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ : A⟨ρ⟩ | wk ρ wfΔ lrA].
   Proof.
@@ -209,7 +268,19 @@ Section Weakenings.
         change tEmpty with tEmpty⟨ρ⟩.
         now eapply wkNeNf.
     - intros; now apply wkΣTerm. 
+    - intros * ih *. now eapply wkListTerm.
   Qed.
+
+
+  Lemma wkListTerm' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
+    (LA' := wkList' ρ wfΔ LA) :
+    (forall u, [Γ ||-<l> u : A | LRList' LA] ->
+          [Δ ||-<l> u⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
+      × (forall u, ListProp Γ A LA u -> ListProp Δ A⟨ρ⟩ LA' u⟨ρ⟩).
+  Proof.
+    apply wkListTerm.
+    intros. now apply wkTerm.
+  Defined.
 
   Lemma wkUTerm {Γ Δ l A t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) :
     [LogRelRec l| Γ ||-U t : A | h ] -> [LogRelRec l | Δ||-U t⟨ρ⟩ : A⟨ρ⟩ | wkU ρ wfΔ h].
@@ -227,6 +298,44 @@ Section Weakenings.
   Proof.
     intros []; constructor. gen_typing.
   Qed.  
+
+  Lemma wkListTermEq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
+    (ih: forall (t u : term),
+      [ListRedTy.parRed LA | Γ ||- t ≅ u : ListRedTy.par LA] ->
+      [wk ρ wfΔ (ListRedTy.parRed LA) | Δ ||- t⟨ρ⟩ ≅ u⟨ρ⟩ : (ListRedTy.par LA)⟨ρ⟩])
+    (LA' := wkList' ρ wfΔ LA) :
+    (forall u t, [Γ ||-<l> u ≅ t : A | LRList' LA] ->
+          [Δ ||-<l> u⟨ρ⟩ ≅ t⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
+      × (forall u t, ListPropEq Γ A LA u t -> ListPropEq Δ A⟨ρ⟩ LA' u⟨ρ⟩ t⟨ρ⟩).
+  Proof.
+    eapply ListRedEqInduction.
+    - intros.
+      unshelve eexists.
+      1-2: now apply wkListTerm'.
+      + cbn.
+        destruct Rt, Ru.
+        cbn.
+        change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+        now eapply convtm_wk.
+      + destruct Rt, Ru.
+        cbn.
+        assumption.
+    - intros. econstructor.
+      + now eapply wft_wk.
+      + now eapply wkEq.
+      + now eapply wft_wk.
+      + now eapply wkEq.
+    - intros. econstructor.
+      + now eapply wft_wk.
+      + now eapply wkEq.
+      + now eapply wft_wk.
+      + now eapply wkEq.
+      + now apply ih.
+      + assumption.
+    - intros. constructor.
+      cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+      now eapply wkNeNfEq.
+  Qed.
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t ≅ u : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ ≅ u⟨ρ⟩: A⟨ρ⟩ | wk ρ wfΔ lrA].
@@ -286,5 +395,6 @@ Section Weakenings.
       + intros; cbn; irrelevance0.
         2: do 2 rewrite wk_comp_ren_on; now unshelve eapply eqSnd.
         rewrite wk_comp_ren_on; now rewrite <- wk_up_ren_subst.
+    - intros. now eapply wkListTermEq.
   Qed.
 End Weakenings.

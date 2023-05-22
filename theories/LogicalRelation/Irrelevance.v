@@ -1,7 +1,7 @@
 (** * LogRel.LogicalRelation.Irrelevance: symmetry and irrelevance of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Escape.
 
 Set Universe Polymorphism.
 Set Printing Universes.
@@ -241,6 +241,81 @@ Proof.
   intros ?? []; econstructor; tea. gen_typing.
 Qed.
 
+Section ListIrrelevanceLemmas.
+Universe i j k l i' j' k' l' v.
+Context {Γ lA lA' A A'} 
+  (LA : ListRedTy@{i j k l} Γ A lA) 
+  (LA' : ListRedTy@{i' j' k' l'} Γ A' lA')
+  (RA := LRList' LA)
+  (RA' := LRList' LA')
+  (eqList : [Γ |- tList (ListRedTy.par LA) ≅ tList (ListRedTy.par LA')])
+  (eqPar : [Γ |- ListRedTy.par LA ≅ ListRedTy.par LA'])
+  .
+
+Context (eqvPar : equivLRPack@{k k' v} (LA.(ListRedTy.parRed)) (LA'.(ListRedTy.parRed))).
+  (* (eqvArrPar : equivLRPack (LRPi' LA.(ListRedTy.arrParRed)) (LRPi' LA'.(ListRedTy.arrParRed))). *)
+
+Lemma ListIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
+Proof.
+  intros []; econstructor; tea.
+  - etransitivity; tea; now symmetry.
+  - now eapply eqvPar.
+Qed.
+
+Lemma ListIrrelevanceTm : 
+  (forall t, [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'])
+  × (forall t, ListProp Γ A LA t -> ListProp Γ A' LA' t).
+Proof.
+  eapply ListRedInduction; intros; econstructor; tea.
+  3-5: now eapply eqvPar.
+  1: now eapply redtmwf_conv.
+  1: now eapply convtm_conv.
+  eapply NeNfconv; tea. 
+  destruct LA'; cbn in *; escape; gen_typing.
+Defined.
+
+Lemma ListIrrelevanceTmEq : 
+  (forall t u, [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA'])
+  × (forall t u, ListPropEq Γ A LA t u -> ListPropEq Γ A' LA' t u).
+Proof.
+  pose (par := ListRedTy.par LA).
+  pose (par' := ListRedTy.par LA').
+  assert [Γ |- par] by (eapply escape; apply ListRedTy.parRed).
+  assert [Γ |- par'] by (eapply escape; apply ListRedTy.parRed).
+  assert [Γ |- tList par'] by gen_typing.
+  eapply ListRedEqInduction; intros.
+  2-4: econstructor; tea.
+  all: try solve [ now eapply redtmwf_conv
+                 | now eapply eqvPar
+                 | now eapply convtm_conv
+                 | now eapply NeNfEqconv ].
+  exists (fst ListIrrelevanceTm _ Rt) (fst ListIrrelevanceTm _ Ru) ; destruct Rt, Ru.
+  1: now eapply convtm_conv.
+  eassumption.
+Qed.
+
+End ListIrrelevanceLemmas.
+
+Lemma ListIrrelevanceLRPack@{i j k l i' j' k' l' v} {Γ lA lA' A A'} 
+  (LA : ListRedTy@{i j k l} Γ A lA) 
+  (LA' : ListRedTy@{i' j' k' l'} Γ A' lA')
+  (RA := LRList' LA)
+  (RA' := LRList' LA')
+  (RAA' : [Γ ||-<lA> A ≅ A' | RA])
+  (eqvPar : equivLRPack@{k k' v} (LA.(ListRedTy.parRed)) (LA'.(ListRedTy.parRed))) :
+  equivLRPack@{k k' v} RA RA'.
+Proof.
+  pose proof (eqvPar' := symLRPack eqvPar).
+  pose proof (RAA'.(ListRedTyEq.eq)).
+  pose proof (escapeEq _ (RAA'.(ListRedTyEq.parRed))).
+  unshelve epose proof (e := redtywf_det _ _ _ _ _  _ LA'.(ListRedTy.red) RAA'.(ListRedTyEq.red)).
+  1,2: constructor.
+  symmetry in e; injection e; clear e; intros h; rewrite h in *; clear h.
+  constructor.
+  - split; apply ListIrrelevanceTyEq; tea; now symmetry.
+  - split; apply ListIrrelevanceTm; tea; now symmetry.
+  - split; apply ListIrrelevanceTmEq; tea; now symmetry.
+Qed.
 
 Section NatIrrelevant.
   Universe i j k l i' j' k' l'.
@@ -386,13 +461,13 @@ Lemma LRIrrelevantPreds {lA lA'}
 Proof.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod]
+  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod | ?? LA LAad IhPar]
     in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now apply UnivIrrelevanceLRPack.
   - destruct lrA'  ; try solve [destruct s] ; clear s.
     now unshelve eapply NeIrrelevanceLRPack.
-  - destruct lrA' as [| | ? A' ΠA' HAad'| | |] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -411,7 +486,7 @@ Proof.
     now unshelve eapply NatIrrelevanceLRPack.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now unshelve eapply EmptyIrrelevanceLRPack.
-  - destruct lrA' as [| | | | |? A' ΠA' HAad'] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -426,6 +501,14 @@ Proof.
     + intros; unshelve eapply IHcod.
       2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
+  - destruct lrA' as [| | | | | |? A' LA' LAad' ] ; try solve [destruct s] ; clear s; cbn in *.
+    eapply (ListIrrelevanceLRPack (ListRedTy.from LAad) (ListRedTy.from LAad')); tea.
+    apply IhPar.
+    1: exact (ListRedTyPack.parAd LAad').
+    pose proof (ListRedTyEq.parRed he).
+    unshelve epose proof (e := redtywf_det _ _ _ _ _  _ LA'.(ListRedTyPack.red) he.(ListRedTyEq.red)).
+    1,2: constructor.
+    symmetry in e; injection e; intros h; rewrite h in *; assumption.
 Qed.
 
 
@@ -473,7 +556,7 @@ Lemma LRIrrelevantCumTy {lA}
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
   intros [ [] lrA ] ; cbn in lrA.
-  induction lrA as [? ? [l1 lt1] | ? | ? A [] ? IHdom IHcod|?? NEA|?? NEA| ?? [] ? IHdom IHcod].
+  induction lrA as [? ? [l1 lt1] | ? | ? A [] ? IHdom IHcod|?? NEA|?? NEA| ?? [] ? IHdom IHcod| ?? [] [] IhPar].
   - eapply LRU_. econstructor ; tea.
   - eapply LRne_. exact neA.
   - cbn in *. eapply LRPi'; unshelve econstructor.
@@ -488,6 +571,9 @@ Proof.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
     1: now eapply PolyRed.from.
     intros; now eapply IHcod.
+  - eapply LRList'. econstructor.
+    1-3: eassumption.
+    exact IhPar.
 Qed.
 
 
@@ -766,6 +852,16 @@ Proof.
       eapply LRTmEqRedConv.
       2: eapply eqSnd.
       now eapply PolyRed.posExt.
+  - intros * ihpar.
+    enough ((forall t u, [LRList'@{i j k l} LA | Γ ||- t ≅ u : A] ->
+                    [LRList'@{i j k l} LA | Γ ||- u ≅ t : A])
+              × (forall t u, ListPropEq@{k} Γ A (ListRedTy.toPack LA) t u ->
+                        ListPropEq@{k} Γ A (ListRedTy.toPack LA) u t)).
+    1: now eauto.
+    apply ListRedEqInduction; intros; econstructor; tea.
+    all: try now symmetry.
+    2: try now apply NeNfEqSym.
+    1: now apply ihpar.
 Qed.
 
 End Irrelevances.

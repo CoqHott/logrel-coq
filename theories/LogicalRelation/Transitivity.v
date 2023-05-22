@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance Escape.
 
 Set Universe Polymorphism.
 
@@ -74,9 +74,9 @@ Proof.
   destruct RA as [pA lrA], RB as [pB lrB], RC as [pC lrC]; cbn in *.
   set (sv := combine _ _ _ _ lrA lrB lrC (ShapeViewConv _ _ RAB) (ShapeViewConv _ _ RBC)).
   revert lB B pB lrB lC C pC lrC RAB RBC sv.
-  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| | |?? PA PAad ihdom ihcod]; intros ??? lrB;
-  induction lrB as [|?? neB|?? ΠB ΠBad _ _| | | ?? PB PBad _ _]; intros ??? lrC;
-  induction lrC as [| |?? ΠC ΠCad _ _| | | ?? PC PCad _ _]; intros RAB RBC [].
+  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| | |?? PA PAad ihdom ihcod|?? LA LAad ih]; intros ??? lrB;
+  induction lrB as [|?? neB|?? ΠB ΠBad _ _| | | ?? PB PBad _ _|?? LB LBad _]; intros ??? lrC;
+  induction lrC as [| |?? ΠC ΠCad _ _| | | ?? PC PCad _ _|?? LC LCad _]; intros RAB RBC [].
   - easy.
   - destruct RAB as [tB red], RBC as [tC]; exists tC. assumption.
     etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
@@ -102,6 +102,21 @@ Proof.
     + eapply (transPolyRedEq@{i j k l} (PolyRed.from PAad) (PolyRed.from PBad) (PolyRed.from PCad)); cbn; tea.
       * intros * ; eapply ihdom; now eapply (PolyRedPack.shpRed PA).
       * intros *; eapply ihcod; eapply (PolyRedPack.posRed PA); tea.
+  - revert RAB RBC; intros [parB redB ? parBRedEq] [parC redC ? parCRedEq'].
+    destruct LB as [parB' redB'], LC as [parC' redC'], LBad as [AdB], LCad as [AdC]; cbn in *.
+    unshelve epose proof (eqLB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
+    injection eqLB ; intros ?; clear eqLB;  subst.
+    unshelve epose proof (eqLC := redtywf_det _ _ _ _ _ _ redC' redC).  1,2 : constructor.
+    injection eqLC ; intros ?; clear eqLC;  subst.
+    exists parC.
+    + assumption.
+    + etransitivity ; eassumption.
+    + unshelve eapply ih.
+      10: eassumption.
+      7: eassumption.
+      6: eassumption.
+      3: eassumption.
+      apply (ListRedTyPack.parRed LA).
 Qed.
 
 
@@ -251,6 +266,46 @@ Proof.
     eapply HH; eauto.
 Qed.
 
+
+Lemma transEqTermList {Γ A l} (LA : [Γ ||-List<l> A])
+  (ih: forall t u v : term,
+      [ListRedTy.parRed LA | Γ ||- t ≅ u : ListRedTy.par LA] ->
+      [ListRedTy.parRed LA | Γ ||- u ≅ v : ListRedTy.par LA] ->
+      [ListRedTy.parRed LA | Γ ||- t ≅ v : ListRedTy.par LA]) :
+  (forall t u,
+      ListRedTmEq _ _ LA t u -> forall v,
+      ListRedTmEq _ _ LA u v ->
+      ListRedTmEq _ _ LA t v) ×
+  (forall t u,
+    ListPropEq _ _ LA t u -> forall v,
+    ListPropEq _ _ LA u v ->
+    ListPropEq _ _ LA t v).
+Proof.
+  apply ListRedEqInduction.
+  - intros * ?? h ? uv ; inversion uv ; subst.
+    assert (whnf (ListRedTm.nf Ru)) by (eapply ListProp_whnf ; now eapply ListRedTm.prop).
+    assert (whnf (ListRedTm.nf Rt0)) by (eapply ListProp_whnf ; now eapply ListRedTm.prop).
+    unshelve epose (eqR := redtmwf_det _ u _ _ _ _ _ _ (ListRedTm.red Ru) (ListRedTm.red Rt0)); tea.
+    unshelve econstructor ; tea.
+    + etransitivity ; tea. etransitivity ; tea.
+      rewrite eqR. eapply lrefl ; tea.
+    + eapply h. rewrite eqR. eassumption.
+  - intros * ????? uv.
+    inversion uv ; subst.
+    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H as [?%convneu_whne]; inv_whne end.
+    now econstructor.
+  - intros * ????? ? h ? uv.
+    inversion uv ; subst.
+    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H as [?%convneu_whne]; inv_whne end.
+    econstructor ; try easy.
+  - intros * ?? uv.
+    assert (whne l'). 1: eapply convneu_whne; symmetry; now eapply NeNf.conv.
+    inversion uv ; subst.
+    all: try (match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; inv_whne end ; fail).
+    econstructor ; try easy.
+    now eapply transNeNfEq.
+Qed.
+
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]} :
   [Γ ||-<lA> t ≅ u : A | RA] ->
@@ -264,6 +319,7 @@ Proof.
   - intros ? NA **; now eapply (fst (transEqTermNat NA)).
   - intros ? NA **; now eapply (fst (transEqTermEmpty NA)).
   - intros * ?????; apply transEqTermΣ; tea.
+  - intros * ?????. eapply transEqTermList ; try easy.
 Qed.
 
 Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :

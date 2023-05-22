@@ -534,7 +534,6 @@ End NeNf.
 Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
 Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
 
-
 (** ** Reducibility of natural number type *)
 Module NatRedTy.
 
@@ -607,7 +606,6 @@ Let NatRedInductionType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma NatRedInduction : NatRedInductionType.
 Proof.
   intros ??? PRed PProp **; split; now apply (_NatRedInduction _ _ _ PRed PProp).
@@ -680,7 +678,6 @@ Let NatRedEqInductionType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma NatRedEqInduction : NatRedEqInductionType.
 Proof.
   intros ??? PRedEq PPropEq **; split; now apply (_NatRedEqInduction _ _ _ PRedEq PPropEq).
@@ -816,9 +813,218 @@ Export EmptyRedTmEq(EmptyRedTmEq,Build_EmptyRedTmEq, EmptyPropEq).
 
 Notation "[ Γ ||-Empty t ≅ u : A | RA ]" := (@EmptyRedTmEq _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
 
+
+(** ** Reducibility at List *)
+
+Module ListRedTyPack.
+
+  Record ListRedTyPack@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term}
+  : Type (* @ max(Set, i+1) *) := {
+    par : term ;
+    red : [Γ |- A :⇒*: tList par];
+    parTy : [Γ |- par];
+    eq : [Γ |- tList par ≅ tList par];
+    parRed : LRPack@{i} Γ par ;
+  }.
+
+  Arguments ListRedTyPack {_ _ _ _ _}.
+
+
+  Record ListRedTyAdequate@{i j} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term} {R : RedRel@{i j}} {LA : ListRedTyPack@{i} Γ A}
+  : Type@{j} := {
+      parAd : LRPackAdequate@{i j} R LA.(parRed) ;
+      (* arrParAd : PiRedTyAdequate@{i j} R LA.(arrParRed) *)
+    }.
+
+  Arguments ListRedTyAdequate {_ _ _ _ _ _ _}.
+
+End ListRedTyPack.
+
+Export ListRedTyPack(ListRedTyPack,Build_ListRedTyPack,ListRedTyAdequate).
+
+
+Module ListRedTyEq.
+
+  Record ListRedTyEq@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {Γ : context} {A : term} {LA : ListRedTyPack@{i} Γ A} {B : term}
+    (par0 := LA.(ListRedTyPack.par))
+  : Type (* @ max(Set, i+1) *) := {
+    par : term ;
+    red : [Γ |- B :⇒*: tList par];
+    eq : [Γ |- tList par0 ≅ tList par];
+    parRed : [LA.(ListRedTyPack.parRed) | Γ ||- par0 ≅ par] ;
+  }.
+
+  Arguments ListRedTyEq {_ _ _ _ _}.
+
+End ListRedTyEq.
+
+Export ListRedTyEq(ListRedTyEq,Build_ListRedTyEq).
+
+Module ListRedTm.
+Section ListRedTm.
+  Universe i.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta}
+    {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
+
+  Let par := LA.(ListRedTyPack.par).
+  Let parRedΓ := ListRedTyPack.parRed LA.
+
+  Inductive ListRedTm : term -> Type :=
+  | Build_ListRedTm {t}
+    (nf : term)
+    (red : [Γ |- t :⇒*: nf : tList par ])
+    (eq : [Γ |- nf ≅ nf : tList par])
+    (prop : ListProp nf) : ListRedTm t
+
+  with ListProp : term -> Type :=
+  (* KM: plugging in the parameter type directly... Is that ok ? *)
+  | nilR {P} :
+    [Γ |- P] ->
+    [parRedΓ | Γ ||- par ≅ P] ->
+    ListProp (tNil P)
+  | consR {P hd tl} :
+    [Γ |- P] ->
+    [parRedΓ | Γ ||- par ≅ P] ->
+    [parRedΓ | Γ ||- hd : par] ->
+    ListRedTm tl ->
+    ListProp (tCons P hd tl)
+  | neR {l} : [Γ ||-NeNf l : tList par] -> ListProp l.
+
+Definition nf {n} : @ListRedTm n -> term.
+Proof.
+  intros [? nf]. exact nf.
+Defined.
+
+Definition red {t} (Rt : @ListRedTm t) : [Γ |- t :⇒*: nf Rt : tList par ].
+  destruct Rt. assumption.
+Defined.
+
+Definition eq {t} (Rt : @ListRedTm t) : [Γ |- nf Rt ≅ nf Rt : tList par].
+  destruct Rt. assumption.
+Defined.
+
+Definition prop {t} (Rt : @ListRedTm t) : ListProp (nf Rt).
+  destruct Rt. assumption.
+Defined.
+
+Scheme
+    ListRedTm_mut_rect := Induction for ListRedTm Sort Type with
+    ListProp_mut_rect := Induction for ListProp   Sort Type.
+
+Combined Scheme _ListRedInduction from
+  ListRedTm_mut_rect,
+  ListProp_mut_rect.
+
+Let _ListRedInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _ListRedInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let ListRedInductionType :=
+  ltac: (let ind := eval cbv delta [_ListRedInductionType] zeta
+    in _ListRedInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma ListRedInduction : ListRedInductionType.
+Proof.
+  intros PRed PProp **; split; now apply (_ListRedInduction PRed PProp).
+Defined.
+
+
+
+End ListRedTm.
+Arguments ListRedTm {_ _ _ _ _ _ _ _ _}.
+Arguments ListProp {_ _ _ _ _ _ _ _ _}.
+End ListRedTm.
+
+Export ListRedTm(ListRedTm,Build_ListRedTm, ListProp, ListRedInduction).
+
+
+Module ListRedTmEq.
+Section ListRedTmEq.
+  Universe i.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta}
+    {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
+
+  Let par := LA.(ListRedTyPack.par).
+  Let parRedΓ := ListRedTyPack.parRed LA.
+  (* Let parEndRed := ListRedTyPack.arrParRed LA. *)
+
+  Inductive ListRedTmEq : term -> term -> Type :=
+  | Build_ListRedTmEq {t u}
+    (Rt: ListRedTm@{i} _ _ LA t)
+    (Ru: ListRedTm@{i} _ _ LA u)
+    (eq : [Γ |- ListRedTm.nf Rt ≅ ListRedTm.nf Ru : tList par])
+    (prop : ListPropEq (ListRedTm.nf Rt) (ListRedTm.nf Ru)) : ListRedTmEq t u
+
+  with ListPropEq : term -> term -> Type :=
+  (* KM: plugging in the parameter type directly... Is that ok ? *)
+  | nilReq {P P'} :
+    [Γ |- P] ->
+    [parRedΓ | Γ ||- par ≅ P] ->
+    [Γ |- P'] ->
+    [parRedΓ | Γ ||- par ≅ P'] ->
+    ListPropEq (tNil P) (tNil P')
+  | consReq {P P' hd hd' tl tl'} :
+    [Γ |- P] ->
+    [parRedΓ | Γ ||- par ≅ P] ->
+    [Γ |- P'] ->
+    [parRedΓ | Γ ||- par ≅ P'] ->
+    [parRedΓ | Γ ||- hd ≅ hd' : par] ->
+    ListRedTmEq tl tl' ->
+    ListPropEq (tCons P hd tl) (tCons P' hd' tl')
+  | neReq {l l'} : [Γ ||-NeNf l ≅ l' : tList par] -> ListPropEq l l'.
+
+Scheme
+    Minimality for ListRedTmEq Sort Type with
+    Minimality for ListPropEq  Sort Type.
+
+Combined Scheme _ListRedEqInduction from
+  ListRedTmEq_rect_nodep,
+  ListPropEq_rect_nodep.
+
+Let _ListRedEqInductionType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _ListRedEqInduction);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let ListRedEqInductionType :=
+  ltac: (let ind := eval cbv delta [_ListRedEqInductionType] zeta
+    in _ListRedEqInductionType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma ListRedEqInduction : ListRedEqInductionType.
+Proof.
+  intros PRedEq PPropEq **; split; now apply (_ListRedEqInduction PRedEq PPropEq).
+Defined.
+
+End ListRedTmEq.
+Arguments ListRedTmEq {_ _ _ _ _ _ _ _ _}.
+Arguments ListPropEq {_ _ _ _ _ _ _ _ _}.
+End ListRedTmEq.
+
+Export ListRedTmEq(ListRedTmEq,Build_ListRedTmEq, ListPropEq, ListRedEqInduction).
+
 (** ** Definition of the logical relation *)
 
 (** This simply bundles the different cases for reducibility already defined. *)
+
 
 Unset Elimination Schemes.
 
@@ -848,7 +1054,13 @@ Inductive LR@{i j k} `{ta : tag}
   | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
     LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA)
   | LRSig {Γ : context} {A : term} (ΣA : SigRedTy@{j} Γ A) (ΣAad : SigRedTyAdequate@{j k} (LR rec) ΣA) :
-    LR rec Γ A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA).
+    LR rec Γ A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA)
+  | LRList {Γ : context} {A : term}
+      (LA : ListRedTyPack@{j} Γ A) (LAAd : ListRedTyAdequate@{j k} (LR rec) LA) :
+    LR rec Γ A
+      (ListRedTyEq@{j} Γ A LA)
+      (ListRedTm@{j} Γ A LA) 
+      (ListRedTmEq@{j} Γ A LA).
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -930,6 +1142,11 @@ Section MoreDefs.
   Definition LREmpty_@{i j k l} l {Γ A} (NA : [Γ ||-Empty A]) 
     : [LogRel@{i j k l} l | Γ ||- A] :=
     LRbuild (LREmpty (LogRelRec l) NA).
+  
+  Definition LRList_@{i j k l} l {Γ A} (LA : ListRedTyPack@{k} Γ A)
+    (LAad : ListRedTyAdequate (LR (LogRelRec@{i j k} l)) LA)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRList (LogRelRec l) LA LAad).
 
 End MoreDefs.
   
@@ -1233,4 +1450,84 @@ Proof.
   - intros t t0 n. induction n.
     eapply X; eauto. destruct prop; eauto.
   - intros. induction n. eapply X0.
+Qed.
+
+Module ListRedTy.
+Section ListRedTy.
+  Universe i j k l.
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta}
+    {Γ : context} {A : term} {l : TypeLevel}.
+
+  Record ListRedTy 
+  : Type := {
+    par : term ;
+    red : [Γ |- A :⇒*: tList par];
+    parTy : [Γ |- par];
+    eq : [Γ |- tList par ≅ tList par];
+    parRed : [LogRel@{i j k l} l | Γ ||- par] ;
+    (* arrParRed : PiRedTyPack@{i j k l} Γ (arr par par) l ; *)
+  }.
+
+  #[program]
+  Definition from {LA : ListRedTyPack Γ A} 
+    (LAad : ListRedTyAdequate (LogRel@{i j k l} l) LA) :
+    ListRedTy.
+  Proof.
+    destruct LA, LAad; unshelve econstructor; tea.
+    - now eapply LRbuild.
+    (* - now eapply PiRedTyPack.pack. *)
+  Defined.
+
+  Definition toPack (LA : ListRedTy) : ListRedTyPack Γ A.
+  Proof.
+    destruct LA as [???? [] (*arrRed*)]; unshelve econstructor; tea.
+    (* now eapply PiRedTyPack.toPiRedTy. *)
+  Defined.
+
+  Definition toAd (LA : ListRedTy) : ListRedTyAdequate (LogRel@{i j k l} l) (toPack LA).
+  Proof.
+    destruct LA as [???? [] (*arrRed *)]; unshelve econstructor; cbn; tea.
+    (* now eapply PiRedTyPack.toPiRedTyAd. *)
+  Defined.
+
+  Definition betaPack {LA : ListRedTyPack Γ A} 
+    (LAad : ListRedTyAdequate (LogRel@{i j k l} l) LA) 
+    : toPack (from LAad) = LA := eq_refl.
+  
+  Definition betaAd {LA : ListRedTyPack Γ A} 
+    (LAad : ListRedTyAdequate (LogRel@{i j k l} l) LA) 
+    : toAd (from LAad) = LAad := eq_refl.
+
+  Definition eta (LA : ListRedTy) : from (toAd LA) = LA := eq_refl.
+
+  Definition LRList' (LA : ListRedTy)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRList (LogRelRec l) _ (toAd LA)).
+
+  Definition list (LA : ListRedTy) : term := tList (par LA).
+
+End ListRedTy.
+
+Arguments ListRedTy {_ _ _ _ _ _ _ _ _}.
+End ListRedTy.
+
+Export ListRedTy(ListRedTy,Build_ListRedTy, LRList').
+Coercion ListRedTy.toPack : ListRedTy >-> ListRedTyPack.
+
+Notation "[ Γ ||-List< l > A ]" := (ListRedTy Γ A l) (at level 0, Γ, l, A at level 50).
+
+Lemma ListProp_whnf `{GenericTypingProperties} {Γ A l t} {LA : [Γ ||-List<l> A]} :
+  ListProp _ _ LA t -> whnf t.
+Proof.
+  induction 1; constructor. 
+  eapply convneu_whne; now eapply NeNf.refl.
+Qed.
+
+Lemma ListPropEq_whnf `{GenericTypingProperties} {Γ A l t u} {LA : [Γ ||-List<l> A]} :
+  ListPropEq _ _ LA t u -> (whnf t × whnf u).
+Proof.
+  induction 1 ; split ; constructor; eapply convneu_whne; [|symmetry]; now eapply NeNf.conv.
 Qed.

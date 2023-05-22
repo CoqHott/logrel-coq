@@ -42,6 +42,9 @@ Proof.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod; tea; cbn.
       unshelve econstructor;intros; apply LRTyEqRefl_.
+  - intros B [par] ih ? ?; cbn in *; unshelve eexists.
+    + apply LRList'; exists par; tea; etransitivity; tea; constructor; tea; gen_typing.
+    + exists par; tea; cbn; apply LRTyEqRefl_.
 Qed.
 
 
@@ -127,6 +130,19 @@ Proof.
     unshelve refine (let rt : [LRSig' PA | Γ ||- t : A] := _ in _).
     1: unshelve eexists p _; tea; constructor; destruct red; tea; etransitivity; tea.
     split; tea; exists rt ru; tea; intros; cbn; now apply LREqTermRefl_.
+  - intros ? LA ih ? ? ru ?.
+    assert ([Γ |- A ≅ tList (ListRedTy.par LA)]) by (destruct LA; cbn in *; gen_typing).
+    inversion ru; subst.
+    unshelve epose (Rt := _ : [LRList' LA | Γ ||- t : A]).
+    { eexists; cycle 1; tea; etransitivity; tea; eapply redtmwf_conv; tea.
+      constructor; tea; now escape. }
+    split.
+    + assumption.
+    + unshelve eexists.
+      * assumption.
+      * now econstructor.
+      * cbn. eassumption.
+      * cbn. now eapply ListRedTmEqRefl.
 Qed.
 
 Lemma redwfSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
@@ -170,6 +186,12 @@ Proof.
     eapply redtywf_refl; gen_typing.
   - intros ??? [?? red] ?? ? red' ?.
     eapply LRSig'. 
+    econstructor; tea.
+    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    1: constructor.
+    eapply redtywf_refl; gen_typing.
+  - intros ??? [? red] ?? red' ?.
+    eapply LRList'.
     unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
     1: constructor.
     econstructor; tea.
@@ -219,6 +241,11 @@ Proof.
   - intros ???????? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
     1: now eapply isPair_whnf.
+    econstructor; tea.
+    eapply redtmwf_refl; gen_typing.
+  - intros ??????? Rt red' ?; inversion Rt; subst.
+    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    1: now eapply ListProp_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
 Qed.

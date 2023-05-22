@@ -23,6 +23,7 @@ Section ShapeViews.
       | LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _ => True
       | LRSig _ _ _, LRSig _ _ _ => True
+      | LRList _ _ _, LRList _ _ _ => True
       | _, _ => False
     end.
 
@@ -56,6 +57,7 @@ when showing symmetry or transitivity of the logical relation. *)
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
     eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].
     3,6: intros ??.
+    7: intros ?.
     all: intros []; eexists; split; tea; constructor; tea.
     eapply convneu_whne; now symmetry.
   Defined.
@@ -101,6 +103,7 @@ when showing symmetry or transitivity of the logical relation. *)
       | LRNat _ _, LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _, LREmpty _ _ => True
       | LRSig _ _ _, LRSig _ _ _, LRSig _ _ _ => True
+      | LRList _ _ _, LRList _ _ _, LRList _ _ _ => True
       | _, _, _ => False
     end.
 

@@ -269,6 +269,36 @@ Proof.
     all: try first [assumption|now eapply lrefl].
 Qed.
 
+Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) (ih : complete (ListRedTy.parRed LA)) 
+  : complete (LRList' LA).
+Proof.
+  set (LA' := LA). destruct LA as [par]; cbn in *.
+  assert [Γ |- A ≅ tList par] by gen_typing.
+  split.
+  - intros n n' wh wh' ?.
+    unshelve epose (lemma := _ :  forall n, [Γ |-[ ta ] n : A] ->
+                        [Γ |-[ ta ] n ~ n : A] -> [LRList' LA' | Γ ||- n : A]).
+    { intro m. unshelve econstructor. 1: exact m.
+      * apply redtmwf_refl.
+        now eapply ty_conv.
+      * apply convtm_convneu.
+        eapply lrefl.
+        now eapply convneu_conv.
+      * do 2 constructor ; try easy; cbn.
+        1: now eapply ty_conv.
+        eapply lrefl.
+        now eapply convneu_conv.
+    }
+    split.
+    + apply lemma ; tea. now eapply lrefl.
+    + unshelve econstructor.
+      * apply lemma ; tea. eapply lrefl ; tea.
+      * apply lemma ; tea. eapply urefl ; tea.
+      * apply convtm_convneu. now eapply convneu_conv.
+      * do 2 constructor ; try easy.
+        now eapply convneu_conv.
+Qed.
+
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
 Proof.
 revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
@@ -278,6 +308,7 @@ revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
 - now apply complete_Nat.
 - now apply complete_Empty.
 - now apply complete_Sig.
+- now apply complete_List.
 Qed.
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :
