@@ -23,6 +23,10 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tProd A B =>  [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
     | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A] & [Γ,, A |- t : B]]
     | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
+    | tList A => T = U × [Γ |- A : U]
+    | tNil A => T = tList A × [Γ |- A]
+    | tCons A hd tl => [× T = tList A, [Γ |- A], [Γ |- hd : A] & [Γ |- tl : tList A]]
+    | tMap A B f l => [× T = tList B, [Γ |- A], [Γ |- B], [Γ |- f : arr A B]&[Γ |- l : tList A]]
     | tSort _ => False
     | tNat => T = U
     | tZero => T = tNat
@@ -38,6 +42,7 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tFst p => ∑ A B, T = A × [Γ |- p : tSig A B]
     | tSnd p => ∑ A B, T = B[(tFst p)..] × [Γ |- p : tSig A B]
   end.
+
 
 Lemma termGen Γ t A :
   [Γ |- t : A] ->
@@ -72,6 +77,16 @@ Proof.
   split ; now econstructor.
 Qed.
 
+Lemma list_ty_inv Γ A :
+  [Γ |- tList A] -> [Γ |- A].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as (?&[-> ]&_).
+  now econstructor.
+Qed.
+
 
 (** ** Stability by weakening *)
 
@@ -88,8 +103,6 @@ Section TypingWk.
     [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
   Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
-
-
 
   Theorem typing_wk : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
   Proof.
@@ -109,6 +122,9 @@ Section TypingWk.
     - intros ?????? ih ** ; rewrite <- wk_sig.
       constructor; eauto.
       eapply ih; constructor; eauto.
+    - intros * _ IHA ? * ?.
+      econstructor.
+      now eapply IHA.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -172,6 +188,24 @@ Section TypingWk.
     - intros ????? ih **.
       unshelve erewrite subst_ren_wk_up; tea.
       econstructor; now eapply ih.
+    - intros * _ IHA ? ρ ?.
+      econstructor.
+      now eapply IHA.
+    - intros * _ IHA ? ρ ?.
+      econstructor.
+      now eapply IHA.
+    - intros * _ IHA _ IHa _ IHl ? ρ ?.
+      econstructor.
+      + now eapply IHA.
+      + now eapply IHa.
+      + now eapply IHl.
+    - intros * _ IHA _ IHB _ IHf _ IHl ? ρ ?.
+      econstructor.
+      + now eapply IHA.
+      + now eapply IHB.
+      + rewrite wk_arr.
+        now apply IHf.
+      + now eapply IHl.
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -187,6 +221,8 @@ Section TypingWk.
     - intros ?????????? ih **.
       do 2 rewrite <- wk_sig; constructor; eauto.
       eapply ih; constructor; eauto.
+    - intros * _ IH ? ρ ?.
+      now econstructor ; eapply IH.
     - intros * _ IHA ? ρ ?.
       eapply TypeRefl.
       now eapply IHA.
@@ -298,6 +334,39 @@ Section TypingWk.
       2:constructor; eauto.
       1: eapply ihB; constructor; eauto.
       rewrite <- subst_ren_wk_up; eauto.
+    - intros * _ IHA ? ρ ?.
+      now econstructor.
+    - intros * _ IHA ? ρ ?.
+      now econstructor.
+    - intros * _ IHA _ IHa _ IHl ? ρ ?.
+      now econstructor.
+    - intros * _ IHA _ IHB _ IHf _ IHl ? ρ ?.
+      econstructor ; try easy.
+      rewrite wk_arr.
+      now eapply IHf.
+    - intros * _ IHA _ IHB _ IHf ? ρ ?.
+      econstructor ; try easy.
+      rewrite wk_arr.
+      now eapply IHf.
+    - intros * _ IHA _ IHB _ IHf _ IHhd _ IHtl ? ρ ?.
+      econstructor ; try easy.
+      rewrite wk_arr.
+      now eapply IHf.
+    - intros * _ IHA _ IHB _ IHC _ IHf _ IHg _ IHl ? ρ ?.
+      cbn.
+      evar (t: term) ; replace (tLambda _ _) with t ; subst t.
+      + eapply TermRedMapComp.
+        * now apply IHA.
+        * now apply IHB.
+        * now apply IHC.
+        * refold; rewrite wk_arr. now apply IHf.
+        * refold; rewrite wk_arr. now apply IHg.
+        * now apply IHl.
+      + asimpl. reflexivity.
+    - intros * _ IHA _ IHl ? ρ ?.
+      eapply TermRedMapId.
+      + now apply IHA.
+      + now apply IHl.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -332,32 +401,22 @@ Section Boundaries.
     now inversion 1.
   Qed.
 
-  Definition boundary_tm_ctx {Γ} {t A} :
-      [ Γ |- t : A ] -> 
-      [ |- Γ ].
+  Fixpoint boundary_tm_ctx {Γ} {t A} (h: [ Γ |- t : A ]) {struct h} : [ |- Γ ]
+  with boundary_ty_ctx {Γ A} (h: [ Γ |- A ]) {struct h} : [ |- Γ ].
   Proof.
-    induction 1 ; now eauto using boundary_ctx_ctx.
+    - induction h.
+      all: eauto using boundary_ctx_ctx.
+    - induction h.
+      all: eauto using boundary_ctx_ctx.
   Qed.
 
-  Definition boundary_ty_ctx {Γ} {A} :
-      [ Γ |- A ] -> 
-      [ |- Γ ].
+  Fixpoint boundary_tm_conv_ctx {Γ} {t u A} (h: [ Γ |- t ≅ u : A ]) {struct h} : [ |- Γ ]
+  with boundary_ty_conv_ctx {Γ} {A B} (h: [ Γ |- A ≅ B ]) {struct h} : [ |- Γ ].
   Proof.
-    induction 1; now eauto using boundary_tm_ctx.
-  Qed.
-
-  Definition boundary_tm_conv_ctx {Γ} {t u A} :
-      [ Γ |- t ≅ u : A ] -> 
-      [ |- Γ ].
-  Proof.
-      induction 1 ; now eauto using boundary_tm_ctx.
-  Qed.
-
-  Definition boundary_ty_conv_ctx {Γ} {A B} :
-      [ Γ |- A ≅ B ] -> 
-      [ |- Γ ].
-  Proof.
-    induction 1 ; now eauto using boundary_ty_ctx, boundary_tm_conv_ctx.
+    - induction h.
+      all: now eauto using boundary_tm_ctx.
+    - induction h.
+      all: now eauto using boundary_ty_ctx, boundary_tm_conv_ctx.
   Qed.
 
 
@@ -446,6 +505,19 @@ Proof.
   + econstructor; [tea|now apply TermRefl].
 Qed.
 
+
+Lemma redtmdecl_map Γ A B f l l' :
+  [Γ |-[ de ] A] ->
+  [Γ |-[ de ] B] ->
+  [Γ |-[ de ] f : arr A B] ->
+  [Γ |-[ de ] l ⇒* l' : tList A] ->
+  [Γ |-[ de ] tMap A B f l ⇒* tMap A B f l' : tList B].
+  intros ? ? ? [].
+  econstructor.
+  2: now apply redalg_map.
+  all: econstructor; tea; now first [eapply TypeRefl| eapply TermRefl].
+Qed.
+
 Lemma redtmdecl_conv Γ t u A A' : 
   [Γ |- t ⇒* u : A] ->
   [Γ |- A ≅ A'] ->
@@ -512,53 +584,27 @@ Module DeclarativeTypingProperties.
 
   #[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := de) := {}.
   Proof.
-  - now econstructor.
-  - intros.
-    constructor ; red ; intros.
-    all: now econstructor.
-  - intros.
-    now apply typing_wk.
-  - intros.
-    eapply TypeTrans ; [eapply TypeTrans | ..].
-    2: eassumption.
-    2: eapply TypeSym.
-    all: now eapply RedConvTyC.
-  - econstructor.
-    now econstructor.
-  - now econstructor.
-  - now do 2 econstructor.
-  - now repeat econstructor.
-  - now econstructor.
+    all: try solve [easy| now econstructor| now do 2 econstructor].  
+    - intros; now apply typing_wk.
+    - intros.
+      eapply TypeTrans ; [eapply TypeTrans | ..].
+      2: eassumption.
+      2: eapply TypeSym.
+      all: now eapply RedConvTyC.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
   Proof.
-  - intros.
-    constructor ; red ; intros.
-    all: now econstructor.
-  - intros.
-    now econstructor.
-  - intros.
-    now eapply typing_wk.
-  - intros.
-    econstructor.
-    2: now eapply TypeSym, RedConvTyC.
-    eapply TermTrans ; [eapply TermTrans |..].
-    2: eassumption.
-    2: eapply TermSym.
-    all: now eapply RedConvTeC.
-  - intros ???? H; apply H.
-  - intros.
-    now econstructor.
-  - intros.
-    now econstructor.
-  - intros.
-    now econstructor.
-  - now do 2 econstructor.
-  - now do 2 econstructor.
-  - now econstructor.
-  - intros. econstructor; tea.
-  - now do 2 econstructor.
+    all: try solve [eassumption|now econstructor|now do 2 econstructor].
+    - intros; now eapply typing_wk.
+    - intros.
+      econstructor.
+      2: now eapply TypeSym, RedConvTyC.
+      eapply TermTrans ; [eapply TermTrans |..].
+      2: eassumption.
+      2: eapply TermSym.
+      all: now eapply RedConvTeC.
+    - intros ???? H; apply H.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -578,6 +624,9 @@ Module DeclarativeTypingProperties.
   - intros ?????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
+  - intros ????????????? []; split; try now econstructor + (do 2 econstructor).
+  - intros ????? []; split; tea; now econstructor.
+  - intros ??????? ????? []; now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
@@ -624,6 +673,29 @@ Module DeclarativeTypingProperties.
     + now econstructor.
     + now apply redalg_snd.
     + now econstructor.
+  - intros * ??? [? r ?]; split; refold.
+    + now econstructor.
+    + now apply redalg_map.
+    + econstructor; tea; now first [eapply TypeRefl|eapply TermRefl].
+  - intros; split; refold.
+    + econstructor; tea ; econstructor.
+      1: now econstructor.
+      econstructor; now symmetry.
+    + eapply redalg_one_step; constructor.
+    + etransitivity.
+      1: econstructor.
+      5: econstructor; cycle 1; tea.
+      1-3: now first [eapply TypeRefl| eapply TermRefl].
+      symmetry; now econstructor.
+  - intros; split; refold.
+    + econstructor; tea; econstructor.
+      1: econstructor; tea; econstructor; tea.
+      2: symmetry.
+      1,2: now econstructor.
+    + eapply redalg_one_step; constructor.
+    + etransitivity; econstructor; tea.
+      4: symmetry; econstructor; tea.
+      all: now first [eapply TypeRefl| eapply TermRefl].
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.

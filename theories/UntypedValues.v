@@ -13,6 +13,9 @@ Inductive snf (r : term) : Type :=
   | snf_tEmpty : [ r ⇒* tEmpty ] -> snf r
   | snf_tSig {A B} : [r ⇒* tSig A B] -> snf A -> snf B -> snf r
   | snf_tPair {A B a b} : [r ⇒* tPair A B a b] -> snf A -> snf B -> snf a -> snf b -> snf r
+  | snf_tList {A} : [ r ⇒* tList A ] -> snf A -> snf r
+  | snf_tNil {A} : [ r ⇒* tNil  A ] -> snf A -> snf r
+  | snf_tCons {A hd tl} : [r ⇒* tCons A hd tl ] -> snf A -> snf hd -> snf tl -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
@@ -21,6 +24,7 @@ with sne (r : term) : Type :=
   | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
   | sne_tFst {p} : r = tFst p -> sne p -> sne r
   | sne_tSnd {p} : r = tSnd p -> sne p -> sne r
+  | sne_tMap {A B f l} : r = tMap A B f l -> snf A -> snf B -> snf f -> sne l -> sne r
 .
 
 Set Elimination Schemes.
@@ -46,10 +50,10 @@ Definition sne_ind
   (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 :=
+Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 :=
   pair 
-    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16)
-    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16).
+    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20)
+    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
@@ -82,6 +86,9 @@ intros t u Hr Hu; destruct Hu.
 + eapply snf_tPair.
   1: transitivity u; eassumption.
   all: tea.
++ eapply snf_tList; tea; now etransitivity.
++ eapply snf_tNil; tea; now etransitivity.
++ eapply snf_tCons; [now etransitivity|..]; tea.
 + eapply snf_sne.
   - transitivity u; eassumption.
   - eassumption.
@@ -120,6 +127,15 @@ Section RenSnf.
   + intros r ???? Hr ???????? ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_tPair; eauto.
+  + intros r ? Hr ?? ρ.
+    apply credalg_wk with (ρ := ρ) in Hr; cbn in *.
+    eapply snf_tList; tea; eauto.
+  + intros r ? Hr ?? ρ.
+    apply credalg_wk with (ρ := ρ) in Hr; cbn in *.
+    eapply snf_tNil; tea; eauto.
+  + intros r ??? Hr ?????? ρ.
+    apply credalg_wk with (ρ := ρ) in Hr; cbn in *.
+    eapply snf_tCons; tea; eauto.
   + intros r n Hr Hn IHn ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_sne; eauto.
@@ -132,6 +148,8 @@ Section RenSnf.
     eapply sne_tEmptyElim; eauto.
   + intros r ? -> ???; cbn; eapply sne_tFst; eauto.
   + intros r ? -> ???; cbn; eapply sne_tSnd; eauto.
+  + intros; subst; cbn.
+    eapply sne_tMap; eauto.
   Qed.
 
   Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).

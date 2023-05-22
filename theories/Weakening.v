@@ -238,7 +238,7 @@ Section RenWhnf.
   Proof.
     induction 1 ; cbn.
     all: econstructor.
-    now eapply whne_ren.
+    all: now eapply whne_ren.
   Qed.
   
   Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
@@ -383,6 +383,9 @@ Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRe
 Proof. now bsimpl. Qed.
 
 Lemma wk_arr {A B Γ Δ} (ρ : Δ ≤ Γ) : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_list {A Γ Δ} (ρ : Δ ≤ Γ) : tList A⟨ρ⟩ = (tList A)⟨ρ⟩.
 Proof. now bsimpl. Qed.
 
 Lemma wk_elimSuccHypTy {P Γ Δ} A (ρ : Δ ≤ Γ) :

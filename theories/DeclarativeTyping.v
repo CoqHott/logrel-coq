@@ -47,6 +47,9 @@ Section Definitions.
           [ Γ |- A ] -> 
           [Γ ,, A |- B ] -> 
           [ Γ |- tSig A B ]
+      | wfTypeList {Γ} {A} :
+          [ Γ |- A ] ->
+          [ Γ |- tList A ]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -106,6 +109,23 @@ Section Definitions.
       | wfTermSnd {Γ A B p} :
         [Γ |- p : tSig A B] ->
         [Γ |- tSnd p : B[(tFst p)..]]
+      | wfTermList {Γ} {A} :
+          [ Γ |- A : U] ->
+          [ Γ |- tList A : U ]
+      | wfTermNil {Γ} {A} :
+          [ Γ |- A ] ->
+          [ Γ |- tNil A : tList A ]
+      | wfTermCons {Γ} {A a l} :
+          [ Γ |- A ] ->
+          [ Γ |- a : A ] ->
+          [ Γ |- l : tList A ] ->
+          [ Γ |- tCons A a l : tList A ]
+      | wfTermMap {Γ} {A B f l} :
+          [ Γ |- A ] ->
+          [ Γ |- B ] ->
+          [ Γ |- f : arr A B ] ->
+          [ Γ |- l : tList A ] ->
+          [ Γ |- tMap A B f l : tList B ]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -122,6 +142,9 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ ,, A |- C ≅ D] ->
           [ Γ |- tSig A C ≅ tSig B D]
+      | TypeListCong {Γ} {A B} :
+          [ Γ |- A ≅ B] ->
+          [ Γ |- tList A ≅ tList B ]
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
@@ -212,6 +235,47 @@ Section Definitions.
         [Γ |- a : A] ->
         [Γ |- b : B[a..]] ->
         [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]]
+      | TermListCong {Γ} {A B} :
+          [ Γ |- A ≅ B : U ] ->
+          [ Γ |- tList A ≅ tList B : U ]
+      | TermNilCong {Γ} {A B } :
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- tNil A ≅ tNil B : tList A ]
+      | TermConsCong {Γ} {a b ax bx A B } :
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- a ≅ b : A ] ->
+          [ Γ |- ax ≅ bx : tList A ] ->
+          [ Γ |- tCons A a ax ≅ tCons B b bx : tList A ]
+      | TermMapCong {Γ} {f g ax bx A B C D} :
+          [ Γ |- A ≅ B ] ->
+          [ Γ |- C ≅ D ] ->
+          [ Γ |- f ≅ g : arr A C ] ->
+          [ Γ |- ax ≅ bx : tList A ] ->
+          [ Γ |- tMap A C f ax ≅ tMap B D g bx : tList C ]
+      | TermRedMapNil {Γ} {f A B} :
+          [ Γ |- A ] ->
+          [ Γ |- B ] ->
+          [ Γ |- f : arr A B ] ->
+          [ Γ |- tMap A B f (tNil A) ≅ (tNil B) : tList B ]
+      | TermRedMapCons {Γ} {f hd tl A B} :
+          [ Γ |- A ] ->
+          [ Γ |- B ] ->
+          [ Γ |- f : arr A B ] ->
+          [ Γ |- hd : A ] ->
+          [ Γ |- tl : tList A ] ->
+          [ Γ |- tMap A B f (tCons A hd tl) ≅ tCons B (tApp f hd) (tMap A B f tl) : tList B ]
+      | TermRedMapComp {Γ} {f g l l' A B C} :
+          [ Γ |- A ] ->
+          [ Γ |- B ] ->
+          [ Γ |- C ] ->
+          [ Γ |- f : arr B C ] ->
+          [ Γ |- g : arr A B ] ->
+          [ Γ |- l ≅ l' : tList A ] ->
+          [ Γ |- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l' : tList C ]
+      | TermRedMapId {Γ} {l l' A} :
+          [ Γ |- A ] ->
+          [ Γ |- l ≅ l' : tList A ] ->
+          [ Γ |- tMap A A (idterm A) l ≅ l' : tList A ]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]

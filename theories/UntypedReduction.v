@@ -33,6 +33,13 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tSnd p ⇒ tSnd p']
 | sndPair {A B a b} :
     [ tSnd (tPair A B a b) ⇒ b ]
+| termRedMapNilAlg {A A' B f} :
+  [ tMap A B f (tNil A') ⇒ tNil B ]
+| termRedMapConsAlg {A A' B f a l} :
+  [ tMap A B f (tCons A' a l) ⇒ tCons B (tApp f a) (tMap A B f l) ]
+| termRedMapUnderAlg {A B f l l'} :
+  [ l ⇒ l' ] ->
+  [ tMap A B f l ⇒ tMap A B f l' ]
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
@@ -81,7 +88,7 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3,6,7,9: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  all: try solve [inversion nf; subst; inv_whne; subst; apply IHred; now constructor].
   all: inversion nf; subst; inv_whne; subst; now inv_whne.
 Qed.
 
@@ -125,6 +132,15 @@ Proof.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst; try reflexivity.
     exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red' ; subst ; clear red'.
+    2: exfalso; eapply whnf_nored; tea; constructor.
+    reflexivity.
+  - inversion red' ; subst ; clear red'.
+    2: exfalso; eapply whnf_nored; tea; constructor.
+    f_equal; eauto.
+  - inversion red' ; subst ; clear red'.
+    1,2: exfalso; eapply whnf_nored; tea; constructor.
+    f_equal; eauto.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -176,7 +192,7 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5,6-10: cbn; asimpl; now econstructor.
+  all: try solve [cbn; asimpl; now econstructor].
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
@@ -225,6 +241,12 @@ Proof.
 Qed.
 
 Lemma redalg_snd {t t'} : [t ⇒* t'] -> [tSnd t ⇒* tSnd t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_map {A B f t t'} : [t ⇒* t'] -> [tMap A B f t ⇒* tMap A B f t'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.
