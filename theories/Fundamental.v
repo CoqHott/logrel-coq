@@ -694,6 +694,136 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
+  (* TODO: Fix all lemmas for list as it was done for https://github.com/CoqHott/logrel-coq/pull/30/files *)
+  Lemma FundTyList : forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy Γ A -> FundTy Γ (tList A).
+  Proof.
+  Admitted.
+
+  Lemma FundTmList : forall (Γ : context) (A : term),
+  [Γ |-[ de ] A : U] -> FundTm Γ U A -> FundTm Γ U (tList A).
+  Proof.
+  Admitted.
+
+  Lemma FundTmNil : forall (Γ : context) (A : term),
+    [Γ |-[ de ] A] -> FundTy Γ A -> FundTm Γ (tList A) (tNil A).
+  Proof.
+  Admitted.
+
+  Lemma FundTmCons : forall (Γ : context) (A a l : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] a : A] ->
+    FundTm Γ A a ->
+    [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList A) (tCons A a l).
+  Proof.
+  Admitted.
+
+  Lemma FundTmMap : forall (Γ : context) (A B f l : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] B] ->
+    FundTy Γ B ->
+    [Γ |-[ de ] f : arr A B] ->
+    FundTm Γ (arr A B) f ->
+    [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList B) (tMap A B f l).
+  Proof.
+  Admitted.
+
+  Lemma FundTyEqListCong : 
+    forall (Γ : context) (A B : term),
+    [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTyEq Γ (tList A) (tList B).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqListCong : forall (Γ : context) (A B : term),
+    [Γ |-[ de ] A ≅ B : U] -> FundTmEq Γ U A B -> FundTmEq Γ U (tList A) (tList B).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqNilCong : forall (Γ : context) (A B : term),
+    [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTmEq Γ (tList A) (tNil A) (tNil B).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqConsCong :
+    forall (Γ : context) (a b ax bx A B : term),
+    [Γ |-[ de ] A ≅ B] ->
+    FundTyEq Γ A B ->
+    [Γ |-[ de ] a ≅ b : A] ->
+    FundTmEq Γ A a b ->
+    [Γ |-[ de ] ax ≅ bx : tList A] ->
+    FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList A) (tCons A a ax) (tCons B b bx).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqMapCong : 
+    forall (Γ : context) (f g ax bx A B C D : term),
+    [Γ |-[ de ] A ≅ B] ->
+    FundTyEq Γ A B ->
+    [Γ |-[ de ] C ≅ D] ->
+    FundTyEq Γ C D ->
+    [Γ |-[ de ] f ≅ g : arr A C] ->
+    FundTmEq Γ (arr A C) f g ->
+    [Γ |-[ de ] ax ≅ bx : tList A] ->
+    FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList C) (tMap A C f ax) (tMap B D g bx).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqMapNil :
+    forall (Γ : context) (f A B : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] B] ->
+    FundTy Γ B ->
+    [Γ |-[ de ] f : arr A B] ->
+    FundTm Γ (arr A B) f -> FundTmEq Γ (tList B) (tMap A B f (tNil A)) (tNil B).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqMapCons :
+    forall (Γ : context) (f hd tl A B : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] B] ->
+    FundTy Γ B ->
+    [Γ |-[ de ] f : arr A B] ->
+    FundTm Γ (arr A B) f ->
+    [Γ |-[ de ] hd : A] ->
+    FundTm Γ A hd ->
+    [Γ |-[ de ] tl : tList A] ->
+    FundTm Γ (tList A) tl ->
+    FundTmEq Γ (tList B) (tMap A B f (tCons A hd tl)) (tCons B (tApp f hd) (tMap A B f tl)).
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqMapComp :
+    forall (Γ : context) (f g l l' A B C : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] B] ->
+    FundTy Γ B ->
+    [Γ |-[ de ] C] ->
+    FundTy Γ C ->
+    [Γ |-[ de ] f : arr B C] ->
+    FundTm Γ (arr B C) f ->
+    [Γ |-[ de ] g : arr A B] ->
+    FundTm Γ (arr A B) g ->
+    [Γ |-[ de ] l ≅ l' : tList A] ->
+    FundTmEq Γ (tList A) l l' ->
+    FundTmEq Γ (tList C) (tMap B C f (tMap A B g l)) (tMap A C (comp A f g) l').
+  Proof.
+  Admitted.
+
+  Lemma FundTmEqMapId :
+    forall (Γ : context) (l l' A : term),
+    [Γ |-[ de ] A] ->
+    FundTy Γ A ->
+    [Γ |-[ de ] l ≅ l' : tList A] ->
+    FundTmEq Γ (tList A) l l' -> FundTmEq Γ (tList A) (tMap A A (idterm A) l) l'.
+  Proof.
+  Admitted.
+
+
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -708,6 +838,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTyNat.
   + intros; now apply FundTyEmpty.
   + intros; now apply FundTySig.
+  + intros; now apply FundTyList.
   + intros; now apply FundTyUniv.
   + intros; now apply FundTmVar.
   + intros; now apply FundTmProd.
@@ -723,9 +854,14 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTmPair.
   + intros; now eapply FundTmFst.
   + intros; now eapply FundTmSnd.
+  + intros; now eapply FundTmList.
+  + intros; now eapply FundTmNil.
+  + intros; now eapply FundTmCons.
+  + intros; now eapply FundTmMap.
   + intros; now eapply FundTmConv.
   + intros; now apply FundTyEqPiCong.
   + intros; now apply FundTyEqSigCong.
+  + intros; now apply FundTyEqListCong.
   + intros; now apply FundTyEqRefl.
   + intros; now apply FundTyEqUniv.
   + intros; now apply FundTyEqSym.
@@ -745,6 +881,14 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTmEqFstBeta.
   + intros; now eapply FundTmEqSndCong.
   + intros; now apply FundTmEqSndBeta.
+  + intros; now eapply FundTmEqListCong.
+  + intros; now eapply FundTmEqNilCong.
+  + intros; now eapply FundTmEqConsCong.
+  + intros; now eapply FundTmEqMapCong.
+  + intros; now eapply FundTmEqMapNil.
+  + intros; now eapply FundTmEqMapCons.
+  + intros; now eapply FundTmEqMapComp.
+  + intros; now eapply FundTmEqMapId.
   + intros; now apply FundTmEqRefl.
   + intros; now eapply FundTmEqConv.
   + intros; now apply FundTmEqSym.
