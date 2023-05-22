@@ -14,6 +14,231 @@ Import IndexedDefinitions.
 
 Section ConversionTerminates.
 
+  Import AlgorithmicTypingData.
+  Import BundledTypingData.
+
+  Let PTyEq (n : nat) :=
+    forall Γ Δ A A' B B' v
+      (hΓ : [|- Γ ≅ Δ])
+      (hA : [Γ |-[bn] A ≅ A'])
+      (hB : [Δ |-[bn] B ≅ B']),
+      #|hA| + #|hB| < n ->
+      domain conv (ty_state;Γ;v;A;B).
+
+  Let PTyRedEq (n : nat) :=
+    forall Γ Δ A A' B B' v
+      (hΓ : [|- Γ ≅ Δ])
+      (hA : [Γ |-[bn] A ≅h A'])
+      (hB : [Δ |-[bn] B ≅h B']),
+      #|hA| + #|hB| < n ->
+      domain conv (ty_red_state;Γ;v;A;B).
+
+  Let PNeEq (n : nat) :=
+    forall Γ Δ A t t' B u u' v
+      (hΓ : [|- Γ ≅ Δ])
+      (ht : [Γ |-[bn] t ~ t' ▹ A])
+      (hu : [Γ |-[bn] u ~ u' ▹ B]),
+      #|ht| + #|hu| < n ->
+      domain conv (ne_state;Γ;v;t;u).
+
+  Let PNeRedEq (n : nat) :=
+    forall Γ Δ A t t' B u u' v
+      (hΓ : [|- Γ ≅ Δ])
+      (ht : [Γ |-[bn] t ~h t' ▹ A])
+      (hu : [Δ |-[bn] u ~h u' ▹ B]),
+      #|ht| + #|hu| < n ->
+      domain conv (ne_red_state;Γ;v;t;u).
+  
+  Let PTmEq (n : nat) :=
+    forall Γ Δ A t t' B u u' v
+      (hΓ : [|- Γ ≅ Δ])
+      (ht : [Γ |-[bn] t ≅ t' : A])
+      (hu : [Δ |-[bn] u ≅ u' : B]),
+      #|ht| + #|hu| < n ->
+      domain conv (tm_state;Γ;v;t;u).
+
+  Let PTmRedEq (n : nat) :=
+    forall Γ Δ A t t' B u u' v
+      (hΓ : [|- Γ ≅ Δ])
+      (ht : [Γ |-[bn] t ≅h t' : A])
+      (hu : [Δ |-[bn] u ≅h u' : B]),
+      #|ht| + #|hu| < n ->
+      domain conv (tm_red_state;Γ;v;t;u).
+
+  Let conversionStmt (n : nat) :=
+    PTyEq n × PTyRedEq n × PNeEq n × PNeRedEq n × PTmEq n × PTmRedEq n.
+
+  Section ConversionTerminatesInductiveSteps.
+    Context (n : nat) (ih : forall m, m < n -> conversionStmt m).
+
+    Arguments bun_conv_ty_sized /.
+    Arguments bun_conv_ty_red_sized /.
+
+    Derive Signature for ConvTypeBunAlg.
+    Derive Signature for ConvTypeRedBunAlg.
+    #[local]
+    Lemma convTyEq_terminates : PTyEq n.
+    Proof.
+      (* subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq conversionStmt. *)
+      intros ?????? hA hB hn%ih.
+      pose proof (xA := bun_conv_ty_inv hA); depind xA.
+      pose proof (xB := bun_conv_ty_inv hB); depind xB.
+      apply compute_domain.
+      simp conv conv_ty; cbn.
+      split.
+      1: eapply wh_red_complete; exists istype; now destruct hA.
+      intros A''; split.
+      1: eapply wh_red_complete ; exists istype; now destruct hB.
+      intros B'' ; split.
+      2: intros x; destruct x; cbn; easy.
+      assert (A'' = A'0). 1:{
+        eapply whred_det ; tea.
+        2: destruct conv0; gen_typing.
+        all:now eapply red_sound.
+      }
+      subst.
+      assert (B'' = A'). 1:{
+        eapply whred_det ; tea.
+        2: destruct conv; gen_typing.
+        all:now eapply red_sound.
+      }
+      subst.
+      (* unification troubles *)
+      unshelve refine (fst (snd hn) _ _ _ _ _ _ _ _ _); cycle 2; tea.
+      unfold size; cbn; rewrite H, H0; simpl_size; lia. 
+    Qed.
+    
+    #[local]
+    Lemma convTyRedEq_terminates : PTyRedEq n.
+    Proof.
+      red. intros ?????? hA hB hn%ih.
+      pose proof (xA := bun_conv_ty_red_inv hA);
+      pose proof (xB := bun_conv_ty_red_inv hB).
+      apply compute_domain.
+      simp conv conv_ty_red.
+      depind xA; depind xB; simp build_nf_ty_view2 ; cbn ; try easy.
+      - split.
+        2: intros [] ; cbn ; [|easy].
+        2: intros Hconv%implem_conv_sound%algo_conv_sound; try split; try easy .
+        3,4: destruct convA, convA0; tea.
+        + unshelve refine (fst hn _ _ _ _ _ _ _ _ _); cycle 2; tea.
+          unfold size; cbn; rewrite H, H0; simpl_size; lia.
+        + unshelve refine (fst hn _ _ _ _ _ _ _ _ _); cycle 2.
+          1: tea.
+          1: eapply stability1.
+          1: 
+          tea.
+          unfold size; cbn; rewrite H, H0; simpl_size; lia.
+        +
+
+
+      apply compute_domain.
+      simp conv conv_ty; cbn.
+
+    Qed.
+
+    #[local]
+    Lemma convNeuEq_terminates : PNeuEq n.
+    Proof.
+    Qed.
+
+    #[local]
+    Lemma convNeuRedEq_terminates : PNeuRedEq n.
+    Proof.
+    Qed.
+
+    #[local]
+    Lemma convTmEq_terminates : PTmEq n.
+    Proof.
+    Qed.
+
+    #[local]
+    Lemma convTmRedEq_terminates : PTmRedEq n.
+    Proof.
+    Qed.
+
+  End ConversionTerminatesInductiveSteps.
+
+  #[local]
+  Lemma conversion_terminates_aux : forall n, conversionStmt n.
+    intro n; apply lt_wf_rect; clear n.
+    subst conversionStmt; cbn; intros n ih; repeat split.
+    - apply convTyEq_terminates.
+    - apply convTyRedEq_terminates.
+    - apply convNeuEq_terminates.
+    - apply convNeuRedEq_terminates.
+    - apply convTmEq_terminates.
+    - apply convTmRedEq_terminates.
+  Qed.
+
+
+    red.
+    - intros ?????? [??? hA] [??? hB] lt; 
+      pose proof (hA' := hA).
+      destruct hA, hB.
+      apply compute_domain.
+      simp conv conv_ty; cbn.
+      split.
+      1: eapply wh_red_complete ; now exists istype.
+      intros A''; split.
+      1: eapply wh_red_complete ; now exists istype.
+      intros B'' ; split.
+      2: intros x; destruct x; cbn; easy.
+      assert [Γ |-[de] A'].
+      1: eapply boundary_red_ty_r, subject_reduction_type; cycle 1; tea.
+      assert [Γ |-[de] A'0].
+      1: eapply boundary_red_ty_r, subject_reduction_type; cycle 1; tea.
+      assert [Γ |-[ de ] B'].
+      1: eapply boundary_red_ty_r, subject_reduction_type; cycle 1; tea.
+      assert [Γ |-[ de ] B'0].
+      1: eapply boundary_red_ty_r, subject_reduction_type; cycle 1; tea.
+      epose proof (fst (snd algo_conv_wh) _ _ _ c) as [].
+      epose proof (fst (snd algo_conv_wh) _ _ _ c0) as [].
+      assert (A'' = A'). 1:{
+        eapply whred_det ; tea.
+        2: gen_typing.
+        all:now eapply red_sound.
+      }
+      subst.
+      assert (B'' = A'0). 1:{
+        eapply whred_det ; tea.
+        2: gen_typing.
+        all:now eapply red_sound.
+      }
+      subst.
+      unshelve refine (fst (snd (ih _ _)) _ _ _ _ _ _ _ _ _).
+      4:{ econstructor. 6: tea. all: tea. }
+      3:{ econstructor. 6: tea. all: tea. }
+      2: exact lt.
+      cbn.
+      set (x := ConvTypeRedAlg_rect_nodep _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _). 
+      
+      match goal with
+      
+      | |- context c [?x + ?y] => idtac x
+      (* pose (a := x); pose (b := y) *)
+      end.
+
+      1: apply (IH tt B'').
+      + eapply type_isType ; tea.
+        now eapply red_sound.
+      + eassumption. 
+      + eapply whred_det ; tea.
+        1: now eapply algo_conv_wh in HA' as [] ; gen_typing.
+        all: now eapply red_sound.
+
+      fold #|bun_conv_ty Γ B B' hB|.
+      unfold size; cbn. unfold bun_conv_ty_sized; cbn.
+      unfold size. unfold ConvTypeAlgSized. typeConvRed.
+
+  
+End ConversionTerminates.
+
+
+
+
+Section ConversionTerminates.
+
 Let PTyEq (Γ : context) (A B : term) :=
   forall v B',
   [Γ |-[de] B'] ->

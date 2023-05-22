@@ -3,6 +3,14 @@ From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping.
 
+#[global]
+Instance ren_map_data {Γ Δ} : Ren1 (Δ ≤ Γ) Map.data Map.data :=
+  fun ρ r => Map.mk (Map.srcTy r)⟨ρ⟩ (Map.tgtTy r)⟨ρ⟩ (Map.fn r)⟨ρ⟩ (Map.lst r)⟨ρ⟩.
+
+#[global]
+Instance ren_map_opt {Γ Δ} : Ren1 (Δ ≤ Γ) Map.opt Map.opt :=
+  fun ρ o => match o with | Map.IsMap r => Map.IsMap r⟨ρ⟩ | Map.IsNotMap r => Map.IsNotMap r⟨ρ⟩ end.
+
 Section Definitions.
 
   (** We locally disable typing notations to be able to use them in the definition
@@ -10,32 +18,88 @@ Section Definitions.
   Close Scope typing_scope.
 
 
-    Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
-    Proof. now destruct t. Qed.
+  Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
+  Proof. now destruct t. Qed.
 
-    Lemma wk_compact_map t: 
-      forall A {Γ Δ} (ρ : Δ ≤ Γ) 
-      (r := compact_map A t) 
-      (r' := compact_map A⟨ρ⟩ t⟨ρ⟩),
-      (Map.srcTy r)⟨ρ⟩ = Map.srcTy r' ×
-      (Map.tgtTy r)⟨ρ⟩ = Map.tgtTy r' ×
-      (Map.fn r)⟨ρ⟩ = Map.fn r' ×
-      (Map.lst r)⟨ρ⟩ = Map.lst r'.
-    Proof.
-      induction t; intros; repeat split; try reflexivity.
-      1,3: eapply IHt4.
-      subst r r'; cbn; f_equal.  1: eapply IHt4.
-      f_equal. 1: now bsimpl.
-      assert (forall x, x⟨↑⟩⟨upRen_term_term ρ⟩ = x⟨ρ⟩⟨↑⟩) as -> by (intros; now bsimpl).
-      do 2 f_equal. eapply IHt4.
-    Qed.
+  Lemma wk_compact_map t: 
+    forall A {Γ Δ} (ρ : Δ ≤ Γ) 
+    (r := compact_map A t) 
+    (r' := compact_map A⟨ρ⟩ t⟨ρ⟩),
+    (Map.srcTy r)⟨ρ⟩ = Map.srcTy r' ×
+    (Map.tgtTy r)⟨ρ⟩ = Map.tgtTy r' ×
+    (Map.fn r)⟨ρ⟩ = Map.fn r' ×
+    (Map.lst r)⟨ρ⟩ = Map.lst r'.
+  Proof.
+    induction t; intros; repeat split; try reflexivity.
+    1,3: eapply IHt4.
+    subst r r'; cbn; f_equal.  1: eapply IHt4.
+    f_equal. 1: now bsimpl.
+    assert (forall x, x⟨↑⟩⟨upRen_term_term ρ⟩ = x⟨ρ⟩⟨↑⟩) as -> by (intros; now bsimpl).
+    do 2 f_equal. eapply IHt4.
+  Qed.
 
-    Lemma compact_map_whne A l :
-      whne (Map.lst (compact_map A l)) -> whne l.
-    Proof.
-      induction l in A |- *; cbn; try easy.
-      intros; constructor; eauto.
-    Qed.
+  Lemma compact_map_whne A l :
+    whne (Map.lst (compact_map A l)) -> whne l.
+  Proof.
+    induction l in A |- *; cbn; try easy.
+    intros; constructor; eauto.
+  Qed.
+
+  Lemma wk_map_compact t : forall {Γ Δ} (ρ : Δ ≤ Γ), (Map.compact t)⟨ρ⟩ = Map.compact t⟨ρ⟩.
+  Proof.
+    induction t; intros; try reflexivity; cbn.
+    refold; rewrite <- IHt4.
+    destruct (Map.compact t4); cbn; refold.
+    2: reflexivity.
+    do 2 f_equal. now bsimpl.
+  Qed.
+
+  Lemma wk_map_combine t u : forall {Γ Δ} (ρ : Δ ≤ Γ), 
+    let r := Map.combine t u in let wkr := Map.combine t⟨ρ⟩ u⟨ρ⟩ in 
+    (fst r)⟨ρ⟩ = fst wkr /\ (snd r)⟨ρ⟩ = snd wkr.
+  Proof.
+    unfold Map.combine; intros; destruct t, u; split; reflexivity.
+  Qed.
+
+  Lemma wk_map_extract t u : forall {Γ Δ} (ρ : Δ ≤ Γ), 
+    let r := Map.extract t u in let wkr := Map.extract t⟨ρ⟩ u⟨ρ⟩ in 
+    (fst r)⟨ρ⟩ = fst wkr /\ (snd r)⟨ρ⟩ = snd wkr.
+  Proof.
+    unfold Map.extract; intros.
+    rewrite <- !wk_map_compact.
+    apply wk_map_combine.
+  Qed.
+
+
+  Lemma compact_is_map_whne l r :
+    Map.compact l = Map.IsMap r -> 
+    whne (Map.lst r) -> whne l.
+  Proof.
+    induction l in r |- *; cbn; try (easy + discriminate).
+    destruct (Map.compact l4) eqn:Eq.
+    all:intros [= <-] ?; cbn in *; constructor; tea.
+    eapply IHl4; tea; reflexivity.
+  Qed.
+
+  Lemma compact_is_not_map_whne l r :
+    Map.compact l = Map.IsNotMap r -> 
+    whne r -> whne l.
+  Proof.
+    destruct l; try (cbn; intros [= <-]; easy).
+    cbn; destruct (Map.compact l4); discriminate.
+  Qed.
+
+  Lemma map_extract_whne l l' : 
+    let r := Map.extract l l' in
+    (whne (Map.lst (fst r)) -> whne l) ×
+    (whne (Map.lst (snd r)) -> whne l').
+  Proof.
+    unfold Map.extract.
+    destruct (Map.compact l) eqn:E, (Map.compact l') eqn:E'; cbn.
+    all: try (split; now (apply compact_is_map_whne + apply compact_is_not_map_whne)).
+    split; intros h; inversion h.
+  Qed.
+
 
 (** ** Conversion *)
 
@@ -382,6 +446,15 @@ Let AlgoConvInductionType :=
     let ind' := polymorphise ind in
   exact ind').
 
+Lemma AlgoConvDefInduction : AlgoConvInductionType.
+Proof.
+  intros PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq **.
+  pose proof (_AlgoConvInduction PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) as H.
+  destruct H as [?[?[?[?[?]]]]] ; cycle -1.
+  1: by_prod_splitter.
+  all: assumption.
+Defined.
+
 Lemma AlgoConvInduction : AlgoConvInductionType.
 Proof.
   intros PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq **.
@@ -397,6 +470,13 @@ Let _AlgoTypingInductionType :=
       refold ;
       let ind_ty := type of ind in
       exact ind_ty).
+
+Definition _AlgoConvInductionConcl :=
+  ltac:(
+    let t := eval unfold _AlgoConvInductionType in _AlgoConvInductionType in
+    let t' := remove_steps t in
+    exact t').
+
 
 Let AlgoTypingInductionType :=
   ltac: (let ind := eval cbv delta [_AlgoTypingInductionType] zeta
@@ -515,6 +595,237 @@ Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : 
 Arguments AlgoTypingInductionConcl PTy PInf PInfRed PCheck : rename.
 Arguments AlgoConvDepInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
 Arguments AlgoTypingDepInductionConcl PTy PInf PInfRed PCheck : rename.
+
+(** ** Size of a derivation for well-founded inductions *)
+
+Class Sized A := size : A -> nat.
+Notation "#| x |" := (size x).
+
+Section Size.
+  Import AlgorithmicTypingData.
+  
+  Let PTyEq (Γ : context) (A B : term) := nat.
+  Let PTyRedEq (Γ : context) (A B : term) := nat.
+  Let PNeEq (Γ : context) (A t u : term) := nat.
+  Let PNeRedEq (Γ : context) (A t u : term) := nat.
+  Let PTmEq (Γ : context) (A t u : term) := nat.
+  Let PTmRedEq (Γ : context) (A t u : term) := nat.
+
+  #[local]
+  Ltac sum :=
+    match goal with
+    | |- nat => refine (S _)
+    | |- nat -> _ => let n := fresh "n" in intro n; sum; refine (n + _)
+    end.
+
+  Theorem algo_conv_size :
+    _AlgoConvInductionConcl PTyEq PTyRedEq
+      PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply _AlgoConvInduction; intros;
+      repeat match goal with
+      | [H : nat |- _] => revert H
+      | [H : _ |- _] => clear H
+      end; sum; exact 0.
+  Defined.
+    
+End Size.
+
+#[global] Instance ConvTypeAlgSized Γ A B : Sized (ConvTypeAlg Γ A B). Proof. unfold Sized; apply algo_conv_size. Defined.
+#[global] Instance ConvTypeRedAlgSized Γ A B : Sized (ConvTypeRedAlg Γ A B). Proof. unfold Sized; apply algo_conv_size. Defined.
+#[global] Instance ConvNeuAlgSized Γ A t u : Sized (ConvNeuAlg Γ A t u). Proof. unfold Sized; apply algo_conv_size. Defined.
+#[global] Instance ConvNeuRedAlgSized Γ A t u : Sized (ConvNeuRedAlg Γ A t u). Proof. unfold Sized; apply algo_conv_size. Defined.
+#[global] Instance ConvTermAlgSized Γ A t u : Sized (ConvTermAlg Γ A t u). Proof. unfold Sized; apply algo_conv_size. Defined.
+#[global] Instance ConvTermRedAlgSized Γ A t u: Sized (ConvTermRedAlg Γ A t u). Proof. unfold Sized; apply algo_conv_size. Defined.
+
+Section SizeLemmas.
+  Import AlgorithmicTypingData.
+  
+  Lemma typeConvRed_size Γ A A' B B'
+    (redA : [A ⇒* A'])
+    (redB : [B ⇒* B'])
+    (conv : [Γ |- A' ≅h B']) :
+    #|typeConvRed redA redB conv| = S (#|conv| + 0).
+  Proof. reflexivity. Qed.
+
+  
+  Lemma typePiCongAlg_size  Γ A B A' B'
+    (convA : [ Γ |- A ≅ A'])
+    (convB : [ Γ ,, A |- B ≅ B']) :
+    #|typePiCongAlg convA convB| = S (#|convB| + (#|convA| + 0)).
+  Proof. reflexivity. Qed. 
+  
+  Lemma typeUnivConvAlg_size  Γ :
+    #|@typeUnivConvAlg Γ| = 1.
+  Proof. reflexivity. Qed.
+
+  Lemma typeNatConvAlg_size  Γ :
+    #|@typeNatConvAlg Γ| = 1.
+  Proof. reflexivity. Qed.
+
+  Lemma typeEmptyConvAlg_size  Γ :
+    #|@typeEmptyConvAlg Γ| = 1.
+  Proof. reflexivity. Qed.
+
+  Lemma typeSigCongAlg_size  Γ A B A' B'
+    (convA : [ Γ |- A ≅ A'])
+    (convB : [ Γ ,, A |- B ≅ B']) :
+    #|typeSigCongAlg convA convB| = S(#|convB| + (#|convA| + 0)).
+  Proof. reflexivity. Qed.
+
+  Lemma typeListCongAlg_size  Γ A A'
+    (convA :[Γ |- A ≅ A']) :
+    #|typeListCongAlg convA| = S (#|convA| + 0).
+  Proof. reflexivity. Qed.
+
+  Lemma typeNeuConvAlg_size  Γ M N T
+    (inf : [ Γ |- M ~ N ▹ T]) :
+    #|typeNeuConvAlg inf| = S (#|inf| + 0).
+  Proof. reflexivity. Qed.
+
+Lemma neuVarConvAlg_size  Γ n decl
+    (hn : in_ctx Γ n decl) :
+    #|neuVarConvAlg hn| = S (n + 0).
+Proof. reflexivity. Qed.
+
+Lemma neuAppCongAlg_size  Γ m n t u A B
+    (convFun : [ Γ |- m ~h n ▹ tProd A B ])
+    (convArg : [ Γ |- t ≅ u : A ]) :
+    #|neuAppCongAlg convFun convArg| = S (#|convArg| + (#|convFun| + 0)).
+Proof. reflexivity. Qed.
+
+Lemma neuNatElimCong_size  Γ n n' P P' hz hz' hs hs'
+  (convn : [Γ |- n ~h n' ▹ tNat])
+  (convP : [Γ,, tNat |- P ≅ P'])
+  (convhz : [Γ |- hz ≅ hz' : P[tZero..]])
+  (convhs : [Γ |- hs ≅ hs' : elimSuccHypTy P]) :
+  #|neuNatElimCong convn convP convhz convhs| = S(#|convhs| + (#|convhz| + (#|convP| + (#|convn| + 0)))).
+  Proof. reflexivity. Qed.
+
+Lemma neuEmptyElimCong_size  Γ P P' e e'
+    (conve : [Γ |- e ~h e' ▹ tEmpty])
+    (convP : [Γ ,, tEmpty |- P ≅ P']) :
+    #|neuEmptyElimCong conve convP| = S(#|convP| + (#|conve| + 0)).
+  Proof. reflexivity. Qed.
+
+Lemma neuFstCongAlg_size  Γ m n A B 
+    (convm : [ Γ |- m ~h n ▹ tSig A B ]) :
+    #|neuFstCongAlg convm| = S(#|convm| + 0).
+  Proof. reflexivity. Qed.
+
+Lemma neuSndCongAlg_size  Γ m n A B 
+    (convm : [ Γ |- m ~h n ▹ tSig A B ]) :
+    #|neuSndCongAlg convm| = S(#|convm| + 0).
+  Proof. reflexivity. Qed.
+
+Lemma neuMapCompact_size  Γ A l l'
+    (r := compact_map A l) (r' := compact_map A l')
+    (hmap : is_map l || is_map l')
+    (convlst : [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ])
+    (convtgtty : [Γ |- r.(Map.tgtTy) ≅ r'.(Map.tgtTy)])
+    (convfn : [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)]) :
+    #|neuMapCompact hmap convlst convtgtty convfn| = S(#|convfn| + (#|convtgtty| + (#|convlst| + 0))).
+  Proof. reflexivity. Qed.
+
+Lemma neuConvRed_size  Γ m n A A'
+    (conv : [Γ |- m ~ n ▹ A])
+    (redA : [A ⇒* A'])
+    (whA : whnf A') :
+  #|neuConvRed conv redA whA| = S(#|conv| + 0).
+  Proof. reflexivity. Qed.
+
+Lemma termConvRed_size  Γ t t' u u' A A'
+      (redA : [A ⇒* A'])
+      (redt : [t ⇒* t'])
+      (redu : [u ⇒* u' ])
+      (conv : [Γ |- t' ≅h u' : A']) :
+      #|termConvRed redA redt redu conv| = S(#|conv| + 0).
+    Proof. reflexivity. Qed.
+Lemma termPiCongAlg_size  Γ A B A' B'
+      (convA : [ Γ |- A ≅ A' : U])
+      (convB : [ Γ ,, A |- B ≅ B' : U]) :
+      #|termPiCongAlg convA convB| = S(#|convB| + (#|convA| + 0)).
+    Proof. reflexivity. Qed.
+Lemma termNatReflAlg_size  Γ :
+  #|@termNatReflAlg Γ| = 1.
+    Proof. reflexivity. Qed.
+Lemma termZeroReflAlg_size  Γ :
+      #|@termZeroReflAlg Γ| = 1.
+    Proof. reflexivity. Qed.
+Lemma termSuccCongAlg_size  Γ t t'
+    (convt : [Γ |- t ≅ t' : tNat]) :
+    #|termSuccCongAlg convt| = S(#|convt| + 0).
+    Proof. reflexivity. Qed.
+Lemma termEmptyReflAlg_size  Γ :
+#|@termEmptyReflAlg Γ| = 1.
+    Proof. reflexivity. Qed.
+Lemma termFunConvAlg_size  Γ f g A B
+      (whf :whnf f)
+      (whg : whnf g)
+      (conveta : [ Γ,, A |- eta_expand f ≅ eta_expand g : B]) :
+      #|termFunConvAlg whf whg conveta| = S(#|conveta| + 0).
+    Proof. reflexivity. Qed.
+Lemma termSigCongAlg_size  Γ A B A' B'
+    (convA : [ Γ |- A ≅ A' : U])
+    (convB : [ Γ ,, A |- B ≅ B' : U]) :
+    #|termSigCongAlg convA convB| = S(#|convB| + (#|convA| + 0)).
+    Proof. reflexivity. Qed.
+Lemma termPairConvAlg_size  Γ p q A B
+      (whp : whnf p)
+      (whq : whnf q)
+      (convfst : [ Γ |- tFst p ≅ tFst q : A])
+      (convsnd : [ Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]]) :
+      #|termPairConvAlg whp whq convfst convsnd| = S(#|convsnd| + (#|convfst| + 0)).
+    Proof. reflexivity. Qed.
+Lemma termListCongAlg_size  Γ A A'
+      (convA : [Γ |- A ≅ A' : U]) :
+      #|termListCongAlg convA| = S(#|convA| + 0).
+    Proof. reflexivity. Qed.
+Lemma termNilConvAlg_size  Γ A A' AT
+      (convA' : [Γ |- A ≅ A'])
+      (convAT : [Γ |- A ≅ AT]) :
+      #|termNilConvAlg convA' convAT| = S(#|convAT| + (#|convA'| + 0)).
+    Proof. reflexivity. Qed.
+Lemma termConsCongAlg_size  Γ A A' AT hd hd' tl tl'
+      (convA' : [Γ |- A ≅ A'])
+      (convAT : [Γ |- A ≅ AT])
+      (convhd : [Γ |- hd ≅ hd' : A])
+      (convtl : [Γ |- tl ≅ tl' : tList A]) :
+      #|termConsCongAlg convA' convAT convhd convtl| = S(#|convtl| + (#|convhd| + (#|convAT| + (#|convA'| + 0)))).
+    Proof. reflexivity. Qed.
+Lemma termNeuConvAlg_size  Γ m n T P
+      (inf : [Γ |- m ~ n ▹ T])
+      (ispos : isPosType P) :
+      #|termNeuConvAlg inf ispos| = S(#|inf| + 0).
+    Proof. reflexivity. Qed.
+
+End SizeLemmas.
+
+Create HintDb sizeLemmas.
+#[global]
+Hint Rewrite typeConvRed_size typePiCongAlg_size typeUnivConvAlg_size typeNatConvAlg_size typeEmptyConvAlg_size typeSigCongAlg_size typeListCongAlg_size typeNeuConvAlg_size neuVarConvAlg_size neuAppCongAlg_size neuNatElimCong_size neuEmptyElimCong_size neuFstCongAlg_size neuSndCongAlg_size neuMapCompact_size neuConvRed_size termConvRed_size termPiCongAlg_size termNatReflAlg_size termZeroReflAlg_size termSuccCongAlg_size termEmptyReflAlg_size termFunConvAlg_size termSigCongAlg_size termPairConvAlg_size termListCongAlg_size termNilConvAlg_size termConsCongAlg_size termNeuConvAlg_size : sizeLemmas.
+
+Ltac simpl_size := autorewrite with sizeLemmas; refold.
+
+Arguments algo_conv_size : simpl never.
+Arguments size : simpl never.
+
+(* Section Foo.
+  Import AlgorithmicTypingData.
+  From Coq Require Import Lia.
+  Goal forall Γ A B (h : [Γ |-[al] A ≅ B]), True.
+  Proof.
+      intros.
+      pose (h' := h).
+      destruct h.
+      assert (#|c| < #| h'|).
+      unfold h'; cbn.
+      unfold h'; simpl_size. lia.
+
+
+End Foo. *)
+
 
 (** ** Stability by weakening *)
 

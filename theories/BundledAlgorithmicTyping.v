@@ -1,4 +1,5 @@
 (** * LogRel.BundledAlgorithmicTyping: algorithmic typing bundled with its pre-conditions, and a tailored induction principle. *)
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping DeclarativeSubst TypeConstructorsInj.
 
@@ -249,6 +250,13 @@ Module BundledIntermediateData.
 End BundledIntermediateData.
 
 Set Universe Polymorphism.
+
+Arguments bun_conv_ty {_ _ _}.
+Arguments bun_conv_ty_red {_ _ _}.
+Arguments bun_conv_tm {_ _ _ _}.
+Arguments bun_conv_tm_red {_ _ _ _}.
+Arguments bun_conv_ne {_ _ _ _}.
+Arguments bun_conv_ne_red {_ _ _ _}.
 
 (** ** Induction principle for bundled algorithmic conversion *)
 
@@ -559,7 +567,9 @@ Section BundledConv.
         pose proof h as []%sig_ty_inj.
         etransitivity; tea.
         eapply typing_subst1; tea; econstructor; eapply TermConv; tea.
-    - admit.
+    - intros * hmap ? ihlst ? ihtgt ? ihfn ? hl hl'.
+      (* Need to decompose l, l' according to is_map and then apply termGen' *)
+      admit.
     - intros * ? IHm HA ? ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
@@ -673,18 +683,17 @@ Section BundledConv.
     - intros * ? ihA  ? ihAT ? ihhd ? ihtl ? hcons hcons'.
       destruct (termGen' _ _ _ hcons) as [? [[-> ?] c]].
       destruct (termGen' _ _ _ hcons') as [? [[->]]].
-      admit.
-      (* assert [Γ |-[de] A ≅ AT] as eq by now eapply list_ty_inj.
+      assert [Γ |-[de] A ≅ AT] as eq by now eapply list_ty_inj.
       assert [Γ |-[de] A' ≅ AT] as eq' by now eapply list_ty_inj.
       assert [Γ |-[de] AT] by now apply boundary in eq.
+      assert ([Γ |-[ de ] hd' : A] × [Γ |-[ de ] tl' : tList A]) as []
+        by (split; econstructor; tea; etransitivity; tea; now symmetry).
+      destruct ihA, ihAT, ihhd, ihtl; tea.
       split.
-      + eapply X21; tea;[eapply ihA | eapply ihAT| eapply ihhd| eapply ihtl]; tea.
-        1,2: econstructor; tea; etransitivity; tea; now symmetry.
-      + econstructor.
-        1:eapply TermConsCong; refold;
-       [eapply ihA | eapply ihhd| eapply ihtl]; tea.
-        3: tea.
-        1,2: econstructor; tea; etransitivity; tea; now symmetry. *)
+      1: eapply X26; eauto. (*why X26 is not found by eauto ??? *)
+      econstructor.
+      1:eapply TermConsCong; refold; tea.
+      tea.
     - intros * ? IHm ? ? Htym Htyn.
       edestruct IHm as [? [? Hm']].
       1: easy.
@@ -715,6 +724,36 @@ Admitted.
   Qed.
 
 End BundledConv.
+
+(** ** Size of bundles for well-founded induction *)
+
+#[global]
+Instance bun_conv_ty_sized Γ A B : Sized (ConvTypeBun Γ A B) := 
+  fun h => #|h.(bun_conv_ty)|.
+
+#[global]
+Instance bun_conv_ty_red_sized Γ A B : Sized (ConvTypeRedBun Γ A B) :=
+  fun h => #|h.(bun_conv_ty_red)|.
+
+#[global]
+Instance bun_conv_tm_sized Γ A t u : Sized (ConvTermBun Γ A t u) :=
+  fun h => #|h.(bun_conv_tm)|.
+
+#[global]
+Instance bun_conv_tm_red_sized Γ A t u : Sized (ConvTermRedBun Γ A t u) :=
+  fun h => #|h.(bun_conv_tm_red)|.
+
+#[global]
+Instance bun_conv_ne_sized Γ A m n : Sized (ConvNeuBun Γ A m n) :=
+  fun h => #|h.(bun_conv_ne)|.
+
+#[global]
+Instance bun_conv_ne_red_sized Γ A m n : Sized (ConvNeuRedBun Γ A m n) :=
+  fun h => #|h.(bun_conv_ne_red)|.
+
+#[global]
+Instance bun_conv_ne_conv_sized Γ A m n : Sized (ConvNeuConvBun Γ A m n) :=
+  fun h => #|h.(bun_conv_ne_conv _ _ _ _)|.
 
 (** ** Soundness of algorithmic conversion *)
 
@@ -772,6 +811,192 @@ Proof.
   all: try eassumption.
   all: now eexists.
 Qed.
+
+(** ** Inductive presentation of bundled algorithmic conversion *)
+
+  Inductive ConvTypeBunAlg : forall {Γ A B}, ConvTypeAlg Γ A B -> Type :=
+  | typeConvRedBun {Γ A A' B B'}
+      (redA : [A ⇒* A'])
+      (redB : [B ⇒* B'])
+      (conv : [Γ |-[bn] A' ≅h B']) :
+      ConvTypeBunAlg (typeConvRed redA redB conv.(bun_conv_ty_red)).
+  
+  Lemma bun_conv_ty_inv {Γ A B} (conv : [Γ |-[bn] A ≅ B]) :
+    ConvTypeBunAlg conv.(bun_conv_ty).
+  Proof.
+    destruct conv as [? hA hB convA].
+    destruct convA as [????? redA redB conv]; cbn. 
+    eapply subject_reduction_type, RedConvTyC in hA, hB ; tea.
+    pose proof (fst (snd algo_conv_wh) _ _ _ conv) as [].
+    unshelve refine (let c : [Γ |-[bn] A' ≅h B'] := _ in _).
+    1: econstructor; tea; boundary.
+    exact (typeConvRedBun redA redB c).
+  Qed.
+  
+  (** **** Conversion of types reduced to weak-head normal forms *)
+  Inductive ConvTypeRedBunAlg : forall {Γ A B}, ConvTypeRedAlg Γ A B -> Type :=
+    | typePiCongBun {Γ A B A' B'}
+      (convA : [ Γ |-[bn] A ≅ A'])
+      (convB : [ Γ ,, A |-[bn] B ≅ B']) :
+      ConvTypeRedBunAlg (typePiCongAlg convA.(bun_conv_ty) convB.(bun_conv_ty))
+    | typeUnivConvBun {Γ} :
+      ConvTypeRedBunAlg (@typeUnivConvAlg Γ)
+    | typeNatConvBun {Γ} :
+      ConvTypeRedBunAlg (@typeNatConvAlg Γ)
+    | typeEmptyConvBun {Γ} :
+      ConvTypeRedBunAlg (@typeEmptyConvAlg Γ) 
+    | typeSigCongBun {Γ A B A' B'}
+      (convA : [ Γ |-[bn] A ≅ A'])
+      (convB : [ Γ ,, A |-[bn] B ≅ B']) :
+      ConvTypeRedBunAlg (typeSigCongAlg convA.(bun_conv_ty) convB.(bun_conv_ty))
+    | typeListCongBun {Γ A A'}
+      (convA : [Γ |-[bn] A ≅ A']) :
+      ConvTypeRedBunAlg (typeListCongAlg convA.(bun_conv_ty))
+    | typeNeuConvBun {Γ M N T}
+      (inf : [ Γ |-[bn] M ~ N ▹ T]) :
+      ConvTypeRedBunAlg (typeNeuConvAlg inf.(bun_conv_ne)).
+
+  Lemma bun_conv_ty_red_inv {Γ A B} (conv : [Γ |-[bn] A ≅h B]) :
+    ConvTypeRedBunAlg conv.(bun_conv_ty_red).
+  Proof.
+    destruct conv as [? hA ? hB ? convA].
+    destruct convA; cbn; try econstructor; AlgorithmicTypingData.fold_algo.
+    + apply prod_ty_inv in hA as [], hB as [].
+      unshelve refine (let cA := {| bun_conv_ty := c |} in let cB := {| bun_conv_ty := c0 |} in typePiCongBun cA cB); tea.
+      1: boundary. 
+      eapply stability1.
+      3: now eapply bn_conv_sound in cA.
+      all: tea.
+    + apply sig_ty_inv in hA as [], hB as [].
+      unshelve refine (let cA := {| bun_conv_ty := c |} in let cB := {| bun_conv_ty := c0 |} in typeSigCongBun cA cB); tea.
+      1: boundary. 
+      eapply stability1.
+      3: now eapply bn_conv_sound in cA.
+      all: tea.
+    + apply list_ty_inv in hA, hB.
+      unshelve refine (let cA := {| bun_conv_ty := c |} in typeListCongBun cA); tea.
+    + pose proof (fst (snd (snd algo_conv_wh)) _ _ _ _ c) as [whM whN].
+      assert [Γ |-[de] M : U].
+      1: inversion hA ; subst ; clear hA; solve [inversion whM| assumption].
+      assert [Γ |-[de] N : U].
+      1: inversion hB ; subst ; clear hB; solve [inversion whN| assumption].
+      unshelve refine (let c := {| bun_conv_ne := c |} in typeNeuConvBun c); tea.
+      all: now eexists.
+  Qed.
+    
+    
+  Inductive ConvNeuBunAlg : forall {Γ T m n}, ConvNeuAlg Γ T m n -> Type :=
+    | neuVarConvBun {Γ n decl}
+      (hn : in_ctx Γ n decl) :
+      ConvNeuBunAlg (neuVarConvAlg hn)
+    | neuAppCongBun {Γ m n t u A B}
+      (convFun : [ Γ |-[bn] m ~h n ▹ tProd A B ])
+      (convArg : [ Γ |-[bn] t ≅ u : A ]) :
+      ConvNeuBunAlg (neuAppCongAlg convFun.(bun_conv_ne_red) convArg.(bun_conv_tm))
+    | neuNatElimCongBun {Γ n n' P P' hz hz' hs hs'} 
+      (convn : [Γ |-[bn] n ~h n' ▹ tNat])
+      (convP : [Γ,, tNat |-[bn] P ≅ P'])
+      (convhz : [Γ |-[bn] hz ≅ hz' : P[tZero..]])
+      (convhs : [Γ |-[bn] hs ≅ hs' : elimSuccHypTy P]) :
+      ConvNeuBunAlg (neuNatElimCong convn.(bun_conv_ne_red) convP.(bun_conv_ty) convhz.(bun_conv_tm) convhs.(bun_conv_tm))
+    | neuEmptyElimCongBun {Γ P P' e e'} 
+      (conve : [Γ |-[bn] e ~h e' ▹ tEmpty])
+      (convP : [Γ ,, tEmpty |-[bn] P ≅ P']) :
+      ConvNeuBunAlg (neuEmptyElimCong conve.(bun_conv_ne_red) convP.(bun_conv_ty))
+    | neuFstCongBun {Γ m n A B} 
+      (convm : [ Γ |-[bn] m ~h n ▹ tSig A B ]) :
+      ConvNeuBunAlg (neuFstCongAlg convm.(bun_conv_ne_red))
+    | neuSndCongBun {Γ m n A B}
+      (convm : [ Γ |-[bn] m ~h n ▹ tSig A B ]) :
+      ConvNeuBunAlg (neuSndCongAlg convm.(bun_conv_ne_red))
+    | neuMapCompactBun {Γ A l l'} 
+      (r := compact_map A l)
+      (r' := compact_map A l')
+      (hmap : is_map l || is_map l')
+      (convlst : [Γ |-[bn] r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ])
+      (convtgtty : [Γ |-[bn] r.(Map.tgtTy) ≅ r'.(Map.tgtTy)])
+      (convfn : [Γ |-[bn] r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)]) :
+      ConvNeuBunAlg (neuMapCompact hmap convlst.(bun_conv_ne_red) convtgtty.(bun_conv_ty) convfn.(bun_conv_tm)).
+
+  Lemma bun_conv_ne_inv {Γ T m n} (conv : [Γ |-[bn] m ~ n ▹ T]) :
+    ConvNeuBunAlg (conv.(bun_conv_ne)).
+  Proof. admit. Admitted.
+
+  Inductive ConvNeuRedBunAlg : forall {Γ T m n}, ConvNeuRedAlg Γ T m n -> Type :=
+    | neuConvRedBun {Γ m n A A'} 
+      (conv : [Γ |-[bn] m ~ n ▹ A])
+      (redA : [A ⇒* A'])
+      (whA : whnf A') :
+      ConvNeuRedBunAlg (neuConvRed conv.(bun_conv_ne) redA whA).
+
+  Lemma bun_conv_ne_red_inv {Γ T m n} (conv : [Γ |-[bn] m ~h n ▹ T]) :
+    ConvNeuRedBunAlg (conv.(bun_conv_ne_red)).
+  Proof. admit. Admitted.
+
+  Inductive ConvTermBunAlg : forall {Γ A t u}, ConvTermAlg Γ A t u -> Type :=
+    | termConvRedBun {Γ t t' u u' A A'}
+      (redA : [A ⇒* A'])
+      (redt : [t ⇒* t'])
+      (redu : [u ⇒* u' ])
+      (conv : [Γ |-[bn] t' ≅h u' : A']) :
+      ConvTermBunAlg (termConvRed redA redt redu conv.(bun_conv_tm_red)).
+
+  Lemma bun_conv_tm_inv {Γ A t u} (conv : [Γ |-[bn] t ≅ u : A]) :
+    ConvTermBunAlg (conv.(bun_conv_tm)).
+  Proof. admit. Admitted.
+
+  Inductive ConvTermRedBunAlg : forall {Γ A t u}, ConvTermRedAlg Γ A t u -> Type :=
+    | termPiCongBun {Γ A B A' B'} 
+      (convA : [ Γ |-[bn] A ≅ A' : U])
+      (convB : [ Γ ,, A |-[bn] B ≅ B' : U]) :
+      ConvTermRedBunAlg (termPiCongAlg convA.(bun_conv_tm) convB.(bun_conv_tm))
+    | termNatReflBun {Γ} :
+      ConvTermRedBunAlg (@termNatReflAlg Γ)
+    | termZeroReflBun {Γ} :
+      ConvTermRedBunAlg (@termZeroReflAlg Γ)
+    | termSuccCongBun {Γ t t'} 
+      (convt : [Γ |-[bn] t ≅ t' : tNat]) :
+      ConvTermRedBunAlg (termSuccCongAlg convt.(bun_conv_tm))
+    | termEmptyReflBun {Γ} :
+      ConvTermRedBunAlg (@termEmptyReflAlg Γ)
+    | termFunConvBun {Γ f g A B}
+      (whf :whnf f)
+      (whg : whnf g)
+      (conveta : [ Γ,, A |-[bn] eta_expand f ≅ eta_expand g : B]) :
+      ConvTermRedBunAlg (termFunConvAlg whf whg conveta.(bun_conv_tm)) 
+    | termSigCongBun {Γ A B A' B'} 
+      (convA : [ Γ |-[bn] A ≅ A' : U])
+      (convB : [ Γ ,, A |-[bn] B ≅ B' : U]) :
+      ConvTermRedBunAlg (termSigCongAlg convA.(bun_conv_tm) convB.(bun_conv_tm))
+    | termPairConvBun {Γ p q A B}
+      (whp : whnf p)
+      (whq : whnf q)
+      (convfst : [ Γ |-[bn] tFst p ≅ tFst q : A])
+      (convsnd : [ Γ |-[bn] tSnd p ≅ tSnd q : B[(tFst p)..]]) :
+      ConvTermRedBunAlg (termPairConvAlg whp whq convfst.(bun_conv_tm) convsnd.(bun_conv_tm))
+    | termListCongBun {Γ A A'} 
+      (convA : [Γ |-[bn] A ≅ A' : U]) :
+      ConvTermRedBunAlg (termListCongAlg convA.(bun_conv_tm))
+    | termNilConvBun {Γ A A' AT} 
+      (convA' : [Γ |-[bn] A ≅ A'])
+      (convAT : [Γ |-[bn] A ≅ AT]) :
+      ConvTermRedBunAlg (termNilConvAlg convA'.(bun_conv_ty) convAT.(bun_conv_ty))
+    | termConsCongBun {Γ A A' AT hd hd' tl tl'} 
+      (convA' : [Γ |-[bn] A ≅ A'])
+      (convAT : [Γ |-[bn] A ≅ AT])
+      (convhd : [Γ |-[bn] hd ≅ hd' : A])
+      (convtl : [Γ |-[bn] tl ≅ tl' : tList A]) :
+      ConvTermRedBunAlg (termConsCongAlg convA'.(bun_conv_ty) convAT.(bun_conv_ty) convhd.(bun_conv_tm) convtl.(bun_conv_tm))
+    | termNeuConvBun {Γ m n T P} 
+      (inf : [Γ |-[bn] m ~ n ▹ T])
+      (ispos : isPosType P) :
+      ConvTermRedBunAlg (termNeuConvAlg inf.(bun_conv_ne) ispos).
+
+  Lemma bun_conv_tm_red_inv {Γ A t u} (conv : [Γ |-[bn] t ≅h u : A]) :
+    ConvTermRedBunAlg (conv.(bun_conv_tm_red)).
+  Proof. admit. Admitted.
+
+
 
 (** ** Induction principle for bundled algorithmic typing *)
 

@@ -426,6 +426,14 @@ Proof.
   now intros [_ _ ?%escapeTm]%(Fundamental (ta := bn)).
 Qed.
 
+Lemma conv_equiv_de_bn Γ A B :
+  [Γ |-[de] A ≅ B] <~> [Γ |-[bn] A ≅ B].
+Proof.
+  split.
+  + now intros [??? ?%escapeEq]%(Fundamental (ta:=bn)).
+  + now intros [??? h%algo_conv_sound].
+Qed.
+
 (** *** Uniqueness of types *)
 
 Lemma type_uniqueness Γ A A' t :

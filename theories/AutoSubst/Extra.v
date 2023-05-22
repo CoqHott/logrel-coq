@@ -79,6 +79,33 @@ Module Map.
   #[projections(primitive)]
   Record data : Set := 
     mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
+
+  Definition id (A k : term) : data := Map.mk A A (idterm A) k.
+ 
+  Inductive opt := | IsMap : data -> opt | IsNotMap : term -> opt.
+
+  Fixpoint compact (t : term) : opt :=
+  match t with
+  | tMap B A f l => 
+    match compact l with
+    | IsMap r => IsMap (Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst))
+    | IsNotMap _ => IsMap (Map.mk B A f l)
+    end
+  | k => IsNotMap k
+  end.
+
+  (* combine and extract should be used only when one of their argument is a map *)
+  Definition garbage := id tZero tNat.
+
+  Definition combine (l r : opt) : data × data :=
+    match l, r with
+    | IsMap l, IsMap r => (l, r)
+    | IsMap l, IsNotMap r => (l, id l.(tgtTy) r)
+    | IsNotMap l, IsMap r => (id r.(tgtTy) l, r)
+    | IsNotMap l, IsNotMap r => (garbage, garbage) (* should never be used *)
+    end.
+
+  Definition extract l r := combine (compact l) (compact r).
 End Map.
 
 Definition is_map t :=
@@ -89,5 +116,5 @@ Fixpoint compact_map (A t : term) : Map.data :=
   | tMap B A f l => 
     let r := compact_map B l in
     Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
-  | k => Map.mk A A (idterm A) k
+  | k => Map.id A k
   end.
