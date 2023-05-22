@@ -91,6 +91,26 @@ Proof.
     + econstructor.
       1: now econstructor.
       now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? [ih] **.
+    econstructor; eauto.
+  - intros * ? [_ ] **.
+    econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? [_ ] **.
+    econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
+  - intros * ? [_ ] **.
+    econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
   - intros * ? [IH] **; subst.
     eapply IH.
     eapply subject_reduction_type ; tea.
@@ -123,6 +143,8 @@ Module AlgorithmicTypingProperties.
   Proof.
     - intros_bn.
       now eapply algo_typing_wk.
+    - intros_bn.
+      now econstructor.
     - intros_bn.
       now econstructor.
     - intros_bn.
@@ -219,6 +241,10 @@ Module AlgorithmicTypingProperties.
       eapply TermConv; refold; [|now symmetry].
       econstructor. eapply TermRefl.
       now eapply inf_conv_decl.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -229,7 +255,7 @@ Module AlgorithmicTypingProperties.
       1: eassumption.
       etransitivity ; tea.
       now eapply algo_conv_sound in bun_conv_ty.
-  Qed.
+  Admitted.
 
   #[export, refine] Instance RedTermAlgProperties :
     RedTermProperties (ta := bn) := {}.
@@ -357,6 +383,9 @@ Module AlgorithmicTypingProperties.
       2: now symmetry.
       eapply TermRefl; eapply wfTermConv; refold; [|now symmetry].
       econstructor; now eapply inf_conv_decl.
+    - admit.
+    - admit.
+    - admit.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -366,7 +395,8 @@ Module AlgorithmicTypingProperties.
     - red. intros_bn.
       2: now etransitivity.
       now econstructor.
-  Qed.
+  Admitted.
+  (* Qed. *)
 
   #[export, refine] Instance RedTypeAlgProperties :
     RedTypeProperties (ta := bn) := {}.

@@ -3,11 +3,58 @@ From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping DeclarativeTyping.
 
+Module Map.
+  (** Quadruple of terms collecting the data of accumulated maps 
+      The record needs to be negative so that we can use it in the 
+      rule neuMapCompact *)
+  #[projections(primitive)]
+  Record data : Set := 
+    mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
+End Map.
+
 Section Definitions.
 
   (** We locally disable typing notations to be able to use them in the definition
   here before declaring the right instance. *)
   Close Scope typing_scope.
+
+  Definition is_map t :=
+    match t with | tMap _ _ _ _ => true | _ => false end.
+
+  Fixpoint compact_map (A t : term) : Map.data :=
+    match t with
+    | tMap B A f l => 
+      let r := compact_map B l in
+      Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
+    | k => Map.mk A A (idterm A) k
+    end.
+
+    Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
+    Proof. now destruct t. Qed.
+
+    Lemma wk_compact_map t: 
+      forall A {Γ Δ} (ρ : Δ ≤ Γ) 
+      (r := compact_map A t) 
+      (r' := compact_map A⟨ρ⟩ t⟨ρ⟩),
+      (Map.srcTy r)⟨ρ⟩ = Map.srcTy r' ×
+      (Map.tgtTy r)⟨ρ⟩ = Map.tgtTy r' ×
+      (Map.fn r)⟨ρ⟩ = Map.fn r' ×
+      (Map.lst r)⟨ρ⟩ = Map.lst r'.
+    Proof.
+      induction t; intros; repeat split; try reflexivity.
+      1,3: eapply IHt4.
+      subst r r'; cbn; f_equal.  1: eapply IHt4.
+      f_equal. 1: now bsimpl.
+      assert (forall x, x⟨↑⟩⟨upRen_term_term ρ⟩ = x⟨ρ⟩⟨↑⟩) as -> by (intros; now bsimpl).
+      do 2 f_equal. eapply IHt4.
+    Qed.
+
+    Lemma compact_map_whne A l :
+      whne (Map.lst (compact_map A l)) -> whne l.
+    Proof.
+      induction l in A |- *; cbn; try easy.
+      intros; constructor; eauto.
+    Qed.
 
 (** ** Conversion *)
 
@@ -34,8 +81,11 @@ Section Definitions.
       [ Γ |- A ≅ A'] ->
       [ Γ ,, A |- B ≅ B'] ->
       [ Γ |- tSig A B ≅h tSig A' B']
+    | typeListCongAlg {Γ A A'} :
+      [Γ |- A ≅ A'] ->
+      [ Γ |- tList A ≅h tList A' ]
     | typeNeuConvAlg {Γ M N T} :
-      [ Γ |- M ~ N ▹ T] -> 
+      [ Γ |- M ~ N ▹ T] ->
       [ Γ |- M ≅h N]
   (** **** Conversion of neutral terms *)
   with ConvNeuAlg : context -> term -> term  -> term -> Type :=
@@ -66,6 +116,14 @@ Section Definitions.
     | neuSndCongAlg {Γ m n A B} :
       [ Γ |- m ~h n ▹ tSig A B ] ->
       [ Γ |- tSnd m ~ tSnd n ▹ B[(tFst m)..] ]
+    | neuMapCompact {Γ A l l'} :
+      let r := compact_map A l in
+      let r' := compact_map A l' in
+      is_map l || is_map l' ->
+      [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ] ->
+      [Γ |- r.(Map.tgtTy) ≅ r'.(Map.tgtTy)] ->
+      [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)] ->
+      [Γ |- l ~ l' ▹ tList r.(Map.tgtTy)]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -111,6 +169,19 @@ Section Definitions.
       [ Γ |- tFst p ≅ tFst q : A] -> 
       [ Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] -> 
       [ Γ |- p ≅h q : tSig A B]
+    | termListCongAlg {Γ A A'} :
+      [Γ |- A ≅ A' : U] ->
+      [Γ |- tList A ≅h tList A' : U]
+    | termNilConvAlg {Γ A A' AT} :
+      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ AT] ->
+      [Γ |- tNil A ≅h tNil A' : tList AT]
+    | termConsCongAlg {Γ A A' AT hd hd' tl tl'} :
+      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ AT] ->
+      [Γ |- hd ≅ hd' : A] ->
+      [Γ |- tl ≅ tl' : tList A] ->
+      [Γ |- tCons A hd tl ≅h tCons A' hd' tl' : tList AT]
     | termNeuConvAlg {Γ m n T P} :
       [Γ |- m ~ n ▹ T] ->
       isPosType P ->
@@ -142,6 +213,9 @@ Section Definitions.
       [Γ |- A ] ->
       [Γ,, A |- B] ->
       [Γ |- tSig A B]
+    | wfTypeList {Γ A} :
+      [Γ |- A] ->
+      [Γ |- tList A]
     | wfTypeUniv {Γ A} :
       ~ isCanonical A ->
       [Γ |- A ▹h U] ->
@@ -198,6 +272,23 @@ Section Definitions.
     | infSnd {Γ A B p} :
       [Γ |- p ▹h tSig A B] ->
       [Γ |- tSnd p ▹ B[(tFst p)..]]
+    | infList {Γ A} :
+      [Γ |- A ▹h U] ->
+      [Γ |- tList A ▹ U]
+    | infNil {Γ A} :
+      [Γ |- A] ->
+      [Γ |- tNil A ▹ tList A]
+    | infCons {Γ A hd tl} :
+      [Γ |- A] ->
+      [Γ |- hd ◃ A] ->
+      [Γ |- tl ◃ tList A] ->
+      [Γ |- tCons A hd tl ▹ tList A]
+    | infMap {Γ A B f l} :
+      [Γ |- A] ->
+      [Γ |- B] ->
+      [Γ |- f ◃ arr A B] ->
+      [Γ |- l ◃ tList A] ->
+      [Γ |- tMap A B f l ▹ tList B]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -401,6 +492,8 @@ Section TypingWk.
       now eapply IHB.
     - intros.
       now econstructor.  
+    - intros.
+      now econstructor.  
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
@@ -440,6 +533,23 @@ Section TypingWk.
     - intros ??? A? ? IH *; cbn.
       rewrite (subst_ren_wk_up (A:=A)).
       econstructor; now eapply IH.
+    - intros *.
+      intros ? ? ihlst ? ihtgt ? ihfn *.
+      destruct (wk_compact_map l A ρ) as [es [et [ef el]]].
+      destruct (wk_compact_map l' A ρ) as [es' [et' [ef' el']]].
+      eapply convne_meta_conv. 3: reflexivity.
+      1: eapply neuMapCompact.
+      5: now rewrite <- et.
+      + now do 2 rewrite wk_is_map.
+      + eapply convne_meta_conv.
+        1: rewrite <- el; eapply ihlst.
+        1: reflexivity.
+        now symmetry.
+      + rewrite <- et; rewrite <- et'; eapply ihtgt.
+      + eapply convtm_meta_conv.
+        1: rewrite <- ef; eapply ihfn.
+        2: now symmetry.
+        rewrite <- et; now bsimpl.
     - intros.
       econstructor.
       + eauto.
@@ -478,6 +588,12 @@ Section TypingWk.
       1,2: gen_typing.
       1: eauto.
       rewrite wk_fst, <- subst_ren_wk_up; eauto.
+    - intros; cbn.
+      econstructor; eauto.
+    - intros; cbn.
+      econstructor; eauto.
+    - intros; cbn.
+      econstructor; eauto.
     - intros.
       econstructor.
       + eauto.
@@ -491,6 +607,7 @@ Section TypingWk.
     [Δ |- t⟨ρ⟩ ▹h A⟨ρ⟩].
   Let PCheck (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ),
   [Δ |- t⟨ρ⟩ ◃ A⟨ρ⟩].
+
 
   Theorem algo_typing_wk :
     AlgoTypingInductionConcl PTy PInf PInfRed PCheck.
@@ -511,6 +628,9 @@ Section TypingWk.
       econstructor.
       + now eauto.
       + now eapply IHB.
+    - intros * ? IHA **.
+      rewrite <- wk_list.
+      econstructor; eauto.
     - constructor.
       + now intros ?%isCanonical_ren.
       + eauto. 
@@ -573,6 +693,12 @@ Section TypingWk.
       rewrite <- wk_snd, (subst_ren_wk_up (A:=A)).
       econstructor.
       now eapply IH.
+    - intros; cbn; econstructor; eauto.
+    - intros; cbn; econstructor; eauto.
+    - intros; cbn; econstructor; eauto.
+    - intros * ????? h **; cbn; econstructor; eauto.
+      eapply typing_meta_conv. 1: apply h.
+      now bsimpl.
     - intros.
       econstructor.
       + eauto.
@@ -640,7 +766,7 @@ Section AlgTypingWh.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
     apply AlgoConvInduction.
     all: intros ; prod_splitter ; prod_hyp_splitter.
-    all: try solve [now constructor].
+    all: try solve [now constructor| now eapply compact_map_whne].
     all: gen_typing.
   Qed.
 End AlgTypingWh.
@@ -669,30 +795,37 @@ Proof.
   all: try easy.
   - intros * ? * Hconv.
     inversion Hconv ; subst ; clear Hconv.
-    now eapply in_ctx_inj.
+    1: now eapply in_ctx_inj.
+    admit.
   - intros * ? IH ? ? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     apply IH in H6.
     now inversion H6.
+    admit.
   - intros * ? IH ?????? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     now reflexivity.
+    admit.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     now reflexivity.
+    admit.
   - intros * ? IH ?? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
     apply IH in H3.
     now inversion H3.
+    admit.
   - intros * ? IH ?? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
     apply IH in H3.
     now inversion H3.
+    admit.
+  - admit.
   - intros * ? IH ???? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
     now eapply whred_det.
-Qed.
+Admitted.
 
 Theorem algo_typing_det :
   AlgoTypingInductionConcl
@@ -741,10 +874,14 @@ Proof.
     inversion Hconv; subst; refold.
     apply IH in H3; try constructor.
     now inversion H3.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H3 ; subst.
     now eapply whred_det.
-Qed.
+Admitted.
 
 End AlgoTypingDet.

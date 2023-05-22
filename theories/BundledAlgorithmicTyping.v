@@ -415,6 +415,12 @@ Section BundledConv.
       destruct IHB as [].
       1-3: gen_typing.
       now econstructor.
+    - intros * Hconv ih ? hLA hLA'.
+      epose proof (list_ty_inv _ _ hLA).
+      epose proof (list_ty_inv _ _ hLA').
+      split.
+      + eauto.
+      + constructor. now eapply ih.
     - intros * Hconv IH ? HM HN.
       assert [Γ |-[de] M : U].
       {
@@ -553,6 +559,7 @@ Section BundledConv.
         pose proof h as []%sig_ty_inj.
         etransitivity; tea.
         eapply typing_subst1; tea; econstructor; eapply TermConv; tea.
+    - admit.
     - intros * ? IHm HA ? ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
@@ -650,6 +657,34 @@ Section BundledConv.
       eapply wfTermConv; [now econstructor|].
       eapply typing_subst1; [now symmetry|].
       now eapply TypeRefl.
+    - intros * ? ih ? hLA hLA'.
+      destruct (termGen' _ _ _ hLA) as [? [[->]]].
+      destruct (termGen' _ _ _ hLA') as [? [[->]]].
+      split. 2: now constructor.
+      eauto.
+    - intros * ? ih  ? ih' ? hnil hnil'.
+      destruct (termGen' _ _ _ hnil) as [? [[-> ?] c]].
+      destruct (termGen' _ _ _ hnil') as [? [[->]]].
+      split.
+      + eapply boundary in c as [_ ?%list_ty_inv]; eauto. 
+      + econstructor. 
+        1:eapply TermNilCong; now eapply ih.
+        tea.
+    - intros * ? ihA  ? ihAT ? ihhd ? ihtl ? hcons hcons'.
+      destruct (termGen' _ _ _ hcons) as [? [[-> ?] c]].
+      destruct (termGen' _ _ _ hcons') as [? [[->]]].
+      admit.
+      (* assert [Γ |-[de] A ≅ AT] as eq by now eapply list_ty_inj.
+      assert [Γ |-[de] A' ≅ AT] as eq' by now eapply list_ty_inj.
+      assert [Γ |-[de] AT] by now apply boundary in eq.
+      split.
+      + eapply X21; tea;[eapply ihA | eapply ihAT| eapply ihhd| eapply ihtl]; tea.
+        1,2: econstructor; tea; etransitivity; tea; now symmetry.
+      + econstructor.
+        1:eapply TermConsCong; refold;
+       [eapply ihA | eapply ihhd| eapply ihtl]; tea.
+        3: tea.
+        1,2: econstructor; tea; etransitivity; tea; now symmetry. *)
     - intros * ? IHm ? ? Htym Htyn.
       edestruct IHm as [? [? Hm']].
       1: easy.
@@ -657,7 +692,8 @@ Section BundledConv.
       split ; [now eauto|..].
       econstructor ; tea.
       now eapply Hm'.
-Qed.
+Admitted.
+(* Qed. *)
 
   Definition BundledConvInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in
@@ -837,7 +873,7 @@ Section BundledTyping.
     intros.
     subst PTy' PInf' PInfRed' PCheck'.
     apply AlgoTypingInduction.
-    1-9: solve [intros ;
+    1-10: solve [intros ;
       repeat unshelve (
         match reverse goal with
           | IH : context [prod] |- _ => destruct IH ; [..|shelve] ; gen_typing
@@ -899,13 +935,17 @@ Section BundledTyping.
       1: now eapply typing_subst1.
       split;[eauto|now econstructor].
       (* why is that not found by eauto ? *)
-      eapply X16; tea; now split.
+      eapply X17; tea; now split.
     - intros * ? ih ?.
       edestruct ih as []; tea.
       split;[eauto|now econstructor].
     - intros * ? ih ?.
       edestruct ih as []; tea.
       split;[eauto|now econstructor].
+    - admit.
+    - admit.
+    - admit.
+    - admit.
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
       split ; [eauto|..].
@@ -919,7 +959,8 @@ Section BundledTyping.
       econstructor ; tea.
       eapply algo_conv_sound in HA ; tea.
       now boundary.
-  Qed.
+  Admitted.
+  (* Qed. *)
 
   Definition BundledTypingInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoTypingInductionConcl PTy PInf PInfRed PCheck) in

@@ -332,6 +332,6 @@ Section NeutralConversion.
         split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
     Unshelve. 2,4: tea. 
-  Qed.
-
+  - admit.
+  Admitted.
 End NeutralConversion.

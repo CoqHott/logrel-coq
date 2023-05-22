@@ -62,7 +62,8 @@ Section TypeConstructors.
       eexists; split.
       1: apply red.
       now constructor.
-  Qed.
+    - admit.
+  Admitted.
 
   Lemma ty_conv_inj : forall (Γ : context) (T T' : term) (nfT : isType T) (nfT' : isType T'),
     [Γ |- T ≅ T'] ->
@@ -101,11 +102,13 @@ Section TypeConstructors.
       + apply convneu_whne in ne, ne'; inversion ne.
       + apply convneu_whne in ne, ne'; inversion ne.
       + apply convneu_whne in ne, ne'; inversion ne.
+      + apply convneu_whne in ne, ne'; inversion ne.
       + destruct nfT'.
         * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
         * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
         * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
         * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
+        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'; gen_typing.
         * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'; gen_typing.
         * cbn. gen_typing.
     - assert [|- Γ] by (apply escape in HT' ; boundary).
@@ -116,10 +119,10 @@ Section TypeConstructors.
       assert (T = tProd dom cod) as HeqT by (apply red_whnf ; gen_typing). 
       assert (T' = tProd dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
       destruct nfT.
-      1,3,4,5: congruence.
+      1,3,4,5,6: congruence.
       2: subst ; exfalso ; gen_typing.
       destruct nfT'.
-      1,3,4,5: congruence.
+      1,3,4,5,6: congruence.
       2: subst ; exfalso ; gen_typing.
       inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
       cbn.
@@ -149,16 +152,17 @@ Section TypeConstructors.
       assert (T = tSig dom cod) as HeqT by (apply red_whnf ; gen_typing). 
       assert (T' = tSig dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
       destruct nfT.
-      1-4: congruence.
+      1-4,6: congruence.
       2: subst; inv_whne.
       destruct nfT'.
-      1-4: congruence.
+      1-4,6: congruence.
       2: subst ; inv_whne.
       inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
       cbn.
       destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed0)).
       split; now escape.
-  Qed.
+    - admit.
+  Admitted.
 
   Corollary red_ty_compl_univ_l Γ T :
     [Γ |- U ≅ T] ->
@@ -350,6 +354,8 @@ Section Boundary.
       eapply typing_subst1.
       + now econstructor.
       + now eapply sig_ty_inv.
+    - now econstructor.
+    - now econstructor.
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
@@ -362,6 +368,9 @@ Section Boundary.
       eapply stability1. 
       3: now symmetry.
       all: tea.
+    - intros * ? [].
+      split.
+      all: now econstructor.
     - intros * ? [].
       split.
       all: now econstructor.
@@ -449,13 +458,21 @@ Section Boundary.
       + econstructor; tea.
         symmetry; eapply typing_subst1; tea.
         now econstructor.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
+    - admit.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
       split; gen_typing.
     - intros * ?[]?[].
       split; gen_typing.
-  Qed.
+  Admitted.
 
 End Boundary.
 
@@ -699,7 +716,10 @@ Proof.
     }
     eapply TermConv; tea; refold.
     now econstructor.
-  Qed.
+  - admit.
+  - admit.
+  - admit.
+  Admitted.
 
 
   Theorem subject_reduction_one_type Γ A A' :
@@ -782,7 +802,7 @@ Lemma type_isType Γ A :
   isType A.
 Proof.
   intros [] ; refold.
-  1-5: econstructor.
+  1-6: econstructor.
   intros.
   now eapply Uterm_isType.
 Qed.
