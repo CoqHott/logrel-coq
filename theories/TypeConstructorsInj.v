@@ -22,6 +22,7 @@ Section TypeConstructors.
       | EmptyType, EmptyType => True
       | NeType _, NeType _ => [Γ |- T ≅ T' : U]
       | @SigType A B, @SigType A' B' => [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B']
+      | @ListType A, @ListType A' => [Γ |- A' ≅ A]
       | _, _ => False
     end.
 
@@ -62,107 +63,41 @@ Section TypeConstructors.
       eexists; split.
       1: apply red.
       now constructor.
-    - admit.
-  Admitted.
+    - eexists; split.
+      1: apply (ListRedTyEq.red Hconv).
+      now constructor.
+  Qed.
 
+  
+  
   Lemma ty_conv_inj : forall (Γ : context) (T T' : term) (nfT : isType T) (nfT' : isType T'),
     [Γ |- T ≅ T'] ->
     type_hd_view Γ nfT nfT'.
   Proof.
     intros * Hconv.
-    eapply Fundamental in Hconv as [HΓ HT HT' Hconv].
-    eapply reducibleTyEq in Hconv.
+    eapply Fundamental in Hconv as [HΓ HT HT' Hconv0].
+    eapply reducibleTyEq in Hconv0.
     set (HTred := reducibleTy _ HT) in *.
     clearbody HTred.
     clear HT.
     eapply reducibleTy in HT'.
-    destruct HTred as [[] lrT].
-    cbn in *.
-    inversion lrT ; subst ; clear lrT.
-    - subst.
-      destruct Hconv as [].
-      assert (T' = U) as HeqT' by (eapply redtywf_whnf ; gen_typing); subst.
-      destruct H.
-      assert (T = U) as HeqU by (eapply redtywf_whnf ; gen_typing). 
-      destruct nfT ; inversion HeqU ; subst.
-      2: now exfalso ; gen_typing.
-      clear HeqU.
-      remember U as T eqn:HeqU in nfT' |- * at 2.
-      destruct nfT' ; inversion HeqU ; subst.
-      2: now exfalso ; gen_typing.
-      now reflexivity.
-    - destruct neA as [nT ? ne], Hconv as [nT' ? ne'] ; cbn in *.
-      assert (T = nT) as <- by
-        (apply red_whnf ; gen_typing).
-      assert (T' = nT') as <- by
-        (apply red_whnf ; gen_typing).
-      destruct nfT.
-      + apply convneu_whne in ne, ne'; exfalso ; gen_typing.
-      + apply convneu_whne in ne, ne'; exfalso ; gen_typing.
-      + apply convneu_whne in ne, ne'; inversion ne.
-      + apply convneu_whne in ne, ne'; inversion ne.
-      + apply convneu_whne in ne, ne'; inversion ne.
-      + apply convneu_whne in ne, ne'; inversion ne.
-      + destruct nfT'.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; exfalso ; gen_typing.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'; gen_typing.
-        * symmetry in ne'; apply convneu_whne in ne, ne'; inversion ne'; gen_typing.
-        * cbn. gen_typing.
-    - assert [|- Γ] by (apply escape in HT' ; boundary).
-      rewrite <- (ParamRedTy.beta_pack ΠAad) in *.
-      remember (ParamRedTy.from ΠAad) as ΠA' eqn:Heq in *.
-      clear ΠA ΠAad Heq.
-      destruct ΠA' as [dom cod red], Hconv as [dom' cod' red'] ; cbn in *.
-      assert (T = tProd dom cod) as HeqT by (apply red_whnf ; gen_typing). 
-      assert (T' = tProd dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
-      destruct nfT.
-      1,3,4,5,6: congruence.
-      2: subst ; exfalso ; gen_typing.
-      destruct nfT'.
-      1,3,4,5,6: congruence.
-      2: subst ; exfalso ; gen_typing.
-      inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
-      cbn.
-      destruct (polyRedEqId (normRedΠ0 (invLRΠ HT')) (PolyRedEqSym _ polyRed0)).
+    pose (HTredcan := invLRcan HTred nfT).
+    assert (Hconv : [HTredcan | Γ ||- T ≅ T']) by irrelevance.
+    clear Hconv0.
+    destruct nfT; cbn in *; revert Hconv; intros []; redSubst.
+    1-6: dependent inversion nfT'; try inv_whne; subst.
+    - now destruct s.
+    - destruct (polyRedEqId (normRedΠ0 (invLRΠ HT')) (PolyRedEqSym _ polyRed)).
       split; now escape.
-    - destruct Hconv.
-      assert (T' = tNat) as HeqT' by (eapply redtywf_whnf ; gen_typing).
-      assert (T = tNat) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
-      destruct nfT; inversion HeqT.
-      + destruct nfT'; inversion HeqT'.
-        * constructor.
-        * exfalso; subst; inversion w.
-      + exfalso; subst; inversion w.
-    - destruct Hconv.
-      assert (T' = tEmpty) as HeqT' by (eapply redtywf_whnf ; gen_typing).
-      assert (T = tEmpty) as HeqT by (destruct NA; eapply redtywf_whnf ; gen_typing).
-      destruct nfT; inversion HeqT.
-      + destruct nfT'; inversion HeqT'.
-        * econstructor.
-        * exfalso; subst; inversion w.
-      + exfalso; subst; inversion w.
-    - assert [|- Γ] by (apply escape in HT' ; boundary).
-      rewrite <- (ParamRedTy.beta_pack ΣAad) in *.
-      remember (ParamRedTy.from ΣAad) as ΣA' eqn:Heq in *.
-      clear ΣA ΣAad Heq.
-      destruct ΣA' as [dom cod red], Hconv as [dom' cod' red'] ; cbn in *.
-      assert (T = tSig dom cod) as HeqT by (apply red_whnf ; gen_typing). 
-      assert (T' = tSig dom' cod') as HeqT' by (apply red_whnf ; gen_typing).
-      destruct nfT.
-      1-4,6: congruence.
-      2: subst; inv_whne.
-      destruct nfT'.
-      1-4,6: congruence.
-      2: subst ; inv_whne.
-      inversion HeqT ; inversion HeqT' ; subst ; clear HeqT HeqT'.
-      cbn.
-      destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed0)).
+    - easy.
+    - easy. 
+    - destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed)).
       split; now escape.
-    - admit.
-  Admitted.
+    - symmetry; now eapply LogicalRelation.Escape.escapeEq.
+    - pose proof eq as ?%symmetry%convneu_whne.
+      destruct nfT'; try solve [inv_whne].
+      cbn in *. gen_typing.
+  Qed.
 
   Corollary red_ty_compl_univ_l Γ T :
     [Γ |- U ≅ T] ->
@@ -298,6 +233,40 @@ Section TypeConstructors.
   Corollary sig_ty_inj Γ A B  A' B' :
     [Γ |- tSig A B ≅ tSig A' B'] ->
     [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B'].
+  Proof.
+    intros Hty.
+    unshelve eapply ty_conv_inj in Hty.
+    1-2: constructor.
+    now eassumption.
+  Qed.
+  
+  Corollary red_ty_compl_list_l Γ A T :
+    [Γ |- tList A ≅ T] ->
+    ∑ A', [Γ |- T ⇒* tList A'] × [Γ |- A' ≅ A].
+  Proof.
+    intros HT.
+    pose proof HT as HT'.
+    unshelve eapply red_ty_complete in HT as (T''&[? nfT]).
+    2: econstructor.
+    assert [Γ |- tList A ≅ T''] as Hconv by 
+      (etransitivity ; [eassumption|now eapply RedConvTyC]).
+    unshelve eapply ty_conv_inj in Hconv.
+    1: constructor.
+    1: assumption.
+    destruct nfT; cbn in *; try solve [destruct Hconv].
+    do 2 eexists; tea.
+  Qed.
+  
+  Corollary red_ty_compl_list_r Γ A T :
+    [Γ |- T ≅ tList A] ->
+    ∑ A', [Γ |- T ⇒* tList A'] × [Γ |- A' ≅ A].
+  Proof.
+    intros; eapply red_ty_compl_list_l; now symmetry.
+  Qed.
+
+  Corollary list_ty_inj Γ A A' :
+    [Γ |- tList A ≅ tList A'] ->
+    [Γ |- A' ≅ A].
   Proof.
     intros Hty.
     unshelve eapply ty_conv_inj in Hty.
