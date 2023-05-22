@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma List.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -697,17 +697,27 @@ Section Fundamental.
   (* TODO: Fix all lemmas for list as it was done for https://github.com/CoqHott/logrel-coq/pull/30/files *)
   Lemma FundTyList : forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy Γ A -> FundTy Γ (tList A).
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor; tea.
+    unshelve eapply listValid; tea.
+  Qed.
 
   Lemma FundTmList : forall (Γ : context) (A : term),
   [Γ |-[ de ] A : U] -> FundTm Γ U A -> FundTm Γ U (tList A).
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor.
+    3: unshelve eapply listTermValid.
+    1: now tea.
+    irrValid.
+  Qed.
 
   Lemma FundTmNil : forall (Γ : context) (A : term),
     [Γ |-[ de ] A] -> FundTy Γ A -> FundTm Γ (tList A) (tNil A).
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor.
+    3: unshelve eapply nilValid.
+    2: now eapply listValid.
+    trivial.
+  Qed.
 
   Lemma FundTmCons : forall (Γ : context) (A a l : term),
     [Γ |-[ de ] A] ->
@@ -716,7 +726,10 @@ Section Fundamental.
     FundTm Γ A a ->
     [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList A) (tCons A a l).
   Proof.
-  Admitted.
+    intros * ?[] ?[] ?[]; unshelve econstructor.
+    3: unshelve eapply consValid; tea.
+    1-2: now irrValid.
+  Qed.
 
   Lemma FundTmMap : forall (Γ : context) (A B f l : term),
     [Γ |-[ de ] A] ->
@@ -727,22 +740,35 @@ Section Fundamental.
     FundTm Γ (arr A B) f ->
     [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList B) (tMap A B f l).
   Proof.
-  Admitted.
+    intros * ?[] ?[] ?[] ?[]; unshelve econstructor.
+    3: unshelve eapply mapValid; tea.
+    1: apply listValid.
+    all: now irrValid.
+  Qed.
 
   Lemma FundTyEqListCong : 
     forall (Γ : context) (A B : term),
     [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTyEq Γ (tList A) (tList B).
   Proof.
-  Admitted.
+    intros * ?[]; unshelve econstructor.
+    4: unshelve eapply listCongValid; tea.
+    now apply listValid.
+  Qed.
 
   Lemma FundTmEqListCong : forall (Γ : context) (A B : term),
     [Γ |-[ de ] A ≅ B : U] -> FundTmEq Γ U A B -> FundTmEq Γ U (tList A) (tList B).
   Proof.
+    intros * ?[]; unshelve econstructor.
+    (* 5: unshelve eapply  *)
+    (* TODO: missing lemma? *)
   Admitted.
 
   Lemma FundTmEqNilCong : forall (Γ : context) (A B : term),
     [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTmEq Γ (tList A) (tNil A) (tNil B).
   Proof.
+    intros * ?[]; unshelve econstructor.
+    (* 5: unshelve eapply nilEqValid. *)
+    (* TODO: missing lemma? *)
   Admitted.
 
   Lemma FundTmEqConsCong :
@@ -778,7 +804,18 @@ Section Fundamental.
     [Γ |-[ de ] f : arr A B] ->
     FundTm Γ (arr A B) f -> FundTmEq Γ (tList B) (tMap A B f (tNil A)) (tNil B).
   Proof.
-  Admitted.
+    intros * ?[] ?[] ?[]; unshelve econstructor.
+    5: unshelve eapply mapRedNilValid; tea.
+    1: apply listValid.
+    5: apply listValid.
+    all: try irrValid.
+    - unshelve eapply mapValid; tea.
+      2: apply listValid.
+      all: try irrValid.
+      unshelve eapply nilValid; tea.
+    - unshelve eapply nilValid; tea.
+      irrValid.
+  Qed.
 
   Lemma FundTmEqMapCons :
     forall (Γ : context) (f hd tl A B : term),
@@ -821,6 +858,13 @@ Section Fundamental.
     [Γ |-[ de ] l ≅ l' : tList A] ->
     FundTmEq Γ (tList A) l l' -> FundTmEq Γ (tList A) (tMap A A (idterm A) l) l'.
   Proof.
+    intros * ?[] ?[]; unshelve econstructor.
+    5: unshelve eapply mapRedIdValid; tea.
+    2:{
+      unshelve eapply mapValid.
+      all: admit.
+    }
+    all: now irrValid.
   Admitted.
 
 

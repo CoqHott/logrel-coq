@@ -54,6 +54,7 @@ theories/Substitution/Introductions/Var.v
 theories/Substitution/Introductions/Nat.v
 theories/Substitution/Introductions/Empty.v
 theories/Substitution/Introductions/Sigma.v
+theories/Substitution/Introductions/List.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v

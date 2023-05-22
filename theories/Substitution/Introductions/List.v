@@ -747,7 +747,14 @@ Proof.
       eapply simple_appTerm; tea.
     + eapply simple_appTerm; tea.
     + admit.
-    + admit.
+    + eapply LREqTermHelper.
+      4: irrelevance.
+      3: eapply LRTyEqRefl_.
+      2: now unshelve eapply (fst (mapRedAux _)); tea.
+      unshelve eapply (fst (mapEqRedAux _ _)); tea.
+      all: try solve [ eapply LRTyEqRefl_ | now eapply LREqTermRefl_ ].
+      change [ LRList' (normList0 LB') | Γ ||- tMap A B g tl ≅ tMap A B g (ListRedTm.nf l) : _ ].
+      unshelve eapply (fst (mapRedAux _)); tea.
     + unshelve eapply (fst (mapRedAux _)); tea.
       change [ LRList' (normList0 LB') | Γ ||- tMap A B g tl : _ ].
       unshelve eapply (fst (mapRedAux _)); tea.
@@ -770,7 +777,7 @@ Proof.
       match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + eapply tm_ne_map.
       1-2: now eapply reifyType.
-      1: admit.
+      1: eapply reifyTerm; admit.
       match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + eapply ty_map.
       1-3: now escape.
@@ -779,8 +786,9 @@ Proof.
       now eapply NeNf.ty.
     + eapply ty_map.
       1-2: now escape.
-      1: admit.
-      now eapply NeNf.ty.
+      * eapply ty_comp.
+        4-5: escape; tea. all: now escape.
+      * now eapply NeNf.ty.
     + eapply convneu_map_comp.
       1-5: now escape.
       now eapply NeNf.refl.
@@ -805,9 +813,10 @@ Lemma mapRedCompValid {Γ A B C f g l l' i}
 Proof.
   split; intros.
   instValid Vσ.
+  assert (Rx : [normList (validTy VLA wfΔ Vσ) | Δ ||- l'[σ] : tList A[σ]]) by irrelevance; refold.
   unshelve eapply LREqTermHelper.
   8:{
-    epose (fst (mapPropRedCompAux _ _ _) _ _).
+    epose (fst (mapPropRedCompAux _ _ _) _ Rx).
     irrelevance.
   }
   all: refold.
@@ -817,21 +826,34 @@ Proof.
     unshelve eapply (fst (mapEqRedAux _ _)).
     all: try solve [ now eapply LRTyEqRefl_ ].
     all: try solve [ tea | eapply invLRList; tea | now eapply ArrRedTy ].
-    + admit.
-    + admit.
-    + eapply LREqTermRefl_. admit.
-    + admit. (* unshelve eapply (fst (mapRedAux _)).  *)
-  - unshelve eapply (fst (mapEqRedAux _ _)); tea. (* have to apply a congruence for composition? *)
+    + irrelevance. apply subst_arr.
+    + clear Rx. irrelevance.
+    + eapply LREqTermRefl_. irrelevance. apply subst_arr.
+    + enough (X : [ normList RVLB | Δ ||- tMap A[σ] B[σ] g[σ] l'[σ] ≅ tMap A[σ] B[σ] g[σ] (ListRedTm.nf Rx) : _ ]) by exact X; refold.
+      unshelve eapply (fst (mapRedAux _)); tea.
+      * rewrite subst_arr in *; tea.
+      * cbn. irrelevance.
+  - eapply transEqTerm.
+    2: {
+      unshelve eapply (fst (mapRedAux _)); tea.
+      - rewrite subst_arr in *; tea.
+      - cbn. admit.
+    }
+    refold.
+    unshelve eapply (fst (mapEqRedAux _ _)).
     all: try solve [ now eapply LRTyEqRefl_ ].
     all: try solve [ tea | eapply invLRList; tea | now eapply ArrRedTy ].
     all: refold.
-    4:{
-      epose (fst (mapRedAux _)); tea.
-      admit.
-    }
+    4: change [ normList RVLA | Δ ||- l'[σ] ≅ l'[σ] : _ ]; now eapply LREqTermRefl_.
     + admit.
     + admit.
     + admit.
+
+      Unshelve.
+      all: refold.
+      all: tea.
+      all: try eapply invLRList; tea.
+      all: admit.
 Admitted.
 
 Lemma mapPropRedIdAux {Γ A i}
