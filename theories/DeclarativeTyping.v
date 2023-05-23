@@ -264,6 +264,11 @@ Notation "[ Γ |- t ⇒* u ∈ A ]" := (RedClosureDecl Γ A t u).
 properties used for the logical relation (see GenericTyping). *)
 Module DeclarativeTypingData.
 
+  Definition de : tag.
+  Proof.
+  constructor.
+  Qed.
+
   #[export] Instance WfContext_Decl : WfContext de := WfContextDecl.
   #[export] Instance WfType_Decl : WfType de := WfTypeDecl.
   #[export] Instance Typing_Decl : Inferring de := TypingDecl.

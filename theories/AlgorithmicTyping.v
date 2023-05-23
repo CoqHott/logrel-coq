@@ -230,6 +230,11 @@ End Definitions.
 (** ** Instances *)
 Module AlgorithmicTypingData.
 
+  Definition al : tag.
+  Proof.
+  constructor.
+  Qed.
+
   #[export] Instance WfContext_Algo : WfContext al := WfContextAlg.
   #[export] Instance WfType_Algo : WfType al := WfTypeAlg.
   #[export] Instance Inferring_Algo : Inferring al := InferAlg.
