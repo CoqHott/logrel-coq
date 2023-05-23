@@ -13,7 +13,7 @@ Inductive whnf : term -> Type :=
   | whnf_tSucc {n} : whnf (tSucc n)
   | whnf_tEmpty : whnf tEmpty
   | whnf_tSig {A B} : whnf (tSig A B)
-  | whnf_tPair {A B a b} : whnf (tPair A B a b)
+  | whnf_tPair {B a b} : whnf (tPair B a b)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
@@ -74,7 +74,7 @@ Inductive isNat : term -> Type :=
   | NeNat {n} : whne n -> isNat n.
 
 Inductive isPair : term -> Type :=
-  | PairPair {A B a b} : isPair (tPair A B a b)
+  | PairPair {B a b} : isPair (tPair B a b)
   | NePair {p} : whne p -> isPair p.
 
 Definition isPosType_isType t (i : isPosType t) : isType t.
@@ -118,6 +118,6 @@ Inductive isCanonical : term -> Type :=
   | can_tSucc {n} : isCanonical (tSucc n)
   | can_tEmpty : isCanonical tEmpty
   | can_tSig {A B} : isCanonical (tSig A B)
-  | can_tPair {A B a b}: isCanonical (tPair A B a b).
+  | can_tPair {B a b}: isCanonical (tPair B a b).
 
 #[global] Hint Constructors isCanonical : gen_typing.

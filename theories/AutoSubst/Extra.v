@@ -33,6 +33,10 @@ Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsi
   (Ren1 (nat -> nat) (nat -> Y) (nat -> Z)) :=
   fun ρ σ i => (σ i)⟨ρ⟩.
     
+#[global] Instance Ren1_option {Y Z : Type} `{Ren1 (nat -> nat) Y Z} :
+  (Ren1 (nat -> nat) (option Y) (option Z)) :=
+  fun ρ => option_map (ren1 ρ).
+
 Ltac fold_autosubst :=
     fold ren_term ;
     fold subst_term.

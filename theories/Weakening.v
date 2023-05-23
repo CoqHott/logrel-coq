@@ -397,7 +397,7 @@ Proof. now bsimpl. Qed.
 Lemma wk_sig {A B Γ Δ} (ρ : Δ ≤ Γ) : tSig A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tSig A B)⟨ρ⟩.
 Proof. now bsimpl. Qed.
 
-Lemma wk_pair {A B a b Γ Δ} (ρ : Δ ≤ Γ) : tPair A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ b⟨ρ⟩ = (tPair A B a b)⟨ρ⟩.
+Lemma wk_pair {A B a b Γ Δ} (ρ : Δ ≤ Γ) : tPair B⟨wk_up A ρ⟩ a⟨ρ⟩ b⟨ρ⟩ = (tPair B a b)⟨ρ⟩.
 Proof. now bsimpl. Qed.
 
 Lemma wk_fst {p Γ Δ} (ρ : Δ ≤ Γ) : tFst p⟨ρ⟩ = (tFst p)⟨ρ⟩.

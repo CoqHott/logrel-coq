@@ -18,6 +18,6 @@ tEmpty : term
 tEmptyElim : (bind term in term) -> term -> term
 
 tSig : term -> (bind term in term) -> term
-tPair : term -> (bind term in term) -> term -> term -> term
+tPair : (bind term in "option" (term)) -> term -> term -> term
 tFst : term -> term
 tSnd : term -> term
