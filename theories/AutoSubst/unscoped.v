@@ -7,7 +7,7 @@ Version: December 11, 2019.
  I changed this library a bit to work better with my generated code.
  1. I use nat directly instead of defining fin to be nat and using Some/None as S/O
  2. I removed the "s, sigma" notation for scons because it interacts with dependent function types "forall x, A"*)
-From LogRel.AutoSubst Require Import core.
+Require Import core.
 Require Import Setoid Morphisms Relation_Definitions.
 
 Definition ap {X Y} (f : X -> Y) {x y : X} (p : x = y) : f x = f y :=
@@ -97,7 +97,7 @@ End SubstNotations.
 Class Var X Y :=
   ids : X -> Y.
 
-#[global] Instance idsRen : Var nat nat := id.
+Instance idsRen : Var nat nat := id.
 
 (** ** Proofs for the substitution primitives. *)
 
@@ -144,7 +144,7 @@ Lemma scons_comp' (T: Type) {U} (s: T) (sigma: nat -> T) (tau: T -> U) :
 Proof. intros x. destruct x; reflexivity. Qed.
 
 (* Morphism for Setoid Rewriting. The only morphism that can be defined statically. *)
-#[global] Instance scons_morphism {X: Type} :
+Instance scons_morphism {X: Type} :
   Proper (eq ==> pointwise_relation _ eq ==> pointwise_relation _ eq) (@scons X).
 Proof.
   intros ? t -> sigma tau H.
@@ -153,7 +153,7 @@ Proof.
   apply H.
 Qed.
 
-#[global] Instance scons_morphism2 {X: Type} :
+Instance scons_morphism2 {X: Type} :
   Proper (eq ==> pointwise_relation _ eq ==> eq ==> eq) (@scons X).
 Proof.
   intros ? t -> sigma tau H ? x ->.
@@ -177,6 +177,8 @@ Module UnscopedNotations.
 
   Notation "↑" := (shift) : subst_scope.
 
+  #[ global ]
+  Open Scope fscope.
   #[ global ]
   Open Scope subst_scope.
 End UnscopedNotations.
