@@ -1,5 +1,5 @@
 diff --git a/theories/AutoSubst/Ast.v b/theories/AutoSubst/Ast.v
-index 06cd3ced..1cbb89ff 100644
+index 285d82b9..03597f26 100644
 --- a/theories/AutoSubst/Ast.v
 +++ b/theories/AutoSubst/Ast.v
 @@ -1,6 +1,6 @@
@@ -12,7 +12,7 @@ index 06cd3ced..1cbb89ff 100644
  
  
  Module Core.
-@@ -857,13 +857,13 @@ Qed.
+@@ -929,13 +929,13 @@ Qed.
  Class Up_term X Y :=
      up_term : X -> Y.
  
@@ -30,7 +30,7 @@ index 06cd3ced..1cbb89ff 100644
  
  Notation "[ sigma_term ]" := (subst_term sigma_term)
    ( at level 1, left associativity, only printing) : fscope.
-@@ -889,7 +889,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
+@@ -961,7 +961,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
  Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
    subst_scope.
  
@@ -39,7 +39,7 @@ index 06cd3ced..1cbb89ff 100644
   (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
      (@subst_term)).
  Proof.
-@@ -898,14 +898,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+@@ -970,14 +970,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
           (ext_term f_term g_term Eq_term s) t Eq_st).
  Qed.
  
@@ -56,7 +56,7 @@ index 06cd3ced..1cbb89ff 100644
   (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
      (@ren_term)).
  Proof.
-@@ -914,7 +914,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+@@ -986,7 +986,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
           (extRen_term f_term g_term Eq_term s) t Eq_st).
  Qed.
  
@@ -66,10 +66,10 @@ index 06cd3ced..1cbb89ff 100644
      (@ren_term)).
  Proof.
 diff --git a/theories/AutoSubst/core.v b/theories/AutoSubst/core.v
-index 9caf457b..83b47256 100644
+index be8bff0d..04325057 100644
 --- a/theories/AutoSubst/core.v
 +++ b/theories/AutoSubst/core.v
-@@ -73,7 +73,7 @@ Defined.
+@@ -107,7 +107,7 @@ Defined.
  (* a.d. TODO hints outside of sections without explicit locality are deprecated. Is this even used in the first place?  *)
  (* but with 8.13.1 the attribute is forbidden. So what's the correct way to use this? *)
  (* #[ global ] *)
@@ -78,7 +78,7 @@ index 9caf457b..83b47256 100644
  
  (* Declaring the scopes that all our notations will live in *)
  Declare Scope fscope.
-@@ -106,7 +106,7 @@ Proof.
+@@ -140,7 +140,7 @@ Proof.
    trivial.
  Qed.
  
@@ -87,7 +87,7 @@ index 9caf457b..83b47256 100644
    Proper (@pointwise_relation Y Z eq ==> @pointwise_relation X Y eq ==> @pointwise_relation X Z eq) funcomp.
  Proof.
    cbv - [funcomp].
-@@ -115,7 +115,7 @@ Proof.
+@@ -149,7 +149,7 @@ Proof.
    reflexivity.
  Qed.
  
@@ -97,7 +97,7 @@ index 9caf457b..83b47256 100644
  Proof.
    intros g0 g1 Hg f0 f1 Hf ? x ->.
 diff --git a/theories/AutoSubst/unscoped.v b/theories/AutoSubst/unscoped.v
-index 27cb4e79..3b590532 100644
+index 27cb4e79..602f8d66 100644
 --- a/theories/AutoSubst/unscoped.v
 +++ b/theories/AutoSubst/unscoped.v
 @@ -7,8 +7,8 @@ Version: December 11, 2019.
@@ -138,12 +138,3 @@ index 27cb4e79..3b590532 100644
    Proper (eq ==> pointwise_relation _ eq ==> eq ==> eq) (@scons X).
  Proof.
    intros ? t -> sigma tau H ? x ->.
-@@ -177,8 +177,6 @@ Module UnscopedNotations.
- 
-   Notation "↑" := (shift) : subst_scope.
- 
--  #[ global ]
--  Open Scope fscope.
-   #[ global ]
-   Open Scope subst_scope.
- End UnscopedNotations.

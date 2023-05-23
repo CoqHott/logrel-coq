@@ -5,9 +5,6 @@ From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst.
 
-(* Export UnscopedNotations.
-#[global] Open Scope subst_scope. *)
-
 Declare Scope asubst_scope.
 Delimit Scope asubst_scope with asub.
 

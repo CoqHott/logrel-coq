@@ -1,6 +1,6 @@
-Require Import core unscoped.
-
-Require Import Setoid Morphisms Relation_Definitions.
+From LogRel.AutoSubst Require Import core unscoped.
+From LogRel Require Import BasicAst.
+From Coq Require Import Setoid Morphisms Relation_Definitions.
 
 
 Module Core.
@@ -929,13 +929,13 @@ Qed.
 Class Up_term X Y :=
     up_term : X -> Y.
 
-Instance Subst_term : (Subst1 _ _ _) := @subst_term.
+#[global] Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 
-Instance Up_term_term : (Up_term _ _) := @up_term_term.
+#[global] Instance Up_term_term : (Up_term _ _) := @up_term_term.
 
-Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+#[global] Instance Ren_term : (Ren1 _ _ _) := @ren_term.
 
-Instance VarInstance_term : (Var _ _) := @tRel.
+#[global] Instance VarInstance_term : (Var _ _) := @tRel.
 
 Notation "[ sigma_term ]" := (subst_term sigma_term)
   ( at level 1, left associativity, only printing) : fscope.
@@ -961,7 +961,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
 Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
   subst_scope.
 
-Instance subst_term_morphism :
+#[global] Instance subst_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@subst_term)).
 Proof.
@@ -970,14 +970,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (ext_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-Instance subst_term_morphism2 :
+#[global] Instance subst_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@subst_term)).
 Proof.
 exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
 Qed.
 
-Instance ren_term_morphism :
+#[global] Instance ren_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@ren_term)).
 Proof.
@@ -986,7 +986,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (extRen_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-Instance ren_term_morphism2 :
+#[global] Instance ren_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@ren_term)).
 Proof.
