@@ -8,7 +8,7 @@ Version: December 11, 2019.
  1. I use nat directly instead of defining fin to be nat and using Some/None as S/O
  2. I removed the "s, sigma" notation for scons because it interacts with dependent function types "forall x, A"*)
 From LogRel.AutoSubst Require Import core.
-Require Import Setoid Morphisms Relation_Definitions.
+From Coq Require Import Setoid Morphisms Relation_Definitions.
 
 Definition ap {X Y} (f : X -> Y) {x y : X} (p : x = y) : f x = f y :=
   match p with eq_refl => eq_refl end.

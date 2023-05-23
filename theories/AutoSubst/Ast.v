@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped.
 From LogRel Require Import BasicAst.
-Require Import Setoid Morphisms Relation_Definitions.
+From Coq Require Import Setoid Morphisms Relation_Definitions.
 
 
 Module Core.
@@ -192,9 +192,8 @@ term :=
   | tSnd s0 => tSnd (subst_term sigma_term s0)
   end.
 
-Lemma upId_term_term (sigma : nat -> term)
-  (Eq : forall x, sigma x = tRel x) :
-  forall x, up_term_term sigma x = tRel x.
+Lemma upId_term_term (sigma : nat -> term) (Eq : forall x, sigma x = tRel x)
+  : forall x, up_term_term sigma x = tRel x.
 Proof.
 exact (fun n =>
        match n with
@@ -814,8 +813,7 @@ Proof.
 exact (idSubst_term (tRel) (fun n => eq_refl) s).
 Qed.
 
-Lemma instId'_term_pointwise :
-  pointwise_relation _ eq (subst_term (tRel)) id.
+Lemma instId'_term_pointwise : pointwise_relation _ eq (subst_term (tRel)) id.
 Proof.
 exact (fun s => idSubst_term (tRel) (fun n => eq_refl) s).
 Qed.
@@ -838,8 +836,7 @@ exact (eq_refl).
 Qed.
 
 Lemma varL'_term_pointwise (sigma_term : nat -> term) :
-  pointwise_relation _ eq (funcomp (subst_term sigma_term) (tRel))
-    sigma_term.
+  pointwise_relation _ eq (funcomp (subst_term sigma_term) (tRel)) sigma_term.
 Proof.
 exact (fun x => eq_refl).
 Qed.
