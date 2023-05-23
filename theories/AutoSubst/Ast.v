@@ -1,6 +1,6 @@
-From LogRel.AutoSubst Require Import core unscoped.
-From LogRel Require Import BasicAst.
-From Coq Require Import Setoid Morphisms Relation_Definitions.
+Require Import core unscoped.
+
+Require Import Setoid Morphisms Relation_Definitions.
 
 
 Module Core.
@@ -20,7 +20,9 @@ Inductive term : Type :=
   | tSig : term -> term -> term
   | tPair : option (term) -> term -> term -> term
   | tFst : term -> term
-  | tSnd : term -> term.
+  | tSnd : term -> term
+  | tAnnot : term -> term -> term
+  | tForget : term -> term.
 
 Lemma congr_tSort {s0 : sort} {t0 : sort} (H0 : s0 = t0) :
   tSort s0 = tSort t0.
@@ -118,6 +120,19 @@ Proof.
 exact (eq_trans eq_refl (ap (fun x => tSnd x) H0)).
 Qed.
 
+Lemma congr_tAnnot {s0 : term} {s1 : term} {t0 : term} {t1 : term}
+  (H0 : s0 = t0) (H1 : s1 = t1) : tAnnot s0 s1 = tAnnot t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => tAnnot x s1) H0))
+         (ap (fun x => tAnnot t0 x) H1)).
+Qed.
+
+Lemma congr_tForget {s0 : term} {t0 : term} (H0 : s0 = t0) :
+  tForget s0 = tForget t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => tForget x) H0)).
+Qed.
+
 Lemma upRen_term_term (xi : nat -> nat) : nat -> nat.
 Proof.
 exact (up_ren xi).
@@ -150,6 +165,8 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
         (ren_term xi_term s1) (ren_term xi_term s2)
   | tFst s0 => tFst (ren_term xi_term s0)
   | tSnd s0 => tSnd (ren_term xi_term s0)
+  | tAnnot s0 s1 => tAnnot (ren_term xi_term s0) (ren_term xi_term s1)
+  | tForget s0 => tForget (ren_term xi_term s0)
   end.
 
 Lemma up_term_term (sigma : nat -> term) : nat -> term.
@@ -188,6 +205,9 @@ term :=
         (subst_term sigma_term s1) (subst_term sigma_term s2)
   | tFst s0 => tFst (subst_term sigma_term s0)
   | tSnd s0 => tSnd (subst_term sigma_term s0)
+  | tAnnot s0 s1 =>
+      tAnnot (subst_term sigma_term s0) (subst_term sigma_term s1)
+  | tForget s0 => tForget (subst_term sigma_term s0)
   end.
 
 Lemma upId_term_term (sigma : nat -> term) (Eq : forall x, sigma x = tRel x)
@@ -240,6 +260,10 @@ subst_term sigma_term s = s :=
         (idSubst_term sigma_term Eq_term s2)
   | tFst s0 => congr_tFst (idSubst_term sigma_term Eq_term s0)
   | tSnd s0 => congr_tSnd (idSubst_term sigma_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (idSubst_term sigma_term Eq_term s0)
+        (idSubst_term sigma_term Eq_term s1)
+  | tForget s0 => congr_tForget (idSubst_term sigma_term Eq_term s0)
   end.
 
 Lemma upExtRen_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -298,6 +322,10 @@ ren_term xi_term s = ren_term zeta_term s :=
         (extRen_term xi_term zeta_term Eq_term s2)
   | tFst s0 => congr_tFst (extRen_term xi_term zeta_term Eq_term s0)
   | tSnd s0 => congr_tSnd (extRen_term xi_term zeta_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (extRen_term xi_term zeta_term Eq_term s0)
+        (extRen_term xi_term zeta_term Eq_term s1)
+  | tForget s0 => congr_tForget (extRen_term xi_term zeta_term Eq_term s0)
   end.
 
 Lemma upExt_term_term (sigma : nat -> term) (tau : nat -> term)
@@ -357,6 +385,10 @@ subst_term sigma_term s = subst_term tau_term s :=
         (ext_term sigma_term tau_term Eq_term s2)
   | tFst s0 => congr_tFst (ext_term sigma_term tau_term Eq_term s0)
   | tSnd s0 => congr_tSnd (ext_term sigma_term tau_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (ext_term sigma_term tau_term Eq_term s0)
+        (ext_term sigma_term tau_term Eq_term s1)
+  | tForget s0 => congr_tForget (ext_term sigma_term tau_term Eq_term s0)
   end.
 
 Lemma up_ren_ren_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -425,6 +457,11 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
       congr_tFst (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+  | tForget s0 =>
+      congr_tForget (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
   end.
 
 Lemma up_ren_subst_term_term (xi : nat -> nat) (tau : nat -> term)
@@ -496,6 +533,12 @@ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
       congr_tFst (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+  | tForget s0 =>
+      congr_tForget
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
   end.
 
 Lemma up_subst_ren_term_term (sigma : nat -> term) (zeta_term : nat -> nat)
@@ -584,6 +627,13 @@ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+  | tForget s0 =>
+      congr_tForget
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
   end.
 
@@ -675,6 +725,13 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
   | tSnd s0 =>
       congr_tSnd
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+  | tForget s0 =>
+      congr_tForget
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
   end.
 
@@ -803,6 +860,11 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
         (rinst_inst_term xi_term sigma_term Eq_term s2)
   | tFst s0 => congr_tFst (rinst_inst_term xi_term sigma_term Eq_term s0)
   | tSnd s0 => congr_tSnd (rinst_inst_term xi_term sigma_term Eq_term s0)
+  | tAnnot s0 s1 =>
+      congr_tAnnot (rinst_inst_term xi_term sigma_term Eq_term s0)
+        (rinst_inst_term xi_term sigma_term Eq_term s1)
+  | tForget s0 =>
+      congr_tForget (rinst_inst_term xi_term sigma_term Eq_term s0)
   end.
 
 Lemma rinstInst'_term (xi_term : nat -> nat) (s : term) :
@@ -867,13 +929,13 @@ Qed.
 Class Up_term X Y :=
     up_term : X -> Y.
 
-#[global]Instance Subst_term : (Subst1 _ _ _) := @subst_term.
+Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 
-#[global]Instance Up_term_term : (Up_term _ _) := @up_term_term.
+Instance Up_term_term : (Up_term _ _) := @up_term_term.
 
-#[global]Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+Instance Ren_term : (Ren1 _ _ _) := @ren_term.
 
-#[global]Instance VarInstance_term : (Var _ _) := @tRel.
+Instance VarInstance_term : (Var _ _) := @tRel.
 
 Notation "[ sigma_term ]" := (subst_term sigma_term)
   ( at level 1, left associativity, only printing) : fscope.
@@ -899,7 +961,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
 Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
   subst_scope.
 
-#[global]Instance subst_term_morphism :
+Instance subst_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@subst_term)).
 Proof.
@@ -908,14 +970,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (ext_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-#[global]Instance subst_term_morphism2 :
+Instance subst_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@subst_term)).
 Proof.
 exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
 Qed.
 
-#[global]Instance ren_term_morphism :
+Instance ren_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@ren_term)).
 Proof.
@@ -924,7 +986,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (extRen_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-#[global]Instance ren_term_morphism2 :
+Instance ren_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@ren_term)).
 Proof.

@@ -21,3 +21,6 @@ tSig : term -> (bind term in term) -> term
 tPair : (bind term in "option" (term)) -> term -> term -> term
 tFst : term -> term
 tSnd : term -> term
+
+tAnnot : term -> term -> term
+tForget : term -> term
