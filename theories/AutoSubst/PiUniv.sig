@@ -1,5 +1,5 @@
 sort : Type
-term : Type
+term(tRel) : Type
 
 tSort : sort -> term
 
