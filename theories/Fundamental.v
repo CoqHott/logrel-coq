@@ -746,7 +746,7 @@ Section Fundamental.
     all: now irrValid.
   Qed.
 
-  Lemma FundTyEqListCong : 
+  Lemma FundTyEqListCong :
     forall (Γ : context) (A B : term),
     [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTyEq Γ (tList A) (tList B).
   Proof.
@@ -759,17 +759,25 @@ Section Fundamental.
     [Γ |-[ de ] A ≅ B : U] -> FundTmEq Γ U A B -> FundTmEq Γ U (tList A) (tList B).
   Proof.
     intros * ?[]; unshelve econstructor.
-    (* 5: unshelve eapply  *)
-    (* TODO: missing lemma? *)
-  Admitted.
+    5: now unshelve eapply listCongTermValid; irrValid.
+    - now tea.
+    - eapply listTermValid; irrValid.
+    - eapply listTermValid; irrValid.
+  Qed.
 
   Lemma FundTmEqNilCong : forall (Γ : context) (A B : term),
     [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTmEq Γ (tList A) (tNil A) (tNil B).
   Proof.
     intros * ?[]; unshelve econstructor.
-    (* 5: unshelve eapply nilEqValid. *)
-    (* TODO: missing lemma? *)
-  Admitted.
+    5: unshelve eapply nilCongValid.
+    all: try irrValid.
+    - now eapply listValid.
+    - unshelve eapply nilValid; tea.
+    - unshelve eapply conv. 4: now unshelve eapply nilValid; tea.
+      + now eapply listValid.
+      + eapply symValidEq.
+        now eapply listCongValid.
+  Qed.
 
   Lemma FundTmEqConsCong :
     forall (Γ : context) (a b ax bx A B : term),
@@ -782,7 +790,7 @@ Section Fundamental.
   Proof.
   Admitted.
 
-  Lemma FundTmEqMapCong : 
+  Lemma FundTmEqMapCong :
     forall (Γ : context) (f g ax bx A B C D : term),
     [Γ |-[ de ] A ≅ B] ->
     FundTyEq Γ A B ->
@@ -862,10 +870,14 @@ Section Fundamental.
     5: unshelve eapply mapRedIdValid; tea.
     2:{
       unshelve eapply mapValid.
-      all: admit.
+      1-2: now tea.
+      - now irrValid.
+      - now eapply simpleArrValid.
+      - now eapply simple_idValid.
+      - irrValid.
     }
     all: now irrValid.
-  Admitted.
+  Qed.
 
 
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)

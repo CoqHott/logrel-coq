@@ -3,7 +3,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
-From LogRel.Substitution.Introductions Require Import Universe Pi Application.
+From LogRel.Substitution.Introductions Require Import Universe Pi Application Lambda Var.
 
 Set Universe Polymorphism.
 
@@ -58,6 +58,18 @@ Section SimpleArrValidity.
   Unshelve. all: tea.
   Qed.
 
+  Lemma simple_idValid {Γ A l}
+    (VΓ : [||-v Γ])
+    {VF : [Γ ||-v<l> A | VΓ]}
+    (VΠ : [Γ ||-v<l> arr A A | VΓ]) :
+    [Γ ||-v<l> idterm A : arr A A | _ | VΠ].
+  Proof.
+    eapply irrelevanceTm'.
+    2: unshelve eapply lamValid.
+    5: unshelve eapply var0Valid.
+    - now rewrite wk1_ren_on.
+    - tea.
+  Qed.
 
 End SimpleArrValidity.
 

@@ -82,7 +82,6 @@ Proof.
   + eapply redtmwf_refl.
     now eapply ty_list.
   + constructor.
-  + apply tm_nf_list. now eapply reifyTerm.
   + eapply convtm_list.
     eapply escapeEqTerm.
     eapply LREqTermRefl_.
@@ -125,6 +124,47 @@ Proof.
       now eapply UnivEq'.
 Qed.
 
+Lemma listEqTermRed@{h i j k l} {Δ A A'} (wfΔ : [|-Δ]) :
+    [Δ ||-<one> A : U | LRU_@{i j k l} (redUOne wfΔ)] ->
+    [Δ ||-<one> A' : U | LRU_@{i j k l} (redUOne wfΔ)] ->
+    [Δ ||-<one> A ≅ A' : U | LRU_@{i j k l} (redUOne wfΔ)] ->
+    [Δ ||-<one> tList A ≅ tList A' : U | LRU_@{i j k l} (redUOne wfΔ)].
+Proof.
+  unshelve econstructor; intros.
+  - now eapply listTermRed.
+  - now eapply listTermRed.
+  (* - eapply listRed. *)
+  - refine (LRCumulative@{Set l i j k l h i j k } _).
+    eapply (listRed@{i j k l} (l:=zero)); tea.
+    now eapply UnivEq'.
+  - cbn. eapply convtm_list.
+    now escape.
+  - refine (LRCumulative@{Set l i j k l h i j k } _).
+    eapply (listRed@{i j k l} (l:=zero)); tea.
+    now eapply UnivEq'.
+  - unshelve eapply (LRTyEqIrrelevantCum@{i j k l h i j k } _).
+    3: { unshelve eapply (listEqRed (l:=zero)).
+         + now eapply UnivEq.
+         + unshelve eapply (escape (l:= zero)). now eapply UnivEq.
+         + now eapply UnivEqEq.
+    }
+    now eapply listRed; eapply UnivEq.
+Qed.
+
+
+Lemma listCongTermValid@{h i j k l} {Γ A A'}
+  (VΓ : [VR@{i j k l}| ||-v Γ]) :
+  termValidity@{i j k l} Γ one A U VΓ (UValid@{i j k i j k l l} VΓ) ->
+  termValidity@{i j k l} Γ one A' U VΓ (UValid@{i j k i j k l l} VΓ) ->
+  termEqValidity@{i j k l} Γ one A A' U VΓ (UValid@{i j k i j k l l} VΓ) ->
+  termEqValidity@{i j k l} Γ one (tList A) (tList A') U VΓ (UValid@{i j k i j k l l} VΓ).
+Proof.
+  constructor; intros.
+  eapply listEqTermRed; refold.
+  - instValid Vσ. eassumption.
+  - instValid Vσ. eassumption.
+  - instValid Vσ. eassumption.
+Qed.
 
 (* TODO: cleanup!! *)
 Lemma nilRed' {Γ A A' l}
@@ -195,6 +235,23 @@ Proof.
     + unshelve eapply escape; eassumption.
     + apply LRTyEqRefl_.
     + eassumption.
+Qed.
+
+
+Lemma nilCongValid {Γ A A' l}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<l> A | VΓ]}
+  {VA' : [Γ ||-v<l> A' | VΓ]}
+  {VAA' : [Γ ||-v<l> A ≅ A' | VΓ | VA ]}
+  {VLA : [Γ ||-v<l> tList A | VΓ]} :
+  [Γ ||-v<l> tNil A ≅ tNil A' : tList A | VΓ | VLA].
+Proof.
+  split; intros.
+  instValid Vσ.
+  eapply nilEqRed; refold; tea.
+  - now escape.
+  - now escape.
+  - eapply LRTyEqRefl_.
 Qed.
 
 Lemma consRed' {Γ A A' hd tl l}
@@ -363,12 +420,6 @@ Proof.
         match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
       * { unshelve eapply escapeEqTerm; tea;
           eapply neuTermEq.
-          - eapply tm_ne_map;
-                  try solve [ eapply reifyType; tea | eapply reifyTerm; tea ];
-                  now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-          - eapply tm_ne_map;
-                  try solve [ eapply reifyType; tea | eapply reifyTerm; tea ];
-                  now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
           - eapply ty_map; try now escape.
             now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
           - eapply ty_map; try now escape.
@@ -380,8 +431,6 @@ Proof.
             + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
         }
       * { constructor. cbn. constructor.
-          - apply tm_ne_map; try solve [ eapply reifyType; tea | eapply reifyTerm; tea ].
-            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
           - apply ty_map; tea.
             now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
           - eapply convneu_map; try solve [ eapply escapeEq; eapply LRTyEqRefl_
@@ -417,6 +466,10 @@ Lemma mapEqRedAux {Γ A A' B B' f f' l}
   (Rf': [Γ ||-<l> f' : arr A' B' | RFAB'])
   {Rff: [Γ ||-<l> f ≅ f' : arr A B | RFAB]} :
   (forall x x' (Rxx': ListRedTmEq _ _ LA_ x x'),
+        (* [ LRList' LA_ | _ ||- x : _ ] -> *)
+        (* ListProp _ _ LA_ x -> *)
+        (* [ LRList' LA_ | _ ||- x' : _ ] -> *)
+        (* ListProp _ _ LA_ x' -> *)
         [Γ ||-<l> tMap A B f x ≅ tMap A' B' f' x' : tList B | RLB])
     ×
     (forall x x' (Rxx': ListPropEq _ _ LA_ x x'),
@@ -473,50 +526,67 @@ Proof.
     cbn. escape. eapply nilEqRed; tea.
     eapply LRTyEqRefl_.
 
-  - intros.
-    eapply LREqTermHelper.
-    + unshelve eapply (snd (mapRedAux _)); tea.
-      unshelve eapply ListIrrelevanceTm. 7: now eassumption.
-      * unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
-      * unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
-      * constructor. all: intuition.
-        all: irrelevance.
-    + unshelve eapply (snd (mapRedAux _)); tea.
-      unshelve eapply ListIrrelevanceTm. 7: now eassumption.
-      all: try now escape.
-      * eapply LRIrrelevantPack. irrelevance.
-    + tea.
-    + cbn; dependent inversion X5; subst; cbn.
-      2: destruct r as [?%tm_ne_whne]; inv_whne.
+  - intros. unshelve eapply LREqTermHelper.
+    7: eassumption.
+    4:{
+      unshelve eapply (snd (mapRedAux _)); tea.
+      eapply ListIrrelevanceTm.
+      4: eassumption.
+      1-2: now cbn; etransitivity; escape; tea; symmetry; tea.
+      eapply LRIrrelevantPack. eapply LRTyEqRefl_.
+    }
+    3:{
+      unshelve eapply (snd (mapRedAux _)); tea.
+      eapply ListIrrelevanceTm.
+      4: eassumption.
+      1-2: now cbn; escape; tea.
+      eapply LRIrrelevantPack. irrelevance.
+    }
+    + eassumption.
+    + cbn.
+      dependent inversion X5; subst; cbn.
       dependent inversion X7; subst; cbn.
-      2: destruct r0 as [?%tm_ne_whne]; inv_whne.
-      eapply consEqRed. 3: eassumption.
-      all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
-      * now eapply simple_appTerm.
-      * eapply simple_appTerm; tea.
-        eapply LRTmRedConv; tea. irrelevance.
-      * now eapply simple_appcongTerm.
-      * eapply (fst (mapRedAux _)); tea.
-      * unshelve eapply (fst (mapRedAux _)); tea.
-        change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
-        eapply LRTmRedConv; tea.
+      { eapply consEqRed. 3: eassumption.
+        all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
+        - now eapply simple_appTerm.
+        - eapply simple_appTerm; tea.
+          eapply LRTmRedConv; tea. irrelevance.
+        - now eapply simple_appcongTerm.
+        - eapply (fst (mapRedAux _)); tea.
+        - unshelve eapply (fst (mapRedAux _)); tea.
+          change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
+          eapply LRTmRedConv; tea.
+      }
+      * admit.
+      * admit.
+      (* 1-2: admit. *)
+      (* { eapply transEqTerm; cycle 1. *)
+      (*   - eapply LRTmEqRedConv. 1: now eapply LRTyEqSym. *)
+      (*     eapply LRTmEqSym. *)
+      (*     eapply redSubstTerm. *)
+      (*     2:{ *)
+      (*       eapply redtm_map_cons; escape; tea. *)
+      (*       - cbn in *. etransitivity. 1: now symmetry.  *)
+      (*         eapply escapeEq. eassumption. *)
+      (*       - eapply escapeTerm. eassumption. *)
+      (*       - eapply escapeTerm. *)
+      (*         match goal with H : ListRedTm _ _ _ tl |- _ => change [ LRList' LA_ | Γ ||- tl : _ ] in H ; exact H end. *)
+      (*     } *)
+      (*   - eapply consRed; escape; tea. *)
+      (*     + eapply LRTyEqRefl_. *)
+      (*     + eapply simple_appTerm; tea. *)
+      (*     + unshelve eapply (fst (mapRedAux _)); tea. *)
+      (*       change [ LRList' (normList0 LA_) | Γ ||- tl : _]. *)
+      (*       match goal with H : ListRedTm _ _ _ tl |- _ => change [ LRList' LA_ | Γ ||- tl : _ ] in H ; irrelevance end. *)
+      (*   - eapply mapEqRedAux. *)
+      (* } *)
+      (* { *)
+      (*   eapply  *)
+      (* } *)
         Unshelve. all: tea.
 
   - intros.
     apply neuTermEq.
-    + apply tm_ne_map.
-      1-2: now eapply reifyType.
-      * now eapply reifyTerm.
-      * now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-    + eapply tm_ne_conv. 3: symmetry; now escape.
-      eapply tm_ne_map.
-      1-2: now eapply reifyType.
-      * now eapply reifyTerm.
-      * eapply tm_ne_conv.
-        1: eapply NeNf.neR ; eassumption.
-        1: eapply wft_list; now escape.
-        1: now escape.
-      * eapply wft_list; now escape.
     + eapply ty_map.
       all: now escape.
     + eapply ty_conv. 2: symmetry; now escape.
@@ -526,9 +596,10 @@ Proof.
     + eapply convneu_map.
       1-3: now escape.
       now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-Qed.
+Admitted.
 
 (* TODO: move; also wk_arr vs arr_wk *)
+(* probably exists elsewhere *)
 Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
 Proof. now bsimpl. Qed.
 
@@ -683,10 +754,6 @@ Proof.
       unshelve eapply (fst (mapRedAux _)); tea.
   - constructor.
     constructor; cbn in *.
-    + eapply tm_ne_map.
-      1-2: now eapply reifyType.
-      1: now eapply reifyTerm.
-      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + eapply ty_map.
       1-3: now escape.
       now eapply NeNf.ty.
@@ -746,7 +813,11 @@ Proof.
     + eapply simple_appTerm; tea.
       eapply simple_appTerm; tea.
     + eapply simple_appTerm; tea.
-    + admit.
+    + eapply LRTmEqSym. eapply redSubstTerm.
+      2: eapply redtm_comp_beta; escape; cycle 2; tea.
+      2: now eapply escapeTerm.
+      eapply simple_appTerm; tea.
+      eapply simple_appTerm; tea.
     + eapply LREqTermHelper.
       4: irrelevance.
       3: eapply LRTyEqRefl_.
@@ -768,17 +839,6 @@ Proof.
   - intros. cbn.
     change [ LRList' LC' | Γ ||- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l : _ ].
     eapply neuTermEq.
-    + eapply tm_ne_map.
-      1-2: now eapply reifyType.
-      1: now eapply reifyTerm.
-      eapply tm_ne_map.
-      1-2: now eapply reifyType.
-      1: now eapply reifyTerm.
-      match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-    + eapply tm_ne_map.
-      1-2: now eapply reifyType.
-      1: eapply reifyTerm; admit.
-      match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + eapply ty_map.
       1-3: now escape.
       eapply ty_map.
@@ -792,7 +852,10 @@ Proof.
     + eapply convneu_map_comp.
       1-5: now escape.
       now eapply NeNf.refl.
-Admitted.
+
+      Unshelve.
+      all: tea.
+Qed.
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VΓ : [||-v Γ]}
@@ -833,28 +896,28 @@ Proof.
       unshelve eapply (fst (mapRedAux _)); tea.
       * rewrite subst_arr in *; tea.
       * cbn. irrelevance.
-  - eapply transEqTerm.
-    2: {
-      unshelve eapply (fst (mapRedAux _)); tea.
-      - rewrite subst_arr in *; tea.
-      - cbn. admit.
-    }
-    refold.
-    unshelve eapply (fst (mapEqRedAux _ _)).
-    all: try solve [ now eapply LRTyEqRefl_ ].
-    all: try solve [ tea | eapply invLRList; tea | now eapply ArrRedTy ].
-    all: refold.
-    4: change [ normList RVLA | Δ ||- l'[σ] ≅ l'[σ] : _ ]; now eapply LREqTermRefl_.
-    + admit.
-    + admit.
-    + admit.
+  - cbn.
+    (* TODO: lemma + rewrite *)
+    replace (tLambda A[σ] (tApp f⟨↑⟩[up_term_term σ] (tApp g⟨↑⟩[up_term_term σ] (tRel var_zero))))
+      with (comp A[σ] f[σ] g[σ]) by now asimpl.
+    cbn.
+    unshelve eapply (fst (mapRedAux _)); tea; refold.
+    + rewrite subst_arr in *; tea.
+    + irrelevanceRefl.
+      eapply compred.
+      1-2: irrelevance; eapply subst_arr.
 
       Unshelve.
-      all: refold.
       all: tea.
       all: try eapply invLRList; tea.
-      all: admit.
-Admitted.
+      all: try rewrite subst_arr in *; tea.
+      1-3: cbn; try irrelevance.
+      irrelevanceRefl. eapply compred.
+      1-2: irrelevance; eapply subst_arr.
+
+      Unshelve.
+      all: tea.
+Qed.
 
 Lemma mapPropRedIdAux {Γ A i}
   {RA : [Γ ||-<i> A]}
@@ -903,11 +966,6 @@ Proof.
       eapply LRTyEqRefl_.
   - intros.
     eapply neuTermEq.
-    + apply tm_ne_map.
-      1-2: now eapply reifyType.
-      * now eapply reifyTerm.
-      * now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-    + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + eapply ty_map; escape; tea.
       now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
