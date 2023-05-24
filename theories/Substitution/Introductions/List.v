@@ -543,8 +543,7 @@ Proof.
       eapply LRIrrelevantPack. irrelevance.
     }
     + eassumption.
-    + cbn.
-      dependent inversion X5; subst; cbn.
+    + cbn; dependent inversion X5; subst;
       dependent inversion X7; subst; cbn.
       { eapply consEqRed. 3: eassumption.
         all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
@@ -557,32 +556,9 @@ Proof.
           change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
           eapply LRTmRedConv; tea.
       }
-      * admit.
-      * admit.
-      (* 1-2: admit. *)
-      (* { eapply transEqTerm; cycle 1. *)
-      (*   - eapply LRTmEqRedConv. 1: now eapply LRTyEqSym. *)
-      (*     eapply LRTmEqSym. *)
-      (*     eapply redSubstTerm. *)
-      (*     2:{ *)
-      (*       eapply redtm_map_cons; escape; tea. *)
-      (*       - cbn in *. etransitivity. 1: now symmetry.  *)
-      (*         eapply escapeEq. eassumption. *)
-      (*       - eapply escapeTerm. eassumption. *)
-      (*       - eapply escapeTerm. *)
-      (*         match goal with H : ListRedTm _ _ _ tl |- _ => change [ LRList' LA_ | Γ ||- tl : _ ] in H ; exact H end. *)
-      (*     } *)
-      (*   - eapply consRed; escape; tea. *)
-      (*     + eapply LRTyEqRefl_. *)
-      (*     + eapply simple_appTerm; tea. *)
-      (*     + unshelve eapply (fst (mapRedAux _)); tea. *)
-      (*       change [ LRList' (normList0 LA_) | Γ ||- tl : _]. *)
-      (*       match goal with H : ListRedTm _ _ _ tl |- _ => change [ LRList' LA_ | Γ ||- tl : _ ] in H ; irrelevance end. *)
-      (*   - eapply mapEqRedAux. *)
-      (* } *)
-      (* { *)
-      (*   eapply  *)
-      (* } *)
+      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
+      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
+      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
         Unshelve. all: tea.
 
   - intros.
@@ -596,7 +572,7 @@ Proof.
     + eapply convneu_map.
       1-3: now escape.
       now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
-Admitted.
+Qed.
 
 (* TODO: move; also wk_arr vs arr_wk *)
 (* probably exists elsewhere *)
