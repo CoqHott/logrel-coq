@@ -111,6 +111,9 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
++ intros * ????? []; split; now repeat constructor.
++ intros * ? []; split; now repeat constructor.
++ intros * ??? []; now repeat constructor.
 Qed.
 
 #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := nf) := {}.
@@ -124,6 +127,7 @@ all: try now (intros; apply redalg_one_step; constructor).
 + intros; now apply redalg_natEmpty.
 + intros; now apply redalg_fst.
 + intros; now apply redalg_snd.
++ intros; now apply redalg_map.
 + intros; assumption.
 + intros; reflexivity.
 Qed.
@@ -215,12 +219,6 @@ Section NeutralConversion.
     eapply Fundamental in Hty' as [? Hfund%reducibleTy].
     revert m n.
     pattern one, Γ, A, Hfund. apply LR_rect_TyUr; clear Γ A Hty VΓ Hfund.
-    (* pose (P := (fun Γ A _ _ _ _ => 
-      forall m n, [Γ |-[ al ] m ~ n ▹ A] -> [Γ |-[ al ] m ≅ n : A]) :
-      forall Γ A rEq rTe rTeEq, LR (LogRelRec one) Γ A rEq rTe rTeEq  -> Type).
-    change (P Γ A Hfund.(LRPack.eqTy) Hfund.(LRPack.redTm) Hfund.(LRPack.eqTm) Hfund.(LRAd.adequate)).
-    apply LR_rect. *)
-    (* all: subst P ; cbn. *)
     - intros.
       econstructor.
       1: eapply redty_red; now destruct h as [??? [??]].
@@ -332,6 +330,11 @@ Section NeutralConversion.
         split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
     Unshelve. 2,4: tea. 
-  - admit.
-  Admitted.
+  - intros * ih * ? hconv.
+    econstructor.
+    1: eapply (ListRedTy.red LA).
+    1,2: reflexivity.
+    econstructor; tea.
+    constructor.
+  Qed.
 End NeutralConversion.

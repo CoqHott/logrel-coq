@@ -427,21 +427,39 @@ Section Boundary.
       + econstructor; tea.
         symmetry; eapply typing_subst1; tea.
         now econstructor.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
+    - intros * ? []; split; tea; now constructor.
+    - intros * ? []; split.
+      1,2: now constructor.
+      econstructor; [now constructor|].
+      econstructor; now symmetry.
+    - intros * ? [] ? [] ? []; split; econstructor; tea.
+      1: econstructor; tea; econstructor; tea.
+      2: symmetry.
+      all: now econstructor.
+    - intros * ?[] ?[] ?[] ?[]; split; econstructor; tea.
+      1: econstructor; tea; econstructor; tea.
+      all: econstructor; tea.
+      2: now symmetry.
+      renToWk; eapply typing_wk; tea.
+      constructor; tea; gen_typing.
+    - intros * ? _ ? _ ? ?; split; econstructor; tea.
+      now constructor.
+    - intros * ? _ ? _ *; split; econstructor; tea.
+      1,3: now econstructor.
+      eapply ty_simple_app; cycle 1; tea.
+    - intros * ? _ ? _ ? _ ????? []; split; econstructor; tea.
+      1: now econstructor.
+      eapply ty_comp; cycle 2; tea.
+    - intros * ? _ ? []; split; econstructor; tea.
+      2: now econstructor.
+      eapply ty_id; tea; now econstructor.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
       split; gen_typing.
     - intros * ?[]?[].
       split; gen_typing.
-  Admitted.
+  Qed.
 
 End Boundary.
 
@@ -685,10 +703,31 @@ Proof.
     }
     eapply TermConv; tea; refold.
     now econstructor.
-  - admit.
-  - admit.
-  - admit.
-  Admitted.
+  - apply termGen' in Hty as [? [[-> ??? hnil]?]].
+    apply termGen' in hnil as [? [[-> ?] hlist]].
+    econstructor; tea.
+    transitivity (tMap A0 B f (tNil A0)).
+    2: now econstructor.
+    econstructor.
+    1-3: now econstructor.
+    econstructor; tea; econstructor.
+    now eapply list_ty_inj.
+  - apply termGen' in Hty as [? [[-> ??? hcons]?]].
+    apply termGen' in hcons as [? [[-> ?] hlist]].
+    pose proof (list_ty_inj _ _ _ hlist).
+    econstructor; tea.
+    transitivity (tMap A0 B f (tCons A0 a l)).
+    2: do 2 (econstructor; tea); now symmetry.
+    econstructor.
+    1-3: now econstructor.
+    econstructor; tea; econstructor.
+    2,3: now econstructor.
+    now symmetry.
+  - apply termGen' in Hty as [? [[-> ????]?]].
+    do 2 (econstructor; tea).
+    1-3: now econstructor.
+    now eapply IHHred.
+  Qed.
 
 
   Theorem subject_reduction_one_type Γ A A' :
