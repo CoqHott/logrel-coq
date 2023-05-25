@@ -694,53 +694,47 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
-  (* TODO: Fix all lemmas for list as it was done for https://github.com/CoqHott/logrel-coq/pull/30/files *)
-  Lemma FundTyList : forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy Γ A -> FundTy Γ (tList A).
+  Lemma FundTyList : forall (Γ : context) (A : term), FundTy Γ A -> FundTy Γ (tList A).
   Proof.
-    intros * ?[]; unshelve econstructor; tea.
+    intros * []; unshelve econstructor; tea.
     unshelve eapply listValid; tea.
   Qed.
 
   Lemma FundTmList : forall (Γ : context) (A : term),
-  [Γ |-[ de ] A : U] -> FundTm Γ U A -> FundTm Γ U (tList A).
+    FundTm Γ U A -> FundTm Γ U (tList A).
   Proof.
-    intros * ?[]; unshelve econstructor.
+    intros * []; unshelve econstructor.
     3: unshelve eapply listTermValid.
     1: now tea.
     irrValid.
   Qed.
 
   Lemma FundTmNil : forall (Γ : context) (A : term),
-    [Γ |-[ de ] A] -> FundTy Γ A -> FundTm Γ (tList A) (tNil A).
+    FundTy Γ A -> FundTm Γ (tList A) (tNil A).
   Proof.
-    intros * ?[]; unshelve econstructor.
+    intros * []; unshelve econstructor.
     3: unshelve eapply nilValid.
     2: now eapply listValid.
     trivial.
   Qed.
 
   Lemma FundTmCons : forall (Γ : context) (A a l : term),
-    [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ |-[ de ] a : A] ->
     FundTm Γ A a ->
-    [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList A) (tCons A a l).
+    FundTm Γ (tList A) l -> FundTm Γ (tList A) (tCons A a l).
   Proof.
-    intros * ?[] ?[] ?[]; unshelve econstructor.
+    intros * [] [] []; unshelve econstructor.
     3: unshelve eapply consValid; tea.
     1-2: now irrValid.
   Qed.
 
   Lemma FundTmMap : forall (Γ : context) (A B f l : term),
-    [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ |-[ de ] B] ->
     FundTy Γ B ->
-    [Γ |-[ de ] f : arr A B] ->
     FundTm Γ (arr A B) f ->
-    [Γ |-[ de ] l : tList A] -> FundTm Γ (tList A) l -> FundTm Γ (tList B) (tMap A B f l).
+    FundTm Γ (tList A) l -> FundTm Γ (tList B) (tMap A B f l).
   Proof.
-    intros * ?[] ?[] ?[] ?[]; unshelve econstructor.
+    intros * [] [] [] []; unshelve econstructor.
     3: unshelve eapply mapValid; tea.
     1: apply listValid.
     all: now irrValid.
@@ -748,17 +742,17 @@ Section Fundamental.
 
   Lemma FundTyEqListCong :
     forall (Γ : context) (A B : term),
-    [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTyEq Γ (tList A) (tList B).
+    FundTyEq Γ A B -> FundTyEq Γ (tList A) (tList B).
   Proof.
-    intros * ?[]; unshelve econstructor.
+    intros * []; unshelve econstructor.
     4: unshelve eapply listCongValid; tea.
     now apply listValid.
   Qed.
 
   Lemma FundTmEqListCong : forall (Γ : context) (A B : term),
-    [Γ |-[ de ] A ≅ B : U] -> FundTmEq Γ U A B -> FundTmEq Γ U (tList A) (tList B).
+    FundTmEq Γ U A B -> FundTmEq Γ U (tList A) (tList B).
   Proof.
-    intros * ?[]; unshelve econstructor.
+    intros * []; unshelve econstructor.
     5: now unshelve eapply listCongTermValid; irrValid.
     - now tea.
     - eapply listTermValid; irrValid.
@@ -766,9 +760,9 @@ Section Fundamental.
   Qed.
 
   Lemma FundTmEqNilCong : forall (Γ : context) (A B : term),
-    [Γ |-[ de ] A ≅ B] -> FundTyEq Γ A B -> FundTmEq Γ (tList A) (tNil A) (tNil B).
+    FundTyEq Γ A B -> FundTmEq Γ (tList A) (tNil A) (tNil B).
   Proof.
-    intros * ?[]; unshelve econstructor.
+    intros * []; unshelve econstructor.
     5: unshelve eapply nilCongValid.
     all: try irrValid.
     - now eapply listValid.
@@ -781,14 +775,11 @@ Section Fundamental.
 
   Lemma FundTmEqConsCong :
     forall (Γ : context) (a b ax bx A B : term),
-    [Γ |-[ de ] A ≅ B] ->
     FundTyEq Γ A B ->
-    [Γ |-[ de ] a ≅ b : A] ->
     FundTmEq Γ A a b ->
-    [Γ |-[ de ] ax ≅ bx : tList A] ->
     FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList A) (tCons A a ax) (tCons B b bx).
   Proof.
-    intros * ?[]?[]?[]; unshelve econstructor.
+    intros * [][][]; unshelve econstructor.
     5: unshelve eapply consCongValid.
     all: try irrValid.
     - now unshelve eapply consValid; irrValid.
@@ -809,16 +800,12 @@ Section Fundamental.
 
   Lemma FundTmEqMapCong :
     forall (Γ : context) (f g ax bx A B C D : term),
-    [Γ |-[ de ] A ≅ B] ->
     FundTyEq Γ A B ->
-    [Γ |-[ de ] C ≅ D] ->
     FundTyEq Γ C D ->
-    [Γ |-[ de ] f ≅ g : arr A C] ->
     FundTmEq Γ (arr A C) f g ->
-    [Γ |-[ de ] ax ≅ bx : tList A] ->
     FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList C) (tMap A C f ax) (tMap B D g bx).
   Proof.
-    intros * ?[]?[]?[]?[].
+    intros * [][][][].
     unshelve econstructor.
     5: unshelve eapply mapCongValid.
     13, 15: unshelve eapply listCongValid.
@@ -840,14 +827,11 @@ Section Fundamental.
 
   Lemma FundTmEqMapNil :
     forall (Γ : context) (f A B : term),
-    [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ |-[ de ] B] ->
     FundTy Γ B ->
-    [Γ |-[ de ] f : arr A B] ->
     FundTm Γ (arr A B) f -> FundTmEq Γ (tList B) (tMap A B f (tNil A)) (tNil B).
   Proof.
-    intros * ?[] ?[] ?[]; unshelve econstructor.
+    intros * [] [] []; unshelve econstructor.
     5: unshelve eapply mapRedNilValid; tea.
     1: apply listValid.
     5: apply listValid.
@@ -862,19 +846,14 @@ Section Fundamental.
 
   Lemma FundTmEqMapCons :
     forall (Γ : context) (f hd tl A B : term),
-    [Γ |-[ de ] A] ->
     FundTy Γ A ->
-    [Γ |-[ de ] B] ->
     FundTy Γ B ->
-    [Γ |-[ de ] f : arr A B] ->
     FundTm Γ (arr A B) f ->
-    [Γ |-[ de ] hd : A] ->
     FundTm Γ A hd ->
-    [Γ |-[ de ] tl : tList A] ->
     FundTm Γ (tList A) tl ->
     FundTmEq Γ (tList B) (tMap A B f (tCons A hd tl)) (tCons B (tApp f hd) (tMap A B f tl)).
   Proof.
-    intros *?[]?[]?[]?[]?[]; unshelve econstructor.
+    intros *[][][][][]; unshelve econstructor.
     5: unshelve eapply mapRedConsValid.
     all: try irrValid.
     - unshelve eapply listValid. irrValid.
@@ -887,21 +866,15 @@ Section Fundamental.
 
   Lemma FundTmEqMapComp :
     forall (Γ : context) (f g l l' A B C : term),
-    [Γ |-[ de ] A] ->
-    FundTy Γ A ->
-    [Γ |-[ de ] B] ->
-    FundTy Γ B ->
-    [Γ |-[ de ] C] ->
-    FundTy Γ C ->
-    [Γ |-[ de ] f : arr B C] ->
-    FundTm Γ (arr B C) f ->
-    [Γ |-[ de ] g : arr A B] ->
-    FundTm Γ (arr A B) g ->
-    [Γ |-[ de ] l ≅ l' : tList A] ->
+    FundTyEq Γ A A ->
+    FundTyEq Γ B B ->
+    FundTyEq Γ C C ->
+    FundTmEq Γ (arr B C) f f ->
+    FundTmEq Γ (arr A B) g g ->
     FundTmEq Γ (tList A) l l' ->
     FundTmEq Γ (tList C) (tMap B C f (tMap A B g l)) (tMap A C (comp A f g) l').
   Proof.
-    intros *?[]?[]?[]?[]?[]?[].
+    intros *[][][][][][].
     unshelve econstructor.
     5: unshelve eapply mapRedCompValid.
     all: try solve [ irrValid
@@ -918,12 +891,10 @@ Section Fundamental.
 
   Lemma FundTmEqMapId :
     forall (Γ : context) (l l' A : term),
-    [Γ |-[ de ] A] ->
-    FundTy Γ A ->
-    [Γ |-[ de ] l ≅ l' : tList A] ->
+    FundTyEq Γ A A ->
     FundTmEq Γ (tList A) l l' -> FundTmEq Γ (tList A) (tMap A A (idterm A) l) l'.
   Proof.
-    intros * ?[] ?[]; unshelve econstructor.
+    intros * [] []; unshelve econstructor.
     5: unshelve eapply mapRedIdValid; tea.
     2:{
       unshelve eapply mapValid.

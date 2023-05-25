@@ -848,7 +848,8 @@ Proof.
         4-5: escape; tea. all: now escape.
       * now eapply NeNf.ty.
     + eapply convneu_map_comp.
-      1-5: now escape.
+      1-3: eapply escapeEq; eapply LRTyEqRefl_.
+      1-2: eapply escapeEqTerm; now eapply LREqTermRefl_.
       now eapply NeNf.refl.
 
       Unshelve.
@@ -979,7 +980,8 @@ Proof.
     + eapply ty_map; escape; tea.
       now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
     + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-    + apply convneu_map_id. 1: now escape; tea.
+    + apply convneu_map_id. 
+      1: eapply escapeEq; eapply LRTyEqRefl_.
       now eapply NeNf.refl.
 
     Unshelve.

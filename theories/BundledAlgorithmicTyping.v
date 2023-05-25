@@ -672,15 +672,19 @@ Section BundledConv.
       destruct (termGen' _ _ _ hLA') as [? [[->]]].
       split. 2: now constructor.
       eauto.
-    - intros * ? ih  ? ih' ? hnil hnil'.
+    - intros * ? hnil hnil'.
       destruct (termGen' _ _ _ hnil) as [? [[-> ?] c]].
       destruct (termGen' _ _ _ hnil') as [? [[->]]].
-      split.
-      + eapply boundary in c as [_ ?%list_ty_inv]; eauto. 
-      + econstructor. 
-        1:eapply TermNilCong; now eapply ih.
-        tea.
-    - intros * ? ihA  ? ihAT ? ihhd ? ihtl ? hcons hcons'.
+      pose proof c as [_ ?%list_ty_inv]%boundary.
+      split; [eauto|].
+      econstructor. 
+      1:{ 
+        eapply TermNilCong; refold.
+        etransitivity; eapply list_ty_inj; tea.
+        now symmetry.
+      }
+      tea.
+    - intros * ? ihhd ? ihtl ? hcons hcons'.
       destruct (termGen' _ _ _ hcons) as [? [[-> ?] c]].
       destruct (termGen' _ _ _ hcons') as [? [[->]]].
       assert [Γ |-[de] A ≅ AT] as eq by now eapply list_ty_inj.
@@ -688,11 +692,11 @@ Section BundledConv.
       assert [Γ |-[de] AT] by now apply boundary in eq.
       assert ([Γ |-[ de ] hd' : A] × [Γ |-[ de ] tl' : tList A]) as []
         by (split; econstructor; tea; etransitivity; tea; now symmetry).
-      destruct ihA, ihAT, ihhd, ihtl; tea.
+      destruct ihhd, ihtl; tea.
       split.
       1: eapply X26; eauto. (*why X26 is not found by eauto ??? *)
       econstructor.
-      1:eapply TermConsCong; refold; tea.
+      1:eapply TermConsCong; refold; tea; etransitivity; tea; now symmetry.
       tea.
     - intros * ? IHm ? ? Htym Htyn.
       edestruct IHm as [? [? Hm']].
@@ -920,7 +924,61 @@ Qed.
 
   Lemma bun_conv_ne_inv {Γ T m n} (conv : [Γ |-[bn] m ~ n ▹ T]) :
     ConvNeuBunAlg (conv.(bun_conv_ne)).
-  Proof. admit. Admitted.
+  Proof. 
+    destruct conv as [? hm ? hn ? hconv]; cbn; refold.
+    destruct hconv; try econstructor; AlgorithmicTypingData.fold_algo.
+    + pose proof hm as [? [? [[? [? [-> Htym]]] ?]]%termGen'].
+      pose proof hn as [? [? [[? [? [-> Htyn]]] ?]]%termGen'].
+      pose proof c as [? hprodm hprodn]%algo_conv_sound; try now econstructor.
+      specialize (hprodm _ Htym) as []%prod_ty_inj.
+      specialize (hprodn _ Htyn) as []%prod_ty_inj.
+      pose proof c as []%algo_conv_wh.
+      unshelve refine (
+        let convFun : [ Γ |-[bn] m ~h n ▹ tProd A B ] := {| bun_conv_ne_red := c |} in
+        let convArg : [ Γ |-[bn] t ≅ u : A ] := {| bun_conv_tm := c0 |} in
+        neuAppCongBun convFun convArg); tea.
+      3: now boundary.
+      all: now econstructor.
+    + pose proof hm as [? [? [[->]]]%termGen'].
+      pose proof hn as [? [? [[->]]]%termGen'].
+      pose proof c as []%algo_conv_wh.
+      pose proof c0 as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let convn : [Γ |-[bn] n ~h n' ▹ tNat] := {| bun_conv_ne_red := c |} in
+        let convP : [Γ,, tNat |-[bn] P ≅ P'] := {| bun_conv_ty := c0 |} in
+        let convhz : [Γ |-[bn] hz ≅ hz' : P[tZero..]] := {| bun_conv_tm := c1 |} in
+        let convhs : [Γ |-[bn] hs ≅ hs' : elimSuccHypTy P] := {| bun_conv_tm := c2 |} in
+        neuNatElimCongBun convn convP convhz convhs); tea.
+      1,2: now econstructor.
+      1: gen_typing.
+      1,3: now boundary.
+      1,2: econstructor; tea; symmetry.
+      1: eapply typing_subst1; gen_typing.
+      now eapply elimSuccHypTy_conv.
+    + pose proof hm as [? [? [[->]]]%termGen'].
+      pose proof hn as [? [? [[->]]]%termGen'].
+      pose proof c as []%algo_conv_wh.
+      pose proof c0 as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let conve : [Γ |-[bn] e ~h e' ▹ tEmpty] := {| bun_conv_ne_red := c |} in
+        let convP : [Γ ,, tEmpty |-[bn] P ≅ P'] := {| bun_conv_ty := c0 |} in
+        neuEmptyElimCongBun conve convP); tea.
+      1,2: now econstructor.
+      gen_typing.
+    + pose proof hm as [? [?[[?[?[->]]]]]%termGen'].
+      pose proof hn as [? [?[[?[?[->]]]]]%termGen'].
+      pose proof c as []%algo_conv_wh.
+      unshelve refine (
+        let convm : [ Γ |-[bn] m ~h n ▹ tSig A B ] := {| bun_conv_ne_red := c |} in
+        neuFstCongBun convm); tea; now econstructor.
+    + pose proof hm as [? [?[[?[?[->]]]]]%termGen'].
+      pose proof hn as [? [?[[?[?[->]]]]]%termGen'].
+      pose proof c as []%algo_conv_wh.
+      unshelve refine (
+        let convm : [ Γ |-[bn] m ~h n ▹ tSig A B ] := {| bun_conv_ne_red := c |} in
+        neuSndCongBun convm); tea; now econstructor.
+    + admit.
+  Admitted.
 
   Inductive ConvNeuRedBunAlg : forall {Γ T m n}, ConvNeuRedAlg Γ T m n -> Type :=
     | neuConvRedBun {Γ m n A A'} 
@@ -931,7 +989,11 @@ Qed.
 
   Lemma bun_conv_ne_red_inv {Γ T m n} (conv : [Γ |-[bn] m ~h n ▹ T]) :
     ConvNeuRedBunAlg (conv.(bun_conv_ne_red)).
-  Proof. admit. Admitted.
+  Proof. 
+    destruct conv as [? hm ? hn ? hconv]; cbn.
+    dependent inversion hconv; subst; AlgorithmicTypingData.fold_algo.
+    now unshelve refine (let conv := {| bun_conv_ne := c |} in neuConvRedBun conv _ _).
+  Qed.
 
   Inductive ConvTermBunAlg : forall {Γ A t u}, ConvTermAlg Γ A t u -> Type :=
     | termConvRedBun {Γ t t' u u' A A'}
@@ -943,7 +1005,16 @@ Qed.
 
   Lemma bun_conv_tm_inv {Γ A t u} (conv : [Γ |-[bn] t ≅ u : A]) :
     ConvTermBunAlg (conv.(bun_conv_tm)).
-  Proof. admit. Admitted.
+  Proof.
+    destruct conv as [???? hconv]; cbn.
+    dependent inversion hconv; subst.
+    pose proof c as []%algo_conv_wh.
+    pose proof (r' := r); eapply subject_reduction_type in r' as []; tea.
+    unshelve refine (let conv := {| bun_conv_tm_red := c |} in termConvRedBun _ _ _ conv); tea.
+    + now boundary.
+    + eapply subject_reduction in r0 as []; tea; econstructor; tea; now boundary.
+    + eapply subject_reduction in r1 as []; tea; econstructor; tea; now boundary.
+  Qed.
 
   Inductive ConvTermRedBunAlg : forall {Γ A t u}, ConvTermRedAlg Γ A t u -> Type :=
     | termPiCongBun {Γ A B A' B'} 
@@ -977,16 +1048,12 @@ Qed.
     | termListCongBun {Γ A A'} 
       (convA : [Γ |-[bn] A ≅ A' : U]) :
       ConvTermRedBunAlg (termListCongAlg convA.(bun_conv_tm))
-    | termNilConvBun {Γ A A' AT} 
-      (convA' : [Γ |-[bn] A ≅ A'])
-      (convAT : [Γ |-[bn] A ≅ AT]) :
-      ConvTermRedBunAlg (termNilConvAlg convA'.(bun_conv_ty) convAT.(bun_conv_ty))
-    | termConsCongBun {Γ A A' AT hd hd' tl tl'} 
-      (convA' : [Γ |-[bn] A ≅ A'])
-      (convAT : [Γ |-[bn] A ≅ AT])
+    | termNilConvBun {Γ A A' AT} :
+      ConvTermRedBunAlg (@termNilConvAlg Γ A A' AT)
+    | termConsCongBun {Γ A} A' AT {hd hd' tl tl'} 
       (convhd : [Γ |-[bn] hd ≅ hd' : A])
       (convtl : [Γ |-[bn] tl ≅ tl' : tList A]) :
-      ConvTermRedBunAlg (termConsCongAlg convA'.(bun_conv_ty) convAT.(bun_conv_ty) convhd.(bun_conv_tm) convtl.(bun_conv_tm))
+      ConvTermRedBunAlg (termConsCongAlg A' AT convhd.(bun_conv_tm) convtl.(bun_conv_tm))
     | termNeuConvBun {Γ m n T P} 
       (inf : [Γ |-[bn] m ~ n ▹ T])
       (ispos : isPosType P) :
@@ -994,8 +1061,81 @@ Qed.
 
   Lemma bun_conv_tm_red_inv {Γ A t u} (conv : [Γ |-[bn] t ≅h u : A]) :
     ConvTermRedBunAlg (conv.(bun_conv_tm_red)).
-  Proof. admit. Admitted.
-
+  Proof. 
+    destruct conv as [? hA ? ht ? hu ? hconv]; cbn.
+    destruct hconv; AlgorithmicTypingData.fold_algo.
+    - pose proof ht as [? [[->] _]]%termGen'.
+      pose proof hu as [? [[->] _]]%termGen'.
+      pose proof c as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let convA : [ Γ |-[bn] A ≅ A' : U] := {| bun_conv_tm := c |} in
+        let convB : [ Γ ,, A |-[bn] B ≅ B' : U] := {| bun_conv_tm := c0 |} in
+        termPiCongBun convA convB); tea.
+      1,2: now boundary.
+      eapply stability1; cycle 2; tea; now (econstructor + boundary).
+    - econstructor.
+    - econstructor.
+    - pose proof ht as [? [[->] _]]%termGen'.
+      pose proof hu as [? [[->] _]]%termGen'.
+      pose proof c as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let convt : [Γ |-[bn] t ≅ t' : tNat] := {| bun_conv_tm := c |} in
+        termSuccCongBun convt); tea.
+    - econstructor.
+    - eapply prod_ty_inv in hA as [].
+      unshelve refine (
+      let conveta : [ Γ,, A |-[bn] eta_expand f ≅ eta_expand g : B] := {| bun_conv_tm := c |} in
+        termFunConvBun _ _ conveta); tea.
+      1: now boundary.
+      all: now eapply typing_eta'.
+    - pose proof ht as [? [[->] _]]%termGen'.
+      pose proof hu as [? [[->] _]]%termGen'.
+      pose proof c as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let convA : [ Γ |-[bn] A ≅ A' : U] := {| bun_conv_tm := c |} in
+        let convB : [ Γ ,, A |-[bn] B ≅ B' : U] := {| bun_conv_tm := c0 |} in
+        termSigCongBun convA convB); tea.
+      1,2: now boundary.
+      eapply stability1; cycle 2; tea; now (econstructor + boundary).
+    - pose proof c as ?%algo_conv_sound.
+      2,3: now econstructor.
+      eapply sig_ty_inv in hA as [].
+      unshelve refine (
+        let convfst : [ Γ |-[bn] tFst p ≅ tFst q : A] := {| bun_conv_tm := c |} in
+        let convsnd : [ Γ |-[bn] tSnd p ≅ tSnd q : B[(tFst p)..]] := {| bun_conv_tm := c0 |} in
+        termPairConvBun _ _ convfst convsnd); tea.
+      1,2: now econstructor.
+      2: now econstructor.
+      1: eapply typing_subst1; tea; now econstructor.
+      econstructor; [now econstructor|].
+      eapply typing_subst1; [now symmetry|now econstructor].
+    - pose proof ht as [? [[->] _]]%termGen'.
+      pose proof hu as [? [[->] _]]%termGen'.
+      pose proof c as ?%algo_conv_sound; tea.
+      unshelve refine (
+        let convA : [Γ |-[bn] A ≅ A' : U] := {| bun_conv_tm := c |} in
+        termListCongBun convA); tea.
+    - econstructor.
+    - eapply list_ty_inv in hA.
+      pose proof ht as [? [[->] ?%list_ty_inj]]%termGen'.
+      pose proof hu as [? [[->] ?%list_ty_inj]]%termGen'.
+      assert [Γ |-[de] A' ≅ A] by (etransitivity; tea; now symmetry).
+      pose proof c as ?%algo_conv_sound; tea.
+      2: econstructor; tea.
+      pose proof c0 as ?%algo_conv_sound; tea.
+      2: econstructor; tea; now econstructor.
+      unshelve refine (
+        let convhd := {| bun_conv_tm := c |} in
+        let convtl := {| bun_conv_tm := c0 |} in
+        termConsCongBun A' AT convhd convtl); tea.
+      * now econstructor.
+      * now econstructor.
+      * econstructor; tea; now econstructor.
+    - pose proof c as []%algo_conv_wh.
+      unshelve refine (
+        let inf : [Γ |-[bn] m ~ n ▹ T] := {| bun_conv_ne := c |} in
+        termNeuConvBun inf _); tea; now econstructor.
+  Qed.
 
 
 (** ** Induction principle for bundled algorithmic typing *)
@@ -1167,10 +1307,25 @@ Section BundledTyping.
     - intros * ? ih ?.
       edestruct ih as []; tea.
       split;[eauto|now econstructor].
-    - admit.
-    - admit.
-    - admit.
-    - admit.
+    - intros * ? ih ?.
+      edestruct ih as []; tea.
+      split;[eauto|now econstructor].
+    - intros * ? ih ?.
+      edestruct ih as []; tea.
+      split;[eauto|now econstructor].
+    - intros * ? ihA ? ihhd ? ihtl ?.
+      edestruct ihA as []; tea.    
+      edestruct ihhd as []; tea.    
+      edestruct ihtl as []; tea;[now econstructor|].
+      split; [eauto|now econstructor].    
+    - intros * ? ihA ? ihB ? ihf ? ihl ?.
+      edestruct ihA as []; tea.
+      edestruct ihB as []; tea.
+      edestruct ihf as []; tea; [now eapply wft_simple_arr|].
+      edestruct ihl as []; tea; [now econstructor|].
+      split; [|now econstructor]. 
+      (* why does it not work ?? *)
+      eapply X23; tea; split; tea.   
     - intros * ? IH HA ?.
       destruct IH as [? IH] ; tea.
       split ; [eauto|..].
@@ -1184,8 +1339,7 @@ Section BundledTyping.
       econstructor ; tea.
       eapply algo_conv_sound in HA ; tea.
       now boundary.
-  Admitted.
-  (* Qed. *)
+  Qed.
 
   Definition BundledTypingInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoTypingInductionConcl PTy PInf PInfRed PCheck) in

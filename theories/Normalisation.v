@@ -111,7 +111,7 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
-+ intros * ????? []; split; now repeat constructor.
++ intros * ????? [] ; split; now repeat constructor.
 + intros * ? []; split; now repeat constructor.
 + intros * ??? []; now repeat constructor.
 Qed.

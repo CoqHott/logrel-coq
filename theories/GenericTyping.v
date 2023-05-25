@@ -410,15 +410,15 @@ Section GenericTyping.
       [Γ |- p ~ p' : tSig A B] ->
       [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
     convneu_map_comp {Γ f g l l' A B C} :
-      [Γ |- A] ->
-      [Γ |- B] ->
-      [Γ |- C] ->
-      [Γ |- g : arr A B] ->
-      [Γ |- f : arr B C] ->
-      [Γ |- l ~ l': tList A] ->
+      [Γ |- A ≅ A] ->
+      [Γ |- B ≅ B] ->
+      [Γ |- C ≅ C] ->
+      [Γ |- g ≅ g : arr A B] ->
+      [Γ |- f ≅ f : arr B C] ->
+      [Γ |- l ~ l' : tList A] ->
       [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' : tList C] ;
     convneu_map_id {Γ A l l'} :
-      [Γ |- A] ->
+      [Γ |- A ≅ A] ->
       [Γ |- l ~ l' : tList A] ->
       [Γ |- tMap A A (idterm A) l ~ l' : tList A] ;
     convneu_map {Γ A A' B B' f f' l l'} :

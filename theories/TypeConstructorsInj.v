@@ -447,10 +447,10 @@ Section Boundary.
     - intros * ? _ ? _ *; split; econstructor; tea.
       1,3: now econstructor.
       eapply ty_simple_app; cycle 1; tea.
-    - intros * ? _ ? _ ? _ ????? []; split; econstructor; tea.
+    - intros * ? [? _] ? [? _] ? [? _] ? [? ? _] ? [?? _] ? []; split; econstructor; tea.
       1: now econstructor.
       eapply ty_comp; cycle 2; tea.
-    - intros * ? _ ? []; split; econstructor; tea.
+    - intros * ? [? _] ? []; split; econstructor; tea.
       2: now econstructor.
       eapply ty_id; tea; now econstructor.
     - intros * ? [] ? [].

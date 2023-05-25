@@ -218,12 +218,8 @@ Section Definitions.
       [Γ |- A ≅ A' : U] ->
       [Γ |- tList A ≅h tList A' : U]
     | termNilConvAlg {Γ A A' AT} :
-      [Γ |- A ≅ A'] ->
-      [Γ |- A ≅ AT] ->
       [Γ |- tNil A ≅h tNil A' : tList AT]
-    | termConsCongAlg {Γ A A' AT hd hd' tl tl'} :
-      [Γ |- A ≅ A'] ->
-      [Γ |- A ≅ AT] ->
+    | termConsCongAlg {Γ A} A' AT {hd hd' tl tl'} :
       [Γ |- hd ≅ hd' : A] ->
       [Γ |- tl ≅ tl' : tList A] ->
       [Γ |- tCons A hd tl ≅h tCons A' hd' tl' : tList AT]
@@ -782,17 +778,13 @@ Lemma termListCongAlg_size  Γ A A'
       (convA : [Γ |- A ≅ A' : U]) :
       #|termListCongAlg convA| = S(#|convA| + 0).
     Proof. reflexivity. Qed.
-Lemma termNilConvAlg_size  Γ A A' AT
-      (convA' : [Γ |- A ≅ A'])
-      (convAT : [Γ |- A ≅ AT]) :
-      #|termNilConvAlg convA' convAT| = S(#|convAT| + (#|convA'| + 0)).
+Lemma termNilConvAlg_size  Γ A A' AT :
+      #|@termNilConvAlg Γ A A' AT| = 1.
     Proof. reflexivity. Qed.
 Lemma termConsCongAlg_size  Γ A A' AT hd hd' tl tl'
-      (convA' : [Γ |- A ≅ A'])
-      (convAT : [Γ |- A ≅ AT])
       (convhd : [Γ |- hd ≅ hd' : A])
       (convtl : [Γ |- tl ≅ tl' : tList A]) :
-      #|termConsCongAlg convA' convAT convhd convtl| = S(#|convtl| + (#|convhd| + (#|convAT| + (#|convA'| + 0)))).
+      #|termConsCongAlg A' AT convhd convtl| = S(#|convtl| + (#|convhd| + 0)).
     Proof. reflexivity. Qed.
 Lemma termNeuConvAlg_size  Γ m n T P
       (inf : [Γ |- m ~ n ▹ T])
