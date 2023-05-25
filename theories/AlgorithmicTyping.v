@@ -1159,11 +1159,15 @@ Import AlgorithmicTypingData.
 Let PTyEq (Γ : context) (A B : term) := True.
 Let PTyRedEq (Γ : context) (A B : term) := True.
 Let PNeEq (Γ : context) (A t u : term) := 
-  forall A' u', [Γ |-[al] t ~ u' ▹ A'] -> A' = A.
+  forall A', [Γ |-[al] t ~ u ▹ A'] -> A' = A.
 Let PNeRedEq (Γ : context) (A t u : term) :=
-  forall A' u', [Γ |-[al] t ~h u' ▹ A'] -> A' = A.
+  forall A', [Γ |-[al] t ~h u ▹ A'] -> A' = A.
 Let PTmEq (Γ : context) (A t u : term) := True.
 Let PTmRedEq (Γ : context) (A t u : term) := True.
+
+  Ltac no_map :=
+    match goal with [H : context c [is_map _] |- _] => cbn in H; inversion H end.
+
 
 Theorem algo_conv_det :
   AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
@@ -1173,33 +1177,35 @@ Proof.
   all: try easy.
   - intros * ? * Hconv.
     inversion Hconv ; subst ; clear Hconv.
-    1: now eapply in_ctx_inj.
-    admit.
-  - intros * ? IH ? ? ?? Hconv.
+    2: no_map.
+    now eapply in_ctx_inj.
+  - intros * ? IH ? _ ? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
+    2: no_map.
     apply IH in H6.
     now inversion H6.
-    admit.
-  - intros * ? IH ?????? ?? Hconv.
+  - intros * ? IH ????? _ ? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
+    2: no_map.
     now reflexivity.
-    admit.
-  - intros * ? IH ?? ?? Hconv.
+  - intros * ? IH ?? ? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
+    2: no_map.
     now reflexivity.
-    admit.
-  - intros * ? IH ?? Hconv.
+  - intros * ? IH ? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
-    apply IH in H3.
-    now inversion H3.
-    admit.
-  - intros * ? IH ?? Hconv.
+    2: no_map.
+    apply IH in H4.
+    now inversion H4.
+  - intros * ? IH ? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
-    apply IH in H3.
-    now inversion H3.
+    2: no_map.
+    apply IH in H4.
+    now inversion H4.
+  - intros * hmap ? ih ? _ ? _ ? Hconv.
+    inversion Hconv; subst; clear Hconv; refold; try no_map.
     admit.
-  - admit.
-  - intros * ? IH ???? Hconv.
+  - intros * ? IH ??? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
     now eapply whred_det.
@@ -1252,14 +1258,18 @@ Proof.
     inversion Hconv; subst; refold.
     apply IH in H3; try constructor.
     now inversion H3.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
+  - intros * ? IH ? Hconv.
+    now inversion Hconv.
+  - intros * ? _ ? Hconv.
+    now inversion Hconv.
+  - intros * ? _ ? _ ? _ ? Hconv.
+    now inversion Hconv.
+  - intros * ? _ ? _ ? _ ? _ ? Hconv.
+    now inversion Hconv.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H3 ; subst.
     now eapply whred_det.
-Admitted.
+Qed.
 
 End AlgoTypingDet.
