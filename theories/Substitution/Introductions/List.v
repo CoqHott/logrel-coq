@@ -360,6 +360,28 @@ Proof.
     all: eapply LRTyEqRefl_.
 Qed.
 
+
+Lemma consCongValid {Γ A A' hd hd' tl tl' l}
+  {VΓ : [||-v Γ]}
+  {VA : [Γ ||-v<l> A | VΓ]}
+  {VA' : [Γ ||-v<l> A' | VΓ]}
+  {VAA' : [Γ ||-v<l> A ≅ A' | VΓ | VA ]}
+  {VLA : [Γ ||-v<l> tList A | VΓ]}
+  {VLA' : [Γ ||-v<l> tList A' | VΓ]}
+  (Vhd : [Γ ||-v<l> hd : A | VΓ | VA ])
+  (Vhd' : [Γ ||-v<l> hd' : A' | VΓ | VA' ])
+  (Vhdhd' : [Γ ||-v<l> hd ≅ hd' : A | VΓ | VA ])
+  (Vtl : [Γ ||-v<l> tl : tList A | VΓ | VLA ])
+  (Vtl' : [Γ ||-v<l> tl' : tList A' | VΓ | VLA' ])
+  (Vtltl' : [Γ ||-v<l> tl ≅ tl' : tList A | VΓ | VLA ]) :
+  [Γ ||-v<l> tCons A hd tl ≅ tCons A' hd' tl' : tList A | VΓ | VLA].
+Proof.
+  split; intros.
+  instValid Vσ.
+  eapply consEqRed; solve [ escape; tea | eapply LRTyEqRefl_].
+Qed.
+
+
 Definition mapProp {Γ L l} (A B f x: term) {LL : [Γ ||-List<l> L]} (p : ListProp _ _ LL x) : term.
 Proof.
   destruct p as [  | | x ].
@@ -847,8 +869,9 @@ Lemma mapRedCompValid {Γ A B C f g l l' i}
   {Vf : [Γ ||-v<i> f : arr B C | VΓ | VFBC ]}
   {Vg : [Γ ||-v<i> g : arr A B | VΓ | VFAB ]}
   {Vl : [Γ ||-v<i> l : tList A | VΓ | VLA ]}
-  {Vl' : [Γ ||-v<i> l' : tList A | VΓ | VLA ]} :
-  [Γ ||-v<i> tMap B C f (tMap A B g l') ≅ tMap A C (comp A f g) l' : tList C | VΓ | VLC].
+  {Vl' : [Γ ||-v<i> l' : tList A | VΓ | VLA ]}
+  {Vll' : [Γ ||-v<i> l ≅ l' : tList A | VΓ | VLA ]} :
+  [Γ ||-v<i> tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l' : tList C | VΓ | VLC].
 Proof.
   split; intros.
   instValid Vσ.
@@ -868,10 +891,21 @@ Proof.
     + irrelevance. apply subst_arr.
     + clear Rx. irrelevance.
     + eapply LREqTermRefl_. irrelevance. apply subst_arr.
-    + enough (X : [ normList RVLB | Δ ||- tMap A[σ] B[σ] g[σ] l'[σ] ≅ tMap A[σ] B[σ] g[σ] (ListRedTm.nf Rx) : _ ]) by exact X; refold.
-      unshelve eapply (fst (mapRedAux _)); tea.
-      * rewrite subst_arr in *; tea.
-      * cbn. irrelevance.
+    + enough (X : [ normList RVLB | Δ ||- tMap A[σ] B[σ] g[σ] l[σ] ≅ tMap A[σ] B[σ] g[σ] (ListRedTm.nf Rx) : _ ]) by exact X; refold.
+      eapply transEqTerm.
+      2: {
+        unshelve eapply (fst (mapRedAux _)); tea.
+        - rewrite subst_arr in *; tea.
+        - cbn. irrelevance.
+      }
+      unshelve eapply (fst (mapEqRedAux _ _)); tea.
+      all: try solve [ eapply LRTyEqRefl_
+                     | eapply invLRList; tea
+                     | rewrite subst_arr in *; tea
+                     |  try eapply LREqTermRefl_; irrelevance
+             ].
+      change [ normList RVLA | Δ ||- l[σ] ≅ l'[σ] : _ ].
+      irrelevance.
   - cbn.
     (* TODO: lemma + rewrite *)
     replace (tLambda A[σ] (tApp f⟨↑⟩[up_term_term σ] (tApp g⟨↑⟩[up_term_term σ] (tRel var_zero))))

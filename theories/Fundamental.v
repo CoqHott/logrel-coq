@@ -788,7 +788,24 @@ Section Fundamental.
     [Γ |-[ de ] ax ≅ bx : tList A] ->
     FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList A) (tCons A a ax) (tCons B b bx).
   Proof.
-  Admitted.
+    intros * ?[]?[]?[]; unshelve econstructor.
+    5: unshelve eapply consCongValid.
+    all: try irrValid.
+    - now unshelve eapply consValid; irrValid.
+    - unshelve eapply conv. 4: unshelve eapply consValid.
+      + eapply listValid. irrValid.
+      + eapply symValidEq. unshelve eapply listCongValid; irrValid.
+      + irrValid.
+      + unshelve eapply conv. 3-4: now irrValid.
+        irrValid.
+      + eapply conv. 1: unshelve eapply listCongValid. 3-5: now irrValid.
+        irrValid.
+    - eapply listValid. irrValid.
+    - unshelve eapply conv. 3-4: now irrValid. irrValid.
+    - unshelve eapply conv. 4: now irrValid.
+      2: unshelve eapply listCongValid.
+      all: now irrValid.
+  Qed.
 
   Lemma FundTmEqMapCong :
     forall (Γ : context) (f g ax bx A B C D : term),
@@ -801,7 +818,25 @@ Section Fundamental.
     [Γ |-[ de ] ax ≅ bx : tList A] ->
     FundTmEq Γ (tList A) ax bx -> FundTmEq Γ (tList C) (tMap A C f ax) (tMap B D g bx).
   Proof.
-  Admitted.
+    intros * ?[]?[]?[]?[].
+    unshelve econstructor.
+    5: unshelve eapply mapCongValid.
+    13, 15: unshelve eapply listCongValid.
+    all: try solve [ irrValid | eapply listValid; irrValid | eapply simpleArrValid; irrValid ].
+    - unshelve eapply mapValid; irrValid.
+    - unshelve eapply conv. 4: unshelve eapply mapValid; try solve [ irrValid | eapply listValid; irrValid ].
+      + eapply listValid; irrValid.
+      + eapply symValidEq. unshelve eapply listCongValid; irrValid.
+      + eapply simpleArrValid; irrValid.
+      + unshelve eapply conv. 4: now irrValid.
+        2: now unshelve eapply simpleArrCongValid; irrValid.
+      + unshelve eapply conv. 4: now irrValid.
+        2: unshelve eapply listCongValid; irrValid.
+    - unshelve eapply conv. 4: now irrValid.
+        2: now unshelve eapply simpleArrCongValid; irrValid.
+    - unshelve eapply conv. 4: now irrValid.
+        2: unshelve eapply listCongValid; irrValid.
+  Qed.
 
   Lemma FundTmEqMapNil :
     forall (Γ : context) (f A B : term),
@@ -839,7 +874,16 @@ Section Fundamental.
     FundTm Γ (tList A) tl ->
     FundTmEq Γ (tList B) (tMap A B f (tCons A hd tl)) (tCons B (tApp f hd) (tMap A B f tl)).
   Proof.
-  Admitted.
+    intros *?[]?[]?[]?[]?[]; unshelve econstructor.
+    5: unshelve eapply mapRedConsValid.
+    all: try irrValid.
+    - unshelve eapply listValid. irrValid.
+    - unshelve eapply mapValid; try irrValid.
+      unshelve eapply consValid; try irrValid.
+    - unshelve eapply consValid; try irrValid.
+      + unshelve eapply simple_appValid. 3-5: now irrValid. irrValid.
+      + unshelve eapply mapValid; try irrValid.
+  Qed.
 
   Lemma FundTmEqMapComp :
     forall (Γ : context) (f g l l' A B C : term),
@@ -857,7 +901,20 @@ Section Fundamental.
     FundTmEq Γ (tList A) l l' ->
     FundTmEq Γ (tList C) (tMap B C f (tMap A B g l)) (tMap A C (comp A f g) l').
   Proof.
-  Admitted.
+    intros *?[]?[]?[]?[]?[]?[].
+    unshelve econstructor.
+    5: unshelve eapply mapRedCompValid.
+    all: try solve [ irrValid
+                   | unshelve eapply listValid; try irrValid
+                   | unshelve eapply simpleArrValid; try irrValid
+           ].
+    - unshelve eapply mapValid; try irrValid.
+      1: now unshelve eapply listValid; irrValid.
+      unshelve eapply mapValid; irrValid.
+    - unshelve eapply mapValid; try irrValid.
+      1: unshelve eapply simpleArrValid; irrValid.
+      unshelve eapply simple_compValid ; try irrValid.
+  Qed.
 
   Lemma FundTmEqMapId :
     forall (Γ : context) (l l' A : term),
