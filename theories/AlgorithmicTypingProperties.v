@@ -236,10 +236,28 @@ Module AlgorithmicTypingProperties.
       eapply TermConv; refold; [|now symmetry].
       econstructor. eapply TermRefl.
       now eapply inf_conv_decl.
-    - admit.
-    - admit.
-    - admit.
-    - admit.
+    - intros * [??? hconv].
+      pose proof hconv as h%red_ty_compl_univ_r.
+      econstructor.
+      2: econstructor; econstructor; tea; apply h.
+      all: gen_typing.
+    - intros * tyA.
+      pose proof tyA as ?%bn_alg_typing_sound.
+      destruct tyA; econstructor; tea.
+      1: now econstructor.
+      now do 2 econstructor.
+    - intros * tyA [] [].
+      pose proof tyA as ?%bn_alg_typing_sound.
+      destruct tyA; econstructor.
+      1: tea.
+      1: econstructor; tea; econstructor; tea; now eapply algo_conv_complete.
+      now do 2 econstructor.
+    - intros * [] tyB [] [].
+      pose proof tyB as ?%bn_alg_typing_sound.
+      destruct tyB; econstructor.
+      1: tea.
+      1: econstructor; tea; econstructor; tea; now eapply algo_conv_complete.
+      now do 2 econstructor.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -250,7 +268,7 @@ Module AlgorithmicTypingProperties.
       1: eassumption.
       etransitivity ; tea.
       now eapply algo_conv_sound in bun_conv_ty.
-  Admitted.
+  Qed.
 
   #[export, refine] Instance RedTermAlgProperties :
     RedTermProperties (ta := bn) := {}.
@@ -378,9 +396,21 @@ Module AlgorithmicTypingProperties.
       2: now symmetry.
       eapply TermRefl; eapply wfTermConv; refold; [|now symmetry].
       econstructor; now eapply inf_conv_decl.
-    - admit.
-    - admit.
-    - admit.
+    - intros * tyA tyB tyf []; econstructor; tea.
+      2: now eapply redalg_map.
+      now eapply ty_map.
+    - intros * tyA ????; econstructor.
+      1: now destruct tyA.
+      2: eapply redalg_one_step; now econstructor.
+      eapply ty_map; tea; eapply ty_conv.
+      1: now eapply ty_nil.
+      eapply convty_list; now symmetry.
+    - intros * tyA ??????; econstructor.
+      1: now destruct tyA.
+      2: eapply redalg_one_step; econstructor.
+      eapply ty_map; tea; eapply ty_conv.
+      1: eapply ty_cons; tea; eapply ty_conv; tea.
+      1,2: eapply convty_list; tea; now symmetry.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -390,8 +420,7 @@ Module AlgorithmicTypingProperties.
     - red. intros_bn.
       2: now etransitivity.
       now econstructor.
-  Admitted.
-  (* Qed. *)
+  Qed.
 
   #[export, refine] Instance RedTypeAlgProperties :
     RedTypeProperties (ta := bn) := {}.

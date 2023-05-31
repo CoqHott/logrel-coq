@@ -428,12 +428,12 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | pairs A B t u :=
         rec (tm_state;Γ;A;tFst t; tFst u) ;;
         rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) (* ::: (tm_red_state;Γ;tSig A B;t;u) ;*) ;
-    | nils A A1 A2 :=
-      rec (ty_state;Γ;tt;A1;A2) ;;
-      rec (ty_state;Γ;tt;A1;A)
+    | nils A A1 A2 := success
+      (* rec (ty_state;Γ;tt;A1;A2) ;;
+      rec (ty_state;Γ;tt;A1;A) *)
     | conss A A1 A2 hd1 hd2 tl1 tl2 => 
-      rec (ty_state;Γ;tt;A1;A2) ;;
-      rec (ty_state;Γ;tt;A1;A) ;;
+      (* rec (ty_state;Γ;tt;A1;A2) ;;
+      rec (ty_state;Γ;tt;A1;A) ;; *)
       rec (tm_state;Γ;A1;hd1;hd2) ;;
       rec (tm_state;Γ;tList A1; tl1; tl2)
     | neutrals _ _ _ :=

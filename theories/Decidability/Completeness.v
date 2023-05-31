@@ -580,18 +580,11 @@ Proof.
     patch_rec_ret; econstructor.
     1: exact ihA.
     now constructor.
-  - intros * ? [ihA'] ? [ihAT] **.
-    unfold graph.
+  - intros; unfold graph.
     simp conv conv_tm_red; cbn.
-    patch_rec_ret; econstructor.
-    1: exact (ihA' tt).
-    cbn; patch_rec_ret; econstructor.
-    1: exact (ihAT tt).
     now constructor.
-  - intros * ? [ihA'] ? [ihAT] ? [ihhd] ? [ihtl] **.
+  - intros * ? [ihhd] ? [ihtl] **.
     unfold graph; simp conv conv_tm_red; cbn.
-    patch_rec_ret; econstructor; [exact (ihA' tt)|].
-    patch_rec_ret; econstructor; [exact (ihAT tt)|].
     patch_rec_ret; econstructor; [exact ihhd|].
     patch_rec_ret; econstructor; [exact ihtl|].
     now constructor.
