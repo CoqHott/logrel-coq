@@ -86,7 +86,6 @@ Section Definitions.
     whne r -> whne l.
   Proof.
     destruct l; try (cbn; intros [= <-]; easy).
-    cbn; destruct (Map.compact l4); discriminate.
   Qed.
 
   Lemma map_extract_whne l l' : 
@@ -162,12 +161,13 @@ Section Definitions.
       [ Γ |- m ~h n ▹ tSig A B ] ->
       [ Γ |- tSnd m ~ tSnd n ▹ B[(tFst m)..] ]
     | neuMapCompact {Γ A l l'} :
-      let r := compact_map A l in
-      let r' := compact_map A l' in
+      let rx := Map.extract l l' in
+      let r := fst rx in
+      let r' := snd rx in
       is_map l || is_map l' ->
       [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ] ->
       [Γ |- r.(Map.tgtTy) ≅ r'.(Map.tgtTy)] ->
-      [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)] ->
+      [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr r.(Map.srcTy) r.(Map.tgtTy)] ->
       [Γ |- l ~ l' ▹ tList r.(Map.tgtTy)]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
@@ -716,11 +716,11 @@ Lemma neuSndCongAlg_size  Γ m n A B
   Proof. reflexivity. Qed.
 
 Lemma neuMapCompact_size  Γ A l l'
-    (r := compact_map A l) (r' := compact_map A l')
+    (rx := Map.extract l l') (r := fst rx) (r' := snd rx)
     (hmap : is_map l || is_map l')
     (convlst : [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ])
     (convtgtty : [Γ |- r.(Map.tgtTy) ≅ r'.(Map.tgtTy)])
-    (convfn : [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)]) :
+    (convfn : [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr r.(Map.srcTy) r.(Map.tgtTy)]) :
     #|neuMapCompact hmap convlst convtgtty convfn| = S(#|convfn| + (#|convtgtty| + (#|convlst| + 0))).
   Proof. reflexivity. Qed.
 
@@ -905,21 +905,21 @@ Section TypingWk.
       econstructor; now eapply IH.
     - intros *.
       intros ? ? ihlst ? ihtgt ? ihfn *.
-      destruct (wk_compact_map l A ρ) as [es [et [ef el]]].
-      destruct (wk_compact_map l' A ρ) as [es' [et' [ef' el']]].
-      eapply convne_meta_conv. 3: reflexivity.
-      1: eapply neuMapCompact.
-      5: now rewrite <- et.
+      pose proof (wk_map_extract l l' ρ) as [fsteq sndeq].
+      rewrite <- wk_list.
+      change (Map.tgtTy ?x)⟨ρ⟩ with (Map.tgtTy x⟨ρ⟩).
+      rewrite fsteq.
+      eapply neuMapCompact; refold; rewrite <- ?fsteq, <- ?sndeq.
       + now do 2 rewrite wk_is_map.
       + eapply convne_meta_conv.
-        1: rewrite <- el; eapply ihlst.
+        1: eapply ihlst.
         1: reflexivity.
         now symmetry.
-      + rewrite <- et; rewrite <- et'; eapply ihtgt.
+      + eapply ihtgt.
       + eapply convtm_meta_conv.
-        1: rewrite <- ef; eapply ihfn.
+        1: eapply ihfn.
         2: now symmetry.
-        rewrite <- et; now bsimpl.
+        now bsimpl.
     - intros.
       econstructor.
       + eauto.
@@ -1136,7 +1136,7 @@ Section AlgTypingWh.
     subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq; cbn.
     apply AlgoConvInduction.
     all: intros ; prod_splitter ; prod_hyp_splitter.
-    all: try solve [now constructor| now eapply compact_map_whne].
+    all: try solve [now constructor| now eapply (map_extract_whne l l')].
     all: gen_typing.
   Qed.
 End AlgTypingWh.
@@ -1196,12 +1196,12 @@ Proof.
     now inversion H4.
   - intros * hmap ? ih ? _ ? _ ? Hconv.
     inversion Hconv; subst; clear Hconv; refold; try no_map.
-    admit.
+    reflexivity.
   - intros * ? IH ??? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
     now eapply whred_det.
-Admitted.
+Qed.
 
 Theorem algo_typing_det :
   AlgoTypingInductionConcl
@@ -1265,3 +1265,188 @@ Proof.
 Qed.
 
 End AlgoTypingDet.
+
+(*
+From Coq Require Import Lia.
+From Equations Require Import Equations.
+
+Derive Signature for ConvTypeAlg.
+Derive Signature for ConvTypeRedAlg.
+Derive Signature for ConvNeuAlg.
+Derive Signature for ConvNeuRedAlg.
+Derive Signature for ConvTermAlg.
+Derive Signature for ConvTermRedAlg.
+
+Derive NoConfusion for term.
+Derive NoConfusion for sort.
+Derive NoConfusion for nat.
+Derive NoConfusion for list.
+Derive NoConfusion for in_ctx.
+
+#[global]
+Instance: UIP nat. Proof. typeclasses eauto. Defined.
+
+Section SizeUnicity.
+  Import AlgorithmicTypingData.
+
+  (* Definition G := (cons (tList tNat) nil).
+  Definition G' := (cons (tList (tApp (idterm U) tNat)) nil).
+  Definition t := tRel 0.
+  Definition u := tMap tNat tNat (idterm tNat) t.
+
+  Definition f : [G |- t ~ u ▹ tList tNat].
+  Proof.
+    pose (r := compact_map tNat t).
+    pose (r' := compact_map tNat u).
+    change tNat with (Map.tgtTy r).
+    econstructor; cbn; refold.
+    1:easy.
+    - econstructor; refold.
+      2: reflexivity.
+      2: constructor.
+      do 2 econstructor.
+    - econstructor; refold.
+      1,2: reflexivity.
+      econstructor.
+    - econstructor; refold.
+      1-3: reflexivity.
+      econstructor; refold.
+      1,2: constructor.
+      econstructor; refold.
+      1: reflexivity.
+      1: apply redalg_one_step; constructor.
+      + etransitivity.
+        1: apply redalg_one_step; constructor.
+        refold; cbn.
+        etransitivity.
+        1: apply redalg_one_step; constructor.
+        cbn.
+        1: apply redalg_one_step; constructor.
+      + refold. cbn.
+        econstructor; refold.
+        2: constructor.
+        econstructor.
+        constructor.
+  Defined.
+
+  Definition f' : [G' |- t ~ u ▹ tList (tApp (idterm U) tNat)].
+  Proof.
+    pose (r := compact_map (tApp (idterm U) tNat) t).
+    pose (r' := compact_map (tApp (idterm U) tNat) u).
+    change (tApp _ _) with (Map.tgtTy r).
+    econstructor; cbn; refold.
+    1:easy.
+    - econstructor; refold.
+      2: reflexivity.
+      2: constructor.
+      econstructor.
+      do 2 econstructor.
+    - econstructor; refold.
+      1: apply redalg_one_step; constructor.
+      1: reflexivity.
+      cbn; econstructor.
+    - econstructor; refold.
+      1-3: reflexivity.
+      econstructor; refold.
+      1,2: constructor.
+      econstructor; refold.
+      1,2: apply redalg_one_step; constructor.
+      + etransitivity.
+        1: apply redalg_one_step; constructor.
+        refold; cbn.
+        etransitivity.
+        1: apply redalg_one_step; constructor.
+        cbn.
+        1: apply redalg_one_step; constructor.
+      + refold. cbn.
+        econstructor; refold.
+        2: constructor.
+        econstructor.
+        constructor.
+  Defined.
+
+  Lemma foo : #|f| = #|f'|.
+  Proof. reflexivity. Qed. *)
+
+  
+  Let PTyEq (Γ : context) (A B : term) (h1 : [Γ |- A ≅ B]) := 
+    forall Δ (h2 : [Δ |- A ≅ B]), #|h1| = #|h2|.
+  Let PTyRedEq (Γ : context) (A B : term) (h1 : [Γ |- A ≅h B]) := 
+    forall Δ (h2: [Δ |- A ≅h B]), #|h1| = #|h2|.
+  Let PNeEq (Γ : context) (A t u : term) (h1: [Γ |- t ~ u ▹ A]) := 
+    forall Δ B (h2: [Δ |- t ~ u ▹ B]), #|h1| = #|h2|.
+  Let PNeRedEq (Γ : context) (A t u : term) (h1: [Γ |- t ~h u ▹ A]) := 
+    forall Δ B (h2: [Δ |- t ~h u ▹ B]), #|h1| = #|h2|.
+  Let PTmEq (Γ : context) (A t u : term) (h1: [Γ |- t ≅ u : A]) :=
+    forall Δ B (h2: [Δ |- t ≅ u : B]), #|h1| = #|h2|.
+  Let PTmRedEq (Γ : context) (A t u : term) (h1: [Γ |- t ≅h u : A]) :=
+    forall Δ B (h2: [Δ |- t ≅ u : B]), #|h1| = #|h2|.
+
+  Lemma algo_conv_size_unique : AlgoConvDepInductionConcl PTyEq PTyRedEq
+      PNeEq PNeRedEq PTmEq PTmRedEq.
+  Proof.
+    subst PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq.
+    apply AlgoConvDepInduction.
+    - intros * ih ? h; destruct h as [?? A'' ? B'']; simpl_size.
+      pose proof c as []%algo_conv_wh.
+      pose proof c0 as []%algo_conv_wh.
+      assert (A' = A'') by (eapply whred_det ; tea; gen_typing).
+      assert (B' = B'') by (eapply whred_det ; tea; gen_typing).
+      subst. specialize (ih _ c0). lia.
+    - intros * ih1 * ih2 ? h2. depind h2; try discriminate.
+      2: pose proof c as []%algo_conv_wh; inv_whne.
+      refold. specialize (ih1 _ c); specialize (ih2 _ c0).
+      simpl_size; lia.
+    - intros ?? h; depind h; [reflexivity|].
+      refold. pose proof c as []%algo_conv_wh; inv_whne.
+    - intros ?? h; depind h; [reflexivity|].
+      refold. pose proof c as []%algo_conv_wh; inv_whne.
+    - intros ?? h; depind h; [reflexivity|].
+      refold. pose proof c as []%algo_conv_wh; inv_whne.
+    - intros * ih1 * ih2 ? h; depind h; refold.
+      2: pose proof c as []%algo_conv_wh; inv_whne.
+      specialize (ih1 _ c); specialize (ih2 _ c0).
+      simpl_size; lia.
+    - intros * ih ? h ; depind h; refold.
+      2: pose proof c as []%algo_conv_wh; inv_whne.
+      specialize (ih _ c); simpl_size; lia.
+    - intros * ih ? h. 
+      pose proof c as []%algo_conv_wh.
+      destruct h; try solve [inv_whne]; refold.
+      specialize (ih _ _ c0); simpl_size; lia.
+    - intros ?????? h; depind h.
+      2: cbn in i; inversion i.
+      epose (uip H eq_refl); subst.
+      cbn in *; subst; simpl_size; reflexivity.
+    - intros * ih1 * ih2 ?? h; depind h; refold.
+      2: cbn in i; inversion i.
+      specialize (ih1 _ _ c); specialize (ih2 _ _ c0); simpl_size; lia.
+    - intros * ih1 * ih2 * ih3 * ih4 ?? h; depind h; refold.
+      2: cbn in i; inversion i.
+      specialize (ih1 _ _ c); specialize (ih2 _ c0); 
+      specialize (ih3 _ _ c1); specialize (ih4 _ _ c2); 
+       simpl_size; lia.
+    - intros * ih1 * ih2 ?? h; depind h; refold. 
+      2: cbn in i; inversion i.
+      specialize (ih1 _ _ c); specialize (ih2 _ c0); simpl_size; lia.
+    - intros * ih ?? h; depind h; refold.
+      2: cbn in i; inversion i.
+      specialize (ih _ _ c);  simpl_size; lia.
+    - intros * ih ?? h; depind h; refold.
+      2: cbn in i; inversion i.
+      specialize (ih _ _ c);  simpl_size; lia.
+    - intros * ih1 * ih2 * ih3 ?? h; depind h; refold.
+      (* Uhh !!! *)
+      Fail match goal with [ H : (_ || _) |- _ ] => idtac H end.
+      all: try (cbn in i; solve [inversion i]).
+      1: cbn in i0; solve [inversion i0].
+      specialize (ih1 _ _ c). ; specialize (ih2 _ c0); 
+      specialize (ih3 _ _ c1);  simpl_size; lia.
+
+
+
+
+  
+End SizeUnicity.
+
+*)

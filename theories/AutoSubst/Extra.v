@@ -86,10 +86,10 @@ Module Map.
 
   Fixpoint compact (t : term) : opt :=
   match t with
-  | tMap B A f l => 
+  | tMap B A f l => IsMap 
     match compact l with
-    | IsMap r => IsMap (Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst))
-    | IsNotMap _ => IsMap (Map.mk B A f l)
+    | IsMap r => Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
+    | IsNotMap _ => Map.mk B A f l
     end
   | k => IsNotMap k
   end.

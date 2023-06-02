@@ -9,6 +9,70 @@ From LogRel.Substitution Require Import Properties Escape.
 
 Import AlgorithmicTypingData BundledTypingData DeclarativeTypingProperties.
 
+(* Lemmas on Map *)
+Lemma not_is_map_compact_id {t} : ~~ is_map t -> Map.compact t = Map.IsNotMap t.
+Proof.
+  destruct t; cbn; try reflexivity; discriminate.
+Qed.
+
+Lemma is_map_compact_id {t} : is_map t -> ∑ r,  Map.compact t = Map.IsMap r.
+Proof.
+  destruct t; cbn; try discriminate.
+  intros; eexists; reflexivity.
+Qed.
+
+Definition map_data_wty Γ (r : Map.data) := 
+  [× [Γ |-[de] Map.lst r : tList (Map.srcTy r)],
+    [Γ |-[de] Map.srcTy r],
+    [Γ |-[de] Map.tgtTy r] &
+    [Γ |-[de] Map.fn r : arr (Map.srcTy r) (Map.tgtTy r)]].
+
+Lemma compact_well_typed {Γ t A r} : 
+  [Γ |-[de] t : A] ->
+  Map.compact t = Map.IsMap r ->
+  [Γ |-[de] tList (Map.tgtTy r) ≅ A] × map_data_wty Γ r.
+Proof.
+  induction t in A, r |- *;cbn; intros ? [=].
+  destruct (Map.compact t4) eqn:E; subst; cbn in *.
+  all: pose proof H as [? [[->]]]%termGen'.
+  2: now (split; [|split]).
+  edestruct IHt4 as [? []]; [tea|reflexivity|].
+  split;[|split]; cbn; tea.
+  eapply ty_comp; try assumption; cycle 2; tea.
+  eapply list_ty_inj in c0.
+  econstructor; tea.
+  eapply convty_simple_arr; tea.
+  2: now symmetry.
+  now econstructor.
+Qed.
+
+Lemma map_id_well_typed {Γ t A} : [Γ |-[de] t : tList A] -> map_data_wty Γ (Map.id A t).
+Proof.
+  intros.
+  assert [Γ |-[de] A] by (eapply list_ty_inv; boundary).
+  split; cbn; tea.
+  eapply ty_id; tea; now econstructor.
+Qed.
+
+Lemma extract_well_typed {Γ l A l' A'} (rx := Map.extract l l') :
+  is_map l || is_map l' ->
+  [Γ |-[de] l : A] ->
+  [Γ |-[de] l' : A'] ->
+  [Γ |-[de] A ≅ A'] ->
+  map_data_wty Γ (fst rx) × map_data_wty Γ (snd rx).
+Proof.
+  unfold Map.extract in rx.
+  destruct (Map.compact l) eqn:El, (Map.compact l') eqn: El'.
+  + intros _ ???; split; now (eapply compact_well_typed; [|tea]).
+  + intros _ ???.
+    eapply compact_well_typed in El; tea; destruct El.
+    split; tea; cbn in *. eapply map_id_well_typed; econstructor; tea.
+
+    1: eapply compact_well_typed; [|tea]; tea.
+    cbn in *.
+  
+
+
 (** ** Stability of algorithmic conversion by context and type change *)
 
 (** If the input context and input type (when there is one) are changed to convertible
@@ -184,7 +248,18 @@ Section AlgoConvConv.
       eapply TermConv; refold; [|now symmetry].
       econstructor; eapply lrefl.
       now eapply stability.
-    - admit.
+    - intros * hmap  ? [ih [? ihl ihr]] ? [] ? [] ?????.
+      edestruct ih as [? []]; tea.
+      eexists; split.
+      2:{ 
+        eapply TypeRefl; refold; econstructor.
+        eapply stability; tea.
+
+
+      }
+
+    
+    admit.
     - intros * ? IHm **.
       edestruct IHm as [[A'' []] []]; tea.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'.
@@ -644,18 +719,34 @@ End Symmetry.
 (** ** Transitivity *)
 
 (* Helper lemma for transitivity on neutrals with a map only on the right *)
-Lemma algo_conv_trans_map_r Γ Δ A A' t u v (r := compact_map A' v) :
-  negb (is_map u) ->
+Lemma algo_conv_trans_map_r Γ Δ A A' t u v 
+  (r := snd (Map.extract u v)) :
+  ~~ is_map t ->
+  ~~ is_map u ->
   is_map v ->
-  [Γ |-[al] t ~ u ▹ A] ->
+  (* [Γ |-[al] t ~ u ▹ A] -> *)
   [Δ |-[al] u ~h Map.lst r ▹ tList A'] ->
-  [Δ |-[al] A' ≅ Map.tgtTy r] ->
+  [Γ |-[al] t ~h Map.lst r ▹ A] ->
+  [Γ |-[de] A ≅ tList A'] ->
+
+  (* [Δ |-[al] A' ≅ Map.tgtTy r] ->
   [Δ |-[al] idterm A' ≅ Map.fn r : arr A' A'] ->
-  [Γ |-[al] t ~ v ▹ A] × [Γ |-[de] A ≅ tList A'].
-(*[Δ |-[al] Map.srcTy r ≅ Map.tgtTy r] ->
+  [Γ |-[al] t ~ v ▹ A] × [Γ |-[de] A ≅ tList A']. *)
+  [Δ |-[al] Map.srcTy r ≅ Map.tgtTy r] ->
   [Δ |-[al] idterm (Map.srcTy r) ≅ Map.fn r : arr (Map.srcTy r) (Map.tgtTy r)] ->
-  [Γ |-[al] t ~ v ▹ A] × [Γ |-[de] A ≅ tList (Map.srcTy r)]. *)
+  ∑ B, [Γ |-[al] t ~ v ▹ B] × [Γ |-[de] A ≅ tList (Map.srcTy r)].
 Proof.
+  set (rx := Map.extract u v) in *.
+  unfold Map.extract in rx.
+  intros hmapt hmapu hmapv convul convtl convtytl convty convfn.
+  pose proof (is_map_compact_id hmapv) as [rv eqv].
+  assert (rx = Map.combine (Map.IsNotMap u) (Map.IsMap rv)). 1:{
+    now rewrite <- eqv, <- (not_is_map_compact_id hmapu).
+  }
+  cbn in H.
+  unfold r in *; clear r; rewrite H in *.
+  cbn in *.
+  
 Admitted.
 
 Section Transitivity.
@@ -671,11 +762,11 @@ Section Transitivity.
   Let PNeEq (Γ : context) (A t u : term) := forall Δ v A',
     [|-[de] Γ ≅ Δ] ->
     [Δ |-[al] u ~ v ▹ A'] ->
-    [Γ |-[al] t ~ v ▹ A] × [Γ |-[de] A ≅ A'].
+    ∑ B, [× [Γ |-[al] t ~ v ▹ B], [Γ |-[de] B ≅ A] & [Γ |-[de] B ≅ A']].
   Let PNeRedEq (Γ : context) (A t u : term) := forall Δ A' v,
     [|-[de] Γ ≅ Δ] ->
     [Δ |-[al] u ~h v ▹ A'] ->
-    [Γ |-[al] t ~h v ▹ A] × [Γ |-[de] A ≅ A'].
+    ∑ B, [× [Γ |-[al] t ~h v ▹ B], [Γ |-[de] B ≅ A] & [Γ |-[de] B ≅ A']].
   Let PTmEq (Γ : context) (A t u : term) := forall Δ A' v,
     [|-[de] Γ ≅ Δ] ->
     [Γ |-[de] A' ≅ A] ->
@@ -739,15 +830,15 @@ Section Transitivity.
       inversion hconv ; subst ; clear hconv.
       2:{ apply algo_conv_wh in H3 as [e _]. now inversion e. }
       now constructor.
-    - intros * ? IH ? ? ? * ? Hconv.
+    - intros * ? [IH] ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       1-6: apply algo_conv_wh in H as [_ e] ; now inversion e.
-      econstructor.
-      now eapply IH.
+      edestruct IH as [? []]; tea.
+      now econstructor.
     - intros * Hin ? _ _ * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       (** Need to find a generic solution for this case and the following ones *)
-      2: cbn in *; eapply algo_conv_trans_map_r; tea; cbn; now econstructor.
+      2:{ cbn -[Map.extract] in *.  eapply algo_conv_trans_map_r; tea; cbn; now econstructor.
       split.
       + now econstructor.
       + eapply in_ctx_conv_l in Hin as [? [Hin ]]; tea.
