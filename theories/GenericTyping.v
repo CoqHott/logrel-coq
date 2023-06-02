@@ -195,12 +195,6 @@ Section GenericTyping.
       [ Γ |- A ] -> 
       [Γ ,, A |- B ] -> 
       [ Γ |- tProd A B ] ;
-    wft_nat {Γ} : 
-      [|- Γ] ->
-      [Γ |- tNat] ;
-    wft_empty {Γ} :
-      [|- Γ] ->
-      [Γ |- tEmpty] ;
     wft_sig {Γ} {A B} : 
       [ Γ |- A ] -> 
       [Γ ,, A |- B ] -> 
@@ -287,10 +281,6 @@ Section GenericTyping.
       [Γ |- A] ->
       [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
       [Γ |- tProd A B ≅ tProd A' B'] ;
-    convty_nat {Γ} :
-      [|- Γ] -> [Γ |- tNat ≅ tNat] ;
-    convty_empty {Γ} :
-      [|- Γ] -> [Γ |- tEmpty ≅ tEmpty] ;
     convty_sig {Γ A A' B B'} :
       [Γ |- A] ->
       [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
@@ -485,9 +475,9 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_empty wft_sig | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_U wft_prod wft_sig | 2 : gen_typing.
 #[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd | 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty convty_sig | 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig | 2 : gen_typing.
 #[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.

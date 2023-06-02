@@ -129,10 +129,6 @@ Module AlgorithmicTypingProperties.
       now econstructor.
     - intros_bn.
       now econstructor.
-    - intros_bn.
-      now econstructor.
-    - intros_bn.
-      now econstructor.
     - intros.
       now eapply algo_typing_small_large.
   Qed.
