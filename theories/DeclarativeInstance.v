@@ -526,8 +526,6 @@ Module DeclarativeTypingProperties.
   - econstructor.
     now econstructor.
   - now econstructor.
-  - now do 2 econstructor.
-  - now repeat econstructor.
   - now econstructor.
   Qed.
 

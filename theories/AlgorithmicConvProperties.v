@@ -937,11 +937,6 @@ Module AlgorithmicConvProperties.
           now eapply algo_conv_sound in bun_conv_ty0.
       + now do 2 econstructor.
     - intros_bn.
-      all: now do 2 econstructor.
-    - intros_bn.
-      1-2: now econstructor.
-      now do 2 econstructor.
-    - intros_bn.
       + now econstructor.
       + econstructor ; tea.
         eapply stability ; tea.
@@ -1291,12 +1286,6 @@ Module IntermediateTypingProperties.
         symmetry.
         now eapply algo_conv_sound in bun_conv_ty.
       + now do 2 econstructor.
-    - econstructor ; tea.
-      1-3: econstructor ; tea.
-      all: now econstructor.
-    - econstructor ; tea.
-      1-2: now econstructor.
-      now do 2 econstructor.
     - intros * ?  [] [].
       split ; tea.
       + now econstructor.
