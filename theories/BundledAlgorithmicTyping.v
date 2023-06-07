@@ -258,6 +258,164 @@ Arguments bun_conv_tm_red {_ _ _ _}.
 Arguments bun_conv_ne {_ _ _ _}.
 Arguments bun_conv_ne_red {_ _ _ _}.
 
+
+(* Lemmas on Map *)
+Lemma not_is_map_compact_id {t} : ~~ is_map t -> Map.compact t = Map.IsNotMap t.
+Proof.
+  destruct t; cbn; try reflexivity; discriminate.
+Qed.
+
+Lemma is_map_compact_id {t} : is_map t -> ∑ r,  Map.compact t = Map.IsMap r.
+Proof.
+  destruct t; cbn; try discriminate.
+  intros; eexists; reflexivity.
+Qed.
+
+Definition map_data_wty Γ (r : Map.data) := 
+  [× [Γ |-[de] Map.lst r : tList (Map.srcTy r)],
+    [Γ |-[de] Map.srcTy r],
+    [Γ |-[de] Map.tgtTy r] &
+    [Γ |-[de] Map.fn r : arr (Map.srcTy r) (Map.tgtTy r)]].
+
+Definition map_t (r : Map.data) :=
+  tMap (Map.srcTy r) (Map.tgtTy r) (Map.fn r) (Map.lst r).
+
+Lemma compact_well_typed {Γ t A r} : 
+  [Γ |-[de] t : A] ->
+  Map.compact t = Map.IsMap r ->
+  [× [Γ |-[de] tList (Map.tgtTy r) ≅ A], map_data_wty Γ r &
+  [Γ |-[de] t ≅ map_t r : tList (Map.tgtTy r)]].
+Proof.
+  induction t in A, r |- *;cbn; intros ? [=].
+  destruct (Map.compact t4) eqn:E; subst; cbn in *.
+  all: pose proof H as [? [[->]]]%termGen'.
+  2:{
+    split; [|split|]; tea.
+    eapply TermRefl; now econstructor.
+  }
+  edestruct IHt4 as [? []]; [tea|reflexivity|].
+  split;[|split|]; cbn; tea.
+  + eapply ty_comp; try assumption; cycle 2; tea.
+    eapply list_ty_inj in c0.
+    econstructor; tea.
+    eapply convty_simple_arr; tea.
+    2: now symmetry.
+    now econstructor.
+  + pose proof c0 as ?%list_ty_inj.
+    etransitivity.
+    1: econstructor; tea; [eapply TypeRefl|eapply TermRefl| eapply TermConv]; tea.
+    eapply TermRedMapComp; refold; eapply TermRefl + eapply TypeRefl; refold; tea.
+    econstructor; tea.
+    eapply convty_simple_arr; tea; now econstructor.
+Qed.
+
+Lemma map_id_well_typed {Γ t A} (r := Map.id A t) : [Γ |-[de] t : tList A] -> map_data_wty Γ r × [Γ |-[de] t ≅ map_t r : tList A].
+Proof.
+  intros.
+  assert [Γ |-[de] A] by (eapply list_ty_inv; boundary).
+  split;[split|]; cbn; tea.
+  1: eapply ty_id; tea; now econstructor.
+  symmetry; unfold map_t, r; cbn.
+  eapply TermRedMapId; now econstructor.
+Qed.
+
+Lemma compact_not_map_inv {t u} : Map.compact t = Map.IsNotMap u -> t = u.
+Proof.  destruct t; now intros [=]. Qed.
+
+Lemma compact_not_map_false {t u} : Map.compact t = Map.IsNotMap u -> is_map t = false.
+Proof. destruct t; now intros [=]. Qed.
+
+Lemma extract_well_typed_lst {Γ l l'} (rx := Map.extract l l') :
+  is_map l || is_map l' ->
+  well_typed (ta:=de) Γ l ->
+  well_typed (ta:=de) Γ l' ->
+  well_typed (ta:=de) Γ (Map.lst (fst rx)) × 
+  well_typed (ta:=de) Γ (Map.lst (snd rx)).
+Proof.
+  unfold Map.extract in rx.
+  destruct (Map.compact l) eqn:El, (Map.compact l') eqn: El'.
+  + intros _ [] [].
+    eapply compact_well_typed in El; tea; destruct El as [? []].
+    eapply compact_well_typed in El'; tea; destruct El' as [? []].
+    split; cbn in *; now eexists.
+  + intros _ [] [].
+    eapply compact_well_typed in El; tea; destruct El as [? []].
+    eapply compact_not_map_inv in El'; subst.
+    split; cbn in *; now eexists.
+  + intros _ [] [].
+    eapply compact_well_typed in El'; tea; destruct El' as [? []].
+    eapply compact_not_map_inv in El; subst.
+    split; cbn in *; now eexists.
+  + rewrite (compact_not_map_false El), (compact_not_map_false El'); cbn; discriminate.
+Qed.
+
+Lemma extract_well_typed_aux {Γ A l l'} (rx := Map.extract l l') :
+  is_map l || is_map l' ->
+  well_typed (ta:=de) Γ l ->
+  well_typed (ta:=de) Γ l' ->
+  (forall T : term, [Γ |-[ de ] Map.lst (fst rx) : T] -> [Γ |-[ de ] tList A ≅ T]) ->
+  (forall T : term, [Γ |-[ de ] Map.lst (snd rx) : T] -> [Γ |-[ de ] tList A ≅ T]) ->
+  [× map_data_wty Γ (fst rx), 
+    map_data_wty Γ (snd rx),
+    [Γ |-[de] Map.srcTy (fst rx) ≅ Map.srcTy (snd rx)],
+    [Γ |-[de] l ≅ map_t (fst rx) : tList (Map.tgtTy (fst rx))] &
+    [Γ |-[de] l' ≅ map_t (snd rx) : tList (Map.tgtTy (snd rx))]].
+  Proof.
+  unfold Map.extract in rx.
+  destruct (Map.compact l) eqn:El, (Map.compact l') eqn: El'.
+  + intros _ [] [] wftlst wftlst'.
+    eapply compact_well_typed in El; tea; destruct El as [? m].
+    eapply compact_well_typed in El'; tea; destruct El' as [? m'].
+    split; tea.
+    destruct m as [?%wftlst%list_ty_inj], m' as [?%wftlst'%list_ty_inj].
+    cbn in *; etransitivity; tea; now symmetry.
+  + intros _ [] [? tyl'] wftlstl wftlstl'.
+    eapply compact_well_typed in El; tea; destruct El as [? m].
+    eapply compact_not_map_inv in El'; subst; pose proof m as [?%wftlstl].
+    unshelve epose proof (map_id_well_typed _) as [].
+    4:{ eapply wfTermConv; [exact tyl'|]; refold. 
+        etransitivity; tea; symmetry; now eapply wftlstl'. }
+    split; tea; cbn in *; now econstructor.
+  + intros _ [? tyl] [] wftlstl wftlstl'.
+    eapply compact_well_typed in El'; tea; destruct El' as [? m'].
+    eapply compact_not_map_inv in El; subst; pose proof m' as [?%wftlstl'].
+    unshelve epose proof (map_id_well_typed _) as [].
+    4:{ eapply wfTermConv; [exact tyl|]; refold. 
+        etransitivity; tea; symmetry; now eapply wftlstl. }
+    split; tea; cbn in *; now econstructor.
+  + rewrite (compact_not_map_false El), (compact_not_map_false El'); cbn; discriminate.
+Qed.
+
+Lemma map_extract_sym {l l'} : fst (Map.extract l l') = snd (Map.extract l' l).
+Proof.
+  unfold Map.extract; destruct (Map.compact l), (Map.compact l'); reflexivity.
+Qed.
+
+Lemma map_extract_sym_alt {l l'} :snd (Map.extract l l') = fst (Map.extract l' l).
+Proof. now rewrite map_extract_sym. Qed.
+
+
+Lemma is_not_map_extract {l l'} (rx := Map.extract l l') :
+  is_map l' ->
+  is_map l = false ->
+  [× Map.lst (fst rx) = l, Map.tgtTy (fst rx) = Map.srcTy (snd rx) & Map.tgtTy (fst rx) = Map.srcTy (fst rx)].
+Proof.
+  unfold rx, Map.extract.
+  intros [? ->]%is_map_compact_id ->%negbT%not_is_map_compact_id; cbn.
+  do 2 constructor.
+Qed.
+
+Lemma is_not_map_extract_alt {l l'} (rx := Map.extract l l') :
+  is_map l ->
+  is_map l' = false ->
+  [× Map.lst (snd rx) = l', Map.tgtTy (snd rx) = Map.srcTy (fst rx)
+  & Map.tgtTy (snd rx) = Map.srcTy (snd rx)].
+Proof.
+  unfold rx; rewrite map_extract_sym, map_extract_sym_alt.
+  apply is_not_map_extract.
+Qed.
+
+
 (** ** Induction principle for bundled algorithmic conversion *)
 
 (** We show an induction principle tailored for the bundled predicates: it threads the invariants
@@ -568,8 +726,54 @@ Section BundledConv.
         etransitivity; tea.
         eapply typing_subst1; tea; econstructor; eapply TermConv; tea.
     - intros * hmap ? ihlst ? ihtgt ? ihfn ? hl hl'.
-      (* Need to decompose l, l' according to is_map and then apply termGen' *)
-      admit.
+      set (rx := Map.extract _ _) in *.
+      unshelve epose proof (extract_well_typed_lst hmap _ _) as []; tea.
+      edestruct ihlst as [? []]; tea.
+      unshelve epose proof (extract_well_typed_aux hmap hl hl' _ _ ) as [[] []]; cycle 1; tea.
+      edestruct ihtgt as []; tea.
+      assert [Γ |-[de] Map.srcTy (fst rx) ≅ Map.srcTy (snd rx)]. 1:{
+        pose proof t as ?%c0%list_ty_inj.
+        pose proof t1 as ?%c1%list_ty_inj.
+        etransitivity; tea; now symmetry.
+      }
+      edestruct ihfn as []; tea.
+      1: econstructor; tea; symmetry; eapply convty_simple_arr; tea.
+      split.
+      1: eauto.
+      split.
+      + etransitivity; tea. 
+        etransitivity; [|eapply TermConv; refold; [now symmetry|]].
+        2: symmetry; now econstructor.
+        unfold map_t; econstructor; tea.
+        econstructor; tea.
+        now eapply c0.
+      + intros ? ht; destruct (is_map l) eqn:Emap.
+        * destruct l; try discriminate Emap.
+          pose proof ht as [? [[->]]]%termGen'.
+          etransitivity; tea.
+          unfold rx, Map.extract; destruct (Map.compact l'); cbn; destruct (Map.compact l4); cbn. 
+          all: eapply TypeRefl; now econstructor. 
+        * pose proof (is_not_map_extract hmap Emap) as [eql eqty].
+          fold rx in eql, eqty; rewrite eqty.
+          etransitivity.
+          2:{ eapply c0. now rewrite eql. }
+          symmetry; etransitivity.
+          2: now econstructor.
+          now eapply c0.
+      + intros ? ht; destruct (is_map l') eqn:Emap.
+        * destruct l'; try discriminate Emap.
+          pose proof ht as [? [[->]]]%termGen'.
+          etransitivity; tea.
+          unfold rx, Map.extract in * ; destruct (Map.compact l); cbn in *; destruct (Map.compact l'4); cbn in *.
+          all: now econstructor.
+        * rewrite orbF in hmap.
+          pose proof (is_not_map_extract_alt hmap Emap) as [eql eqty eqsrctgt].
+          etransitivity.
+          2:{ eapply c1. unfold rx; now rewrite eql. }
+          etransitivity.
+          2: symmetry; now eapply c1.
+          econstructor; etransitivity; tea.
+          unfold rx; rewrite eqsrctgt; now econstructor.
     - intros * ? IHm HA ? ? Htym Htyn.
       pose proof Htym as [? Htym'].
       pose proof Htyn as [? Htyn'].
@@ -705,8 +909,7 @@ Section BundledConv.
       split ; [now eauto|..].
       econstructor ; tea.
       now eapply Hm'.
-Admitted.
-(* Qed. *)
+  Qed. 
 
   Definition BundledConvInductionConcl : Type :=
     ltac:(let t := eval red in (AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq) in
@@ -816,6 +1019,24 @@ Proof.
   all: now eexists.
 Qed.
 
+
+Lemma extract_well_typed {Γ A l l'} (rx := Map.extract l l') :
+  is_map l || is_map l' ->
+  well_typed (ta:=de) Γ l ->
+  well_typed (ta:=de) Γ l' ->
+  [Γ |-[al] Map.lst (fst rx) ~h Map.lst (snd rx) ▹ tList A] ->
+  [× map_data_wty Γ (fst rx), 
+    map_data_wty Γ (snd rx),
+    [Γ |-[de] Map.srcTy (fst rx) ≅ Map.srcTy (snd rx)],
+    [Γ |-[de] l ≅ map_t (fst rx) : tList (Map.tgtTy (fst rx))] &
+    [Γ |-[de] l' ≅ map_t (snd rx) : tList (Map.tgtTy (snd rx))]].
+Proof.
+  intros hmap hl hl'.
+  destruct (extract_well_typed_lst hmap hl hl').
+  intros []%algo_conv_sound; tea.
+  now eapply extract_well_typed_aux.
+Qed.
+
 (** ** Inductive presentation of bundled algorithmic conversion *)
 
   Inductive ConvTypeBunAlg : forall {Γ A B}, ConvTypeAlg Γ A B -> Type :=
@@ -914,12 +1135,11 @@ Qed.
       (convm : [ Γ |-[bn] m ~h n ▹ tSig A B ]) :
       ConvNeuBunAlg (neuSndCongAlg convm.(bun_conv_ne_red))
     | neuMapCompactBun {Γ A l l'} 
-      (r := compact_map A l)
-      (r' := compact_map A l')
+      (rx := Map.extract l l') (r := fst rx) (r' := snd rx)
       (hmap : is_map l || is_map l')
       (convlst : [Γ |-[bn] r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ])
       (convtgtty : [Γ |-[bn] r.(Map.tgtTy) ≅ r'.(Map.tgtTy)])
-      (convfn : [Γ |-[bn] r.(Map.fn) ≅ r'.(Map.fn) : arr A r.(Map.tgtTy)]) :
+      (convfn : [Γ |-[bn] r.(Map.fn) ≅ r'.(Map.fn) : arr r.(Map.srcTy) r.(Map.tgtTy)]) :
       ConvNeuBunAlg (neuMapCompact hmap convlst.(bun_conv_ne_red) convtgtty.(bun_conv_ty) convfn.(bun_conv_tm)).
 
   Lemma bun_conv_ne_inv {Γ T m n} (conv : [Γ |-[bn] m ~ n ▹ T]) :
@@ -977,8 +1197,20 @@ Qed.
       unshelve refine (
         let convm : [ Γ |-[bn] m ~h n ▹ tSig A B ] := {| bun_conv_ne_red := c |} in
         neuSndCongBun convm); tea; now econstructor.
-    + admit.
-  Admitted.
+    + unshelve epose proof (extract_well_typed i _ _ _) as [[] []]; tea. 
+      pose proof c as []%algo_conv_wh.
+      unshelve refine (
+        let convl := {| bun_conv_ne_red := c |} in
+        let convtgtTy := {| bun_conv_ty := c0 |} in
+        let convfn := {| bun_conv_tm := c1 |} in
+        neuMapCompactBun i convl convtgtTy convfn) ; tea.
+      1,2: now eexists.
+      1: now eapply wft_simple_arr.
+      econstructor; tea; eapply convty_simple_arr; tea.
+      1: now symmetry.
+      symmetry; fold rx r'.
+      now eapply bn_conv_sound in convtgtTy.
+  Qed.  
 
   Inductive ConvNeuRedBunAlg : forall {Γ T m n}, ConvNeuRedAlg Γ T m n -> Type :=
     | neuConvRedBun {Γ m n A A'} 
@@ -1136,6 +1368,60 @@ Qed.
         let inf : [Γ |-[bn] m ~ n ▹ T] := {| bun_conv_ne := c |} in
         termNeuConvBun inf _); tea; now econstructor.
   Qed.
+
+  From Equations Require Import Equations.
+
+  Derive Signature for ConvTypeBunAlg.
+  Derive Signature for ConvTypeRedBunAlg.
+  Derive Signature for ConvNeuBunAlg.
+  Derive Signature for ConvNeuRedBunAlg.
+  Derive Signature for ConvTermBunAlg.
+  Derive Signature for ConvTermRedBunAlg.
+  Derive NoConfusion for term.
+  Derive NoConfusion for sort.
+
+
+Ltac inv_bn H :=
+  match type of H with
+  | [_ |-[bn] _ ≅ _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_ty_inv H); depelim h; subst ; clear dependent H
+  | [_ |-[bn] _ ≅h _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_ty_red_inv H); depelim h; subst ; clear dependent H
+  | [_ |-[bn] _ ~ _ ▹ _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_ne_inv H); depelim h; subst ; clear dependent H
+  | [_ |-[bn] _ ~h _ ▹ _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_ne_red_inv H); depelim h; subst ; clear dependent H
+  | [_ |-[bn] _ ≅ _ : _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_tm_inv H); depelim h; subst ; clear dependent H
+  | [_ |-[bn] _ ≅h _ : _] => 
+    let h := fresh "invhyp" in 
+    pose proof (h := bun_conv_tm_red_inv H); depelim h;
+    try match goal with 
+    | Heq : context [H] |- _ => injection Heq; intros 
+    end; subst ; clear dependent H
+  end.
+
+
+  (* Lemma bn_inv :
+    (forall {Γ A B} (conv : [Γ |-[bn] A ≅ B]), ConvTypeBunAlg conv.(bun_conv_ty))
+    × (forall {Γ A B} (conv : [Γ |-[bn] A ≅h B]), ConvTypeRedBunAlg conv.(bun_conv_ty_red))
+    × (forall {Γ T m n} (conv : [Γ |-[bn] m ~ n ▹ T]), ConvNeuBunAlg (conv.(bun_conv_ne)))
+    × (forall {Γ T m n} (conv : [Γ |-[bn] m ~h n ▹ T]), ConvNeuRedBunAlg (conv.(bun_conv_ne_red)))
+    × (forall {Γ A t u} (conv : [Γ |-[bn] t ≅ u : A]), ConvTermBunAlg (conv.(bun_conv_tm)))
+    × (forall {Γ A t u} (conv : [Γ |-[bn] t ≅h u : A]), ConvTermRedBunAlg (conv.(bun_conv_tm_red))).
+  Proof.
+    split; [intros; eapply bun_conv_ty_inv|].
+    split; [intros; eapply bun_conv_ty_red_inv|].
+    split; [intros; eapply bun_conv_ne_inv|].
+    split; [intros; eapply bun_conv_ne_red_inv|].
+    split; [intros; eapply bun_conv_tm_inv|].
+    intros; eapply bun_conv_tm_red_inv.
+  Qed. *)
 
 
 (** ** Induction principle for bundled algorithmic typing *)

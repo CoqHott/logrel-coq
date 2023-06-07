@@ -100,8 +100,8 @@ Module Map.
   Definition combine (l r : opt) : data × data :=
     match l, r with
     | IsMap l, IsMap r => (l, r)
-    | IsMap l, IsNotMap r => (l, id l.(tgtTy) r)
-    | IsNotMap l, IsMap r => (id r.(tgtTy) l, r)
+    | IsMap l, IsNotMap r => (l, id l.(srcTy) r)
+    | IsNotMap l, IsMap r => (id r.(srcTy) l, r)
     | IsNotMap l, IsNotMap r => (garbage, garbage) (* should never be used *)
     end.
 

@@ -176,6 +176,24 @@ Section Definitions.
       [A ⇒* A'] ->
       whnf A' ->
       [Γ |- m ~h n ▹ A']
+
+  (** **** Conversion of neutral terms at a positive type *)
+  (* [Γ |- m ~ n ◃ P ] 
+    Presupposes:
+      [|-[de] Γ], [Γ |-[de] P], [Γ |-[de] m : P], [Γ |-[de] n : P]
+    Ensures: 
+      positive P
+  *)
+  (* with ConvNeuPosAlg : context -> term -> term -> term -> Type :=
+    | neuNat {Γ A n n'} : [Γ |- n ~ n' ▹ A] -> [Γ |- n ~ n' ◃ tNat]
+    | neuMapCompact {Γ A B l l'} :
+      (* compact_map reduces all maps in head position, possibly inserting an identity *)
+      let r := compact_map B l in
+      let r' := compact_map B l' in
+      [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ] ->
+      [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A B] ->
+      [Γ |- l ~ l' ◃ tList B] *)
+
   (** **** Conversion of terms *)
   with ConvTermAlg : context -> term -> term -> term -> Type :=
     | termConvRed {Γ t t' u u' A A'} :
@@ -184,6 +202,7 @@ Section Definitions.
       [u ⇒* u' ] ->
       [Γ |- t' ≅h u' : A'] ->
       [Γ |- t ≅ u : A]
+
   (** **** Conversion of terms reduced to a weak-head normal form at a reduced type *)
   with ConvTermRedAlg : context -> term -> term -> term -> Type :=
     | termPiCongAlg {Γ A B A' B'} :
@@ -227,6 +246,9 @@ Section Definitions.
       [Γ |- m ~ n ▹ T] ->
       isPosType P ->
       [Γ |- m ≅h n : P]
+    (* | termNeuConvAlg {Γ m n P} :
+      [Γ |- m ~ n ◃ P] ->
+      [Γ |- m ≅h n : P] *)
 
   where "[ Γ |- A ≅ B ]" := (ConvTypeAlg Γ A B)
   and "[ Γ |- A ≅h B ]" := (ConvTypeRedAlg Γ A B)
@@ -234,6 +256,7 @@ Section Definitions.
   and "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n)
   and "[ Γ |- t ≅ u : T ]" := (ConvTermAlg Γ T t u)
   and "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u)
+  (* and "[ Γ |- m ~ n ◃ T]" := (ConvNeuPosAlg Γ T m n) *)
   and "[ t ⇒ t' ]" := (OneRedAlg t t')
   and "[ t ⇒* t' ]" := (RedClosureAlg t t').
 
@@ -803,6 +826,24 @@ Ltac simpl_size := autorewrite with sizeLemmas; refold.
 Arguments algo_conv_size : simpl never.
 Arguments size : simpl never.
 
+From Coq Require Import Lia.
+
+Section SizeAtLeastOne.
+  Import AlgorithmicTypingData.
+
+  Let PTy Γ A B (h : [Γ |-[al] A ≅ B]) := 1 <= #|h|.
+  Let PTyRed Γ A B (h : [Γ |-[al] A ≅h B]) := 1 <= #|h|.
+  Let PNe Γ A m n (h : [Γ |-[al] m ~ n ▹ A]) := 1 <= #|h|.
+  Let PNeRed Γ A m n (h : [Γ |-[al] m ~h n ▹ A]) := 1 <= #|h|.
+  Let PTm Γ A t u (h : [Γ |-[al] t ≅ u : A]) := 1 <= #|h|.
+  Let PTmRed Γ A t u (h : [Γ |-[al] t ≅h u : A]) := 1 <= #|h|.
+
+  Lemma size_positive : AlgoConvDepInductionConcl PTy PTyRed PNe PNeRed PTm PTmRed.
+  Proof.
+    subst PTy PTyRed PNe PNeRed PTm PTmRed.
+    eapply AlgoConvDepInduction; intros; simpl_size; lia.
+  Qed.
+End SizeAtLeastOne.
 (* Section Foo.
   Import AlgorithmicTypingData.
   From Coq Require Import Lia.

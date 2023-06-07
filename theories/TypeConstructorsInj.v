@@ -633,6 +633,9 @@ Section Stability.
     now eapply stability.
   Qed.
 
+  #[global] Instance ConvCtxPER : PER ConvCtx.
+  Proof. econstructor; typeclasses eauto. Defined.
+
 End Stability.
 
 Lemma termGen' Γ t A :

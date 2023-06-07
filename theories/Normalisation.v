@@ -171,6 +171,14 @@ End Normalisation.
 
 Import DeclarativeTypingProperties.
 
+Corollary typing_nf_alt  {Γ t} : well_formed Γ t -> WN  t.
+Proof.
+  intros [[] Hty].
+  all: first [apply TypeRefl in Hty|apply TermRefl in Hty].
+  all: now eapply typing_nf in Hty as [? _].
+Qed.
+
+
 Record cored t t' : Prop := { _ : [t' ⇒ t] }.
 
 Theorem typing_SN Γ t :
