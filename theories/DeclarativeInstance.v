@@ -644,8 +644,8 @@ Module DeclarativeTypingProperties.
   - intros ????????????? []; split; try now econstructor + (do 2 econstructor).
   - intros ????? []; split; tea.
     + gen_typing.
-    + gen_typing.
-    + now econstructor.   
+    + refold.
+      now econstructor.
   - intros * ??? []; split.
     + gen_typing.
     + gen_typing.

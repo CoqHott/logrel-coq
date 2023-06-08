@@ -432,13 +432,13 @@ Class ConvNeuListProperties :=
   [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' :List C] ;
 convneulist_map_id {Γ A l l'} :
   [Γ |- A ≅ A] ->
-  [Γ |- l ~ l' : tList A] ->
+  [Γ |- l ~ l' :List A] ->
   [Γ |- tMap A A (idterm A) l ~ l' :List A] ;
 convneulist_map {Γ A A' B B' f f' l l'} :
   [Γ |- A ≅ A'] ->
   [Γ |- B ≅ B'] ->
   [Γ |- f ≅ f' : arr A B] ->
-  [Γ |- l ~ l' : tList A] ->
+  [Γ |- l ~ l' :List A] ->
   [Γ |- tMap A B f l ~ tMap A' B' f' l' :List B] ;
 }.
 

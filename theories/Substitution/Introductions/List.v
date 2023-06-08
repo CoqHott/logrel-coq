@@ -439,29 +439,24 @@ Proof.
     + enough [normList RLB | Γ ||- tMap A B f l0 : tList B] by irrelevance.
       econstructor.
       * cbn. apply redtmwf_refl. apply ty_map; tea.
-        match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-      * { unshelve eapply escapeEqTerm; tea;
-          eapply neuTermEq.
-          - eapply ty_map; try now escape.
-            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-          - eapply ty_map; try now escape.
-            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-          - eapply convneu_map.
+      * { unshelve eapply escapeEqTerm; tea.
+          enough [normList RLB | Γ ||- tMap A B f l0 ≅ tMap A B f l0 : tList B] by irrelevance.
+          eapply neuListTermEq.
+          - eapply ty_map; now escape.
+          - eapply ty_map; now escape.
+          - eapply convneulist_map.
             + unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
             + unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
             + eapply escapeEqTerm. now eapply LREqTermRefl_.
-            + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
+            + eassumption.
         }
-      * { constructor. cbn. constructor.
+      * { constructor. cbn.
           - apply ty_map; tea.
-            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-          - eapply convneu_map; try solve [ eapply escapeEq; eapply LRTyEqRefl_
+          - eapply convneulist_map; try solve [ eapply escapeEq; eapply LRTyEqRefl_
                                           | eapply escapeEqTerm; eapply LREqTermRefl_; tea ].
-            now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => destruct H end.
+            eassumption.
         }
     + apply redtm_refl ; apply ty_map ; tea.
-      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-
       Unshelve.
       all: tea.
 Qed.
@@ -578,22 +573,23 @@ Proof.
           change [LRList' (normList0 LA'_) | Γ ||- tl' : _ ].
           eapply LRTmRedConv; tea.
       }
-      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
-      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
-      * unshelve epose proof (convneu_whne (NeNf.refl _)); cycle 3 ; tea; inv_whne.
+      * unshelve epose proof (convneulist_whne _); cycle 4 ; tea ; inv_whne.
+      * unshelve epose proof (convneulist_whne _); cycle 4 ; tea ; inv_whne.
+      * unshelve epose proof (convneulist_whne _); cycle 4 ; tea ; inv_whne.
         Unshelve. all: tea.
 
   - intros.
-    apply neuTermEq.
+    enough [normList RLB | Γ ||- tMap A B f l0 ≅ tMap A' B' f' l' : tList B] by irrelevance.
+    apply neuListTermEq.
     + eapply ty_map.
       all: now escape.
     + eapply ty_conv. 2: symmetry; now escape.
       eapply ty_map.
       1-3: try now escape.
       eapply ty_conv. 1-2: now escape.
-    + eapply convneu_map.
+    + eapply convneulist_map.
       1-3: now escape.
-      now match goal with H : [Γ ||-NeNf _ ≅ _ : tList _] |- _ => destruct H end.
+      eassumption.
 Qed.
 
 (* TODO: move; also wk_arr vs arr_wk *)
@@ -750,15 +746,13 @@ Proof.
     + eapply simple_appTerm; tea.
     + change [LRList' (normList0 RLB) | Γ ||- tMap A B f tl : _ ].
       unshelve eapply (fst (mapRedAux _)); tea.
-  - constructor.
-    constructor; cbn in *.
-    + eapply ty_map.
+  - constructor; cbn in *.
+    + eapply ty_map ; tea.
       1-3: now escape.
-      now eapply NeNf.ty.
-    + eapply convneu_map.
+    + eapply convneulist_map.
       1-2: now unshelve eapply escapeEq ; solve [ eapply LRTyEqRefl_ | tea ].
       1: now unshelve eapply escapeEqTerm ; solve [ now eapply LREqTermRefl_ | tea ].
-      now eapply NeNf.refl.
+      easy.
 Defined.
 
 Lemma mapPropRedCompAux {Γ A B C f g i}
@@ -836,21 +830,21 @@ Proof.
       irrelevance.
   - intros. cbn.
     change [ LRList' LC' | Γ ||- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l : _ ].
-    eapply neuTermEq.
+    eapply neuListTermEq.
     + eapply ty_map.
       1-3: now escape.
       eapply ty_map.
       1-3: now escape.
-      now eapply NeNf.ty.
+      easy.
     + eapply ty_map.
       1-2: now escape.
       * eapply ty_comp.
         4-5: escape; tea. all: now escape.
-      * now eapply NeNf.ty.
-    + eapply convneu_map_comp.
+      * easy.
+    + eapply convneulist_map_comp.
       1-3: eapply escapeEq; eapply LRTyEqRefl_.
       1-2: eapply escapeEqTerm; now eapply LREqTermRefl_.
-      now eapply NeNf.refl.
+      easy.
 
       Unshelve.
       all: tea.
@@ -976,14 +970,12 @@ Proof.
       eapply listEqRed ; escape; tea.
       eapply LRTyEqRefl_.
   - intros.
-    eapply neuTermEq.
+    eapply neuListTermEq.
     + eapply ty_map; escape; tea.
-      now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-    + now match goal with H : [Γ ||-NeNf _ : tList _] |- _ => apply H end.
-    + apply convneu_map_id. 
+    + eassumption. 
+    + apply convneulist_map_id. 
       1: eapply escapeEq; eapply LRTyEqRefl_.
-      now eapply NeNf.refl.
-
+      easy.
     Unshelve.
     all: tea.
 Qed.

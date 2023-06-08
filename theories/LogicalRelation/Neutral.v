@@ -266,35 +266,47 @@ Proof.
     all: try first [assumption|now eapply lrefl].
 Qed.
 
-Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) (ih : complete (ListRedTy.parRed LA)) 
-  : complete (LRList' LA).
+Lemma complete_List_list_neutrals {l Γ A} (LA : [Γ ||-List<l> A]) (ih : complete (ListRedTy.parRed LA)) :
+  forall n n' : term,
+  [Γ |-[ ta ] n : A] ->
+  [Γ |-[ ta ] n' : A] ->
+  [Γ |-[ ta ] n ~ n' :List (ListRedTy.par LA)] ->
+  [LRList' LA | Γ ||- n : A] × [LRList' LA | Γ ||- n ≅ n' : A].
 Proof.
   set (LA' := LA). destruct LA as [par]; cbn in *.
   assert [Γ |- A ≅ tList par] by gen_typing.
-  split.
-  intros n n' wh wh' ?.
   unshelve epose (lemma := _ :  forall n, [Γ |-[ ta ] n : A] ->
-                      [Γ |-[ ta ] n ~ n : A] -> [LRList' LA' | Γ ||- n : A]).
+                      [Γ |-[ ta ] n ~ n :List par] -> [LRList' LA' | Γ ||- n : A]).
   { intro m. unshelve econstructor. 1: exact m.
     * apply redtmwf_refl.
       now eapply ty_conv.
-    * apply convtm_convneu.
-      eapply lrefl.
-      now eapply convneu_conv.
+    * now eapply convtm_convneulist.
     * constructor; try easy; cbn.
-      1: now eapply ty_conv.
-      eapply lrefl.
-      now eapply convneulist_convneu, convneu_conv.
+      now eapply ty_conv.
   }
   split.
   + apply lemma ; tea. now eapply lrefl.
   + unshelve econstructor.
     * apply lemma ; tea. eapply lrefl ; tea.
     * apply lemma ; tea. eapply urefl ; tea.
-    * apply convtm_convneu.
-      now eapply convneu_conv.
-    * constructor ; try easy.
-      now eapply convneulist_convneu, convneu_conv.
+    * now apply convtm_convneulist.
+    * now constructor.
+Qed.
+
+Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) (ih : complete (ListRedTy.parRed LA)) 
+  : complete (LRList' LA).
+Proof.
+  set (LA' := LA). destruct LA as [par]; cbn in *.
+  split.
+  intros n n' wh wh' ?.
+  assert ([Γ |-[ ta ] n ~ n' :List ListRedTy.par LA']).
+  {
+    eapply convneulist_convneu, convneu_conv ; tea.
+    cbn.
+    gen_typing.
+  }
+  split.
+  all: now eapply complete_List_list_neutrals.
 Qed.
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
@@ -324,6 +336,27 @@ Lemma neuTermEq {l Γ A} (RA : [Γ ||-<l> A]) {n n'} :
   [Γ ||-<l> n ≅ n' : A| RA].
 Proof.
   intros; now eapply completeness.
+Qed.
+
+Lemma neuListTerm {l Γ A} (LA : [Γ ||-List<l> A]) {n} :
+  [Γ |- n : A] ->
+  [Γ |- n ~ n :List (ListRedTy.par LA)] ->
+  [LRList' LA | Γ ||- n : A].
+Proof.
+  intros.
+  eapply complete_List_list_neutrals ; tea.
+  eapply completeness.
+Qed.
+
+Lemma neuListTermEq {l Γ A} (LA : [Γ ||-List<l> A]) {n n'} :
+  [Γ |- n : A] ->
+  [Γ |- n' : A] ->
+  [Γ |- n ~ n' :List (ListRedTy.par LA)] ->
+  [Γ ||-<l> n ≅ n' : A| LRList' LA].
+Proof.
+  intros.
+  eapply complete_List_list_neutrals ; tea.
+  eapply completeness.
 Qed.
 
 Lemma var0conv {l Γ A A'} (RA : [Γ ,, A ||-<l> A']) :
