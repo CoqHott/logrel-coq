@@ -3,6 +3,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedR
 From LogRel.LogicalRelation Require Import Induction Reflexivity Irrelevance Escape.
 
 Set Universe Polymorphism.
+Set Printing Primitive Projection Parameters.
 
 Section Neutral.
 Context `{GenericTypingProperties}.
@@ -26,10 +27,6 @@ Proof.
     now apply convtm_convneu.
   * eapply RedTyRecBwd, neu. 1,2: gen_typing.
 Defined.
-
-
-Set Printing Primitive Projection Parameters.
-
 
 Lemma neuEq {l Γ A B} (RA : [Γ ||-<l> A]) :
   [Γ |- A] -> [Γ |- B] ->
@@ -275,28 +272,29 @@ Proof.
   set (LA' := LA). destruct LA as [par]; cbn in *.
   assert [Γ |- A ≅ tList par] by gen_typing.
   split.
-  - intros n n' wh wh' ?.
-    unshelve epose (lemma := _ :  forall n, [Γ |-[ ta ] n : A] ->
-                        [Γ |-[ ta ] n ~ n : A] -> [LRList' LA' | Γ ||- n : A]).
-    { intro m. unshelve econstructor. 1: exact m.
-      * apply redtmwf_refl.
-        now eapply ty_conv.
-      * apply convtm_convneu.
-        eapply lrefl.
-        now eapply convneu_conv.
-      * do 2 constructor ; try easy; cbn.
-        1: now eapply ty_conv.
-        eapply lrefl.
-        now eapply convneu_conv.
-    }
-    split.
-    + apply lemma ; tea. now eapply lrefl.
-    + unshelve econstructor.
-      * apply lemma ; tea. eapply lrefl ; tea.
-      * apply lemma ; tea. eapply urefl ; tea.
-      * apply convtm_convneu. now eapply convneu_conv.
-      * do 2 constructor ; try easy.
-        now eapply convneu_conv.
+  intros n n' wh wh' ?.
+  unshelve epose (lemma := _ :  forall n, [Γ |-[ ta ] n : A] ->
+                      [Γ |-[ ta ] n ~ n : A] -> [LRList' LA' | Γ ||- n : A]).
+  { intro m. unshelve econstructor. 1: exact m.
+    * apply redtmwf_refl.
+      now eapply ty_conv.
+    * apply convtm_convneu.
+      eapply lrefl.
+      now eapply convneu_conv.
+    * constructor; try easy; cbn.
+      1: now eapply ty_conv.
+      eapply lrefl.
+      now eapply convneulist_convneu, convneu_conv.
+  }
+  split.
+  + apply lemma ; tea. now eapply lrefl.
+  + unshelve econstructor.
+    * apply lemma ; tea. eapply lrefl ; tea.
+    * apply lemma ; tea. eapply urefl ; tea.
+    * apply convtm_convneu.
+      now eapply convneu_conv.
+    * constructor ; try easy.
+      now eapply convneulist_convneu, convneu_conv.
 Qed.
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.

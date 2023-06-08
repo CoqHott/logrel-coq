@@ -18,6 +18,7 @@ Inductive whnf : term -> Type :=
   | whnf_tNil {A} : whnf (tNil A)
   | whnf_tCons {A a l} : whnf (tCons A a l)
   | whnf_whne {n} : whne n -> whnf n
+  | whnf_whne_list {n} : whne_list n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
   | whne_tApp {n t} : whne n -> whne (tApp n t)
@@ -25,14 +26,20 @@ with whne : term -> Type :=
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)
   | whne_tSnd {p} : whne p -> whne (tSnd p)
-  | whne_tMap {A B f l} : whne l -> whne (tMap A B f l).
+with whne_list : term -> Type :=
+  | whne_tMap {A B f l} : whne_list l -> whne_list (tMap A B f l)
+  | whne_list_whne {n} : whne n -> whne_list n.
 
-#[global] Hint Constructors whne whnf : gen_typing.
+
+#[global] Hint Constructors whne whne_list whnf : gen_typing.
 
 Ltac inv_whne :=
   repeat lazymatch goal with
     | H : whne _ |- _ =>
     try solve [inversion H] ; block H
+    | H : whne_list _ |- _ =>
+    let H' := fresh in
+    try solve [inversion H as [|? H'] ; inversion H'] ; block H
   end; unblock.
 
 Lemma neSort s : whne (tSort s) -> False.
@@ -107,7 +114,7 @@ Definition isNat_whnf t (i : isNat t) : whnf t :=
   match i with
   | ZeroNat => whnf_tZero
   | SuccNat => whnf_tSucc
-  | NeNat n => whnf_whne n
+  | NeNat n => whnf_whne  n
   end.
 
 #[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf isPair_whnf : gen_typing.

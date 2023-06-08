@@ -71,16 +71,17 @@ Inductive RedClosureAlg : term -> term -> Type :=
 (** *** Weak-head normal forms do not reduce *)
 
 Ltac inv_whne :=
-  match goal with [ H : whne _ |- _ ] => inversion H end.
+  match goal with
+  | [ H : whne _ |- _ ] => inversion H ; subst ; clear H
+  | [ H : whne_list _ |- _ ] => inversion H ; subst ; clear H
+  end.
 
 Lemma whne_nored n u :
   whne n -> [n ⇒ u] -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
-  all: inversion ne ; subst ; clear ne.
-  2: auto.
-  all: now inv_whne.
+  all: solve [repeat (inv_whne ; auto)].
 Qed.
 
 Lemma whnf_nored n u :
@@ -88,8 +89,10 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  all: try solve [inversion nf; subst; inv_whne; subst; apply IHred; now constructor].
-  all: inversion nf; subst; inv_whne; subst; now inv_whne.
+  all: inversion nf ; subst ; inv_whne.
+  all: try solve [apply IHred ; now constructor].
+  all: try solve [do 2 (inv_whne ; auto)].
+  all: inv_whne ; apply IHred ; now constructor.
 Qed.
 
 (** *** Determinism of reduction *)

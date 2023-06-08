@@ -17,6 +17,7 @@ Inductive snf (r : term) : Type :=
   | snf_tNil {A} : [ r ⇒* tNil  A ] -> snf A -> snf r
   | snf_tCons {A hd tl} : [r ⇒* tCons A hd tl ] -> snf A -> snf hd -> snf tl -> snf r
   | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
+  | snf_sne_list {n} : [r ⇒* n] -> sne_list n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
@@ -24,40 +25,64 @@ with sne (r : term) : Type :=
   | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
   | sne_tFst {p} : r = tFst p -> sne p -> sne r
   | sne_tSnd {p} : r = tSnd p -> sne p -> sne r
-  | sne_tMap {A B f l} : r = tMap A B f l -> snf A -> snf B -> snf f -> sne l -> sne r
-.
+with sne_list (r : term) : Type :=
+  | sne_tMap {A B f l} : r = tMap A B f l -> snf A -> snf B -> snf f -> sne_list l -> sne_list r
+  | sne_list_sne : sne r -> sne_list r.
 
 Set Elimination Schemes.
 
 Scheme
   Induction for snf Sort Type with
-  Induction for sne Sort Type.
+  Induction for sne Sort Type with
+  Induction for sne_list Sort Type.
 
 Definition snf_rec
   (P : forall r : term, snf r -> Set)
-  (Q : forall r : term, sne r -> Set) := snf_rect P Q.
+  (Q : forall r : term, sne r -> Set)
+  (R : forall r : term, sne_list r -> Set) := snf_rect P Q R.
 
 Definition snf_ind
   (P : forall r : term, snf r -> Prop)
-  (Q : forall r : term, sne r -> Prop) := snf_rect P Q.
+  (Q : forall r : term, sne r -> Prop)
+  (R : forall r : term, sne_list r -> Prop) := snf_rect P Q R.
 
 Definition sne_rec
   (P : forall r : term, snf r -> Set)
-  (Q : forall r : term, sne r -> Set) := sne_rect P Q.
+  (Q : forall r : term, sne r -> Set)
+  (R : forall r : term, sne_list r -> Set) := sne_rect P Q R.
 
 Definition sne_ind
   (P : forall r : term, snf r -> Prop)
-  (Q : forall r : term, sne r -> Prop) := sne_rect P Q.
+  (Q : forall r : term, sne r -> Prop)
+  (R : forall r : term, sne_list r -> Prop) := sne_rect P Q R.
+
+Definition sne_list_rec
+(P : forall r : term, snf r -> Set)
+(Q : forall r : term, sne r -> Set)
+(R : forall r : term, sne_list r -> Set) := sne_list_rect P Q R.
+
+Definition sne_list_ind
+(P : forall r : term, snf r -> Prop)
+(Q : forall r : term, sne r -> Prop)
+(R : forall r : term, sne_list r -> Prop) := sne_list_rect P Q R.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 :=
+Definition snf_sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 :=
   pair 
-    (snf_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20)
-    (sne_rect P Q p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20).
+    (snf_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)
+  (pair
+    (sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)
+    (sne_list_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)).
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
-apply sne_rect with (P := fun _ _ => True); intros; subst; constructor; assumption.
+apply sne_rect with (P := fun _ _ => True) (P1 := fun _ _ => True); intros; subst; constructor; assumption.
+Qed.
+
+Lemma sne_whne_list : forall (t : term), sne_list t -> whne_list t.
+Proof.
+apply sne_list_rect with (P := fun _ _ => True) (P0 := fun _ _ => True) ; intros; subst; constructor.
+all: eauto using sne_whne.
 Qed.
 
 Lemma snf_red : forall t u, [ t ⇒* u ] -> snf u -> snf t.
@@ -92,12 +117,16 @@ intros t u Hr Hu; destruct Hu.
 + eapply snf_sne.
   - transitivity u; eassumption.
   - eassumption.
++ eapply snf_sne_list.
+  - transitivity u; eassumption.
+  - eassumption.
 Qed.
 
 Section RenSnf.
 
   Lemma snf_sne_ren :
-    prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩)) (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)).
+    prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩))
+    (prod (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)) (forall t, sne_list t -> forall ρ, sne_list (t⟨ρ⟩))).
   Proof.
   apply snf_sne_rect.
   + intros r s Hr ρ.
@@ -139,6 +168,9 @@ Section RenSnf.
   + intros r n Hr Hn IHn ρ.
     apply credalg_wk with (ρ := ρ) in Hr.
     eapply snf_sne; eauto.
+  + intros r n Hr Hn IHn ρ.
+    apply credalg_wk with (ρ := ρ) in Hr.
+    eapply snf_sne_list; eauto. 
   + intros r v -> ρ; econstructor; reflexivity.
   + intros r n t -> Hn IHn Ht IHt ρ.
     cbn; eapply sne_tApp; eauto.
@@ -150,9 +182,16 @@ Section RenSnf.
   + intros r ? -> ???; cbn; eapply sne_tSnd; eauto.
   + intros; subst; cbn.
     eapply sne_tMap; eauto.
+  + intros n Hn IHn ρ.
+    eapply sne_list_sne ; eauto. 
   Qed.
 
   Lemma sne_ren ρ t : sne t -> sne (t⟨ρ⟩).
+  Proof.
+  intros; apply snf_sne_ren; assumption.
+  Qed.
+
+  Lemma sne_list_ren ρ t : sne_list t -> sne_list (t⟨ρ⟩).
   Proof.
   intros; apply snf_sne_ren; assumption.
   Qed.

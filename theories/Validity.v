@@ -78,7 +78,7 @@ Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" := (RΓ.(@VAd.pack
 
 Record typeValidity@{u i j k l} `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
-  `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
+  `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta} `{!RedType ta} `{!RedTerm ta}
   {Γ : context} {VΓ : VPack@{u} Γ}
   {l : TypeLevel} {A : term} :=
   {
@@ -95,7 +95,7 @@ Record typeValidity@{u i j k l} `{ta : tag} `{!WfContext ta}
   }.
 
 Arguments typeValidity : clear implicits.
-Arguments typeValidity {_ _ _ _ _ _ _ _ _}.
+Arguments typeValidity {_ _ _ _ _ _ _ _ _ _}.
 
 Notation "[ P | Γ ||-v< l > A ]" := (typeValidity Γ P l A) (at level 0, P, Γ, l, A at level 50).
 
@@ -108,7 +108,7 @@ Section snocValid.
   Universe u i j k l.
   Context `{ta : tag} `{!WfContext ta}
   `{!WfType ta} `{!Typing ta} `{!ConvType ta}
-  `{!ConvTerm ta} `{!ConvNeuConv ta} `{!RedType ta} `{!RedTerm ta}
+  `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta} `{!RedType ta} `{!RedTerm ta}
   {Γ : context} {VΓ : VPack@{u} Γ} {A : term} {l : TypeLevel}
   {vA : typeValidity@{u i j k l} Γ VΓ l A (* [ VΓ | Γ ||-v< l > A ] *)}.
 
@@ -130,19 +130,19 @@ Section snocValid.
 End snocValid.
 
 Arguments snocValidSubst : clear implicits.
-Arguments snocValidSubst {_ _ _ _ _ _ _ _ _}.
+Arguments snocValidSubst {_ _ _ _ _ _ _ _ _ _}.
 
 Arguments snocEqSubst : clear implicits.
-Arguments snocEqSubst {_ _ _ _ _ _ _ _ _}.
+Arguments snocEqSubst {_ _ _ _ _ _ _ _ _ _}.
 
 Arguments snocVPack : clear implicits.
-Arguments snocVPack {_ _ _ _ _ _ _ _ _}.
+Arguments snocVPack {_ _ _ _ _ _ _ _ _ _}.
 
 Unset Elimination Schemes.
 
 Inductive VR@{i j k l} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuListConv ta}
   `{RedType ta} `{RedTerm ta} : VRel@{k l} :=
   | VREmpty : VR ε emptyValidSubst@{k} emptyEqSubst@{k}
   | VRSnoc : forall {Γ A l}
@@ -162,7 +162,7 @@ Notation "[ Γ ||-v< l > A | VΓ ]"                := [ VΓ | Γ ||-v< l > A ] (
 
 Section MoreDefs.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedType ta} `{RedTerm ta}.
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{RedType ta} `{RedTerm ta}.
 
   Definition validEmpty@{i j k l} : [VR@{i j k l}| ||-v ε ] := Build_VAdequate emptyVPack VREmpty.
 
@@ -221,23 +221,23 @@ Section MoreDefs.
 End MoreDefs.
 
 Arguments termValidity : clear implicits.
-Arguments termValidity {_ _ _ _ _ _ _ _ _}.
+Arguments termValidity {_ _ _ _ _ _ _ _ _ _}.
 Arguments Build_termValidity {_ _ _ _ _ _ _ _ _}.
 
 Arguments typeEqValidity : clear implicits.
-Arguments typeEqValidity {_ _ _ _ _ _ _ _ _}.
+Arguments typeEqValidity {_ _ _ _ _ _ _ _ _ _}.
 Arguments Build_typeEqValidity {_ _ _ _ _ _ _ _ _}.
 
 Arguments termEqValidity : clear implicits.
-Arguments termEqValidity {_ _ _ _ _ _ _ _ _}.
+Arguments termEqValidity {_ _ _ _ _ _ _ _ _ _}.
 Arguments Build_termEqValidity {_ _ _ _ _ _ _ _ _}.
 
 Arguments tmEqValidity : clear implicits.
-Arguments tmEqValidity {_ _ _ _ _ _ _ _ _}.
+Arguments tmEqValidity {_ _ _ _ _ _ _ _ _ _}.
 Arguments Build_tmEqValidity {_ _ _ _ _ _ _ _ _}.
 
 Arguments redValidity : clear implicits.
-Arguments redValidity {_ _ _ _ _ _ _ _ _}.
+Arguments redValidity {_ _ _ _ _ _ _ _ _ _}.
 Arguments Build_redValidity {_ _ _ _ _ _ _ _ _}.
 
 Notation "[ Γ ||-v< l > t : A | VΓ | VA ]"     := (termValidity Γ l t A VΓ VA) (at level 0, Γ, l, t, A, VΓ, VA at level 50).
@@ -248,7 +248,7 @@ Notation "[ Γ ||-v t :⇒*: u : A | VΓ ]"      := (redValidity Γ t u A VΓ) (
 
 Section Inductions.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedType ta} `{RedTerm ta}.
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{RedType ta} `{RedTerm ta}.
 
   Theorem VR_rect
     (P : forall {Γ vSubst vSubstExt}, VR Γ vSubst vSubstExt -> Type)

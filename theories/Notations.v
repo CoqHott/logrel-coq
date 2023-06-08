@@ -35,6 +35,7 @@ Class ConvTermRed (ta : tag) := conv_term_red : context -> term -> term -> term 
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
 Class ConvNeuRed (ta : tag) := conv_neu_red : context -> term -> term -> term -> Set.
 Class ConvNeuConv (ta : tag) := conv_neu_conv : context -> term -> term -> term -> Set.
+Class ConvNeuListConv (ta : tag) := conv_neu_list_conv : context -> term -> term -> term -> Set.
 
 (** The context Γ is well-formed *)
 Notation "[ |- Γ ]" := (wf_context Γ)
@@ -97,6 +98,11 @@ Notation "[ Γ |-[ ta  ] n '~h' n' ▹ A ]" := (conv_neu_red (ta := ta) Γ A n n
 Notation "[ Γ |- n ~ n' : A ]" := (conv_neu_conv Γ A n n')
   (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
 Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu_conv (ta := ta) Γ A n n')
+  (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
+(** Neutral lists n and n' are convertible in Γ at type List A *)
+Notation "[ Γ |- n ~ n' :List A ]" := (conv_neu_list_conv Γ A n n')
+  (at level 0, Γ, n, n', A at level 50, only parsing) : typing_scope. 
+Notation "[ Γ |-[ ta  ] n ~ n' :List A ]" := (conv_neu_list_conv (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** ** Reductions *)

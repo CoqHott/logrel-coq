@@ -5,6 +5,8 @@ From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Escap
 
 Set Universe Polymorphism.
 Set Printing Universes.
+Set Printing Primitive Projection Parameters.
+
 
 (** We show a general version of irrelevance, saying that if A and A' are reducible (at levels logical relation levels lA, lA')
 and A' is reducibly convertible to A, then the reducibility predicates they decode to are equivalent.
@@ -267,11 +269,13 @@ Lemma ListIrrelevanceTm :
   × (forall t, ListProp Γ A LA t -> ListProp Γ A' LA' t).
 Proof.
   eapply ListRedInduction; intros; econstructor; tea.
-  3-5: now eapply eqvPar.
-  1: now eapply redtmwf_conv.
-  1: now eapply convtm_conv.
-  eapply NeNfconv; tea. 
-  destruct LA'; cbn in *; escape; gen_typing.
+  - now eapply redtmwf_conv.
+  - now eapply convtm_conv.
+  - now eapply eqvPar.
+  - now eapply eqvPar.
+  - now eapply eqvPar.
+  - now eapply ty_conv.
+  - now eapply convneulist_conv.
 Defined.
 
 Lemma ListIrrelevanceTmEq : 
@@ -284,14 +288,15 @@ Proof.
   assert [Γ |- par'] by (eapply escape; apply ListRedTy.parRed).
   assert [Γ |- tList par'] by gen_typing.
   eapply ListRedEqInduction; intros.
-  2-4: econstructor; tea.
-  all: try solve [ now eapply redtmwf_conv
-                 | now eapply eqvPar
-                 | now eapply convtm_conv
-                 | now eapply NeNfEqconv ].
-  exists (fst ListIrrelevanceTm _ Rt) (fst ListIrrelevanceTm _ Ru) ; destruct Rt, Ru.
-  1: now eapply convtm_conv.
-  eassumption.
+  - exists (fst ListIrrelevanceTm _ Rt) (fst ListIrrelevanceTm _ Ru) ; destruct Rt, Ru.
+    all: cbn in * ; tea.
+    now eapply convtm_conv.
+  - econstructor ; tea.
+    all: now eapply eqvPar.
+  - econstructor ; tea.
+    all: now eapply eqvPar.
+  - econstructor.
+    now eapply convneulist_conv.  
 Qed.
 
 End ListIrrelevanceLemmas.
@@ -885,8 +890,7 @@ Proof.
     1: now eauto.
     apply ListRedEqInduction; intros; econstructor; tea.
     all: try now symmetry.
-    2: try now apply NeNfEqSym.
-    1: now apply ihpar.
+    now eapply ihpar.
 Qed.
 
 End Irrelevances.

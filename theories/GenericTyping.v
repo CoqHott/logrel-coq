@@ -169,7 +169,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
@@ -331,6 +331,8 @@ Section GenericTyping.
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
+    convtm_convneulist {Γ n n' A} :
+      [Γ |- n ~ n' :List A] -> [Γ |- n ≅ n' : tList A] ;
     convtm_prod {Γ A A' B B'} :
       [Γ |- A : U] ->
       [Γ |- A ≅ A' : U] -> [Γ,, A |- B ≅ B' : U] ->
@@ -409,25 +411,36 @@ Section GenericTyping.
     convneu_snd {Γ A B p p'} :
       [Γ |- p ~ p' : tSig A B] ->
       [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
-    convneu_map_comp {Γ f g l l' A B C} :
-      [Γ |- A ≅ A] ->
-      [Γ |- B ≅ B] ->
-      [Γ |- C ≅ C] ->
-      [Γ |- g ≅ g : arr A B] ->
-      [Γ |- f ≅ f : arr B C] ->
-      [Γ |- l ~ l' : tList A] ->
-      [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' : tList C] ;
-    convneu_map_id {Γ A l l'} :
-      [Γ |- A ≅ A] ->
-      [Γ |- l ~ l' : tList A] ->
-      [Γ |- tMap A A (idterm A) l ~ l' : tList A] ;
-    convneu_map {Γ A A' B B' f f' l l'} :
-      [Γ |- A ≅ A'] ->
-      [Γ |- B ≅ B'] ->
-      [Γ |- f ≅ f' : arr A B] ->
-      [Γ |- l ~ l' : tList A] ->
-      [Γ |- tMap A B f l ~ tMap A' B' f' l' : tList B] ;
   }.
+
+Class ConvNeuListProperties :=
+{
+  convneulist_equiv {Γ A} :> PER (conv_neu_list_conv Γ A) ;
+  convneulist_conv {Γ t u A A'} : [Γ |- t ~ u :List A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u :List A'] ;
+  convneulist_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
+    [|- Δ ] -> [Γ |- t ~ u :List A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ :List A⟨ρ⟩] ;
+  convneulist_convneu {Γ n n' A} :
+    [Γ |- n ~ n' : tList A] -> [Γ |- n ~ n' :List A] ;
+  convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
+  convneulist_map_comp {Γ f g l l' A B C} :
+  [Γ |- A ≅ A] ->
+  [Γ |- B ≅ B] ->
+  [Γ |- C ≅ C] ->
+  [Γ |- g ≅ g : arr A B] ->
+  [Γ |- f ≅ f : arr B C] ->
+  [Γ |- l ~ l' :List A] ->
+  [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' :List C] ;
+convneulist_map_id {Γ A l l'} :
+  [Γ |- A ≅ A] ->
+  [Γ |- l ~ l' : tList A] ->
+  [Γ |- tMap A A (idterm A) l ~ l' :List A] ;
+convneulist_map {Γ A A' B B' f f' l l'} :
+  [Γ |- A ≅ A'] ->
+  [Γ |- B ≅ B'] ->
+  [Γ |- f ≅ f' : arr A B] ->
+  [Γ |- l ~ l' : tList A] ->
+  [Γ |- tMap A B f l ~ tMap A' B' f' l' :List B] ;
+}.
 
   Class RedTypeProperties :=
   {
@@ -540,6 +553,7 @@ abstract instance of this class. *)
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
+  `(ConvNeuListConv ta)
   `(RedType ta) `(RedTerm ta)
   `(RedType ta) `(RedTerm ta)
 :=
@@ -550,6 +564,7 @@ Class GenericTypingProperties `(ta : tag)
   convty_prop :> ConvTypeProperties ;
   convtm_prop :> ConvTermProperties ;
   convne_prop :> ConvNeuProperties ;
+  convnelist_prop :> ConvNeuListProperties ;
   redty_prop :> RedTypeProperties ;
   redtm_prop :> RedTermProperties ;
 }.
@@ -563,12 +578,13 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_list ty_nil ty_cons ty_map | 2 : gen_typing.
 #[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty convty_sig convty_list | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_list convtm_nil convtm_cons | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_map_comp convneu_map_id convneu_map | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
+#[export] Hint Resolve convneulist_wk convneulist_map_comp convneulist_map_id convneulist_map  | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
 (* Priority 6 *)
-#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
+#[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv convneulist_conv redtm_conv | 6 : gen_typing.
 
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)
@@ -665,7 +681,7 @@ Section GenericConsequences.
   Context `{ta : tag}
   `{!WfContext ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-  `{!RedType ta} `{!RedTerm ta}
+  `{!ConvNeuListConv ta} `{!RedType ta} `{!RedTerm ta}
   `{!WfContextProperties} `{!WfTypeProperties}
   `{!TypingProperties} `{!ConvTypeProperties}
   `{!ConvTermProperties} `{!ConvNeuProperties}

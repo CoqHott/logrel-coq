@@ -20,7 +20,7 @@ does not create global constraints on universes. *)
 Section Inductions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
 (** ** Embedding *)
@@ -198,7 +198,7 @@ End Inductions.
 Section Inversions.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}
     `{!ConvNeuProperties}.
 

@@ -316,6 +316,12 @@ Section Definitions.
     convnedecl_conv : [ Γ |- t ≅ u : A ];
   }.
 
+  Record ConvNeuConvListDecl (Γ : context) (A : term) (t u : term) := {
+    convnelistdecl_whne_l : whne_list t;
+    convnelistdecl_whne_r : whne_list u;
+    convnelistdecl_conv : [ Γ |- t ≅ u : tList A ];
+  }.
+
 End Definitions.
 
 Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
@@ -336,6 +342,7 @@ Module DeclarativeTypingData.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvNeuConvDecl.
+  #[export] Instance ConvNeuConvList_Decl : ConvNeuListConv de := ConvNeuConvListDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 

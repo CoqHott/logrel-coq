@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation.Reflexivity: reflexivity of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
+From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Escape.
 
 Set Universe Polymorphism.
@@ -59,14 +59,10 @@ Section Reflexivities.
     × (forall t : term, ListProp Γ A LA t -> ListPropEq Γ A LA t t).
   Proof.
     eapply ListRedInduction.
-    1,2,3: intros **.
     all: try now econstructor.
-    1:{
-      pose (Rt := Build_ListRedTm nf red eq prop).
-      exists Rt Rt ; tea.
-    }
-    intros. econstructor; tea.
-    now eapply NeNfEqRefl.
+    intros.
+    pose (Rt := Build_ListRedTm nf red eq prop).
+    now unshelve econstructor.
   Defined.
 
   Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :

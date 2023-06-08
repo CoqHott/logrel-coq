@@ -870,7 +870,7 @@ Module ListRedTm.
 Section ListRedTm.
   Universe i.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
-    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{ConvTerm ta}
     `{RedTerm ta}
     {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
 
@@ -896,7 +896,7 @@ Section ListRedTm.
     [parRedΓ | Γ ||- hd : par] ->
     ListRedTm tl ->
     ListProp (tCons P hd tl)
-  | neR {l} : [Γ ||-NeNf l : tList par] -> ListProp l.
+  | neR {l} (ty : [Γ |-[ta] l : tList par]) (refl : [Γ |-[ta] l ~ l :List par]) : ListProp l.
 
 Definition nf {n} : @ListRedTm n -> term.
 Proof.
@@ -955,7 +955,7 @@ Module ListRedTmEq.
 Section ListRedTmEq.
   Universe i.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
-    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{ConvTerm ta}
     `{RedTerm ta}
     {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
 
@@ -986,7 +986,7 @@ Section ListRedTmEq.
     [parRedΓ | Γ ||- hd ≅ hd' : par] ->
     ListRedTmEq tl tl' ->
     ListPropEq (tCons P hd tl) (tCons P' hd' tl')
-  | neReq {l l'} : [Γ ||-NeNf l ≅ l' : tList par] -> ListPropEq l l'.
+  | neReq {l l'} (conv : [Γ |-[ta] l ~ l' :List par]) : ListPropEq l l'.
 
 Scheme
     Minimality for ListRedTmEq Sort Type with
@@ -1030,7 +1030,7 @@ Unset Elimination Schemes.
 
 Inductive LR@{i j k} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuListConv ta}
   `{RedType ta} `{RedTerm ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
@@ -1078,7 +1078,7 @@ Set Elimination Schemes.
 Section MoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=
@@ -1169,7 +1169,7 @@ Module PolyRed.
 Section PolyRed.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {l : TypeLevel} {shp pos : term}.
 
@@ -1236,7 +1236,7 @@ Section PolyRed.
 End PolyRed.
 
 Arguments PolyRed : clear implicits.
-Arguments PolyRed {_ _ _ _ _ _ _ _ _} _ _ _.
+Arguments PolyRed {_ _ _ _ _ _ _ _ _ _} _ _ _.
 
 End PolyRed.
 
@@ -1247,7 +1247,7 @@ Module ParamRedTy.
 Section ParamRedTy.
   Context {T : term -> term -> term} `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {l : TypeLevel} {A : term}.
 
@@ -1299,7 +1299,7 @@ Section ParamRedTy.
 End ParamRedTy.
 
 Arguments ParamRedTy : clear implicits.
-Arguments ParamRedTy _ {_ _ _ _ _ _ _ _ _}.
+Arguments ParamRedTy _ {_ _ _ _ _ _ _ _ _ _}.
 
 End ParamRedTy.
 
@@ -1315,7 +1315,7 @@ Notation "[ Γ ||-Σ< l > A ]" := (ParamRedTy tSig Γ l A) (at level 0, Γ, l, A
 Section EvenMoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}.
   
   Definition LRPi'@{i j k l} {l Γ A} (ΠA : ParamRedTy@{i j k l} tProd Γ l A)
@@ -1334,7 +1334,7 @@ End EvenMoreDefs.
 Section LogRelRecFoldLemmas.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Lemma RedTyRecFwd {l Γ A t} (h : [Γ ||-U<l> A]) : 
@@ -1457,7 +1457,7 @@ Section ListRedTy.
   Universe i j k l.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {A : term} {l : TypeLevel}.
 
@@ -1511,7 +1511,7 @@ Section ListRedTy.
 
 End ListRedTy.
 
-Arguments ListRedTy {_ _ _ _ _ _ _ _ _}.
+Arguments ListRedTy {_ _ _ _ _ _ _ _ _ _}.
 End ListRedTy.
 
 Export ListRedTy(ListRedTy,Build_ListRedTy, LRList').
@@ -1522,12 +1522,16 @@ Notation "[ Γ ||-List< l > A ]" := (ListRedTy Γ A l) (at level 0, Γ, l, A at 
 Lemma ListProp_whnf `{GenericTypingProperties} {Γ A l t} {LA : [Γ ||-List<l> A]} :
   ListProp _ _ LA t -> whnf t.
 Proof.
-  induction 1; constructor. 
-  eapply convneu_whne; now eapply NeNf.refl.
+  induction 1.
+  1-2: now constructor.
+  now eapply whnf_whne_list, convneulist_whne.
 Qed.
 
 Lemma ListPropEq_whnf `{GenericTypingProperties} {Γ A l t u} {LA : [Γ ||-List<l> A]} :
   ListPropEq _ _ LA t u -> (whnf t × whnf u).
 Proof.
-  induction 1 ; split ; constructor; eapply convneu_whne; [|symmetry]; now eapply NeNf.conv.
+  induction 1 ; split ; try solve [constructor].
+  all: eapply whnf_whne_list, convneulist_whne.
+  2: symmetry.
+  all: eassumption.
 Qed.

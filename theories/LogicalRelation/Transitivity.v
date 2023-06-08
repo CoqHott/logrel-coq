@@ -292,18 +292,22 @@ Proof.
     + eapply h. rewrite eqR. eassumption.
   - intros * ????? uv.
     inversion uv ; subst.
-    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H as [?%convneu_whne]; inv_whne end.
+    2:{ apply convneulist_whne in conv. inv_whne. }
     now econstructor.
   - intros * ????? ? h ? uv.
     inversion uv ; subst.
-    2: match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H as [?%convneu_whne]; inv_whne end.
+    2:{ apply convneulist_whne in conv. inv_whne. }
     econstructor ; try easy.
   - intros * ?? uv.
-    assert (whne l'). 1: eapply convneu_whne; symmetry; now eapply NeNf.conv.
+    econstructor.
+    etransitivity ; tea.
+    assert (whne_list l').
+    {
+      eapply convneulist_whne; now symmetry.
+    }
     inversion uv ; subst.
-    all: try (match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; inv_whne end ; fail).
-    econstructor ; try easy.
-    now eapply transNeNfEq.
+    all: try solve [inv_whne].
+    eassumption.
 Qed.
 
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 

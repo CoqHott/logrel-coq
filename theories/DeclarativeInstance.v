@@ -540,7 +540,7 @@ Qed.
 
 #[export] Instance RedTermTrans Γ A : Transitive (red_tm Γ A).
 Proof.
-  intros t u r [] []; split.
+  intros t u r [] []; split.
   + assumption.
   + now etransitivity.
   + now eapply TermTrans.
@@ -548,7 +548,7 @@ Qed.
 
 #[export] Instance RedTypeTrans Γ : Transitive (red_ty Γ).
 Proof.
-  intros t u r [] []; split.
+  intros t u r [] []; split.
   + assumption.
   + now etransitivity.
   + now eapply TypeTrans.
@@ -605,6 +605,7 @@ Module DeclarativeTypingProperties.
       2: eapply TermSym.
       all: now eapply RedConvTeC.
     - intros ???? H; apply H.
+    - intros ???? H; apply H. 
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -624,9 +625,31 @@ Module DeclarativeTypingProperties.
   - intros ?????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
+  Qed.
+
+  #[export, refine] Instance ConvNeuListDeclProperties : ConvNeuListProperties (ta := de) := {}.
+  Proof.
+  - split; red.
+    + intros ?? []; split; tea; now econstructor.
+    + intros ??? [] []; split; tea; now econstructor.
+  - intros ????? [] ?; split; tea; econstructor ; tea.
+    now econstructor.
+  - intros ??????? [?? H]; split.
+    + now eapply whne_list_ren.
+    + now eapply whne_list_ren.
+    + now eapply typing_wk in H.
+  - intros * [].
+    econstructor ; now gen_typing.
+  - now intros * [].
   - intros ????????????? []; split; try now econstructor + (do 2 econstructor).
-  - intros ????? []; split; tea; now econstructor.
-  - intros ??????? ????? []; split; now econstructor.
+  - intros ????? []; split; tea.
+    + gen_typing.
+    + gen_typing.
+    + now econstructor.   
+  - intros * ??? []; split.
+    + gen_typing.
+    + gen_typing.
+    + now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
@@ -717,6 +740,6 @@ Module DeclarativeTypingProperties.
     + now constructor.
   Qed.
 
-  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance DeclarativeTypingProperties : GenericTypingProperties de _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End DeclarativeTypingProperties.

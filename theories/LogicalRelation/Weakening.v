@@ -227,8 +227,9 @@ Section Weakenings.
       + fold ren_term. now apply ih.
       + eassumption.
     - intros. econstructor.
-      cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
-      now eapply wkNeNf.
+      + cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
+        now eapply ty_wk.
+      + now eapply convneulist_wk.
   Defined.
 
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
@@ -334,7 +335,7 @@ Section Weakenings.
       + assumption.
     - intros. constructor.
       cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
-      now eapply wkNeNfEq.
+      now eapply convneulist_wk.
   Qed.
 
   Lemma wkTermEq {Γ Δ t u A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 

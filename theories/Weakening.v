@@ -234,11 +234,17 @@ Section RenWhnf.
     all: now econstructor.
   Qed.
 
-  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Lemma whne_list_ren t : whne_list t -> whne_list (t⟨ρ⟩).
   Proof.
     induction 1 ; cbn.
     all: econstructor.
-    all: now eapply whne_ren.
+    all: eauto using whne_ren.
+  Qed.
+
+  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor ; now eauto using whne_ren, whne_list_ren.
   Qed.
   
   Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
@@ -285,6 +291,11 @@ Section RenWlWhnf.
   Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
   Proof.
     apply whne_ren.
+  Qed.
+
+  Lemma whne_list_ren_wl t : whne_list t -> whne_list (t⟨ρ⟩).
+  Proof.
+    apply whne_list_ren.
   Qed.
 
   Lemma whnf_ren_wl t : whnf t -> whnf (t⟨ρ⟩).
