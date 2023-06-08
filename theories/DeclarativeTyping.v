@@ -342,7 +342,7 @@ Module DeclarativeTypingData.
   #[export] Instance ConvType_Decl : ConvType de := ConvTypeDecl.
   #[export] Instance ConvTerm_Decl : ConvTerm de := ConvTermDecl.
   #[export] Instance ConvNeuConv_Decl : ConvNeuConv de := ConvNeuConvDecl.
-  #[export] Instance ConvNeuConvList_Decl : ConvNeuListConv de := ConvNeuConvListDecl.
+  #[export] Instance ConvNeuConvList_Decl : ConvNeuList de := ConvNeuConvListDecl.
   #[export] Instance RedType_Decl : RedType de := TypeRedClosure.
   #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure.
 

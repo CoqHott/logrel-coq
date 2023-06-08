@@ -793,9 +793,9 @@ Lemma Uterm_isType Γ A :
   isType A.
 Proof.
   intros Hty Hwh.
-  destruct Hwh.
+  destruct Hwh ; cycle -1.
+  1: inversion w ; subst.
   all: try solve [now econstructor].
-  all: exfalso.
   all: eapply termGen' in Hty ; cbn in *.
   all: prod_hyp_splitter ; try easy.
   all: subst.
@@ -824,7 +824,8 @@ Lemma fun_isFun Γ A B t:
   isFun t.
 Proof.
   intros Hty Hwh.
-  destruct Hwh.
+  destruct Hwh ; cycle -1.
+  1: inversion w ; subst.
   all: try now econstructor.
   all: eapply termGen' in Hty ; cbn in *.
   all: exfalso.
@@ -844,7 +845,8 @@ Lemma nat_isNat Γ t:
   isNat t.
 Proof.
   intros Hty Hwh.
-  destruct Hwh.
+  destruct Hwh ; cycle -1.
+  1: inversion w ; subst.
   all: try now econstructor.
   all: eapply termGen' in Hty ; cbn in *.
   all: exfalso.
@@ -864,7 +866,8 @@ Lemma empty_isEmpty Γ t:
   whne t.
 Proof.
   intros Hty Hwh.
-  destruct Hwh ; try easy.
+  destruct Hwh ; try easy ; cycle -1.
+  1: inversion w ; subst ; try easy.
   all: eapply termGen' in Hty ; cbn in *.
   all: exfalso.
   all: prod_hyp_splitter ; try easy.
@@ -885,8 +888,10 @@ Lemma neutral_isNeutral Γ A t :
 Proof.
   intros (?&Hgen&Hconv)%termGen' HwA Hwh.
   set (iA := NeType HwA).
-  destruct Hwh ; cbn in * ; try easy.
+  destruct Hwh ; cbn in * ; try easy ; cycle -1.
+  1: inversion w ; subst ; try easy.
   all: exfalso.
+  1: destruct Hgen as [->].
   all: prod_hyp_splitter.
   all: subst.
   all: unshelve eapply ty_conv_inj in Hconv ; tea.

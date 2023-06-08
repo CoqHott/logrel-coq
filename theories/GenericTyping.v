@@ -169,7 +169,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
@@ -415,7 +415,7 @@ Section GenericTyping.
 
 Class ConvNeuListProperties :=
 {
-  convneulist_equiv {Γ A} :> PER (conv_neu_list_conv Γ A) ;
+  convneulist_equiv {Γ A} :> PER (conv_neu_list Γ A) ;
   convneulist_conv {Γ t u A A'} : [Γ |- t ~ u :List A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u :List A'] ;
   convneulist_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
     [|- Δ ] -> [Γ |- t ~ u :List A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ :List A⟨ρ⟩] ;
@@ -553,7 +553,7 @@ abstract instance of this class. *)
 Class GenericTypingProperties `(ta : tag)
   `(WfContext ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
-  `(ConvNeuListConv ta)
+  `(ConvNeuList ta)
   `(RedType ta) `(RedTerm ta)
   `(RedType ta) `(RedTerm ta)
 :=
@@ -681,7 +681,7 @@ Section GenericConsequences.
   Context `{ta : tag}
   `{!WfContext ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-  `{!ConvNeuListConv ta} `{!RedType ta} `{!RedTerm ta}
+  `{!ConvNeuList ta} `{!RedType ta} `{!RedTerm ta}
   `{!WfContextProperties} `{!WfTypeProperties}
   `{!TypingProperties} `{!ConvTypeProperties}
   `{!ConvTermProperties} `{!ConvNeuProperties}

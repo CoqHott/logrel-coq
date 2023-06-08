@@ -870,7 +870,7 @@ Module ListRedTm.
 Section ListRedTm.
   Universe i.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
-    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{ConvTerm ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuList ta} `{ConvTerm ta}
     `{RedTerm ta}
     {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
 
@@ -955,7 +955,7 @@ Module ListRedTmEq.
 Section ListRedTmEq.
   Universe i.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
-    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuListConv ta} `{ConvTerm ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvNeuList ta} `{ConvTerm ta}
     `{RedTerm ta}
     {Γ : context} {A: term} {LA : ListRedTyPack@{i} Γ A}.
 
@@ -1030,7 +1030,7 @@ Unset Elimination Schemes.
 
 Inductive LR@{i j k} `{ta : tag}
   `{WfContext ta} `{WfType ta} `{Typing ta}
-  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuListConv ta}
+  `{ConvType ta} `{ConvTerm ta} `{ConvNeuConv ta} `{ConvNeuList ta}
   `{RedType ta} `{RedTerm ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
@@ -1078,7 +1078,7 @@ Set Elimination Schemes.
 Section MoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Definition rec0@{i j} (l' : TypeLevel) (h : l' << zero) : RedRel@{i j} :=
@@ -1169,7 +1169,7 @@ Module PolyRed.
 Section PolyRed.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {l : TypeLevel} {shp pos : term}.
 
@@ -1247,7 +1247,7 @@ Module ParamRedTy.
 Section ParamRedTy.
   Context {T : term -> term -> term} `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {l : TypeLevel} {A : term}.
 
@@ -1315,7 +1315,7 @@ Notation "[ Γ ||-Σ< l > A ]" := (ParamRedTy tSig Γ l A) (at level 0, Γ, l, A
 Section EvenMoreDefs.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}.
   
   Definition LRPi'@{i j k l} {l Γ A} (ΠA : ParamRedTy@{i j k l} tProd Γ l A)
@@ -1334,7 +1334,7 @@ End EvenMoreDefs.
 Section LogRelRecFoldLemmas.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Lemma RedTyRecFwd {l Γ A t} (h : [Γ ||-U<l> A]) : 
@@ -1457,7 +1457,7 @@ Section ListRedTy.
   Universe i j k l.
   Context `{ta : tag}
     `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuListConv ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta} `{!ConvNeuList ta}
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {A : term} {l : TypeLevel}.
 

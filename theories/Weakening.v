@@ -308,6 +308,11 @@ Section RenWlWhnf.
     apply isType_ren.
   Qed.
   
+  Lemma isPosType_ren_wl A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    apply isPosType_ren.
+  Qed.
+  
   Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
@@ -326,7 +331,7 @@ Section RenWlWhnf.
 End RenWlWhnf.
 
 #[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isCanonical_ren : gen_typing.
-#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isPosType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
 
 (** ** Adaptation of AutoSubst's asimpl to well typed weakenings *)
 
@@ -419,3 +424,21 @@ Proof. now cbn. Qed.
 
 Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
 Proof. now cbn. Qed.
+
+(** Weakening and compactification *)
+
+Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
+Proof. now destruct t. Qed.
+
+#[global]
+Instance ren_map_data {Γ Δ} : Ren1 (Γ ≤ Δ) Map.data Map.data :=
+  fun ρ r => Map.mk (Map.srcTy r)⟨ρ⟩ (Map.fn r)⟨ρ⟩ (Map.lst r)⟨ρ⟩.
+
+Lemma wk_map_compact A t {Γ Δ} : forall (ρ : Γ ≤ Δ), (Map.compact A t)⟨ρ⟩ = Map.compact A⟨ρ⟩ t⟨ρ⟩.
+Proof.
+  induction t in A |- * ; intros; try reflexivity.
+  cbn. refold.
+  rewrite <- IHt4.
+  destruct (Map.compact t1 t4); cbn.
+  do 2 f_equal. now bsimpl.
+Qed.

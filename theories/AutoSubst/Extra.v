@@ -68,53 +68,27 @@ Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
 
-
-
 (** Flattening of map on lists; used in AlgorithmicTyping and Functions *)
 
 Module Map.
-  (** Quadruple of terms collecting the data of accumulated maps 
+  (** Triple of terms collecting the data of accumulated maps 
       The record needs to be negative so that we can use it in the 
       rule neuMapCompact *)
   #[projections(primitive)]
   Record data : Set := 
-    mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
+    mk { srcTy : term ; fn : term ; lst : term }.
 
-  Definition id (A k : term) : data := Map.mk A A (idterm A) k.
+  Definition id (A k : term) : data := Map.mk A (idterm A) k.
  
-  Inductive opt := | IsMap : data -> opt | IsNotMap : term -> opt.
-
-  Fixpoint compact (t : term) : opt :=
+  Fixpoint compact (T t : term) : data :=
   match t with
-  | tMap B A f l => IsMap 
-    match compact l with
-    | IsMap r => Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
-    | IsNotMap _ => Map.mk B A f l
-    end
-  | k => IsNotMap k
+  | tMap B A f l =>
+      let r := compact B l in
+      Map.mk r.(Map.srcTy) (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
+  | k => id T k
   end.
 
-  (* combine and extract should be used only when one of their argument is a map *)
-  Definition garbage := id tZero tNat.
-
-  Definition combine (l r : opt) : data × data :=
-    match l, r with
-    | IsMap l, IsMap r => (l, r)
-    | IsMap l, IsNotMap r => (l, id l.(srcTy) r)
-    | IsNotMap l, IsMap r => (id r.(srcTy) l, r)
-    | IsNotMap l, IsNotMap r => (garbage, garbage) (* should never be used *)
-    end.
-
-  Definition extract l r := combine (compact l) (compact r).
 End Map.
 
 Definition is_map t :=
   match t with | tMap _ _ _ _ => true | _ => false end.
-
-Fixpoint compact_map (A t : term) : Map.data :=
-  match t with
-  | tMap B A f l => 
-    let r := compact_map B l in
-    Map.mk r.(Map.srcTy) A (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
-  | k => Map.id A k
-  end.

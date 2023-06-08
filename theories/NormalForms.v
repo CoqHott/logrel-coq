@@ -74,7 +74,6 @@ Inductive isPosType : term -> Type :=
   | UnivPos {s} : isPosType (tSort s)
   | NatPos : isPosType tNat
   | EmptyPos : isPosType tEmpty
-  | ListPos {A} : isPosType (tList A)
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
@@ -137,3 +136,23 @@ Inductive isCanonical : term -> Type :=
   | can_tCons {A hd tl} : isCanonical (tCons A hd tl).
 
 #[global] Hint Constructors isCanonical : gen_typing.
+
+(** ** Normal forms and compactification *)
+
+Lemma compact_map_whne A l :
+  whne_list (Map.lst (Map.compact A l)) -> whne_list l.
+Proof.
+  induction l in A |- *; cbn; try easy.
+  intros; constructor; eauto.
+Qed.
+
+Lemma compact_map_lst_whne A l :
+  whne_list l -> whne (Map.lst (Map.compact A l)).
+Proof.
+  induction l in A |- * ; cbn ; try easy.
+  all: intros Hw ; try solve [inv_whne].
+  1-6: now inversion Hw.
+  inversion Hw ; subst.
+  2: inv_whne.
+  eauto.
+Qed.

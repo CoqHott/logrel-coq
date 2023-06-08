@@ -90,7 +90,7 @@ Qed.
 
 (** ** Stability by weakening *)
 
-Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
+Lemma shift_up_ren {Γ Δ} {t : term} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
 Proof. now asimpl. Qed.
 
 Section TypingWk.
