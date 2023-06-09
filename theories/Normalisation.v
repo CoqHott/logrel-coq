@@ -54,25 +54,26 @@ Definition nf := de.
 #[export] Instance ConvTypeNf : ConvType nf := fun Γ A B => WN A × WN B.
 #[export] Instance ConvTermNf : ConvTerm nf := fun Γ A t u => WN t × WN u.
 #[export] Instance ConvNeuConvNf : ConvNeuConv nf := fun Γ A m n => whne m × whne n.
+#[export] Instance ConvNeuListNf : ConvNeuList nf := fun Γ A m n => whne_list m × whne_list n.
 #[export] Instance RedTypeNf : RedType nf := fun Γ A B => [A ⇒* B].
 #[export] Instance RedTermNf : RedTerm nf := fun Γ A t u => [t ⇒* u].
 
-#[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := nf) := {}.
+#[export, refine] Instance WfCtxNfProperties : WfContextProperties (ta := nf) := {}.
 Proof.
 all: try constructor.
 Qed.
 
-#[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := nf) := {}.
+#[export, refine] Instance WfTypeNfProperties : WfTypeProperties (ta := nf) := {}.
 Proof.
 all: try constructor.
 Qed.
 
-#[export, refine] Instance TypingDeclProperties : TypingProperties (ta := nf) := {}.
+#[export, refine] Instance TypingNfProperties : TypingProperties (ta := nf) := {}.
 Proof.
 all: try constructor.
 Qed.
 
-#[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := nf) := {}.
+#[export, refine] Instance ConvTypeNfProperties : ConvTypeProperties (ta := nf) := {}.
 Proof.
 all: try (intros; split; apply WN_whnf; now constructor).
 + intros * []; now split.
@@ -83,7 +84,7 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? ? []; split; now eapply WN_exp.
 Qed.
 
-#[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := nf) := {}.
+#[export, refine] Instance ConvTermNfProperties : ConvTermProperties (ta := nf) := {}.
 Proof.
 all: try (intros; split; apply WN_whnf; now constructor).
 + intros; split.
@@ -93,11 +94,12 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? []; split; now eapply WN_exp.
 + intros * []; split; now apply WN_whnf, whnf_whne.
++ intros * []; split; now apply WN_whnf, whnf_whne_list. 
 + intros * ? ? ? ? ? ? []; split; now apply WN_isFun.
 + intros; split; now apply WN_isPair.
 Qed.
 
-#[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := nf) := {}.
+#[export, refine] Instance ConvNeuNfProperties : ConvNeuProperties (ta := nf) := {}.
 Proof.
 + intros; split.
   - intros t u []; now split.
@@ -111,9 +113,21 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
-+ intros * ????? [] ; split; now repeat constructor.
-+ intros * ? []; split; now repeat constructor.
-+ intros * ??? []; now repeat constructor.
+Qed.
+
+
+#[export, refine] Instance ConvNeuListNfProperties : ConvNeuListProperties (ta := nf) := {}.
+Proof.
++ intros; split.
+  - intros t u []; now split.
+  - intros t u v [] []; now split.
++ intros * [] ?; now split.
++ intros * ? []; split; now apply whne_list_ren.
++ intros * []; split; now econstructor.
++ now intros * [].
++ intros * ????? []; split; constructor ; tea ; now constructor.
++ intros * ? [] ; split ; tea ; now constructor.
++ intros * ??? []; split; now constructor.
 Qed.
 
 #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := nf) := {}.
@@ -140,7 +154,7 @@ all: try now intros; eassumption.
 + intros; reflexivity.
 Qed.
 
-#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ := {}.
+#[export] Instance DeclarativeTypingProperties : GenericTypingProperties nf _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End Nf.
 
@@ -343,6 +357,41 @@ Section NeutralConversion.
     1: eapply (ListRedTy.red LA).
     1,2: reflexivity.
     econstructor; tea.
-    constructor.
+    assert (Map.compact (ListRedTy.par LA) m = Map.id (ListRedTy.par LA) m) as Heqm.
+    {
+      destruct m eqn:? ; cbn ; try reflexivity.
+      exfalso.
+      subst.
+      eapply algo_conv_wh in hconv as [hconv _].
+      inversion hconv.
+    }
+    assert (Map.compact (ListRedTy.par LA) n = Map.id (ListRedTy.par LA) n) as Heqn.
+    {
+      destruct n eqn:? ; cbn ; try reflexivity.
+      exfalso.
+      subst.
+      eapply algo_conv_wh in hconv as [_ hconv].
+      inversion hconv.
+    }
+    econstructor ; rewrite Heqm, Heqn ; cbn.
+    + econstructor ; tea.
+      2: now econstructor.
+      eapply LA.
+    + econstructor.
+      1-3: reflexivity.
+      econstructor.
+      1-2: now econstructor.
+      destruct LA ; cbn in *.
+      econstructor.
+      * admit.
+      * eapply redSuccAlg.
+        1: econstructor.
+        cbn.
+        reflexivity.
+      * eapply redSuccAlg.
+        1: econstructor.
+        cbn.
+        reflexivity.
+      * econstructor.   
   Qed.
 End NeutralConversion.

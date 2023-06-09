@@ -866,11 +866,11 @@ Section Fundamental.
 
   Lemma FundTmEqMapComp :
     forall (Γ : context) (f g l l' A B C : term),
-    FundTyEq Γ A A ->
-    FundTyEq Γ B B ->
-    FundTyEq Γ C C ->
-    FundTmEq Γ (arr B C) f f ->
-    FundTmEq Γ (arr A B) g g ->
+    FundTy Γ A ->
+    FundTy Γ B ->
+    FundTy Γ C ->
+    FundTm Γ (arr B C) f ->
+    FundTm Γ (arr A B) g ->
     FundTmEq Γ (tList A) l l' ->
     FundTmEq Γ (tList C) (tMap B C f (tMap A B g l)) (tMap A C (comp A f g) l').
   Proof.

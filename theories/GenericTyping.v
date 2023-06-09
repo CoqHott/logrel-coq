@@ -330,6 +330,7 @@ Section GenericTyping.
       [Γ |- A ⇒* A'] -> [Γ |- t ⇒* t' : A'] -> [Γ |- u ⇒* u' : A'] ->
       [Γ |- t' ≅ u' : A'] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
+      isPosType A ->
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_convneulist {Γ n n' A} :
       [Γ |- n ~ n' :List A] -> [Γ |- n ≅ n' : tList A] ;
@@ -420,14 +421,15 @@ Class ConvNeuListProperties :=
   convneulist_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
     [|- Δ ] -> [Γ |- t ~ u :List A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ :List A⟨ρ⟩] ;
   convneulist_convneu {Γ n n' A} :
-    [Γ |- n ~ n' : tList A] -> [Γ |- n ~ n' :List A] ;
+    [Γ |- n ~ n' : tList A] ->
+    [Γ |- n ~ n' :List A] ;
   convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
   convneulist_map_comp {Γ f g l l' A B C} :
-  [Γ |- A ≅ A] ->
-  [Γ |- B ≅ B] ->
-  [Γ |- C ≅ C] ->
-  [Γ |- g ≅ g : arr A B] ->
-  [Γ |- f ≅ f : arr B C] ->
+  [Γ |- A] ->
+  [Γ |- B] ->
+  [Γ |- C] ->
+  [Γ |- g : arr A B] ->
+  [Γ |- f : arr B C] ->
   [Γ |- l ~ l' :List A] ->
   [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' :List C] ;
 convneulist_map_id {Γ A l l'} :
@@ -981,7 +983,7 @@ Section GenericConsequences.
     + now asimpl.
   Qed.
 
-  Lemma convtm_id {Γ A A' B C} : 
+  (* Lemma convtm_id {Γ A A' B C} : 
     [|- Γ] ->
     [Γ |- A] ->
     [Γ |- A'] ->
@@ -1014,9 +1016,10 @@ Section GenericConsequences.
       1: now eapply lrefl.
       eapply ty_conv. 2: now symmetry.
       now eapply ty_var0.
-    - eapply convtm_convneu. eapply convneu_var.
-      now eapply ty_var0.
-  Qed.
+    - eapply convtm_convneu.
+      2: eapply convneu_var.
+      2: now eapply ty_var0.
+  Qed. *)
 
   Lemma ty_comp {Γ A B C f g} :
     [Γ |- A] ->

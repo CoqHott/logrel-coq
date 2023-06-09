@@ -22,7 +22,7 @@ Section TypeConstructors.
       | EmptyType, EmptyType => True
       | NeType _, NeType _ => [Γ |- T ≅ T' : U]
       | @SigType A B, @SigType A' B' => [Γ |- A' ≅ A] × [Γ,, A' |- B ≅ B']
-      | @ListType A, @ListType A' => [Γ |- A' ≅ A]
+      | @ListType A, @ListType A' => [Γ |- A ≅ A']
       | _, _ => False
     end.
 
@@ -93,7 +93,7 @@ Section TypeConstructors.
     - easy. 
     - destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed)).
       split; now escape.
-    - symmetry; now eapply LogicalRelation.Escape.escapeEq.
+    - now eapply LogicalRelation.Escape.escapeEq.
     - pose proof eq as ?%symmetry%convneu_whne.
       destruct nfT'; try solve [inv_whne].
       cbn in *. gen_typing.
@@ -242,7 +242,7 @@ Section TypeConstructors.
   
   Corollary red_ty_compl_list_l Γ A T :
     [Γ |- tList A ≅ T] ->
-    ∑ A', [Γ |- T ⇒* tList A'] × [Γ |- A' ≅ A].
+    ∑ A', [Γ |- T ⇒* tList A'] × [Γ |- A ≅ A'].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -261,12 +261,17 @@ Section TypeConstructors.
     [Γ |- T ≅ tList A] ->
     ∑ A', [Γ |- T ⇒* tList A'] × [Γ |- A' ≅ A].
   Proof.
-    intros; eapply red_ty_compl_list_l; now symmetry.
+    intros H.
+    symmetry in H. 
+    eapply red_ty_compl_list_l in H as [? []]. 
+    eexists.
+    split ; tea.
+    now symmetry.
   Qed.
 
   Corollary list_ty_inj Γ A A' :
     [Γ |- tList A ≅ tList A'] ->
-    [Γ |- A' ≅ A].
+    [Γ |- A ≅ A'].
   Proof.
     intros Hty.
     unshelve eapply ty_conv_inj in Hty.
@@ -447,7 +452,7 @@ Section Boundary.
     - intros * ? _ ? _ *; split; econstructor; tea.
       1,3: now econstructor.
       eapply ty_simple_app; cycle 1; tea.
-    - intros * ? [? _] ? [? _] ? [? _] ? [? ? _] ? [?? _] ? []; split; econstructor; tea.
+    - intros * ? _ ? _ ? _ ? ? ? ? ? []; split; econstructor; tea.
       1: now econstructor.
       eapply ty_comp; cycle 2; tea.
     - intros * ? [? _] ? []; split; econstructor; tea.

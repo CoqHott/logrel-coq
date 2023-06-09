@@ -16,7 +16,7 @@ Section SimpleArrow.
     - now escape.
     - renToWk; eapply wft_wk; gen_typing.
     - intros; irrelevance0.
-      2: replace (subst_term _ _) with B⟨ρ⟩.      
+      2: replace (subst_term _ _) with B⟨ρ⟩.
       2: eapply wkEq, LRTyEqRefl_.
       all: bsimpl; now rewrite rinstInst'_term.
       Unshelve. all: tea.
@@ -37,6 +37,14 @@ Section SimpleArrow.
   Lemma ArrRedTy {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-<l> arr A B].
   Proof. intros; eapply LRPi'; now eapply ArrRedTy0. Qed.
 
+  (* Lemma idrefl {Γ l A} (RA : [Γ ||-<l> A]) :
+    [Γ ||-<l> idterm A ≅ idterm A : arr A A | ArrRedTy RA RA].
+  Proof.
+    set (ΠAA := normRedΠ0 (invLRΠ (ArrRedTy RA RA))).
+    enough [LRPi' ΠAA | Γ ||- idterm A ≅ idterm A : arr A A] by irrelevance.
+    unshelve econstructor ; cbn. *)
+
+
   Lemma idred {Γ l A} (RA : [Γ ||-<l> A]) :
     [Γ ||-<l> idterm A : arr A A | ArrRedTy RA RA].
   Proof.
@@ -54,12 +62,41 @@ Section SimpleArrow.
       eapply redSubstTerm; tea.
       now eapply redtm_id_beta.
     }
+    assert [Γ,, A |- A⟨↑⟩].
+    {
+      erewrite <- wk1_ren_on.
+      eapply wft_wk ; tea.
+      eapply wfc_cons ; gen_typing.
+    }
     econstructor; cbn.
     - eapply redtmwf_refl.
       now eapply ty_id.
     - constructor.
-    - eapply convtm_id; tea.
-      eapply wfc_wft; now escape.
+    - eapply convtm_eta ; tea.
+      + eapply ty_lam ; tea.
+        now eapply ty_var0.
+      + econstructor.
+      + eapply ty_lam ; tea.
+        now eapply ty_var0.
+      + econstructor.
+      + eapply convtm_exp ; cycle 1.
+        * cbn.
+          eapply redtm_beta ; tea.
+          2: now eapply ty_var0.
+          now eapply ty_var0.
+        * cbn.
+          eapply redtm_beta ; tea.
+          2: now eapply ty_var0.
+          now eapply ty_var0.
+        * cbn.
+          replace (A⟨↑⟩⟨↑⟩[_]) with (A⟨↑⟩) by (bsimpl ; now substify).
+          unshelve eapply escapeEqTerm, LREqTermRefl_ ; tea.
+          2: now eapply var0.
+          erewrite <- wk1_ren_on.
+          eapply wk ; tea.
+          gen_typing.
+        * replace (A⟨↑⟩⟨↑⟩[_]) with (A⟨↑⟩) by (bsimpl ; now substify).
+          now eapply redty_refl.
     - intros; cbn; irrelevance0.
       2: now eapply h.
       bsimpl; now rewrite rinstInst'_term.

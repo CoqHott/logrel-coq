@@ -79,7 +79,10 @@ Section Escapes.
       all: gen_typing.
     - intros ??? [] [] ; cbn in *.
       eapply convtm_exp ; tea.
-      all: gen_typing.
+      1-3: gen_typing.
+      eapply convtm_convneu ; tea.
+      econstructor.
+      now eapply convneu_whne.
     - intros ??? [] * ?? [[termL] [termR]] ; cbn in *.
       eapply convtm_exp ; tea.
       all: gen_typing.

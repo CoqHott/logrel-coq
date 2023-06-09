@@ -604,7 +604,7 @@ Module DeclarativeTypingProperties.
       2: eassumption.
       2: eapply TermSym.
       all: now eapply RedConvTeC.
-    - intros ???? H; apply H.
+    - intros ????? H; apply H.
     - intros ???? H; apply H. 
   Qed.
 

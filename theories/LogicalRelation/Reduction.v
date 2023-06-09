@@ -76,10 +76,7 @@ Proof.
   - intros ???? ru' ?; pose (ru := ru'); destruct ru' as [n].
     assert [Γ |- A ≅ neRedTy.ty neA]. 1:{
       destruct neA; cbn in *.
-      eapply convty_exp.
-       2: apply redtywf_refl; gen_typing.
-       2: apply convty_term; now apply convtm_convneu.
-       gen_typing.
+      gen_typing.
     }
     assert [Γ |-[ ta ] t ⇒* u : neRedTy.ty neA] by (eapply redtm_conv; tea). 
     assert [Γ |-[ ta ] t : neRedTy.ty neA] by (eapply ty_conv; tea; gen_typing). 

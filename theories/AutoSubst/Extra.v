@@ -88,6 +88,10 @@ Module Map.
   | k => id T k
   end.
 
+
+  Definition build (tgt : term) (r : Map.data) :=
+    tMap (Map.srcTy r) tgt (Map.fn r) (Map.lst r).
+
 End Map.
 
 Definition is_map t :=

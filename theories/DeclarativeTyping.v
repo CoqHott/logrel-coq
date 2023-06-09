@@ -265,11 +265,11 @@ Section Definitions.
           [ Γ |- tl : tList A ] ->
           [ Γ |- tMap A B f (tCons A hd tl) ≅ tCons B (tApp f hd) (tMap A B f tl) : tList B ]
       | TermRedMapComp {Γ} {f g l l' A B C} :
-          [ Γ |- A ≅ A ] ->
-          [ Γ |- B ≅ B ] ->
-          [ Γ |- C ≅ C ] ->
-          [ Γ |- f ≅ f : arr B C ] ->
-          [ Γ |- g ≅ g : arr A B ] ->
+          [ Γ |- A] ->
+          [ Γ |- B] ->
+          [ Γ |- C] ->
+          [ Γ |- f : arr B C ] ->
+          [ Γ |- g : arr A B ] ->
           [ Γ |- l ≅ l' : tList A ] ->
           [ Γ |- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l' : tList C ]
       | TermRedMapId {Γ} {l l' A} :

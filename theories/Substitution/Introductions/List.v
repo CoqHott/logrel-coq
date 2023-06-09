@@ -841,10 +841,9 @@ Proof.
       * eapply ty_comp.
         4-5: escape; tea. all: now escape.
       * easy.
-    + eapply convneulist_map_comp.
-      1-3: eapply escapeEq; eapply LRTyEqRefl_.
-      1-2: eapply escapeEqTerm; now eapply LREqTermRefl_.
-      easy.
+    + eapply convneulist_map_comp ; tea.
+      1-3: now eapply escape.
+      all: now eapply escapeTerm.
 
       Unshelve.
       all: tea.
