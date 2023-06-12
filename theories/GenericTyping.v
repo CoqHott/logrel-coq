@@ -422,6 +422,7 @@ Class ConvNeuListProperties :=
     [|- Δ ] -> [Γ |- t ~ u :List A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ :List A⟨ρ⟩] ;
   convneulist_convneu {Γ n n' A} :
     [Γ |- n ~ n' : tList A] ->
+    [Γ ,, A |- tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
     [Γ |- n ~ n' :List A] ;
   convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
   convneulist_map_comp {Γ f g l l' A B C} :
@@ -982,44 +983,6 @@ Section GenericConsequences.
     + cbn; now bsimpl.
     + now asimpl.
   Qed.
-
-  (* Lemma convtm_id {Γ A A' B C} : 
-    [|- Γ] ->
-    [Γ |- A] ->
-    [Γ |- A'] ->
-    [Γ |- A ≅ A'] ->
-    [Γ |- A ≅ B] ->
-    [Γ |- A ≅ C] ->
-    [Γ |- idterm A ≅ idterm A' : arr B C].
-  Proof.
-    intros.
-    assert [Γ |- A ≅ A] by (etransitivity; tea; now symmetry).
-    eapply convtm_conv.
-    2: eapply convty_simple_arr; cycle 1; tea.
-    eapply convtm_eta; tea.
-    { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: constructor.
-    1,2: eapply ty_id; tea; now symmetry.
-    assert [|- Γ,, A] by gen_typing.
-    assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk. 
-    eapply convtm_exp.
-    - eapply redty_refl; now renToWk.
-    - cbn. eapply redtm_id_beta.
-      3: now eapply ty_var0.
-      1,2: renToWk; tea; now eapply convty_wk.
-    - cbn. 
-      assert [Γ,, A |- A'⟨↑⟩ ≅ A⟨↑⟩]
-        by (renToWk; symmetry; now eapply convty_wk). 
-      eapply redtm_conv; tea.
-      eapply redtm_id_beta.
-      1: renToWk; now eapply wft_wk.
-      1: now eapply lrefl.
-      eapply ty_conv. 2: now symmetry.
-      now eapply ty_var0.
-    - eapply convtm_convneu.
-      2: eapply convneu_var.
-      2: now eapply ty_var0.
-  Qed. *)
 
   Lemma ty_comp {Γ A B C f g} :
     [Γ |- A] ->

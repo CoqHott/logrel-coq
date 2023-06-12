@@ -2,6 +2,7 @@
 
 (** This is the only file in the AutoSubst submodule that is not automatically generated. *)
 From smpl Require Import Smpl.
+From Coq Require Import ssrbool List.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst.
 
@@ -67,6 +68,17 @@ Qed.
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
+Fixpoint tApps (fn : list term) (t : term) :=
+  match fn with
+  | nil => t
+  | f :: fn' => tApp f (tApps fn' t)
+  end.
+
+Definition eta_expands (fn : list term) :=
+  (tApps (list_map (fun f => f⟨↑⟩) fn) (tRel 0)).
+
+Definition comps (A : term) (fn : list term) :=
+  tLambda A (eta_expands fn).
 
 (** Flattening of map on lists; used in AlgorithmicTyping and Functions *)
 
@@ -76,23 +88,56 @@ Module Map.
       rule neuMapCompact *)
   #[projections(primitive)]
   Record data : Set := 
-    mk { srcTy : term ; fn : term ; lst : term }.
+    mk { srcTy : term ; tys : list (term × term) ; fn : list term ; lst : term }.
 
-  Definition id (A k : term) : data := Map.mk A (idterm A) k.
+  Definition id (A k : term) : data := Map.mk A [::] [::] k.
  
-  Fixpoint compact (T t : term) : data :=
+  Fixpoint decompose (T t : term) : data :=
   match t with
   | tMap B A f l =>
-      let r := compact B l in
-      Map.mk r.(Map.srcTy) (comp r.(Map.srcTy) f r.(Map.fn)) r.(Map.lst)
+      let r := decompose B l in
+      mk r.(srcTy) ((B,A) :: r.(tys)) (f :: r.(fn)) r.(lst)
   | k => id T k
   end.
 
+  Fixpoint recompose_aux tys fn lst :=
+    match tys, fn with
+    | [::], _ => lst
+    | _, [::] => lst
+    | (A,B) :: tys', f :: fn' => tMap A B f (recompose_aux tys' fn' lst)
+    end.
 
-  Definition build (tgt : term) (r : Map.data) :=
-    tMap (Map.srcTy r) tgt (Map.fn r) (Map.lst r).
+  Definition recompose (d : data) := recompose_aux d.(tys) d.(fn) d.(lst).
+
+  Definition compact (tgt : term) (r : Map.data) :=
+    tMap (srcTy r) tgt (comps (srcTy r) (fn r)) (lst r).
+
+  Lemma decompose_recompose T t : recompose (decompose T t) = t.
+  Proof.
+    induction t in T |- * ; cbn.
+    all: try reflexivity.
+    f_equal.
+    easy.
+  Qed.
+
+  Lemma decompose_lst_eq (T T' t : term) :
+    (decompose T t).(lst) = (decompose T' t).(lst).
+  Proof.
+    now destruct t.
+  Qed.
+
+  Lemma decompose_fn_eq (T T' t : term) :
+    (decompose T t).(fn) = (decompose T' t).(fn).
+  Proof.
+    now destruct t.
+  Qed.
+
+  Definition is_map t :=
+    match t with | tMap _ _ _ _ => true | _ => false end.
+
+  Lemma compact_id {A t} : ~~ is_map t -> decompose A t = id A t.
+  Proof.
+    destruct t; cbn; try reflexivity; discriminate.
+  Qed.
 
 End Map.
-
-Definition is_map t :=
-  match t with | tMap _ _ _ _ => true | _ => false end.

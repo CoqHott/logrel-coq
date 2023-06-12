@@ -17,6 +17,11 @@ Notation "`=2`" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at le
 Infix "=2" := (pointwise_relation _ (pointwise_relation _ Logic.eq)) (at level 70).
 Infix "<~>" := iffT (at level 90).
 
+(** We avoid the usual list notations, which conflict with autosubst, and use the following instead. *)
+Notation "[::]" := nil : list_scope.
+Notation "[:: x ]" := (cons x nil) : list_scope.
+Notation "[::  x ; .. ; y ]" := (cons x .. (cons y nil) ..) : list_scope.
+
 (** Since we work a lot with type-level propositions,
 we override the notation for negation from the
 standard library. **)
@@ -131,7 +136,27 @@ Section ReflexiveTransitiveClosure.
   Defined.
 End ReflexiveTransitiveClosure.
 
+(** ** Predicates on lists *)
 
+  Inductive Forall2T [A B : Type] (R : A -> B -> Type) :
+    list A -> list B -> Type :=
+  | Forall2T_nil : Forall2T R [::] [::]
+  | Forall2T_cons x y xs ys : R x y -> Forall2T R xs ys -> Forall2T R (x :: xs) (y :: ys).
+
+(** List chaining: each element is related to the next one *)
+
+  Inductive ListChain [A : Type] (Rchain : A -> A -> Type) (Rext : A -> A -> Type) :
+    A -> list (A × A) -> A -> Type :=
+  | chain_nil x z : Rext x z -> ListChain Rchain Rext x [::] z
+  | chain_cons x y y' ys z : Rchain x y' -> ListChain Rchain Rext y ys z ->
+      ListChain Rchain Rext x ((y,y') :: ys) z.
+
+  Definition ListChainFull [A : Type] (Rchain : A -> A -> Type) (Rext : A -> A -> Type) 
+    (x : A) (ys : list (A × A)) (z : A) : Type :=
+  match ys with
+  | [::] => Rext x z
+  | (y,y') :: ys' => Rext x y' × ListChain Rchain Rext y ys' z
+  end.
 
 (** ** Tactics *)
 

@@ -69,6 +69,9 @@ Section AlgoConvConv.
   Let PNeRedEq' (Γ : context) (A t u : term) := forall Γ',
     [|-[de] Γ' ≅ Γ] ->
     ∑ A', [× [Γ' |-[al] t ~h u ▹ A'], [Γ' |-[de] A' ≅ A] & isType A'].
+  Let PNeListEq' (Γ : context) (A t u : term) := forall Γ' A',
+    [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
+    [Γ' |-[al] t ~ u :List A'].
   Let PTmEq' (Γ : context) (A t u : term) := forall Γ' A',
     [|-[de] Γ' ≅ Γ] -> [Γ' |-[de] A ≅ A'] ->
     [Γ' |-[al] t ≅ u : A'].
@@ -77,9 +80,9 @@ Section AlgoConvConv.
     [Γ' |-[al] t ≅h u : A'].
 
   Theorem bundled_conv_conv :
-    BundledConvInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+    BundledConvInductionConcl PTyEq' PTyRedEq' PNeEq' PNeRedEq' PNeListEq' PTmEq' PTmRedEq'.
   Proof.
-    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PTmEq' PTmRedEq'.
+    all: subst PTyEq' PTyRedEq' PNeEq' PNeRedEq' PNeListEq' PTmEq' PTmRedEq'.
     apply BundledConvInduction ; cbn in *.
     - intros * ??? IH **.
       econstructor ; tea.
@@ -185,19 +188,6 @@ Section AlgoConvConv.
       eapply TermConv; refold; [|now symmetry].
       econstructor; eapply lrefl.
       now eapply stability.
-    - intros * hmap  ? [ih [? ihl ihr]] ? [] ? [] ?????.
-      set (rx := Map.extract _ _) in *.
-      edestruct ih as [? [? [? [r]]%red_ty_compl_list_r wh%isType_whnf]]; tea.
-      exists (tList (Map.tgtTy (fst rx))); split.
-      + pose proof (redty_whnf r wh); subst.
-        econstructor; fold rx; tea.
-        1: now eapply c0.
-        eapply c2; tea.
-        eapply stability; tea.
-        eapply TypeRefl; refold; boundary.
-      + eapply stability; tea.
-        eapply TypeRefl; refold.
-        econstructor; boundary.
     - intros * ? IHm **.
       edestruct IHm as [[A'' []] []]; tea.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'.
@@ -217,6 +207,32 @@ Section AlgoConvConv.
       + symmetry ; etransitivity ; tea.
         now eapply RedConvTyC.
       + eassumption.
+    - intros * ? [ih [? ihl ihr]] ? [] **.
+      set (rl := Map.compact _ _) in *.
+      set (rl' := Map.compact _ l') in *.
+      edestruct ih as [T [ihlst hconv]] ; tea.
+      eapply red_ty_compl_list_r in hconv as [A'' []].
+      assert (T = tList A'') as ->.
+      {
+        eapply red_whnf.
+        1: now eapply redty_sound.
+        gen_typing.
+      }
+      econstructor.
+      + repeat rewrite (Map.compact_lst_eq A' B).
+        eapply ihlst.
+      + 
+
+      exists (tList (Map.tgtTy (fst rx))); split.
+      + pose proof (redty_whnf r wh); subst.
+        econstructor; fold rx; tea.
+        1: now eapply c0.
+        eapply c2; tea.
+        eapply stability; tea.
+        eapply TypeRefl; refold; boundary.
+      + eapply stability; tea.
+        eapply TypeRefl; refold.
+        econstructor; boundary.
     - intros * ? ? ? []%algo_conv_wh IH ? ? ? ? A'' **.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'
         by now eapply conv_red_l.
@@ -318,6 +334,7 @@ Section AlgoConvConv.
       pose proof (redty_whnf r wh); subst.
       assert [Γ' |-[de] A ≅ A] by (eapply stability; tea; econstructor; now boundary).
       econstructor; [eapply ihhd|eapply ihtl]; tea; now econstructor.
+    - admit.
     - intros * ? IHm HtyP ? ? ? * ? HconvN HtyA'.
       edestruct IHm as [[? []] ?] ; tea.
       unshelve eapply ty_conv_inj in HconvN.
@@ -328,6 +345,10 @@ Section AlgoConvConv.
       all: cbn in HconvN ; try now exfalso.
       all: now constructor.
   Qed.
+
+
+  
+
 
   Let PTyEq (Γ : context) (A B : term) := True.
   Let PTyRedEq (Γ : context) (A B : term) := True.

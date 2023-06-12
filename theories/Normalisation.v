@@ -93,7 +93,7 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * [] ?; now split.
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? []; split; now eapply WN_exp.
-+ intros * []; split; now apply WN_whnf, whnf_whne.
++ intros * ? []; split; now apply WN_whnf, whnf_whne.
 + intros * []; split; now apply WN_whnf, whnf_whne_list. 
 + intros * ? ? ? ? ? ? []; split; now apply WN_isFun.
 + intros; split; now apply WN_isPair.
@@ -233,165 +233,50 @@ Section NeutralConversion.
   Lemma ne_conv_conv : forall (Γ : context) (A m n : term),
     [Γ |-[de] A] ->
     [Γ |-[de] m : A] ->
+    isPosType A ->
     [Γ |-[al] m ~ n ▹ A] ->
     [Γ |-[al] m ≅ n : A].
   Proof.
-    intros * Hty.
-    pose proof (Hty' := Hty).
-    eapply Fundamental in Hty' as [? Hfund%reducibleTy].
-    revert m n.
-    pattern one, Γ, A, Hfund. apply LR_rect_TyUr; clear Γ A Hty VΓ Hfund.
-    - intros.
-      econstructor.
-      1: eapply redty_red; now destruct h as [??? [??]].
-      1-2: reflexivity.
-      econstructor. 
-      2: now constructor.
-      eassumption.
-    - intros ? * [] ?.
-      econstructor.
-      1: gen_typing.
-      1-2: reflexivity.
-      econstructor.
-      1: eassumption.
-      econstructor; eapply (convneu_whne eq).
-    - intros ? ? ? ΠA IHdom IHcod m n mty Hconv ; cbn in *.
-      destruct ΠA  as [????? []]; cbn in *.
-      econstructor.
-      1: gen_typing.
-      1-2: reflexivity.
-      econstructor.
-      1-2: econstructor ; now eapply algo_conv_wh in Hconv.
-      eapply convtm_meta_conv.
-      3: reflexivity.
-      1: unshelve eapply IHcod.
-      + exact (tRel var_zero).
-      + apply wk1.
-      + gen_typing.
-      + eapply var0; tea ; now bsimpl.
-      + econstructor. 1:econstructor.
-        * renToWk; erewrite wk_prod; eapply ty_wk.
-          1: econstructor; tea; boundary.
-          econstructor; tea. gen_typing.
-        * rewrite wk1_ren_on; now eapply ty_var0.
-        * assert (cod⟨wk_up dom (@wk1 Γ dom)⟩[(tRel 0)..] = cod[tRel 0 .: @wk1 Γ dom >> tRel]) as -> by now bsimpl.
-          econstructor. now rewrite var0_wk1_id.
-      + eapply convne_meta_conv.
-        3: reflexivity.
-        1: econstructor.
-        * replace (tProd _ _) with ((tProd dom cod)⟨↑⟩) by
-            (cbn ; reflexivity).
-          eapply algo_conv_shift.
-          econstructor ; tea.
-          1: now gen_typing.
-          econstructor.
-        * eapply convtm_meta_conv.
-          1: unshelve eapply IHdom.
-          -- now eapply wk1.
-          -- gen_typing.
-          -- rewrite wk1_ren_on; now eapply ty_var0.
-          -- eapply convne_meta_conv.
-             1: do 2 econstructor.
-             2: reflexivity.
-             now bsimpl.
-          -- now bsimpl.
-          -- reflexivity.
-        * now bsimpl.
-      + bsimpl.
-        rewrite scons_eta'.
-        now bsimpl.
-  - intros _ Δ B NB **; destruct NB.
+    intros * Hty Hm HA Hconv.
     econstructor.
-    + now eapply redtywf_red.
-    + reflexivity.
-    + reflexivity.
-    + econstructor; [eassumption|constructor].
-  - intros _ Δ B NB **; destruct NB.
-    econstructor.
-    + now eapply redtywf_red.
-    + reflexivity.
-    + reflexivity.
-    + econstructor; [eassumption|constructor].
-  - intros ??? ΣA ihdom ihcod m n tym Hconv.
-    destruct (polyRedId ΣA); escape.
-    assert [|-[de] Γ] by boundary.
-    econstructor.
-    1: eapply (ParamRedTy.red ΣA).
-    1,2: reflexivity.
-    assert [Γ |-[de] m : ParamRedTy.outTy ΣA]. 1:{
-      econstructor; tea.
-      eapply convty_exp. 
-      1: eapply (ParamRedTy.red ΣA).
-      1: eapply redtywf_refl; eapply (ParamRedTy.red ΣA).
-      econstructor; tea;
-      eapply LogicalRelation.Escape.escapeEq;
-      eapply LRTyEqRefl_.
-    }
-    assert [Γ |-[ de ] tFst m : (ParamRedTy.dom ΣA)⟨@wk_id Γ⟩].
-    1: rewrite wk_id_ren_on; now econstructor.
-    assert [Γ |-[ al ] tFst m ~ tFst n ▹ ParamRedTy.dom ΣA].
-    1:{
-      do 2 econstructor; tea.
-      1: eapply (ParamRedTy.red ΣA).
-      constructor.
-    }
-    econstructor.
-    1-2: econstructor ; now eapply algo_conv_wh in Hconv.
-    + unshelve epose (r := ihdom _ wk_id _ _ _ _).
-      1,4: tea.
-      2: rewrite wk_id_ren_on in r; now apply r.
-    + unshelve epose (r := ihcod _ (tFst m) wk_id _ _ _ _ _).
-      1: tea.
-      5: erewrite Sigma.wk_id_shift in r; apply r.
-      3: do 2 econstructor; tea.
-      3: eapply (ParamRedTy.red ΣA).
-      3: constructor.
-      * assert (whne m).
-        { apply algo_conv_wh in Hconv; now destruct Hconv. }
-        eapply neuTerm; tea.
-        split; tea; now econstructor.
-      * rewrite Sigma.wk_id_shift; now econstructor.
-    Unshelve. 2,4: tea. 
-  - intros * ih * ? hconv.
-    econstructor.
-    1: eapply (ListRedTy.red LA).
-    1,2: reflexivity.
-    econstructor; tea.
-    assert (Map.compact (ListRedTy.par LA) m = Map.id (ListRedTy.par LA) m) as Heqm.
-    {
-      destruct m eqn:? ; cbn ; try reflexivity.
-      exfalso.
-      subst.
-      eapply algo_conv_wh in hconv as [hconv _].
-      inversion hconv.
-    }
-    assert (Map.compact (ListRedTy.par LA) n = Map.id (ListRedTy.par LA) n) as Heqn.
-    {
-      destruct n eqn:? ; cbn ; try reflexivity.
-      exfalso.
-      subst.
-      eapply algo_conv_wh in hconv as [_ hconv].
-      inversion hconv.
-    }
-    econstructor ; rewrite Heqm, Heqn ; cbn.
-    + econstructor ; tea.
-      2: now econstructor.
-      eapply LA.
-    + econstructor.
-      1-3: reflexivity.
-      econstructor.
-      1-2: now econstructor.
-      destruct LA ; cbn in *.
-      econstructor.
-      * admit.
-      * eapply redSuccAlg.
-        1: econstructor.
-        cbn.
-        reflexivity.
-      * eapply redSuccAlg.
-        1: econstructor.
-        cbn.
-        reflexivity.
-      * econstructor.   
+    1-3: reflexivity.
+    now econstructor.
   Qed.
+
+  Lemma refl_rel_id (Γ : context) (A : term) :
+    [Γ,, A |-[al] tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
+    [Γ |-[al] idterm A ≅h idterm A : arr A A].
+  Proof.
+    intros Hconv.
+    inversion Hconv ; subst.
+    eapply UntypedReduction.red_whnf in H0 as <- , H1 as <-.
+    2-3: now do 2 econstructor.
+    econstructor.
+    1-2: econstructor.
+    econstructor ; tea.
+    - eapply redalg_one_step.
+      econstructor.
+    - eapply redalg_one_step.
+      econstructor.
+  Qed.
+
+  Lemma ne_conv_ne_list_conv : forall (Γ : context) (A m n : term),
+    [Γ |-[de] A] ->
+    [Γ |-[al] m ~h n ▹ tList A] ->
+    [Γ ,, A |-[al] tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
+    [Γ |-[al] m ~ n :List A].
+  Proof.
+    intros * HA Hconv.
+    assert (Map.compact A m = Map.id A m × Map.compact A n = Map.id A n) as [em en].
+    {
+      eapply algo_conv_wh in Hconv as [[] []].
+      all: cbn ; split ; reflexivity.
+    }
+    econstructor ; tea.
+    all: rewrite em, en.
+    1: eassumption.
+    cbn.
+    eassumption.
+  Qed.
+  
 End NeutralConversion.

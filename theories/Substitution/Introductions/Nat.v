@@ -217,19 +217,22 @@ Section NatElimRed.
       2: unshelve eapply (appTerm RPs Rhs Rn).
       now bsimpl.
     - intros ? [] ?.
-      apply reflect.
-      + apply completeness.
+      epose proof (reflect _ (completeness _) _ (wk_id)) as [].
+      all: repeat rewrite wk_id_ren_on.
       + now eapply ty_natElim.
       + now eapply ty_natElim.
       + eapply convneu_natElim; tea.
         { eapply escapeEq, LRTyEqRefl_. }
         { eapply escapeEqTerm; now eapply LREqTermRefl_. }
         { eapply escapeEqTerm; now eapply LREqTermRefl_. }
+      + split ; irrelevance. 
     Unshelve.
     * eapply ArrRedTy; now eapply RPpt.
     * rewrite arr_subst_eq. eapply ArrRedTy.
       2: rewrite liftSubst_singleSubst_eq; cbn.
       all: now eapply RPpt.
+    * now apply RPpt.
+    * assumption.
     * exact l.
     * assumption.
   Qed.

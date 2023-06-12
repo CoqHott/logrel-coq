@@ -86,11 +86,11 @@ Section Definitions.
   *)
   with ConvNeuListAlg : context -> term -> term -> term -> Type :=
   | neuMapCompact {Γ A B l l'} :
-    (* Map.compact reduces all maps in head position, possibly inserting an identity *)
-    let r := Map.compact B l in
-    let r' := Map.compact B l' in
+    (* Map.decompose reduces all maps in head position, possibly inserting an identity *)
+    let r := Map.decompose B l in
+    let r' := Map.decompose B l' in
     [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ] ->
-    [Γ |- r.(Map.fn) ≅ r'.(Map.fn) : arr A B] ->
+    [Γ ,, A |- eta_expands r.(Map.fn) ≅ eta_expands r'.(Map.fn) : B⟨↑⟩] ->
     [Γ |- l ~ l' :List B]
 
   (** **** Conversion of terms *)
@@ -527,11 +527,15 @@ Section TypingWk.
     - intros * ? ihlst ? ihfn *.
       cbn.
       econstructor.
-      all: repeat rewrite <- wk_map_compact.
+      all: do 2 rewrite <- wk_map_decompose.
       + cbn in ihlst.
         apply ihlst.
-      + refold. rewrite wk_arr.
-        now apply ihfn.
+      + unfold ren1, ren_map_data ; cbn -[eta_expands].
+        do 2 erewrite wk_eta_expands.
+        refold.
+        replace (B⟨_⟩⟨_⟩) with (B⟨↑⟩⟨wk_up A ρ⟩).
+        eapply ihfn.
+        now bsimpl. 
     - intros.
       econstructor.
       1-3: eauto using credalg_wk.
@@ -750,7 +754,7 @@ Section AlgTypingWh.
     all: intros ; prod_splitter ; prod_hyp_splitter.
     all: try solve [now constructor].
     all: try solve [gen_typing].
-    all: eauto using compact_map_whne with gen_typing.
+    all: eauto using decompose_map_whne with gen_typing.
   Qed.
 End AlgTypingWh.
 

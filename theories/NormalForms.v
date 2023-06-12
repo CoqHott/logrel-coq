@@ -139,15 +139,15 @@ Inductive isCanonical : term -> Type :=
 
 (** ** Normal forms and compactification *)
 
-Lemma compact_map_whne A l :
-  whne_list (Map.lst (Map.compact A l)) -> whne_list l.
+Lemma decompose_map_whne A l :
+  whne_list (Map.lst (Map.decompose A l)) -> whne_list l.
 Proof.
   induction l in A |- *; cbn; try easy.
   intros; constructor; eauto.
 Qed.
 
-Lemma compact_map_lst_whne A l :
-  whne_list l -> whne (Map.lst (Map.compact A l)).
+Lemma decompose_map_lst_whne A l :
+  whne_list l -> whne (Map.lst (Map.decompose A l)).
 Proof.
   induction l in A |- * ; cbn ; try easy.
   all: intros Hw ; try solve [inv_whne].

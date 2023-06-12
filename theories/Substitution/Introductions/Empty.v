@@ -118,13 +118,15 @@ Section EmptyElimRed.
       + eapply redtm_emptyelim; tea.
         cbn; gen_typing.
     - intros ? [] ?.
-      apply reflect.
-      + apply completeness.
+      epose proof (reflect _ (completeness _) _ (wk_id)) as [].
+      all: repeat rewrite wk_id_ren_on.
       + now eapply ty_emptyElim.
       + now eapply ty_emptyElim.
       + eapply convneu_emptyElim; tea.
         { eapply escapeEq, LRTyEqRefl_. }
+      + split ; irrelevance. 
     Unshelve. all: tea.
+    now apply RPpt.
   Qed.
 
   Lemma emptyElimRed : forall n (Rn : [Γ ||-<l> n : _ | RN]), [Γ ||-<l> tEmptyElim P n : _ | RPpt _ Rn ].

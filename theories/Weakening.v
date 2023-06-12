@@ -140,7 +140,6 @@ Ltac change_well_wk :=
 
 Smpl Add 10 change_well_wk : refold.
 
-
 (** Constructors of well-typed weakenings *)
 
 Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
@@ -399,7 +398,27 @@ Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRe
 Proof. now bsimpl. Qed.
 
 Lemma wk_arr {A B Γ Δ} (ρ : Δ ≤ Γ) : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
-Proof. now bsimpl. Qed.
+Proof. cbn. now bsimpl. Qed.
+
+Lemma wk_tApps {fn t Γ Δ} (ρ : Δ ≤ Γ) :
+  tApps (list_map (fun t => t⟨ρ⟩) fn) t⟨ρ⟩ = (tApps fn t)⟨ρ⟩.
+Proof.
+  induction fn ; cbn in *.
+  1: reflexivity.
+  now rewrite IHfn.
+Qed.
+
+Lemma wk_eta_expands {fn Γ Δ A} (ρ : Δ ≤ Γ) :
+  eta_expands (list_map (fun t => t⟨ρ⟩) fn) = (eta_expands fn)⟨wk_up A ρ⟩.
+Proof.
+  unfold eta_expands.
+  rewrite <- wk_tApps ; cbn.
+  f_equal.
+  repeat rewrite List.map_map.
+  apply List.map_ext.
+  intros.
+  now bsimpl.
+Qed.
 
 Lemma wk_list {A Γ Δ} (ρ : Δ ≤ Γ) : tList A⟨ρ⟩ = (tList A)⟨ρ⟩.
 Proof. now bsimpl. Qed.
@@ -427,18 +446,21 @@ Proof. now cbn. Qed.
 
 (** Weakening and compactification *)
 
-Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : is_map t⟨ρ⟩ = is_map t.
+Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : Map.is_map t⟨ρ⟩ = Map.is_map t.
 Proof. now destruct t. Qed.
 
 #[global]
 Instance ren_map_data {Γ Δ} : Ren1 (Γ ≤ Δ) Map.data Map.data :=
-  fun ρ r => Map.mk (Map.srcTy r)⟨ρ⟩ (Map.fn r)⟨ρ⟩ (Map.lst r)⟨ρ⟩.
+  fun ρ r => {|
+    Map.srcTy := (Map.srcTy r)⟨ρ⟩ ;
+    Map.tys := list_map (fun '(A,B) => (A⟨ρ⟩,B⟨ρ⟩)) (Map.tys r) ;
+    Map.fn := list_map (fun f => f⟨ρ⟩) (Map.fn r) ;
+    Map.lst := (Map.lst r)⟨ρ⟩
+  |}.
 
-Lemma wk_map_compact A t {Γ Δ} : forall (ρ : Γ ≤ Δ), (Map.compact A t)⟨ρ⟩ = Map.compact A⟨ρ⟩ t⟨ρ⟩.
+Lemma wk_map_decompose A t {Γ Δ} : forall (ρ : Γ ≤ Δ), (Map.decompose A t)⟨ρ⟩ = Map.decompose A⟨ρ⟩ t⟨ρ⟩.
 Proof.
   induction t in A |- * ; intros; try reflexivity.
   cbn. refold.
-  rewrite <- IHt4.
-  destruct (Map.compact t1 t4); cbn.
-  do 2 f_equal. now bsimpl.
+  now rewrite <- IHt4.
 Qed.
