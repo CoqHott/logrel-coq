@@ -40,6 +40,9 @@ Inductive OneRedAlg : term -> term -> Type :=
 | termRedMapUnderAlg {A B f l l'} :
   [ l ⇒ l' ] ->
   [ tMap A B f l ⇒ tMap A B f l' ]
+| mapComp {A B B' C f g l} :
+  whne l->
+  [ tMap B C f (tMap A B' g l) ⇒ tMap A C (comp A f g) l]
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 

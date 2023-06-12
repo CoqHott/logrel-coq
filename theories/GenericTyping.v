@@ -425,24 +425,18 @@ Class ConvNeuListProperties :=
     [Γ ,, A |- tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
     [Γ |- n ~ n' :List A] ;
   convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
-  convneulist_map_comp {Γ f g l l' A B C} :
-  [Γ |- A] ->
-  [Γ |- B] ->
-  [Γ |- C] ->
-  [Γ |- g : arr A B] ->
-  [Γ |- f : arr B C] ->
-  [Γ |- l ~ l' :List A] ->
-  [Γ |- tMap B C f (tMap A B g l) ~ tMap A C (comp A f g) l' :List C] ;
-convneulist_map_id {Γ A l l'} :
-  [Γ |- A ≅ A] ->
-  [Γ |- l ~ l' :List A] ->
-  [Γ |- tMap A A (idterm A) l ~ l' :List A] ;
-convneulist_map {Γ A A' B B' f f' l l'} :
-  [Γ |- A ≅ A'] ->
-  [Γ |- B ≅ B'] ->
-  [Γ |- f ≅ f' : arr A B] ->
-  [Γ |- l ~ l' :List A] ->
-  [Γ |- tMap A B f l ~ tMap A' B' f' l' :List B] ;
+  convneulist_map_id {Γ A A' B f l l'} :
+    [Γ |- A ≅ B] ->
+    [Γ |- A ≅ A'] ->
+    [Γ ,, A |- eta_expand f ≅ tRel 0 : A⟨↑⟩] ->
+    [Γ |- l ~ l' : A' ] ->
+    [Γ |- tMap A B f l ~ l' :List B] ;
+  convneulist_map {Γ A A' B B' f f' l l'} :
+    [Γ |- A ≅ A'] ->
+    [Γ |- B ≅ B'] ->
+    [Γ ,, A |- eta_expand f ≅ eta_expand f' : B⟨↑⟩] ->
+    [Γ |- l ~ l' : tList A] ->
+    [Γ |- tMap A B f l ~ tMap A' B' f' l' :List B] ;
 }.
 
   Class RedTypeProperties :=

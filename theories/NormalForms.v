@@ -27,7 +27,7 @@ with whne : term -> Type :=
   | whne_tFst {p} : whne p -> whne (tFst p)
   | whne_tSnd {p} : whne p -> whne (tSnd p)
 with whne_list : term -> Type :=
-  | whne_tMap {A B f l} : whne_list l -> whne_list (tMap A B f l)
+  | whne_tMap {A B f l} : whne l -> whne_list (tMap A B f l)
   | whne_list_whne {n} : whne n -> whne_list n.
 
 
