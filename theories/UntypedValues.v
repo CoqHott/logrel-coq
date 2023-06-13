@@ -26,7 +26,7 @@ with sne (r : term) : Type :=
   | sne_tFst {p} : r = tFst p -> sne p -> sne r
   | sne_tSnd {p} : r = tSnd p -> sne p -> sne r
 with sne_list (r : term) : Type :=
-  | sne_tMap {A B f l} : r = tMap A B f l -> snf A -> snf B -> snf f -> sne_list l -> sne_list r
+  | sne_tMap {A B f l} : r = tMap A B f l -> snf A -> snf B -> snf f -> sne l -> sne_list r
   | sne_list_sne : sne r -> sne_list r.
 
 Set Elimination Schemes.

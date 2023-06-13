@@ -139,8 +139,8 @@ Inductive isCanonical : term -> Type :=
 
 (** ** Normal forms and compactification *)
 
-Lemma decompose_map_whne A l :
-  whne_list (Map.lst (Map.decompose A l)) -> whne_list l.
+(* Lemma decompose_map_whne A l :
+  whne (Map.lst (Map.decompose A l)) -> whne_list l.
 Proof.
   induction l in A |- *; cbn; try easy.
   intros; constructor; eauto.
@@ -155,4 +155,17 @@ Proof.
   inversion Hw ; subst.
   2: inv_whne.
   eauto.
+Qed. *)
+
+Lemma eta_map_lst_whne l (x := Map.eta l) :
+  whne_list l -> whne (snd x).
+Proof.
+  destruct l; unfold x; cbn; intros h; inversion h; try easy.
+  inv_whne.
+Qed.
+  
+Lemma eta_map_whne l (x := Map.eta l) :
+  whne (snd x) -> whne_list l.
+Proof.
+  destruct l; unfold x; cbn; now econstructor.
 Qed.

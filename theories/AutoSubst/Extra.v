@@ -140,4 +140,13 @@ Module Map.
     destruct t; cbn; try reflexivity; discriminate.
   Qed.
 
+  (* for n a whne_list (in context Γ), 
+     returns a pair (h, r) such that
+     Γ, x : A ⊢ h : B,  Γ ⊢ r : list A and n ~ map (λ x. h) r*)
+  Definition eta n :=
+    match n with
+    | tMap _ _ f l => (eta_expand f, l)
+    | u => (tRel 0, u)
+    end.
+
 End Map.

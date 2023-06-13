@@ -426,12 +426,20 @@ Class ConvNeuListProperties :=
     [Γ |- n ~ n' :List A] ;
   convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
   convneulist_map_id {Γ A A' B f l l'} :
+    [Γ |- A] ->
+    [Γ |- B] ->
+    [Γ |- f : arr A B] ->
+    [Γ |- idterm B : arr A B ] ->
     [Γ |- A ≅ B] ->
     [Γ |- A ≅ A'] ->
     [Γ ,, A |- eta_expand f ≅ tRel 0 : A⟨↑⟩] ->
-    [Γ |- l ~ l' : A' ] ->
+    [Γ |- l ~ l' : tList A' ] ->
     [Γ |- tMap A B f l ~ l' :List B] ;
   convneulist_map {Γ A A' B B' f f' l l'} :
+    [Γ |- A] ->
+    [Γ |- B] ->
+    [Γ |- f : arr A B] ->
+    [Γ |- f' : arr A B] ->
     [Γ |- A ≅ A'] ->
     [Γ |- B ≅ B'] ->
     [Γ ,, A |- eta_expand f ≅ eta_expand f' : B⟨↑⟩] ->
@@ -576,7 +584,7 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty convty_sig convty_list | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_list convtm_nil convtm_cons | 2 : gen_typing.
 #[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
-#[export] Hint Resolve convneulist_wk convneulist_map_comp convneulist_map_id convneulist_map  | 2 : gen_typing.
+#[export] Hint Resolve convneulist_wk convneulist_map_id convneulist_map_id convneulist_map  | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
@@ -1030,6 +1038,7 @@ Section GenericConsequences.
     + now asimpl.
   Qed.
 
+
   Lemma convtm_comp {Γ A B C f f' g g'} :
     [|- Γ] ->
     [Γ |- A] ->
@@ -1042,7 +1051,6 @@ Section GenericConsequences.
     [Γ,, A |-[ ta ] tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) ≅ tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩] ->
     [Γ |- comp A g f ≅ comp A g' f' : arr A C].
   Proof.
-    assert (eq : forall t: term, t⟨↑⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ↑⟩) by (intros; now asimpl).
     intros.
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
@@ -1052,13 +1060,13 @@ Section GenericConsequences.
     all: tea.
     eapply convtm_exp.
     - eapply redty_refl; now eapply wft_wk1.
-    - cbn. do 2 rewrite <- eq.
+    - cbn. do 2 rewrite <- shift_upRen.
       eapply redtm_comp_beta.
       5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
       4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
       1-3: now eapply wft_wk1.
       now eapply ty_var0.
-    - cbn. do 2 rewrite <- eq.
+    - cbn. do 2 rewrite <- shift_upRen.
       eapply redtm_comp_beta.
       5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
       4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.

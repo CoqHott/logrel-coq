@@ -79,12 +79,25 @@ Ltac inv_whne :=
   | [ H : whne_list _ |- _ ] => inversion H ; subst ; clear H
   end.
 
+
 Lemma whne_nored n u :
   whne n -> [n ⇒ u] -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
-  all: solve [repeat (inv_whne ; auto)].
+  all: try solve [ (inv_whne ; auto) | do 2 (inv_whne ; auto)].
+  inversion ne.
+Qed.
+
+Lemma whne_list_nored n u :
+  whne_list n -> [n ⇒ u] -> False.
+Proof.
+  intros h r; inversion h; subst.
+  2: now eapply whne_nored. 
+  inversion r; subst.
+  3: now eapply whne_nored.
+  1,2: do 2 inv_whne.
+  inversion H.
 Qed.
 
 Lemma whnf_nored n u :
@@ -92,10 +105,11 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
+  14:{ inversion nf; subst; inversion H; subst; inv_whne. }
   all: inversion nf ; subst ; inv_whne.
   all: try solve [apply IHred ; now constructor].
   all: try solve [do 2 (inv_whne ; auto)].
-  all: inv_whne ; apply IHred ; now constructor.
+  all: try (inv_whne ; apply IHred ; now constructor).
 Qed.
 
 (** *** Determinism of reduction *)
@@ -146,7 +160,15 @@ Proof.
     f_equal; eauto.
   - inversion red' ; subst ; clear red'.
     1,2: exfalso; eapply whnf_nored; tea; constructor.
-    f_equal; eauto.
+    1: f_equal; eauto.
+    inversion red; subst; clear red; try solve [inv_whne].
+    1: exfalso; now eapply whne_nored.
+    inversion H4.
+  - inversion red' ; subst ; clear red'; [|reflexivity].
+    inversion H4; subst. 
+    1,2: inv_whne.
+    1: exfalso; now eapply whne_nored.
+    inversion w.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -192,6 +214,9 @@ Qed.
 
 (** *** Stability by weakening *)
 
+Lemma shift_upRen ρ t : t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ρ⟩.
+Proof. now asimpl. Qed.
+
 Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 [t ⇒ u] ->
 [t⟨ρ⟩ ⇒ u⟨ρ⟩].
@@ -205,6 +230,8 @@ Proof.
     all: subst t'.
     1: econstructor.
     now asimpl.
+  - cbn; rewrite <- !shift_upRen; constructor.
+    now eapply whne_ren.
 Qed.
 
 Lemma credalg_wk (ρ : nat -> nat) (t u : term) :

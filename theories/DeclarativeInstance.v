@@ -641,15 +641,30 @@ Module DeclarativeTypingProperties.
   - intros * [].
     econstructor ; now gen_typing.
   - now intros * [].
-  - intros ????????????? []; split; try now econstructor + (do 2 econstructor).
-  - intros ????? []; split; tea.
-    + gen_typing.
-    + refold.
-      now econstructor.
-  - intros * ??? []; split.
-    + gen_typing.
-    + gen_typing.
-    + now econstructor.
+  - intros * ??????? []; split; try now econstructor.
+    assert [Γ |- B ≅ B] by (etransitivity; tea; now symmetry).
+    refold. etransitivity.
+    2:{ eapply TermRedMapId; refold; tea.
+      eapply TermConv; tea; econstructor.
+      etransitivity; [now symmetry| tea]. }
+    eapply TermMapCong; refold; tea.
+    2: eapply TermConv; refold; [|econstructor; now symmetry].
+    2: etransitivity; tea; now symmetry.
+    econstructor; tea.
+    etransitivity; cycle 1.
+    + symmetry; cbn. 
+      assert (eq : forall X, X = X⟨↑⟩[(tRel 0)..]) by (intros; now asimpl).
+      assert [Γ,, A |- B⟨wk1 A⟩] by (eapply wft_wk; gen_typing).
+      rewrite (eq (B⟨↑⟩)); eapply TermBRed; refold; rewrite <- eq.
+      1: renToWk; tea.
+      * econstructor. 2: econstructor.
+        econstructor; renToWk; tea; gen_typing.
+      * eapply ty_conv. 
+        1: econstructor; [gen_typing| econstructor].
+        renToWk; eapply convty_wk; tea; gen_typing.
+    + cbn; eapply TermConv; refold; tea.
+      renToWk; eapply convty_wk; tea; gen_typing.
+  - intros * ??????? [] ; split; try now econstructor + (do 2 econstructor).
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
