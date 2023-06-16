@@ -424,7 +424,8 @@ Class ConvNeuListProperties :=
     [Γ |- n ~ n' : tList A] ->
     [Γ ,, A |- tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
     [Γ |- n ~ n' :List A] ;
-  convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
+  convneulist_whne_list {Γ A t u} : [Γ |- t ~ u :List A] -> whne_list t;
+  convneulist_whne {Γ A t u} : [Γ |- t ~ u :List A] -> whne t -> whne u -> [Γ |- t ~ u : tList A];
   convneulist_map_id {Γ A A' B f l l'} :
     [Γ |- A] ->
     [Γ |- B] ->
@@ -538,6 +539,17 @@ Class ConvNeuListProperties :=
       [Γ |- hd : A] ->
       [Γ |- tl : tList A] ->
       [Γ |- tMap A B f (tCons A' hd tl) ⇒* tCons B (tApp f hd) (tMap A B f tl) : tList B] ;
+    redtm_map_comp {Γ A B B' C f g l} :
+      [Γ |- A] ->
+      [Γ |- B] ->
+      [Γ |- B'] ->
+      [Γ |- B ≅ B' ] ->
+      [Γ |- C] ->
+      [Γ |- g : arr A B'] ->
+      [Γ |- f : arr B C] ->
+      [Γ |- l : tList A] ->
+      whne l ->
+      [Γ |- tMap B C f (tMap A B' g l) ⇒* tMap A C (comp A f g) l : tList C];
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -691,6 +703,9 @@ Section GenericConsequences.
   `{!TypingProperties} `{!ConvTypeProperties}
   `{!ConvTermProperties} `{!ConvNeuProperties}
   `{!RedTypeProperties} `{!RedTermProperties}.
+
+  Lemma wfc_cons' {Γ A} : [Γ |- A] -> [|- Γ ,, A].
+  Proof. intros h; gen_typing. Qed.
 
   (** *** Meta-conversion *)
   (** Similar to conversion, but using a meta-level equality rather
@@ -1038,6 +1053,37 @@ Section GenericConsequences.
     + now asimpl.
   Qed.
 
+  Lemma convtm_comp_app {Γ A B C f f' g g'} :
+    [|- Γ] ->
+    [Γ |- A] ->
+    [Γ |- B] ->
+    [Γ |- C] ->
+    [Γ |- f : arr A B] ->
+    [Γ |- f' : arr A B] ->
+    [Γ |- g : arr B C] ->
+    [Γ |- g' : arr B C] ->
+    [Γ,, A |- tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) ≅ tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩] ->
+    [Γ ,, A |- tApp (comp A g f)⟨↑⟩ (tRel 0) ≅ tApp (comp A g' f')⟨↑⟩ (tRel 0) : C⟨↑⟩].
+  Proof.
+    intros.
+    eapply convtm_exp.
+    - eapply redty_refl;  now eapply wft_wk1.
+    - cbn.
+      do 2 rewrite <- shift_upRen.
+      eapply redtm_comp_beta.
+      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      1-3: now eapply wft_wk1.
+      now eapply ty_var0.
+    - cbn. do 2 rewrite <- shift_upRen.
+      eapply redtm_comp_beta.
+      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      1-3: now eapply wft_wk1.
+      now eapply ty_var0.
+    - assumption.
+  Qed.
+
 
   Lemma convtm_comp {Γ A B C f f' g g'} :
     [|- Γ] ->
@@ -1058,21 +1104,7 @@ Section GenericConsequences.
     1,2: eapply ty_comp.
     4,5,9,10: tea.
     all: tea.
-    eapply convtm_exp.
-    - eapply redty_refl; now eapply wft_wk1.
-    - cbn. do 2 rewrite <- shift_upRen.
-      eapply redtm_comp_beta.
-      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      1-3: now eapply wft_wk1.
-      now eapply ty_var0.
-    - cbn. do 2 rewrite <- shift_upRen.
-      eapply redtm_comp_beta.
-      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      1-3: now eapply wft_wk1.
-      now eapply ty_var0.
-    - assumption.
+    eapply convtm_comp_app; cycle 4; tea.
   Qed.
 
   Lemma typing_eta (Γ : context) A B f :

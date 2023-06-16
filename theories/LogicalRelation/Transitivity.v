@@ -63,6 +63,7 @@ Ltac inv_red red red' :=
   unshelve epose proof (eq := redtywf_det _ _ _ _ _ _ red red');
   [constructor| constructor|]; injection eq; intros ??; clear eq;  subst.
 
+(* DO NOT USE, prefer LRTransEq *)
 Lemma transEq@{i j k l} {Γ A B C lA lB lC} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]}
   {RB : [LogRel@{i j k l} lB | Γ ||- B]}
@@ -71,52 +72,7 @@ Lemma transEq@{i j k l} {Γ A B C lA lB lC}
    (RBC : [Γ ||-<lB> B ≅ C | RB]) :
   [Γ ||-<lA> A ≅ C | RA].
 Proof.
-  destruct RA as [pA lrA], RB as [pB lrB], RC as [pC lrC]; cbn in *.
-  set (sv := combine _ _ _ _ lrA lrB lrC (ShapeViewConv _ _ RAB) (ShapeViewConv _ _ RBC)).
-  revert lB B pB lrB lC C pC lrC RAB RBC sv.
-  induction lrA as [| |?? ΠA ΠAad ihdom ihcod| | |?? PA PAad ihdom ihcod|?? LA LAad ih]; intros ??? lrB;
-  induction lrB as [|?? neB|?? ΠB ΠBad _ _| | | ?? PB PBad _ _|?? LB LBad _]; intros ??? lrC;
-  induction lrC as [| |?? ΠC ΠCad _ _| | | ?? PC PCad _ _|?? LC LCad _]; intros RAB RBC [].
-  - easy.
-  - destruct RAB as [tB red], RBC as [tC]; exists tC. assumption.
-    etransitivity. 1: eassumption. destruct neB as [? red']. cbn in *.
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red red').
-    1,2 : eapply whnf_whne, convneu_whne. all: first [eassumption|symmetry; eassumption].
-  - destruct RAB as [?? redB ??], RBC as [?? redC ??].
-    destruct ΠB as [??? redB' ??], ΠC as [domC codC ? redC' ??].
-    inv_red redB redB'; inv_red redC redC'.
-    exists domC codC.
-    + eassumption.
-    + etransitivity; eassumption.
-    + eapply (transPolyRedEq@{i j k l} (PolyRed.from ΠAad) (PolyRed.from ΠBad) (PolyRed.from ΠCad)); cbn; tea.
-      * intros * ; eapply ihdom; now eapply (PolyRedPack.shpRed ΠA).
-      * intros *; eapply ihcod; eapply (PolyRedPack.posRed ΠA); tea.
-  - destruct RBC; now constructor.
-  - destruct RBC; now constructor.
-  - destruct RAB as [?? redB ??], RBC as [?? redC ??].
-    destruct PB as [??? redB' ??], PC as [domC codC ? redC' ??].
-    inv_red redB redB'; inv_red redC redC'.
-    exists domC codC.
-    + eassumption.
-    + etransitivity; eassumption.
-    + eapply (transPolyRedEq@{i j k l} (PolyRed.from PAad) (PolyRed.from PBad) (PolyRed.from PCad)); cbn; tea.
-      * intros * ; eapply ihdom; now eapply (PolyRedPack.shpRed PA).
-      * intros *; eapply ihcod; eapply (PolyRedPack.posRed PA); tea.
-  - revert RAB RBC; intros [parB redB ? parBRedEq] [parC redC ? parCRedEq'].
-    destruct LB as [parB' redB'], LC as [parC' redC'], LBad as [AdB], LCad as [AdC]; cbn in *.
-    unshelve epose proof (eqLB := redtywf_det _ _ _ _ _ _ redB' redB).  1,2 : constructor.
-    injection eqLB ; intros ?; clear eqLB;  subst.
-    unshelve epose proof (eqLC := redtywf_det _ _ _ _ _ _ redC' redC).  1,2 : constructor.
-    injection eqLC ; intros ?; clear eqLC;  subst.
-    exists parC.
-    + assumption.
-    + etransitivity ; eassumption.
-    + unshelve eapply ih.
-      10: eassumption.
-      7: eassumption.
-      6: eassumption.
-      3: eassumption.
-      apply (ListRedTyPack.parRed LA).
+  now eapply LRTransEq.
 Qed.
 
 
@@ -268,10 +224,10 @@ Qed.
 
 
 Lemma transEqTermList {Γ A l} (LA : [Γ ||-List<l> A])
-  (ih: forall t u v : term,
-      [ListRedTy.parRed LA | Γ ||- t ≅ u : ListRedTy.par LA] ->
-      [ListRedTy.parRed LA | Γ ||- u ≅ v : ListRedTy.par LA] ->
-      [ListRedTy.parRed LA | Γ ||- t ≅ v : ListRedTy.par LA]) :
+  (ih: forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u v : term),
+      [ListRedTy.parRed LA ρ wfΔ | _ ||- t ≅ u : _] ->
+      [ListRedTy.parRed LA ρ wfΔ | _ ||- u ≅ v : _] ->
+      [ListRedTy.parRed LA ρ wfΔ | _ ||- t ≅ v : _]) :
   (forall t u,
       ListRedTmEq _ _ LA t u -> forall v,
       ListRedTmEq _ _ LA u v ->
@@ -292,22 +248,22 @@ Proof.
     + eapply h. rewrite eqR. eassumption.
   - intros * ????? uv.
     inversion uv ; subst.
-    2:{ apply convneulist_whne in conv. inv_whne. }
-    now econstructor.
+    2:{ apply convneulist_whne_list in conv. inv_whne. }
+    econstructor; tea; irrelevance.
   - intros * ????? ? h ? uv.
     inversion uv ; subst.
-    2:{ apply convneulist_whne in conv. inv_whne. }
-    econstructor ; try easy.
-  - intros * ?? uv.
-    econstructor.
-    etransitivity ; tea.
+    2:{ apply convneulist_whne_list in conv. inv_whne. }
+    econstructor ; try easy. 1: irrelevance.
+    eapply ih; tea; irrelevance.
+  - intros * ???? uv.
     assert (whne_list l').
     {
-      eapply convneulist_whne; now symmetry.
+      eapply convneulist_whne_list; now symmetry.
     }
     inversion uv ; subst.
     all: try solve [inv_whne].
-    eassumption.
+    econstructor; tea.
+    now etransitivity.
 Qed.
 
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 

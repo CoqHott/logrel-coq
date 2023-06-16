@@ -93,14 +93,6 @@ Record complete {l Γ A} (RA : [Γ ||-<l> A]) := {
 }.
   
 
-Definition reflect_ren_stmt {l Γ A} (RA : [Γ ||-<l> A]) := 
-  forall Δ (ρ : Δ ≤ Γ) n n' (hΔ : [|- Δ]),
-    [Δ |- n : A⟨ρ⟩] ->
-    [Δ |- n' : A⟨ρ⟩] ->
-    [Δ |- n ~ n' : A⟨ρ⟩] ->
-    [Δ ||-<l> n : A⟨ρ⟩ | wk ρ hΔ RA] × [Δ ||-<l> n ≅ n' : A⟨ρ⟩ | wk ρ hΔ RA].
-
-
 Lemma complete_reflect_simpl {l Γ A} (RA : [Γ ||-<l> A]) (c : complete RA) :
   forall n, [Γ |- n : A] -> [Γ |- n ~ n : A] -> [Γ ||-<l> n : A | RA].
 Proof.
@@ -482,34 +474,28 @@ Proof.
     all: try first [assumption|now eapply lrefl].
 Qed.
 
-Lemma reflect_ren_stmt_reflect {l Γ A} (RA : [Γ ||-<l> A]) :
-  reflect_ren_stmt RA -> complete RA.
-Proof.
-  intros h; split; intros ?? Rn Rn' Rnn'.
-  irrelevance0. 2: eapply (h _ wk_id).
-  all: now rewrite wk_id_ren_on.
-  Unshelve. gen_typing.
-Qed.
 
-Lemma complete_List_list_neutrals {l Γ A} (LA : [Γ ||-List<l> A]) (ih : complete (ListRedTy.parRed LA)) :
-  forall Δ (ρ : Δ ≤ Γ) (hΔ : [|- Δ]) n n',
-    [Δ |- n : A⟨ρ⟩] ->
-    [Δ |- n' : A⟨ρ⟩] ->
-    [Δ |- n ~ n' :List (ListRedTy.par LA)⟨ρ⟩] ->
-  [wk ρ hΔ (LRList' LA) | Δ ||- n : A⟨ρ⟩] × [wk ρ hΔ (LRList' LA) | Δ ||- n ≅ n' : A⟨ρ⟩].
+Lemma complete_List_list_neutrals {l Γ A} (LA : [Γ ||-List<l> A]) :
+  forall n n',
+    [Γ |- n : A] ->
+    [Γ |- n' : A] ->
+    [Γ |- n ~ n' :List (ListRedTy.par LA)] ->
+    ListRedTm.map_inv LA n ->
+    ListRedTm.map_inv LA n' ->
+    [LRList' LA | Γ ||- n : A] × [LRList' LA | Γ ||- n ≅ n' : A].
 Proof.
-  intros Δ ρ hΔ.
   set (LA' := LA). destruct LA as [par] ; cbn -[wk] in *.
-  assert [Δ |- A⟨ρ⟩ ≅ tList par⟨ρ⟩] by (eapply (convty_wk (B := (tList _))) ; gen_typing).
-  unshelve epose (lemma := _ :  forall n, [Δ |-[ ta ] n : A⟨ρ⟩] ->
-                      [Δ |-[ ta ] n ~ n :List par⟨ρ⟩] -> [wk ρ hΔ (LRList' LA') | Δ ||- n : A⟨ρ⟩]).
+  assert [Γ |- A ≅ tList par] by gen_typing.
+  unshelve epose (lemma := _ :  forall n, [Γ |-[ ta ] n : A] ->
+                      [Γ |-[ ta ] n ~ n :List par] -> 
+                      ListRedTm.map_inv LA' n -> [LRList' LA' | Γ ||- n : A]).
   { intro m. unshelve econstructor. 1: exact m.
     all: cbn.
     * apply redtmwf_refl.
       now eapply ty_conv.
     * now eapply convtm_convneulist.
     * constructor; try easy; cbn.
-      now eapply ty_conv.
+      1: now eapply ty_conv.
   }
   split.
   + apply lemma ; tea. now eapply lrefl.
@@ -520,97 +506,41 @@ Proof.
     * now constructor.
 Qed.
 
-Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) (ih : reflect_ren_stmt (ListRedTy.parRed LA)) 
-  : reflect_ren_stmt (LRList' LA).
+Lemma ListRedTm_map_inv_whne {Γ l A m} {LA : [Γ ||-List<l> A]} : whne m -> ListRedTm.map_inv LA m.
+Proof. intros []; cbn; easy. Qed.
+
+Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) 
+  (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), complete (ListRedTy.parRed LA  ρ wfΔ))
+  : complete (LRList' LA).
 Proof.
-  set (LA' := LA). destruct LA as [par]; unfold reflect_ren_stmt in *; cbn in *.
-  intros * wh wh' ?.
-  assert [ |-[ ta ] Δ,, par⟨ρ⟩].
-  {
-   eapply wfc_cons ; tea.
-   now eapply wft_wk. 
-  }
-  assert ([Δ |-[ ta ] n ~ n' :List par⟨ρ⟩]).
-  {
-    eapply convneulist_convneu.
-    - eapply convneu_conv ; tea.
-      eapply (convty_wk (B := tList _)) ; tea.
-      gen_typing.
-    - erewrite <- wk1_ren_on.
-      eapply convtm_meta_conv.
-      3: reflexivity.
-      2: now eapply wk_comp_ren_on.
-      eapply escapeEqTerm, ih.
-      3: eapply convneu_var.
-      all: eapply ty_var ; tea.
-      all: rewrite <- wk_comp_ren_on.
-      all: rewrite wk1_ren_on.
-      all: econstructor.
-  }
-  split.
-  all: eapply complete_List_list_neutrals ; tea.
-  all: now eapply reflect_ren_stmt_reflect.
-
-  Unshelve.
-  eassumption.
+  set (LA' := LA). destruct LA as [par]; cbn in *.
+  split. intros.
+  eapply complete_List_list_neutrals ; tea.
+  2,3: eapply ListRedTm_map_inv_whne; eapply convneu_whne; (now symmetry + tea).
+  eapply convneulist_convneu.
+  - eapply convneu_conv ; tea. cbn. gen_typing.
+  - erewrite <- wk1_ren_on.
+    eapply escapeEqTerm, ih.
+    3: eapply convneu_var.
+    all: eapply ty_var ; tea.
+    all: rewrite ?wk1_ren_on.
+    2,4,6: econstructor.
+    all: cbn; gen_typing.
+    Unshelve. cbn; gen_typing. 
 Qed.
-
-Lemma reflect_ren_irrelevance {l Γ A} (RA RA' : [Γ ||-<l> A]) :
-  reflect_ren_stmt RA -> reflect_ren_stmt RA'.
-Proof.
-  intros h; red; intros; irrelevanceRefl; now unshelve eapply h.
-Qed.
-
-Lemma reflect_reflect_ren_stmt {l Γ A} (RA : [Γ ||-<l> A]) :
-  (forall Δ (ρ : Δ ≤ Γ) (h : [|-Δ]), complete (wk ρ h RA)) ->
-  reflect_ren_stmt RA.
-Proof.
-  intros h; red ; intros ? ρ ?? hΔ Rn Rn' Rnn'.
-  irrelevance0. 2: eapply (h _ ρ hΔ). all: tea; reflexivity.
-Qed.
-
-Lemma reflect_weakeness {l Γ A} (RA : [Γ ||-<l> A]) : reflect_ren_stmt RA.
-Proof.
-revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
-- red; intros; now apply complete_U.
-- red; intros; now apply complete_ne.
-- red; intros;  apply complete_Pi; tea.
-  + intros ? ρ' hΞ; split; intros.
-    irrelevance0.
-    2: eapply (X _ ρ hΔ _ ρ' _ _ hΞ); tea.
-    reflexivity.
-  + intros ? ? ρ' hΞ ?; split; intros.
-    assert (eq : (ParamRedTy.cod ΠA)[a .: (ρ' ∘w ρ) >> tRel]⟨@wk_id Δ0⟩ =
-    (ParamRedTy.cod (wkΠ ρ hΔ (ParamRedTy.from (ParamRedTy.toAd ΠA))))
-    [a .: ρ' >> tRel]) by now bsimpl.
-    irrelevance0; tea.
-    eapply (X0 _ a (ρ' ∘w ρ) hΞ _ _ wk_id).
-    all: now rewrite eq.
-    Unshelve. 2: tea. irrelevance.
-- red; intros; now apply complete_Nat.
-- red; intros; now apply complete_Empty.
-- red; intros; apply complete_Sig; tea.
-  + intros ? ρ' hΞ; split; intros.
-    irrelevance0.
-    2: eapply (X _ ρ hΔ _ ρ' _ _ hΞ); tea.
-    reflexivity.
-  + intros ? ? ρ' hΞ ?; split; intros.
-    assert (eq : (ParamRedTy.cod ΠA)[a .: (ρ' ∘w ρ) >> tRel]⟨@wk_id Δ0⟩ =
-    (ParamRedTy.cod (wkΣ ρ hΔ (ParamRedTy.from (ParamRedTy.toAd ΠA))))
-    [a .: ρ' >> tRel]) by now bsimpl.
-    irrelevance0; tea.
-    eapply (X0 _ a (ρ' ∘w ρ) hΞ _ _ wk_id).
-    all: now rewrite eq.
-    Unshelve. 2: tea. irrelevance.
-- now apply complete_List.
-Qed.
-
 
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
 Proof.
-  apply reflect_ren_stmt_reflect.
-  now eapply reflect_weakeness.
+revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
+- now apply complete_U.
+- now apply complete_ne.
+- now apply complete_Pi.
+- now apply complete_Nat.
+- now apply complete_Empty.
+- now apply complete_Sig.
+- now apply complete_List.
 Qed.
+
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :
   [Γ |- n : A] ->
@@ -632,36 +562,21 @@ Qed.
 Lemma neuListTerm {l Γ A} (LA : [Γ ||-List<l> A]) {n} :
   [Γ |- n : A] ->
   [Γ |- n ~ n :List (ListRedTy.par LA)] ->
+  ListRedTm.map_inv LA n ->
   [LRList' LA | Γ ||- n : A].
 Proof.
-  intros Hn Hnn.
-  rewrite <- (wk_id_ren_on Γ A) in Hn.
-  eapply LRTmRedIrrelevant'.
-  2: eapply complete_List_list_neutrals ; tea.
-  1: now bsimpl.
-  2: now rewrite wk_id_ren_on.
-  eapply completeness.
-  Unshelve.
-  escape.
-  gen_typing.
+  intros hn hnn hmap; generalize hmap; now apply complete_List_list_neutrals.
 Qed.
 
 Lemma neuListTermEq {l Γ A} (LA : [Γ ||-List<l> A]) {n n'} :
   [Γ |- n : A] ->
   [Γ |- n' : A] ->
   [Γ |- n ~ n' :List (ListRedTy.par LA)] ->
+  ListRedTm.map_inv LA n ->
+  ListRedTm.map_inv LA n' ->
   [Γ ||-<l> n ≅ n' : A| LRList' LA].
 Proof.
-  intros Hn Hn' Hnn.
-  rewrite <- (wk_id_ren_on Γ A) in Hn, Hn'.
-  eapply LRTmEqIrrelevant'.
-  2: eapply complete_List_list_neutrals ; tea.
-  1: now bsimpl.
-  2: now rewrite wk_id_ren_on.
-  eapply completeness.
-  Unshelve.
-  escape.
-  gen_typing.
+  intros Hn Hn' Hnn ??; now apply complete_List_list_neutrals.
 Qed.
 
 Lemma var0conv {l Γ A A'} (RA : [Γ ,, A ||-<l> A']) :

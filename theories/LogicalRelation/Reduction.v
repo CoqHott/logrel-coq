@@ -44,7 +44,7 @@ Proof.
       unshelve econstructor;intros; apply LRTyEqRefl_.
   - intros B [par] ih ? ?; cbn in *; unshelve eexists.
     + apply LRList'; exists par; tea; etransitivity; tea; constructor; tea; gen_typing.
-    + exists par; tea; cbn; apply LRTyEqRefl_.
+    + exists par; tea; cbn; intros; apply LRTyEqRefl_.
 Qed.
 
 

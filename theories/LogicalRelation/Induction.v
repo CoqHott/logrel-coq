@@ -50,7 +50,9 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     | LRNat _ NA => LRNat _ NA
     | LREmpty _ NA => LREmpty _ NA
     | LRSig _ PA PAad => LRSig _ PA (embedPolyAd PAad)
-    | LRList _ LA LAad => LRList _ LA {| ListRedTyPack.parAd := LR_embedding l_ LAad.(ListRedTyPack.parAd) |}
+    | LRList _ LA LAad => LRList _ LA 
+      {| ListRedTyPack.parAd (Δ : context) (ρ : Δ ≤ _) (h : [  |- Δ]) :=
+          LR_embedding l_ (LAad.(ListRedTyPack.parAd) ρ h) |}
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -60,6 +62,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
         (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : _ ]),
         P (HAad.(PolyRedPack.posAd) ρ h ha)) -> G).
+
+  (* Notation "'∀K' ρ ':' Δ '≤' Γ , t" := (forall {Δ} (ρ : Δ ≤ Γ) (h : [|-Δ]), t) (at level 70). *)
 
   Theorem LR_rect@{i j k o}
     (l : TypeLevel)
@@ -84,9 +88,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       PolyHyp P Γ ΠA HAad (P (LRSig rec ΠA HAad))) ->
 
     (forall Γ A (LA : ListRedTyPack@{j} Γ A) (LAad : ListRedTyAdequate (LR rec) LA),
-        P (LAad.(ListRedTyPack.parAd)) ->
-        (* PiHyp P Γ (LA.(ListRedTyPack.arrParRed))
-          (LAad.(ListRedTyPack.arrParAd)) *)
+        (forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
+          P (LAad.(ListRedTyPack.parAd) ρ wfΔ)) ->
           (P (LRList rec LA LAad))) ->
 
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
@@ -139,7 +142,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       PolyHypLogRel P Γ ΠA (P (LRSig' ΠA).(LRAd.adequate ))) ->
 
     (forall l Γ A (LA : ListRedTy@{i j k l} Γ A l),
-        P (LA.(ListRedTy.parRed).(LRAd.adequate)) ->
+        (forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]),
+          P ((LA.(ListRedTy.parRed) ρ wfΔ).(LRAd.adequate))) ->
         (* PiHypLogRel P Γ (LA.(ListRedTy.arrParRed)) *)
           (P (LRList' LA).(LRAd.adequate))) ->
 
@@ -180,7 +184,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
 
     (forall l Γ A (LA : ListRedTy@{i j k l} Γ A l),
-      P LA.(ListRedTy.parRed) ->
+      (forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), 
+        P (LA.(ListRedTy.parRed) ρ wfΔ)) ->
       P (LRList' LA)) ->
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),

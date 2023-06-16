@@ -641,6 +641,7 @@ Module DeclarativeTypingProperties.
   - intros * [].
     econstructor ; now gen_typing.
   - now intros * [].
+  - intros * [] ??; now split.
   - intros * ??????? []; split; try now econstructor.
     assert [Γ |- B ≅ B] by (etransitivity; tea; now symmetry).
     refold. etransitivity.
@@ -734,6 +735,19 @@ Module DeclarativeTypingProperties.
     + etransitivity; econstructor; tea.
       4: symmetry; econstructor; tea.
       all: now first [eapply TypeRefl| eapply TermRefl].
+  - intros; split; refold.
+    + econstructor; tea; econstructor.
+      1: now econstructor.
+      econstructor; now symmetry.
+    + eapply redalg_one_step; now econstructor.
+    + etransitivity.
+      * econstructor; tea.
+        1,2: now econstructor.
+        econstructor; econstructor; now econstructor.
+      * eapply TermRedMapComp; refold; tea.
+        2: now econstructor.
+        econstructor; tea. eapply convty_simple_arr; tea.
+        now econstructor.
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.

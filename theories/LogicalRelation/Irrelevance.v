@@ -254,15 +254,25 @@ Context {Γ lA lA' A A'}
   (eqPar : [Γ |- ListRedTy.par LA ≅ ListRedTy.par LA'])
   .
 
-Context (eqvPar : equivLRPack@{k k' v} (LA.(ListRedTy.parRed)) (LA'.(ListRedTy.parRed))).
-  (* (eqvArrPar : equivLRPack (LRPi' LA.(ListRedTy.arrParRed)) (LRPi' LA'.(ListRedTy.arrParRed))). *)
+  Context (eqvPar : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]),
+    equivLRPack@{k k' v} (LA.(ListRedTy.parRed) ρ wfΔ) (LA'.(ListRedTy.parRed) ρ wfΔ)).
 
 Lemma ListIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
 Proof.
   intros []; econstructor; tea.
   - etransitivity; tea; now symmetry.
-  - now eapply eqvPar.
+  - intros; now eapply eqvPar.
 Qed.
+
+#[local]
+Lemma ListRedTm_map_inv_irrelevance {l} :
+  ListRedTm.map_inv LA l -> ListRedTm.map_inv LA' l.
+Proof.
+  destruct l; try easy; intros []; unshelve econstructor; tea.
+  1: etransitivity; tea; now symmetry.
+  intros; eapply eqvPar; now eapply redfn.
+Qed.
+ 
 
 Lemma ListIrrelevanceTm : 
   (forall t, [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'])
@@ -276,6 +286,7 @@ Proof.
   - now eapply eqvPar.
   - now eapply ty_conv.
   - now eapply convneulist_conv.
+  - now eapply ListRedTm_map_inv_irrelevance.
 Defined.
 
 Lemma ListIrrelevanceTmEq : 
@@ -284,8 +295,9 @@ Lemma ListIrrelevanceTmEq :
 Proof.
   pose (par := ListRedTy.par LA).
   pose (par' := ListRedTy.par LA').
-  assert [Γ |- par] by (eapply escape; apply ListRedTy.parRed).
-  assert [Γ |- par'] by (eapply escape; apply ListRedTy.parRed).
+  assert [|- Γ] by gen_typing.
+  assert [Γ |- par] by (erewrite <-wk_id_ren_on; eapply escape; now apply ListRedTy.parRed).
+  assert [Γ |- par'] by (erewrite <-wk_id_ren_on; eapply escape; now apply ListRedTy.parRed).
   assert [Γ |- tList par'] by gen_typing.
   eapply ListRedEqInduction; intros.
   - exists (fst ListIrrelevanceTm _ Rt) (fst ListIrrelevanceTm _ Ru) ; destruct Rt, Ru.
@@ -296,6 +308,7 @@ Proof.
   - econstructor ; tea.
     all: now eapply eqvPar.
   - econstructor.
+    2,3: now eapply ListRedTm_map_inv_irrelevance.
     now eapply convneulist_conv.  
 Qed.
 
@@ -307,12 +320,15 @@ Lemma ListIrrelevanceLRPack@{i j k l i' j' k' l' v} {Γ lA lA' A A'}
   (RA := LRList' LA)
   (RA' := LRList' LA')
   (RAA' : [Γ ||-<lA> A ≅ A' | RA])
-  (eqvPar : equivLRPack@{k k' v} (LA.(ListRedTy.parRed)) (LA'.(ListRedTy.parRed))) :
+  (eqvPar : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]),
+    equivLRPack@{k k' v} (LA.(ListRedTy.parRed) ρ wfΔ) (LA'.(ListRedTy.parRed) ρ wfΔ)) :
   equivLRPack@{k k' v} RA RA'.
 Proof.
-  pose proof (eqvPar' := symLRPack eqvPar).
+  pose proof (eqvPar' := fun Δ ρ wfΔ => symLRPack (eqvPar Δ ρ wfΔ)).
   pose proof (RAA'.(ListRedTyEq.eq)).
-  pose proof (escapeEq _ (RAA'.(ListRedTyEq.parRed))).
+  assert (wfΓ : [|-Γ]) by (escape; gen_typing).
+  pose proof (heq := escapeEq _ (RAA'.(ListRedTyEq.parRed) wk_id wfΓ)).
+  rewrite 2!wk_id_ren_on in heq.
   unshelve epose proof (e := redtywf_det _ _ _ _ _  _ LA'.(ListRedTy.red) RAA'.(ListRedTyEq.red)).
   1,2: constructor.
   symmetry in e; injection e; clear e; intros h; rewrite h in *; clear h.
@@ -508,9 +524,9 @@ Proof.
       eapply codRed.
   - destruct lrA' as [| | | | | |? A' LA' LAad' ] ; try solve [destruct s] ; clear s; cbn in *.
     eapply (ListIrrelevanceLRPack (ListRedTy.from LAad) (ListRedTy.from LAad')); tea.
-    apply IhPar.
-    1: exact (ListRedTyPack.parAd LAad').
-    pose proof (ListRedTyEq.parRed he).
+    intros ? ρ wfΔ; apply IhPar.
+    1: exact (ListRedTyPack.parAd LAad' _ _).
+    pose proof (ListRedTyEq.parRed he ρ wfΔ).
     unshelve epose proof (e := redtywf_det _ _ _ _ _  _ LA'.(ListRedTyPack.red) he.(ListRedTyEq.red)).
     1,2: constructor.
     symmetry in e; injection e; intros h; rewrite h in *; assumption.

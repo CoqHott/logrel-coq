@@ -217,7 +217,7 @@ Section NatElimRed.
       2: unshelve eapply (appTerm RPs Rhs Rn).
       now bsimpl.
     - intros ? [] ?.
-      epose proof (reflect _ (completeness _) _ (wk_id)) as [].
+      epose proof (reflect _ (completeness _)) as [].
       all: repeat rewrite wk_id_ren_on.
       + now eapply ty_natElim.
       + now eapply ty_natElim.
@@ -233,7 +233,6 @@ Section NatElimRed.
       all: now eapply RPpt.
     * now apply RPpt.
     * assumption.
-    * exact l.
     * assumption.
   Qed.
 

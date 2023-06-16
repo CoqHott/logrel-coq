@@ -52,9 +52,9 @@ Section Reflexivities.
   Qed.
 
   Lemma ListRedTmEqRefl0 {Γ A l} (LA : [Γ ||-List<l> A])
-    (ih : forall t : term,
-          [ListRedTyPack.parRed LA | Γ ||- t : ListRedTyPack.par LA] ->
-          [ListRedTyPack.parRed LA | Γ ||- t ≅ t : ListRedTyPack.par LA]) :
+    (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t : term),
+          [ListRedTyPack.parRed LA ρ wfΔ| _ ||- t : _] ->
+          [ListRedTyPack.parRed LA ρ wfΔ| _ ||- t ≅ t : _]) :
     (forall t : term, ListRedTm Γ A LA t -> ListRedTmEq Γ A LA t t)
     × (forall t : term, ListProp Γ A LA t -> ListPropEq Γ A LA t t).
   Proof.

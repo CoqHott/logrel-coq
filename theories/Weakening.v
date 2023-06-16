@@ -444,6 +444,9 @@ Proof. now cbn. Qed.
 Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
 Proof. now cbn. Qed.
 
+Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
 (** Weakening and compactification *)
 
 Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : Map.is_map t⟨ρ⟩ = Map.is_map t.

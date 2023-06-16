@@ -58,9 +58,7 @@ Section Weakenings.
   Qed.
 
   Lemma wkList  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ])
-    (LA : [Γ ||-List< l > A])
-    (ih : [Δ ||-< l > (ListRedTy.par LA)⟨ρ⟩])
-    :
+    (LA : [Γ ||-List< l > A]) :
     [Δ ||-List< l > A⟨ρ⟩].
   Proof.
     destruct LA as [ty].
@@ -68,7 +66,7 @@ Section Weakenings.
     + change (tList _) with ((tList ty)⟨ρ⟩) ; gen_typing.
     + gen_typing.
     + change (tList _) with ((tList ty)⟨ρ⟩) ; gen_typing.
-    + assumption.
+    + intros; rewrite wk_comp_ren_on; now apply parRed.
   Defined.
 
   Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
@@ -86,18 +84,15 @@ Section Weakenings.
     - intros; eapply LREmpty_; now eapply wkEmpty.
     - intros; apply LRSig'; now eapply wkΣ.
     - intros ??? ? ih ???. apply LRList'. eapply (wkList ρ wfΔ LA).
-      now eapply ih.
   Defined.
 
-  Definition wkList' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ])
-    (LA : [Γ ||-List< l > A]) :=
-    let ih := (wk ρ wfΔ (ListRedTy.parRed LA)) in
-    wkList ρ wfΔ LA ih.
-
+  (* Sanity checks for Π and Σ: we do compute correctly with wk *)
+  #[local]
   Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
     wk ρ wfΔ (LRPi' ΠA) = LRPi' (wkΠ ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
   
+  #[local]
   Lemma wkΣ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) :
     wk ρ wfΔ (LRSig' ΠA) = LRSig' (wkΣ ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
@@ -202,11 +197,29 @@ Section Weakenings.
       rewrite <- wk_comp_ren_on; cbn; now rewrite <- wk_up_ren_subst.
   Defined.
 
+  Lemma wkList_map_inv {Γ Δ A l n} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
+    (LA' := wkList ρ wfΔ LA) :
+    ListRedTm.map_inv LA n -> ListRedTm.map_inv LA' n⟨ρ⟩.
+  Proof.
+    destruct n; try easy.
+    intros []; unshelve econstructor; cbn; refold.
+    1-2: now eapply wft_wk.
+    all: rewrite ?wk_arr, ?wk_list.
+    1,2: now eapply ty_wk.
+    1,2: now eapply convty_wk.
+    + now eapply convtm_wk.
+    + now eapply convneu_wk.
+    + intros. irrelevance0; rewrite wk_comp_ren_on.
+      1: reflexivity. 
+      apply redfn; now rewrite <- wk_comp_ren_on.
+      Unshelve. tea.
+  Qed.
+
   Lemma wkListTerm {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
-    (ih: forall (t : term),
-        [ListRedTy.parRed LA | Γ ||- t : ListRedTy.par LA] ->
-        [wk ρ wfΔ (ListRedTy.parRed LA) | Δ ||- t⟨ρ⟩ : (ListRedTy.par LA)⟨ρ⟩])
-    (LA' := wkList' ρ wfΔ LA) :
+      (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t : term) (Δ' : context) (ρ' : Δ' ≤ Δ) (wfΔ' : [ |-[ ta ] Δ']),
+        [ListRedTy.parRed LA ρ wfΔ | Δ ||- t : (ListRedTy.par LA)⟨ρ⟩] ->
+        [wk ρ' wfΔ' (ListRedTy.parRed LA ρ wfΔ) | Δ' ||- t⟨ρ'⟩ : (ListRedTy.par LA)⟨ρ⟩⟨ρ'⟩])
+    (LA' := wkList ρ wfΔ LA) :
     (forall u, [Γ ||-<l> u : A | LRList' LA] ->
           [Δ ||-<l> u⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
       × (forall u, ListProp Γ A LA u -> ListProp Δ A⟨ρ⟩ LA' u⟨ρ⟩).
@@ -218,18 +231,32 @@ Section Weakenings.
       + cbn. change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
         now eapply convtm_wk.
       + assumption.
-    - intros. econstructor.
+    - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + cbn. now eapply wkEq.
-    - intros. econstructor.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
+    - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + now eapply wkEq.
-      + fold ren_term. now apply ih.
-      + eassumption.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
+      + fold ren_term. 
+        irrelevance0.
+        2: now apply ih.
+        now rewrite 2!wk_id_ren_on.
+        Unshelve. tea.
     - intros. econstructor.
       + cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
         now eapply ty_wk.
       + now eapply convneulist_wk.
+      + now apply wkList_map_inv.
   Defined.
 
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
@@ -274,7 +301,7 @@ Section Weakenings.
 
 
   Lemma wkListTerm' {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
-    (LA' := wkList' ρ wfΔ LA) :
+    (LA' := wkList ρ wfΔ LA) :
     (forall u, [Γ ||-<l> u : A | LRList' LA] ->
           [Δ ||-<l> u⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
       × (forall u, ListProp Γ A LA u -> ListProp Δ A⟨ρ⟩ LA' u⟨ρ⟩).
@@ -301,10 +328,11 @@ Section Weakenings.
   Qed.  
 
   Lemma wkListTermEq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
-    (ih: forall (t u : term),
-      [ListRedTy.parRed LA | Γ ||- t ≅ u : ListRedTy.par LA] ->
-      [wk ρ wfΔ (ListRedTy.parRed LA) | Δ ||- t⟨ρ⟩ ≅ u⟨ρ⟩ : (ListRedTy.par LA)⟨ρ⟩])
-    (LA' := wkList' ρ wfΔ LA) :
+    (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) 
+      (t u : term) (Δ' : context) (ρ' : Δ' ≤ Δ) (wfΔ' : [ |-[ ta ] Δ']),
+      [ListRedTy.parRed LA ρ wfΔ | Δ ||- t ≅ u : (ListRedTy.par LA)⟨ρ⟩] ->
+      [wk ρ' wfΔ' (ListRedTy.parRed LA ρ wfΔ) | Δ' ||- t⟨ρ'⟩ ≅ u⟨ρ'⟩ : (ListRedTy.par LA)⟨ρ⟩⟨ρ'⟩])
+    (LA' := wkList ρ wfΔ LA) :
     (forall u t, [Γ ||-<l> u ≅ t : A | LRList' LA] ->
           [Δ ||-<l> u⟨ρ⟩ ≅ t⟨ρ⟩ : A⟨ρ⟩ | LRList' LA' ])
       × (forall u t, ListPropEq Γ A LA u t -> ListPropEq Δ A⟨ρ⟩ LA' u⟨ρ⟩ t⟨ρ⟩).
@@ -321,19 +349,42 @@ Section Weakenings.
       + destruct Rt, Ru.
         cbn.
         assumption.
-    - intros. econstructor.
+    - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + now eapply wkEq.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
       + now eapply wft_wk.
-      + now eapply wkEq.
-    - intros. econstructor.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
+    - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + now eapply wkEq.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
       + now eapply wft_wk.
-      + now eapply wkEq.
-      + now apply ih.
-      + assumption.
+      + irrelevance0.
+        1: now rewrite wk_id_ren_on.
+        unshelve eapply wkEq; tea.
+        2: irrelevance.
+        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
+        now rewrite wk_id_ren_on in h.
+      + irrelevance0.
+        2: now apply ih.
+        now rewrite 2! wk_id_ren_on.
+        Unshelve. tea.
     - intros. constructor.
+      2, 3: apply wkList_map_inv; tea; intros; now eapply wkTerm.
       cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
       now eapply convneulist_wk.
   Qed.

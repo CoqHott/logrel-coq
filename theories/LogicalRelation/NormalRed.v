@@ -91,10 +91,33 @@ Definition normList0 {Γ l A} (LA : [Γ ||-List<l> tList A]) : [Γ ||-List<l> tL
   {| ListRedTy.par := A |}.
 Solve All Obligations with 
   intros; destruct LA as [? red]; pose proof (e := redtywf_whnf red whnf_tList); 
-  injection e; intros; subst; clear e; tea.
+  injection e; intros; subst; clear e; tea; eauto.
+
 
 Definition normList {Γ l A} (LA : [Γ ||-<l> tList A]) : [Γ ||-<l> tList A] :=
   LRList' (normList0 (invLRList LA)).
+
+#[program]
+Definition normListEq0 {Γ l  A A'}
+  (LA : [Γ ||-List<l> tList A]) 
+  (LA_ := normList0 LA)
+  (LAA' : ListRedTyEq _ _ LA_ (tList A')) : 
+  ListRedTyEq _ _ LA_ (tList A') :=
+  {| ListRedTyEq.par := A' |}.
+Solve All Obligations with
+  intros ; revert LAA'; intros [? red];
+  pose proof (e := redtywf_whnf red whnf_tList); 
+  injection e; intros; subst; clear e; tea; eauto.
+
+#[program]
+Definition normListEq {Γ l  A A'}
+  (LA : [Γ ||-<l> tList A]) 
+  (LA_ := normList LA)
+  (LAA' : [Γ ||-<l> _ ≅ tList A' | LA]) :
+  [Γ ||-<l> _ ≅ tList A' | LA_].
+Proof.  eapply normListEq0.
+  change [Γ ||-<l> _ ≅ tList A' | LA_]; irrelevance.
+Defined.
 
 Definition invLRcan {Γ l A} (lr : [Γ ||-<l> A]) (w : isType A) : [Γ ||-<l> A] :=
   match w as w in isType A return forall (lr : [Γ ||-<l> A]), invLRTy lr (reflexivity A) w -> [Γ ||-<l> A] with
