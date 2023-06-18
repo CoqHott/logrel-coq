@@ -65,6 +65,9 @@ Proof.
   now asimpl.
 Qed.
 
+Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
+Proof. now asimpl. Qed.
+
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
@@ -111,4 +114,12 @@ Module Map.
     destruct n ; cbn ; eauto.
   Qed.
   
+  Inductive view : term -> Type :=
+    | IsMap {A B f l} : view (tMap A B f l)
+    | IsNotMap {u} : ~~ is_map u -> view u.
+
+  Definition into_view (t : term) : view t.
+  Proof. destruct t; now econstructor. Defined.
+
 End Map.
+

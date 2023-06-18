@@ -482,6 +482,7 @@ Lemma complete_List_list_neutrals {l Γ A} (LA : [Γ ||-List<l> A]) :
     [Γ |- n ~ n' :List (ListRedTy.par LA)] ->
     ListRedTm.map_inv LA n ->
     ListRedTm.map_inv LA n' ->
+    ListRedTmEq.map_inv_eq LA n n' ->
     [LRList' LA | Γ ||- n : A] × [LRList' LA | Γ ||- n ≅ n' : A].
 Proof.
   set (LA' := LA). destruct LA as [par] ; cbn -[wk] in *.
@@ -509,6 +510,9 @@ Qed.
 Lemma ListRedTm_map_inv_whne {Γ l A m} {LA : [Γ ||-List<l> A]} : whne m -> ListRedTm.map_inv LA m.
 Proof. intros []; cbn; easy. Qed.
 
+Lemma ListRedTmEq_map_inv_eq_whne {Γ l A m m'} {LA : [Γ ||-List<l> A]} : whne m -> whne m'-> ListRedTmEq.map_inv_eq LA m m'.
+Proof. intros [] []; cbn; easy. Qed.
+
 Lemma complete_List {l Γ A} (LA : [Γ ||-List<l> A]) 
   (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), complete (ListRedTy.parRed LA  ρ wfΔ))
   : complete (LRList' LA).
@@ -517,6 +521,7 @@ Proof.
   split. intros.
   eapply complete_List_list_neutrals ; tea.
   2,3: eapply ListRedTm_map_inv_whne; eapply convneu_whne; (now symmetry + tea).
+  2: eapply ListRedTmEq_map_inv_eq_whne; eapply convneu_whne; (now symmetry + tea).
   eapply convneulist_convneu.
   - eapply convneu_conv ; tea. cbn. gen_typing.
   - erewrite <- wk1_ren_on.
@@ -565,7 +570,9 @@ Lemma neuListTerm {l Γ A} (LA : [Γ ||-List<l> A]) {n} :
   ListRedTm.map_inv LA n ->
   [LRList' LA | Γ ||- n : A].
 Proof.
-  intros hn hnn hmap; generalize hmap; now apply complete_List_list_neutrals.
+  intros hn hnn hmap.
+  eapply (complete_List_list_neutrals  LA n n); tea.
+  now apply ListRedTm_map_inv_refl.
 Qed.
 
 Lemma neuListTermEq {l Γ A} (LA : [Γ ||-List<l> A]) {n n'} :
@@ -574,6 +581,7 @@ Lemma neuListTermEq {l Γ A} (LA : [Γ ||-List<l> A]) {n n'} :
   [Γ |- n ~ n' :List (ListRedTy.par LA)] ->
   ListRedTm.map_inv LA n ->
   ListRedTm.map_inv LA n' ->
+  ListRedTmEq.map_inv_eq LA n n' ->
   [Γ ||-<l> n ≅ n' : A| LRList' LA].
 Proof.
   intros Hn Hn' Hnn ??; now apply complete_List_list_neutrals.

@@ -385,34 +385,43 @@ Proof.
   eapply consEqRed; solve [ escape; tea | eapply LRTyEqRefl_].
 Qed.
 
-
-Inductive map_view : term -> Type :=
-  | IsMap {A B f l} : map_view (tMap A B f l)
-  | IsNotMap {u} : ~~ Map.is_map u -> map_view u.
-
-Definition into_map_view (t : term) : map_view t.
-Proof. destruct t; now econstructor. Defined.
-
 Definition mapProp {Γ L l} (A B f x: term) {LL : [Γ ||-List<l> L]} (p : ListProp _ _ LL x) : term.
 Proof.
   destruct p as [  | | x ].
   - exact (tNil B).
   - exact (tCons B (tApp f hd) (tMap A B f tl)).
-  - destruct (into_map_view x) as [A' B' f' x'| y].
+  - destruct (Map.into_view x) as [A' B' f' x'| y].
     + exact (tMap A' B (comp A' f f') x').
     + exact (tMap A B f y).
 Defined.
-
-Lemma whne_list_not_map {t} : whne_list t -> ~~ Map.is_map t ->  whne t.
-Proof.
-  intros []; [cbn;discriminate| easy].
-Qed.
 
 Lemma instKripke {Γ A l} (wfΓ : [|-Γ]) (h : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [Δ ||-<l> A⟨ρ⟩]) : [Γ ||-<l> A].
 Proof.
   specialize (h Γ wk_id wfΓ); now rewrite wk_id_ren_on in h.
 Qed.
 
+Lemma redfun_kripke_neutrals {Γ l A B f} 
+  (RA : [Γ ||-<l> A])
+  (RAB : [Γ ||-<l> arr A B])
+  (RLB : [Γ ||-<l> tList B])
+  (RLB' := (normList0 (invLRList RLB)))
+  (Rf : [Γ ||-<l> f : _ | RAB])
+  {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n :
+  [Δ |- n : A⟨ρ⟩] ->
+  [Δ |- n ~ n : A⟨ρ⟩] ->
+  [ListRedTyPack.parRed RLB' ρ wfΔ | Δ ||- tApp f⟨ρ⟩ n : _].
+Proof.
+  intros. eapply simple_appTerm.
+  2: now eapply neuTerm.
+  irrelevance0.
+  2: now eapply wkTerm.
+  now rewrite <- wk_arr.
+  Unshelve. 3: tea. 2: apply ArrRedTy.
+    all: eapply wk; tea.
+    unshelve eapply instKripke.
+    1: escape; gen_typing.
+    intros. now eapply ListRedTy.parRed.
+Qed.
 
 Lemma mapRedAux {Γ A B f l}
   {RA : [Γ ||-<l> A]}
@@ -464,7 +473,7 @@ Proof.
         now eapply escapeTerm.
 
   - intros. cbn.
-    destruct (into_map_view l0) as [A' B' f' l'|l'].
+    destruct (Map.into_view l0) as [A' B' f' l'|l'].
     + assert (whne l') by 
         (eapply convneulist_whne_list in refl; inversion refl; tea; inv_whne).
       destruct tyconv; eapply redSubstTerm; cycle 1.
@@ -509,16 +518,14 @@ Proof.
       1: eapply ty_map; tea.
       * eapply convneulist_map; tea.
         eapply convtm_comp_app ; cycle 4; tea; gen_typing.
-      * split; tea.
-        -- eapply convtm_comp; tea; gen_typing.
-        -- intros.
-          eapply redSubstTerm.
-          1: now eapply hcomp.
-          rewrite wk_comp.
-          eapply redtm_comp_beta; tea.
-          1-3: eapply wft_wk; tea.
-          1,2: rewrite wk_arr; now eapply ty_wk.
-          Unshelve. gen_typing.
+      * split; tea; intros.
+        eapply redSubstTerm.
+        1: now eapply hcomp.
+        rewrite wk_comp.
+        eapply redtm_comp_beta; tea.
+        1-3: eapply wft_wk; tea.
+        1,2: rewrite wk_arr; now eapply ty_wk.
+        Unshelve. gen_typing.
     + enough [normList RLB | Γ ||- tMap A B f l' : tList B].
       1: split; [| eapply LREqTermRefl_ ]; irrelevance.
       assert [Γ |- A ≅ A]
@@ -541,15 +548,35 @@ Proof.
         1: erewrite <- wk1_ren_on; eapply wk; gen_typing.
         apply ArrRedTy; erewrite <- wk1_ren_on; eapply wk; tea; gen_typing.
         Unshelve. gen_typing.
-      * eapply escapeEqTerm; now eapply LREqTermRefl_.
-      * intros. eapply simple_appTerm.
-        2: now eapply neuTerm.
-        irrelevance0.
-        2: now eapply wkTerm.
-        now rewrite <- wk_arr.
-        Unshelve. 3: tea. 2: apply ArrRedTy.
-          all: eapply wk; tea.
+      * intros; now eapply redfun_kripke_neutrals.
 Qed.
+
+Lemma ListPropIrrelevance {Γ lA lA' A A' t} (wfΓ : [|- Γ])
+  (LA : [Γ ||-List< lA > A]) (LA' : [Γ ||-List< lA' > A']) 
+  (Rpar := instKripke wfΓ (fun Δ => ListRedTy.parRed LA (Δ:=Δ))):
+  [Rpar | Γ ||- ListRedTy.par LA ≅ ListRedTy.par LA'] ->
+  ListProp Γ A LA t -> ListProp Γ A' LA' t.
+Proof.
+  intros conv.
+  apply ListIrrelevanceTm.
+  1: escape; now eapply convty_list.
+  1: now escape.
+  intros; eapply LRIrrelevantPack; irrelevanceRefl; unshelve eapply wkEq; tea.
+Defined.
+
+Lemma ListRedTmIrrelevance {Γ lA lA' A A' t} (wfΓ : [|- Γ])
+  (LA : [Γ ||-List< lA > A]) (LA' : [Γ ||-List< lA' > A']) 
+  (Rpar := instKripke wfΓ (fun Δ => ListRedTy.parRed LA (Δ:=Δ))):
+  [Rpar | Γ ||- ListRedTy.par LA ≅ ListRedTy.par LA'] ->
+  [LRList' LA | Γ ||- t : A] -> [LRList' LA' | Γ ||- t : A'].
+Proof.
+  intros conv.
+  apply ListIrrelevanceTm.
+  1: escape; now eapply convty_list.
+  1: now escape.
+  intros; eapply LRIrrelevantPack; irrelevanceRefl; unshelve eapply wkEq; tea.
+Defined.
+
 
 Lemma mapEqRedAux {Γ A A' B B' f f' l}
   {RA : [Γ ||-<l> A]}
@@ -604,12 +631,10 @@ Proof.
     4: eassumption. 1: eassumption.
     unshelve epose (Ru' := _ : ListRedTm Γ (tList A') LA'_ u).
     {
-      change ([LRList' LA'_ | Γ ||- u : _ ]).
-      unshelve eapply (fst (ListIrrelevanceTm LA_ LA'_ _ _ _) _ Ru).
-      1-2: now escape.
-      intros; eapply LRIrrelevantPack.
-      pose proof (ListRedTyEq.parRed (normListEq RLA RELA) ρ wfΔ).
-      irrelevance.
+      unshelve eapply ListRedTmIrrelevance.
+      6: tea.
+      2: irrelevance.
+      1: escape; gen_typing.
     }
     replace (ListRedTm.nf Ru) with (ListRedTm.nf Ru').
     2: destruct Ru; reflexivity.
@@ -638,10 +663,11 @@ Proof.
     7: eassumption.
     4:{
       unshelve eapply (snd (mapRedAux _)); tea.
-      eapply ListIrrelevanceTm.
-      4: eassumption.
-      1-2: now cbn; etransitivity; escape; tea; symmetry; tea.
-      intros; eapply LRIrrelevantPack; eapply LRTyEqRefl_.
+      econstructor; tea; (inversion X5; subst; [| eapply convneulist_whne_list in refl; inv_whne ]).
+      + irrelevance.
+      + irrelevance.
+      + escape; unshelve eapply ListRedTmIrrelevance.
+        3,6: tea. now eapply LRTyEqRefl_. Unshelve. tea.
     }
     3:{
       unshelve eapply (snd (mapRedAux _)); tea.
@@ -653,7 +679,7 @@ Proof.
       irrelevance.
     }
     + eassumption.
-    + cbn; dependent inversion X5; subst;
+    + cbn; inversion X5; subst;
       dependent inversion X7; subst; cbn.
       { eapply consEqRed. 3: eassumption.
         all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
@@ -672,7 +698,7 @@ Proof.
         Unshelve. all: tea.
 
   - intros.
-    destruct (into_map_view l0) as [Ap Bp fp lp|lp], (into_map_view l') as [Ap' Bp' fp' lp'|lp']; cycle 3.
+    destruct (Map.into_view l0) as [Ap Bp fp lp|lp], (Map.into_view l') as [Ap' Bp' fp' lp'|lp']; cycle 3.
     + pose proof conv as ?%convneulist_whne.
       2,3: eapply whne_list_not_map; tea; eapply convneulist_whne_list; now symmetry + tea.
       enough [normList RLB | Γ ||- tMap A B f lp ≅ tMap A' B' f' lp' : tList B] by irrelevance.
@@ -696,12 +722,21 @@ Proof.
         4: apply ArrRedTy.
         2-5: erewrite <- wk1_ren_on; eapply wk; tea; gen_typing.
       * split; tea; cbn.
-        1-4: etransitivity; tea; now symmetry.
-        admit. (* export the proof from mapRedAux in a lemma *)
-      * split; tea. all: admit. (* also need to apply conversions *)
+        1-3: etransitivity; tea; now symmetry.
+        intros. eapply redfun_kripke_neutrals; cycle 1; tea.
+      * split; tea. 
+        -- eapply ty_conv; tea.
+        -- now eapply urefl.
+        -- eapply convneu_conv; tea; now eapply urefl.
+        -- intros; eapply LRTmRedConv.
+          2: eapply redfun_kripke_neutrals; cycle 1; tea.
+          cbn; eapply LRTyEqSym; now eapply wkEq.
+          Unshelve. all: tea.
+      * split; tea.
+        admit.
     + eapply LREqTermHelper.
       1,2: unshelve eapply mapRedAux; tea.
-      1:{ destruct tyconv. 
+      1:{ destruct tyinv. 
         econstructor.
         - eapply ty_conv.
           1: now eapply ty_map.
@@ -710,8 +745,15 @@ Proof.
           eapply convneulist_map; tea.
           3: now symmetry.
           1: etransitivity; tea; now symmetry.
-          admit.
-        - admit.
+          eapply convtm_conv.
+          2: renToWk; eapply convty_wk; gen_typing.
+          eapply escapeEqTerm.
+          eapply LREqTermRefl_.
+          erewrite <- wk1_ren_on; eapply redfn.
+          2: eapply convneu_var.
+          1,2: rewrite wk1_ren_on; now eapply ty_var0.
+          Unshelve. 1: tea. gen_typing.
+        - admit. (* can I extract a lemma with this conclusion ? *)
       }
       1:{ destruct tyconv'. 
         econstructor.
@@ -728,11 +770,6 @@ Proof.
       now econstructor.
       1,2: tea.
 Qed.
-
-(* TODO: move; also wk_arr vs arr_wk *)
-(* probably exists elsewhere *)
-Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
-Proof. now bsimpl. Qed.
 
 Lemma mapValid {Γ A B f x i}
   {VΓ : [||-v Γ]}

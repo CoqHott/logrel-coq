@@ -222,6 +222,18 @@ Proof.
     eapply HH; eauto.
 Qed.
 
+From Coq Require Import ssrbool.
+
+Lemma convneulist_is_not_map_convneu {Γ l l' A} :
+  ~~ Map.is_map l -> ~~ Map.is_map l' ->
+  [Γ |- l ~ l' :List A] ->
+  [Γ |- l ~ l' : tList A].
+Proof.
+  intros ?? h.
+  eapply convneulist_whne ; tea.
+  all: eapply whne_list_not_map; tea.
+  all: eapply convneulist_whne_list; now symmetry + tea.
+Qed.
 
 Lemma transEqTermList {Γ A l} (LA : [Γ ||-List<l> A])
   (ih: forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u v : term),
@@ -255,7 +267,7 @@ Proof.
     2:{ apply convneulist_whne_list in conv. inv_whne. }
     econstructor ; try easy. 1: irrelevance.
     eapply ih; tea; irrelevance.
-  - intros * ???? uv.
+  - intros * ????? uv.
     assert (whne_list l').
     {
       eapply convneulist_whne_list; now symmetry.
@@ -263,7 +275,52 @@ Proof.
     inversion uv ; subst.
     all: try solve [inv_whne].
     econstructor; tea.
-    now etransitivity.
+    1: now etransitivity.
+    revert tyconv tyconv0; unfold ListRedTmEq.map_inv_eq.
+    do 3 destruct (Map.into_view _); try easy.
+    + intros [] []; split.
+      1-2: now etransitivity.
+      1: etransitivity; tea; eapply convneu_conv; tea; eapply convty_list; now symmetry.
+      intros; eapply ih; eauto. 
+      assert [Δ |- A0⟨ρ⟩ ≅ A1⟨ρ⟩] by now eapply convty_wk.
+      eapply convredfn0; [eapply ty_conv|eapply convneu_conv]; tea.
+    + intros [] []; split.
+      * etransitivity; tea; etransitivity; tea; now symmetry.
+      * etransitivity ; tea; eapply convneu_conv; tea; eapply convty_list; now symmetry.
+      * intros; eapply ih; eauto. 
+        assert [Δ |- A0⟨ρ⟩ ≅ A1⟨ρ⟩] by now eapply convty_wk.
+        eapply convredfn_id; [eapply ty_conv|eapply convneu_conv]; tea.
+    + intros [] []; destruct tyinv, tyinv'0.
+      assert [Γ |- B ≅ B0] by ( transitivity (ListRedTy.par LA); tea; now symmetry).
+      assert [Γ |- A0 ≅ A1].
+      1: etransitivity; tea; etransitivity; [|now symmetry]; tea.
+      split; tea.
+      * etransitivity; tea; eapply convneu_conv; [|eapply convty_list]; now symmetry.
+      * intros; eapply ih; eauto. 
+        assert [Δ |- A0⟨ρ⟩ ≅ A1⟨ρ⟩] by now eapply convty_wk.
+        eapply LRTmEqSym.
+        eapply convredfn_id0; [eapply ty_conv|eapply convneu_conv]; tea.
+    + intros []; split; tea.
+      etransitivity; tea.
+      eapply convneulist_is_not_map_convneu; tea.
+      eapply convneulist_conv; tea.
+      destruct tyinv; etransitivity; tea; now symmetry.
+    + intros [] []; split.
+      * do 2 ( etransitivity; tea); now symmetry.
+      * eapply convneu_conv.
+        2: now eapply convty_list.
+        etransitivity; [ now symmetry|tea].
+      * intros.
+        assert [Δ |- A0⟨ρ⟩ ≅ A1⟨ρ⟩] by now eapply convty_wk.
+        eapply ih.
+        2: eapply convredfn_id; [now eapply ty_conv| now eapply convneu_conv].
+        eapply LRTmEqSym; eapply convredfn; [now eapply ty_conv| now eapply convneu_conv].
+    + intros _ []; split; tea.
+      etransitivity; tea.
+      symmetry; eapply convneu_conv.
+      1: now eapply convneulist_is_not_map_convneu.
+      eapply convty_list. 
+      destruct tyinv'0; etransitivity; tea; now symmetry.
 Qed.
 
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 

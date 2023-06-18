@@ -270,9 +270,18 @@ Lemma ListRedTm_map_inv_irrelevance {l} :
 Proof.
   destruct l; try easy; intros []; unshelve econstructor; tea.
   1: etransitivity; tea; now symmetry.
-  intros; eapply eqvPar; now eapply redfn.
+  intros; eapply eqvPar; eauto.
 Qed.
  
+#[local]
+Lemma ListRedTm_map_inv_eq_irrelevance {l l'} :
+  ListRedTmEq.map_inv_eq LA l l'-> ListRedTmEq.map_inv_eq LA' l l'.
+Proof.
+  unfold ListRedTmEq.map_inv_eq.
+  do 2 destruct (Map.into_view _); try easy.
+  all: intros []; split; tea.
+  all: intros; eapply eqvPar; eauto.
+Qed.
 
 Lemma ListIrrelevanceTm : 
   (forall t, [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'])
@@ -309,6 +318,7 @@ Proof.
     all: now eapply eqvPar.
   - econstructor.
     2,3: now eapply ListRedTm_map_inv_irrelevance.
+    2: now eapply ListRedTm_map_inv_eq_irrelevance.
     now eapply convneulist_conv.  
 Qed.
 
@@ -906,7 +916,14 @@ Proof.
     1: now eauto.
     apply ListRedEqInduction; intros; econstructor; tea.
     all: try now symmetry.
-    now eapply ihpar.
+    1: now eapply ihpar.
+    revert tyconv; unfold ListRedTmEq.map_inv_eq.
+    do 2 destruct (Map.into_view _); try easy.
+    intros []; split; try now symmetry.
+    1: symmetry; eapply convneu_conv; tea; gen_typing.
+    intros.
+    assert [Δ |- A1⟨ρ⟩ ≅ A0⟨ρ⟩] by (eapply convty_wk; tea; now symmetry).
+    eapply ihpar; eapply convredfn; [eapply ty_conv|eapply convneu_conv];tea.
 Qed.
 
 End Irrelevances.

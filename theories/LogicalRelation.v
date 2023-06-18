@@ -887,7 +887,7 @@ Section ListRedTm.
     wtyres : [Γ |- l : tList A] ;
     wconvdom : [Γ |- A ≅ A] ;
     wconvcod : [Γ |- par ≅ B] ;
-    wconvfn : [Γ |- f ≅ f : arr A B] ;
+    (* wconvfn : [Γ |- f ≅ f : arr A B] ; *)
     wconvres : [Γ |- l ~ l : tList A] ;
     redfn : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) {n},
       [Δ |- n : A⟨ρ⟩] ->
@@ -896,8 +896,8 @@ Section ListRedTm.
   }.
 
   Definition map_inv l : Type@{i} :=
-    match l with 
-    | tMap A B f l => map_inv_data A B f l
+    match Map.into_view l with 
+    | @Map.IsMap A B f l => map_inv_data A B f l
     | _ => unit end.
 
   Inductive ListRedTm : term -> Type :=
@@ -969,7 +969,7 @@ Defined.
 End ListRedTm.
 Arguments ListRedTm {_ _ _ _ _ _ _ _ _ _}.
 Arguments ListProp {_ _ _ _ _ _ _ _ _ _}.
-Arguments map_inv {_ _ _ _ _ _ _ _ _ _}.
+Arguments map_inv {_ _ _ _ _ _ _ _ _}.
 End ListRedTm.
 
 Export ListRedTm(ListRedTm,Build_ListRedTm, ListProp, ListRedInduction).
@@ -986,11 +986,33 @@ Section ListRedTmEq.
   Let par := LA.(ListRedTyPack.par).
   Let parRedΓ (wfΓ : [|- Γ]) := ListRedTyPack.parRed LA wk_id wfΓ.
   
-  (* Definition map_inv_eq l l' :=
-    match l, l' with 
-    | tMap A B f l, tMap A' B' f' l' => 
-      [× [Γ |- A ≅ A'], [Γ |- B ≅ B'], [Γ |- f ≅ f' : arr A B] & [Γ |- l ~ l' : tList A]]
-    | _, _ => unit end. *)
+  Record map_map_inv_data A A' B B' f f' l l' : Type@{i} := {
+    wconvdom : [Γ |- A ≅ A'];
+    wconvcod : [Γ |- B ≅ B'] ;
+    (* wconvfn : [Γ |- f ≅ f' : arr A B] ; *)
+    wconvres : [Γ |- l ~ l' : tList A] ;
+    convredfn : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) {n},
+      [Δ |- n : A⟨ρ⟩] ->
+      [Δ |- n ~ n : A⟨ρ⟩] ->
+      [ListRedTyPack.parRed LA ρ wfΔ | _ ||- tApp f⟨ρ⟩ n ≅ tApp f'⟨ρ⟩ n : _ ];
+  }.
+  
+  Record map_ne_inv_data A B f l l' : Type@{i} := {
+    wconvdomcod : [Γ |- A ≅ B];
+    (* wconvfn : [Γ |- f ≅ idterm A : arr A B] ; *)
+    wconvresne : [Γ |- l ~ l' : tList A] ;
+    convredfn_id : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) {n},
+      [Δ |- n : A⟨ρ⟩] ->
+      [Δ |- n ~ n : A⟨ρ⟩] ->
+      [ListRedTyPack.parRed LA ρ wfΔ | _ ||- tApp f⟨ρ⟩ n ≅ n : _ ];
+  }.
+  
+  Definition map_inv_eq l l' : Type@{i} :=
+    match Map.into_view l, Map.into_view l' with 
+    | @Map.IsMap A B f l, @Map.IsMap A' B' f' l' => map_map_inv_data A A' B B' f f' l l'
+    | @Map.IsMap A B f l, _ => map_ne_inv_data A B f l l'
+    | _, @Map.IsMap A' B' f' l' => map_ne_inv_data A' B' f' l' l
+    | _, _ => unit end.
 
   Inductive ListRedTmEq : term -> term -> Type :=
   | Build_ListRedTmEq {t u}
@@ -1016,8 +1038,10 @@ Section ListRedTmEq.
     ListRedTmEq tl tl' ->
     ListPropEq (tCons P hd tl) (tCons P' hd' tl')
   | neReq {l l'} (conv : [Γ |-[ta] l ~ l' :List par])
-      (tyconv: ListRedTm.map_inv LA l) 
-      (tyconv': ListRedTm.map_inv LA l') : ListPropEq l l'.
+      (tyinv: ListRedTm.map_inv LA l) 
+      (tyinv': ListRedTm.map_inv LA l')
+      (tyconv : map_inv_eq l l')
+      : ListPropEq l l'.
 
 Scheme
     Minimality for ListRedTmEq Sort Type with
@@ -1048,6 +1072,7 @@ Defined.
 End ListRedTmEq.
 Arguments ListRedTmEq {_ _ _ _ _ _ _ _ _ _}.
 Arguments ListPropEq {_ _ _ _ _ _ _ _ _ _}.
+Arguments map_inv_eq {_ _ _ _ _ _ _ _ _}.
 End ListRedTmEq.
 
 Export ListRedTmEq(ListRedTmEq,Build_ListRedTmEq, ListPropEq, ListRedEqInduction).

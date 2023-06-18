@@ -1,3 +1,4 @@
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
@@ -207,7 +208,6 @@ Section Weakenings.
     all: rewrite ?wk_arr, ?wk_list.
     1,2: now eapply ty_wk.
     1,2: now eapply convty_wk.
-    + now eapply convtm_wk.
     + now eapply convneu_wk.
     + intros. irrelevance0; rewrite wk_comp_ren_on.
       1: reflexivity. 
@@ -327,6 +327,48 @@ Section Weakenings.
     intros []; constructor. gen_typing.
   Qed.  
 
+  Lemma not_map_into_view {Γ Δ} (ρ : Δ ≤ Γ) l :
+    ~~ Map.is_map l -> ∑ p, Map.into_view l⟨ρ⟩ = Map.IsNotMap p.
+  Proof.
+    destruct l; try discriminate; eexists; reflexivity.
+  Qed.
+
+  Lemma wkListRedTmEq_map_inv_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
+    (LA' := wkList ρ wfΔ LA) m n :
+    ListRedTmEq.map_inv_eq LA m n ->
+    ListRedTmEq.map_inv_eq LA' m⟨ρ⟩ n⟨ρ⟩.
+  Proof.
+    unfold ListRedTmEq.map_inv_eq.
+    do 2 (destruct (Map.into_view _); cbn).
+    + intros []; split.
+      1,2: now eapply convty_wk.
+      1: cbn; refold; rewrite wk_list; now eapply convneu_wk.
+      intros; irrelevance0.
+      2: refold; rewrite 2!wk_comp_ren_on; apply convredfn; now rewrite <- wk_comp_ren_on.
+      now rewrite <- wk_comp_ren_on.
+      Unshelve. tea.
+    + eapply not_map_into_view in i as [? ->].
+      intros []; split.
+      * now eapply convty_wk.
+      * refold; rewrite wk_list; now eapply convneu_wk.
+      * intros; irrelevance0.
+        2: refold; rewrite wk_comp_ren_on; apply convredfn_id ; now rewrite <- wk_comp_ren_on.
+        now rewrite <- wk_comp_ren_on.
+      Unshelve. tea.
+    + eapply not_map_into_view in i as [? ->].
+      intros []; split.
+      * now eapply convty_wk.
+      * refold; rewrite wk_list; now eapply convneu_wk.
+      * intros; irrelevance0.
+        2: refold; rewrite wk_comp_ren_on; apply convredfn_id ; now rewrite <- wk_comp_ren_on.
+        now rewrite <- wk_comp_ren_on.
+      Unshelve. tea.
+    + eapply not_map_into_view in i as [? ->].
+      eapply not_map_into_view in i0 as [? ->].
+      easy.
+  Qed.
+
+
   Lemma wkListTermEq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (LA : [Γ ||-List< l > A])
     (ih : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) 
       (t u : term) (Δ' : context) (ρ' : Δ' ≤ Δ) (wfΔ' : [ |-[ ta ] Δ']),
@@ -385,6 +427,7 @@ Section Weakenings.
         Unshelve. tea.
     - intros. constructor.
       2, 3: apply wkList_map_inv; tea; intros; now eapply wkTerm.
+      2: now eapply wkListRedTmEq_map_inv_eq.
       cbn; change (tList ?e⟨ρ⟩) with ((tList e)⟨ρ⟩).
       now eapply convneulist_wk.
   Qed.

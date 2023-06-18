@@ -1,4 +1,5 @@
 (** * LogRel.NormalForms: definition of normal and neutral forms, and properties. *)
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
 
@@ -58,6 +59,12 @@ Proof.
 Qed.
 
 #[global] Hint Resolve neSort nePi neLambda : gen_typing.
+
+Lemma whne_list_not_map {t} : whne_list t -> ~~ Map.is_map t ->  whne t.
+Proof.
+  intros []; [cbn;discriminate| easy].
+Qed.
+
 
 (** ** Restricted classes of normal forms *)
 
