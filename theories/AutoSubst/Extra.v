@@ -88,65 +88,27 @@ Module Map.
       rule neuMapCompact *)
   #[projections(primitive)]
   Record data : Set := 
-    mk { srcTy : term ; tys : list (term × term) ; fn : list term ; lst : term }.
-
-  Definition id (A k : term) : data := Map.mk A [::] [::] k.
- 
-  Fixpoint decompose (T t : term) : data :=
-  match t with
-  | tMap B A f l =>
-      let r := decompose B l in
-      mk r.(srcTy) ((B,A) :: r.(tys)) (f :: r.(fn)) r.(lst)
-  | k => id T k
-  end.
-
-  Fixpoint recompose_aux tys fn lst :=
-    match tys, fn with
-    | [::], _ => lst
-    | _, [::] => lst
-    | (A,B) :: tys', f :: fn' => tMap A B f (recompose_aux tys' fn' lst)
-    end.
-
-  Definition recompose (d : data) := recompose_aux d.(tys) d.(fn) d.(lst).
-
-  Definition compact (tgt : term) (r : Map.data) :=
-    tMap (srcTy r) tgt (comps (srcTy r) (fn r)) (lst r).
-
-  Lemma decompose_recompose T t : recompose (decompose T t) = t.
-  Proof.
-    induction t in T |- * ; cbn.
-    all: try reflexivity.
-    f_equal.
-    easy.
-  Qed.
-
-  Lemma decompose_lst_eq (T T' t : term) :
-    (decompose T t).(lst) = (decompose T' t).(lst).
-  Proof.
-    now destruct t.
-  Qed.
-
-  Lemma decompose_fn_eq (T T' t : term) :
-    (decompose T t).(fn) = (decompose T' t).(fn).
-  Proof.
-    now destruct t.
-  Qed.
-
-  Definition is_map t :=
-    match t with | tMap _ _ _ _ => true | _ => false end.
-
-  Lemma compact_id {A t} : ~~ is_map t -> decompose A t = id A t.
-  Proof.
-    destruct t; cbn; try reflexivity; discriminate.
-  Qed.
+    mk { srcTy : term ; tgtTy : term ; fn : term ; lst : term }.
 
   (* for n a whne_list (in context Γ), 
      returns a pair (h, r) such that
      Γ, x : A ⊢ h : B,  Γ ⊢ r : list A and n ~ map (λ x. h) r*)
-  Definition eta n :=
+  Definition eta T n : data :=
     match n with
-    | tMap _ _ f l => (eta_expand f, l)
-    | u => (tRel 0, u)
+    | tMap A B f l => {| srcTy := A ; tgtTy := B ; fn := eta_expand f ; lst := l |}
+    | u => {| srcTy := T ; tgtTy := T ; fn := tRel 0 ; lst := u |}
     end.
 
+  Lemma eta_eq_fn T T' n :
+    (eta T n).(fn) = (eta T' n).(fn).
+  Proof.
+    destruct n ; cbn ; eauto.
+  Qed.
+
+  Lemma eta_eq_lst T T' n :
+    (eta T n).(lst) = (eta T' n).(lst).
+  Proof.
+    destruct n ; cbn ; eauto.
+  Qed.
+  
 End Map.

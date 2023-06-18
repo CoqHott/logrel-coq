@@ -125,9 +125,8 @@ Proof.
 + intros * ? []; split; now apply whne_list_ren.
 + intros * []; split; now econstructor.
 + now intros * [].
-+ intros * ????? []; split; constructor ; tea ; now constructor.
-+ intros * ? [] ; split ; tea ; now constructor.
-+ intros * ??? []; split; now constructor.
++ intros * ?????? [] []; split; constructor ; tea ; now constructor.
++ intros * ?????? [] []; split; constructor ; tea ; now constructor.
 Qed.
 
 #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := nf) := {}.
@@ -266,17 +265,19 @@ Section NeutralConversion.
     [Γ ,, A |-[al] tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
     [Γ |-[al] m ~ n :List A].
   Proof.
-    intros * HA Hconv.
-    assert (Map.compact A m = Map.id A m × Map.compact A n = Map.id A n) as [em en].
+    intros * HA Hconv HconvRel.
+    assert (((Map.fn (Map.eta A m)) = tRel 0) × (Map.lst (Map.eta A m) = m)) as [em em'].
+    {
+      eapply algo_conv_wh in Hconv as [[] []].
+      all: cbn ; split ; reflexivity.
+    }
+    assert (((Map.fn (Map.eta A n)) = tRel 0) × (Map.lst (Map.eta A n) = n)) as [en en'].
     {
       eapply algo_conv_wh in Hconv as [[] []].
       all: cbn ; split ; reflexivity.
     }
     econstructor ; tea.
-    all: rewrite em, en.
-    1: eassumption.
-    cbn.
-    eassumption.
+    all: now rewrite ?em, ?em', ?en, ?en'.
   Qed.
   
 End NeutralConversion.

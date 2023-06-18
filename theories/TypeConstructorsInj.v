@@ -735,7 +735,8 @@ Proof.
     do 2 (econstructor; tea).
     1-3: now econstructor.
     now eapply IHHred.
-  Qed.
+  - admit. 
+  Admitted.
 
 
   Theorem subject_reduction_one_type Γ A A' :

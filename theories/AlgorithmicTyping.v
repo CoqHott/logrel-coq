@@ -87,10 +87,10 @@ Section Definitions.
   with ConvNeuListAlg : context -> term -> term -> term -> Type :=
   | neuMapCompact {Γ A B l l'} :
     (* Map.decompose reduces all maps in head position, possibly inserting an identity *)
-    let r := Map.decompose B l in
-    let r' := Map.decompose B l' in
+    let r := Map.eta B l in
+    let r' := Map.eta B l' in
     [Γ |- r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ] ->
-    [Γ ,, A |- eta_expands r.(Map.fn) ≅ eta_expands r'.(Map.fn) : B⟨↑⟩] ->
+    [Γ ,, A |- r.(Map.fn) ≅ r'.(Map.fn) : B⟨↑⟩] ->
     [Γ |- l ~ l' :List B]
 
   (** **** Conversion of terms *)
@@ -137,9 +137,9 @@ Section Definitions.
       [Γ |- tList A ≅h tList A' : U]
     | termNilConvAlg {Γ A A' AT} :
       [Γ |- tNil A ≅h tNil A' : tList AT]
-    | termConsCongAlg {Γ A} A' AT {hd hd' tl tl'} :
-      [Γ |- hd ≅ hd' : A] ->
-      [Γ |- tl ≅ tl' : tList A] ->
+    | termConsCongAlg {Γ} A A' AT {hd hd' tl tl'} :
+      [Γ |- hd ≅ hd' : AT] ->
+      [Γ |- tl ≅ tl' : tList AT] ->
       [Γ |- tCons A hd tl ≅h tCons A' hd' tl' : tList AT]
     | termListNeuConvAlg {Γ m n A} :
       [Γ |- m ~ n :List A] ->
@@ -429,7 +429,7 @@ Definition AlgoTypingInductionConcl :=
 
 End InductionPrinciples.
 
-Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PTmEq PTmRedEq : rename.
+Arguments AlgoConvInductionConcl PTyEq PTyRedEq PNeEq PNeRedEq PNeListEq PTmEq PTmRedEq : rename.
 Arguments AlgoTypingInductionConcl PTy PInf PInfRed PCheck : rename.
 
 
@@ -527,15 +527,12 @@ Section TypingWk.
     - intros * ? ihlst ? ihfn *.
       cbn.
       econstructor.
-      all: do 2 rewrite <- wk_map_decompose.
+      all: do 2 erewrite wk_map_eta ; cbn.
       + cbn in ihlst.
         apply ihlst.
-      + unfold ren1, ren_map_data ; cbn -[eta_expands].
-        do 2 erewrite wk_eta_expands.
-        refold.
-        replace (B⟨_⟩⟨_⟩) with (B⟨↑⟩⟨wk_up A ρ⟩).
+      + replace (B⟨_⟩⟨_⟩) with (B⟨↑⟩⟨wk_up A ρ⟩).
         eapply ihfn.
-        now bsimpl. 
+        now bsimpl.
     - intros.
       econstructor.
       1-3: eauto using credalg_wk.
@@ -580,7 +577,7 @@ Section TypingWk.
     - intros.
       econstructor.
       + eauto.
-      + gen_typing. 
+      + gen_typing.
   Qed.
 
   Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [Δ |- A⟨ρ⟩].
@@ -754,7 +751,7 @@ Section AlgTypingWh.
     all: intros ; prod_splitter ; prod_hyp_splitter.
     all: try solve [now constructor].
     all: try solve [gen_typing].
-    all: eauto using decompose_map_whne with gen_typing.
+    all: eauto using eta_map_whne with gen_typing.
   Qed.
 End AlgTypingWh.
 

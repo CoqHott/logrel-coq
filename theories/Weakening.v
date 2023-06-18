@@ -449,21 +449,16 @@ Proof. now bsimpl. Qed.
 
 (** Weakening and compactification *)
 
-Lemma wk_is_map t {Γ Δ} (ρ : Δ ≤ Γ) : Map.is_map t⟨ρ⟩ = Map.is_map t.
-Proof. now destruct t. Qed.
-
-#[global]
-Instance ren_map_data {Γ Δ} : Ren1 (Γ ≤ Δ) Map.data Map.data :=
-  fun ρ r => {|
-    Map.srcTy := (Map.srcTy r)⟨ρ⟩ ;
-    Map.tys := list_map (fun '(A,B) => (A⟨ρ⟩,B⟨ρ⟩)) (Map.tys r) ;
-    Map.fn := list_map (fun f => f⟨ρ⟩) (Map.fn r) ;
-    Map.lst := (Map.lst r)⟨ρ⟩
-  |}.
-
-Lemma wk_map_decompose A t {Γ Δ} : forall (ρ : Γ ≤ Δ), (Map.decompose A t)⟨ρ⟩ = Map.decompose A⟨ρ⟩ t⟨ρ⟩.
+Lemma wk_map_eta {Γ Δ} (ρ : Γ ≤ Δ) T t:
+  Map.eta T⟨ρ⟩ (t⟨ρ⟩) =
+    {| Map.srcTy := (Map.eta T t).(Map.srcTy)⟨ρ⟩ ;
+       Map.tgtTy := (Map.eta T t).(Map.tgtTy)⟨ρ⟩ ;
+       Map.fn := (Map.eta T t).(Map.fn)⟨wk_up T ρ⟩ ;
+       Map.lst := ((Map.eta T t)).(Map.lst)⟨ρ⟩
+    |}.
 Proof.
-  induction t in A |- * ; intros; try reflexivity.
-  cbn. refold.
-  now rewrite <- IHt4.
+  destruct t ; cbn ; try reflexivity.
+  f_equal.
+  f_equal.
+  now bsimpl.
 Qed.

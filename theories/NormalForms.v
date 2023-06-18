@@ -157,15 +157,15 @@ Proof.
   eauto.
 Qed. *)
 
-Lemma eta_map_lst_whne l (x := Map.eta l) :
-  whne_list l -> whne (snd x).
+Lemma eta_map_lst_whne A l (x := Map.eta A l) :
+  whne_list l -> whne x.(Map.lst).
 Proof.
   destruct l; unfold x; cbn; intros h; inversion h; try easy.
   inv_whne.
 Qed.
   
-Lemma eta_map_whne l (x := Map.eta l) :
-  whne (snd x) -> whne_list l.
+Lemma eta_map_whne A l (x := Map.eta A l) :
+  whne x.(Map.lst) -> whne_list l.
 Proof.
   destruct l; unfold x; cbn; now econstructor.
 Qed.

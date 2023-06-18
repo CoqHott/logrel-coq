@@ -275,13 +275,125 @@ Arguments bun_conv_ne_red {_ _ _ _}.
 
 (* Lemmas on Map *)
 
+Lemma map_eta_well_typed {Γ A t} (r := Map.eta A t):
+  [Γ |-[de] t : tList A] ->
+  [× [Γ |-[de] r.(Map.tgtTy) ≅ A],
+    [Γ |-[de] r.(Map.lst) : tList r.(Map.srcTy)] &
+    [Γ ,, r.(Map.srcTy) |-[de] r.(Map.fn) : r.(Map.tgtTy)⟨@wk1 Γ A⟩ ]].
+Proof.
+  intros Hty.
+  assert [Γ |-[de] A] by (eapply list_ty_inv ; boundary).
+  assert [Γ |-[de] A ≅ A] by now econstructor.
+  assert [Γ,, A |-[de] tRel 0 : A⟨@wk1 Γ A⟩].
+  {
+    econstructor.
+    1: econstructor ; gen_typing.
+    rewrite wk1_ren_on ; now econstructor.
+  }
+  destruct t ; try solve [now split].
+  eapply termGen' in Hty as [? [[-> ?? Hfn Hl]]] ; cbn in *.
+  split ; tea.
+  2: econstructor ; [econstructor|..].
+  - now eapply list_ty_inj.
+  - erewrite <- wk1_ren_on.
+    eapply typing_wk in Hfn ; cbn in * ; tea.
+    econstructor ; gen_typing.
+  - econstructor.
+    2: rewrite wk1_ren_on.
+    all: econstructor ; tea.
+    gen_typing.
+  - replace (_[(tRel 0) ..]) with (t2⟨@wk1 Γ t1⟩).
+    replace (_⟨wk1 A⟩) with (t2⟨@wk1 Γ t1⟩) by (now rewrite !wk1_ren_on).
+    1: eapply typing_wk.
+    + now econstructor.
+    + now econstructor ; gen_typing.
+    + bsimpl. 
+      now renamify.
+Qed.
+
+Lemma map_eta_conv {Γ t A} (r := Map.eta A t):
+  [Γ |-[de] t : tList A] ->
+  [Γ |-[de] t ≅ tMap r.(Map.srcTy) r.(Map.tgtTy) (tLambda r.(Map.srcTy) r.(Map.fn)) r.(Map.lst) : tList A].
+Proof.
+  intros Hty.
+  assert [Γ |-[de] t ≅ tMap A A (tLambda A (tRel 0)) t : tList A].
+  {
+    symmetry.
+    econstructor.
+    all: econstructor ; tea.
+    eapply list_ty_inv ; boundary.
+  }
+  destruct t ; cbn ; tea.
+  pose proof (map_eta_well_typed Hty) as [] ; cbn in *.
+  eapply termGen' in Hty as [? [[->]]] ; cbn in *.
+  assert [Γ,, t1 |-[ de ] tRel 0 : t1⟨↑⟩].
+  {
+    econstructor.
+    all: econstructor ; gen_typing.
+  }
+  assert [Γ,, t1 ,, t1⟨↑⟩ |-[de] tRel 0 : t1⟨↑⟩⟨↑⟩].
+  {
+    do 2 econstructor.
+    all: boundary.
+  }
+  assert [(Γ,, t1),, t1⟨↑⟩ |-[ de ] t3⟨↑⟩⟨upRen_term_term ↑⟩ : arr t1⟨↑⟩⟨↑⟩ t2⟨↑⟩⟨↑⟩] as t3_wk2.
+  {
+    replace (t3⟨_⟩⟨_⟩) with (t3 ⟨@wk1 (Γ,, t1) t1⟨↑⟩ ∘w (@wk1 Γ t1)⟩).
+    2: now bsimpl.
+    eapply typing_meta_conv.
+    1: eapply typing_wk ; tea.
+    1: boundary.
+    rewrite <- wk_comp_ren_on, !wk1_ren_on ; cbn.
+    now bsimpl.
+  }
+  econstructor.
+  1: eapply TermMapCong ; refold.
+  all: try solve [now econstructor].
+  econstructor ; tea.
+  - econstructor ; tea.
+    now erewrite <- wk1_ren_on.
+  - symmetry.
+    eapply convtm_meta_conv ; cbn.
+    3: reflexivity.
+    2: shelve.
+    econstructor.
+    2: now econstructor.
+    econstructor.
+    + boundary.
+    + econstructor.
+      1: boundary.
+      now econstructor.
+    + eapply typing_meta_conv.
+      2: shelve.
+      renToWk.
+      eapply typing_wk ; tea.
+      boundary.
+      Unshelve.
+      all: now substify ; bsimpl.
+    + eapply convtm_meta_conv.
+      1: cbn ; econstructor ; tea.
+      * boundary.
+      * econstructor.
+        2: do 2 econstructor ; boundary.
+        renToWk.
+        eapply typing_meta_conv.
+        1: eapply typing_wk ; tea.
+        1: rewrite wk1_ren_on ; econstructor ; boundary.
+        Unshelve.
+        2: exact (t2⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩).
+        now substify ; cbn ; bsimpl.
+      * now bsimpl.
+      * now substify ; bsimpl.
+Qed.
+
+
 (* Lemma is_map_compact_id {t} : is_map t -> ∑ r,  Map.compact t = Map.IsMap r.
 Proof.
   destruct t; cbn; try discriminate.
   intros; eexists; reflexivity.
 Qed. *)
 
-Inductive ForallT [A : Type] (P : A -> Type) :
+(* Inductive ForallT [A : Type] (P : A -> Type) :
 list A -> Type :=
 | ForallT_nil : ForallT P [::]
 | ForallT_cons x xs : P x -> ForallT P xs -> ForallT P (x :: xs).
@@ -482,7 +594,7 @@ Proof.
     1: econstructor ; [eapply TermMapCong|..] ; refold ; tea.
     1-2: now econstructor.
     now eapply ty_comps.
-Qed.
+Qed. *)
 
 (* Lemma map_id_well_typed {Γ t A} (r := Map.id A t) : [Γ |-[de] t : tList A] -> map_data_wty Γ r × [Γ |-[de] t ≅ Map.build r : tList A].
 Proof.
@@ -924,41 +1036,81 @@ Section BundledConv.
         symmetry in HA'.
         etransitivity ; gen_typing.
     - intros * ? ihlst ? ihfn ? hl hl'.
-      unshelve epose proof (compact_well_typed hl) as [].
-      unshelve epose proof (compact_well_typed hl') as [].
-      set (rl := Map.compact B l) in *.
-      set (rl' := Map.compact B l') in *.
-      edestruct ihlst as [? [? Hconvl Hconvl']] ; tea.
-      1-2: now eexists.
-      assert [Γ |-[de] A ≅ (Map.srcTy rl)]
-        by now apply list_ty_inj, Hconvl.
-      assert [Γ |-[de] A ≅ (Map.srcTy rl')]
-        by now apply list_ty_inj, Hconvl'.
-      assert [Γ |-[de] B]
-        by (apply list_ty_inv ; boundary).
-      edestruct ihfn ; tea.
-      1-2: econstructor ; tea.
-      1-2: eapply convty_simple_arr ; tea.
-      1,3: now symmetry.
-      1-2: now constructor.
+      pose proof (map_eta_well_typed hl) as [].
+      pose proof (map_eta_well_typed hl') as [].
+      set (rl := Map.eta B l) in *.
+      set (rl' := Map.eta B l') in *.
+      assert (well_typed (ta := de) Γ (Map.lst rl)) by now eexists.
+      assert (well_typed (ta := de) Γ (Map.lst rl')) by now eexists.
+      pose proof ihlst as [? []] ; tea.
+      assert [Γ |-[de] A ≅ (Map.srcTy rl)] by (now eapply list_ty_inj).
+      assert [Γ |-[de] A ≅ (Map.srcTy rl')] by (now eapply list_ty_inj).
+      assert [|-[de] Γ ,, A] by (econstructor ; tea ; boundary).
+      assert [Γ,, A |-[de] Map.fn rl : B⟨↑⟩].
+      {
+        erewrite <- wk1_ren_on.
+        econstructor.
+        1: eapply stability1 ; last first.
+        5: eapply typing_wk.
+        1: eassumption.
+        all: tea.
+        all: boundary.
+      }
+      assert [Γ,, A |-[de] Map.fn rl' : B⟨↑⟩].
+      {
+        erewrite <- wk1_ren_on.
+        econstructor.
+        1: eapply stability1 ; last first.
+        5: eapply typing_wk.
+        1: eassumption.
+        all: tea.
+        all: boundary.
+      }
       split ; eauto.
       etransitivity.
-      1: now eapply map_compact_conv.
+      1: eapply map_eta_conv ; tea.
       etransitivity.
-      2: symmetry ; now eapply map_compact_conv.
-      unfold Map.build ; cbn.
-      fold rl rl'.
+      2: symmetry ; eapply map_eta_conv ; tea.
       econstructor.
+      1: eapply TermMapCong ; refold.
       + etransitivity ; tea.
         now symmetry.
-      + now econstructor.
-      + eapply TermConv ; tea ; refold.
-        eapply convty_simple_arr ; tea.
-        * boundary.
-        * now econstructor.
-      + econstructor ; tea.
-        econstructor.
+      + etransitivity ; tea.
         now symmetry.
+      + fold rl rl'.
+        assert [Γ |-[ de ] Map.tgtTy rl ≅ Map.tgtTy rl'].
+        {
+          etransitivity ; tea.
+          now symmetry.
+        }
+        eapply lambda_cong ; tea.
+        * boundary.
+        * boundary.
+        * renToWk.
+          eapply typing_wk.
+          1: boundary.
+          econstructor ; boundary.
+        * eapply typing_meta_conv ; tea.
+          now bsimpl.
+        * etransitivity ; tea.
+          now symmetry.
+        * rewrite wk1_ren_on.
+          renToWk.
+          eapply typing_wk ; tea.
+          econstructor ; boundary.
+        * econstructor.
+          1: eapply stability1.
+          4: eapply ihfn.
+          all: tea.
+          1-2: boundary.
+          1: now symmetry.
+          symmetry.
+          renToWk.
+          eapply typing_wk ; tea.
+          now econstructor ; boundary.
+      + econstructor ; tea.
+        now econstructor.
+      + now econstructor. 
     - intros * HA Ht Hu ? IH ? Htyt Htyu.
       pose proof (HA' := HA).
       pose proof (Ht' := Ht).
@@ -1061,14 +1213,24 @@ Section BundledConv.
       assert [Γ |-[de] A ≅ AT] as eq by now eapply list_ty_inj.
       assert [Γ |-[de] A' ≅ AT] as eq' by now eapply list_ty_inj.
       assert [Γ |-[de] AT] by now apply boundary in eq.
-      assert ([Γ |-[ de ] hd' : A] × [Γ |-[ de ] tl' : tList A]) as []
-        by (split; econstructor; tea; etransitivity; tea; now symmetry).
+      assert [Γ |-[de] hd : AT] by now econstructor.
+      assert [Γ |-[ de ] hd' : AT] by now econstructor.
+      assert [Γ |-[de] tl : tList AT]
+        by (econstructor ; tea ; now econstructor).
+        assert [Γ |-[de] tl' : tList AT]
+          by (econstructor ; tea ; now econstructor).
       destruct ihhd, ihtl; tea.
       split.
-      1: eapply X26; eauto. (*why X26 is not found by eauto ??? *)
+      1: eauto 10.
       econstructor.
-      1:eapply TermConsCong; refold; tea; etransitivity; tea; now symmetry.
-      tea.
+      1:eapply TermConsCong; refold; tea.
+      + etransitivity ; tea ; now symmetry.
+      + econstructor ; tea.
+        now symmetry.
+      + econstructor ; tea.
+        econstructor.
+        now symmetry.
+      + now econstructor.    
     - intros * ? IH **.
       split ; eauto.
       now destruct IH.
@@ -1389,11 +1551,11 @@ Qed.
     | termNilConvBun {Γ A A' AT} :
       ConvTermRedBunAlg (@termNilConvAlg Γ A A' AT)
     | termConsCongBun {Γ A} A' AT {hd hd' tl tl'} 
-      (convhd : [Γ |-[bn] hd ≅ hd' : A])
-      (convtl : [Γ |-[bn] tl ≅ tl' : tList A]) :
-      ConvTermRedBunAlg (termConsCongAlg A' AT convhd.(bun_conv_tm) convtl.(bun_conv_tm))
+      (convhd : [Γ |-[bn] hd ≅ hd' : AT])
+      (convtl : [Γ |-[bn] tl ≅ tl' : tList AT]) :
+      ConvTermRedBunAlg (termConsCongAlg A A' AT convhd.(bun_conv_tm) convtl.(bun_conv_tm))
     | neuMapCompactBun {Γ A B l l'} 
-      (r := Map.compact B l) (r' := Map.compact B l')
+      (r := Map.eta B l) (r' := Map.eta B l')
       (convlst : [Γ |-[bn] r.(Map.lst) ~h r'.(Map.lst) ▹ tList A ])
       (convfn : [Γ |-[bn] r.(Map.fn) ≅ r'.(Map.fn) : arr A B]) :
       ConvTermRedBunAlg (termListNeuConvAlg (neuMapCompact convlst.(bun_conv_ne_red) convfn.(bun_conv_tm)))
@@ -1474,52 +1636,63 @@ Qed.
       * now econstructor.
       * now econstructor.
       * econstructor; tea; now econstructor.
+      * econstructor ; tea.
+        now econstructor.
+      * econstructor ; tea.
+        now econstructor.
+      * econstructor ; tea.
+        now econstructor.
+      * now econstructor.   
     - dependent inversion c ; subst ; refold.
       subst r r' r0 r'0 r1 r'1.
-      pose proof (compact_well_typed ht) as [].
-      pose proof (compact_well_typed hu) as [].
-      set (r := Map.compact A m) in *.
-      set (r' := Map.compact A n) in *.
+      pose proof (map_eta_well_typed ht) as [].
+      pose proof (map_eta_well_typed hu) as [].
+      set (r := Map.eta A m) in *.
+      set (r' := Map.eta A n) in *.
       assert [Γ |-[de] A0 ≅ (Map.srcTy r)].
       {
         eapply algo_conv_sound in c0 as [].
         2-3: now eexists.
-        now eapply list_ty_inj, c2.
+        now eapply list_ty_inj, c4.
       }
       assert [Γ |-[de] A0 ≅ (Map.srcTy r')].
       {
         eapply algo_conv_sound in c0 as [].
         2-3: now eexists.
-        now eapply list_ty_inj, c3.
+        now eapply list_ty_inj, c5.
       }
       unshelve refine (
         let convlst := {| bun_conv_ne_red := c0 |} in
         let convfn :=  {| bun_conv_tm := c1 |} in
         neuMapCompactBun convlst convfn) ; tea.
       + now eexists.
-      + eapply compact_map_lst_whne.
+      + eapply eta_map_lst_whne.
         now eapply algo_conv_wh in c.
       + now eexists. 
-      + eapply compact_map_lst_whne.
+      + eapply eta_map_lst_whne.
         now eapply algo_conv_wh in c.
       + clear convlst.
-        eapply wft_simple_arr.
-        2: eapply list_ty_inv.
+        econstructor.
         all: boundary.
       + clear convlst.
-        econstructor ; tea.
-        eapply convty_simple_arr ; tea.
-        1: now symmetry.
-        constructor.
-        eapply list_ty_inv.
-        boundary.
+        renToWk.
+        eapply typing_wk.
+        2: econstructor.
+        all: boundary.
       + clear convlst.
-        econstructor ; tea.
-        eapply convty_simple_arr ; tea.
-        1: now symmetry.
-        constructor.
-        eapply list_ty_inv.
-        boundary.
+        econstructor.
+        2: renToWk ; eapply typing_wk.
+        1: eapply stability1 ; last first ; tea.
+        all: tea.
+        3: econstructor.
+        all: boundary.
+      + clear convlst.
+        econstructor.
+        2: renToWk ; eapply typing_wk.
+        1: eapply stability1 ; last first ; tea.
+        all: tea.
+        3: econstructor.
+        all: boundary.
     - pose proof c as []%algo_conv_wh.
       unshelve refine (
         let inf : [Γ |-[bn] m ~ n ▹ T] := {| bun_conv_ne := c |} in

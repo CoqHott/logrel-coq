@@ -1134,6 +1134,63 @@ Section GenericConsequences.
     intros; constructor; gen_typing.
   Qed.
 
+  Lemma lambda_cong {Γ A A' B B' t t'} :
+    [Γ |- A] ->
+    [Γ |- A'] ->
+    [Γ,, A |- B] ->
+    [Γ,, A |- t : B] ->
+    [Γ,, A' |- t' : B'] ->
+    [Γ |- A ≅ A'] ->
+    [Γ,, A |- B ≅ B'] ->
+    [Γ,, A |- t ≅ t' : B] ->
+    [Γ |- tLambda A t ≅ tLambda A' t' : tProd A B].
+  Proof.
+    intros.
+    assert [|- Γ,, A] by gen_typing.
+    apply convtm_eta ; tea.
+    1-2,4: gen_typing.
+    - eapply ty_conv.
+      1: eapply ty_lam ; tea.
+      symmetry.
+      now eapply convty_prod.
+    - eapply convtm_exp ; tea.
+      1: now eapply redty_refl.
+      2: eapply redtm_conv ; cbn ; [eapply redtm_meta_conv |..] ; [eapply redtm_beta |..].
+      1: eapply redtm_meta_conv ; cbn ; [eapply redtm_beta |..].
+      + renToWk.
+        now eapply wft_wk.
+      + renToWk.
+        eapply ty_wk ; tea.
+        eapply wfc_cons ; tea.
+        now eapply wft_wk.
+      + eapply ty_var ; tea.
+        now econstructor.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + renToWk.
+        now eapply wft_wk.
+      + renToWk.
+        eapply ty_wk ; tea.
+        eapply wfc_cons ; tea.
+        now eapply wft_wk.
+      + eapply ty_conv.
+        1: eapply ty_var0 ; tea.
+        renToWk.
+        now eapply convty_wk.
+      + shelve.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + symmetry. eassumption.
+      Unshelve.
+      bsimpl.
+      rewrite scons_eta'.
+      now bsimpl.
+  Qed.
   
   (** *** Lifting determinism properties from untyped reduction to typed reduction. *)
 
