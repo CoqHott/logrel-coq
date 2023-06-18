@@ -93,7 +93,11 @@ Section TypeConstructors.
     - easy. 
     - destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed)).
       split; now escape.
-    - now eapply LogicalRelation.Escape.escapeEq.
+    - replace A with (A⟨@wk_id Γ⟩) by now rewrite wk_id_ren_on.
+      replace par with (par⟨@wk_id Γ⟩) by now rewrite wk_id_ren_on.
+      eapply LogicalRelation.Escape.escapeEq, parRed.
+      Unshelve.
+      boundary.
     - pose proof eq as ?%symmetry%convneu_whne.
       destruct nfT'; try solve [inv_whne].
       cbn in *. gen_typing.
@@ -452,9 +456,13 @@ Section Boundary.
     - intros * ? _ ? _ *; split; econstructor; tea.
       1,3: now econstructor.
       eapply ty_simple_app; cycle 1; tea.
-    - intros * ? _ ? _ ? _ ? ? ? ? ? []; split; econstructor; tea.
-      1: now econstructor.
-      eapply ty_comp; cycle 2; tea.
+    - intros * ? _ ? _ ? _ ? [] ? _ ? ? ? ? ? ?; split; econstructor ; tea.
+      + do 2 econstructor ; tea.
+        now symmetry.
+      + eapply ty_comp; cycle 2; tea.
+        econstructor ; tea.
+        eapply convty_simple_arr ; tea.
+        now econstructor.
     - intros * ? [? _] ? []; split; econstructor; tea.
       2: now econstructor.
       eapply ty_id; tea; now econstructor.
@@ -735,9 +743,13 @@ Proof.
     do 2 (econstructor; tea).
     1-3: now econstructor.
     now eapply IHHred.
-  - admit. 
-  Admitted.
-
+  - apply termGen' in Hty as [? [[-> ??? Hty'] Hconv]].
+    apply termGen' in Hty' as [? [[->] Hconv']].
+    eapply list_ty_inj in Hconv'.
+    econstructor ; tea.
+    eapply TermRedMapComp ; refold ; tea.
+    now symmetry.
+  Qed.
 
   Theorem subject_reduction_one_type Γ A A' :
   [Γ |- A] ->

@@ -352,13 +352,15 @@ Section TypingWk.
       econstructor ; try easy.
       rewrite wk_arr.
       now eapply IHf.
-    - intros * _ IHA _ IHB _ IHC _ IHf _ IHg _ IHl ? ρ ?.
+    - intros * _ IHA _ IHB _ IHB' _ IHBc _ IHC _ IHf _ IHg _ IHl ? ρ ?.
       cbn.
       evar (t: term) ; replace (tLambda _ _) with t ; subst t.
       + eapply TermRedMapComp.
         * now apply IHA.
         * now apply IHB.
-        * now apply IHC.
+        * now apply IHB'.
+        * now apply IHBc.
+        * now apply IHC.   
         * refold; rewrite wk_arr. now apply IHf.
         * refold; rewrite wk_arr. now apply IHg.
         * now apply IHl.
@@ -740,14 +742,7 @@ Module DeclarativeTypingProperties.
       1: now econstructor.
       econstructor; now symmetry.
     + eapply redalg_one_step; now econstructor.
-    + etransitivity.
-      * econstructor; tea.
-        1,2: now econstructor.
-        econstructor; econstructor; now econstructor.
-      * eapply TermRedMapComp; refold; tea.
-        2: now econstructor.
-        econstructor; tea. eapply convty_simple_arr; tea.
-        now econstructor.
+    + now eapply TermRedMapComp.
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.
