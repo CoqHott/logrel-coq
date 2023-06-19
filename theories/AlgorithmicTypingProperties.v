@@ -411,6 +411,16 @@ Module AlgorithmicTypingProperties.
       eapply ty_map; tea; eapply ty_conv.
       1: eapply ty_cons; tea; eapply ty_conv; tea.
       1,2: eapply convty_list; tea; now symmetry.
+    - intros * tyA **.
+      pose proof tyA as ?%bn_alg_typing_sound.
+      econstructor.
+      1: boundary.
+      2: eapply redalg_one_step ; now econstructor.
+      eapply ty_map ; tea.
+      eapply ty_conv.
+      1: eapply ty_map ; tea.
+      eapply convty_list.
+      now symmetry.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.
@@ -438,7 +448,7 @@ Module AlgorithmicTypingProperties.
       now etransitivity.
   Qed.
 
-  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance AlgorithmicTypingProperties : GenericTypingProperties bn _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End AlgorithmicTypingProperties.
 

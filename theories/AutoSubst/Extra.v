@@ -96,10 +96,13 @@ Module Map.
   (* for n a whne_list (in context Γ), 
      returns a pair (h, r) such that
      Γ, x : A ⊢ h : B,  Γ ⊢ r : list A and n ~ map (λ x. h) r*)
+
+  Definition eta_id T n : data := {| srcTy := T ; tgtTy := T ; fn := tRel 0 ; lst := n |}.
+
   Definition eta T n : data :=
     match n with
     | tMap A B f l => {| srcTy := A ; tgtTy := B ; fn := eta_expand f ; lst := l |}
-    | u => {| srcTy := T ; tgtTy := T ; fn := tRel 0 ; lst := u |}
+    | u => eta_id T u
     end.
 
   Lemma eta_eq_fn T T' n :
@@ -127,5 +130,12 @@ Module Map.
   Definition into_view (t : term) : view t.
   Proof. destruct t; now econstructor. Defined.
 
-End Map.
+  Lemma is_map_eta t :
+    ~~ is_map t ->
+    forall A, eta A t = eta_id A t.
+  Proof.
+    destruct t ; cbn ; try reflexivity.
+    now congruence.
+  Qed.
 
+End Map.

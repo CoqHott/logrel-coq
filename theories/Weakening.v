@@ -1,5 +1,5 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
-From Coq Require Import Lia.
+From Coq Require Import Lia ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms.
 
@@ -449,6 +449,12 @@ Proof. now bsimpl. Qed.
 
 (** Weakening and compactification *)
 
+Lemma wk_is_map {Γ Δ} (ρ : Γ ≤ Δ) t :
+  Map.is_map t = Map.is_map (t⟨ρ⟩).
+Proof.
+  destruct t ; reflexivity.
+Qed.
+
 Lemma wk_map_eta {Γ Δ} (ρ : Γ ≤ Δ) T t:
   Map.eta T⟨ρ⟩ (t⟨ρ⟩) =
     {| Map.srcTy := (Map.eta T t).(Map.srcTy)⟨ρ⟩ ;
@@ -457,8 +463,11 @@ Lemma wk_map_eta {Γ Δ} (ρ : Γ ≤ Δ) T t:
        Map.lst := ((Map.eta T t)).(Map.lst)⟨ρ⟩
     |}.
 Proof.
-  destruct t ; cbn ; try reflexivity.
-  f_equal.
-  f_equal.
-  now bsimpl.
+  edestruct (Map.into_view t) as [| ? He]; cbn.
+  - do 2 f_equal.
+    now bsimpl.
+  - rewrite !Map.is_map_eta ; cbn.
+    + reflexivity.
+    + assumption.
+    + now rewrite <- wk_is_map.
 Qed.

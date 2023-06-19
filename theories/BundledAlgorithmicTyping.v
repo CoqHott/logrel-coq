@@ -259,7 +259,8 @@ Module BundledIntermediateData.
     change (typing (ta := bni)) with (typing (ta := de)) in * ;
     change (conv_type (ta := bni)) with (conv_type (ta := bn)) in * ;
     change (conv_term (ta := bni)) with (conv_term (ta := bn)) in * ;
-    change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in *.
+    change (conv_neu_conv (ta := bni)) with (conv_neu_conv (ta := bn)) in * ;
+    change (conv_neu_list (ta := bni)) with (conv_neu_list (ta := bn)) in *.
 
 End BundledIntermediateData.
 
@@ -311,34 +312,39 @@ Proof.
       now renamify.
 Qed.
 
+Lemma map_eta_id_conv {Γ t A} (r := Map.eta_id A t):
+  [Γ |-[de] t : tList A] ->
+  [Γ |-[de] t ≅ tMap r.(Map.srcTy) r.(Map.tgtTy) (tLambda r.(Map.srcTy) r.(Map.fn)) r.(Map.lst) : tList A].
+Proof.
+  intros.
+  symmetry.
+  econstructor.
+  all: econstructor ; tea.
+  eapply list_ty_inv ; boundary.
+Qed.
+
 Lemma map_eta_conv {Γ t A} (r := Map.eta A t):
   [Γ |-[de] t : tList A] ->
   [Γ |-[de] t ≅ tMap r.(Map.srcTy) r.(Map.tgtTy) (tLambda r.(Map.srcTy) r.(Map.fn)) r.(Map.lst) : tList A].
 Proof.
   intros Hty.
-  assert [Γ |-[de] t ≅ tMap A A (tLambda A (tRel 0)) t : tList A].
-  {
-    symmetry.
-    econstructor.
-    all: econstructor ; tea.
-    eapply list_ty_inv ; boundary.
-  }
-  destruct t ; cbn ; tea.
+  edestruct (Map.into_view t) as [A' B f l |? ->%Map.is_map_eta] ; cbn ; tea.
+  2: now apply map_eta_id_conv.
   pose proof (map_eta_well_typed Hty) as [] ; cbn in *.
   eapply termGen' in Hty as [? [[->]]] ; cbn in *.
-  assert [Γ,, t1 |-[ de ] tRel 0 : t1⟨↑⟩].
+  assert [Γ,, A' |-[ de ] tRel 0 : A'⟨↑⟩].
   {
     econstructor.
     all: econstructor ; gen_typing.
   }
-  assert [Γ,, t1 ,, t1⟨↑⟩ |-[de] tRel 0 : t1⟨↑⟩⟨↑⟩].
+  assert [Γ,, A' ,, A'⟨↑⟩ |-[de] tRel 0 : A'⟨↑⟩⟨↑⟩].
   {
     do 2 econstructor.
     all: boundary.
   }
-  assert [(Γ,, t1),, t1⟨↑⟩ |-[ de ] t3⟨↑⟩⟨upRen_term_term ↑⟩ : arr t1⟨↑⟩⟨↑⟩ t2⟨↑⟩⟨↑⟩] as t3_wk2.
+  assert [(Γ,, A'),, A'⟨↑⟩ |-[ de ] f⟨↑⟩⟨upRen_term_term ↑⟩ : arr A'⟨↑⟩⟨↑⟩ B⟨↑⟩⟨↑⟩] as f_wk2.
   {
-    replace (t3⟨_⟩⟨_⟩) with (t3 ⟨@wk1 (Γ,, t1) t1⟨↑⟩ ∘w (@wk1 Γ t1)⟩).
+    replace (f⟨_⟩⟨_⟩) with (f⟨@wk1 (Γ,, A') A'⟨↑⟩ ∘w (@wk1 Γ A')⟩).
     2: now bsimpl.
     eapply typing_meta_conv.
     1: eapply typing_wk ; tea.
@@ -380,327 +386,11 @@ Proof.
         1: eapply typing_wk ; tea.
         1: rewrite wk1_ren_on ; econstructor ; boundary.
         Unshelve.
-        2: exact (t2⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩).
+        2: exact (B⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩).
         now substify ; cbn ; bsimpl.
       * now bsimpl.
       * now substify ; bsimpl.
 Qed.
-
-
-(* Lemma is_map_compact_id {t} : is_map t -> ∑ r,  Map.compact t = Map.IsMap r.
-Proof.
-  destruct t; cbn; try discriminate.
-  intros; eexists; reflexivity.
-Qed. *)
-
-(* Inductive ForallT [A : Type] (P : A -> Type) :
-list A -> Type :=
-| ForallT_nil : ForallT P [::]
-| ForallT_cons x xs : P x -> ForallT P xs -> ForallT P (x :: xs).
-
-Inductive ListChain [A : Type] (R : A -> A -> Type) :
-A -> list (A × A) -> A -> Type :=
-| chain_nil x z : R x z -> ListChain R x [::] z
-| chain_cons x y y' ys z : R x y' -> ListChain R y ys z ->
-  ListChain R x ((y,y') :: ys) z.
- 
-Lemma Forall2T_map [A A' B B' : Type] (R : A -> B -> Type) (R' : A' -> B' -> Type)
-  (f : A -> A') (g : B -> B') la lb :
-  (forall a b, R a b -> R' (f a) (g b)) ->
-  Forall2T R la lb ->
-  Forall2T R' (list_map f la) (list_map g lb).
-Proof.
-  induction 2.
-  all: cbn ; econstructor ; eauto.
-Qed.
-
-Lemma ListChain_map [A A' : Type] (R : A -> A -> Type) (R' : A' -> A' -> Type) (f : A -> A')
-  x ys z :
-  (forall a a', R a a' -> R' (f a) (f a')) ->
-  ListChain R x ys z ->
-  ListChain R' (f x) (list_map (fun '(y,y') => (f y,f y')) ys) (f z).
-Proof.
-  induction 2.
-  all: cbn ; econstructor ; eauto.
-Qed.
-
-Definition map_data_wty Γ (tgt : term) (r : Map.data) :=
-  [×
-    Forall2T (fun '(A,B) f => [Γ |-[de] f : arr A B]) (Map.tys r) (Map.fn r),
-    ListChain (fun A B => [Γ |-[de] B ≅ A])
-      tgt (Map.tys r) (Map.srcTy r) &
-    [Γ |-[de] Map.lst r : tList (Map.srcTy r)]
-  ].
-
-Lemma map_id_well_typed Γ (tgt : term) (t : term) :
-  [Γ |-[de] t : tList tgt] ->
-  map_data_wty Γ tgt (Map.id tgt t).
-Proof.
-  intros Hty.
-  assert [Γ |-[de] tgt].
-  {
-    eapply list_ty_inv.
-    boundary.
-  }
-  split ; cbn.
-  - econstructor.
-  - now do 2 econstructor.
-  - eassumption.
-Qed.
-
-Lemma compact_well_typed {Γ t A} : 
-  [Γ |-[de] t : tList A] ->
-  map_data_wty Γ A (Map.decompose A t).
-Proof.
-  induction t in A |- *;cbn; intros ? ; cycle -1.
-  1: shelve.
-  all: now eapply map_id_well_typed.
-  Unshelve.
-  pose proof H as [? [[->]]]%termGen'.
-  edestruct IHt4 as [? IHchain ?]; tea.
-  destruct (Map.decompose t1 t4); subst; cbn in *.
-  split ; cbn ; tea.
-  - now econstructor.
-  - econstructor ; tea.
-    now eapply list_ty_inj.
-Qed.
-
-Lemma map_id_conv {Γ tgt t} :
-  [Γ |-[de] t : tList tgt] ->
-  [Γ |-[de] t ≅ Map.compact tgt (Map.id tgt t) : tList tgt].
-Proof.
-  intros.
-  unfold Map.compact ; cbn.
-  do 3 constructor ; tea.
-  eapply list_ty_inv.
-  boundary.
-Qed.
-
-Lemma ty_apps {Γ src tys tgt fn t} :
-  [Γ |-[de] t : src] ->
-  Forall2T (fun '(A,B) f => [Γ |-[de] f : arr A B]) tys fn ->
-  ListChain (fun A B => [Γ |-[de] B ≅ A]) tgt tys src ->
-  [Γ |-[de] tApps fn t : tgt].
-Proof.
-  intros Ht Hfn Hconv.
-  induction Hfn in t, Ht, src, tgt, Hconv |- *.
-  all: inversion Hconv ; subst ; cbn.
-  - now econstructor.
-  - econstructor.
-    + now econstructor.
-    + now bsimpl.
-Qed.
-
-Lemma boundary_chain_src Γ tgt tys src :
-  ListChain (fun A B => [Γ |-[de] B ≅ A]) tgt tys src ->
-  [Γ |-[de] src].
-Proof.
-  induction 1 ; tea.
-  now boundary.
-Qed.
-
-Lemma ty_comps Γ fn src tys tgt :
-  Forall2T (fun '(A,B) f => [Γ |-[de] f : arr A B]) tys fn ->
-  ListChain (fun A B => [Γ |-[de] B ≅ A]) tgt tys src ->
-  [Γ |-[de] comps src fn : arr src tgt].
-Proof.
-  intros Hfn Hconv.
-  assert [Γ |-[de] src] by now eapply boundary_chain_src.
-  unfold comps.
-  econstructor ; tea.
-  unfold eta_expands.
-  unshelve eapply ty_apps.
-  - shelve.
-  - exact (map (fun '(A,B) => (A⟨↑⟩,B⟨↑⟩)) tys).  
-  - do 2 econstructor.
-    all: gen_typing.
-  - eapply Forall2T_map ; tea.
-    intros [] ? Hb ; cbn.
-    eapply ty_wk in Hb.
-    1: rewrite <- arr_ren1 ; now renToWk.
-    now econstructor ; tea ; boundary.
-  - eapply ListChain_map ; tea.
-    intros * Hconv' ; cbn in *.
-    eapply typing_wk in Hconv'.
-    1: now renToWk.
-    econstructor ; tea ; boundary.
-Qed.
-
-Lemma comps_conv Γ fn src tys tgt f tgt' :
-  Forall2T (fun '(A,B) f => [Γ |-[de] f : arr A B]) tys fn ->
-  ListChain (fun A B => [Γ |-[de] B ≅ A]) tgt tys src ->
-  [Γ |-[de] tgt'] ->
-  [Γ |-[de] f : arr tgt tgt'] ->
-  [Γ |-[de] comps src (f :: fn) ≅ comp src f (comps src fn) : arr src tgt'].
-Proof.
-  intros Htgt Hfn Hconv Hf.
-  econstructor.
-  - now eapply boundary_chain_src. 
-  - eapply ty_comps.
-    + unshelve econstructor ; tea.
-      1: split ; shelve.
-      cbn ; eassumption.
-    + econstructor ; tea.
-      now econstructor.
-  - eapply ty_comp ; last first ; tea.
-    + now eapply ty_comps.
-    + eapply prod_ty_inv ; boundary.
-    + now eapply boundary_chain_src.
-  - admit.
-Admitted.
-
-Lemma map_compact_conv {Γ tgt d} :
-  map_data_wty Γ tgt d ->
-  [Γ |-[de] Map.recompose d ≅ Map.compact tgt d : tList tgt].
-Proof.
-  intros [Hfn Hconv Hlst].
-  destruct d as [src tys fn lst]; unfold Map.compact ; cbn in *.
-  induction Hfn as [|[A B] f] in tgt, Hconv |- * ; cbn in *.
-  - unfold comps ; cbn.
-    inversion Hconv ; subst.
-    symmetry.
-    etransitivity ; [eapply TermMapCong | eapply TermRedMapId] ; refold.
-    + eassumption.
-    + econstructor. boundary.
-    + admit.
-    + now econstructor.
-    + econstructor. boundary.
-    + do 2 econstructor ; tea.
-      now econstructor.
-  - inversion Hconv ; subst ; clear Hconv.
-    specialize (IHHfn _ H5).
-    assert [Γ |-[de] tgt] by boundary.
-    assert [Γ |-[de] tgt ≅ tgt] by now econstructor.
-    assert [Γ |-[de] src] by now eapply boundary_chain_src.
-    assert [Γ |-[de] src ≅ src] by now econstructor.
-    assert [Γ |-[de] lst ≅ lst : tList src] by now econstructor.
-    assert [Γ |-[de] A].
-    {
-      inversion H5 ; subst ; boundary.
-    }
-    assert [Γ |-[de] A ≅ A] by now econstructor.
-    assert [Γ |-[de] f : arr A tgt].
-    {
-      econstructor ; tea.
-      now eapply convty_simple_arr.
-    }
-    etransitivity.
-    1: eapply TermConv ; refold.
-    3: eapply TermMapCong ; refold ; tea.
-    3: symmetry ; eapply comps_conv ; tea.
-    2: now econstructor.
-    etransitivity.
-    2: eapply TermRedMapComp ; refold ; last first ; tea.
-    1: econstructor ; [eapply TermMapCong|..] ; refold ; tea.
-    1-2: now econstructor.
-    now eapply ty_comps.
-Qed. *)
-
-(* Lemma map_id_well_typed {Γ t A} (r := Map.id A t) : [Γ |-[de] t : tList A] -> map_data_wty Γ r × [Γ |-[de] t ≅ Map.build r : tList A].
-Proof.
-  intros.
-  assert [Γ |-[de] A] by (eapply list_ty_inv; boundary).
-  split;[split|]; cbn; tea.
-  1: eapply ty_id; tea; now econstructor.
-  symmetry; unfold Map.build, r; cbn.
-  eapply TermRedMapId; now econstructor.
-Qed.
-
-Lemma compact_not_map_inv {t u} : Map.compact t = Map.IsNotMap u -> t = u.
-Proof.  destruct t; now intros [=]. Qed.
-
-Lemma compact_not_map_false {t u} : Map.compact t = Map.IsNotMap u -> is_map t = false.
-Proof. destruct t; now intros [=]. Qed.
-
-Lemma extract_well_typed_lst {Γ l l'} (rx := Map.extract l l') :
-  is_map l || is_map l' ->
-  well_typed (ta:=de) Γ l ->
-  well_typed (ta:=de) Γ l' ->
-  well_typed (ta:=de) Γ (Map.lst (fst rx)) × 
-  well_typed (ta:=de) Γ (Map.lst (snd rx)).
-Proof.
-  unfold Map.extract in rx.
-  destruct (Map.compact l) eqn:El, (Map.compact l') eqn: El'.
-  + intros _ [] [].
-    eapply compact_well_typed in El; tea; destruct El as [? []].
-    eapply compact_well_typed in El'; tea; destruct El' as [? []].
-    split; cbn in *; now eexists.
-  + intros _ [] [].
-    eapply compact_well_typed in El; tea; destruct El as [? []].
-    eapply compact_not_map_inv in El'; subst.
-    split; cbn in *; now eexists.
-  + intros _ [] [].
-    eapply compact_well_typed in El'; tea; destruct El' as [? []].
-    eapply compact_not_map_inv in El; subst.
-    split; cbn in *; now eexists.
-  + rewrite (compact_not_map_false El), (compact_not_map_false El'); cbn; discriminate.
-Qed.
-
-Lemma extract_well_typed_aux {Γ A l l'} (rx := Map.extract l l') :
-  is_map l || is_map l' ->
-  well_typed (ta:=de) Γ l ->
-  well_typed (ta:=de) Γ l' ->
-  (forall T : term, [Γ |-[ de ] Map.lst (fst rx) : T] -> [Γ |-[ de ] tList A ≅ T]) ->
-  (forall T : term, [Γ |-[ de ] Map.lst (snd rx) : T] -> [Γ |-[ de ] tList A ≅ T]) ->
-  [× map_data_wty Γ (fst rx), 
-    map_data_wty Γ (snd rx),
-    [Γ |-[de] Map.srcTy (fst rx) ≅ Map.srcTy (snd rx)],
-    [Γ |-[de] l ≅ Map.build (fst rx) : tList (Map.tgtTy (fst rx))] &
-    [Γ |-[de] l' ≅ Map.build (snd rx) : tList (Map.tgtTy (snd rx))]].
-  Proof.
-  unfold Map.extract in rx.
-  destruct (Map.compact l) eqn:El, (Map.compact l') eqn: El'.
-  + intros _ [] [] wftlst wftlst'.
-    eapply compact_well_typed in El; tea; destruct El as [? m].
-    eapply compact_well_typed in El'; tea; destruct El' as [? m'].
-    split; tea.
-    destruct m as [?%wftlst%list_ty_inj], m' as [?%wftlst'%list_ty_inj].
-    cbn in *; etransitivity; tea; now symmetry.
-  + intros _ [] [? tyl'] wftlstl wftlstl'.
-    eapply compact_well_typed in El; tea; destruct El as [? m].
-    eapply compact_not_map_inv in El'; subst; pose proof m as [?%wftlstl].
-    unshelve epose proof (map_id_well_typed _) as [].
-    4:{ eapply wfTermConv; [exact tyl'|]; refold. 
-        etransitivity; tea; symmetry; now eapply wftlstl'. }
-    split; tea; cbn in *; now econstructor.
-  + intros _ [? tyl] [] wftlstl wftlstl'.
-    eapply compact_well_typed in El'; tea; destruct El' as [? m'].
-    eapply compact_not_map_inv in El; subst; pose proof m' as [?%wftlstl'].
-    unshelve epose proof (map_id_well_typed _) as [].
-    4:{ eapply wfTermConv; [exact tyl|]; refold. 
-        etransitivity; tea; symmetry; now eapply wftlstl. }
-    split; tea; cbn in *; now econstructor.
-  + rewrite (compact_not_map_false El), (compact_not_map_false El'); cbn; discriminate.
-Qed.
-
-Lemma map_extract_sym {l l'} : fst (Map.extract l l') = snd (Map.extract l' l).
-Proof.
-  unfold Map.extract; destruct (Map.compact l), (Map.compact l'); reflexivity.
-Qed.
-
-Lemma map_extract_sym_alt {l l'} :snd (Map.extract l l') = fst (Map.extract l' l).
-Proof. now rewrite map_extract_sym. Qed.
-
-
-Lemma is_not_map_extract {l l'} (rx := Map.extract l l') :
-  is_map l' ->
-  is_map l = false ->
-  [× Map.lst (fst rx) = l, Map.tgtTy (fst rx) = Map.srcTy (snd rx) & Map.tgtTy (fst rx) = Map.srcTy (fst rx)].
-Proof.
-  unfold rx, Map.extract.
-  intros [? ->]%is_map_compact_id ->%negbT%not_is_map_compact_id; cbn.
-  do 2 constructor.
-Qed.
-
-Lemma is_not_map_extract_alt {l l'} (rx := Map.extract l l') :
-  is_map l ->
-  is_map l' = false ->
-  [× Map.lst (snd rx) = l', Map.tgtTy (snd rx) = Map.srcTy (fst rx)
-  & Map.tgtTy (snd rx) = Map.srcTy (snd rx)].
-Proof.
-  unfold rx; rewrite map_extract_sym, map_extract_sym_alt.
-  apply is_not_map_extract.
-Qed. *)
 
 
 (** ** Induction principle for bundled algorithmic conversion *)
@@ -1323,6 +1013,14 @@ Proof.
   all: match goal with H : context [al] |- _ => eapply algo_conv_sound in H end.
   all: prod_hyp_splitter.
   all: eassumption.
+Qed.
+
+Theorem bn_ne_conv_sound Γ A n n' :
+  [Γ |-[bn] n ~ n' : A] ->
+  [Γ |-[de] n ≅ n' : A].
+Proof.
+  intros [?????? []%algo_conv_sound ?] ; tea.
+  now econstructor.
 Qed.
 
 (** ** Inductive presentation of bundled algorithmic conversion *)

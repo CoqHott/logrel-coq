@@ -1743,6 +1743,124 @@ End Transitivity.
 
 (** ** Instances *)
 
+Lemma convneulist_map_id_decls (Γ : context) (A A' B f l l' : term) :
+  [Γ |-[ de ] f : arr A B] ->
+  [Γ |-[ de ] A ≅ B] ->
+  [Γ |-[ de ] A ≅ A'] ->
+  [Γ,, A |-[ bn ] tApp f⟨↑⟩ (tRel 0) ≅ tRel 0 : A⟨↑⟩] ->
+  [Γ |-[ bn ] l ~ l' : tList A'] ->
+  [Γ |-[ bn ] tMap A B f l ~ l' :List B].
+Proof.
+  intros * ??? Hfn Hlst.
+  pose proof Hfn as ?%bn_conv_sound.
+  destruct Hfn.
+  pose proof Hlst as ?%bn_ne_conv_sound.
+  destruct Hlst.
+  pose proof bun_conv_ne_conv_conv as [A'' []]%red_ty_compl_list_r.
+  econstructor ; cycle -1.
+  1: econstructor.
+  + cbn.
+    rewrite !Map.is_map_eta ; cbn.
+    2: now eapply whne_map.
+    econstructor ; tea.
+    2: now econstructor.
+    now eapply redty_red.
+  + cbn.
+    rewrite !Map.is_map_eta ; cbn.
+    2: now eapply whne_map.
+    eapply bundled_conv_conv ; cycle 1.
+    3: split.
+    7: eassumption.
+    * econstructor.
+      1: now eapply ctx_refl.
+      etransitivity ; tea.
+      now symmetry.
+    * renToWk.
+      eapply typing_wk ; tea.
+      econstructor ; boundary.
+    * econstructor ; boundary.
+    * renToWk.
+      eapply typing_wk.
+      2: econstructor.
+      all: boundary.
+    * eassumption.
+    * eassumption.
+  + boundary.
+  + boundary. 
+  + econstructor.
+    1-3: boundary.
+    econstructor.
+    1: boundary.
+    now econstructor.
+  + econstructor.
+    now eapply algo_conv_wh in bun_conv_ne_conv as [].
+  + econstructor.
+    1: boundary.
+    econstructor.
+    etransitivity ; tea.
+    now symmetry.
+  + econstructor.
+    now eapply algo_conv_wh in bun_conv_ne_conv as [].
+Qed.
+
+Lemma convneulist_map_decls (Γ : context) (A A' B B' f f' l l' : term) :
+  [Γ |-[ de ] f : arr A B] ->
+  [Γ |-[ de ] f' : arr A B] ->
+  [Γ |-[ de ] A ≅ A'] ->
+  [Γ |-[ de ] B ≅ B'] ->
+  [Γ,, A |-[ bn ] tApp f⟨↑⟩ (tRel 0) ≅ tApp f'⟨↑⟩ (tRel 0) : B⟨↑⟩] ->
+  [Γ |-[ bn ] l ~ l' : tList A] ->
+  [Γ |-[ bn ] tMap A B f l ~ tMap A' B' f' l' :List B].
+Proof.
+  intros ???? Hfn Hlst.
+  pose proof Hfn as ?%bn_conv_sound.
+  destruct Hfn.
+  pose proof Hlst as ?%bn_ne_conv_sound.
+  destruct Hlst.
+  pose proof bun_conv_ne_conv_conv as [A'' []]%red_ty_compl_list_r.
+  econstructor ; cycle -1.
+  1: econstructor.
+  + cbn.
+    econstructor ; tea.
+    2: now econstructor.
+    now eapply redty_red.
+  + cbn.
+    eapply bundled_conv_conv ; cycle 1.
+    3: split.
+    7: eassumption.
+    * econstructor ; tea.
+      now eapply ctx_refl.
+    * renToWk.
+      eapply typing_wk ; tea.
+      all: econstructor ; boundary.
+    * econstructor ; boundary.
+    * renToWk.
+      eapply typing_wk.
+      2: econstructor.
+      all: boundary.
+    * eassumption.
+    * eassumption.
+  + boundary.
+  + boundary. 
+  + econstructor.
+    all: boundary.
+  + econstructor.
+    now eapply algo_conv_wh in bun_conv_ne_conv as [].
+  + econstructor.
+    1: econstructor.
+    all: try boundary.
+    * econstructor ; tea.
+      eapply convty_simple_arr ; tea.
+      boundary.
+    * econstructor.
+      1: boundary.
+      now econstructor.
+    * econstructor.
+      now symmetry.
+  + econstructor.
+    now eapply algo_conv_wh in bun_conv_ne_conv as [].
+Qed.
+
 Module AlgorithmicConvProperties.
   Export AlgorithmicTypingData.
 
@@ -1831,15 +1949,17 @@ Qed.
       all: eapply algo_typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
-        now gen_typing.
+        econstructor ; tea.
+        now etransitivity.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
-        now gen_typing.
+        econstructor ; tea.
+        now etransitivity.
       + inversion bun_conv_tm ; subst ; clear bun_conv_tm.
         econstructor.
         1-3: now etransitivity.
         eassumption.
-    - intros Γ n n' A [? ? ? ? ? A' Hconvn HconvA].
+    - intros Γ n n' A ? [? ? ? ? ? A' Hconvn HconvA].
       assert [Γ |-[de] A] by boundary.
       assert [Γ |-[de] n : A'] by
         (eapply algo_conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
@@ -1849,8 +1969,17 @@ Qed.
       1-2: now gen_typing.
       eapply algo_conv_conv ; tea.
       2: now eapply ctx_refl.
-      apply ne_conv_conv; tea.
-      boundary.
+      eapply red_ty_compl_pos_r in HconvA as [A'' []] ; tea.
+      econstructor.
+      + now eapply redty_sound.
+      + reflexivity.
+      + reflexivity.
+      + now econstructor.
+    - intros_bn.
+      1: boundary.
+      econstructor.
+      1-3: reflexivity.
+      now econstructor. 
     - intros_bn.
       + now constructor.
       + constructor ; tea.
@@ -1918,6 +2047,7 @@ Qed.
         all: econstructor; tea; now econstructor.
       * econstructor; try reflexivity; now econstructor.
   Qed.
+
 
   #[export, refine] Instance ConvNeuAlgProperties : ConvNeuProperties (ta := bn) := {}.
   Proof.
@@ -2086,81 +2216,79 @@ Qed.
       symmetry; econstructor; tea.
       1: boundary.
       now symmetry.
-    - intros * tyeqA tyeqB tyeqC tyeqg tyeqf [?????? lstconv tyl].
-      pose proof tyeqA as [? ? _ _].
-      pose proof tyeqB as [_ ? _ _].
-      pose proof tyeqC as [_ ? _ _].
-      pose proof tyeqg as [_ ? ? _ _].
-      pose proof tyeqf as [_ ? ? _ _].
-      pose proof lstconv as []%algo_conv_sound; tea.
-      (* pose proof tyl as [? [r]]%red_ty_compl_list_r. *)
-      pose proof lstconv as []%algo_conv_wh.
-      econstructor; tea.
-      2, 4: now repeat constructor.
-      * eexists; econstructor; tea; econstructor; tea; econstructor; tea; boundary.
-      * eexists; econstructor; tea.
-        1: eapply ty_comp; cycle 3; tea.
-        econstructor; tea; boundary.
-      * 
-        assert (h : forall t, t⟨↑⟩⟨upRen_term_term ↑⟩ = t⟨↑⟩⟨↑⟩) by now (intro; asimpl).
-        assert (h' : forall A f g ρ, comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩ = (comp A f g)⟨ρ⟩) by ( intros; now asimpl).
-        destruct (is_map l || is_map l') eqn: hmap.
-        1: inversion lstconv; subst; cbn in hmap; try inversion hmap.
-        all: econstructor; try solve [cbn; easy].
-        2,5: cbn; now destruct tyeqC.
-        + admit. (* lemmas on compact_map fusion *)
-        + cbn.
-          rewrite !h, !h'.
-          (* lemma on alg typing of comp + problem of reflexivity on f, g *)
-          admit.
-        + cbn; admit. (*lemma on compact_map for not map *)
-        + cbn. rewrite !h, !h'.
-        (* lemma on alg typing of comp + problem of reflexivity on f, g + lemma on compact_map for not map *)
-          admit.
-      * cbn; econstructor; now econstructor.
-    - intros * tyeqA [?????? lstconv tyl].
-      pose proof tyeqA as [? ? _].
-      pose proof tyeqA as ?%bn_conv_sound.
-      pose proof lstconv as [? hwtyl]%algo_conv_sound; tea.
-      pose proof lstconv as []%algo_conv_wh.
-      econstructor.
-      1,3,4,5: tea.
-      1: now econstructor.
-      3: eapply TypeRefl; now econstructor.
-      2: destruct (is_map l || is_map l') eqn: hmap.
-      2: inversion lstconv; subst; cbn in hmap; try inversion hmap.
-      + eexists. econstructor; tea.
-        1: now eapply ty_id.
-        destruct bun_conv_ne_conv_l as [Tl wtyl].
-        econstructor; tea.
-        etransitivity; tea.
-        symmetry; now eapply hwtyl.
-      + refold. admit.
-      + set (t := tMap _ _ _ _).
-        change (tList A) with (tList (Map.tgtTy (compact_map A t))).
-        econstructor; cbn; try easy.
-        all: admit. (* lemmas on map compactification *)
-    - intros * convA convB [] [?????? convl].
-      pose proof convA as ?%bn_conv_sound.
-      pose proof convB as ?%bn_conv_sound.
-      pose proof convl as []%algo_conv_wh.
-      pose proof convl as [? _ _]%algo_conv_sound; tea.
-      destruct convA, convB; econstructor; tea.
-      2,4: now econstructor.
-      * do 2 econstructor; tea; econstructor; tea; now boundary.
-      * do 2 econstructor; tea; econstructor; tea.
-        1: eapply convty_simple_arr; tea.
-        1: now boundary.
-        etransitivity; tea; now econstructor.
-      * destruct (is_map l || is_map l') eqn: hmap.
-        + inversion convl; subst; cbn in hmap; try inversion hmap.
-          econstructor; cbn; try easy.
-          1,2: admit.
-        + econstructor; cbn; try easy.
-          1,2: admit.
-      * cbn; econstructor; now econstructor.
-  Admitted.
-  (* Qed. *)
+  Qed.
+
+  #[export, refine] Instance ConvNeuListAlglProperties : ConvNeuListProperties (ta := bn) := {}.
+  Proof.
+  - split ; red.
+    + intros_bn.
+      eapply algo_conv_sym.
+      2: now eapply ctx_refl.
+      now split.
+    + intros_bn.
+      eapply algo_conv_trans ; tea.
+      * now econstructor.
+      * now eapply ctx_refl.
+      * now econstructor.
+  - intros * ? ?%bn_conv_sound.
+    now eapply bn_conv_conv.
+  - intros_bn.
+    + gen_typing.
+    + rewrite wk_list.
+      gen_typing.
+    + now apply whne_list_ren.
+    + rewrite wk_list.
+      gen_typing.
+    + now apply whne_list_ren.
+    + now eapply algo_conv_wk.
+  - intros * [] [].
+    pose proof bun_conv_ne_conv_conv as [A' []]%red_ty_compl_list_r.
+    econstructor ; cycle -1.
+    1: econstructor.
+    + repeat rewrite !Map.is_map_eta ; cbn.
+      2-3: now apply whne_map.
+      econstructor ; tea.
+      2: gen_typing.
+      now eapply redty_red.
+    + repeat rewrite !Map.is_map_eta ; cbn.
+      2-3: now apply whne_map.
+      eapply bundled_conv_conv ; cycle 1.
+      3: split ; tea.
+      * econstructor ; [now eapply ctx_refl | eassumption].
+      * renToWk.
+        eapply typing_wk.
+        all: econstructor ; boundary.
+    + boundary.
+    + boundary. 
+    + eapply algo_conv_sound in bun_conv_ne_conv as []; tea.
+      econstructor ; tea.
+      boundary.
+    + econstructor.
+      now eapply algo_conv_wh in bun_conv_ne_conv.
+    + eapply algo_conv_sound in bun_conv_ne_conv as []; tea.
+      econstructor ; tea.
+      boundary.
+    + econstructor.
+      now eapply algo_conv_wh in bun_conv_ne_conv.
+  - now intros * [].
+  - intros * [] ??.
+    inversion bun_conv_ne_lst ; subst ; refold.
+    replace r with (Map.eta_id A t) in *
+     by (symmetry ; now apply Map.is_map_eta, whne_map).
+    replace r' with (Map.eta_id A u) in *
+    by (symmetry ; now apply Map.is_map_eta, whne_map).
+    cbn in *.
+    inversion H1 ; subst ; refold.
+    econstructor ; tea.
+    1-2: now eexists.
+    eapply algo_conv_sound in H3 as [].
+    2-3: now eexists.
+    eauto.
+  - intros * _ _ ?%bn_typing_sound _ ?%bn_conv_sound ?%bn_conv_sound Hfn Hlst.
+    now eapply convneulist_map_id_decls.
+  - intros * _ _ ?%bn_typing_sound ?%bn_typing_sound ?%bn_conv_sound ?%bn_conv_sound Hfn Hlst.
+    now eapply convneulist_map_decls.
+Qed.
 
 End AlgorithmicConvProperties.
 
@@ -2283,6 +2411,12 @@ Module IntermediateTypingProperties.
         4: eassumption.
         all: now etransitivity. 
     - gen_typing.
+    - intros * [].
+      split ; tea.
+      1: now econstructor.
+      econstructor.
+      1-3: reflexivity.
+      now econstructor. 
     - intros * ? [] [].
       split ; tea.
       + now econstructor.
@@ -2330,7 +2464,7 @@ Module IntermediateTypingProperties.
     - intros; now eapply (convtm_list (ta:=bn)).
     - intros; now eapply (convtm_nil (ta:=bn)).
     - intros; now eapply (convtm_cons (ta:=bn)).
-  Qed. 
+  Qed.
 
   #[export, refine] Instance ConvNeuIntProperties : ConvNeuProperties (ta := bni) := {}.
   Proof.
@@ -2355,9 +2489,26 @@ Module IntermediateTypingProperties.
     - gen_typing.
     - gen_typing.
     - gen_typing.
+  Qed.
+
+  #[export, refine] Instance ConvNeuListIntProperties : ConvNeuListProperties (ta := bni) := {}.
+  Proof.
+    all: unfold_bni.
     - gen_typing.
     - gen_typing.
-    - gen_typing.
+    - intros.
+      apply convneulist_wk ; tea.
+      now split.
+    - intros.
+      now apply convneulist_convneu.
+    - intros.
+      now eapply (convneulist_whne_list (ta := bn)).
+    - intros.
+      now eapply (convneulist_whne (ta := bn)).
+    - intros * ???? ?%bn_conv_sound ?%bn_conv_sound **.
+      now eapply convneulist_map_id_decls.
+    - intros * ???? ?%bn_conv_sound ?%bn_conv_sound **.
+      now eapply convneulist_map_decls.
   Qed.
 
   #[export, refine] Instance RedTermIntProperties :
@@ -2446,6 +2597,16 @@ Module IntermediateTypingProperties.
       + boundary.
       + gen_typing.
       + eapply redalg_one_step; econstructor.
+    - intros * ??? ?%bn_conv_sound **.
+      econstructor ; tea.
+      + boundary.
+      + econstructor ; tea.
+        econstructor.
+        1: econstructor ; tea.
+        econstructor.
+        now symmetry.
+      + eapply redalg_one_step.
+        now econstructor.   
     - intros * [] [].
       econstructor ; tea.
       econstructor ; tea.
@@ -2485,7 +2646,7 @@ Module IntermediateTypingProperties.
       now etransitivity.
   Qed.
 
-  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ := {}.
+  #[export] Instance IntermediateTypingProperties : GenericTypingProperties bni _ _ _ _ _ _ _ _ _ _ _ := {}.
 
 End IntermediateTypingProperties.
 

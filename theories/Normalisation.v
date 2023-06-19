@@ -125,6 +125,7 @@ Proof.
 + intros * ? []; split; now apply whne_list_ren.
 + intros * []; split; now econstructor.
 + now intros * [].
++ intros * [] ??; now split. 
 + intros * ?????? [] []; split; constructor ; tea ; now constructor.
 + intros * ?????? [] []; split; constructor ; tea ; now constructor.
 Qed.
@@ -229,18 +230,6 @@ Section NeutralConversion.
   Lemma var0_wk1_id {Γ A t} : t[tRel 0 .: @wk1 Γ A >> tRel] = t.
   Proof. bsimpl. rewrite scons_eta'. now asimpl. Qed.
 
-  Lemma ne_conv_conv : forall (Γ : context) (A m n : term),
-    [Γ |-[de] A] ->
-    [Γ |-[de] m : A] ->
-    isPosType A ->
-    [Γ |-[al] m ~ n ▹ A] ->
-    [Γ |-[al] m ≅ n : A].
-  Proof.
-    intros * Hty Hm HA Hconv.
-    econstructor.
-    1-3: reflexivity.
-    now econstructor.
-  Qed.
 
   Lemma refl_rel_id (Γ : context) (A : term) :
     [Γ,, A |-[al] tRel 0 ≅ tRel 0 : A⟨↑⟩] ->

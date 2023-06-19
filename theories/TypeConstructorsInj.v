@@ -93,22 +93,26 @@ Section TypeConstructors.
     - easy. 
     - destruct (polyRedEqId (normRedΣ0 (invLRΣ HT')) (PolyRedEqSym _ polyRed)).
       split; now escape.
-    - now eapply LogicalRelation.Escape.escapeEq.
+    - replace A with (A⟨@wk_id Γ⟩) by now rewrite wk_id_ren_on.
+      replace par with (par⟨@wk_id Γ⟩) by now rewrite wk_id_ren_on.
+      eapply LogicalRelation.Escape.escapeEq, parRed.
+      Unshelve.
+      boundary.
     - pose proof eq as ?%symmetry%convneu_whne.
       destruct nfT'; try solve [inv_whne].
       cbn in *. gen_typing.
   Qed.
 
-  Corollary red_ty_compl_univ_l Γ T :
-    [Γ |- U ≅ T] ->
-    [Γ |- T ⇒* U].
+  Corollary red_ty_compl_sort_l Γ s T :
+    [Γ |- tSort s ≅ T] ->
+    [Γ |- T ⇒* tSort s].
   Proof.
     intros HT.
     pose proof HT as HT'.
     unshelve eapply red_ty_complete in HT' as (T''&[? nfT]).
     2: econstructor.
-    enough (T'' = U) as -> by easy.
-    assert [Γ |- U ≅ T''] as Hconv by
+    enough (T'' = tSort s) as -> by easy.
+    assert [Γ |- tSort s ≅ T''] as Hconv by
       (etransitivity ; [eassumption|now eapply RedConvTyC]).
     unshelve eapply ty_conv_inj in Hconv.
     1: econstructor.
@@ -116,13 +120,27 @@ Section TypeConstructors.
     now destruct nfT, Hconv.
   Qed.
 
+  Corollary red_ty_compl_univ_l Γ T :
+    [Γ |- U ≅ T] ->
+    [Γ |- T ⇒* U].
+  Proof.
+    now apply red_ty_compl_sort_l.
+  Qed.
+
+  Corollary red_ty_compl_sort_r Γ s T :
+    [Γ |- T ≅ tSort s] ->
+    [Γ |- T ⇒* tSort s].
+  Proof.
+    intros.
+    eapply red_ty_compl_sort_l.
+    now symmetry.
+  Qed.
+
   Corollary red_ty_compl_univ_r Γ T :
     [Γ |- T ≅ U] ->
     [Γ |- T ⇒* U].
   Proof.
-    intros.
-    eapply red_ty_compl_univ_l.
-    now symmetry.
+    now apply red_ty_compl_sort_r.
   Qed.
 
   Corollary red_ty_compl_nat_l Γ T :
@@ -277,6 +295,66 @@ Section TypeConstructors.
     unshelve eapply ty_conv_inj in Hty.
     1-2: constructor.
     now eassumption.
+  Qed.
+
+  Corollary red_ty_compl_neu_l Γ N T :
+    whne N ->
+    [Γ |- N ≅ T] ->
+    ∑ N', [Γ |- T ⇒* N'] × whne N'.
+  Proof.
+    intros Hn HT.
+    pose proof HT as HT'.
+    unshelve eapply red_ty_complete in HT' as (T''&[? nfT]).
+    2: now econstructor.
+    eexists ; split ; tea.
+    assert [Γ |- N ≅ T''] as Hconv by
+      (etransitivity ; [eassumption|now eapply RedConvTyC]).
+    unshelve eapply ty_conv_inj in Hconv.
+    1: now econstructor.
+    1: eassumption.
+    now destruct nfT, Hconv.
+  Qed.
+
+
+  Corollary red_ty_compl_neu_r Γ N T :
+    whne N ->
+    [Γ |- T ≅ N] ->
+    ∑ N', [Γ |- T ⇒* N'] × whne N'.
+  Proof.
+    intros.
+    eapply red_ty_compl_neu_l ; tea.
+    now symmetry.
+  Qed.
+
+  Lemma red_ty_compl_pos_l Γ A A' :
+    [Γ |- A ≅ A'] ->
+    isPosType A ->
+    ∑ A'', [Γ |- A' ⇒* A''] × isPosType A''.
+  Proof.
+    intros Hconv Hpos.
+    destruct Hpos.
+    - eapply red_ty_compl_sort_l in Hconv.
+      eexists ; split ; tea.
+      now econstructor.
+    - eapply red_ty_compl_nat_l in Hconv.
+      eexists ; split ; tea.
+      now econstructor.
+    - eapply red_ty_compl_empty_l in Hconv.
+      eexists ; split ; tea.
+      now econstructor.
+    - eapply red_ty_compl_neu_l in Hconv as [? []] ; tea.
+      eexists ; split ; tea.
+      now econstructor.
+  Qed.
+
+  Corollary red_ty_compl_pos_r Γ A A' :
+    [Γ |- A' ≅ A] ->
+    isPosType A ->
+    ∑ A'', [Γ |- A' ⇒* A''] × isPosType A''.
+  Proof.
+    intros.
+    eapply red_ty_compl_pos_l ; tea.
+    now symmetry.
   Qed.
 
 End TypeConstructors.
@@ -735,11 +813,29 @@ Proof.
     do 2 (econstructor; tea).
     1-3: now econstructor.
     now eapply IHHred.
-  - admit. 
-  Admitted.
+  - apply termGen' in Hty as [? [[-> ??? Hty'] Hconv]].
+    apply termGen' in Hty' as [? [[->] Hconv']].
+    eapply list_ty_inj in Hconv'.
+    econstructor ; tea.
+    assert [Γ |-[ de ] tMap A0 C (comp A0 f g) l : tList C].
+    {
+      econstructor ; tea.
+      eapply ty_comp ; tea.
+      econstructor ; tea.
+      eapply convty_simple_arr ; tea.
+      1: now symmetry.
+      now econstructor.
+    }
+    eapply convtm_exp.
+    + eapply redty_refl.
+      boundary.
+    + eapply redtm_map_comp ; tea.
+      now symmetry.
+    + now eapply redtm_refl.
+    + now eapply TermRefl.
+Qed.
 
-
-  Theorem subject_reduction_one_type Γ A A' :
+Theorem subject_reduction_one_type Γ A A' :
   [Γ |- A] ->
   [A ⇒ A'] ->
   [Γ |- A ≅ A'].

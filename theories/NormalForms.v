@@ -176,3 +176,10 @@ Lemma eta_map_whne A l (x := Map.eta A l) :
 Proof.
   destruct l; unfold x; cbn; now econstructor.
 Qed.
+
+Lemma whne_map n :
+  whne n ->
+  ~~ Map.is_map n.
+Proof.
+  intros [] ; now reflexivity.
+Qed.
