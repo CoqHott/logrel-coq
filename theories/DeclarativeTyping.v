@@ -264,16 +264,14 @@ Section Definitions.
           [ Γ |- hd : A ] ->
           [ Γ |- tl : tList A ] ->
           [ Γ |- tMap A B f (tCons A hd tl) ≅ tCons B (tApp f hd) (tMap A B f tl) : tList B ]
-      | TermRedMapComp {Γ} {f g l A B B' C} :
+      | TermRedMapComp {Γ} {f g l l' A B C} :
           [ Γ |- A] ->
           [ Γ |- B] ->
-          [Γ |- B'] ->
-          [Γ |- B ≅ B'] ->
           [ Γ |- C] ->
           [ Γ |- f : arr B C ] ->
-          [ Γ |- g : arr A B' ] ->
-          [ Γ |- l : tList A ] ->
-          [ Γ |- tMap B C f (tMap A B' g l) ≅ tMap A C (comp A f g) l : tList C ]
+          [ Γ |- g : arr A B ] ->
+          [ Γ |- l ≅ l' : tList A ] ->
+          [ Γ |- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l' : tList C ]
       | TermRedMapId {Γ} {l l' A} :
           [ Γ |- A ≅ A ] ->
           [ Γ |- l ≅ l' : tList A ] ->

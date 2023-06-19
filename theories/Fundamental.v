@@ -865,15 +865,14 @@ Section Fundamental.
   Qed.
 
   Lemma FundTmEqMapComp :
-    forall (Γ : context) (f g l l' A B B' C : term),
+    forall (Γ : context) (f g l l' A B C : term),
     FundTy Γ A ->
     FundTy Γ B ->
-    FundTy Γ B' ->
-    FundTyEq Γ B B' ->
     FundTy Γ C ->
     FundTm Γ (arr B C) f ->
-    FundTm Γ (arr A B') g ->
-    FundTmEq Γ (tList C) (tMap B C f (tMap A B' g l)) (tMap A C (comp A f g) l').
+    FundTm Γ (arr A B) g ->
+    FundTmEq Γ (tList A) l l' ->
+    FundTmEq Γ (tList C) (tMap B C f (tMap A B g l)) (tMap A C (comp A f g) l').
   Proof.
     intros *[][][][][][].
     unshelve econstructor.
