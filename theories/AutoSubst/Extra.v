@@ -114,6 +114,12 @@ Module Map.
     destruct n ; cbn ; eauto.
   Qed.
   
+  Definition is_map t :=
+    match t with
+    | tMap _ _ _ _ => true
+    | _ => false
+    end.
+  
   Inductive view : term -> Type :=
     | IsMap {A B f l} : view (tMap A B f l)
     | IsNotMap {u} : ~~ is_map u -> view u.
