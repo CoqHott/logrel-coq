@@ -58,66 +58,6 @@ Section RedImplemComplete.
     now eapply R_acc, typing_SN.
   Qed.
 
-  Lemma well_typed_zip Γ t π :
-    well_typed Γ (zip t π) ->
-    ∑ T', [Γ |- t : T'] × (forall u, [Γ |- t ≅ u : T'] -> well_typed Γ (zip u π)).
-  Proof.
-    intros H.
-    induction π as [|[]] in t, H |- * ; cbn.
-    - destruct H as [T Hty].
-      exists T ; split.
-      1: eassumption.
-      intros *.
-      eexists.
-      boundary.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermEmptyElimCong ; tea ; refold.
-      2: eassumption.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermNatElimCong ; tea ; refold.
-      + now econstructor.
-      + now econstructor.
-      + now eapply TermRefl.
-      + eassumption.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&(?&?&[])&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u' Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: econstructor ; tea.
-      2: eassumption.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as [T [[?[[?[?[->]]]]]%termGen' Hsubst]].
-      eexists; split; tea.
-      intros; eapply Hsubst.
-      eapply TermConv; refold; tea.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as [T [[?[[?[?[->]]]]]%termGen' Hsubst]].
-      eexists; split; tea.
-      intros; eapply Hsubst.
-      eapply TermConv; refold; tea.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as [T [[?[[]]]%termGen' Hsubst]]; subst.
-      eexists; split; tea.
-      intros; eapply Hsubst.
-      eapply TermConv; refold; tea.
-      econstructor; tea; now (eapply TypeRefl + eapply TermRefl).
-  Qed.
 
   Lemma isType_ty Γ T t :
     [Γ |- t : T] ->

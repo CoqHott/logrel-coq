@@ -1,5 +1,5 @@
 (** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
-From Coq Require Import Nat Lia.
+From Coq Require Import Nat Lia List.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context DeclarativeTyping.
@@ -8,6 +8,17 @@ From PartialFun Require Import Monad PartialFun.
 Import MonadNotations.
 Set Universe Polymorphism.
 Import IndexedDefinitions.
+
+Definition singleton_store {F} (f : F) : forall (x : unit), unit := fun _ => tt.
+
+(** DO NOT PUT AS INSTANCE IN GENERAL
+    (create loops in typeclass search since it autofires itself) *)
+Definition singleton_pfun {F} (f : F) `{PFun F f} : forall (x : unit), PFun (singleton_store f x).
+Proof. destruct H; now econstructor. Defined.
+
+Definition call_single {F}
+  (f : F) `{PFun F f} {A B} :=
+  call (pfun:=singleton_pfun f) tt (A:=A) (B:=B).
 
 (* #[local] Remove Hints MonadOrec : typeclass_instances.
 #[local] Hint Resolve MonadOrec | 3 : typeclass_instances.
@@ -54,23 +65,32 @@ Variant list_entry : term -> Type :=
   | eNil A : list_entry (tNil A)
   | eCons A hd tl : list_entry (tCons A hd tl).
 
-Variant dest_entry : Type :=
+Variant ne_entry : Type :=
   | eEmptyElim (P : term)
   | eNatElim (P : term) (hs hz : term)
   | eApp (u : term)
   | eFst
-  | eSnd
-  | eMap (A B f : term).
+  | eSnd.
 
-Definition zip1 (t : term) (e : dest_entry) : term :=
+Definition zip1_ne (t : term) (e : ne_entry) : term :=
   match e with
     | eEmptyElim P => (tEmptyElim P t)
     | eNatElim P hs hz => (tNatElim P hs hz t) 
     | eApp u => (tApp t u)
     | eFst => tFst t
     | eSnd => tSnd t
-    | eMap A B f => tMap A B f t
   end.
+
+(* Definition compact1 (t : term) (e : dest_entry) : term :=
+  match e, (Map.into_view t) with
+    | eEmptyElim P, _ => (tEmptyElim P t)
+    | eNatElim P hs hz, _ => (tNatElim P hs hz t) 
+    | eApp u, _ => (tApp t u)
+    | eFst, _ => tFst t
+    | eSnd, _ => tSnd t
+    | eMap B' C g, @Map.IsMap A B f l => tMap A C (comp A g f) l
+    | eMap A B f, Map.IsNotMap _ => tMap A B f t
+  end. *)
 
 Variant tm_view1 : term -> Type :=
   | tm_view1_type {t} : ty_entry t -> tm_view1 t
@@ -79,7 +99,8 @@ Variant tm_view1 : term -> Type :=
   | tm_view1_nat {t} : nat_entry t -> tm_view1 t
   | tm_view1_sig A B a b : tm_view1 (tPair A B a b)
   | tm_view1_list {t} : list_entry t -> tm_view1 t
-  | tm_view1_dest t (s : dest_entry) : tm_view1 (zip1 t s).
+  | tm_view1_map A B f l : tm_view1 (tMap A B f l)
+  | tm_view1_dest t (s : ne_entry) : tm_view1 (zip1_ne t s).
 
 Definition build_tm_view1 t : tm_view1 t :=
   match t with
@@ -101,12 +122,12 @@ Definition build_tm_view1 t : tm_view1 t :=
   | tList A => tm_view1_type (eList A)
   | tNil A => tm_view1_list (eNil A)
   | tCons A hd tl => tm_view1_list (eCons A hd tl)
-  | tMap A B f l => tm_view1_dest l (eMap A B f)
+  | tMap A B f l => tm_view1_map A B f l
   end.
 
 Variant ne_view1 : term -> Type :=
   | ne_view1_rel n : ne_view1 (tRel n)
-  | ne_view1_dest t s : ne_view1 (zip1 t s).
+  | ne_view1_dest t s : ne_view1 (zip1_ne t s).
 
 Variant nf_view1 : term -> Type :=
   | nf_view1_type {t} : ty_entry t -> nf_view1 t
@@ -114,6 +135,7 @@ Variant nf_view1 : term -> Type :=
   | nf_view1_nat {t} : nat_entry t -> nf_view1 t
   | nf_view1_sig A B a b : nf_view1 (tPair A B a b)
   | nf_view1_list {t} : list_entry t -> nf_view1 t
+  | nf_view1_ne_list A B f l : nf_view1 (tMap A B f l)
   | nf_view1_ne {t} : ne_view1 t -> nf_view1 t.
 
 Definition build_nf_view1 t : nf_view1 t :=
@@ -136,7 +158,7 @@ Definition build_nf_view1 t : nf_view1 t :=
   | tList A => nf_view1_type (eList A)
   | tNil A => nf_view1_list (eNil A)
   | tCons A hd tl => nf_view1_list (eCons A hd tl)
-  | tMap A B f l => nf_view1_ne (ne_view1_dest l (eMap A B f))
+  | tMap A B f l => nf_view1_ne_list A B f l
   end.
 
 Variant ty_view1 : term -> Type :=
@@ -152,16 +174,52 @@ Definition build_ty_view1 t : ty_view1 t :=
   | tm_view1_fun _ _ 
   | tm_view1_nat _ 
   | tm_view1_sig _ _ _ _ 
-  | tm_view1_list _ => ty_view1_anomaly
+  | tm_view1_list _      
+  | tm_view1_map _ _ _ _ => ty_view1_anomaly
   end.
 
-Definition stack := list dest_entry.
+Variant stack_entry : Type :=
+| sEmptyElim (P : term)
+| sNatElim (P : term) (hs hz : term)
+| sApp (u : term)
+| sFst
+| sSnd
+| sMap (A B f : term).
+
+Definition to_stack (e : ne_entry) : stack_entry :=
+  match e with
+  | eEmptyElim P => sEmptyElim P
+  | eNatElim P hs hz => sNatElim P hs hz
+  | eApp u => sApp u
+  | eFst => sFst
+  | eSnd => sSnd
+  end.
+
+Coercion to_stack : ne_entry >-> stack_entry.
+
+Definition zip1 (t : term) (s : stack_entry) : term :=
+match s with
+  | sEmptyElim P => (tEmptyElim P t)
+  | sNatElim P hs hz => (tNatElim P hs hz t) 
+  | sApp u => (tApp t u)
+  | sFst => tFst t
+  | sSnd => tSnd t
+  | sMap A B f => tMap A B f t
+end.
+
+Definition stack := list stack_entry.
 
 Fixpoint zip t (π : stack) :=
   match π with
-  | nil => t
-  | cons s π => zip (zip1 t s) π
+  | [::] => t
+  | s :: π => zip (zip1 t s) π
   end.
+
+(* Fixpoint compact t (π : stack) :=
+  match π with
+  | [::] => t
+  | s :: π => compact (compact1 t s) π
+  end. *)
 
 Definition empty_store : forall (x: False), match x return Set with end :=
   fun x => match x as x return match x return Set with end with end.
@@ -170,47 +228,50 @@ Definition empty_store : forall (x: False), match x return Set with end :=
 Instance empty_pfun : forall (x:False), PFun@{Set Set Set} (empty_store x) | 5 :=
   fun x => match x as x return PFun (empty_store x) with end.
 
-Arguments rec {_ _ _ _ _ _}. 
+Arguments rec {_ _ _ _ _ _}.
 
-Equations wh_red_stack : term × stack ⇀[empty_store] term :=
+Equations compact : bool × term × stack ⇀[empty_store] term :=
+  compact (_,t,[::]) := ret t ;
+  compact (false,t,(sMap A B f) :: π) := rec (true,tMap A B f t, π);
+  compact (false,t, s :: π) := rec (false,(zip1 t s),π) ;
+  compact (true,t,(sMap B' C g) :: π) with (Map.into_view t) := {
+  compact (true,?(tMap A B f l),(sMap B' C g) :: π) (@Map.IsMap A B f l) := rec (true,tMap A C (comp A g f) l,π) ;
+  compact (true,_,_) (Map.IsNotMap _) := undefined ;
+  } ;
+  compact (true,_,s) := undefined.
+
+
+#[local] Instance: forall x, PFun (singleton_store compact x) := singleton_pfun compact.
+
+Equations wh_red_stack : term × stack ⇀[singleton_store compact] term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
-  wh_red_stack (?(tRel n)       ,π)                         (tm_view1_rel n) := ret (zip (tRel n) π) ;
-  wh_red_stack (?(zip1 t s)     ,π)                         (tm_view1_dest t s) := rec (t,cons s π) ;
-  wh_red_stack (?(tLambda A t)  ,nil)                       (tm_view1_fun A t) := ret (tLambda A t) ;
-  wh_red_stack (?(tLambda A t)  ,cons (eApp u) π)           (tm_view1_fun A t) := rec (t[u..], π) ;
-  wh_red_stack (_               ,cons _ _)                  (tm_view1_fun _ _) := undefined ;
-  wh_red_stack (t               ,nil)                       (tm_view1_nat _) := ret t ;
-  wh_red_stack (?(tZero)        ,cons (eNatElim _ hz _) π)  (tm_view1_nat eZero) := rec (hz,π) ;
-  wh_red_stack (?(tSucc t)      ,cons (eNatElim P hz hs) π) (tm_view1_nat (eSucc t)) := rec (hs ,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
-  wh_red_stack (t               ,cons _ _)                  (tm_view1_nat _) := undefined ;
-  wh_red_stack (?(tPair A B a b),nil)                       (tm_view1_sig A B a b) := ret (tPair A B a b) ;
-  wh_red_stack (?(tPair A B a b),cons eFst π)               (tm_view1_sig A B a b) := rec (a , π) ;
-  wh_red_stack (?(tPair A B a b),cons eSnd π)               (tm_view1_sig A B a b) := rec (b , π) ;
-  wh_red_stack (?(tPair A B a b),cons _ π)                  (tm_view1_sig A B a b) := undefined ;
-  wh_red_stack (t               , nil)                      (tm_view1_list _) := ret t ;
-  wh_red_stack (?(tNil A)       , cons (eMap _ B _) π)      (tm_view1_list (eNil A)) := rec (tNil B, π) ;
-  wh_red_stack (?(tCons _ hd tl), cons (eMap A B f) π)      (tm_view1_list (eCons _ hd tl)) := rec (tCons B (tApp f hd) (tMap A B f tl), π) ;
-  wh_red_stack (t               , cons _ _)                 (tm_view1_list _) := undefined;
-  wh_red_stack (t               ,nil)                       (tm_view1_type _) := ret t ;
-  wh_red_stack (t               ,cons s _)                  (tm_view1_type _) := undefined.
+  wh_red_stack (?(tRel n)       ,π)                       (tm_view1_rel n) := call_single compact (false, (tRel n),π) ;
+  wh_red_stack (?(zip1_ne t s)     ,π)                       (tm_view1_dest t s) := rec (t,(to_stack s) :: π) ;
+  wh_red_stack (?(tMap A B f l), π)                       (tm_view1_map A B f l) := rec (l,(sMap A B f) :: π) ;
+  wh_red_stack (?(tLambda A t)  ,[::])                    (tm_view1_fun A t) := ret (tLambda A t) ;
+  wh_red_stack (?(tLambda A t)  ,(sApp u) :: π)           (tm_view1_fun A t) := rec (t[u..], π) ;
+  wh_red_stack (_               ,_ :: _)                  (tm_view1_fun _ _) := undefined ;
+  wh_red_stack (t               ,[::])                    (tm_view1_nat _) := ret t ;
+  wh_red_stack (?(tZero)        ,(sNatElim _ hz _) :: π)  (tm_view1_nat eZero) := rec (hz,π) ;
+  wh_red_stack (?(tSucc t)      ,(sNatElim P hz hs) :: π) (tm_view1_nat (eSucc t)) := rec (hs ,(sApp t) :: (sApp (tNatElim P hz hs t) :: π)) ;
+  wh_red_stack (t               , _ :: _)                 (tm_view1_nat _) := undefined ;
+  wh_red_stack (?(tPair A B a b),[::])                    (tm_view1_sig A B a b) := ret (tPair A B a b) ;
+  wh_red_stack (?(tPair A B a b),sFst :: π)               (tm_view1_sig A B a b) := rec (a , π) ;
+  wh_red_stack (?(tPair A B a b),sSnd :: π)               (tm_view1_sig A B a b) := rec (b , π) ;
+  wh_red_stack (?(tPair A B a b),_ :: π)                  (tm_view1_sig A B a b) := undefined ;
+  wh_red_stack (t               , [::])                   (tm_view1_list _) := ret t ;
+  wh_red_stack (?(tNil A)       , (sMap _ B _) :: π)      (tm_view1_list (eNil A)) := rec (tNil B, π) ;
+  wh_red_stack (?(tCons _ hd tl), (sMap A B f) :: π)      (tm_view1_list (eCons _ hd tl)) := rec (tCons B (tApp f hd) (tMap A B f tl), π) ;
+  wh_red_stack (t               , _ :: _)                 (tm_view1_list _) := undefined;
+  wh_red_stack (t               ,[::])                    (tm_view1_type _) := ret t ;
+  wh_red_stack (t               ,s :: _)                  (tm_view1_type _) := undefined.
 
 Set Printing Universes.
-
-Definition singleton_store {F} (f : F) : forall (x : unit), unit := fun _ => tt.
-
-(** DO NOT PUT AS INSTANCE IN GENERAL
-    (create loops in typeclass search since it autofires itself) *)
-Definition singleton_pfun {F} (f : F) `{PFun F f} : forall (x : unit), PFun (singleton_store f x).
-Proof. destruct H; now econstructor. Defined.
-
-Definition call_single {F}
-  (f : F) `{PFun F f} {A B} :=
-  call (pfun:=singleton_pfun f) tt (A:=A) (B:=B).
 
 #[local] Instance: forall x, PFun (singleton_store wh_red_stack x) := singleton_pfun wh_red_stack.
 
 Equations wh_red : term ⇀[singleton_store wh_red_stack] term :=
-  wh_red t := call_single wh_red_stack (t,nil).
+  wh_red t := call_single wh_red_stack (t,[::]).
 
 Definition wh_red_fuel n t := fueled wh_red n t.
 
@@ -260,8 +321,12 @@ Inductive nf_view3 : term -> term -> term -> Type :=
 | functions A B t t' : nf_view3 (tProd A B) t t'
 | zeros : nf_view3 tNat tZero tZero
 | succs t t' : nf_view3 tNat (tSucc t) (tSucc t')
-| nils A A1 A2 : nf_view3 (tList A) (tNil A1) (tNil A2) (* Constraints on types ? *)
-| conss A A1 A2 hd1 hd2 tl1 tl2 : nf_view3 (tList A) (tCons A1 hd1 tl1) (tCons A2 hd2 tl2) (* Constraints on types ? *)
+| nils A A1 A2 : nf_view3 (tList A) (tNil A1) (tNil A2)
+| conss A A1 A2 hd1 hd2 tl1 tl2 : nf_view3 (tList A) (tCons A1 hd1 tl1) (tCons A2 hd2 tl2)
+(* | map_l T A B f n n' : nf_view3 (tList T) (tMap A B f n) n' 
+| map_r T A' B' f' n n' : nf_view3 (tList T) n (tMap A' B' f' n')
+| maps T A A' B B' f f' n n' : nf_view3 (tList T) (tMap A B f n) (tMap A' B' f' n') *)
+| neutral_lists A n n' : nf_view3 (tList A) n n'
 | pairs A B t t' : nf_view3 (tSig A B) t t'
 | neutrals (A n n' : term) : nf_view3 A n n'
 | mismatch (A t u : term) : nf_view3 A t u
@@ -305,7 +370,10 @@ Equations build_nf_view3 T t t' : nf_view3 T t t' :=
       nils A A1 A2
     | nf_view1_list (eCons A1 hd1 tl1), nf_view1_list (eCons A2 hd2 tl2) :=
       conss A A1 A2 hd1 hd2 tl1 tl2
-    | nf_view1_ne _, nf_view1_ne _ := neutrals _ _ _ ;
+    | nf_view1_ne_list _ _ _ _, nf_view1_ne_list _ _ _ _ := neutral_lists _ _ _ ;
+    | nf_view1_ne_list _ _ _ _, nf_view1_ne _ := neutral_lists _ _ _ ;
+    | nf_view1_ne _, nf_view1_ne_list _ _ _ _ := neutral_lists _ _ _ ;
+    | nf_view1_ne _, nf_view1_ne _ := neutral_lists _ _ _ ;
     | nf_view1_list _, nf_view1_list _ :=
         mismatch _ _ _ ;
     | nf_view1_ne _, nf_view1_list _ :=
@@ -326,17 +394,18 @@ Variant conv_state : Type :=
   | tm_state (** Conversion of arbitrary terms *)
   | tm_red_state (** Comparison of terms if weak-head normal forms *)
   | ne_state (** Comparison of neutrals *)
-  | ne_red_state. (** Comparison of neutrals with a reduced type *)
+  | ne_red_state (** Comparison of neutrals with a reduced type *)
+  | ne_list_state. (** Comparison of neutral lists *)
 
 Definition cstate_input (c : conv_state) : Type :=
   match c with
-  | tm_state | tm_red_state => term
+  | tm_state | tm_red_state | ne_list_state => term
   | ty_state | ty_red_state | ne_state | ne_red_state => unit
   end.
 
 Definition cstate_output (c : conv_state) : Type :=
   match c with
-  | ty_state | ty_red_state | tm_state | tm_red_state => unit
+  | ty_state | ty_red_state | tm_state | tm_red_state | ne_list_state => unit
   | ne_state | ne_red_state => term
   end.
 
@@ -434,14 +503,16 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | conss A A1 A2 hd1 hd2 tl1 tl2 => 
       (* rec (ty_state;Γ;tt;A1;A2) ;;
       rec (ty_state;Γ;tt;A1;A) ;; *)
-      rec (tm_state;Γ;A1;hd1;hd2) ;;
-      rec (tm_state;Γ;tList A1; tl1; tl2)
-    | neutrals _ _ _ :=
+      rec (tm_state;Γ;A;hd1;hd2) ;;
+      rec (tm_state;Γ;tList A; tl1; tl2)
+    | neutral_lists A _ _ :=
+      rec (ne_list_state;Γ;A;t;u) ;; success (M:=M0) ;
+    | neutrals A _ _ :=
       rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
     | anomaly _ _ _ := undefined ;
   }.
-
+  
 Equations to_neutral_diag (t u : term) : option (ne_view1 t × ne_view1 u) :=
   | t, u with build_nf_view1 t, build_nf_view1 u =>
   {
@@ -449,27 +520,7 @@ Equations to_neutral_diag (t u : term) : option (ne_view1 t × ne_view1 u) :=
     | _ , _ => None
   }.
 
-Fixpoint extract_map_arg (t : term) : term :=
-  match t with
-  | tMap B A f l => extract_map_arg l
-  | k => k
-  end.
-
-Definition conv_ne_map (Γ: context) (w w' : term) : M (cstate_output ne_state) :=
-  T ← rec (ne_red_state;Γ;tt; extract_map_arg w;extract_map_arg w');;
-  match T with
-  | tList A =>
-    let r := compact_map A w in
-    let r' := compact_map A w' in
-    rec (ty_state;Γ;tt;r.(Map.tgtTy);r'.(Map.tgtTy)) ;;
-    rec (tm_state;Γ;arr A r.(Map.tgtTy);r.(Map.fn);r'.(Map.fn)) ;;
-    ret (tList r.(Map.tgtTy))
-  | _ => undefined
-  end.
-
-
-
-Time Equations conv_ne : conv_stmt ne_state :=
+Equations conv_ne : conv_stmt ne_state :=
   | (Γ;inp; t; t') with t, t', to_neutral_diag t t' :=
   {
     | _, _, Some (ne_view1_rel n, ne_view1_rel n') with n =? n' :=
@@ -516,12 +567,21 @@ Time Equations conv_ne : conv_stmt ne_state :=
       match T with
       | tSig A B => ret B[(tFst n)..]
       | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
-      end ; 
-    | w, w', Some (ne_view1_dest _ (eMap _ _ _), _) => conv_ne_map Γ w w' 
-    | w, w', Some (_ , ne_view1_dest _ (eMap _ _ _)) => conv_ne_map Γ w w'
-    | w, w', _ => raise (destructor_mismatch w w')
+      end ;
+    | w, w', Some _ => raise (destructor_mismatch w w')
+    | _, _, None => undefined
   }.
   
+Equations conv_ne_list : conv_stmt ne_list_state :=
+  | (Γ;B; t; t') :=
+    let r := Map.eta B t in
+    let r' := Map.eta B t' in
+    T ← rec (ne_red_state;Γ;tt;r.(Map.lst);r'.(Map.lst)) ;;
+    match T with
+    | tList A =>
+        rec (tm_state;Γ,,A;B⟨↑⟩;r.(Map.fn);r'.(Map.fn))
+    | _ => undefined
+    end.
 (* 
 Time Equations conv_ne_alt : conv_stmt ne_state :=
   | (Γ;inp;tRel n;tRel n')
@@ -588,7 +648,8 @@ Equations conv : ∇[singleton_store wh_red] (x : conv_full_dom), conv_full_cod 
   | (tm_state; Γ ; inp ; T; V) := conv_tm (Γ; inp; T; V);
   | (tm_red_state; Γ ; inp ; T; V) := conv_tm_red (Γ; inp; T; V);
   | (ne_state; Γ ; inp ; T; V) := conv_ne (Γ; inp; T; V);
-  | (ne_red_state; Γ ; inp ; T; V) := conv_ne_red (Γ; inp; T; V).
+  | (ne_red_state; Γ ; inp ; T; V) := conv_ne_red (Γ; inp; T; V)
+  | (ne_list_state;Γ;B;t;t') := conv_ne_list (Γ;B;t;t').
 
 End Conversion.
 
