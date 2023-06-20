@@ -170,9 +170,6 @@ Section SimpleArrow.
     now bsimpl.
   Qed.
 
-  Lemma arr_wk {Γ Δ A B} {ρ : Δ ≤ Γ} : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
-  Proof. cbn; now bsimpl. Qed.
-
   Lemma wkRedArr {Γ l A B f} 
     (RA : [Γ ||-<l> A]) 
     (RB : [Γ ||-<l> B]) 
@@ -182,7 +179,7 @@ Section SimpleArrow.
   Proof.
     intro; irrelevance0.
     2: unshelve eapply wkTerm; cycle 3; tea.
-    symmetry; apply arr_wk.
+    symmetry; apply wk_arr.
   Qed.
 
   Lemma compred {Γ l A B C f g} 
@@ -225,10 +222,10 @@ Section SimpleArrow.
       + now eapply h.
       + eapply redtm_comp_beta.
         6: cbn in *; now escape.
-        5: erewrite arr_wk; eapply ty_wk; tea.
+        5: erewrite wk_arr; eapply ty_wk; tea.
         4: eapply typing_meta_conv.
         4: eapply ty_wk; tea.
-        4: now rewrite <- arr_wk.
+        4: now rewrite <- wk_arr.
         1-3: now eapply wft_wk.
     }
     econstructor.

@@ -927,6 +927,7 @@ Proof.
 Qed.
 
 Definition ListProp_of_mapProp {Γ l} (A B f x: term)
+  (wfΓ: [ |- Γ ])
   (RA: [Γ ||-<l> A])
   (RLA : [Γ ||-List<l> tList A])
   (RB: [Γ ||-<l> B])
@@ -951,7 +952,27 @@ Proof.
     + change [LRList' (normList0 RLB) | Γ ||- tMap A B f tl : _ ].
       unshelve eapply (fst (mapRedAux _)); tea.
   - cbn; destruct (Map.into_view _).
-    * admit. (* new case *)
+    * constructor; cbn in *;
+      match goal with
+        | H : ListRedTm.map_inv_data _ _ _ _ |- _ => destruct H
+      end;
+      assert [Γ |-[ ta ] f : arr B0 B] by (eapply ty_conv; escape; tea; eapply convty_simple_arr; tea;
+                                          unshelve eapply escapeEq; tea; eapply LRTyEqRefl_).
+      { eapply ty_map; escape; tea.
+        eapply ty_comp; cycle 2; tea. }
+      { eapply convneulist_map; escape; tea.
+        1-2: eapply ty_comp; tea; eapply ty_conv; tea; eapply convty_simple_arr; tea; escape; symmetry; tea.
+        - unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+        - admit.
+      }
+      { constructor; escape; tea.
+        - eapply ty_comp; cycle 2; tea.
+        - cbn in *. unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+        - intros. (* do I need hypothesis on A0 *)
+          (* eapply simple_appTerm. *)
+          (* 2: now eapply neuTerm. *)
+          admit.
+      }
     * constructor; cbn in *.
       + eapply ty_map ; tea.
       1-3: now escape.

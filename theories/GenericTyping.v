@@ -960,6 +960,16 @@ Section GenericConsequences.
     eapply ty_app; tea.
   Qed.
 
+  Lemma convneu_simple_app {Γ f g t u A B} :
+      [ Γ |- f ~ g : arr A B ] ->
+      [ Γ |- t ≅ u : A ] ->
+      [ Γ |- tApp f t ~ tApp g u : B ].
+  Proof.
+    intros.
+    replace B with B⟨↑⟩[t..] by now asimpl.
+    now eapply convneu_app.
+  Qed.
+
   #[local]
   Hint Resolve ty_simple_app : gen_typing.
   
