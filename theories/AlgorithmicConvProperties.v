@@ -1184,8 +1184,8 @@ Section Transitivity.
             1: destruct convtgtty.
             rewrite H in convlst0. 
           
-          admit.
-          * admit.
+          Commented admit.
+          * Commented admit.
         + move: hmapuv (hmap)=> /negbT /norP-[/[dup] hmapu /negbTE->] hmapv /=.
           rewrite orbF=> hmapt.
           eapply algo_conv_trans_map_l=> //; first exact hmapu; tea.
@@ -1198,8 +1198,8 @@ Section Transitivity.
           have: 1 <= x0 by apply size_positive. 
           have: 1 <= x by apply size_positive. 
           lia. 
-      admit.
-    Admitted.
+      Commented admit.
+    Commented Admitted.
     (* Qed. *)
 
     #[local]
