@@ -1471,21 +1471,26 @@ Proof.
   - intros. cbn.
     change [ LRList' LC' | Γ ||- tNil C ≅ tNil C : _ ].
     unshelve eapply nilEqRed; tea; solve [ now escape | eapply LRTyEqRefl_ ].
-  - intros. cbn.
-    admit. (* Fix ListProp_of_mapProp *)
-    (* change [ LRList' LC' | Γ ||- tCons C (tApp f (tApp g hd)) (tMap B C f (tMap A B g tl)) ≅
+  - intros. cbn in *.
+    change [ LRList' LC' | Γ ||- tCons C (tApp f (tApp g hd)) (tMap B C f (tMap A B g tl)) ≅
                              tCons C (tApp (comp A f g) hd) (tMap A C (comp A f g) tl) : _ ].
     unshelve eapply consEqRed; try eapply LRTyEqRefl_; tea; try now escape.
     + eapply simple_appTerm; tea.
       eapply simple_appTerm; tea.
+      replace A with A⟨@wk_id Γ⟩. 2: now eapply wk_id_ren_on.
+      irrelevance.
     + eapply simple_appTerm; tea.
+      replace A with A⟨@wk_id Γ⟩. 2: now eapply wk_id_ren_on.
+      irrelevance.
     + eapply LRTmEqSym. eapply redSubstTerm.
       2: eapply redtm_comp_beta; escape; cycle 2; tea.
-      2: now eapply escapeTerm.
+      2: replace A with A⟨@wk_id Γ⟩ ; [now eapply escapeTerm | now eapply wk_id_ren_on].
       eapply simple_appTerm; tea.
       eapply simple_appTerm; tea.
+      replace A with A⟨@wk_id Γ⟩. 2: now eapply wk_id_ren_on.
+      irrelevance.
     + eapply LREqTermHelper.
-      4: irrelevance.
+      4: exact X.
       3: eapply LRTyEqRefl_.
       2: now unshelve eapply (fst (mapRedAux _)); tea.
       unshelve eapply (fst (mapEqRedAux _ _)); tea.
@@ -1501,27 +1506,35 @@ Proof.
     + unshelve eapply (fst (mapRedAux _)); tea.
       change [ LRList' (normList0 LA') | Γ ||- tl : _ ].
       change [ LRList' LA' | Γ ||- tl : _ ] in l.
-      irrelevance. *)
+      irrelevance.
   - intros. cbn.
-    admit. (* Fix ListProp_of_mapProp *)
-    (* change [ LRList' LC' | Γ ||- tMap B C f (tMap A B g l) ≅ tMap A C (comp A f g) l : _ ].
-    eapply neuListTermEq.
-    + eapply ty_map.
-      1-3: now escape.
-      eapply ty_map.
-      1-3: now escape.
-      easy.
-    + eapply ty_map.
-      1-2: now escape.
-      * eapply ty_comp.
-        4-5: escape; tea. all: now escape.
-      * easy.
-    + eapply convneulist_map_comp ; tea.
-      1-3: now eapply escape.
-      all: now eapply escapeTerm.
+    destruct (Map.into_view l).
+    2:{
+      change [ LRList' LC' | Γ ||- (tMap A C (comp A f g) u) ≅ (tMap A C (comp A f g) u) : _ ].
+      eapply LREqTermRefl_.
+      unshelve eapply (fst (mapRedAux _)); tea.
+      change [ LRList' (normList0 LA') | Γ ||- u : _ ].
+      eapply neuTerm; tea.
+      now eapply convneulist_is_not_map_convneu.
+    }
+    (* cbn. *)
 
-      Unshelve.
-      all: tea. *)
+    (* + eapply ty_map. *)
+    (*   1-3: now escape. *)
+    (*   eapply ty_map. *)
+    (*   1-3: now escape. *)
+    (*   easy. *)
+    (* + eapply ty_map. *)
+    (*   1-2: now escape. *)
+    (*   * eapply ty_comp. *)
+    (*     4-5: escape; tea. all: now escape. *)
+    (*   * easy. *)
+    (* + eapply convneulist_map_comp ; tea. *)
+    (*   1-3: now eapply escape. *)
+    (*   all: now eapply escapeTerm. *)
+
+    (*   Unshelve. *)
+    (*   all: tea. *)
 Admitted.
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
