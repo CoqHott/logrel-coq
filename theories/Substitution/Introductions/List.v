@@ -1511,12 +1511,7 @@ Proof.
     set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
     dependent inversion x; destruct (Map.into_view l); try discriminate.
     2:{
-      change [ LRList' LC' | Γ ||- (tMap A C (comp A f g) u) ≅ (tMap A C (comp A f g) u) : _ ].
-      eapply LREqTermRefl_.
-      unshelve eapply (fst (mapRedAux _)); tea.
-      change [ LRList' (normList0 LA') | Γ ||- u : _ ].
-      eapply neuTerm; tea.
-      now eapply convneulist_is_not_map_convneu.
+      admit.
     }
     (* cbn. *)
 

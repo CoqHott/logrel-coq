@@ -12,236 +12,6 @@ Import IndexedDefinitions.
 
 Set Universe Polymorphism.
 
-Definition well_typed_stack Γ A t B (π : stack) :=
-  forall u, [Γ |- t ≅ u : A] -> [Γ |- (zip u π) : B].
-
-Lemma well_typed_stack_conv_in Γ A A' t B (π : stack) :
-  well_typed_stack Γ A t B π ->
-  [Γ |- A ≅ A'] ->
-  well_typed_stack Γ A' t B π.
-Proof.
-  unfold well_typed_stack.
-  intros Hπ Hconv u Hu.
-  eapply Hπ.
-  now econstructor.
-Qed.
-
-Lemma well_typed_zip Γ B t π :
-  [Γ |- zip t π : B] ->
-  ∑ A, [Γ |- t : A] × well_typed_stack Γ A t B π.
-Proof.
-intros Hty.
-induction π as [|[]] in t, B, Hty |- * ; cbn.
-- exists B ; split.
-  1: eassumption.
-  intros u ** ; cbn.
-  boundary.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as (T&(?&[]&?)%termGen'&Hstack) ; subst.
-  eexists ; split ; tea.
-  intros u Htyu.
-  eapply Hstack.
-  econstructor.
-  1: eapply TermEmptyElimCong ; tea ; refold.
-  2: eassumption.
-  now econstructor.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as (T&(?&[]&?)%termGen'&Hstack) ; subst.
-  eexists ; split ; tea.
-  intros u Htyu.
-  eapply Hstack.
-  econstructor.
-  1: eapply TermNatElimCong ; tea ; refold.
-  + now econstructor.
-  + now econstructor.
-  + now eapply TermRefl.
-  + eassumption.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as (T&(?&(?&?&[])&?)%termGen'&Hstack) ; subst.
-  eexists ; split ; tea.
-  intros u' Htyu.
-  eapply Hstack.
-  econstructor.
-  1: econstructor ; tea.
-  2: eassumption.
-  now econstructor.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as [T [[?[[?[?[->]]]]]%termGen' Hstack]].
-  eexists; split; tea.
-  intros; eapply Hstack.
-  eapply TermConv; refold; tea.
-  now econstructor.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as [T [[?[[?[?[->]]]]]%termGen' Hstack]].
-  eexists; split; tea.
-  intros; eapply Hstack.
-  eapply TermConv; refold; tea.
-  now econstructor.
-- unfold well_typed_stack in * ; cbn in *.
-  eapply IHπ in Hty as [T [[?[[]]]%termGen' Hstack]]; subst.
-  eexists; split; tea.
-  intros; eapply Hstack.
-  eapply TermConv; refold; tea.
-  econstructor; tea; now (eapply TypeRefl + eapply TermRefl).
-Qed.
-
-Lemma zip_app t π π' : zip t (π ++ π') = zip (zip t π) π'.
-Proof.
-  induction π in t |- * ; cbn ; eauto.
-Qed.
-
-(* Lemma compact_app t π π' : compact t (π ++ π') = compact (compact t π) π'.
-Proof.
-  induction π in t |- * ; cbn ; eauto.
-Qed. *)
-
-Lemma well_typed_zip_app Γ A t B π π' :
-  [Γ |- t : A] ->
-  well_typed_stack Γ A t B (π ++ π') ->
-  ∑ T, well_typed_stack Γ A t T π × well_typed_stack Γ T (zip t π) B π'.
-Proof.
-  intros Ht Hπ.
-  unshelve epose proof (Hπ t _) as Hzip.
-  1: now econstructor.
-  rewrite zip_app in Hzip.
-  eapply well_typed_zip in Hzip as [T [Hzip]].
-  eapply well_typed_zip in Hzip as [A' []].
-  eexists ; split ; tea.
-  eapply well_typed_stack_conv_in ; tea.
-  now eapply typing_unique.
-Qed.
-
-Corollary well_typed_zip_cons Γ A t B s π :
-  [Γ |- t : A] ->
-  well_typed_stack Γ A t B (s :: π) ->
-  ∑ T, [Γ |- zip1 t s : T] × well_typed_stack Γ T (zip1 t s) B π.
-Proof.
-  intros Ht Hty.
-  change (s :: π) with ([:: s] ++ π) in Hty.
-  eapply well_typed_zip_app in Hty as [? [Hts]] ; tea.
-  cbn in *.
-  eexists ; split ; tea.
-  eapply Hts.
-  now econstructor.
-Qed.
-
-(* Definition nomap_stack π :=
-  forallb (fun s => match s with | eMap _ _ _ => false | _ => true end) π.
-
-Definition ismap_stack π :=
-  forallb (fun s => match s with | eMap _ _ _ => true | _ => false end) π.
-
-Lemma stack_ne n π :
-  nomap_stack π -> whne n -> whne (zip n π).
-Proof.
-  intros Hπ Hne.
-  induction π as [|[]] in n, Hne, Hπ |- * ; cbn.
-  1: eassumption.
-  1-5: cbn in * ; eapply IHπ ; tea ; now econstructor.
-  cbn in * ; congruence.
-Qed. *)
-
-(* Lemma stack_compact_nomap n π :
-  whne n -> nomap_stack π -> compact n π = zip n π.
-Proof.
-  intros Hne Hπ.
-  induction π as [|[] π] in n, Hne, Hπ |- * ; cbn in * ; try fold (nomap_stack π) in Hπ.
-  1: reflexivity.
-  1-5: eapply IHπ ; tea ; now econstructor.
-  now congruence.
-Qed.
-
-Lemma stack_compact_map n π :
-  ismap_stack π -> whne_list n -> whne_list (compact n π).
-Proof.
-  intros Hπ Hne.
-  induction π as [|[]] in n, Hne, Hπ |- * ; cbn.
-  1: eassumption.
-  1-5: cbn in * ; congruence.
-  destruct (Map.into_view n) ; cbn in *.
-  - eapply IHπ ; tea.
-    econstructor.
-    inversion Hne ; subst ; tea.
-    exfalso ; now inversion H.
-  - eapply IHπ ; tea.
-    econstructor.
-    inversion Hne ; subst ; tea.
-    cbn in *.
-    now congruence.
-Qed. *)
-
-(* Lemma list_stack_ismap Γ A t B (π : stack) :
-  [Γ |- t : tList A] ->
-  well_typed_stack Γ (tList A) t B π ->
-  ismap_stack π.
-Proof.
-  intros Ht Hπ.
-  induction π as [|[] π] in A, t, B, Ht, Hπ |- * ; cbn.
-  - easy.
-  - eapply well_typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply well_typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply well_typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply well_typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply well_typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply well_typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
-    eapply well_typed_stack_conv_in in Hstack.
-    2: now symmetry.
-    eapply IHπ.
-    2: eassumption.
-    now econstructor.
-Qed.
-
-Lemma well_typed_stack_good Γ A t B (π : stack) :
-  [Γ |- t : A] ->
-  well_typed_stack Γ A t B π ->
-  ∑ π' π'', [× π = π' ++ π'', nomap_stack π' & ismap_stack π''].
-Proof.
-  intros Ht Hty.
-  induction π as [|[]] in A, t, B, Ht, Hty |- *.
-  - exists [::], [::] ; split ; eauto.
-  - eapply well_typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (eEmptyElim _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply well_typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (eNatElim _ _ _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply well_typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (eApp _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply well_typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (eFst :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply well_typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (eSnd :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eexists [::], _ ; split.
-    1-2: reflexivity.
-    pose proof Hty as [? [(?&[->]&?)%termGen' ?]]%well_typed_zip_cons ; tea.
-    eapply list_stack_ismap.
-    2: eapply well_typed_stack_conv_in ; tea.
-    2: now eapply typing_unique.
-    eassumption.
-Qed. *)
 
 Lemma zip_ored t t' π : [t ⇒ t'] -> [zip t π ⇒ zip t' π].
 Proof.
@@ -259,76 +29,31 @@ Proof.
   now eapply zip_ored.
 Qed.
 
-(* Lemma compact_red n π :
-  whne_list n ->
-  ismap_stack π ->
-  [zip n π ⇒* compact n π].
-Proof.
-  intros whn hπ.
-  induction π as [|[] π] in n, whn, hπ |- * ; cbn.
-  1: reflexivity.
-  1-5: cbn in * ; congruence.
-  cbn in * ; fold (ismap_stack π) in hπ.
-  destruct (Map.into_view n) ; cbn.
-  - inversion whn ; subst.
-    + etransitivity.
-      1: now eapply zip_red, redalg_one_step, mapComp.
-      eapply (IHπ (zip1 _ (eMap _ _ _))) ; tea.
-      now econstructor.
-    + inversion H.
-  - eapply (IHπ (zip1 _ (eMap _ _ _))) ; tea.
-    cbn.
-    econstructor.
-    inversion whn ; subst ; tea ; cbn in *.
-    congruence.
-Qed.
-
-Lemma well_typed_compact Γ A t π :
-  whne t ->
-  [Γ |- zip t π : A] ->
-  [zip t π ⇒* compact t π] × whnf (compact t π).
-Proof.
-  intros Hne Hty.
-  apply well_typed_zip in Hty as [? [Ht Hπ]].
-  apply well_typed_stack_good in Hπ as (π'&π''&[-> Hπ' Hπ'']) ; tea.
-  rewrite zip_app, compact_app.
-  unshelve erewrite (stack_compact_nomap _ _ _ Hπ') ; tea.
-  split.
-  1: eapply compact_red ; tea.
-  2: eapply whnf_whne_list, stack_compact_map ; tea.
-  all: econstructor.
-  all: eapply stack_ne ; tea.
-Qed. *)
-
-Section CompactImplSound.
+Section RedImplemSound.
 
 Lemma compact_sound :
-  funrect compact (fun '(b,t,_) => (if b then whne_list t else whne t))
-    (fun '(b,t,π) t' => [zip t π ⇒* t'] × whne_list t').
+  funrect compact (fun '(t,_) => whne_list t)
+    (fun '(t,π) t' => [zip t π ⇒* t'] × whne_list t').
 Proof.
   intros ? ?.
   funelim (compact _).
   all: cbn ; try easy.
-  2-6: split ; gen_typing.
-  - destruct b.
-    1: easy.
-    split ; [easy|..].
-    now econstructor.
   - split.
-    1: now econstructor.
-    easy.
-  - inversion H ; subst ; clear H.
+    2: easy.
+    assert (whne u) by eauto using whne_list_not_map.
+    destruct s ; cbn.
+    all: econstructor ; tea.
+    all: now econstructor.
+  - inversion H ; subst.
     2: now inversion H0.
     split.
-    + gen_typing.
-    + intros ? [] ; split ; tea.
+    + now econstructor.
+    + intros v [Hv].
+      split ; tea.
       econstructor ; tea.
       eapply zip_ored.
       now econstructor.
 Qed.
-
-Section RedImplemSound.
-
 
 Lemma isType_tm_view1 t e :
   build_tm_view1 t = tm_view1_type e ->
@@ -376,7 +101,7 @@ Proof.
   - now econstructor.
   - eapply funrect_graph in H ; cycle 1.
     + eapply compact_sound.
-    + econstructor.
+    + now do 2 econstructor.
     + cbn in *.
       now eapply whnf_whne_list.
   - now eapply whnf_tm_view1_nat.
@@ -384,7 +109,7 @@ Proof.
   - now eapply whnf_tm_view1_list.
   - eapply funrect_graph in H ; cycle 1.
     + eapply compact_sound.
-    + econstructor.
+    + now do 2 econstructor.
     + now cbn in *.
 Qed.
 

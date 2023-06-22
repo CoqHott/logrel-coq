@@ -135,7 +135,7 @@ Variant nf_view1 : term -> Type :=
   | nf_view1_nat {t} : nat_entry t -> nf_view1 t
   | nf_view1_sig A B a b : nf_view1 (tPair A B a b)
   | nf_view1_list {t} : list_entry t -> nf_view1 t
-  | nf_view1_ne_list A B f l : nf_view1 (tMap A B f l)
+  | nf_view1_map A B f l : nf_view1 (tMap A B f l)
   | nf_view1_ne {t} : ne_view1 t -> nf_view1 t.
 
 Definition build_nf_view1 t : nf_view1 t :=
@@ -158,7 +158,7 @@ Definition build_nf_view1 t : nf_view1 t :=
   | tList A => nf_view1_type (eList A)
   | tNil A => nf_view1_list (eNil A)
   | tCons A hd tl => nf_view1_list (eCons A hd tl)
-  | tMap A B f l => nf_view1_ne_list A B f l
+  | tMap A B f l => nf_view1_map A B f l
   end.
 
 Variant ty_view1 : term -> Type :=
@@ -230,22 +230,20 @@ Instance empty_pfun : forall (x:False), PFun@{Set Set Set} (empty_store x) | 5 :
 
 Arguments rec {_ _ _ _ _ _}.
 
-Equations compact : bool × term × stack ⇀[empty_store] term :=
-  compact (_,t,[::]) := ret t ;
-  compact (false,t,(sMap A B f) :: π) := rec (true,tMap A B f t, π);
-  compact (false,t, s :: π) := rec (false,(zip1 t s),π) ;
-  compact (true,t,(sMap B' C g) :: π) with (Map.into_view t) := {
-  compact (true,?(tMap A B f l),(sMap B' C g) :: π) (@Map.IsMap A B f l) := rec (true,tMap A C (comp A g f) l,π) ;
-  compact (true,_,_) (Map.IsNotMap _) := undefined ;
-  } ;
-  compact (true,_,s) := undefined.
-
+Equations compact : term × stack ⇀[empty_store] term :=
+  compact (t,[::]) := ret t ;
+  compact (t,s::π) with (Map.into_view t) := {
+  compact (?(u),s::π) (@Map.IsNotMap u _) := rec (zip1 u s,π) ;
+  compact (?(tMap A B f l),s::π) (@Map.IsMap A B f l) with s := {
+    | sMap B' C g => rec (tMap A C (comp A g f) l,π);
+    | _ => undefined ;
+  }}.
 
 #[local] Instance: forall x, PFun (singleton_store compact x) := singleton_pfun compact.
 
 Equations wh_red_stack : term × stack ⇀[singleton_store compact] term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
-  wh_red_stack (?(tRel n)       ,π)                       (tm_view1_rel n) := call_single compact (false, (tRel n),π) ;
+  wh_red_stack (?(tRel n)       ,π)                       (tm_view1_rel n) := call_single compact ((tRel n),π) ;
   wh_red_stack (?(zip1_ne t s)     ,π)                       (tm_view1_dest t s) := rec (t,(to_stack s) :: π) ;
   wh_red_stack (?(tMap A B f l), π)                       (tm_view1_map A B f l) := rec (l,(sMap A B f) :: π) ;
   wh_red_stack (?(tLambda A t)  ,[::])                    (tm_view1_fun A t) := ret (tLambda A t) ;
@@ -370,15 +368,19 @@ Equations build_nf_view3 T t t' : nf_view3 T t t' :=
       nils A A1 A2
     | nf_view1_list (eCons A1 hd1 tl1), nf_view1_list (eCons A2 hd2 tl2) :=
       conss A A1 A2 hd1 hd2 tl1 tl2
-    | nf_view1_ne_list _ _ _ _, nf_view1_ne_list _ _ _ _ := neutral_lists _ _ _ ;
-    | nf_view1_ne_list _ _ _ _, nf_view1_ne _ := neutral_lists _ _ _ ;
-    | nf_view1_ne _, nf_view1_ne_list _ _ _ _ := neutral_lists _ _ _ ;
+    | nf_view1_map _ _ _ _, nf_view1_map _ _ _ _ := neutral_lists _ _ _ ;
+    | nf_view1_map _ _ _ _, nf_view1_ne _ := neutral_lists _ _ _ ;
+    | nf_view1_ne _, nf_view1_map _ _ _ _ := neutral_lists _ _ _ ;
     | nf_view1_ne _, nf_view1_ne _ := neutral_lists _ _ _ ;
     | nf_view1_list _, nf_view1_list _ :=
         mismatch _ _ _ ;
     | nf_view1_ne _, nf_view1_list _ :=
         mismatch _ _ _ ;
+    | nf_view1_map _ _ _ _ , nf_view1_list _ :=
+        mismatch _ _ _ ;
     | nf_view1_list _, nf_view1_ne _ :=
+        mismatch _ _ _ ;
+    | nf_view1_list _, nf_view1_map _ _ _ _ :=
         mismatch _ _ _ ;
     | _, _ := anomaly _ _ _ ;
   } 

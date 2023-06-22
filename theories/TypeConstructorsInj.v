@@ -982,6 +982,27 @@ Proof.
   all: now cbn in Hconv.
 Qed.
 
+Lemma list_isList Γ A t:
+  [Γ |-[de] t : tList A] ->
+  whnf t ->
+  isList t.
+Proof.
+  intros Hty Hwh.
+  destruct Hwh ; cycle -2.
+  1: econstructor.
+  all: try now econstructor.
+  all: eapply termGen' in Hty ; cbn in *.
+  all: exfalso.
+  all: prod_hyp_splitter ; try easy.
+  all: subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ tList _] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end.
+  all: try now econstructor.
+  all: now cbn in Hconv.
+Qed.
+
 Lemma neutral_isNeutral Γ A t :
   [Γ |-[de] t : A] ->
   whne A ->

@@ -96,6 +96,11 @@ Inductive isPair : term -> Type :=
   | PairPair {A B a b} : isPair (tPair A B a b)
   | NePair {p} : whne p -> isPair p.
 
+Inductive isList : term -> Type :=
+  | NilList {A} : isList (tNil A)
+  | ConsList {A a l} : isList (tCons A a l)
+  | NeList {n} : whne_list n -> isList n.
+
 Definition isPosType_isType t (i : isPosType t) : isType t.
 Proof. destruct i; now constructor. Defined.
 

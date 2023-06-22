@@ -765,9 +765,9 @@ Import AlgorithmicTypingData.
 Let PTyEq (Γ : context) (A B : term) := True.
 Let PTyRedEq (Γ : context) (A B : term) := True.
 Let PNeEq (Γ : context) (A t u : term) := 
-  forall A', [Γ |-[al] t ~ u ▹ A'] -> A' = A.
+  forall A' u', [Γ |-[al] t ~ u' ▹ A'] -> A' = A.
 Let PNeRedEq (Γ : context) (A t u : term) :=
-  forall A', [Γ |-[al] t ~h u ▹ A'] -> A' = A.
+  forall A' u', [Γ |-[al] t ~h u' ▹ A'] -> A' = A.
 Let PNeListEq (Γ : context) (A t u : term) := True.
 Let PTmEq (Γ : context) (A t u : term) := True.
 Let PTmRedEq (Γ : context) (A t u : term) := True.
@@ -781,25 +781,25 @@ Proof.
   - intros * ? * Hconv.
     inversion Hconv ; subst ; clear Hconv.
     now eapply in_ctx_inj.
-  - intros * ? IH ? _ ? Hconv.
+  - intros * ? IH ? _ ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
-    apply IH in H6.
-    now inversion H6.
-  - intros * ? IH ????? _ ? Hconv.
-    inversion Hconv ; subst ; clear Hconv ; refold.
-    now reflexivity.
-  - intros * ? IH ?? ? Hconv.
+    apply IH in H5.
+    now inversion H5.
+  - intros * ? IH ????? _ ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     now reflexivity.
-  - intros * ? IH ? Hconv.
+  - intros * ? IH ?? ?? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    now reflexivity.
+  - intros * ? IH ?? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
-    apply IH in H4.
-    now inversion H4.
-  - intros * ? IH ? Hconv.
+    apply IH in H3.
+    now inversion H3.
+  - intros * ? IH ?? Hconv.
     inversion Hconv; subst; clear Hconv; refold.
-    apply IH in H4.
-    now inversion H4.
-  - intros * ? IH ??? Hconv.
+    apply IH in H3.
+    now inversion H3.
+  - intros * ? IH ???? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
     now eapply whred_det.
