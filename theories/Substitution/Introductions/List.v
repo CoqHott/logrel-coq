@@ -1507,8 +1507,9 @@ Proof.
       change [ LRList' (normList0 LA') | Γ ||- tl : _ ].
       change [ LRList' LA' | Γ ||- tl : _ ] in l.
       irrelevance.
-  - intros. cbn.
-    destruct (Map.into_view l).
+  - intros. 
+    set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
+    dependent inversion x; destruct (Map.into_view l); try discriminate.
     2:{
       change [ LRList' LC' | Γ ||- (tMap A C (comp A f g) u) ≅ (tMap A C (comp A f g) u) : _ ].
       eapply LREqTermRefl_.
