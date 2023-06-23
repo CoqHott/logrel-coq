@@ -414,13 +414,13 @@ Section FunctionLemmas.
    forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
     [Δ |- n : X⟨ρ⟩] ->
     [Δ |- n ~ n : X⟨ρ⟩] ->
-    [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n : _]. 
-  
+    [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n : _].
+
   Definition kripke_neutral_app_eq X {Y} g g' (RY : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> Y⟨ρ⟩]) :=
    forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
     [Δ |- n : X⟨ρ⟩] ->
     [Δ |- n ~ n : X⟨ρ⟩] ->
-    [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n ≅ tApp g'⟨ρ⟩ n : _]. 
+    [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n ≅ tApp g'⟨ρ⟩ n : _].
 
   Lemma redfun_kripke_neutrals : kripke_neutral_app A f Rpar.
   Proof.
@@ -435,7 +435,7 @@ Section FunctionLemmas.
       1: escape; gen_typing.
       intros. now eapply ListRedTy.parRed.
   Qed.
-  
+
   Lemma redfun_postcomp_kripke {X g} (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) :
     kripke_neutral_app X g RAwk ->
     forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
@@ -454,7 +454,7 @@ Section FunctionLemmas.
       1: escape; gen_typing.
       exact Rpar.
   Qed.
-    
+
   Lemma redfun_comp_kripke {X g} (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) :
     [Γ |- X] ->
     [Γ |- g : arr X A] ->
@@ -490,10 +490,10 @@ Section FunctionLemmas.
       intros. now eapply ListRedTy.parRed.
   Qed.
 
-  Lemma kripke_neutral_app_conv {X X' A' g} 
+  Lemma kripke_neutral_app_conv {X X' A' g}
     (RA' : [Γ ||-<l> A'])
     (RAA' : [Γ ||-<l> A ≅ A' | RA])
-    (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A'⟨ρ⟩]) 
+    (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A'⟨ρ⟩])
     (RAwk' : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) :
     [Γ |- X ≅ X'] ->
     kripke_neutral_app X g RAwk ->
@@ -513,8 +513,8 @@ Section FunctionLemmas.
     (RAB' : [Γ ||-<l> arr A' B'])
     (Rf' : [Γ ||-<l> f' : _ | RAB']).
 
-  Lemma redconvfun_postcomp_kripke {X X' g g'} 
-    (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) 
+  Lemma redconvfun_postcomp_kripke {X X' g g'}
+    (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩])
     (RAwk' : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A'⟨ρ⟩]) :
     [Γ |- X ≅ X'] ->
     kripke_neutral_app X g RAwk ->
@@ -541,7 +541,7 @@ Section FunctionLemmas.
   Qed.
 End FunctionLemmas.
 
-   
+
 Lemma redconvfun_comp_kripke {Γ l A B f}
   (RA : [Γ ||-<l> A])
   (RAB : [Γ ||-<l> arr A B])
@@ -560,7 +560,7 @@ Lemma redconvfun_comp_kripke {Γ l A B f}
   (RLB' : [Γ ||-List<l> tList B'])
   (RBB' : [Γ ||-<l> B ≅ B' | RB])
   {X X' g g'}
-  (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) 
+  (RAwk : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩])
   (RAwk' : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A'⟨ρ⟩]) :
   [Γ |- X] ->
   [Γ |- X'] ->
@@ -589,13 +589,13 @@ Proof.
     1: eapply ty_conv; tea.
     2: eapply convneu_conv; tea.
     all: now eapply convty_wk.
-    Unshelve. all: tea. 
+    Unshelve. all: tea.
   + eapply redconvfun_postcomp_kripke.
     1,5,6,7,8,9: tea.
     all: tea.
   Qed.
-    
- 
+
+
 Lemma eta_expand_redfuneq {Γ A B f f' l}
   {RA : [Γ ||-<l> A]}
   {RB : [Γ ||-<l> B]}
@@ -822,11 +822,11 @@ Proof.
   intros; eapply LRIrrelevantPack; irrelevanceRefl; unshelve eapply wkEq; tea.
 Defined.
 
-Lemma ListRedTm_map_inv_conv {Γ X X' l A B f r} 
+Lemma ListRedTm_map_inv_conv {Γ X X' l A B f r}
   (wfΓ : [|- Γ])
   (RX : [Γ ||-List<l> X])
   (RX' : [Γ ||-List<l> X'])
-  (RXX' : [Γ ||-<l> ListRedTy.par RX ≅ ListRedTy.par RX' |  instKripke wfΓ (fun Δ =>ListRedTy.parRed RX (Δ:=Δ))]) : 
+  (RXX' : [Γ ||-<l> ListRedTy.par RX ≅ ListRedTy.par RX' |  instKripke wfΓ (fun Δ =>ListRedTy.parRed RX (Δ:=Δ))]) :
   ListRedTm.map_inv RX (tMap A B f r) -> ListRedTm.map_inv RX' (tMap A B f r).
 Proof.
   escape.
@@ -886,7 +886,7 @@ Proof.
   pose (RLB_ := (normList0 (invLRList RLB))).
   assert (convredfn' : kripke_neutral_app_eq Ap fp fp' RAwk).
   1:{
-    red; intros; irrelevanceRefl. 
+    red; intros; irrelevanceRefl.
     now eapply convredfn.
     Unshelve. tea.
   }
@@ -908,7 +908,7 @@ Proof.
     1: gen_typing.
     2: eapply convneu_var.
     1,2: rewrite wk1_ren_on; now eapply ty_var0.
-    eapply escapeEqTerm in hcomp0. 
+    eapply escapeEqTerm in hcomp0.
     rewrite !wk1_ren_on in hcomp0.
     exact hcomp0.
   * eapply ListRedTm_map_inv_conv; tea.
@@ -1027,7 +1027,7 @@ Proof.
     + eassumption.
     + cbn; inversion X5; subst;
       dependent inversion X7; subst; cbn.
-      * { 
+      * {
         eapply consEqRed. 3: eassumption.
         all: try solve [ escape ; tea | eapply LRTyEqRefl_ ].
         - unshelve eapply simple_appTerm; cycle 3; tea; irrelevance.
@@ -1122,7 +1122,7 @@ Proof.
         intros.
         eapply transEqTerm.
         + eapply redSubstTerm ; [|rewrite wk_comp; eapply redtm_comp_beta; cbn; tea].
-          5,6: erewrite wk_arr; eapply ty_wk; tea; 
+          5,6: erewrite wk_arr; eapply ty_wk; tea;
             eapply ty_conv; tea; eapply convty_simple_arr; tea; now eapply lrefl.
           2-4: gen_typing.
           eapply redfun_postcomp_kripke; cycle 1; tea.
@@ -1189,7 +1189,7 @@ Proof.
       1:{
         eapply ty_comp; cycle 2; tea.
         eapply ty_conv; tea.
-        eapply convty_simple_arr; tea; now eapply urefl. 
+        eapply convty_simple_arr; tea; now eapply urefl.
       }
       assert [Γ |-[ ta ] A ≅ Ap'].
       1: cbn in *; transitivity Bp'; now symmetry.
@@ -1208,7 +1208,7 @@ Proof.
           1: cbn; eapply LRTyEqSym; now eapply wkEq.
           1: tea.
           1:{ eapply kripke_neutral_app_conv; cycle 3; tea; now eapply LRTyEqSym. }
-          6,7: erewrite wk_arr; eapply ty_wk; tea; 
+          6,7: erewrite wk_arr; eapply ty_wk; tea;
             eapply ty_conv; tea; eapply convty_simple_arr; tea; now symmetry.
           3-5: gen_typing.
           1,3: eapply ty_conv; tea; now eapply convty_wk.
@@ -1221,12 +1221,12 @@ Proof.
           2: eapply simple_appcongTerm.
           2: irrelevance0; [|now eapply wkTermEq]; now rewrite <- wk_arr.
           1: reflexivity.
-          * now eapply neuTerm. 
-          * now eapply redfn. 
+          * now eapply neuTerm.
+          * now eapply redfn.
           * eapply LRTmEqSym; now eapply convredfn_id.
             Unshelve. all: tea. 2: rewrite wk_arr.
               all: now eapply wk.
-      } 
+      }
       eapply neuListTermEq; tea.
       * now eapply ty_map.
       * eapply ty_conv.
@@ -1246,7 +1246,7 @@ Proof.
         1,2: now eapply lrefl.
         1: eapply convneu_conv; [now eapply urefl|]; symmetry; now eapply convty_list.
         intros; eapply redfun_kripke_neutrals; cycle 1; tea.
-      * eapply ListRedTm_map_inv_conv; tea. 
+      * eapply ListRedTm_map_inv_conv; tea.
         eapply LRTyEqSym; irrelevance.
         Unshelve. all: tea.
       * split; tea.
@@ -1507,9 +1507,10 @@ Proof.
       change [ LRList' (normList0 LA') | Γ ||- tl : _ ].
       change [ LRList' LA' | Γ ||- tl : _ ] in l.
       irrelevance.
-  - intros. 
+  - intros.
     set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
     dependent inversion x; destruct (Map.into_view l); try discriminate.
+<<<<<<< HEAD
     2:{
       admit.
     }
@@ -1531,7 +1532,43 @@ Proof.
 
     (*   Unshelve. *)
     (*   all: tea. *)
+=======
+    + cbn.
+      admit.
+    + cbn.
+>>>>>>> 42f21f1 (progress?)
 Admitted.
+(*     + admit. *)
+(*       (* change [ LRList' LC' | Γ ||- (tMap A0 C (comp A0 f g) u) ≅ (tMap A0 C (comp A f g) u) : _ ]. *) *)
+(*     + cbn. *)
+(*       destruct u. ; cbn in i0. hinversion i0. *)
+(*     2:{ *)
+(*       change [ LRList' LC' | Γ ||- (tMap A C (comp A f g) u) ≅ (tMap A C (comp A f g) u) : _ ]. *)
+(*       eapply LREqTermRefl_. *)
+(*       unshelve eapply (fst (mapRedAux _)); tea. *)
+(*       change [ LRList' (normList0 LA') | Γ ||- u : _ ]. *)
+(*       eapply neuTerm; tea. *)
+(*       now eapply convneulist_is_not_map_convneu. *)
+(*     } *)
+(*     (* cbn. *) *)
+
+(*     (* + eapply ty_map. *) *)
+(*     (*   1-3: now escape. *) *)
+(*     (*   eapply ty_map. *) *)
+(*     (*   1-3: now escape. *) *)
+(*     (*   easy. *) *)
+(*     (* + eapply ty_map. *) *)
+(*     (*   1-2: now escape. *) *)
+(*     (*   * eapply ty_comp. *) *)
+(*     (*     4-5: escape; tea. all: now escape. *) *)
+(*     (*   * easy. *) *)
+(*     (* + eapply convneulist_map_comp ; tea. *) *)
+(*     (*   1-3: now eapply escape. *) *)
+(*     (*   all: now eapply escapeTerm. *) *)
+
+(*     (*   Unshelve. *) *)
+(*     (*   all: tea. *) *)
+(* Admitted. *)
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VΓ : [||-v Γ]}
@@ -1607,6 +1644,7 @@ Proof.
       all: tea.
 Qed.
 
+
 Lemma mapPropRedIdAux {Γ A i}
   {RA : [Γ ||-<i> A]}
   {LA : [Γ ||-List<i> tList A]}
@@ -1656,14 +1694,53 @@ Proof.
       eapply listEqRed ; escape; rewrite wk_id_ren_on; tea.
       eapply LRTyEqRefl_.
   - intros. cbn. destruct (Map.into_view _).
-    * admit. (* new case*)
+    * { change [ LRList' LA' | Γ ||- (tMap A0 A (tLambda A0 (tApp (idterm A⟨↑⟩) (tApp f⟨↑⟩ (tRel 0)))) l)
+                              ≅ (tMap A0 B f l) : _ ].
+        admit.
+      }
     * eapply neuListTermEq.
       + eapply ty_map; escape; tea.
       + eassumption.
       + escape; eapply convneulist_map_id; tea.
         1,2: eapply escapeEq; eapply LRTyEqRefl_.
-        1: admit. (* there should be a lemma somewhere on the evaluation of id *)
+        1: {
+          assert [ |- Γ ,, A ] by admit.
+          unshelve eapply escapeEqTerm; tea.
+          1:{ erewrite<- wk1_ren_on. eapply wk; tea. }
+          eapply redSubstTerm.
+          - now apply var0.
+          - eapply redtm_id_beta.
+            + erewrite<- wk1_ren_on. apply wft_wk; tea.
+            + erewrite<- wk1_ren_on. apply convty_wk; tea.
+              unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+            + eapply ty_var; tea. constructor.
+        }
         now eapply convneulist_is_not_map_convneu.
+      + cbn. constructor; escape; tea.
+        2: cbn. 1-2: unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
+        2:{
+          intros.
+          eapply simple_appTerm.
+          - admit.
+          - now eapply neuTerm.
+        }
+        1: now eapply convneulist_is_not_map_convneu.
+      + eapply ListRedTm_map_inv_whne. eapply whne_list_not_map; tea.
+        eapply convneulist_whne_list; tea.
+      + cbn. destruct (Map.into_view u); try discriminate.
+        constructor; tea.
+        3:{ (* TODO: need a lemma? *)
+          intros.
+          eapply redSubstTerm.
+          - cbn. now eapply neuTerm.
+          - eapply redtm_id_beta; tea.
+            + apply wft_wk; escape; tea.
+            + apply convty_wk; tea.
+              unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+        }
+        1: unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
+        now eapply convneulist_is_not_map_convneu.
+
       Unshelve.
       all: tea.
 Admitted.
