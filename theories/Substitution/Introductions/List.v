@@ -1510,33 +1510,24 @@ Proof.
   - intros.
     set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
     dependent inversion x; destruct (Map.into_view l); try discriminate.
-<<<<<<< HEAD
-    2:{
-      admit.
-    }
-    (* cbn. *)
-
-    (* + eapply ty_map. *)
-    (*   1-3: now escape. *)
-    (*   eapply ty_map. *)
-    (*   1-3: now escape. *)
-    (*   easy. *)
-    (* + eapply ty_map. *)
-    (*   1-2: now escape. *)
-    (*   * eapply ty_comp. *)
-    (*     4-5: escape; tea. all: now escape. *)
-    (*   * easy. *)
-    (* + eapply convneulist_map_comp ; tea. *)
-    (*   1-3: now eapply escape. *)
-    (*   all: now eapply escapeTerm. *)
-
-    (*   Unshelve. *)
-    (*   all: tea. *)
-=======
-    + cbn.
-      admit.
-    + cbn.
->>>>>>> 42f21f1 (progress?)
+    + destruct tyconv0. eapply neuListTermEq.
+      * eapply ty_map; escape; tea.
+        eapply ty_comp; cycle 3; tea.
+      * eapply ty_map; escape; tea.
+        eapply ty_comp; cycle 3; tea.
+        admit.
+      * eapply convneulist_map; escape; tea.
+        all: admit.
+      * admit.
+      * admit.
+      * admit.
+    + eapply neuListTermEq.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
 Admitted.
 (*     + admit. *)
 (*       (* change [ LRList' LC' | Γ ||- (tMap A0 C (comp A0 f g) u) ≅ (tMap A0 C (comp A f g) u) : _ ]. *) *)
@@ -1694,10 +1685,16 @@ Proof.
       eapply listEqRed ; escape; rewrite wk_id_ren_on; tea.
       eapply LRTyEqRefl_.
   - intros. cbn. destruct (Map.into_view _).
-    * { change [ LRList' LA' | Γ ||- (tMap A0 A (tLambda A0 (tApp (idterm A⟨↑⟩) (tApp f⟨↑⟩ (tRel 0)))) l)
-                              ≅ (tMap A0 B f l) : _ ].
+    * change [ LRList' LA' | Γ ||- (tMap A0 A (tLambda A0 (tApp (idterm A⟨↑⟩) (tApp f⟨↑⟩ (tRel 0)))) l)
+                               ≅ (tMap A0 B f l) : _ ].
+      eapply neuListTermEq; tea.
+      + destruct tyconv. eapply ty_map; escape; tea.
         admit.
-      }
+      + destruct tyconv. eapply convneulist_map; escape; tea.
+        all: admit.
+      + admit.
+      + admit.
+
     * eapply neuListTermEq.
       + eapply ty_map; escape; tea.
       + eassumption.
