@@ -1510,56 +1510,10 @@ Proof.
   - intros.
     set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
     dependent inversion x; destruct (Map.into_view l); try discriminate.
-    + destruct tyconv0. eapply neuListTermEq.
-      * eapply ty_map; escape; tea.
-        eapply ty_comp; cycle 3; tea.
-      * eapply ty_map; escape; tea.
-        eapply ty_comp; cycle 3; tea.
-        admit.
-      * eapply convneulist_map; escape; tea.
-        all: admit.
-      * admit.
-      * admit.
-      * admit.
-    + eapply neuListTermEq.
-      * admit.
-      * admit.
-      * admit.
-      * admit.
-      * admit.
-      * admit.
+    + admit.
+    + admit.
 Admitted.
-(*     + admit. *)
-(*       (* change [ LRList' LC' | Γ ||- (tMap A0 C (comp A0 f g) u) ≅ (tMap A0 C (comp A f g) u) : _ ]. *) *)
-(*     + cbn. *)
-(*       destruct u. ; cbn in i0. hinversion i0. *)
-(*     2:{ *)
-(*       change [ LRList' LC' | Γ ||- (tMap A C (comp A f g) u) ≅ (tMap A C (comp A f g) u) : _ ]. *)
-(*       eapply LREqTermRefl_. *)
-(*       unshelve eapply (fst (mapRedAux _)); tea. *)
-(*       change [ LRList' (normList0 LA') | Γ ||- u : _ ]. *)
-(*       eapply neuTerm; tea. *)
-(*       now eapply convneulist_is_not_map_convneu. *)
-(*     } *)
-(*     (* cbn. *) *)
 
-(*     (* + eapply ty_map. *) *)
-(*     (*   1-3: now escape. *) *)
-(*     (*   eapply ty_map. *) *)
-(*     (*   1-3: now escape. *) *)
-(*     (*   easy. *) *)
-(*     (* + eapply ty_map. *) *)
-(*     (*   1-2: now escape. *) *)
-(*     (*   * eapply ty_comp. *) *)
-(*     (*     4-5: escape; tea. all: now escape. *) *)
-(*     (*   * easy. *) *)
-(*     (* + eapply convneulist_map_comp ; tea. *) *)
-(*     (*   1-3: now eapply escape. *) *)
-(*     (*   all: now eapply escapeTerm. *) *)
-
-(*     (*   Unshelve. *) *)
-(*     (*   all: tea. *) *)
-(* Admitted. *)
 
 Lemma mapRedCompValid {Γ A B C f g l l' i}
   {VΓ : [||-v Γ]}
@@ -1637,6 +1591,7 @@ Qed.
 
 
 Lemma mapPropRedIdAux {Γ A i}
+  {wfΓ: [ |- Γ ]}
   {RA : [Γ ||-<i> A]}
   {LA : [Γ ||-List<i> tList A]}
   (LA' := normList0 LA : [Γ ||-List<i> tList A])
@@ -1685,15 +1640,27 @@ Proof.
       eapply listEqRed ; escape; rewrite wk_id_ren_on; tea.
       eapply LRTyEqRefl_.
   - intros. cbn. destruct (Map.into_view _).
-    * change [ LRList' LA' | Γ ||- (tMap A0 A (tLambda A0 (tApp (idterm A⟨↑⟩) (tApp f⟨↑⟩ (tRel 0)))) l)
+    * change [ LRList' LA' | Γ ||- (tMap A0 A (comp A0 (idterm A) f) l)
                                ≅ (tMap A0 B f l) : _ ].
       eapply neuListTermEq; tea.
       + destruct tyconv. eapply ty_map; escape; tea.
-        admit.
+        eapply ty_comp; tea.
+        eapply ty_conv; tea; eapply convty_simple_arr; tea; now symmetry.
       + destruct tyconv. eapply convneulist_map; escape; tea.
-        all: admit.
+        { eapply ty_comp; cycle 3; tea.
+          eapply ty_conv; tea; eapply convty_simple_arr; tea.
+          unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
+        }
+        { eapply ty_conv; tea. eapply convty_simple_arr; tea; now symmetry. }
+        { admit. }
       + admit.
-      + admit.
+      + destruct tyconv.
+        constructor; tea.
+        intros.
+        eapply simple_appcongTerm.
+        2-3: now apply neuTerm.
+        2: now apply neuTermEq.
+        admit.
 
     * eapply neuListTermEq.
       + eapply ty_map; escape; tea.
@@ -1701,7 +1668,7 @@ Proof.
       + escape; eapply convneulist_map_id; tea.
         1,2: eapply escapeEq; eapply LRTyEqRefl_.
         1: {
-          assert [ |- Γ ,, A ] by admit.
+          assert [ |- Γ ,, A ] by (eapply wfc_cons; tea).
           unshelve eapply escapeEqTerm; tea.
           1:{ erewrite<- wk1_ren_on. eapply wk; tea. }
           eapply redSubstTerm.
@@ -1717,9 +1684,11 @@ Proof.
         2: cbn. 1-2: unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
         2:{
           intros.
-          eapply simple_appTerm.
-          - admit.
-          - now eapply neuTerm.
+          unshelve eapply simple_appTerm.
+          5: now eapply neuTerm.
+          - now eapply wk.
+          - eapply ArrRedTy; now eapply wk.
+          - cbn. eapply idred.
         }
         1: now eapply convneulist_is_not_map_convneu.
       + eapply ListRedTm_map_inv_whne. eapply whne_list_not_map; tea.
@@ -1757,7 +1726,7 @@ Proof.
   eapply transEqTerm. 2: eassumption.
   eapply transEqTerm; cycle 1.
   - unshelve epose (fst (mapPropRedIdAux _) _ _).
-    10: irrelevance.
+    11: irrelevance.
     all: tea.
     + now apply invLRList.
     + now apply ArrRedTy.
