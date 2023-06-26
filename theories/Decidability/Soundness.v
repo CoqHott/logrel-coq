@@ -273,15 +273,12 @@ Section ConversionSound.
   Lemma _implem_conv_sound :
     funrect conv (fun _ => True) conv_sound_type.
   Proof.
-    intros x Hpre.
-    funelim_conv ; cbn; try easy.
-    all: intros ; simp conv_sound_type; cbn.
+    intros x _.
+    Time funelim_conv ; try exact I.
     all: match goal with
       | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
     end.
-    all: repeat match goal with
-      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
-    end.
+    all: intros ; cbn.
     all: unfold conv_full_cod, conv_cod.
     all: repeat (
       match goal with
@@ -292,6 +289,9 @@ Section ConversionSound.
         destruct t; cbn; try easy
       | s : sort |- _ => destruct s
       end).
+    all: repeat match goal with
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+    end.
     all: try solve [now econstructor].
     - econstructor ; tea.
       now econstructor.
@@ -304,10 +304,7 @@ Section ConversionSound.
       + f_equal.
         symmetry.
         now eapply Nat.eqb_eq.
-    - match goal with
-      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
-      end.
-      split; tea.
+    - split; tea.
       now econstructor.
   Qed.
 
@@ -358,8 +355,7 @@ Section TypingCorrect.
     funrect typing (fun _ => True) typing_sound_post.
   Proof.
     intros x ?.
-    funelim_typing ; cbn.
-    all: intros ; simp typing_sound_post ; try easy ; cbn.
+    funelim_typing ; intros ; try exact I ; cbn.
     all: repeat (
       match goal with
       | |- _ * _ => split ; [try easy ; shelve |..]

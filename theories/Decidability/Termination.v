@@ -162,7 +162,7 @@ Proof.
   - intros ? ???? A B Hm [IHm []] ? [IHt] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [|m' t'| | | |].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn; try exact I.
     split.
     + apply (IHm tt m') ; tea.
       destruct Hty as [? (?&(?&?&[])&?)%termGen'].

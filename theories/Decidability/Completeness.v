@@ -509,10 +509,7 @@ Section RedImplemComplete.
     domain wh_red t.
   Proof.
     intros [|w]%well_formed_well_typed.
-    all: eapply compute_domain.
-    Fail rewrite wh_red_equation_1.
-      (* weird, should work? probably the reason why simp also fails? *)
-    all: rewrite (wh_red_equation_1 t) ; cbn.
+    all: eapply compute_domain; simp wh_red; cbn.
     all: split ; [|easy].
     - eapply wh_red_stack_complete ; tea.
     - inversion w ; subst ; clear w; cycle -1.
@@ -911,7 +908,15 @@ Proof.
   all: intros.
   all: prod_hyp_splitter.
   all: unfold graph in *.
-  all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
+  (* dispatch the simplifications as needed *)
+  Time all: lazymatch goal with
+    | |- context [wf_ty_state] => simp typing typing_wf_ty
+    | |- context [inf_state] => simp typing typing_inf
+    | |- context [inf_red_state] => simp typing typing_inf_red
+    | |- context [check_state] => simp typing typing_check
+  end.
+  (* Time all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check.
+  Time all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn. *)
   (* Well formed types *)
   1-6:repeat match goal with | |- orec_graph typing _ _ => patch_rec_ret ; econstructor ; try eauto ; cbn end.
   - unshelve erewrite can_ty_view1_small ; tea.
