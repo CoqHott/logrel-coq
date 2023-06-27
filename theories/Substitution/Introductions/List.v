@@ -390,7 +390,7 @@ Proof.
   destruct p as [  | | x ].
   - exact (tNil B).
   - exact (tCons B (tApp f hd) (tMap A B f tl)).
-  - destruct (Map.into_view x) as [A' B' f' x'| y].
+  - clear ty refl tyconv. destruct (Map.into_view x) as [A' B' f' x'| y].
     + exact (tMap A' B (comp A' f f') x').
     + exact (tMap A B f y).
 Defined.
@@ -1428,6 +1428,50 @@ Proof.
         intros; eapply redfun_kripke_neutrals ; cycle 1; tea.
 Defined.
 
+Lemma comp_assoc_app_neutral
+        {Γ A B C A0 f g h n l}
+        (RA : [Γ ||-<l> A])
+        (RB : [Γ ||-<l> B])
+        (RC : [Γ ||-<l> C])
+        (tyA0 : [Γ |- A0])
+        (RFBC : [Γ ||-<l> arr B C])
+        (RFAB : [Γ ||-<l> arr A B])
+        (Rf : [RFBC | Γ ||- f : arr B C])
+        (Rg : [RFAB | Γ ||- g : arr A B])
+        (tyh : [Γ |- h : arr A0 A])
+        (Rapp : [RA | Γ ||- tApp h n : A ])
+        (tycompgh : [Γ |- comp A0 g h : arr A0 B])
+        (Rapp' : [RB | Γ ||- tApp (comp A0 g h) n : B])
+  : [Γ |- n : A0] -> [Γ |- n ~ n : A0] ->
+    [RC | Γ ||- tApp (comp A0 f (comp A0 g h)) n ≅ tApp (comp A0 (comp A f g) h) n : _ ].
+Proof.
+  intros; escape.
+  eapply (transEqTerm (u:= tApp f (tApp g (tApp h n)))).
+  + eapply transEqTerm.
+    2: eapply simple_appcongTerm.
+    - eapply redSubstTerm.
+      2: eapply redtm_comp_beta; cycle 3; tea.
+      unshelve eapply simple_appTerm; cycle 2; tea.
+    - now eapply LREqTermRefl_.
+    - eapply redSubstTerm.
+      2: eapply redtm_comp_beta; cycle 3; tea.
+      unshelve eapply simple_appTerm; cycle 3; tea.
+    - unshelve eapply simple_appTerm; cycle 3; tea.
+    - eapply redSubstTerm.
+      * unshelve eapply simple_appTerm; cycle 3; tea.
+      * eapply redtm_comp_beta; cycle 3; tea.
+  + eapply LRTmEqSym.
+    eapply redSubstTerm.
+    - unshelve eapply simple_appTerm; cycle 3; tea.
+      unshelve eapply simple_appTerm; cycle 3; tea.
+    - etransitivity.
+      * eapply redtm_comp_beta; cycle 3; tea.
+        eapply ty_comp; cycle 3; tea.
+      * eapply redtm_comp_beta; cycle 3; tea.
+
+  Unshelve. now tea.
+Qed.
+
 Lemma mapPropRedCompAux {Γ A B C f g i}
   {RA : [Γ ||-<i> A]}
   {RB : [Γ ||-<i> B]}
@@ -1510,8 +1554,65 @@ Proof.
   - intros.
     set (x := ListProp_of_mapProp _ _ _ _ _ _ _); clearbody x.
     dependent inversion x; destruct (Map.into_view l); try discriminate.
-    + admit.
-    + admit.
+    + cbn. change [ LRList' LC' | Γ ||- (tMap A0 C (comp A0 f (comp A0 g f0)) l) ≅ (tMap A0 C (comp A0 (comp A f g) f0) l) : _ ].
+      eapply neuListTermEq.
+      3:{
+        destruct tyconv0, tyconv. escape.
+        eapply convneulist_map; tea.
+        4:{
+          (* TODO: use comp_assoc_app_neutral *)
+          admit.
+        }
+        - eapply ty_comp; cycle 3; tea.
+        - eapply ty_comp; cycle 3; tea.
+          eapply ty_conv.
+          eapply ty_comp; cycle 3; tea.
+          eapply convty_simple_arr; tea.
+          unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+        - unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+      }
+      5:{
+        destruct tyconv0, tyconv.
+        constructor; tea.
+        - unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+        - intros.
+          repeat rewrite wk_comp.
+          eapply comp_assoc_app_neutral; cycle 2; tea.
+          + eapply wkTerm in Rg. irrelevance.
+            apply arr_ren1.
+          + eapply ty_conv.
+            * now eapply ty_wk.
+            * rewrite wk_arr.
+              apply convty_wk; tea.
+              eapply convty_simple_arr; tea.
+              now symmetry.
+          + now eapply redfn0.
+          + eapply ty_wk in wtyfn; tea.
+            rewrite wk_comp in wtyfn.
+            now rewrite<- wk_arr in wtyfn.
+          + rewrite<- wk_comp.
+            now eapply redfn.
+          + now eapply wft_wk.
+          + eapply wkTerm in Rf. irrelevance.
+      }
+      * destruct tyconv0, tyconv. escape. eapply ty_map; tea.
+        eapply ty_comp; cycle 3; tea.
+      * destruct tyconv0, tyconv. escape. eapply ty_map; tea.
+        eapply ty_comp; cycle 3; tea.
+        eapply ty_conv.
+        eapply ty_comp; cycle 3; tea.
+        eapply convty_simple_arr; tea.
+        unshelve eapply escapeEq; tea. eapply LRTyEqRefl_.
+      * admit.
+      * admit.
+
+    + cbn. rewrite (not_map_is_not_Map i0).
+      change [LRList' LC' | Γ ||- tMap A C (comp A f g) u ≅ tMap A C (comp A f g) u : _ ].
+      eapply LREqTermRefl_.
+      eapply (fst (mapRedAux _ (LA:=LA'))).
+      change [ LRList' (normList0 LA') | Γ ||- u : _ ].
+      eapply neuTerm; tea.
+      now eapply convtm_convneulist.
 Admitted.
 
 
@@ -1590,6 +1691,24 @@ Proof.
 Qed.
 
 
+Lemma comp_id_app_neutral
+        {Γ A A0 f n l}
+        (RA : [Γ ||-<l> A])
+        (tyA0 : [Γ |- A0])
+        (tyh : [Γ |- f : arr A0 A])
+        (Rapp : [RA | Γ ||- tApp f n : A ])
+  : [Γ |- n : A0] -> [Γ |- n ~ n : A0] ->
+    [RA | Γ ||- tApp (comp A0 (idterm A) f) n ≅ tApp f n : A ].
+Proof.
+  intros. escape.
+  eapply redSubstTerm; tea.
+  etransitivity.
+  eapply redtm_comp_beta; cycle 3; tea.
+  1: admit.
+  admit. (* TODO: redtm_simple_beta? *)
+Admitted.
+
+
 Lemma mapPropRedIdAux {Γ A i}
   {wfΓ: [ |- Γ ]}
   {RA : [Γ ||-<i> A]}
@@ -1652,15 +1771,17 @@ Proof.
           unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
         }
         { eapply ty_conv; tea. eapply convty_simple_arr; tea; now symmetry. }
-        { admit. }
-      + admit.
+        { admit. (* THIS IS AN INSTANCE OF BELOW *)}
+      + destruct tyconv.
+        constructor; tea.
+        (* THE SAME REDUCTION THING *)
+        all: admit.
       + destruct tyconv.
         constructor; tea.
         intros.
-        eapply simple_appcongTerm.
-        2-3: now apply neuTerm.
-        2: now apply neuTermEq.
-        admit.
+        rewrite wk_comp.
+        eapply comp_id_app_neutral.
+        all: admit.
 
     * eapply neuListTermEq.
       + eapply ty_map; escape; tea.
@@ -1695,7 +1816,7 @@ Proof.
         eapply convneulist_whne_list; tea.
       + cbn. destruct (Map.into_view u); try discriminate.
         constructor; tea.
-        3:{ (* TODO: need a lemma? *)
+        3:{ (* TODO: check the lemmas above! *)
           intros.
           eapply redSubstTerm.
           - cbn. now eapply neuTerm.
