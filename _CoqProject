@@ -2,6 +2,8 @@
 
 -Q theories LogRel
 
+theories/mapPiSigmaFunctorLaws.v
+
 theories/Utils.v
 theories/BasicAst.v
 
