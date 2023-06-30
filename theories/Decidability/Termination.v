@@ -805,3 +805,5 @@ Proof.
 Qed.
 
 End TypingTerminates.
+
+Print Assumptions typing_terminates.
