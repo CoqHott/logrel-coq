@@ -1,4 +1,4 @@
-
+(** * LogRel.mapPiSigmaFunctorLaws: functor laws hold definitionally for Coq's Π and Σ *)
 Set Primitive Projections.
 Record Sigma A B := pair { proj1 : A ; proj2 : B proj1 }.
 Notation "'∑' x .. y , p" := (Sigma _ (fun x => .. (Sigma _ (fun y => p%type)) ..))
