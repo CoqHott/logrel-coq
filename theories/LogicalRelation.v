@@ -647,7 +647,6 @@ Section NatRedTmEq.
     (prop : NatPropEq nfL nfR) : NatRedTmEq t u
 
   with NatPropEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
-  (* KM: plugging in the parameter type directly... Is that ok ? *)
   | zeroReq :
     NatPropEq tZero tZero
   | succReq {n n'} :
@@ -759,7 +758,6 @@ Section EmptyRedTm.
 (*     let ind' := polymorphise ind in *)
 (*   exact ind'). *)
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 (* Lemma EmptyRedInduction : EmptyRedInductionType. *)
 (* Proof. *)
 (*   intros ??? PRed PProp **; split; now apply (_EmptyRedInduction _ _ _ PRed PProp). *)
@@ -793,7 +791,6 @@ Section EmptyRedTmEq.
     `{RedTerm ta}.
 
   Inductive EmptyPropEq {Γ : context} : term -> term -> Set :=
-  (* KM: plugging in the parameter type directly... Is that ok ? *)
   | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tEmpty] -> EmptyPropEq ne ne'.
 
   Inductive EmptyRedTmEq {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> term -> Set :=
@@ -958,7 +955,6 @@ Let ListRedInductionType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma ListRedInduction : ListRedInductionType.
 Proof.
   intros PRed PProp **; split; now apply (_ListRedInduction PRed PProp).
@@ -1022,7 +1018,6 @@ Section ListRedTmEq.
     (prop : ListPropEq (ListRedTm.nf Rt) (ListRedTm.nf Ru)) : ListRedTmEq t u
 
   with ListPropEq : term -> term -> Type :=
-  (* KM: plugging in the parameter type directly... Is that ok ? *)
   | nilReq {P P'} (wfΓ : [|- Γ]) :
     [Γ |- P] ->
     [parRedΓ wfΓ | Γ ||- _ ≅ P] ->
@@ -1063,7 +1058,6 @@ Let ListRedEqInductionType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma ListRedEqInduction : ListRedEqInductionType.
 Proof.
   intros PRedEq PPropEq **; split; now apply (_ListRedEqInduction PRedEq PPropEq).
