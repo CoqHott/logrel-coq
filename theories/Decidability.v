@@ -1,4 +1,4 @@
-(** * LogRel.Decidability: conversion and type-checking are decidable. *)
+(** * LogRel.Decidability: type-checking is decidable. *)
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
