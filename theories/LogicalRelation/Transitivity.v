@@ -1,3 +1,4 @@
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance Escape.
@@ -221,8 +222,6 @@ Proof.
     1: now etransitivity.
     eapply HH; eauto.
 Qed.
-
-From Coq Require Import ssrbool.
 
 Lemma convneulist_is_not_map_convneu {Γ l l' A} :
   ~~ Map.is_map l -> ~~ Map.is_map l' ->

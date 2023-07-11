@@ -1,7 +1,7 @@
 
 From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeTyping DeclarativeInstance Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction Weakening GenericTyping LogicalRelation DeclarativeTyping DeclarativeInstance Validity.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction Application Universe NormalRed SimpleArr.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion SingleSubst Reflexivity.
 From LogRel.Substitution.Introductions Require Import Universe Pi SimpleArr Var.
@@ -411,13 +411,13 @@ Section FunctionLemmas.
     (Rf : [Γ ||-<l> f : _ | RAB]).
 
   Definition kripke_neutral_app X {Y} g (RY : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> Y⟨ρ⟩]) :=
-   forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
+   forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
     [Δ |- n : X⟨ρ⟩] ->
     [Δ |- n ~ n : X⟨ρ⟩] ->
     [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n : _].
 
   Definition kripke_neutral_app_eq X {Y} g g' (RY : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> Y⟨ρ⟩]) :=
-   forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
+   forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) n,
     [Δ |- n : X⟨ρ⟩] ->
     [Δ |- n ~ n : X⟨ρ⟩] ->
     [RY ρ wfΔ | Δ ||- tApp g⟨ρ⟩ n ≅ tApp g'⟨ρ⟩ n : _].
@@ -838,8 +838,6 @@ Proof.
   now eapply wkEq.
   Unshelve. all: tea.
 Qed.
-
-From LogRel Require Import UntypedReduction.
 
 Lemma mapCompEqRedAux {Γ A Ap A' Ap' B Bp B' Bp' f fp f' fp' r r' l}
   {RA : [Γ ||-<l> A]}

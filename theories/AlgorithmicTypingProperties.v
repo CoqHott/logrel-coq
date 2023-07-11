@@ -465,6 +465,13 @@ Proof.
   now intros [_ _ ?%escapeTm]%(Fundamental (ta := bn)).
 Qed.
 
+Corollary algo_wfty_complete Γ A :
+  [Γ |-[de] A] ->
+  [Γ |-[bn] A].
+Proof.
+  now intros [_ ?%escapeTy]%(Fundamental (ta := bn)).
+Qed.
+
 Lemma conv_equiv_de_bn Γ A B :
   [Γ |-[de] A ≅ B] <~> [Γ |-[bn] A ≅ B].
 Proof.

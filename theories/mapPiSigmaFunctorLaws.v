@@ -28,7 +28,7 @@ Lemma mapPiComp {X Y Z : domΠ} (f : homΠ Y Z) (g : homΠ X Y) (h : forall x : 
 Proof. reflexivity. Defined.
 
 Definition domΣ := ∑ A, A -> Type.
-Definition homΣ (X Y : domΣ) := ∑ (f : X.π1 -> Y.π1), forall {x : X.π1}, X.π2 x -> Y.π2 (f x).
+Definition homΣ (X Y : domΣ) := ∑ (f : X.π1 -> Y.π1), forall (x : X.π1), X.π2 x -> Y.π2 (f x).
 Definition idΣ (X : domΣ) : homΣ X X := let id x := x in (id ; fun y x => x : X.π2 (id y)).
 Definition compΣ {X Y Z} (f : homΣ Y Z) (g : homΣ X Y) : homΣ X Z :=
   let fg1 x := f.π1 (g.π1 x) in

@@ -909,7 +909,7 @@ Proof.
   all: prod_hyp_splitter.
   all: unfold graph in *.
   (* dispatch the simplifications as needed *)
-  Time all: lazymatch goal with
+  (* Time *) all: lazymatch goal with
     | |- context [wf_ty_state] => simp typing typing_wf_ty
     | |- context [inf_state] => simp typing typing_inf
     | |- context [inf_red_state] => simp typing typing_inf_red

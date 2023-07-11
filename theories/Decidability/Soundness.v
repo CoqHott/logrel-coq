@@ -274,7 +274,7 @@ Section ConversionSound.
     funrect conv (fun _ => True) conv_sound_type.
   Proof.
     intros x _.
-    Time funelim_conv ; try exact I.
+    funelim_conv ; try exact I.
     all: match goal with
       | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
     end.
