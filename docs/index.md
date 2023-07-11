@@ -11,13 +11,13 @@ To complement it, here is a rough description of the content of every file.
 Partial functions library ([coq-partialfun folder](../coq-partialfun/theories))
 ----------------
 This part of the repository is due to [Winterhalter](https://github.com/TheoWinterhalter/coq-partialfun), 
-we simply reproduce it here with minimal changes in the absence of an opam package.
+we simply reproduce a fork of it here with minimal changes, in the absence of an opam package.
 
 | File | Description |
 |---|----|
 | [Monad] | Monad and the error monad transformer, with notations.
 | [PartialFun] | Support for the definition of potentially non-terminating recursive functions.
-| Examples | Simple usage examples of the library.
+| [Examples] | Simple usage examples of the library.
 
 Miscellaneous
 ---------

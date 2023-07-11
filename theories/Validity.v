@@ -1,3 +1,4 @@
+(** * LogRel.Validity: Definition of validity: free closure of the logical relation under substition. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation.
 
