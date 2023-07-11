@@ -66,24 +66,6 @@ Proof.
   gen_typing.
 Qed.
 
-(* Lemma convneu_app_ren_var {Γ A f g dom cod} :
-  [Γ |- f ~ g : A] ->
-  [Γ |- A ≅ tProd dom cod] ->
-  [Γ ,, dom |- tRel 0 ≅ tRel 0 : dom⟨↑⟩] ->
-  [Γ ,, dom |- tApp f⟨↑⟩ (tRel 0) ~ tApp g⟨↑⟩ (tRel 0) : cod].
-Proof.
-  intros Hf HA Hrel.
-  erewrite <- wk1_ren_on.
-  eapply convne_meta_conv.
-  - eapply convneu_app_ren ; tea.
-    now rewrite wk1_ren_on.
-  - replace cod[_] with (cod[(0 .: ↑) >> tRel]) by now bsimpl.
-    renamify.
-    rewrite scons_eta_id'.
-    now bsimpl.
-  - now bsimpl.
-Qed. *)
-
 Record complete {l Γ A} (RA : [Γ ||-<l> A]) := {
   reflect : forall n n',
     [Γ |- n : A] ->

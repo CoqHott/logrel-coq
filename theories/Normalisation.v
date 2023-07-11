@@ -3,7 +3,7 @@ From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
   GenericTyping DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
-From LogRel Require Import LogicalRelation UntypedValues Validity Fundamental.
+From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape Neutral Induction ShapeView Reflexivity.
 From LogRel.Substitution Require Import Escape Poly.
 
@@ -185,7 +185,7 @@ End Normalisation.
 
 Import DeclarativeTypingProperties.
 
-Corollary typing_nf_alt  {Γ t} : well_formed Γ t -> WN  t.
+Corollary typing_nf_alt  {Γ t} : well_formed Γ t -> WN t.
 Proof.
   intros [[] Hty].
   all: first [apply TypeRefl in Hty|apply TermRefl in Hty].
@@ -223,6 +223,8 @@ Proof.
     apply IHred; tea.
     eapply WN_exp; [tea|]; now apply WN_whnf.
 Qed.
+
+Print Assumptions typing_SN.
 
 Section NeutralConversion.
   Import AlgorithmicTypingData.

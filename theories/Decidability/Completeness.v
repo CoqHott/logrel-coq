@@ -129,7 +129,7 @@ Proof.
   eapply typed_zip in Hzip as [A' []].
   eexists ; split ; tea.
   eapply typed_stack_conv_in ; tea.
-  now eapply typing_unique.
+  now eapply type_uniqueness.
 Qed.
   
 Corollary typed_zip_cons Γ A t B s π :
@@ -171,23 +171,23 @@ Proof.
   induction π as [|[] π] in A, t, B, Ht, Hπ |- * ; cbn.
   - easy.
   - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
     2-3: now econstructor.
     now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
     2-3: now econstructor.
     now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
     2-3: now econstructor.
     now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
     2-3: now econstructor.
     now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
     2-3: now econstructor.
     now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
@@ -231,7 +231,7 @@ Proof.
     pose proof Hty as [? [(?&[->]&?)%termGen' ?]]%typed_zip_cons ; tea.
     eapply list_stack_ismap.
     2: eapply typed_stack_conv_in ; tea.
-    2: now eapply typing_unique.
+    2: now eapply type_uniqueness.
     eassumption.
 Qed.
 

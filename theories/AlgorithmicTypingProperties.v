@@ -480,17 +480,4 @@ Proof.
   + now intros [??? h%algo_conv_sound].
 Qed.
 
-(** *** Uniqueness of types *)
-
-Lemma type_uniqueness Γ A A' t :
-  [Γ |-[de] t : A] ->
-  [Γ |-[de] t : A'] ->
-  [Γ |-[de] A ≅ A'].
-Proof.
-  intros [?? Hinf]%algo_typing_complete [?? Hinf']%algo_typing_complete.
-  eapply algo_typing_det in Hinf.
-  2: eassumption.
-  subst.
-  etransitivity ; tea.
-  now symmetry.
-Qed.
+Print Assumptions algo_typing_complete.

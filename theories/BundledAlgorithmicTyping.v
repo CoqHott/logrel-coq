@@ -1724,6 +1724,8 @@ Proof.
   now eapply algo_typing_sound in Hty.
 Qed.
 
+Print Assumptions bn_typing_sound.
+
 Corollary inf_conv_decl Γ t A A' :
 [Γ |-[al] t ▹ A] ->
 [Γ |-[de] A ≅ A'] ->
