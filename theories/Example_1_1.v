@@ -2,7 +2,7 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils Notations BasicAst Context GenericTyping DeclarativeTyping DeclarativeInstance BundledAlgorithmicTyping.
 From PartialFun Require Import Monad PartialFun.
-From LogRel.Decidability Require Import Functions Soundness Completeness Termination.
+From LogRel.Decidability Require Import Functions Soundness.
 
 Import DeclarativeTypingProperties.
 Import IndexedDefinitions.
@@ -48,6 +48,7 @@ Fixpoint nat_to_tNat (n: nat) :=
   end.
 Definition forty_two : term := nat_to_tNat 42.
 
+(** λ x : ℕ × ℕ. (π1 x,(π2 x,42)) *)
 Definition glue : term :=
   tLambda rec2N
     (mkRec3N
@@ -58,6 +59,7 @@ Definition glue : term :=
 Eval vm_compute in (infer ε glue).
 Check (eq_refl : infer ε glue = Success (ok (arr rec2N rec3N))).
 
+(** λ x : ℕ × ℕ × ℕ. (π1 x,π2 x) *)
 Definition glue_retr : term :=
   tLambda rec3N
     (mkRec2N
@@ -69,51 +71,50 @@ Check (eq_refl : infer ε glue_retr = Success (ok (arr rec3N rec2N))).
 
 Eval vm_compute in (conv_tm ε idty_rec2N (idterm rec2N) (comp rec2N glue_retr glue)).
 
+(** λ x : List ℕ × ℕ. map glue_retr (map glue x) *)
 Definition map_example :=
   tLambda (tList rec2N) (tMap rec3N rec2N glue_retr (tMap rec2N rec3N glue (tRel 0))).
 
 Eval vm_compute in (conv_tm ε (idtype (tList rec2N)) map_example (idterm (tList rec2N))).
 
-Lemma map_example_conv : conv_tm ε (idtype (tList rec2N)) map_example (idterm (tList rec2N)) = Success (ok tt).
+Lemma map_example_conv_graph : graph conv (tm_state;ε;(idtype (tList rec2N));map_example;(idterm (tList rec2N))) (ok tt).
 Proof.
+  apply (fueled_graph_sound conv 1000 (tm_state;_)).
   reflexivity.
 Qed.
 
-Lemma map_example_ty_eq : infer ε map_example = Success (ok (idtype (tList rec2N))).
+Lemma map_example_graph : graph typing (inf_state; ε; tt; map_example) (ok (idtype (tList rec2N))).
 Proof.
+  apply (fueled_graph_sound typing 1000 (inf_state;_)).
   reflexivity.
 Qed.
 
 Lemma map_example_ty : [ε |- map_example : idtype (tList rec2N)].
 Proof.
-  pose proof map_example_ty_eq as e.
-  unfold infer in e.
-  eapply (fueled_graph_sound typing _ (inf_state; _)) in e.
-  apply implem_typing_sound, algo_typing_sound in e.
+  pose proof map_example_graph as ?%implem_typing_sound%algo_typing_sound.
   + assumption.
   + constructor.
-Fail Qed. (* Stack overflow *)
-Admitted.
+Qed.
 
-Lemma idterm_ty : infer ε (idterm (tList rec2N)) = Success (ok (idtype (tList rec2N))).
+Lemma idterm_graph : graph typing (inf_state;ε;tt;(idterm (tList rec2N))) (ok (idtype (tList rec2N))).
 Proof.
+  apply (fueled_graph_sound typing 1000 (inf_state;_)).
   reflexivity.
 Qed.
 
+Lemma idterm_ty : [ε |- idterm (tList rec2N) : idtype (tList rec2N)].
+Proof.
+  pose proof idterm_graph as ?%implem_typing_sound%algo_typing_sound.
+  + assumption.
+  + constructor.
+Qed. 
+
 Theorem example_1_1_conv : [ε |- map_example ≅ idterm (tList rec2N) : idtype (tList rec2N)].
 Proof.
-  pose proof map_example_conv as e.
-  unfold conv_tm in e.
-  eapply (fueled_graph_sound conv) in e.
-  apply implem_conv_sound, algo_conv_sound in e.
+  pose proof map_example_conv_graph as e%implem_conv_sound%algo_conv_sound.
   - assumption.
   - apply map_example_ty.
-  - clear.
-    pose proof idterm_ty as e.
-    unfold infer in e.
-    eapply (fueled_graph_sound typing _ (inf_state; _)) in e.
-    apply implem_typing_sound, algo_typing_sound in e.
-    + assumption.
-    + constructor.
-Fail Qed.
-Admitted.
+  - apply idterm_ty.
+Qed.
+
+Print Assumptions example_1_1_conv.
