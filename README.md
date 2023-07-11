@@ -12,9 +12,7 @@ The project builds with Coq version `8.16.1`. It needs the opam package `coq-smp
 - `typing_SN` in [Normalisation](./theories/Normalisation.v), states that reduction on well-typed terms is (strongly) normalizing; this is phrased in a constructively acceptable way, as accessibility of every well-typed term under reduction, i.e. as well-foundation of the reduction relation.
 - `algo_typing_sound` in [BundledAlgorithmicTyping](./theories/BundledAlgorithmicTyping.v) says that algorithmic typing (assuming its inputs are well-formed), is sound with respect to declarative typing, and `algo_typing_complete` in [AlgorithmicTypingProperties](./theories/AlgorithmicTypingProperties.v) says that it is complete.
 - `check_full` in file [Decidability](./theories/Decidability.v), says that typing is decidable.
-
-The first three are axiom-free, while `check_full`
-only requires a dependently-typed version of the function extensionality axiom. This harmless axiom is introduced by Equations for the definition of the functions.
+The message `Closed under the global context` indicates that all of them are axiom-free.
 
 Browsing the Development
 ==================
