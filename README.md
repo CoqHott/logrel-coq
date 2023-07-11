@@ -8,7 +8,9 @@ The formalisation follows a similar [Agda formalization]((https://github.com/mr-
 Building
 ===========
 
-The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder. Apart from a few harmless warnings, and the output of some examples, the build reports on the assumptions of our main theorems. The message `Closed under the global context` indicates that all of them are axiom-free.
+The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder. The build takes around 3 minutes on a modern laptop.
+
+Apart from a few harmless warnings, and the output of some examples, the build reports on the assumptions of our main theorems, using `Print Assumptions`. The message `Closed under the global context` indicates that all of them are axiom-free.
 
 For easiness, the html documentation built using `coqdoc` is included in the artefact. It can be built again invoking `make coqdoc`.
 
@@ -41,7 +43,7 @@ Finally, `check_full` in file [Decidability], says that typing is decidable.
 Example from the paper
 ---------------
 
-We have formalized a variant of example 1.1 (since we do not have booleans or records in the formalisation, the first have been replaced by natural numbers, and the second by iterated Σ-type) in [Example_1_1].
+We have formalized a variant of example 1.1 in [Example_1_1]. Since we do not have booleans or records in the formalisation, the first have been replaced by natural numbers, and the second by iterated Σ-type.
 
 Rather than building the derivation of conversion by hand, we use our certified checker. So this also serves as a demonstration that our functions are effectively executable.
 
