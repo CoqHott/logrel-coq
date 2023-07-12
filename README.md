@@ -8,13 +8,13 @@ The formalisation follows a similar [Agda formalization]((https://github.com/mr-
 Building
 ===========
 
-The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder. The build takes around 3 minutes on a modern laptop.
+The project builds with Coq version `8.16.1`. It depends on the opam package `coq-smpl` and `coq-equations` (version 1.3 at least). Once these have been installed, you can simply issue `make` in the root folder. The build takes around 3 minutes on a modern laptop.
 
 Apart from a few harmless warnings, and the output of some examples, the build reports on the assumptions of our main theorems, using `Print Assumptions`. The message `Closed under the global context` indicates that all of them are axiom-free.
 
 For easiness, the html documentation built using `coqdoc` is included in the artefact. It can be built again invoking `make coqdoc`.
 
-Browsing the Development
+Browsing the development
 ==================
 
 The development, rendered using the [coqdoc](https://coq.inria.fr/refman/using/tools/coqdoc.html) utility, can be generated using `make coqdoc`, and then browed offline (as html files). To start navigating the sources, the best entry point is probably the [the table of content](./docs/coqdoc/toc.html). A [short description of the file contents](./docs/index.md) is also provided to make the navigation easier.
