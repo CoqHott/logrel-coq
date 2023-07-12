@@ -3,7 +3,7 @@ Presentation
 
 This repo contains the formalisation work accompangy the paper *Definitional Functoriality for Dependent (Sub)Types*.
 
-The formalisation follows a similar [Agda formalization]((https://github.com/mr-ohman/logrel-mltt/)) (described in [*Decidability of conversion for Type Theory in Type Theory*, 2018](https://dl.acm.org/doi/10.1145/3158111)). In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate. It also includes code from Winterhalter's [partial-fun](https://github.com/TheoWinterhalter/coq-partialfun) library to handle the definition of partial functions.
+The formalisation follows a similar [Agda formalization](https://github.com/mr-ohman/logrel-mltt/) (described in [*Decidability of conversion for Type Theory in Type Theory*, 2018](https://dl.acm.org/doi/10.1145/3158111)). In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate. It also includes code from Winterhalter's [partial-fun](https://github.com/TheoWinterhalter/coq-partialfun) library to handle the definition of partial functions.
 
 Building
 ===========
