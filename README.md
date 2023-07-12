@@ -8,7 +8,7 @@ The formalisation follows a similar [Agda formalization](https://github.com/mr-o
 Building
 ===========
 
-The project builds with Coq version `8.16.1`. It depends on the opam package `coq-smpl` and `coq-equations` (version 1.3 at least). Once these have been installed, you can simply issue `make` in the root folder. The build takes around 3 minutes on a modern laptop.
+The project builds with Coq version `8.16.1`. It depends on the opam package `coq-smpl` and `coq-equations` (version 1.3 at least). Once these have been installed, you can simply issue `make` in the root folder. The development should build within 10 minutes (around 3 minutes on a modern laptop).
 
 Apart from a few harmless warnings, and the output of some examples, the build reports on the assumptions of our main theorems, using `Print Assumptions`. The message `Closed under the global context` indicates that all of them are axiom-free.
 
