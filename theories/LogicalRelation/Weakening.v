@@ -233,20 +233,10 @@ Section Weakenings.
       + assumption.
     - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
     - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
       + fold ren_term. 
         irrelevance0.
         2: now apply ih.
@@ -393,34 +383,14 @@ Section Weakenings.
         assumption.
     - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
     - intros. unshelve econstructor; tea.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
       + now eapply wft_wk.
-      + irrelevance0.
-        1: now rewrite wk_id_ren_on.
-        unshelve eapply wkEq; tea.
-        2: irrelevance.
-        pose proof (h := ListRedTy.parRed LA wk_id wfΓ); 
-        now rewrite wk_id_ren_on in h.
+      + cbn; now eapply convty_wk.
       + irrelevance0.
         2: now apply ih.
         now rewrite 2! wk_id_ren_on.

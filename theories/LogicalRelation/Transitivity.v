@@ -258,14 +258,14 @@ Proof.
     + etransitivity ; tea. etransitivity ; tea.
       rewrite eqR. eapply lrefl ; tea.
     + eapply h. rewrite eqR. eassumption.
-  - intros * ????? uv.
+  - intros * ?????? uv.
     inversion uv ; subst.
     2:{ apply convneulist_whne_list in conv. inv_whne. }
     econstructor; tea; irrelevance.
   - intros * ????? ? h ? uv.
     inversion uv ; subst.
     2:{ apply convneulist_whne_list in conv. inv_whne. }
-    econstructor ; try easy. 1: irrelevance.
+    econstructor ; try easy.
     eapply ih; tea; irrelevance.
   - intros * ????? uv.
     assert (whne_list l').

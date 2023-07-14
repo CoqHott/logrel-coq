@@ -290,8 +290,8 @@ Proof.
   eapply ListRedInduction; intros; econstructor; tea.
   - now eapply redtmwf_conv.
   - now eapply convtm_conv.
-  - now eapply eqvPar.
-  - now eapply eqvPar.
+  - etransitivity ; tea; now symmetry.
+  - etransitivity ; tea; now symmetry.
   - now eapply eqvPar.
   - now eapply ty_conv.
   - now eapply convneulist_conv.
@@ -313,9 +313,10 @@ Proof.
     all: cbn in * ; tea.
     now eapply convtm_conv.
   - econstructor ; tea.
-    all: now eapply eqvPar.
+    all: etransitivity ; tea; now symmetry.
   - econstructor ; tea.
-    all: now eapply eqvPar.
+    3: now eapply eqvPar.
+    all: etransitivity ; tea; now symmetry.
   - econstructor.
     2,3: now eapply ListRedTm_map_inv_irrelevance.
     2: now eapply ListRedTm_map_inv_eq_irrelevance.

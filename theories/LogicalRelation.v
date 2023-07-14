@@ -910,11 +910,11 @@ Section ListRedTm.
   with ListProp : term -> Type :=
   | nilR {P} (wfΓ : [|- Γ]) :
     [Γ |- P] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P] ->
+    [Γ |- par ≅ P] ->
     ListProp (tNil P)
   | consR {P hd tl} (wfΓ : [|- Γ]):
     [Γ |- P] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P] ->
+    [Γ |- par ≅ P] ->
     [parRedΓ wfΓ | Γ ||- hd : _] ->
     ListRedTm tl ->
     ListProp (tCons P hd tl)
@@ -1025,15 +1025,15 @@ Section ListRedTmEq.
   (* KM: plugging in the parameter type directly... Is that ok ? *)
   | nilReq {P P'} (wfΓ : [|- Γ]) :
     [Γ |- P] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P] ->
+    [Γ |- par ≅ P] ->
     [Γ |- P'] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P'] ->
+    [Γ |- par ≅ P'] ->
     ListPropEq (tNil P) (tNil P')
   | consReq {P P' hd hd' tl tl'} (wfΓ : [|- Γ]) :
     [Γ |- P] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P] ->
+    [Γ |- par ≅ P] ->
     [Γ |- P'] ->
-    [parRedΓ wfΓ | Γ ||- _ ≅ P'] ->
+    [Γ |- par ≅ P'] ->
     [parRedΓ wfΓ | Γ ||- hd ≅ hd' : _] ->
     ListRedTmEq tl tl' ->
     ListPropEq (tCons P hd tl) (tCons P' hd' tl')
