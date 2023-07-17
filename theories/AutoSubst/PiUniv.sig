@@ -24,3 +24,4 @@ tList : term -> term
 tNil : term -> term
 tCons : term -> term -> term -> term
 tMap : term -> term -> term -> term -> term
+tListElim : term -> (bind term in term) -> term -> term -> term -> term

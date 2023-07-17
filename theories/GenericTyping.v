@@ -288,6 +288,13 @@ Section GenericTyping.
       [Γ |- f : arr A B] ->
       [Γ |- l : tList A] ->
       [Γ |- tMap A B f l : tList B] ;
+    ty_listElim {Γ A P hnil hcons l} :
+      [Γ |- A] ->
+      [Γ ,, tList A |- P] ->
+      [Γ |- hnil : P[(tNil A)..]] ->
+      [Γ |- hcons : elimConsHypTy A P] ->
+      [Γ |- l : tList A] ->
+      [Γ |- tListElim A P hnil hcons l : P[l..]] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -412,6 +419,14 @@ Section GenericTyping.
     convneu_snd {Γ A B p p'} :
       [Γ |- p ~ p' : tSig A B] ->
       [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
+    convneu_listElim {Γ A A' P P' hnil hnil' hcons hcons' l l'} :
+      [Γ |- A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ,, tList A |- P ≅ P'] ->
+      [Γ |- hnil ≅ hnil' : P[(tNil A)..]] ->
+      [Γ |- hcons ≅ hcons' : elimConsHypTy A P] ->
+      [Γ |- l ~ l' :List A] ->
+      [Γ |- tListElim A P hnil hcons l ~ tListElim A' P' hnil' hcons' l' : P[l..]]
   }.
 
 Class ConvNeuListProperties :=
@@ -550,6 +565,31 @@ Class ConvNeuListProperties :=
       [Γ |- l : tList A] ->
       whne l ->
       [Γ |- tMap B C f (tMap A B' g l) ⇒* tMap A C (comp A f g) l : tList C];
+    redtm_listElimNil {Γ A P hnil hcons A'} :
+      [Γ |- A] ->
+      [Γ,, tList A |- P] ->
+      [Γ |- hnil : P[(tNil A)..]] ->
+      [Γ |- hcons : elimConsHypTy A P] ->
+      [Γ |- A'] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- tListElim A P hnil hcons (tNil A') ⇒* hnil : P[(tNil A')..]] ;
+    redtm_listElimCons {Γ A P hnil hcons A' hd tl} :
+      [Γ |- A] ->
+      [Γ,, tList A |- P] ->
+      [Γ |- hnil : P[(tNil A)..]] ->
+      [Γ |- hcons : elimConsHypTy A P] ->
+      [Γ |- A'] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- hd : A'] ->
+      [Γ |- tl : tList A'] ->
+      [Γ |- tListElim A P hnil hcons (tCons A' hd tl) ⇒* tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl) : P[(tCons A' hd tl)..]] ;
+    redtm_listelim {Γ A P hnil hcons l l'} :
+      [Γ |- A] ->
+      [Γ,, tList A |- P] ->
+      [Γ |- hnil : P[(tNil A)..]] ->
+      [Γ |- hcons : elimConsHypTy A P] ->
+      [Γ |- l ⇒* l' : tList A] ->
+      [Γ |- tListElim A P hnil hcons l ⇒* tListElim A P hnil hcons l' : P[l..]] ;
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -592,11 +632,11 @@ Class GenericTypingProperties `(ta : tag)
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
 #[export] Hint Resolve wft_wk wft_U wft_prod wft_nat wft_empty wft_sig wft_list | 2 : gen_typing.
-#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_list ty_nil ty_cons ty_map | 2 : gen_typing.
+#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_list ty_nil ty_cons ty_map ty_listElim | 2 : gen_typing.
 #[export] Hint Resolve convty_wk convty_uni convty_prod convty_nat convty_empty convty_sig convty_list | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_list convtm_nil convtm_cons | 2 : gen_typing.
 #[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
-#[export] Hint Resolve convneulist_wk convneulist_map_id convneulist_map_id convneulist_map  | 2 : gen_typing.
+#[export] Hint Resolve convneulist_wk convneulist_map_id convneulist_map_id convneulist_map convneu_listElim | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
@@ -769,7 +809,7 @@ Section GenericConsequences.
   #[local] Hint Resolve tyr_wf_l tmr_wf_l : gen_typing.
   #[local] Hint Resolve redty_wk redty_term redty_refl redtm_wk redtm_app redtm_refl | 2 : gen_typing.
   #[local] Hint Resolve redtm_beta redtm_natElimZero redtm_natElimSucc | 2 : gen_typing.
-  #[local] Hint Resolve redtm_map redtm_map_nil redtm_map_cons | 3 : gen_typing.
+  #[local] Hint Resolve redtm_map redtm_map_nil redtm_map_cons redtm_listElimNil redtm_listElimCons redtm_listelim | 3 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
 
   Lemma redty_red {Γ A B} :
@@ -1201,6 +1241,7 @@ Section GenericConsequences.
       rewrite scons_eta'.
       now bsimpl.
   Qed.
+  
   
   (** *** Lifting determinism properties from untyped reduction to typed reduction. *)
 
