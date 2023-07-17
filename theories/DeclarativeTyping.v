@@ -126,6 +126,13 @@ Section Definitions.
           [ Γ |- f : arr A B ] ->
           [ Γ |- l : tList A ] ->
           [ Γ |- tMap A B f l : tList B ]
+      | wfTermListElim {Γ A P hnil hcons l} :
+        [Γ |- A] ->
+        [Γ ,, tList A |- P] ->
+        [Γ |- hnil : P[(tNil A)..]] ->
+        [Γ |- hcons : elimConsHypTy A P] ->
+        [Γ |- l : tList A] ->
+        [Γ |- tListElim A P hnil hcons l : P[l..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -276,6 +283,31 @@ Section Definitions.
           [ Γ |- A ≅ A ] ->
           [ Γ |- l ≅ l' : tList A ] ->
           [ Γ |- tMap A A (idterm A) l ≅ l' : tList A ]
+      | TermRedListElimCong {Γ A A' P P' hnil hnil' hcons hcons' l l'} :
+        [Γ |- A] ->
+        [Γ |- A ≅ A'] ->
+        [Γ,, tList A |- P ≅ P'] ->
+        [Γ |- hnil ≅ hnil' : P[(tNil A)..]] ->
+        [Γ |- hcons ≅ hcons' : elimConsHypTy A P] ->
+        [Γ |- l ≅ l' : tList A] ->
+        [Γ |- tListElim A P hnil hcons l ≅ tListElim A' P' hnil' hcons' l' : P[l..]]
+      | TermRedListElimNil {Γ A P hnil hcons A'} :
+        [Γ |- A] ->
+        [Γ,, tList A |- P] ->
+        [Γ |- hnil : P[(tNil A)..]] ->
+        [Γ |- hcons : elimConsHypTy A P] ->
+        (* [Γ |- A'] -> *)
+        [Γ |- A ≅ A'] ->
+        [Γ |- tListElim A P hnil hcons (tNil A') ≅ hnil : P[(tNil A')..]]
+      | TermRedListElimCons {Γ A P hnil hcons A' hd tl} :
+        [Γ |- A] ->
+        [Γ,, tList A |- P] ->
+        [Γ |- hnil : P[(tNil A)..]] ->
+        [Γ |- hcons : elimConsHypTy A P] ->
+        [Γ |- A ≅ A'] ->
+        [Γ |- hd : A'] ->
+        [Γ |- tl : tList A'] ->
+        [Γ |- tListElim A P hnil hcons (tCons A' hd tl) ≅ tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl) : P[(tCons A' hd tl)..]]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]

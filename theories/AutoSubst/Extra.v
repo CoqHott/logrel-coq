@@ -71,6 +71,34 @@ Proof. now asimpl. Qed.
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
+(*
+  Γ |- A
+  Γ , x : list A |- P
+
+  Γ, x : A |- list A⟨↑⟩
+
+  Γ, x : A |- <shift> : Γ
+  Γ, x : A, y : list A⟨↑⟩ |- <up_ren shift> : Γ, x : list A
+  Γ, x : A, y : list A⟨↑⟩ |- P<up_ren shift>
+
+
+  Γ, x : A, y : list A⟨↑⟩ |- σ := ↑ >> ↑ >> tRel : Γ
+  Γ, x : A, y : list A⟨↑⟩ |- tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0) : list A[σ]
+  Γ, x : A, y : list A⟨↑⟩ |- P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0) .: σ]
+  
+
+
+  Γ, x : A, y : list A⟨↑⟩ |- P<up_ren shift> -> P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0).: σ]
+  Γ, x : A |- Π (list A⟨↑⟩) (P<up_ren shift> -> P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0).: σ])
+  Γ, x : A |- Π (list A⟨↑⟩) (P<up_ren shift> -> P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0).: σ])
+  Γ |- Π A Π (list A⟨↑⟩) (P<up_ren shift> -> P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0).: σ])
+
+  Γ |- elimConsHypTy A P
+*)
+
+Definition elimConsHypTy A P :=
+  tProd A (tProd (tList A⟨↑⟩) (arr P⟨up_ren ↑⟩ P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0) .: ↑ >> ↑ >> tRel])).
+
 Fixpoint tApps (fn : list term) (t : term) :=
   match fn with
   | nil => t

@@ -1,7 +1,7 @@
 
 From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeTyping DeclarativeInstance Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction Application Universe NormalRed SimpleArr.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion SingleSubst Reflexivity.
 From LogRel.Substitution.Introductions Require Import Universe Pi SimpleArr Var.
@@ -839,7 +839,6 @@ Proof.
   Unshelve. all: tea.
 Qed.
 
-From LogRel Require Import UntypedReduction.
 
 Lemma mapCompEqRedAux {Γ A Ap A' Ap' B Bp B' Bp' f fp f' fp' r r' l}
   {RA : [Γ ||-<l> A]}

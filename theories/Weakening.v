@@ -227,17 +227,23 @@ Section RenWhnf.
 
   Variable (ρ : nat -> nat).
 
+  Let P t := (whne t -> whne t⟨ρ⟩).
+  Let Q t := (whne_list t -> whne_list t⟨ρ⟩).
+
+  Lemma whne_mut_ren : (forall t, P t) × (forall t, Q t).
+  Proof.
+    eapply whne_mut ; cbn.
+    all: now econstructor.
+  Qed.
+
   Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
   Proof.
-    induction 1 ; cbn.
-    all: now econstructor.
+    apply whne_mut_ren.
   Qed.
 
   Lemma whne_list_ren t : whne_list t -> whne_list (t⟨ρ⟩).
   Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    all: eauto using whne_ren.
+    apply whne_mut_ren.
   Qed.
 
   Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
@@ -446,6 +452,40 @@ Proof. now cbn. Qed.
 
 Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
 Proof. now bsimpl. Qed.
+
+
+(* Γ |- A 
+  Γ, x : list A |- P
+  Δ |- ρ : Γ
+
+  Δ |- A⟨ρ⟩
+  Δ, x : list A⟨ρ⟩ |- P⟨wk_up (list A) ρ⟩
+*)
+Lemma wk_elimConsHypTy {A P Γ Δ} (ρ : Δ ≤ Γ) :
+  elimConsHypTy A⟨ρ⟩ P⟨wk_up (tList A) ρ⟩ = (elimConsHypTy A P)⟨ρ⟩.
+Proof.
+  unfold elimConsHypTy.
+  rewrite <- wk_prod; f_equal.
+  rewrite <- wk_prod; f_equal.
+  1: rewrite <- wk_list; f_equal; now bsimpl.
+  rewrite <- wk_arr; f_equal.
+  1: now bsimpl.
+  f_equal.
+  now bsimpl.
+Qed.
+
+Lemma wk_elimNilHypTy {A P : term} {Γ Δ} (ρ : Δ ≤ Γ) :
+  P⟨wk_up (tList A) ρ⟩[(tNil A⟨ρ⟩)..] = (P[(tNil A)..])⟨ρ⟩.
+Proof.
+  now bsimpl.
+Qed.
+
+Lemma wk_listElim {A P hnil hcons l Γ Δ} (ρ : Δ ≤ Γ) :
+  (tListElim A P hnil hcons l)⟨ρ⟩ = tListElim A⟨ρ⟩ P⟨wk_up (tList A) ρ⟩ hnil⟨ρ⟩ hcons⟨ρ⟩ l⟨ρ⟩.
+Proof.
+  now bsimpl.
+Qed.
+
 
 (** Weakening and compactification *)
 

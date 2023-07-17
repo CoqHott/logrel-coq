@@ -33,20 +33,25 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tSnd p ⇒ tSnd p']
 | sndPair {A B a b} :
     [ tSnd (tPair A B a b) ⇒ b ]
-| termRedMapNilAlg {A A' B f} :
+| mapNil {A A' B f} :
   [ tMap A B f (tNil A') ⇒ tNil B ]
-| termRedMapConsAlg {A A' B f a l} :
+| mapCons {A A' B f a l} :
   [ tMap A B f (tCons A' a l) ⇒ tCons B (tApp f a) (tMap A B f l) ]
-| termRedMapUnderAlg {A B f l l'} :
+| mapSubst {A B f l l'} :
   [ l ⇒ l' ] ->
   [ tMap A B f l ⇒ tMap A B f l' ]
 | mapComp {A B B' C f g l} :
   whne l->
   [ tMap B C f (tMap A B' g l) ⇒ tMap A C (comp A f g) l]
+| listElimNil {A P hnil hcons A'} :
+  [ tListElim A P hnil hcons (tNil A') ⇒ hnil]
+| listElimCons {A P hnil hcons A' hd tl} :
+  [ tListElim A P hnil hcons (tCons A' hd tl) ⇒ tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl) ]
+| listElimSubst {A P hnil hcons l l'} :
+  [l ⇒ l'] ->
+  [ tListElim A P hnil hcons l ⇒ tListElim A P hnil hcons l' ]
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
-
-(* Keep in sync with OneRedTermDecl! *)
 
 (** *** Multi-step reduction *)
 
@@ -80,24 +85,26 @@ Ltac inv_whne :=
   end.
 
 
+Lemma whne_mut_nored n u (red : [n ⇒ u]) : (whne n ->  False) × (whne_list n -> False).
+Proof.
+  induction red; split; intros ne *.
+  all: try match goal with H : _ × _ |- _ => destruct H end.
+  all: try solve [ inversion ne | (inv_whne ; auto) | do 2 (inv_whne ; auto) | do 3 inv_whne | do 4 inv_whne].
+  inversion ne; subst.
+  + inversion H0.
+  + inversion H.
+Qed.
+
 Lemma whne_nored n u :
   whne n -> [n ⇒ u] -> False.
 Proof.
-  intros ne red.
-  induction red in ne |- *.
-  all: try solve [ (inv_whne ; auto) | do 2 (inv_whne ; auto)].
-  inversion ne.
+  intros ne red; now eapply (fst (whne_mut_nored n u red)).
 Qed.
 
 Lemma whne_list_nored n u :
   whne_list n -> [n ⇒ u] -> False.
 Proof.
-  intros h r; inversion h; subst.
-  2: now eapply whne_nored. 
-  inversion r; subst.
-  3: now eapply whne_nored.
-  1,2: do 2 inv_whne.
-  inversion H.
+  intros ne red; now eapply (snd (whne_mut_nored n u red)).
 Qed.
 
 Lemma whnf_nored n u :
@@ -110,6 +117,8 @@ Proof.
   all: try solve [apply IHred ; now constructor].
   all: try solve [do 2 (inv_whne ; auto)].
   all: try (inv_whne ; apply IHred ; now constructor).
+  + do 3 inv_whne.
+  + do 3 inv_whne.
 Qed.
 
 (** *** Determinism of reduction *)
@@ -169,6 +178,13 @@ Proof.
     1,2: inv_whne.
     1: exfalso; now eapply whne_nored.
     inversion w.
+  - inversion red'; subst; clear red'; [reflexivity|].
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; clear red'; [reflexivity|].
+    exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; clear red'.
+    1,2: exfalso; eapply whnf_nored; tea; constructor.
+    f_equal; auto.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -284,6 +300,13 @@ Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.
 Qed.
+
+Lemma redalg_listElim {A P hnil hcons l l'} : [l ⇒* l'] -> [tListElim A P hnil hcons l ⇒* tListElim A P hnil hcons l'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
 
 Lemma redalg_one_step {t t'} : [t ⇒ t'] -> [t ⇒* t'].
 Proof. intros; econstructor;[tea|reflexivity]. Qed.

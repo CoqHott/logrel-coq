@@ -23,6 +23,9 @@ with sne (r : term) : Type :=
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
   | sne_tNatElim {P hz hs n} : r = tNatElim P hz hs n -> snf P -> snf hz -> snf hs -> sne n -> sne r
   | sne_tEmptyElim {P e} : r = tEmptyElim P e -> snf P -> sne e -> sne r
+  | sne_tListElim {A P hnil hcons l} :
+    r = tListElim A P hnil hcons l ->
+    snf A -> snf P -> snf hnil -> snf hcons -> sne_list l -> sne r
   | sne_tFst {p} : r = tFst p -> sne p -> sne r
   | sne_tSnd {p} : r = tSnd p -> sne p -> sne r
 with sne_list (r : term) : Type :=
@@ -67,22 +70,27 @@ Definition sne_list_ind
 (R : forall r : term, sne_list r -> Prop) := sne_list_rect P Q R.
 
 (* A&Y: add as many ps as you added new constructors for snf and sne in total *)
-Definition snf_sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 :=
+Definition snf_sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23 :=
   pair 
-    (snf_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)
+    (snf_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23)
   (pair
-    (sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)
-    (sne_list_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22)).
+    (sne_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23)
+    (sne_list_rect P Q R p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23)).
+
+
+Lemma sn_mut : (forall t, snf t -> True) × (forall t, sne t -> whne t) × (forall t, sne_list t -> whne_list t).
+Proof.
+  eapply snf_sne_rect; intros; subst; constructor; assumption.
+Qed.
 
 Lemma sne_whne : forall (t : term), sne t -> whne t.
 Proof.
-apply sne_rect with (P := fun _ _ => True) (P1 := fun _ _ => True); intros; subst; constructor; assumption.
+  apply sn_mut.
 Qed.
 
 Lemma sne_whne_list : forall (t : term), sne_list t -> whne_list t.
 Proof.
-apply sne_list_rect with (P := fun _ _ => True) (P0 := fun _ _ => True) ; intros; subst; constructor.
-all: eauto using sne_whne.
+  apply sn_mut.
 Qed.
 
 Lemma snf_red : forall t u, [ t ⇒* u ] -> snf u -> snf t.
@@ -125,8 +133,9 @@ Qed.
 Section RenSnf.
 
   Lemma snf_sne_ren :
-    prod (forall t, snf t -> forall ρ, snf (t⟨ρ⟩))
-    (prod (forall t, sne t -> forall ρ, sne (t⟨ρ⟩)) (forall t, sne_list t -> forall ρ, sne_list (t⟨ρ⟩))).
+    (forall t, snf t -> forall ρ, snf (t⟨ρ⟩)) ×
+     (forall t, sne t -> forall ρ, sne (t⟨ρ⟩))
+     × (forall t, sne_list t -> forall ρ, sne_list (t⟨ρ⟩)).
   Proof.
   apply snf_sne_rect.
   + intros r s Hr ρ.
@@ -178,6 +187,8 @@ Section RenSnf.
     eapply sne_tNatElim; eauto.
   + intros. subst. cbn.
     eapply sne_tEmptyElim; eauto.
+  + intros. subst; cbn.
+    eapply sne_tListElim; eauto.
   + intros r ? -> ???; cbn; eapply sne_tFst; eauto.
   + intros r ? -> ???; cbn; eapply sne_tSnd; eauto.
   + intros; subst; cbn.

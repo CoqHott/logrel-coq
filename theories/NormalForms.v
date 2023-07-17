@@ -27,12 +27,44 @@ with whne : term -> Type :=
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)
   | whne_tSnd {p} : whne p -> whne (tSnd p)
+  | whne_tListElim {A P hnil hcons l} : whne_list l -> whne (tListElim A P hnil hcons l) 
 with whne_list : term -> Type :=
   | whne_tMap {A B f l} : whne l -> whne_list (tMap A B f l)
   | whne_list_whne {n} : whne n -> whne_list n.
 
 
 #[global] Hint Constructors whne whne_list whnf : gen_typing.
+
+Section WhneMut.
+
+Scheme
+    whne_mut_rect := Induction for whne Sort Type with
+    whne_list_mut_rect := Induction for whne_list  Sort Type.
+
+Combined Scheme _whne_mut from
+  whne_mut_rect,
+  whne_list_mut_rect.
+
+Let _whne_mutType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _whne_mut);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let whne_mutType :=
+  ltac: (let ind := eval cbv delta [_whne_mutType] zeta
+    in _whne_mutType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma whne_mut : whne_mutType.
+Proof.
+  intros PRed PProp **; split; now apply (_whne_mut PRed PProp).
+Defined.
+
+End WhneMut.
+
 
 Ltac inv_whne :=
   repeat lazymatch goal with

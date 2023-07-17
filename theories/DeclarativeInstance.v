@@ -27,6 +27,8 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tNil A => T = tList A × [Γ |- A]
     | tCons A hd tl => [× T = tList A, [Γ |- A], [Γ |- hd : A] & [Γ |- tl : tList A]]
     | tMap A B f l => [× T = tList B, [Γ |- A], [Γ |- B], [Γ |- f : arr A B]&[Γ |- l : tList A]]
+    | tListElim A P hnil hcons l =>
+      [× T = P[l..], [Γ |- A], [Γ,, tList A |- P], [Γ |- hnil : P[(tNil A)..]], [Γ |- hcons : elimConsHypTy A P] & [Γ |- l : tList A]]
     | tSort _ => False
     | tNat => T = U
     | tZero => T = tNat
@@ -206,6 +208,15 @@ Section TypingWk.
       + rewrite wk_arr.
         now apply IHf.
       + now eapply IHl.
+    - intros * _ IHA _ IHP _ IHnil _ IHcons _ IHl ? ρ ?.
+      erewrite wk_listElim, subst_ren_wk_up.
+      econstructor.
+      2: rewrite wk_list.
+      3: rewrite wk_elimNilHypTy.
+      4: rewrite wk_elimConsHypTy.
+      all: eauto.
+      eapply IHP; econstructor; tea.
+      cbn; econstructor; eauto.
     - intros * _ IHt _ IHAB ? ρ ?.
       econstructor.
       1: now eapply IHt.
@@ -367,6 +378,30 @@ Section TypingWk.
       eapply TermRedMapId.
       + now apply IHA.
       + now apply IHl.
+    - intros * _ IH _ IHA _ IHP _ IHnil _ IHcons _ IHl ? ρ ?.
+      erewrite 2!wk_listElim, subst_ren_wk_up.
+      econstructor.
+      3: rewrite wk_list.
+      4: rewrite wk_elimNilHypTy.
+      5: rewrite wk_elimConsHypTy.
+      all: eauto.
+      eapply IHP; econstructor; tea; cbn; econstructor; eauto.
+    - intros *  _ IHA _ IHP _ IHnil _ IHcons _ IHl ? ρ ?.
+      rewrite wk_listElim, <- wk_elimNilHypTy.
+      econstructor.
+      2: rewrite wk_list.
+      3: rewrite wk_elimNilHypTy.
+      4: rewrite wk_elimConsHypTy.
+      all: eauto.
+      eapply IHP; econstructor; tea; cbn; econstructor; eauto.
+    - intros *  _ IHA _ IHP _ IHnil _ IHcons _ IHA' _ IHhd _ IHtl ? ρ ?.
+      erewrite wk_listElim, subst_ren_wk_up.
+      econstructor.
+      2: rewrite wk_list.
+      3: rewrite wk_elimNilHypTy.
+      4: rewrite wk_elimConsHypTy.
+      all: eauto.
+      eapply IHP; econstructor; tea; cbn; econstructor; eauto.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -625,6 +660,7 @@ Module DeclarativeTypingProperties.
   - intros ?????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
+  - intros * ????? []; split; now econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuListDeclProperties : ConvNeuListProperties (ta := de) := {}.
@@ -748,6 +784,18 @@ Module DeclarativeTypingProperties.
         2: now econstructor.
         econstructor; tea. eapply convty_simple_arr; tea.
         now econstructor.
+  - intros; split; refold.
+    + econstructor; tea; econstructor; [|symmetry]; now econstructor.
+    + eapply redalg_one_step; econstructor.
+    + now econstructor.
+  - intros; split; refold.
+    + econstructor; tea; econstructor; [|symmetry]; now econstructor.
+    + eapply redalg_one_step; econstructor.
+    + now econstructor.
+  - intros * ???? [] ; split; refold.
+    + now econstructor.
+    + now eapply redalg_listElim.
+    + econstructor; tea; first [now eapply TypeRefl| now eapply TermRefl].
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.
