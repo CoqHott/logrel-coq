@@ -37,6 +37,57 @@ Section SimpleArrow.
   Lemma ArrRedTy {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-<l> arr A B].
   Proof. intros; eapply LRPi'; now eapply ArrRedTy0. Qed.
 
+
+  Lemma shift_subst_scons {B a Γ Δ} (ρ : Δ ≤ Γ) : B⟨↑⟩[a .: ρ >> tRel] = B⟨ρ⟩.
+  Proof. bsimpl; now rewrite rinstInst'_term. Qed.
+
+  Lemma shiftPolyRedEq {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B]) (PAB : PolyRed Γ l A B⟨↑⟩) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    PolyRedEq PAB A' B'⟨↑⟩.
+  Proof.
+    intros; escape; unshelve econstructor.
+    - intros; irrelevanceRefl; now eapply wkEq.
+    - intros; irrelevance0; rewrite shift_subst_scons; [reflexivity|].
+      now eapply wkEq.
+      Unshelve. all: tea.
+  Qed.
+
+  Lemma arrRedCong0 {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) (RAB : [Γ ||-Π<l> arr A B]) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-Π arr A B ≅ arr A' B' | normRedΠ0 RAB].
+  Proof.
+    intros RAA' RBB'; escape.
+    unshelve econstructor; cycle 2.
+    + eapply redtywf_refl; now eapply wft_simple_arr.
+    + now eapply convty_simple_arr.
+    + now eapply shiftPolyRedEq.
+  Qed.
+
+    
+  Lemma arrRedCong {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-<l> arr A B ≅ arr A' B' | normRedΠ (ArrRedTy RA RB)].
+  Proof.
+    intros; now eapply arrRedCong0.
+  Qed.
+
+  Lemma arrRedCong' {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) (RAB : [Γ ||-<l> arr A B]) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-<l> arr A B ≅ arr A' B' | RAB].
+  Proof.
+    intros; irrelevanceRefl; now eapply arrRedCong.
+  Qed.
+
+
+
+
   (* Lemma idrefl {Γ l A} (RA : [Γ ||-<l> A]) :
     [Γ ||-<l> idterm A ≅ idterm A : arr A A | ArrRedTy RA RA].
   Proof.
