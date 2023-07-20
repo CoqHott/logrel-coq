@@ -143,7 +143,7 @@ Proof.
   - intros ? ???? A B Hm [IHm []] ? [IHt] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [|m' t'| | | |].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn; try exact I.
     split.
     + apply (IHm tt m') ; tea.
       destruct Hty as [? (?&(?&?&[])&?)%termGen'].
@@ -163,7 +163,7 @@ Proof.
   - intros * Hn [IHn] ? [IHP] ? [IHz] ? [IHs] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [| |P'' hz'' hs'' n''| | |].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
     1: apply (IHn tt n'') ; tea ; now eexists.
@@ -198,7 +198,7 @@ Proof.
   - intros * He [IHe] ? [IHP] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [| | | P'' e'' | |].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
     1: apply (IHe tt e'') ; tea ; now eexists.
@@ -212,7 +212,7 @@ Proof.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [| | | | t |].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
     1: apply (ih tt t); tea; now eexists.
@@ -224,7 +224,7 @@ Proof.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
     destruct wu' as [| | | | | t].
-    all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
+    all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
     1: apply (ih tt t); tea; now eexists.
@@ -282,7 +282,7 @@ Proof.
     eapply Uterm_isType in wu' ; tea.
     destruct wu' as [ | A'' B'' | | | | ? wu'] ; cycle -1.
     1: rewrite (whne_ty_view1 wu').
-    all: cbn ; try easy.
+    all: cbn ; try exact I.
     eapply termGen' in Hty as (?&[]&?) ; subst.
     split.
     2: intros [|] ; cbn ; [|easy] ; intros ?%implem_conv_sound%algo_conv_sound.

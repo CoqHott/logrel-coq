@@ -221,9 +221,7 @@ Section RedImplemComplete.
   Proof.
     intros [|w]%well_formed_well_typed.
     all: eapply compute_domain.
-    Fail rewrite wh_red_equation_1.
-      (* weird, should work? probably the reason why simp also fails? *)
-    all: rewrite (wh_red_equation_1 t) ; cbn.
+    all: rewrite wh_red_equation_1; cbn.
     all: split ; [|easy].
     - eapply wh_red_stack_complete ; tea.
     - inversion w ; subst ; clear w.

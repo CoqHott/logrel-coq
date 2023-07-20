@@ -326,6 +326,7 @@ Section LRIrrelevantInductionStep.
 
 Universe i j k l i' j' k' l'.
 
+#[local]
 Definition IHStatement lA lA' :=
   (forall l0 (ltA : l0 << lA) (ltA' : l0 << lA'),
       prod@{v v}
@@ -337,6 +338,7 @@ Definition IHStatement lA lA' :=
             [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈>
             [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ≅ u | lr2 ])).
 
+#[local]
 Lemma UnivIrrelevanceLRPack
   {Γ lA lA' A A'}
   (IH : IHStatement lA lA')
@@ -370,6 +372,7 @@ Qed.
 
 (** ** The main theorem *)
 
+#[local]
 Lemma LRIrrelevantPreds {lA lA'}
   (IH : IHStatement lA lA')
   (Γ : context) (A A' : term)
@@ -429,6 +432,7 @@ Proof.
 Qed.
 
 
+#[local]
 Lemma LRIrrelevantCumPolyRed {lA}
   (IH : IHStatement lA lA)
   (Γ : context) (shp pos : term)
@@ -467,6 +471,7 @@ Qed.
 
 
 Set Printing Universes.
+#[local]
 Lemma LRIrrelevantCumTy {lA}
   (IH : IHStatement lA lA)
   (Γ : context) (A : term)
@@ -491,6 +496,7 @@ Proof.
 Qed.
 
 
+#[local]
 Lemma IrrRec0 : IHStatement zero zero.
 Proof.
   intros ? ltA; inversion ltA.
@@ -508,6 +514,7 @@ Fail Fail Constraint l' < l.
 
 End LRIrrelevantInductionStep.
 
+#[local]
 Theorem IrrRec@{i j k l i' j' k' l'} {lA} {lA'} :
   IHStatement@{i j k l i' j' k' l'} lA lA'.
 Proof.
@@ -525,6 +532,7 @@ Proof.
     exact (tyEq u).
 Qed.
 
+#[local]
 Theorem LRIrrelevantCum@{i j k l i' j' k' l'}
   (Γ : context) (A A' : term) {lA lA'}
   {eqTyA redTmA : term -> Type@{k}}
@@ -540,6 +548,30 @@ Theorem LRIrrelevantCum@{i j k l i' j' k' l'}
 Proof.
   exact (LRIrrelevantPreds@{i j k l i' j' k' l'} IrrRec Γ A A' lrA lrA').
 Qed.
+
+Theorem LRIrrelevantPack@{i j k l} 
+  (Γ : context) (A A' : term) {lA lA'} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
+  (RA' : [ LogRel@{i j k l} lA' | Γ ||- A' ])
+  (RAA' : [Γ ||-<lA> A ≅ A' | RA]) :
+  equivLRPack@{v v v} RA RA'.
+Proof.
+  pose proof (LRIrrelevantCum@{i j k l i j k l} Γ A A' (LRAd.adequate RA) (LRAd.adequate RA') RAA') as [].
+  constructor; eauto.
+Defined.
+
+Theorem LRTransEq@{i j k l} 
+  (Γ : context) (A B C : term) {lA lB} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
+  (RB : [ LogRel@{i j k l} lB | Γ ||- B ])
+  (RAB : [Γ ||-<lA> A ≅ B | RA])
+  (RBC : [Γ ||-<lB> B ≅ C | RB]) :
+  [Γ ||-<lA> A ≅ C | RA].
+Proof.
+  pose proof (LRIrrelevantPack Γ A B RA RB RAB) as [h _ _].
+  now apply h.
+Defined.
+
 
 Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
   {Γ : context} {A : term}
@@ -557,6 +589,7 @@ Qed.
 End LRIrrelevant.
 
 
+#[local]
 Corollary TyEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall B, eqTyA B -> eqTyA' B.
@@ -588,6 +621,7 @@ Proof.
   revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
 Qed.
 
+#[local]
 Corollary RedTmIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
@@ -620,6 +654,7 @@ Proof.
 Qed.
 
 
+#[local]
 Corollary TmEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
   forall t u, eqTmA t u -> eqTmA' t u.
@@ -671,6 +706,7 @@ Proof.
   now eapply TyEqSym.
 Qed.
 
+#[local]
 Corollary RedTmConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
@@ -701,6 +737,7 @@ Proof.
   Unshelve. all: tea.
 Qed.
 
+#[local]
 Corollary TmEqRedConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
   (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->

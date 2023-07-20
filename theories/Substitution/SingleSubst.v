@@ -60,7 +60,6 @@ Proof.
     eapply validTmEq.
     now eapply convEq.
     Unshelve. all: tea.
-    now eapply validTy.
 Qed.
 
 

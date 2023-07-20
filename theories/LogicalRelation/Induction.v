@@ -208,7 +208,7 @@ Section Inversions.
       exfalso.
       gen_typing.
     - intros * ? A' red whA.
-      enough ({w' & whA = NeType w'}) as [? ->] by easy.
+      enough (∑ w', whA = NeType w') as [? ->] by easy.
       destruct neA as [A'' redA neA''].
       apply convneu_whne in neA''.
       assert (A' = A'') as <-.
