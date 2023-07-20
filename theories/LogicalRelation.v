@@ -1069,13 +1069,45 @@ Proof.
   intros PRedEq PPropEq **; split; now apply (_ListRedEqInduction PRedEq PPropEq).
 Defined.
 
+Scheme
+    ListRedTmEq_mut_rect := Induction for ListRedTmEq Sort Type with
+    ListPropEq_mut_rect := Induction for ListPropEq   Sort Type.
+
+Combined Scheme _ListRedEqInductionDep from
+  ListRedTmEq_mut_rect,
+  ListPropEq_mut_rect.
+
+Let _ListRedEqInductionDepType :=
+  ltac:(let ind := fresh "ind" in
+      pose (ind := _ListRedEqInductionDep);
+      let ind_ty := type of ind in
+      exact ind_ty).
+
+Let ListRedEqInductionDepType :=
+  ltac: (let ind := eval cbv delta [_ListRedEqInductionDepType] zeta
+    in _ListRedEqInductionDepType in
+    let ind' := polymorphise ind in
+  exact ind').
+
+(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
+Lemma ListRedEqInductionDep : ListRedEqInductionDepType.
+Proof.
+  intros PRed PProp **; split; now apply (_ListRedEqInductionDep PRed PProp).
+Defined.
+
+Definition redl {t u} (Rtu : ListRedTmEq t u) : ListRedTm Γ A LA t.
+Proof. now destruct Rtu. Defined.
+
+Definition redr {t u} (Rtu : ListRedTmEq t u) : ListRedTm Γ A LA u.
+Proof. now destruct Rtu. Defined.
+
 End ListRedTmEq.
 Arguments ListRedTmEq {_ _ _ _ _ _ _ _ _ _}.
 Arguments ListPropEq {_ _ _ _ _ _ _ _ _ _}.
 Arguments map_inv_eq {_ _ _ _ _ _ _ _ _}.
 End ListRedTmEq.
 
-Export ListRedTmEq(ListRedTmEq,Build_ListRedTmEq, ListPropEq, ListRedEqInduction).
+Export ListRedTmEq(ListRedTmEq,Build_ListRedTmEq, ListPropEq, ListRedEqInduction, ListRedEqInductionDep).
 
 (** ** Definition of the logical relation *)
 
