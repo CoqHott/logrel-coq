@@ -2,7 +2,7 @@
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context DeclarativeTyping.
+From LogRel Require Import Utils BasicAst Context.
 From PartialFun Require Import Monad PartialFun.
 
 Import MonadNotations.
