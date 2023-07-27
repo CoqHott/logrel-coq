@@ -21,6 +21,4 @@ force _CoqProject Makefile: ;
 %: Makefile.coq force
 	@+$(MAKE) -f Makefile.coq $@
 
-depgraph: dependency_graph.png
-
-.PHONY: all clean force partial-fun logrel depgraph
+.PHONY: all clean force partial-fun logrel

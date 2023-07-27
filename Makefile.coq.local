@@ -24,8 +24,11 @@ coqdoc: $(GLOBFILES) $(VFILES) $(HEADER) $(FOOTER) $(RESOURCES) $(FRONTPAGE)
 clean::
 	$(HIDE)rm -rf $(COQDOCDIR)/*.html
 
-dependency_graph.dot: $(VFILES)
-	coqdep -Q theories LogRel -R coq-partialfun/theories PartialFun $(VFILES) | perl generate_deps.pl | tred > dependency_graph.dot
+$(DOCDIR)/dependency_graph.dot: $(VFILES)
+	coqdep -Q theories LogRel -R coq-partialfun/theories PartialFun $(VFILES) | perl generate_deps.pl | tred > $(DOCDIR)/dependency_graph.dot
 
-dependency_graph.png: dependency_graph.dot
-	dot -T png dependency_graph.dot -o dependency_graph.png
+$(DOCDIR)/dependency_graph.png: $(DOCDIR)/dependency_graph.dot
+	dot -T png $(DOCDIR)/dependency_graph.dot -o $(DOCDIR)/dependency_graph.png
+
+depgraph: $(DOCDIR)/dependency_graph.png
+.PHONY: depgraph
