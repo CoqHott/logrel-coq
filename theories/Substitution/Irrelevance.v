@@ -152,8 +152,8 @@ Proof.
   Unshelve. all: tea. now eapply validTy.
 Qed.
 
-Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
-  [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A | VΓ' | VA'].
+Lemma irrelevanceTm'' {Γ l l' t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l'> A | VΓ']) :
+  [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l'> t : A | VΓ' | VA'].
 Proof.
   intros [h1 h2]; unshelve econstructor.
   - intros. irrelevanceRefl.
@@ -165,11 +165,19 @@ Proof.
     eapply irrelevanceSubstEq; eassumption.
 Qed.
 
-Lemma irrelevanceTm' {Γ l t A A'} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) :
-  A = A' -> [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A' | VΓ' | VA'].
+Lemma irrelevanceTm' {Γ l l' t A A'} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l'> A' | VΓ']) :
+  A = A' -> [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l'> t : A' | VΓ' | VA'].
 Proof.
-  intros ->; now eapply irrelevanceTm.
+  intros ->; now eapply irrelevanceTm''.
 Qed.
+
+Lemma irrelevanceTm {Γ l t A} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
+  [Γ ||-v<l> t : A | VΓ | VA] -> [Γ ||-v<l> t : A | VΓ' | VA'].
+Proof.
+  now eapply irrelevanceTm''.
+Qed.
+
+
 
 Lemma irrelevanceTmLift {l t A F G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])

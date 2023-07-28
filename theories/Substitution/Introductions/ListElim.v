@@ -468,13 +468,14 @@ Context {Γ l A P hnil hcons}
   (RLiA0 : [Γ ||-List<l> tList A])
   (RLiA := normList0 RLiA0)
   (RLA := LRList' RLiA)
-  (RP : forall t, [Γ ||-<l> t : _ | RLA] -> [Γ ||-<l> P[t..]])
-  (RPeq : forall t u (Rt : [Γ ||-<l> t : _ | RLA]), [Γ ||-<l> u : _ | RLA] -> [Γ ||-<l> t ≅ u : _ | RLA] -> [Γ ||-<l> P[t..] ≅ P[u..]| RP t Rt])
   (PolyP : PolyRed Γ l (tList A) P)
+  (RP := polyCodSubstRed RLA PolyP)
+  (RPeq := polyCodSubstExtRed RLA PolyP)
   (Rtynil : [Γ ||-<l> P[(tNil A)..]])
   (Rhnil : [Γ ||-<l> hnil : _ | Rtynil])
   (Rtycons : [Γ ||-<l> elimConsHypTy A P])
   (Rhcons : [Γ ||-<l> hcons : _ | Rtycons]).
+
 
 Definition listElimProp  t (Rt : ListProp Γ _ RLiA t) : term.
 Proof.
@@ -628,15 +629,15 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
   (RLiA' := normList0 RLiA0')
   (RLA' := LRList' RLiA')
 
-  (RP : forall t, [Γ ||-<l> t : _ | RLA] -> [Γ ||-<l> P[t..]])
-  (RP' : forall t, [Γ ||-<l> t : _ | RLA'] -> [Γ ||-<l> P'[t..]])
-  (RPeq : forall t u (Rt : [Γ ||-<l> t : _ | RLA]), [Γ ||-<l> u : _ | RLA] -> [Γ ||-<l> t ≅ u : _ | RLA] -> [Γ ||-<l> P[t..] ≅ P[u..]| RP t Rt])
-  (RPeq' : forall t u (Rt : [Γ ||-<l> t : _ | RLA']), [Γ ||-<l> u : _ | RLA'] -> [Γ ||-<l> t ≅ u : _ | RLA'] -> [Γ ||-<l> P'[t..] ≅ P'[u..]| RP' t Rt])
-  (RPP' : forall t u (Rt : [Γ ||-<l> t : _ | RLA]), [Γ ||-<l> u : _ | RLA] -> [Γ ||-<l> t ≅ u : _ | RLA] -> [Γ ||-<l> P[t..] ≅ P'[u..]| RP t Rt])
-
   (PolyP : PolyRed Γ l (tList A) P)
   (PolyP' : PolyRed Γ l (tList A') P')
   (PolyPeq : PolyRedEq PolyP (tList A') P')
+
+  (RP := polyCodSubstRed RLA PolyP)
+  (RP' := polyCodSubstRed RLA' PolyP')
+  (RPeq := polyCodSubstExtRed RLA PolyP)
+  (RPeq' := polyCodSubstExtRed RLA' PolyP')
+
 
   (Rtynil : [Γ ||-<l> P[(tNil A)..]])
   (Rhnil : [Γ ||-<l> hnil : _ | Rtynil])
@@ -650,6 +651,7 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
   (Rhcons' : [Γ ||-<l> hcons' : _ | Rtycons'])
   (Rhconseq : [Γ ||-<l> hcons ≅ hcons' : _ | Rtycons]).
 
+
   Let listElimProp' := @listElimProp Γ l A' P' hnil' hcons' RLiA0'.
   Let listElimProp := @listElimProp Γ l A P hnil hcons RLiA0.
 
@@ -660,7 +662,7 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
     forall (Rt : [Γ ||-<l> t : _ | RLA]) (Ru : [Γ ||-<l> u : _ | RLA]) (RPl := RP t Rt),
       [Γ ||-<l> tListElim A P hnil hcons t ≅ tListElim A' P' hnil' hcons' u : _ | RPl].
 
-  Lemma elimListRedEq : 
+  Lemma elimListRedEq_mut : 
     (forall t u (Rtu : ListRedTmEq Γ _ RLiA t u), QRed t u Rtu) ×
     (forall t u (Ptu : ListPropEq Γ _ RLiA t u), QProp t u Ptu).
   Proof.
@@ -669,6 +671,16 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
       + eapply redtywf_refl; escape; gen_typing.
       + escape; now eapply convty_list.
       + intros; cbn; irrelevanceRefl; now unshelve eapply wkEq.
+    }
+    assert (RPP' : forall t u (Rt : [Γ ||-<l> t : _ | RLA]), [Γ ||-<l> u : _ | RLA] -> [Γ ||-<l> t ≅ u : _ | RLA] -> [Γ ||-<l> P[t..] ≅ P'[u..]| RP t Rt]).
+    1:{
+      intros.
+      assert [|- Γ] by (escape ; gen_typing).
+      eapply transEq.
+      1: now unshelve eapply RPeq.
+      irrelevance0; erewrite <- subst_wk_id_tail; [reflexivity|].
+      unshelve eapply (PolyRedEq.posRed PolyPeq); tea; irrelevance.
+      Unshelve. 3: now eapply RP. 2: eapply RP'; eapply LRTmRedConv; tea.
     }
 
     assert [Γ |- A] by now escape.
@@ -680,8 +692,8 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
     - intros.
       assert [Γ ||-<l> t ≅ u : _ | RLA] by now econstructor.
       assert (Ru' : [Γ ||-<l> u : _ | RLA']) by now eapply LRTmRedConv.
-      pose proof (elimListRed RA RLiA0 RP RPeq PolyP Rtynil Rhnil Rtycons Rhcons t Rt) as [_ [Rtnf Rtnfeq]].
-      pose proof (elimListRed RA' RLiA0' RP' RPeq' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' u Ru') as [_ [Runf Runfeq]].
+      pose proof (elimListRed RA RLiA0 PolyP Rtynil Rhnil Rtycons Rhcons t Rt) as [_ [Rtnf Rtnfeq]].
+      pose proof (elimListRed RA' RLiA0' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' u Ru') as [_ [Runf Runfeq]].
       assert [Γ ||-<l> P[t..] ≅ P'[u..] | RP _ Rt] by now eapply RPP'.
       eapply LREqTermHelper; tea.
       (* why does rewrite fails here ? *)
@@ -701,8 +713,8 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
 
       set (Pt := ListProp_nil_inv RA _ (ListRedTm_prop_whnf RA _ Rt whnf_tNil)).
       set (Pu' := ListProp_nil_inv RA' _ (ListRedTm_prop_whnf RA' _ Ru' whnf_tNil)).
-      pose proof (elimListProp RA RLiA0 RP RPeq PolyP Rtynil Rhnil Rtycons Rhcons _ Pt Rt) as [_ []].
-      pose proof (elimListProp RA' RLiA0' RP' RPeq' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' _ Pu' Ru') as [_ []].
+      pose proof (elimListProp RA RLiA0 PolyP Rtynil Rhnil Rtycons Rhcons _ Pt Rt) as [_ []].
+      pose proof (elimListProp RA' RLiA0' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' _ Pu' Ru') as [_ []].
       eapply LREqTermHelper; tea.
       + eapply RPP'; tea.
         eapply transEqTerm; tea.
@@ -723,8 +735,8 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
       pose proof (Pu0' := ListRedTm_prop_whnf RA' _ Ru' whnf_tCons).
       pose proof (ListProp_cons_inv0 RA' _ Pu0') as [].
       set (Pu' := ListProp_cons_inv RA' _ Pu0').
-      pose proof (elimListProp RA RLiA0 RP RPeq PolyP Rtynil Rhnil Rtycons Rhcons _ Pt Rt) as [_ []].
-      pose proof (elimListProp RA' RLiA0' RP' RPeq' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' _ Pu' Ru') as [_ []].
+      pose proof (elimListProp RA RLiA0 PolyP Rtynil Rhnil Rtycons Rhcons _ Pt Rt) as [_ []].
+      pose proof (elimListProp RA' RLiA0' PolyP' Rtynil' Rhnil' Rtycons' Rhcons' _ Pu' Ru') as [_ []].
       eapply LREqTermHelper; tea.
       + eapply RPP'; tea.
         eapply consEqRed; cycle 3; tea.
@@ -747,7 +759,7 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
           now escape.
         Unshelve. 
           2: irrelevance.
-          2: tea.
+          2,3: tea.
           now eapply consRed.
     - intros. 
       pose proof (polyRedId PolyP) as [_].
@@ -766,5 +778,120 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
       + now eapply convneu_listElim.
   Qed.
 
+  Lemma elimListRedEq : forall t u (Rtu : ListRedTmEq Γ _ RLiA t u), QRed t u Rtu.
+  Proof. apply elimListRedEq_mut. Qed.
 
 End ListElimRed.
+
+
+
+Section ListElimValid.
+  Context `{GenericTypingProperties}.
+
+  Context {Γ l A P}
+    (VΓ : [||-v Γ])
+    (VA : [Γ ||-v<l> A | VΓ])
+    (VLA := listValid VΓ VA)
+    (VΓA := validSnoc VΓ VLA)
+    (VP : [Γ ,, tList A ||-v<l> P | VΓA]).
+
+
+  Lemma Vtynil : [Γ ||-v<l> P[(tNil A)..] | VΓ].
+  Proof.
+    eapply substS; tea.
+    eapply nilValid.
+    Unshelve. tea.
+  Defined.
+
+  Definition wk2 Γ A B := wk_step B (@wk1 Γ A).
+
+  Lemma wk2_ren_on Δ X Y t : t⟨wk2 Δ X Y⟩ = t⟨↑⟩⟨↑⟩.
+  Proof. unfold wk2; now bsimpl. Qed.
+
+  Lemma Vtycons : [Γ ||-v<l> elimConsHypTy A P | VΓ].
+  Proof.
+    unfold elimConsHypTy.
+    unshelve eapply PiValid; tea.
+    unshelve eapply PiValid; tea.
+    1: eapply listValid; erewrite <- wk1_ren_on; now eapply wk1ValidTy.
+    assert (VΓALA : [||-v (Γ ,, A),, (tList A)⟨@wk1 Γ A⟩]).
+    1: unshelve eapply validSnoc; [|unshelve eapply validSnoc; tea|now eapply wkValid].
+    pose (ρ := wk_up (tList A) (@wk1 Γ A)).
+    eapply simpleArrValid.
+    + eapply irrelevanceValidity'.
+      1: exact (wkValid ρ VΓA VΓALA VP).
+      1: unfold ρ; now bsimpl.
+      now bsimpl.
+    + set (t := tCons _ _ _).
+      set (τ := wk2 Γ A (tList A⟨@wk1 Γ A⟩)).
+      pose (VULA := wkValid τ VΓ VΓALA VLA).
+      assert [_ ||-v<l> t : _ | VΓALA | VULA].
+      1:{
+        eapply irrelevanceTm'.
+        1: now rewrite <- wk_list, wk2_ren_on.
+        unfold t. eapply consValid.
+        1: eapply var1Valid.
+        eapply varnValid; rewrite wk1_ren_on; now constructor.
+        Unshelve.
+        2: tea.
+        2,3: erewrite <- wk2_ren_on, ?wk_list; eapply wkValid; tea.
+      }
+      enough (h : [_ ||-v<l> P⟨ρ⟩[t]⇑ | VΓALA]).
+      1:{
+        eapply irrelevanceValidity'; [exact h|..].
+        1: now unfold ρ; bsimpl.
+        now rewrite <- wk_list, wk1_ren_on.
+      } 
+      eapply irrelevanceValidity.
+      eapply substLiftS.
+      2: eapply irrelevanceTm'; tea; unfold τ, wk2; now bsimpl.
+      now eapply wkValid.
+      Unshelve.
+      1: now eapply validSnoc.
+      now eapply wkValid.
+  Qed.
+
+  Context {hnil hcons}
+    (Vhnil : [Γ ||-v<l> hnil : _ | VΓ | Vtynil])
+    (Vhcons : [Γ ||-v<l> hcons : _ | VΓ | Vtycons]).
+
+
+  Lemma elimConsHypTySubst σ : (elimConsHypTy A P)[σ] = elimConsHypTy A[σ] P[up_term_term σ].
+  Proof.
+    unfold elimConsHypTy. do 2 (rewrite subst_prod; f_equal).
+    1: now asimpl.
+    rewrite subst_arr; f_equal.
+    1: now asimpl.
+    do 2 (asimpl; cbn); now rewrite rinstInst'_term_pointwise.
+  Qed.
+
+  Lemma elimListValid t (Vt : [Γ ||-v<l> t : _ | VΓ | VLA]) (VPt := substS VP Vt) :
+    [Γ ||-v<l> tListElim A P hnil hcons t : _ | VΓ | VPt].
+  Proof.
+    pose Vtynil.
+    pose Vtycons.
+    econstructor; intros.
+    - instValid Vσ.
+      cbn; irrelevance0.
+      2: unshelve eapply elimListRed; tea; try irrelevance.
+      1: now asimpl.
+      1: now eapply invLRList.
+      4: apply elimConsHypTySubst.
+      3: now rewrite <- elimConsHypTySubst.
+      2: intros; change (tNil ?A[?σ]) with (tNil A)[σ]; now rewrite <- singleSubstComm'.
+      change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRed.
+    - instAllValid Vσ Vσ' Vσσ'.
+      cbn; irrelevance0.
+      1: now rewrite singleSubstComm'.
+      unshelve eapply elimListRedEq; tea; try irrelevance.
+      1,8: now eapply invLRList. 
+      9,10,11: apply elimConsHypTySubst.
+      1,7: change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRed.
+      2,3: intros; change (tNil ?A[?σ]) with (tNil A)[σ]; now rewrite <- singleSubstComm'.
+      2,3: now rewrite <- elimConsHypTySubst.
+      1: change [Δ ||-<l> t[σ] ≅ t[σ'] : _ | LRList' (normList0 (invLRList RVLA))]; irrelevance.
+      change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRedEq.
+  Qed.
+
+  
+End ListElimValid.

@@ -126,21 +126,6 @@ Proof.
   constructor; intros; cbn; instValid Vσ; now unshelve eapply succRedEq.
 Qed.
 
-Lemma arr_subst_eq {A B σ} : (arr A B)[σ] = arr A[σ] B[σ].
-Proof. now bsimpl. Qed.
-
-Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
-Proof. now bsimpl. Qed.
-
-Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
-Proof.  now bsimpl. Qed.
-
-Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
-Proof.
-  bsimpl. eapply ext_term; intros [|n]; cbn.
-  1: reflexivity.
-  unfold funcomp; now rewrite  rinstInst'_term.
-Qed.
 
 Lemma elimSuccHypTy_subst {P} σ :
   elimSuccHypTy P[up_term_term σ] = (elimSuccHypTy P)[σ].
@@ -228,7 +213,7 @@ Section NatElimRed.
       + split ; irrelevance. 
     Unshelve.
     * eapply ArrRedTy; now eapply RPpt.
-    * rewrite arr_subst_eq. eapply ArrRedTy.
+    * rewrite subst_arr. eapply ArrRedTy.
       2: rewrite liftSubst_singleSubst_eq; cbn.
       all: now eapply RPpt.
     * now apply RPpt.
@@ -335,7 +320,7 @@ Section NatElimRedEq.
           eapply LRTyEqSym; now eapply RPQext.
         Unshelve. 2,4,5: tea.
         1: eapply ArrRedTy; now eapply RPpt.
-        rewrite arr_subst_eq. eapply ArrRedTy.
+        rewrite subst_arr. eapply ArrRedTy.
         2: rewrite liftSubst_singleSubst_eq; cbn.
         all: now eapply RPpt.
     - intros ?? neueq ??. escape. inversion neueq.
@@ -581,8 +566,9 @@ Lemma elimSuccHypTyCongValid {Γ l P P'}
     Unshelve. all: tea.
     unshelve eapply irrelevanceTm; tea.
     2: eapply succValid.
-    unshelve eapply irrelevanceTm'.
-    5: unshelve eapply var0Valid; tea.
+    unshelve eapply irrelevanceTm'; cycle -1.
+    1: unshelve eapply var0Valid.
+    1,2 : tea.
     now bsimpl.
   Qed.
 

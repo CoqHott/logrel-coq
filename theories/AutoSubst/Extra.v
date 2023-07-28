@@ -65,8 +65,24 @@ Proof.
   now asimpl.
 Qed.
 
-Lemma subst_arr A B σ : (arr A B)[σ] = arr (subst_term σ A) (subst_term σ B).
+Lemma subst_arr A B σ : (arr A B)[σ] = arr A[σ] B[σ].
 Proof. now asimpl. Qed.
+
+Lemma subst_prod X Y σ : (tProd X Y)[σ] = tProd X[σ] Y[up_term_term σ].
+Proof. now asimpl. Qed.
+
+Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
+Proof. now asimpl. Qed.
+
+Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
+Proof.  now asimpl. Qed.
+
+Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
+Proof.
+  asimpl. eapply ext_term; intros [|n]; cbn.
+  1: reflexivity.
+  unfold funcomp; now rewrite  rinstInst'_term.
+Qed.
 
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
