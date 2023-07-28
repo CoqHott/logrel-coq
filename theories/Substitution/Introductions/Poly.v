@@ -18,11 +18,35 @@ Proof.
   bsimpl ; now substify.
 Qed.
 
-  Set Printing Primitive Projection Parameters.
+Lemma subst_wk_id_tail Γ P t : P[t .: @wk_id Γ >> tRel] = P[t..].
+Proof. setoid_rewrite id_ren; now bsimpl. Qed.
+
+
+Set Printing Primitive Projection Parameters.
 
 Section PolyValidity.
 
   Context `{GenericTypingProperties}.
+
+  Lemma polyCodSubstRed {Γ l F G} (RF : [Γ ||-<l> F]) : 
+    PolyRed Γ l F G -> forall t, [Γ ||-<l> t : _ | RF] -> [Γ ||-<l> G[t..]].
+  Proof.
+    intros PFG ??. 
+    escape. assert (wfΓ : [|- Γ]) by gen_typing.
+    erewrite <- subst_wk_id_tail.
+    eapply (PolyRed.posRed PFG wk_id wfΓ).
+    irrelevance.
+  Qed.
+
+  Lemma polyCodSubstExtRed {Γ l F G} (RF : [Γ ||-<l> F]) (PFG : PolyRed Γ l F G) (RG := polyCodSubstRed RF PFG) :
+    forall t u (Rt : [Γ ||-<l> t : _ | RF]), [Γ ||-<l> u : _ | RF] -> [Γ ||-<l> t ≅ u : _ | RF] -> 
+    [Γ ||-<l> G[t..] ≅ G[u..]| RG t Rt].
+  Proof.
+    intros. escape. assert (wfΓ : [|- Γ]) by gen_typing.
+    irrelevance0; erewrite <- subst_wk_id_tail; [reflexivity|].
+    unshelve eapply (PolyRed.posExt PFG wk_id wfΓ); irrelevance.
+  Qed.  
+
 
   Lemma polyRedId {Γ l F G} : PolyRed Γ l F G -> [Γ ||-<l> F] × [Γ ,, F ||-<l> G].
   Proof.
