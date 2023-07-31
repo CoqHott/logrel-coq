@@ -28,34 +28,25 @@ Section Var.
     + epose (eqHead Vσσ'); irrelevance.
   Qed.
 
-  Lemma in_ctx_valid {n} :  forall {Γ A} (VΓ : [||-v Γ]), in_ctx Γ n A -> ∑ l, [Γ ||-v<l> A | VΓ].
+  Lemma in_ctx_valid {Γ A n} (hin : in_ctx Γ n A) : forall (VΓ : [||-v Γ]), ∑ l, [Γ ||-v<l> A | VΓ].
   Proof.
-    induction n.
-    - intros ??? h; inversion h; subst.
-      pose proof (invValiditySnoc VΓ) as [? [? [? ]]]; subst.
-      eexists.
-      erewrite <- wk1_ren_on.
-      now eapply wk1ValidTy.
-    - intros ??? h; inversion h; subst.
-      pose proof (invValiditySnoc VΓ) as [? [? [? ]]]; subst.
-      eapply IHn in H13 as [l ?].
-      exists l. erewrite <- wk1_ren_on.
-      now eapply wk1ValidTy.
+    induction hin as [| ???? hin ih]; intros VΓ;
+    pose proof (invValiditySnoc VΓ) as [? [VΓ' [? ]]]; subst.
+    2: destruct (ih VΓ').
+    all: eexists; erewrite <- wk1_ren_on; now eapply wk1ValidTy.
   Qed.
 
-  Lemma varnValid {n} :  forall {Γ l A} (VΓ : [||-v Γ]) (h : in_ctx Γ n A) (VA : [Γ ||-v<l> A | VΓ]),
+  Lemma varnValid {Γ A n} (hin : in_ctx Γ n A) :  forall l (VΓ : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]),
     [Γ ||-v<l> tRel n : _ | VΓ | VA ].
   Proof.
-    induction n.
-    - intros ???? h ?; inversion h; subst.
-      eapply var0Valid'.
-    - intros * h ?; inversion h; subst.
-      pose proof (invValiditySnoc VΓ) as [? [VΓ0 [? ]]]; subst.
-      destruct (in_ctx_valid VΓ0 H13).
-      pose proof (h' := H13); eapply IHn, wk1ValidTm in h'; rewrite wk1_ren_on in h'.
-      eapply irrelevanceTm'; tea.
-      now rewrite wk1_ren_on.
-      Unshelve. 1,4: tea.
+    induction hin as [| ???? hin ih]; intros l VΓ VA.
+    1: eapply var0Valid'.
+    pose proof (invValiditySnoc VΓ) as [? [VΓ' [VA' ]]]; subst.
+    destruct (in_ctx_valid hin VΓ') as [? h].
+    pose proof (h' := wk1ValidTm VA' _ (ih _ _ h)).
+    cbn zeta in h'; rewrite wk1_ren_on in h'.
+    eapply irrelevanceTm'; tea.
+    now rewrite wk1_ren_on.
   Qed.
   
   Lemma var1Valid {Γ l A B} (VΓ : [||-v (Γ,, A) ,, B]) (VA : [_ ||-v<l> A⟨↑⟩⟨↑⟩ | VΓ]) :

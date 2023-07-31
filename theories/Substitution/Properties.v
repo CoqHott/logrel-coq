@@ -445,6 +445,21 @@ Proof.
     Unshelve. 2,3: tea.
 Qed.
 
+Lemma wkEqValid {l Γ Δ A B} (ρ : Δ ≤ Γ)
+  (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ])
+  (VA : [Γ ||-v<l> A | VΓ])
+  (VAB : [Γ ||-v<l> A ≅ B | VΓ | VA]) :
+  [Δ ||-v<l> A⟨ρ⟩ ≅ B⟨ρ⟩ | VΔ | wkValid ρ VΓ VΔ VA].
+Proof.
+  assert (h : forall A σ, A⟨ρ⟩[σ] = A[ ρ >> σ]) by (intros; now asimpl).
+  unshelve econstructor; intros; irrelevance0; rewrite h; [reflexivity|].
+  now eapply validTyEq.
+  Unshelve. 1: tea.
+    now eapply substS_wk.
+Qed.
+
+
 Lemma irrelevanceValidity' {Γ Γ' A A' l} (VΓ : [||-v Γ]) (VΓ' : [||-v Γ']) (VA : [Γ ||-v<l> A | VΓ]) : 
   A = A' -> Γ = Γ' -> [Γ' ||-v<l> A' | VΓ'].
 Proof.

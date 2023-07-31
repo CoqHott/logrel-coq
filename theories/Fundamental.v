@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma List.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma List ListElim.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -169,16 +169,10 @@ Section Fundamental.
     FundCon Γ ->
     in_ctx Γ n decl -> FundTm Γ decl (tRel n).
   Proof.
-    intros Γ n d FΓ hin; induction hin;
-      destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ.
-    - renToWk; rewrite <- (wk1_ren_on Γ d d).
-      eexists _ _; unshelve eapply var0Valid; tea.
-      now eapply embValidTyOne.
-    - renToWk; rewrite <- (wk1_ren_on Γ d' d).
-      destruct (IHhin VΓ); cbn in *.
-      econstructor. set (ρ := wk1 _).
-      replace (tRel _) with (tRel n)⟨ρ⟩ by (unfold ρ; now bsimpl).
-      unshelve eapply wk1ValidTm; cycle 1; tea; now eapply irrelevanceValidity.
+    intros Γ n d FΓ hin. 
+    unshelve econstructor; tea.
+    + eapply in_ctx_valid in hin as []; now eapply embValidTyOne. 
+    + now eapply varnValid.
   Qed.
 
   Lemma FundTmProd : forall (Γ : context) (A B : term),
@@ -907,6 +901,100 @@ Section Fundamental.
     all: now irrValid.
   Qed.
 
+  Lemma FundTmListElim :
+    forall (Γ : context) (A P hnil hcons l : term),
+    FundTy Γ A ->
+    FundTy (Γ,, tList A) P ->
+    FundTm Γ P[(tNil A)..] hnil ->
+    FundTm Γ (elimConsHypTy A P) hcons ->
+    FundTm Γ (tList A) l -> FundTm Γ P[l..] (tListElim A P hnil hcons l).
+  Proof.
+    intros * [] [] [] [] []; unshelve econstructor; tea.
+    2: eapply elimListValid; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
+  Lemma FundTmEqListElimCong :
+    forall (Γ : context) (A A' P P' hnil hnil' hcons hcons' l l' : term),
+    FundTy Γ A ->
+    FundTyEq Γ A A' ->
+    FundTyEq (Γ,, tList A) P P' ->
+    FundTmEq Γ P[(tNil A)..] hnil hnil' ->
+    FundTmEq Γ (elimConsHypTy A P) hcons hcons' ->
+    FundTmEq Γ (tList A) l l' -> FundTmEq Γ P[l..] (tListElim A P hnil hcons l) (tListElim A' P' hnil' hcons' l').
+  Proof.
+    intros * [] [] [] [] [] [].
+    assert [Γ ||-v< one > tList A ≅ tList A | VΓ4 | VA4] by eapply reflValidTy.
+    assert [Γ ||-v< one > tList A ≅ tList A' | VΓ4 | VA4].
+    1: eapply irrelevanceEq; now eapply listCongValid. 
+    assert [ _ ||-v<_> _ ≅ P'[(tNil A')..] | _ | VA2].
+    1:{ eapply irrelevanceEq ; eapply substSEq; cycle 1; try irrValid.
+      + eapply conv; [now eapply symValidEq|now eapply nilValid].
+      + eapply nilCongValid.
+    }
+    assert [ _ ||-v<_> elimConsHypTy A P ≅ elimConsHypTy A' P' | _ | VA3].
+    1: eapply elimConsHypTyCongValid; tea; try irrValid; eapply listValid; irrValid.
+    unshelve econstructor.
+    3: eapply elimListValid; irrValid.
+    3: eapply elimListCongValid; tea; try irrValid.
+    1: eapply conv; [| eapply elimListValid].
+    1: eapply symValidEq; eapply substSEq; cycle 1; try irrValid.
+    all: eapply conv; irrValid.
+    Unshelve. 
+      all: try irrValid.
+      1: eapply nilValid.
+      1:  eapply listValid; irrValid.
+      3: eapply conv; irrValid.
+      1,2: eapply irrelevanceLift; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
+  Lemma FundTmEqListElimNil :
+    forall (Γ : context) (A P hnil hcons A' : term),
+    FundTy Γ A ->
+    FundTy (Γ,, tList A) P ->
+    FundTm Γ P[(tNil A)..] hnil ->
+    FundTm Γ (elimConsHypTy A P) hcons ->
+    FundTyEq Γ A A' -> FundTmEq Γ P[(tNil A')..] (tListElim A P hnil hcons (tNil A')) hnil.
+  Proof.
+    intros * [] [] [] [] []; unshelve econstructor; tea.
+    4: eapply elimListNilValid; try irrValid.
+    1: eapply elimListValid; irrValid.
+    eapply conv; try irrValid.
+    eapply substSEq.
+    3: eapply reflValidTy.
+    2: irrValid.
+    3: eapply nilCongValid.
+    1: eapply reflValidTy.
+    eapply convsym. 2:eapply nilValid.
+    now eapply listCongValid.
+    Unshelve. all: try irrValid.
+    1,3: now eapply listValid.
+    now unshelve eapply nilValid.
+  Qed.
+
+  Lemma FundTmEqListElimCons :
+    forall (Γ : context) (A P hnil hcons A' hd tl : term),
+    FundTy Γ A ->
+    FundTy (Γ,, tList A) P ->
+    FundTm Γ P[(tNil A)..] hnil ->
+    FundTm Γ (elimConsHypTy A P) hcons ->
+    FundTyEq Γ A A' ->
+    FundTm Γ A' hd ->
+    FundTm Γ (tList A') tl ->
+    FundTmEq Γ P[(tCons A' hd tl)..] (tListElim A P hnil hcons (tCons A' hd tl))
+      (tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl)).
+  Proof.
+    intros * [] [] [] [] [] [] []; unshelve econstructor; tea.
+    4: eapply elimListConsValid; irrValid.
+    1: eapply elimListValid; irrValid.
+    1: eapply elimListConsValid; irrValid.
+    Unshelve. all: try irrValid.
+    1,2: eapply convsym; try irrValid.
+    eapply listCongValid; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
 
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
@@ -942,6 +1030,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now eapply FundTmNil.
   + intros; now eapply FundTmCons.
   + intros; now eapply FundTmMap.
+  + intros; now eapply FundTmListElim.
   + intros; now eapply FundTmConv.
   + intros; now apply FundTyEqPiCong.
   + intros; now apply FundTyEqSigCong.
@@ -973,11 +1062,17 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now eapply FundTmEqMapCons.
   + intros; now eapply FundTmEqMapComp.
   + intros; now eapply FundTmEqMapId.
+  + intros; now eapply FundTmEqListElimCong.
+  + intros; now eapply FundTmEqListElimNil.
+  + intros; now eapply FundTmEqListElimCons.
   + intros; now apply FundTmEqRefl.
   + intros; now eapply FundTmEqConv.
   + intros; now apply FundTmEqSym.
   + intros; now eapply FundTmEqTrans.
   Qed.
+
+
+
 
 (** ** Well-typed substitutions are also valid *)
 

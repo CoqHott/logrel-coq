@@ -784,10 +784,248 @@ Context {Γ l A A' P P' hnil hnil' hcons hcons'}
 End ListElimRed.
 
 
-
 Section ListElimValid.
   Context `{GenericTypingProperties}.
 
+  Definition wk2 Γ A B := wk_step B (@wk1 Γ A).
+
+  Lemma wk2_ren_on Δ X Y t : t⟨wk2 Δ X Y⟩ = t⟨↑⟩⟨↑⟩.
+  Proof. unfold wk2; now bsimpl. Qed.
+
+  Lemma elimConsHypTySubst A P σ : (elimConsHypTy A P)[σ] = elimConsHypTy A[σ] P[up_term_term σ].
+  Proof.
+    unfold elimConsHypTy. do 2 (rewrite subst_prod; f_equal).
+    1: now asimpl.
+    rewrite subst_arr; f_equal.
+    1: now asimpl.
+    do 2 (asimpl; cbn); now rewrite rinstInst'_term_pointwise.
+  Qed.
+
+  Lemma elimNilHypTyCongValid {l Γ A A' P P'}
+    (VΓ : [||-v Γ])
+    (VΓLA : [||-v Γ,, tList A])
+    (VA : [Γ ||-v<l> A | VΓ])
+    (VA' : [Γ ||-v<l> A' | VΓ])
+    (VAA' : [Γ ||-v<l> A ≅ A' | VΓ| VA])
+    (VP : [Γ,, tList A ||-v<l> P | VΓLA])
+    (VP' : [Γ,, tList A ||-v<l> P' | VΓLA])
+    (VPP' : [Γ,, tList A ||-v<l> P ≅ P' | VΓLA | VP])
+    (VPnil : [Γ ||-v<l> P[(tNil A)..] | VΓ]) : 
+    [ _ ||-v<_> _ ≅ P'[(tNil A')..] | _ | VPnil].
+  Proof.
+    eapply irrelevanceEq ; eapply substSEq; cycle 1; try irrValid.
+    + eapply conv; [ eapply symValidEq|now eapply nilValid].
+      now eapply listCongValid.
+    + eapply nilCongValid.
+    + eapply reflValidTy.
+    Unshelve. all: try irrValid + now eapply listValid.
+      now unshelve eapply nilValid.
+  Qed.
+
+  Lemma elimConsHypTyWellTyped Γ A P :
+    let ρ := @wk1 Γ A in
+    elimConsHypTy A P = 
+     tProd A
+     (tProd (tList A)⟨ρ⟩
+      (arr P⟨wk_up (tList A) ρ⟩ (P⟨wk_up (tList A) ρ⟩[tCons A⟨wk2 Γ A (tList A)⟨ρ⟩⟩ (tRel 1) (tRel 0)]⇑))).
+    Proof.
+      unfold elimConsHypTy; do 3 f_equal.
+      + now rewrite wk1_ren_on.
+      + rewrite wk_up_ren_on; asimpl.
+        now setoid_rewrite wk1_ren.
+      + rewrite wk_up_ren_on; bsimpl.
+        refold; rewrite wk1_ren_on, wk2_ren_on; asimpl; cbn; now asimpl.
+    Qed.
+
+  Lemma elimConsHypTyValid_wk_up {l Γ A1 A2 P}
+      (VΓ : [||-v Γ]) 
+      (VA1 : [Γ ||-v<l> A1 | VΓ])
+      (VA2 : [Γ ||-v<l> A2 | VΓ])
+      (VΓLA : [||-v Γ ,, tList A2])
+      (VP : [_ ||-v<l> P | VΓLA])
+      (VΓALA : [||-v (Γ,, A1),, (tList A2)⟨@wk1 Γ A1⟩]) :
+      [ _ ||-v<l> P⟨wk_up (tList A2) (@wk1 Γ A1)⟩ | VΓALA ].
+  Proof.
+    now eapply wkValid.
+  Qed.
+
+  Lemma elimConsHypTyValid_cons {l Γ A1 A2 A3 P}
+      (VΓ : [||-v Γ]) 
+      (VA1 : [Γ ||-v<l> A1 | VΓ])
+      (VA2 : [Γ ||-v<l> A2 | VΓ])
+      (VA3 : [Γ ||-v<l> A3 | VΓ])
+      (VA12 : [Γ ||-v<l> A1 ≅ A2 | VΓ | VA1])
+      (VA13 : [Γ ||-v<l> A1 ≅ A3 | VΓ | VA1])
+      (VΓLA : [||-v Γ ,, tList A2])
+      (VP : [_ ||-v<l> P | VΓLA])
+      (LA := (tList A2)⟨@wk1 Γ A1⟩)
+      (VΓALA : [||-v (Γ,, A1),, LA])
+      (ρ := wk2 Γ A1 LA)
+      (VLA : [_ ||-v<l> (tList A2)⟨ρ⟩ | VΓALA ]) :
+      [ _ ||-v<l> tCons A3⟨ρ⟩ (tRel 1) (tRel 0) : _ | VΓALA | VLA ].
+  Proof.
+    assert (VA32 : [_ ||-v<l> A3 ≅ A2 | _ | VA3 ]).
+    1:{
+      eapply transValidEq. 2: tea.
+      eapply symValidEq; exact VA13.
+    }
+    assert (eq : LA⟨↑⟩ = (tList A2⟨wk2 Γ A1 LA⟩)).
+    1: unfold LA; now rewrite wk2_ren_on, wk1_ren_on.
+    eapply conv.
+    1: eapply wkEqValid; now eapply listCongValid.
+    eapply consValid; eapply convsym.
+    2: eapply var1Valid.
+    3: eapply var0Valid'.
+    - rewrite <- (wk2_ren_on Γ A1 LA); eapply wkEqValid.
+      now eapply symValidEq.
+    - rewrite eq.
+      eapply irrelevanceEq; eapply listCongValid.
+      1: now eapply wkValid.
+      now eapply wkEqValid.
+    Unshelve.
+    3,4: tea.
+    1: erewrite <- wk2_ren_on; now eapply wkValid.
+    rewrite eq; eapply listValid; now eapply wkValid.
+  Qed.
+
+  Lemma elimConsHypTyValid_subst_cons {l Γ A1 A2 A3 P}
+      (VΓ : [||-v Γ]) 
+      (VA1 : [Γ ||-v<l> A1 | VΓ])
+      (VA2 : [Γ ||-v<l> A2 | VΓ])
+      (VA3 : [Γ ||-v<l> A3 | VΓ])
+      (VA12 : [Γ ||-v<l> A1 ≅ A2 | VΓ | VA1])
+      (VA13 : [Γ ||-v<l> A1 ≅ A3 | VΓ | VA1])
+      (VΓLA : [||-v Γ ,, tList A2])
+      (VP : [_ ||-v<l> P | VΓLA])
+      (LA := (tList A2)⟨@wk1 Γ A1⟩)
+      (VΓALA : [||-v (Γ,, A1),, LA])
+      (ρ := wk2 Γ A1 LA)
+      (τ := wk_up (tList A2) (@wk1 Γ A1)) :
+      [ _ ||-v<l> P⟨τ⟩[tCons A3⟨ρ⟩ (tRel 1) (tRel 0)]⇑ | VΓALA ].
+  Proof.
+    assert [Γ,, A1 ||-v< l > LA | validSnoc VΓ VA1].
+    1: unfold LA; eapply wkValid; now eapply listValid.
+    eapply irrelevanceValidity; eapply substLiftS.
+    1: now eapply wkValid.
+    eapply irrelevanceTm'.
+    2: eapply elimConsHypTyValid_cons; tea; eapply reflValidTy.
+    unfold LA; now rewrite wk2_ren_on, 2!wk1_ren_on.
+    Unshelve.
+      2: tea.
+      1: now eapply validSnoc.
+      eapply wkValid; now eapply listValid.
+  Qed.
+  
+  Lemma elimConsHypTyValid_arr {l Γ A1 A2 A3 P}
+      (VΓ : [||-v Γ]) 
+      (VA1 : [Γ ||-v<l> A1 | VΓ])
+      (VA2 : [Γ ||-v<l> A2 | VΓ])
+      (VA3 : [Γ ||-v<l> A3 | VΓ])
+      (VA12 : [Γ ||-v<l> A1 ≅ A2 | VΓ | VA1])
+      (VA13 : [Γ ||-v<l> A1 ≅ A3 | VΓ | VA1])
+      (VΓLA : [||-v Γ ,, tList A2])
+      (VP : [_ ||-v<l> P | VΓLA])
+      (LA := (tList A2)⟨@wk1 Γ A1⟩)
+      (VΓALA : [||-v (Γ,, A1),, LA])
+      (ρ := wk2 Γ A1 LA)
+      (τ := wk_up (tList A2) (@wk1 Γ A1)) :
+      [ _ ||-v<l> arr P⟨τ⟩ P⟨τ⟩[tCons A3⟨ρ⟩ (tRel 1) (tRel 0)]⇑ | VΓALA ].
+  Proof.
+    eapply simpleArrValid.
+    2: now eapply elimConsHypTyValid_subst_cons.
+    now eapply wkValid.
+  Qed.
+
+  Lemma elimConsHypTyValid {l Γ A P} (VΓ : [||-v Γ]) (VΓLA : [||-v Γ ,, tList A])
+      (VA : [Γ ||-v<l> A | VΓ])
+      (VLA := listValid VΓ VA)
+      (VP : [_ ||-v<l> P | VΓLA]) :
+      [Γ ||-v<l> elimConsHypTy A P | VΓ].
+  Proof.
+    rewrite (elimConsHypTyWellTyped Γ).
+    unshelve eapply PiValid; tea.
+    unshelve eapply PiValid; tea.
+    1: now eapply wkValid.
+    eapply elimConsHypTyValid_arr; tea; eapply reflValidTy.
+    Unshelve. tea.
+  Qed.
+
+  Lemma elimConsHypTyCongValid {l Γ A A' P P'}
+    (VΓ : [||-v Γ])
+    (VΓLA : [||-v Γ,, tList A])
+    (VA : [Γ ||-v<l> A | VΓ])
+    (VA' : [Γ ||-v<l> A' | VΓ])
+    (VLA : [Γ ||-v<l> tList A | VΓ])
+    (VLA' : [Γ ||-v<l> tList A' | VΓ])
+    (VAA' : [Γ ||-v<l> A ≅ A' | VΓ| VA])
+    (VP : [Γ,, tList A ||-v<l> P | VΓLA])
+    (VP' : [Γ,, tList A ||-v<l> P' | VΓLA])
+    (VPP' : [Γ,, tList A ||-v<l> P ≅ P' | VΓLA | VP])
+    (Vconsty : [Γ ||-v<l> elimConsHypTy A P | VΓ]) :
+     [ _ ||-v<_> elimConsHypTy A P ≅ elimConsHypTy A' P' | _ | Vconsty].
+  Proof.
+    assert [||-vΓ,, A] by now eapply validSnoc.
+    assert [||-v(Γ,, A),, (tList A)⟨@wk1 Γ A⟩].
+    1: unshelve eapply validSnoc; tea; now eapply wkValid.
+    assert (VΓLA' : [||-v Γ ,, tList A']) by now eapply validSnoc.
+    assert (eq : (tList A')⟨@wk1 Γ A'⟩ = (tList A')⟨@wk1 Γ A⟩) by reflexivity.
+    assert (eq' : P'⟨wk_up (tList A') (@wk1 Γ A')⟩ = P'⟨wk_up (tList A) (@wk1 Γ A)⟩) by reflexivity.
+    assert (eq'' : forall X, X⟨wk2 Γ A (tList A)⟨@wk1 Γ A⟩⟩ = X⟨@wk1 Γ A⟩⟨@wk1 (Γ,,A) (tList A)⟨@wk1 Γ A⟩⟩).
+    1: intros; now rewrite wk2_ren_on, 2! wk1_ren_on.
+    assert [Γ ||-v<l> _ ≅ tList A' | _ | VLA].
+    1: eapply irrelevanceEq; now eapply listCongValid.
+    assert (hP' : [Γ ,, tList A' ||-v<l> P' | VΓLA']).
+    1: eapply irrelevanceValidity ; eapply irrelevanceLift; irrValid.
+    eapply irrelevanceEq'; rewrite (elimConsHypTyWellTyped Γ); [reflexivity|].
+    unshelve eapply PiCong; tea.
+    1,2: unshelve eapply PiValid; tea.
+    1,2: now eapply wkValid.
+    1,2: eapply elimConsHypTyValid_arr; tea; eapply reflValidTy.
+    unshelve eapply PiCong; tea.
+    1: erewrite wk1_ren_on, <- wk1_ren_on; now eapply wkValid.
+    2: rewrite eq; now eapply wkEqValid.
+    1:{ 
+      eapply irrelevanceValidity'.
+      3: now rewrite eq.
+      1: eapply elimConsHypTyValid_arr.
+      1,2: exact VA'.
+      1,2: tea.
+      1: exact hP'.
+      reflexivity.
+    }
+    eapply irrelevanceEq.
+    unshelve eapply simpleArrCongValid.
+    3,4: rewrite eq'.
+    1,3: now eapply wkValid.
+    2: now eapply wkEqValid.
+    2: rewrite eq'; change A'⟨_⟩ with (A'⟨wk2 Γ A (tList A)⟨@wk1 Γ A⟩⟩).
+    1,2: eapply elimConsHypTyValid_subst_cons; tea; eapply reflValidTy.
+    eapply irrelevanceEq; eapply substLiftSEq'.
+    1: rewrite eq'; now eapply wkValid.
+    1: rewrite eq'; eapply wkEqValid; tea.
+    1,2: change A'⟨_⟩ with (A'⟨wk2 Γ A (tList A)⟨@wk1 Γ A⟩⟩).
+    1: eapply irrelevanceTm'; [| eapply elimConsHypTyValid_cons]; tea; [apply eq''| now eapply reflValidTy].
+    eapply irrelevanceTmEq'.
+    2: eapply consCongValid.
+    1: now rewrite eq''.
+    3,6: eapply reflValidTm.
+    2,6: eapply convsym.
+    4: eapply listCongValid.
+    2,5: eapply wkEqValid; now eapply symValidEq.
+    3: now eapply wkValid.
+    all: try (eapply irrelevanceTm'; try first [eapply var1Valid| eapply var0Valid]).
+    all: now rewrite wk2_ren_on + rewrite eq''.
+    Unshelve. all: tea; try now eapply wkValid.
+    1: unshelve eapply validSnoc; tea; now eapply wkValid.
+    5-7: erewrite <- wk2_ren_on; now eapply wkValid.
+    2,4: eapply listValid; now eapply wkValid.
+    2: now eapply wkEqValid.
+    eapply irrelevanceTm'; [| eapply elimConsHypTyValid_cons]; tea; try eapply reflValidTy.
+    apply eq''. 
+    Unshelve. 2: eapply wkValid. all: tea.
+  Qed.
+
+  Section ElimValid.
   Context {Γ l A P}
     (VΓ : [||-v Γ])
     (VA : [Γ ||-v<l> A | VΓ])
@@ -803,67 +1041,13 @@ Section ListElimValid.
     Unshelve. tea.
   Defined.
 
-  Definition wk2 Γ A B := wk_step B (@wk1 Γ A).
 
-  Lemma wk2_ren_on Δ X Y t : t⟨wk2 Δ X Y⟩ = t⟨↑⟩⟨↑⟩.
-  Proof. unfold wk2; now bsimpl. Qed.
-
-  Lemma Vtycons : [Γ ||-v<l> elimConsHypTy A P | VΓ].
-  Proof.
-    unfold elimConsHypTy.
-    unshelve eapply PiValid; tea.
-    unshelve eapply PiValid; tea.
-    1: eapply listValid; erewrite <- wk1_ren_on; now eapply wk1ValidTy.
-    assert (VΓALA : [||-v (Γ ,, A),, (tList A)⟨@wk1 Γ A⟩]).
-    1: unshelve eapply validSnoc; [|unshelve eapply validSnoc; tea|now eapply wkValid].
-    pose (ρ := wk_up (tList A) (@wk1 Γ A)).
-    eapply simpleArrValid.
-    + eapply irrelevanceValidity'.
-      1: exact (wkValid ρ VΓA VΓALA VP).
-      1: unfold ρ; now bsimpl.
-      now bsimpl.
-    + set (t := tCons _ _ _).
-      set (τ := wk2 Γ A (tList A⟨@wk1 Γ A⟩)).
-      pose (VULA := wkValid τ VΓ VΓALA VLA).
-      assert [_ ||-v<l> t : _ | VΓALA | VULA].
-      1:{
-        eapply irrelevanceTm'.
-        1: now rewrite <- wk_list, wk2_ren_on.
-        unfold t. eapply consValid.
-        1: eapply var1Valid.
-        eapply varnValid; rewrite wk1_ren_on; now constructor.
-        Unshelve.
-        2: tea.
-        2,3: erewrite <- wk2_ren_on, ?wk_list; eapply wkValid; tea.
-      }
-      enough (h : [_ ||-v<l> P⟨ρ⟩[t]⇑ | VΓALA]).
-      1:{
-        eapply irrelevanceValidity'; [exact h|..].
-        1: now unfold ρ; bsimpl.
-        now rewrite <- wk_list, wk1_ren_on.
-      } 
-      eapply irrelevanceValidity.
-      eapply substLiftS.
-      2: eapply irrelevanceTm'; tea; unfold τ, wk2; now bsimpl.
-      now eapply wkValid.
-      Unshelve.
-      1: now eapply validSnoc.
-      now eapply wkValid.
-  Qed.
+  Let Vtycons := elimConsHypTyValid VΓ VΓA VA VP.
 
   Context {hnil hcons}
     (Vhnil : [Γ ||-v<l> hnil : _ | VΓ | Vtynil])
     (Vhcons : [Γ ||-v<l> hcons : _ | VΓ | Vtycons]).
 
-
-  Lemma elimConsHypTySubst σ : (elimConsHypTy A P)[σ] = elimConsHypTy A[σ] P[up_term_term σ].
-  Proof.
-    unfold elimConsHypTy. do 2 (rewrite subst_prod; f_equal).
-    1: now asimpl.
-    rewrite subst_arr; f_equal.
-    1: now asimpl.
-    do 2 (asimpl; cbn); now rewrite rinstInst'_term_pointwise.
-  Qed.
 
   Lemma elimListValid t (Vt : [Γ ||-v<l> t : _ | VΓ | VLA]) (VPt := substS VP Vt) :
     [Γ ||-v<l> tListElim A P hnil hcons t : _ | VΓ | VPt].
@@ -893,5 +1077,178 @@ Section ListElimValid.
       change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRedEq.
   Qed.
 
+  Section NilEq.
+    Context {A'} (VA' : [Γ ||-v<l> A' | VΓ]) (VAA' : [Γ ||-v<l> A ≅ A' | _ | VA])
+      (VLA' := listValid VΓ VA')
+      (VLAA' := listCongValid VΓ VA VA' VAA').
+    Let Vnil' := nilValid (VA:=VA') (VLA:=VLA').
+    Let Vnil := conv _ _ VLA (symValidEq _ VLAA') Vnil'. 
+    Let VPnil := substS VP Vnil.
+
+    Lemma elimListNilValid : 
+      [Γ ||-v<l> tListElim A P hnil hcons (tNil A') : _ | _ | VPnil] ×
+      [Γ ||-v<l> tListElim A P hnil hcons (tNil A') ≅ hnil  : _ | VΓ | VPnil].
+    Proof.
+      split; [eapply elimListValid|].
+      constructor; intros; cbn.
+      pose Vtynil. pose Vtycons. instValid Vσ.
+      pose (RLA := normList0 (invLRList RVLA)); refold.
+      escape.
+      unshelve refine (let h : ListProp _ _ RLA (tNil A'[σ]) := _ in _).
+      1: unshelve eapply ListRedTm.nilR; tea; irrelevance.
+      irrelevance0.
+      1: now rewrite singleSubstComm'.
+      unshelve eapply (snd (snd (elimListProp RVA _ _ _ _ _ _ _ h _))).
+      4: now rewrite <- elimConsHypTySubst.
+      2: change (tNil ?A[?σ]) with (tNil A)[σ]; now rewrite <- singleSubstComm'.
+      4: eapply LRTmRedConv; [now eapply LRTyEqSym|].
+      2,3,4: irrelevance.
+      2: apply elimConsHypTySubst.
+      change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRed.
+      Unshelve. 2: exact RVLA'.
+    Qed.
+  End NilEq.
   
+  Section ConsEq.
+    Context {A' hd tl} 
+      (VA' : [Γ ||-v<l> A' | VΓ]) (VAA' : [Γ ||-v<l> A ≅ A' | _ | VA])
+      (VLA' := listValid VΓ VA')
+      (VLAA' := listCongValid VΓ VA VA' VAA')
+      (Vhd : [Γ ||-v<l> hd : _ | VΓ | VA])
+      (Vhd' := conv _ _ VA' VAA' Vhd)
+      (Vtl : [Γ ||-v<l> tl : _ | VΓ | VLA])
+      (Vtl' := conv _ _ VLA' VLAA' Vtl).
+
+    Let Vcons' := consValid Vhd' Vtl'.
+    Let Vcons := conv _ _ VLA (symValidEq _ VLAA') Vcons'.
+    Let VPcons := substS VP Vcons.
+
+    From LogRel.Substitution.Introductions Require Import Application.
+
+    Lemma elimListConsValid : 
+      [Γ ||-v<l> tListElim A P hnil hcons (tCons A' hd tl) : _ | VΓ | VPcons] ×
+      [Γ ||-v<l> tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl)  : _ | VΓ | VPcons] ×
+      [Γ ||-v<l> tListElim A P hnil hcons (tCons A' hd tl) ≅ tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl)  : _ | VΓ | VPcons].
+    Proof.
+      split; [eapply elimListValid| split].
+      + eapply conv.
+        * eapply substSEq.
+          2: tea.
+          2: eapply reflValidTy.
+          3: eapply consCongValid.
+          5,8: eapply reflValidTm.
+          3: exact Vhd.
+          all: try irrValid.
+          eapply reflValidTy.
+          Unshelve. 
+          all: try irrValid.
+          unshelve eapply consValid; irrValid.
+        * assert (h : forall t u, t⟨↑⟩[u..] = t) by (intros; now bsimpl).
+          eapply simple_appValid.
+          2: eapply elimListValid.
+          eapply irrelevanceTm'; [|eapply appValid; tea].
+          2: eapply irrelevanceTm'; [|eapply appValid].
+          3: eapply irrelevanceTm'; tea.
+          3: rewrite (elimConsHypTyWellTyped Γ); f_equal.
+          2: rewrite subst_prod; f_equal.
+          rewrite 2!subst_arr; f_equal.
+          1: rewrite wk_up_ren_on; bsimpl; now cbn.
+          rewrite wk_up_ren_on, wk2_ren_on; bsimpl; cbn.
+          asimpl; rewrite <- !rinstInst'_term; cbn.  reflexivity.
+          Unshelve.
+          all: try irrValid.
+          3: now rewrite wk1_ren_on, h.
+          3: eapply conv; tea; rewrite wk1_ren_on, h; eapply listCongValid; tea; now eapply symValidEq.
+          3: rewrite <- elimConsHypTyWellTyped; now eapply elimConsHypTyValid.
+          1: eapply simpleArrValid; eapply substS; tea; now eapply consValid.
+          unshelve eapply PiValid.
+          1: now rewrite wk1_ren_on, h.
+          eapply irrelevanceValidity'.
+          3: now rewrite wk1_ren_on, h.
+          2: replace (_[_]) with (arr P P[tCons A⟨@wk1 Γ (tList A)⟩ hd⟨@wk1 Γ (tList A)⟩ (tRel 0)]⇑) ; [reflexivity|].
+          2: rewrite subst_arr, wk2_ren_on; f_equal; bsimpl.
+          2: rewrite scons_eta'; now asimpl.
+          2: cbn; bsimpl; rewrite rinstInst'_term; asimpl; now cbn.
+          eapply simpleArrValid; tea.
+          eapply substLiftS; [exact VP|eapply consValid].
+          1: now eapply wk1ValidTm.
+          eapply irrelevanceTm';[now rewrite wk_list|eapply var0Valid].
+          Unshelve. 2,3: tea. 
+      + constructor; intros; cbn.
+        pose Vtynil. pose Vtycons. instValid Vσ.
+        pose (RLA := normList0 (invLRList RVLA)); refold.
+        escape.
+        assert (h0 : ListProp _ _ RLA (tCons A'[σ] hd[σ] tl[σ])).
+        1:{
+          eapply ListRedTm_prop_whnf; [tea|..]; try constructor.
+          eapply LRTmRedConv; [| exact RVcons'].
+          now eapply LRTyEqSym.
+        }
+        pose (h := ListProp_cons_inv RVA (invLRList RVLA) h0).
+        irrelevance0.
+        1: now rewrite singleSubstComm'.
+        unshelve eapply (snd (snd (elimListProp RVA _ _ _ _ _ _ _ h _))).
+        4: now rewrite <- elimConsHypTySubst.
+        2: change (tNil ?A[?σ]) with (tNil A)[σ]; now rewrite <- singleSubstComm'.
+        4: eapply LRTmRedConv; [now eapply LRTyEqSym|].
+        2,3,4: irrelevance.
+        2: apply elimConsHypTySubst.
+        change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRed.
+        Unshelve. 2: tea.
+    Qed.
+
+  End ConsEq.
+
+  End ElimValid.
+
+  Section ElimCongValid.
+  Context {Γ l A A' P P'}
+    (VΓ : [||-v Γ])
+    (VA : [Γ ||-v<l> A | VΓ])
+    (VA' : [Γ ||-v<l> A' | VΓ])
+    (VAA' : [Γ ||-v<l> A ≅ A' | VΓ | VA])
+    (VLA := listValid VΓ VA)
+    (VLA' := listValid VΓ VA')
+    (VΓA := validSnoc VΓ VLA)
+    (VΓA' := validSnoc VΓ VLA')
+    (VP : [Γ ,, tList A ||-v<l> P | VΓA])
+    (VP' : [Γ ,, tList A' ||-v<l> P' | VΓA'])
+    (VPP' : [Γ ,, tList A ||-v<l> P ≅ P' | VΓA | VP])
+    (Vtynil0 := Vtynil VΓ VA VP)
+    (Vtynil' := Vtynil VΓ VA' VP')
+    {hnil hnil' hcons hcons'}
+    (Vhnil : [Γ ||-v<l> hnil : _ | VΓ | Vtynil0])
+    (Vhnil' : [Γ ||-v<l> hnil' : _ | VΓ | Vtynil'])
+    (Vhnileq : [Γ ||-v<l> hnil ≅ hnil'  : _ | VΓ | Vtynil0])
+    (Vtycons0 := elimConsHypTyValid VΓ VΓA VA VP)
+    (Vtycons' := elimConsHypTyValid VΓ VΓA' VA' VP')
+    (Vhcons : [Γ ||-v<l> hcons  : _ | VΓ | Vtycons0])
+    (Vhcons' : [Γ ||-v<l> hcons'  : _ | VΓ | Vtycons'])
+    (Vhconseq : [Γ ||-v<l> hcons ≅ hcons'  : _ | VΓ | Vtycons0])
+    {t t'}
+    (Vt : [Γ ||-v<l> t : _ | VΓ | VLA])
+    (Vt' : [Γ ||-v<l> t' : _ | VΓ | VLA])
+    (Vteq : [Γ ||-v<l> t ≅ t' : _ | VΓ | VLA])
+    (VPt := substS VP Vt).
+
+  Lemma elimListCongValid :
+    [Γ ||-v<l> tListElim A P hnil hcons t ≅ tListElim A' P' hnil' hcons' t' : _ | VΓ | VPt].
+  Proof.
+    econstructor; intros; cbn.
+    instValid Vσ.
+    irrelevance0. 1: now rewrite singleSubstComm'.
+    unshelve eapply elimListRedEq; tea; try first [now eapply invLRList | irrelevance].
+    9-11: apply elimConsHypTySubst.
+    1,7: change (tList ?A[?σ]) with (tList A)[σ]; now eapply substPolyRed.
+    2,3: intros; change (tNil ?A[?σ]) with (tNil A)[σ]; now rewrite <- singleSubstComm'.
+    2,3: now rewrite <- elimConsHypTySubst.
+    1: change [Δ ||-<l> t[σ] ≅ t'[σ] : _ | LRList' (normList0 (invLRList RVLA))]; irrelevance.
+    change (tList ?A[?σ]) with (tList A)[σ]; unshelve eapply substEqPolyRedEq; tea.
+    now eapply listCongValid.
+  Qed.
+
+  End ElimCongValid.
+
 End ListElimValid.
+
+
