@@ -183,6 +183,35 @@ Proof.
   instValid Vσt. irrelevance.
 Qed.
 
+Lemma substLiftSEq' {Γ F G G' t t' l} (VΓ : [||-v Γ])
+  (VF : [Γ ||-v<l> F | VΓ])
+  (VΓF := validSnoc VΓ VF)
+  (VG : [Γ,, F ||-v<l> G | VΓF])
+  (VG' : [Γ,, F ||-v<l> G' | VΓF])
+  (VGeq : [Γ,, F ||-v<l> G ≅ G' | VΓF | VG])
+  (VF' := wk1ValidTy VF VF)
+  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) 
+  (Vt' : [Γ,, F ||-v<l> t' : F⟨@wk1 Γ F⟩ | VΓF | VF'])
+  (Vtt' : [Γ,, F ||-v<l> t ≅ t' : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  [Γ ,, F ||-v<l> G[t]⇑ ≅ G'[t']⇑ | VΓF | substLiftS _ VF VG Vt].
+Proof.
+  eapply transValidEq.
+  1: eapply substLiftSEq; [| exact VGeq]; tea.
+  constructor; intros; irrelevance0; rewrite liftSubstComm ; [reflexivity|].
+  instValid Vσ.
+  eapply validTyExt.
+  + unshelve eapply consSubstS.
+    6: now eapply validTail.
+    3: exact VF. 
+    irrelevance.
+  + unshelve eapply consSubstSEq'.
+    1: now eapply validTail.
+    1,3: irrelevance.
+    eapply reflSubst.
+    Unshelve. 3: tea. now eapply substLiftS.
+Qed.
+
+
 Lemma singleSubstPoly {Γ F G t l lF}
   (RFG : PolyRed Γ l F G)
   {RF : [Γ ||-<lF> F]}

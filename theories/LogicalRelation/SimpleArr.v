@@ -38,9 +38,6 @@ Section SimpleArrow.
   Proof. intros; eapply LRPi'; now eapply ArrRedTy0. Qed.
 
 
-  Lemma shift_subst_scons {B a Γ Δ} (ρ : Δ ≤ Γ) : B⟨↑⟩[a .: ρ >> tRel] = B⟨ρ⟩.
-  Proof. bsimpl; now rewrite rinstInst'_term. Qed.
-
   Lemma shiftPolyRedEq {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B]) (PAB : PolyRed Γ l A B⟨↑⟩) :
     [Γ ||-<l> A ≅ A' | RA] ->
     [Γ ||-<l> B ≅ B' | RB] ->
