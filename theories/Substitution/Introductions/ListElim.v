@@ -4,202 +4,13 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction Application Universe NormalRed SimpleArr.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion SingleSubst Reflexivity.
-From LogRel.Substitution.Introductions Require Import Universe Pi SimpleArr Var List Poly.
+From LogRel.Substitution.Introductions Require Import Universe Pi SimpleArr Application Var List Poly.
 
 Set Universe Polymorphism.
 Set Printing Primitive Projection Parameters.
 
-
-
-
 Section ListElimRed.
 Context `{GenericTypingProperties}.
-
-
-Lemma consEqRedParam
-  {Γ A P hd tl l}
-  (RA: [Γ ||-< l > A])
-  (RLA: [Γ ||-< l > tList A]) :
-  [Γ |- P] ->
-  [RA | Γ ||- A ≅ P] ->
-  [RA | Γ ||- hd : A] ->
-  [RLA | Γ ||- tl : tList A] ->
-  [RLA | Γ ||- tCons A hd tl : tList A ] ×
-  [RLA | Γ ||- tCons P hd tl : tList A ] ×
-  [RLA | Γ ||- tCons A hd tl ≅ tCons P hd tl : tList A ].
-Proof.
-  intros.
-  assert [Γ ||-<l> A ≅ A | RA ] by now eapply LRTyEqRefl_.
-  escape; split; [|split].
-  1,2: now eapply consRed.
-  eapply consEqRed; tea.
-  1,2 : now eapply LREqTermRefl_.
-Qed.
-
-
-(* Definition elimListProp {Γ l} A {RLiA : [Γ ||-List<l> tList A]} 
-  (P hnil hcons t : term) (Rt : ListProp Γ _ RLiA t) : term.
-Proof.
-  destruct Rt as [  | | x ].
-  - exact hnil.
-  - exact (tApp (tApp (tApp hcons hd) tl) (tListElim A P hnil hcons tl)).
-  - exact (tListElim A P hnil hcons x).
-Defined. *)
-
-Lemma appTerm' {Γ t u F G l X}
-  (RΠ : [Γ ||-<l> tProd F G])
-  {RF : [Γ ||-<l> F]}
-  (Rt : [Γ ||-<l> t : tProd F G | RΠ])
-  (Ru : [Γ ||-<l> u : F | RF])
-  (eq : X = G[u..])
-  (RX : [Γ ||-<l> X]) : 
-  [Γ ||-<l> tApp t u : X | RX].
-Proof. 
-  irrelevance0; [symmetry; tea|].
-  unshelve eapply appTerm; cycle 1; tea.
-  Unshelve. now rewrite <- eq.
-Qed. 
-
-Lemma appcongTerm' {Γ t t' u u' F F' G l l' X}
-  (RΠ : [Γ ||-<l> tProd F G]) 
-  {RF : [Γ ||-<l'> F]}
-  {RF' : [Γ ||-<l'> F']}
-  (RFF' : [Γ ||-<l'> F ≅ F' | RF])
-  (Rtt' : [Γ ||-<l> t ≅ t' : tProd F G | RΠ])
-  (Ru : [Γ ||-<l'> u : F | RF])
-  (Ru' : [Γ ||-<l'> u' : F' | RF'])
-  (Ruu' : [Γ ||-<l'> u ≅ u' : F | RF ])
-  (RGu : [Γ ||-<l'> X])
-   : X = G[u..] ->
-    [Γ ||-<l'> tApp t u ≅ tApp t' u' : X | RGu].
-Proof.
-  intros eq.
-  irrelevance0 ; [symmetry; apply eq|].
-  eapply appcongTerm; tea.
-  eapply LRTmRedConv; tea.
-  now eapply LRTyEqSym.
-  Unshelve. now rewrite <- eq.
-Qed.
-
-Lemma mkPolyRed {Γ l A B} (wfΓ : [|-Γ])
-  (RA : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) 
-  (RB : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> a : _ | RA Δ ρ wfΔ] -> [Δ ||-<l> B[a .: ρ >> tRel]])
-  (RBext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (Ra : [Δ ||-<l> a : _ | RA Δ ρ wfΔ]),
-    [Δ ||-<l> b : _ | RA Δ ρ wfΔ] ->
-    [Δ ||-<l> a ≅ b : _ | RA Δ ρ wfΔ] -> [Δ ||-<l> B[a .: ρ >> tRel] ≅ B[b .: ρ >> tRel] | RB Δ a ρ wfΔ Ra]) :
-  PolyRed Γ l A B.
-Proof.
-  assert [Γ |- A] by (eapply escape; now eapply instKripke).
-  unshelve econstructor; tea.
-  unshelve epose proof (RB _ (tRel 0) (@wk1 Γ A) _ _).
-  + gen_typing.
-  + eapply var0; tea; now rewrite wk1_ren_on.
-  + enough (B = B[tRel 0 .: @wk1 Γ A >> tRel]) as -> by now escape.
-    setoid_rewrite wk1_ren; rewrite scons_eta'; now asimpl.
-Qed.
-
-Lemma mkPolyRed' {Γ l A B} (RA : [Γ ||-<l> A]) 
-  (RB : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> a : _ | wk ρ wfΔ RA] -> [Δ ||-<l> B[a .: ρ >> tRel]])
-  (RBext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (Ra : [Δ ||-<l> a : _ | wk ρ wfΔ RA]),
-    [Δ ||-<l> b : _ | wk ρ wfΔ RA] ->
-    [Δ ||-<l> a ≅ b : _ | wk ρ wfΔ RA] -> [Δ ||-<l> B[a .: ρ >> tRel] ≅ B[b .: ρ >> tRel] | RB Δ a ρ wfΔ Ra]) :
-  PolyRed Γ l A B.
-Proof.
-  unshelve eapply mkPolyRed; tea.
-  escape; gen_typing.
-Qed.
-
-
-Lemma polyRedArrExt {Γ l A B C} : PolyRed Γ l A B -> PolyRed Γ l A C -> PolyRed Γ l A (arr B C).
-Proof.
-  intros [tyA tyB RA RB RBext] [_ tyC RA' RC RCext].
-  opector; tea.
-  2: now eapply wft_simple_arr.
-  + intros; rewrite subst_arr; refold.
-    apply ArrRedTy; [eapply RB| eapply RC]; now irrelevanceRefl.
-    Unshelve. all: tea.
-  + intros.
-    irrelevance0; rewrite subst_arr; [refold; reflexivity|]; refold.
-    eapply arrRedCong.
-    1,2: eapply escape; first [eapply RB| eapply RC]; now irrelevanceRefl.
-    1,2: first [eapply RBext| eapply RCext]; now irrelevanceRefl.
-    Unshelve. all: now irrelevanceRefl + tea.
-Qed.
-
-Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
-Proof. now bsimpl. Qed.
-
-Lemma polyRedSubst {Γ l A B t} (PAB : PolyRed Γ l A B) 
-  (Rt : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> t[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
-  (Rtext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> a ≅ b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> t[a .: ρ >> tRel] ≅ t[b .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
-  : PolyRed Γ l A B[t]⇑.
-Proof.
-  destruct PAB; opector; tea.
-  + intros; rewrite liftSubst_scons_eq.
-    unshelve eapply posRed; tea; eapply Rt; now irrelevanceRefl.
-  + unshelve epose proof (posRed _ t (@wk1 Γ A) _ _).
-    - escape; gen_typing.
-    - replace t with t[tRel 0 .: @wk1 Γ A >> tRel].
-      2:{ bsimpl; rewrite scons_eta'; now asimpl. }
-      eapply Rt.
-      eapply var0; tea; now rewrite wk1_ren_on.
-    - escape. 
-      replace (B[_]) with B[t .: @wk1 Γ A >> tRel]; tea.
-      now setoid_rewrite wk1_ren.
-  + intros; irrelevance0; rewrite liftSubst_scons_eq;[reflexivity|].
-    unshelve eapply posExt; tea; eapply Rt + eapply Rtext; now irrelevanceRefl.
-Qed.
-
-Lemma polyRedEqArrExt {Γ l A A' B B' C C'}
-  (PAB : PolyRed Γ l A B) (PAC : PolyRed Γ l A C) 
-  (PAB' : PolyRed Γ l A' B') (PAC' : PolyRed Γ l A' C') 
-  (PABC : PolyRed Γ l A (arr B C))
-  (PABeq : PolyRedEq PAB A' B')
-  (PACeq : PolyRedEq PAC A' C')
-  : PolyRedEq PABC A' (arr B' C').
-Proof.
-  constructor.
-  + intros; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
-  + intros; irrelevance0; rewrite subst_arr; refold; [reflexivity|].
-    apply arrRedCong.
-    * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
-      eapply LRTmRedConv; tea; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
-    * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
-      eapply LRTmRedConv; tea. irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
-    * unshelve eapply (PolyRedEq.posRed PABeq); tea; now irrelevanceRefl.
-    * unshelve eapply (PolyRedEq.posRed PACeq); tea; now irrelevanceRefl.
-Qed.
-
-Lemma polyRedEqSubst {Γ l A B t u} (PAB : PolyRed Γ l A B) 
-  (Rt : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> t[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
-  (Ru : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> u[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
-  (Rtu : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> a ≅ b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
-    [Δ ||-<l> t[a .: ρ >> tRel] ≅ u[b .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
-  (PABt : PolyRed Γ l A B[t]⇑)
-  : PolyRedEq PABt A B[u]⇑.
-Proof.
-  constructor.
-  - intros; eapply LRTyEqRefl_.
-  - intros; irrelevance0; rewrite liftSubst_scons_eq; [reflexivity|].
-    unshelve eapply PolyRed.posExt; cycle 1; tea.
-    + eapply Rt; now irrelevanceRefl.
-    + eapply Ru; now irrelevanceRefl.
-    + eapply Rtu; try eapply LREqTermRefl_; now irrelevanceRefl.
-Qed.
-
 
 Section PolyRedConsHypSubst.
   Context {Γ l A P} (RA : [Γ ||-<l> A]) (PolyP : PolyRed Γ l (tList A) P).
@@ -284,41 +95,6 @@ Section PolyRedConsHypSubst.
 
 End PolyRedConsHypSubst.
 
-
-Lemma LRPiPoly0 {Γ l A B} (PAB : PolyRed Γ l A B) : [Γ ||-Π<l> tProd A B].
-Proof.
-  econstructor; tea; pose proof (polyRedId PAB) as []; escape.
-  + eapply redtywf_refl; gen_typing.
-  + eapply convty_prod; tea; unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
-Defined.
-
-Definition LRPiPoly {Γ l A B} (PAB : PolyRed Γ l A B) : [Γ ||-<l> tProd A B] := LRPi' (LRPiPoly0 PAB).
-
-Lemma LRPiPolyEq0 {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') :
-  [Γ |- A'] -> [Γ ,, A' |- B'] ->
-  [Γ ||-Π tProd A B ≅ tProd A' B' | LRPiPoly0 PAB].
-Proof.
-  econstructor; cbn; tea.
-  + eapply redtywf_refl; gen_typing.
-  + pose proof (polyRedEqId PAB Peq) as []; escape.
-    eapply convty_prod; tea.
-    eapply escape; now apply (polyRedId PAB).
-Qed.
-
-Lemma LRPiPolyEq {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') :
-  [Γ |- A'] -> [Γ ,, A' |- B'] ->
-  [Γ ||-<l> tProd A B ≅ tProd A' B' | LRPiPoly PAB].
-Proof.
-  now eapply LRPiPolyEq0.
-Qed.
-
-Lemma LRPiPolyEq' {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') (RAB : [Γ ||-<l> tProd A B]):
-  [Γ |- A'] -> [Γ ,, A' |- B'] ->
-  [Γ ||-<l> tProd A B ≅ tProd A' B' | RAB].
-Proof.
-  intros; irrelevanceRefl; now eapply LRPiPolyEq.
-Qed.
-
 Section ElimConsHyp.
 Context {Γ l A P} {hnil hcons hd tl : term}
     (ih := tListElim A P hnil hcons tl)
@@ -331,39 +107,6 @@ Context {Γ l A P} {hnil hcons hd tl : term}
   (RP : forall t, [Γ ||-<l> t : _ | RLA] -> [Γ ||-<l> P[t..]])
   (PolyP : PolyRed Γ l (tList A) P).
 
-
-  Lemma elimConsHypTyRed : [Γ ||-<l> elimConsHypTy A P].
-  Proof.
-    unfold elimConsHypTy.
-    assert (h : forall a {Δ Γ} (ρ : Δ ≤ Γ),
-     (tProd (tList A⟨↑⟩) (arr P⟨up_ren ↑⟩ P[tCons A⟨↑⟩⟨↑⟩ (tRel 1) (tRel 0) .: (↑ >> ↑) >> tRel])) [a .: ρ >> tRel]
-     = tProd (tList A)⟨ρ⟩ (arr P⟨wk_up (tList A) ρ⟩ P⟨wk_up (tList A) ρ⟩[tCons A⟨ρ⟩⟨↑⟩ a⟨↑⟩ (tRel 0)]⇑)).
-    1:{ intros. cbn; f_equal; [|f_equal].
-      + now rewrite shift_subst_scons.
-      + bsimpl; rewrite rinstInst'_term; asimpl; reflexivity.
-      + bsimpl; rewrite !rinstInst'_term.
-        cbn. asimpl. reflexivity.
-    }
-    assert (hred : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]),
-      [wk ρ wfΔ RA | Δ ||- a : A⟨ρ⟩] ->
-      PolyRed Δ l (tList A)⟨ρ⟩ (arr P⟨wk_up (tList A) ρ⟩ P⟨wk_up (tList A) ρ⟩[tCons A⟨ρ⟩⟨↑⟩ a⟨↑⟩ (tRel 0)]⇑)).
-    1:{
-      intros; unshelve eapply polyRedArrConsHyp; refold.
-      + now eapply wk.
-      + rewrite wk_list; now eapply wkPoly.
-      + cbn; refold; now irrelevanceRefl.
-    }
-    eapply LRPiPoly. unshelve eapply mkPolyRed'; tea.
-    1:  intros; rewrite h; now eapply LRPiPoly.
-    intros; irrelevance0; rewrite h; [reflexivity|].
-    unshelve eapply LRPiPolyEq.
-    - now eapply hred.
-    - cbn; refold. eapply polyRedEqArrConsHyp; tea.
-      rewrite wk_list at 1; now eapply wkPoly.
-    - eapply wft_wk; now escape.
-    - unshelve epose proof (polyRedId (hred Δ b ρ wfΔ _)) as [_]; tea.
-      now escape.
-  Qed.
   
   Lemma elimConsHypAppRed
     (Rtycons : [Γ ||-<l> elimConsHypTy A P]) 
@@ -451,16 +194,6 @@ Context {Γ l A P} {hnil hcons hd tl : term}
 
 End ElimConsHyp.
 
-Lemma redSubstTerm' {Γ A t u l} (RA : [Γ ||-<l> A]) :
-  [Γ ||-<l> u : A | RA] ->
-  [Γ |- t ⇒* u : A ] ->
-  [Γ ||-<l> t : A | RA] ×  
-  [Γ ||-<l> u : A | RA] ×
-  [Γ ||-<l> t ≅ u : A | RA].
-Proof.
-  intros. assert ([Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA]) by now eapply redSubstTerm.
-  now repeat split.
-Qed.
 
 Section EliminatorReducibility.
 Context {Γ l A P hnil hcons}
@@ -560,61 +293,6 @@ Proof.
 
 End EliminatorReducibility.
 
-Lemma ListRedTmFwd {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
-  (Rt : [Γ ||-<l> t : _ | RLA]) : [Γ ||-<l> ListRedTm.nf Rt : _ | RLA] × [Γ ||-<l> t ≅ ListRedTm.nf Rt : _ | RLA].
-Proof. eapply redTmFwdConv; tea; [eapply (ListRedTm.red Rt)| eapply ListProp_whnf; eapply (ListRedTm.prop Rt)]. Qed.
-
-Lemma ListRedTm_det {Γ l A A' t} (RA : [Γ ||-<l> A]) (RA' : [Γ ||-<l> A'])
-  (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
-  (RLiA0' : [Γ ||-List<l> tList A']) (RLiA' := normList0 RLiA0') (RLA' := LRList' RLiA')
-  (Rt : [Γ ||-<l> t : _ | RLA]) (Rt' : [Γ ||-<l> t : _ | RLA']) : ListRedTm.nf Rt = ListRedTm.nf Rt'.
-Proof.
-  eapply redtmwf_det.
-  1,2: eapply ListProp_whnf; eapply ListRedTm.prop.
-  1,2: eapply ListRedTm.red.
-Qed.
-
-Lemma ListRedTm_whnf {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
-  (Rt : [Γ ||-<l> t : _ | RLA]) : whnf t -> ListRedTm.nf Rt = t.
-Proof.
-  intros; symmetry; eapply redtmwf_whnf; tea.
-  eapply ListRedTm.red.
-Qed.
-
-Lemma ListRedTm_prop_whnf {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
-  (Rt : [Γ ||-<l> t : _ | RLA]) : whnf t -> ListProp Γ _ RLiA t.
-Proof.
-  intros. erewrite <- ListRedTm_whnf.
-  1: eapply ListRedTm.prop.
-  all: tea.
-  Unshelve. tea.
-Qed.
-
-Lemma ListProp_nil_inv {Γ l A P} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
-  ListProp Γ _ RLiA (tNil P) -> ListProp Γ _ RLiA (tNil P).
-Proof.
-  intros Rt.  
-  econstructor; inversion Rt; tea; try (eapply convneulist_whne_list in refl; do 2 inv_whne); now irrelevanceRefl.
-  Unshelve. escape; now gen_typing.
-Defined.
-
-Lemma ListProp_cons_inv0 {Γ l A P hd tl} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
-  ListProp Γ _ RLiA (tCons P hd tl) -> 
-  [× [Γ |- P], 
-    [Γ ||-<l> A ≅ P | RA],
-    [Γ ||-<l> hd : _ | RA] &
-    [Γ ||-<l> tl : _ | RLA]].
-Proof.
-  intros Rt; inversion Rt; tea; try (eapply convneulist_whne_list in refl; do 2 inv_whne).
-  subst; split; tea; irrelevance.
-Qed.
-
-Lemma ListProp_cons_inv {Γ l A P hd tl} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
-  ListProp Γ _ RLiA (tCons P hd tl) -> ListProp Γ _ RLiA (tCons P hd tl).
-Proof.
-  intros Rt; econstructor; pose proof (ListProp_cons_inv0 RA _ Rt) as []; tea; irrelevance.
-  Unshelve. escape; now gen_typing.
-Defined.
 
 
 Context {Γ l A A' P P' hnil hnil' hcons hcons'}
@@ -1123,7 +801,6 @@ Section ListElimValid.
     Let Vcons := conv _ _ VLA (symValidEq _ VLAA') Vcons'.
     Let VPcons := substS VP Vcons.
 
-    From LogRel.Substitution.Introductions Require Import Application.
 
     Lemma elimListConsValid : 
       [Γ ||-v<l> tListElim A P hnil hcons (tCons A' hd tl) : _ | VΓ | VPcons] ×

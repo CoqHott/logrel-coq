@@ -84,6 +84,9 @@ Proof.
   unfold funcomp; now rewrite  rinstInst'_term.
 Qed.
 
+Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
+Proof. now asimpl. Qed.
+
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 

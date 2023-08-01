@@ -346,6 +346,26 @@ Proof.
     irrelevance.
 Qed.
 
+Lemma consEqRedParam
+  {Γ A P hd tl l}
+  (RA: [Γ ||-< l > A])
+  (RLA: [Γ ||-< l > tList A]) :
+  [Γ |- P] ->
+  [RA | Γ ||- A ≅ P] ->
+  [RA | Γ ||- hd : A] ->
+  [RLA | Γ ||- tl : tList A] ->
+  [RLA | Γ ||- tCons A hd tl : tList A ] ×
+  [RLA | Γ ||- tCons P hd tl : tList A ] ×
+  [RLA | Γ ||- tCons A hd tl ≅ tCons P hd tl : tList A ].
+Proof.
+  intros.
+  assert [Γ ||-<l> A ≅ A | RA ] by now eapply LRTyEqRefl_.
+  escape; split; [|split].
+  1,2: now eapply consRed.
+  eapply consEqRed; tea.
+  1,2 : now eapply LREqTermRefl_.
+Qed.
+
 Lemma consValid {Γ A hd tl l}
   {VΓ : [||-v Γ]}
   {VA : [Γ ||-v<l> A | VΓ]}
@@ -384,6 +404,65 @@ Proof.
   instValid Vσ.
   eapply consEqRed; solve [ escape; tea | eapply LRTyEqRefl_].
 Qed.
+
+
+Lemma ListRedTmFwd {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
+  (Rt : [Γ ||-<l> t : _ | RLA]) : [Γ ||-<l> ListRedTm.nf Rt : _ | RLA] × [Γ ||-<l> t ≅ ListRedTm.nf Rt : _ | RLA].
+Proof. eapply redTmFwdConv; tea; [eapply (ListRedTm.red Rt)| eapply ListProp_whnf; eapply (ListRedTm.prop Rt)]. Qed.
+
+Lemma ListRedTm_det {Γ l A A' t} (RA : [Γ ||-<l> A]) (RA' : [Γ ||-<l> A'])
+  (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
+  (RLiA0' : [Γ ||-List<l> tList A']) (RLiA' := normList0 RLiA0') (RLA' := LRList' RLiA')
+  (Rt : [Γ ||-<l> t : _ | RLA]) (Rt' : [Γ ||-<l> t : _ | RLA']) : ListRedTm.nf Rt = ListRedTm.nf Rt'.
+Proof.
+  eapply redtmwf_det.
+  1,2: eapply ListProp_whnf; eapply ListRedTm.prop.
+  1,2: eapply ListRedTm.red.
+Qed.
+
+Lemma ListRedTm_whnf {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
+  (Rt : [Γ ||-<l> t : _ | RLA]) : whnf t -> ListRedTm.nf Rt = t.
+Proof.
+  intros; symmetry; eapply redtmwf_whnf; tea.
+  eapply ListRedTm.red.
+Qed.
+
+Lemma ListRedTm_prop_whnf {Γ l A t} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA)
+  (Rt : [Γ ||-<l> t : _ | RLA]) : whnf t -> ListProp Γ _ RLiA t.
+Proof.
+  intros. erewrite <- ListRedTm_whnf.
+  1: eapply ListRedTm.prop.
+  all: tea.
+  Unshelve. tea.
+Qed.
+
+Lemma ListProp_nil_inv {Γ l A P} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
+  ListProp Γ _ RLiA (tNil P) -> ListProp Γ _ RLiA (tNil P).
+Proof.
+  intros Rt.  
+  econstructor; inversion Rt; tea; try (eapply convneulist_whne_list in refl; do 2 inv_whne); now irrelevanceRefl.
+  Unshelve. escape; now gen_typing.
+Defined.
+
+Lemma ListProp_cons_inv0 {Γ l A P hd tl} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
+  ListProp Γ _ RLiA (tCons P hd tl) -> 
+  [× [Γ |- P], 
+    [Γ ||-<l> A ≅ P | RA],
+    [Γ ||-<l> hd : _ | RA] &
+    [Γ ||-<l> tl : _ | RLA]].
+Proof.
+  intros Rt; inversion Rt; tea; try (eapply convneulist_whne_list in refl; do 2 inv_whne).
+  subst; split; tea; irrelevance.
+Qed.
+
+Lemma ListProp_cons_inv {Γ l A P hd tl} (RA : [Γ ||-<l> A]) (RLiA0 : [Γ ||-List<l> tList A]) (RLiA := normList0 RLiA0) (RLA := LRList' RLiA) :
+  ListProp Γ _ RLiA (tCons P hd tl) -> ListProp Γ _ RLiA (tCons P hd tl).
+Proof.
+  intros Rt; econstructor; pose proof (ListProp_cons_inv0 RA _ Rt) as []; tea; irrelevance.
+  Unshelve. escape; now gen_typing.
+Defined.
+
+
 
 Definition mapProp {Γ L l} (A B f x: term) {LL : [Γ ||-List<l> L]} (p : ListProp _ _ LL x) : term.
 Proof.
