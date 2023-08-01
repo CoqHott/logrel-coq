@@ -100,6 +100,11 @@ Proof.
   - eapply VAext; [eapply irrelevanceSubst| eapply irrelevanceSubstEq]; eassumption.
 Qed.
 
+Lemma irrelevanceValidity' {Γ Γ' A A' l} (VΓ : [||-v Γ]) (VΓ' : [||-v Γ']) (VA : [Γ ||-v<l> A | VΓ]) : 
+  A = A' -> Γ = Γ' -> [Γ' ||-v<l> A' | VΓ'].
+Proof.
+  intros eqA eqΓ; subst; now eapply irrelevanceValidity.
+Qed.
 
 Lemma irrelevanceLift {l A F G Γ} (VΓ : [||-v Γ])
   (VF: [Γ ||-v<l> F | VΓ]) (VG: [Γ ||-v<l> G | VΓ])
