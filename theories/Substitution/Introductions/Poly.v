@@ -28,6 +28,35 @@ Section PolyValidity.
 
   Context `{GenericTypingProperties}.
 
+  Lemma mkPolyRed {Γ l A B} (wfΓ : [|-Γ])
+    (RA : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> A⟨ρ⟩]) 
+    (RB : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> a : _ | RA Δ ρ wfΔ] -> [Δ ||-<l> B[a .: ρ >> tRel]])
+    (RBext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (Ra : [Δ ||-<l> a : _ | RA Δ ρ wfΔ]),
+      [Δ ||-<l> b : _ | RA Δ ρ wfΔ] ->
+      [Δ ||-<l> a ≅ b : _ | RA Δ ρ wfΔ] -> [Δ ||-<l> B[a .: ρ >> tRel] ≅ B[b .: ρ >> tRel] | RB Δ a ρ wfΔ Ra]) :
+    PolyRed Γ l A B.
+  Proof.
+    assert [Γ |- A] by (eapply escape; now eapply instKripke).
+    unshelve econstructor; tea.
+    unshelve epose proof (RB _ (tRel 0) (@wk1 Γ A) _ _).
+    + gen_typing.
+    + eapply var0; tea; now rewrite wk1_ren_on.
+    + enough (B = B[tRel 0 .: @wk1 Γ A >> tRel]) as -> by now escape.
+      setoid_rewrite wk1_ren; rewrite scons_eta'; now asimpl.
+  Qed.
+
+  Lemma mkPolyRed' {Γ l A B} (RA : [Γ ||-<l> A]) 
+    (RB : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), [Δ ||-<l> a : _ | wk ρ wfΔ RA] -> [Δ ||-<l> B[a .: ρ >> tRel]])
+    (RBext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (Ra : [Δ ||-<l> a : _ | wk ρ wfΔ RA]),
+      [Δ ||-<l> b : _ | wk ρ wfΔ RA] ->
+      [Δ ||-<l> a ≅ b : _ | wk ρ wfΔ RA] -> [Δ ||-<l> B[a .: ρ >> tRel] ≅ B[b .: ρ >> tRel] | RB Δ a ρ wfΔ Ra]) :
+    PolyRed Γ l A B.
+  Proof.
+    unshelve eapply mkPolyRed; tea.
+    escape; gen_typing.
+  Qed.
+
+
   Lemma polyCodSubstRed {Γ l F G} (RF : [Γ ||-<l> F]) : 
     PolyRed Γ l F G -> forall t, [Γ ||-<l> t : _ | RF] -> [Γ ||-<l> G[t..]].
   Proof.
@@ -72,6 +101,57 @@ Section PolyValidity.
       bsimpl; rewrite scons_eta'; now asimpl.
       Unshelve. 1: gen_typing.
       eapply var0; tea; now bsimpl.
+  Qed.
+
+  Lemma polyRedSubst {Γ l A B t} (PAB : PolyRed Γ l A B) 
+    (Rt : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> t[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
+    (Rtext : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> a ≅ b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> t[a .: ρ >> tRel] ≅ t[b .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
+    : PolyRed Γ l A B[t]⇑.
+  Proof.
+    destruct PAB; opector; tea.
+    + intros; rewrite liftSubst_scons_eq.
+      unshelve eapply posRed; tea; eapply Rt; now irrelevanceRefl.
+    + unshelve epose proof (posRed _ t (@wk1 Γ A) _ _).
+      - escape; gen_typing.
+      - replace t with t[tRel 0 .: @wk1 Γ A >> tRel].
+        2:{ bsimpl; rewrite scons_eta'; now asimpl. }
+        eapply Rt.
+        eapply var0; tea; now rewrite wk1_ren_on.
+      - escape. 
+        replace (B[_]) with B[t .: @wk1 Γ A >> tRel]; tea.
+        now setoid_rewrite wk1_ren.
+    + intros; irrelevance0; rewrite liftSubst_scons_eq;[reflexivity|].
+      unshelve eapply posExt; tea; eapply Rt + eapply Rtext; now irrelevanceRefl.
+  Qed.
+
+  Lemma polyRedEqSubst {Γ l A B t u} (PAB : PolyRed Γ l A B) 
+    (Rt : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> t[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
+    (Ru : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> u[a .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
+    (Rtu : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      [Δ ||-<l> a : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> a ≅ b : _ | PolyRed.shpRed PAB ρ wfΔ] ->
+      [Δ ||-<l> t[a .: ρ >> tRel] ≅ u[b .: ρ >> tRel] : _ | PolyRed.shpRed PAB ρ wfΔ ])
+    (PABt : PolyRed Γ l A B[t]⇑)
+    : PolyRedEq PABt A B[u]⇑.
+  Proof.
+    constructor.
+    - intros; eapply LRTyEqRefl_.
+    - intros; irrelevance0; rewrite liftSubst_scons_eq; [reflexivity|].
+      unshelve eapply PolyRed.posExt; cycle 1; tea.
+      + eapply Rt; now irrelevanceRefl.
+      + eapply Ru; now irrelevanceRefl.
+      + eapply Rtu; try eapply LREqTermRefl_; now irrelevanceRefl.
   Qed.
   
   Context {l Γ F G} (VΓ : [||-v Γ])

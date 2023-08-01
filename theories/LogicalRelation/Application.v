@@ -61,6 +61,20 @@ Proof.
   irrelevance.
 Qed.
 
+Lemma appTerm' {Γ t u F G l X}
+  (RΠ : [Γ ||-<l> tProd F G])
+  {RF : [Γ ||-<l> F]}
+  (Rt : [Γ ||-<l> t : tProd F G | RΠ])
+  (Ru : [Γ ||-<l> u : F | RF])
+  (eq : X = G[u..])
+  (RX : [Γ ||-<l> X]) : 
+  [Γ ||-<l> tApp t u : X | RX].
+Proof. 
+  irrelevance0; [symmetry; tea|].
+  unshelve eapply appTerm; cycle 1; tea.
+  Unshelve. now rewrite <- eq.
+Qed. 
+
 
 Lemma appcongTerm {Γ t t' u u' F G l l'}
   (RΠ : [Γ ||-<l> tProd F G]) 
@@ -108,6 +122,27 @@ Proof.
     eapply LRTmEqRedConv; tea.
     eapply LRTmEqSym.
     eapply (snd (appTerm0 hΠ Rt' Ru' RGu')).
+Qed.
+
+Lemma appcongTerm' {Γ t t' u u' F F' G l l' X}
+  (RΠ : [Γ ||-<l> tProd F G]) 
+  {RF : [Γ ||-<l'> F]}
+  {RF' : [Γ ||-<l'> F']}
+  (RFF' : [Γ ||-<l'> F ≅ F' | RF])
+  (Rtt' : [Γ ||-<l> t ≅ t' : tProd F G | RΠ])
+  (Ru : [Γ ||-<l'> u : F | RF])
+  (Ru' : [Γ ||-<l'> u' : F' | RF'])
+  (Ruu' : [Γ ||-<l'> u ≅ u' : F | RF ])
+  (RGu : [Γ ||-<l'> X])
+   : X = G[u..] ->
+    [Γ ||-<l'> tApp t u ≅ tApp t' u' : X | RGu].
+Proof.
+  intros eq.
+  irrelevance0 ; [symmetry; apply eq|].
+  eapply appcongTerm; tea.
+  eapply LRTmRedConv; tea.
+  now eapply LRTyEqSym.
+  Unshelve. now rewrite <- eq.
 Qed.
 
 End Application.

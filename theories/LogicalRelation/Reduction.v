@@ -142,6 +142,18 @@ Proof.
       * cbn. now eapply ListRedTmEqRefl.
 Qed.
 
+Lemma redSubstTerm' {Γ A t u l} (RA : [Γ ||-<l> A]) :
+  [Γ ||-<l> u : A | RA] ->
+  [Γ |- t ⇒* u : A ] ->
+  [Γ ||-<l> t : A | RA] ×  
+  [Γ ||-<l> u : A | RA] ×
+  [Γ ||-<l> t ≅ u : A | RA].
+Proof.
+  intros. assert ([Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA]) by now eapply redSubstTerm.
+  now repeat split.
+Qed.
+
+
 Lemma redwfSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
   [Γ |- t :⇒*: u : A ] ->

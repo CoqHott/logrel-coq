@@ -83,6 +83,41 @@ Section SimpleArrow.
   Qed.
 
 
+  Lemma polyRedArrExt {Γ l A B C} : PolyRed Γ l A B -> PolyRed Γ l A C -> PolyRed Γ l A (arr B C).
+  Proof.
+    intros [tyA tyB RA RB RBext] [_ tyC RA' RC RCext].
+    opector; tea.
+    2: now eapply wft_simple_arr.
+    + intros; rewrite subst_arr; refold.
+      apply ArrRedTy; [eapply RB| eapply RC]; now irrelevanceRefl.
+      Unshelve. all: tea.
+    + intros.
+      irrelevance0; rewrite subst_arr; [refold; reflexivity|]; refold.
+      eapply arrRedCong.
+      1,2: eapply escape; first [eapply RB| eapply RC]; now irrelevanceRefl.
+      1,2: first [eapply RBext| eapply RCext]; now irrelevanceRefl.
+      Unshelve. all: now irrelevanceRefl + tea.
+  Qed.
+
+  Lemma polyRedEqArrExt {Γ l A A' B B' C C'}
+    (PAB : PolyRed Γ l A B) (PAC : PolyRed Γ l A C) 
+    (PAB' : PolyRed Γ l A' B') (PAC' : PolyRed Γ l A' C') 
+    (PABC : PolyRed Γ l A (arr B C))
+    (PABeq : PolyRedEq PAB A' B')
+    (PACeq : PolyRedEq PAC A' C')
+    : PolyRedEq PABC A' (arr B' C').
+  Proof.
+    constructor.
+    + intros; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+    + intros; irrelevance0; rewrite subst_arr; refold; [reflexivity|].
+      apply arrRedCong.
+      * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
+        eapply LRTmRedConv; tea; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+      * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
+        eapply LRTmRedConv; tea. irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+      * unshelve eapply (PolyRedEq.posRed PABeq); tea; now irrelevanceRefl.
+      * unshelve eapply (PolyRedEq.posRed PACeq); tea; now irrelevanceRefl.
+  Qed.
 
 
   (* Lemma idrefl {Γ l A} (RA : [Γ ||-<l> A]) :
