@@ -182,9 +182,8 @@ Section Inversions.
     `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}
     `{!ConvNeuProperties}.
-
-
-  Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') :
+  
+  Definition invLRTy {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') :=
     match w return Type with
     | UnivType => [Γ ||-U<l> A]
     | ProdType => [Γ ||-Π<l> A]
@@ -193,7 +192,10 @@ Section Inversions.
     | SigType => [Γ ||-Σ<l> A]
     | NeType _ => [Γ ||-ne A]
     end.
+
+  Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') : invLRTy lr r w.
   Proof.
+    unfold invLRTy.
     revert A' r w.
     pattern l, Γ, A, lr ; eapply LR_rect_TyUr; clear l Γ A lr.
     - intros * h ? red whA.
@@ -208,7 +210,7 @@ Section Inversions.
       exfalso.
       gen_typing.
     - intros * ? A' red whA.
-      enough (∑ w', whA = NeType w') as [? ->] by easy.
+      enough ({w' & whA = NeType w'}) as [? ->] by easy.
       destruct neA as [A'' redA neA''].
       apply convneu_whne in neA''.
       assert (A' = A'') as <-.

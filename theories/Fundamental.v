@@ -169,16 +169,10 @@ Section Fundamental.
     FundCon Γ ->
     in_ctx Γ n decl -> FundTm Γ decl (tRel n).
   Proof.
-    intros Γ n d FΓ hin; induction hin;
-      destruct (invValiditySnoc FΓ) as [l [VΓ [VA _]]]; clear FΓ.
-    - renToWk; rewrite <- (wk1_ren_on Γ d d).
-      eexists _ _; unshelve eapply var0Valid; tea.
-      now eapply embValidTyOne.
-    - renToWk; rewrite <- (wk1_ren_on Γ d' d).
-      destruct (IHhin VΓ); cbn in *.
-      econstructor. set (ρ := wk1 _).
-      replace (tRel _) with (tRel n)⟨ρ⟩ by (unfold ρ; now bsimpl).
-      unshelve eapply wk1ValidTm; cycle 1; tea; now eapply irrelevanceValidity.
+    intros Γ n d FΓ hin. 
+    unshelve econstructor; tea.
+    + eapply in_ctx_valid in hin as []; now eapply embValidTyOne. 
+    + now eapply varnValid.
   Qed.
 
   Lemma FundTmProd : forall (Γ : context) (A B : term),

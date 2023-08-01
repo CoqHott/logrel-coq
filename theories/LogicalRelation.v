@@ -534,7 +534,6 @@ End NeNf.
 Notation "[ Γ ||-NeNf k : A ]" := (NeNf.RedTm Γ k A) (at level 0, Γ, k, A at level 50).
 Notation "[ Γ ||-NeNf k ≅ l : A ]" := (NeNf.RedTmEq Γ k l A) (at level 0, Γ, k, l, A at level 50).
 
-
 (** ** Reducibility of natural number type *)
 Module NatRedTy.
 
@@ -940,6 +939,11 @@ Notation "[ Γ ||-< l > A ]" := [ LogRel l | Γ ||- A ].
 Notation "[ Γ ||-< l > A ≅ B | RA ]" := [ LogRel l | Γ ||- A ≅ B | RA ].
 Notation "[ Γ ||-< l > t : A | RA ]" := [ LogRel l | Γ ||- t : A | RA ].
 Notation "[ Γ ||-< l > t ≅ u : A | RA ]" := [ LogRel l | Γ ||- t ≅ u : A | RA ].
+
+Lemma instKripke `{GenericTypingProperties} {Γ A l} (wfΓ : [|-Γ]) (h : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [Δ ||-<l> A⟨ρ⟩]) : [Γ ||-<l> A].
+Proof.
+  specialize (h Γ wk_id wfΓ); now rewrite wk_id_ren_on in h.
+Qed.
 
 (** ** Rebundling reducibility of Polynomial *)
 

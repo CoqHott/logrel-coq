@@ -16,7 +16,7 @@ Section SimpleArrow.
     - now escape.
     - renToWk; eapply wft_wk; gen_typing.
     - intros; irrelevance0.
-      2: replace (subst_term _ _) with B⟨ρ⟩.      
+      2: replace (subst_term _ _) with B⟨ρ⟩.
       2: eapply wkEq, LRTyEqRefl_.
       all: bsimpl; now rewrite rinstInst'_term.
       Unshelve. all: tea.
@@ -36,6 +36,87 @@ Section SimpleArrow.
 
   Lemma ArrRedTy {Γ l A B} : [Γ ||-<l> A] -> [Γ ||-<l> B] -> [Γ ||-<l> arr A B].
   Proof. intros; eapply LRPi'; now eapply ArrRedTy0. Qed.
+
+  Lemma shiftPolyRedEq {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B]) (PAB : PolyRed Γ l A B⟨↑⟩) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    PolyRedEq PAB A' B'⟨↑⟩.
+  Proof.
+    intros; escape; unshelve econstructor.
+    - intros; irrelevanceRefl; now eapply wkEq.
+    - intros; irrelevance0; rewrite shift_subst_scons; [reflexivity|].
+      now eapply wkEq.
+      Unshelve. all: tea.
+  Qed.
+
+  Lemma arrRedCong0 {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) (RAB : [Γ ||-Π<l> arr A B]) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-Π arr A B ≅ arr A' B' | normRedΠ0 RAB].
+  Proof.
+    intros RAA' RBB'; escape.
+    unshelve econstructor; cycle 2.
+    + eapply redtywf_refl; now eapply wft_simple_arr.
+    + now eapply convty_simple_arr.
+    + now eapply shiftPolyRedEq.
+  Qed.
+
+    
+  Lemma arrRedCong {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-<l> arr A B ≅ arr A' B' | normRedΠ (ArrRedTy RA RB)].
+  Proof.
+    intros; now eapply arrRedCong0.
+  Qed.
+
+  Lemma arrRedCong' {Γ l A A' B B'} (RA : [Γ ||-<l> A]) (RB : [Γ ||-<l> B])
+    (tyA' : [Γ |- A']) (tyB' : [Γ |- B']) (RAB : [Γ ||-<l> arr A B]) :
+    [Γ ||-<l> A ≅ A' | RA] ->
+    [Γ ||-<l> B ≅ B' | RB] ->
+    [Γ ||-<l> arr A B ≅ arr A' B' | RAB].
+  Proof.
+    intros; irrelevanceRefl; now eapply arrRedCong.
+  Qed.
+
+
+  Lemma polyRedArrExt {Γ l A B C} : PolyRed Γ l A B -> PolyRed Γ l A C -> PolyRed Γ l A (arr B C).
+  Proof.
+    intros [tyA tyB RA RB RBext] [_ tyC RA' RC RCext].
+    opector; tea.
+    2: now eapply wft_simple_arr.
+    + intros; rewrite subst_arr; refold.
+      apply ArrRedTy; [eapply RB| eapply RC]; now irrelevanceRefl.
+      Unshelve. all: tea.
+    + intros.
+      irrelevance0; rewrite subst_arr; [refold; reflexivity|]; refold.
+      eapply arrRedCong.
+      1,2: eapply escape; first [eapply RB| eapply RC]; now irrelevanceRefl.
+      1,2: first [eapply RBext| eapply RCext]; now irrelevanceRefl.
+      Unshelve. all: now irrelevanceRefl + tea.
+  Qed.
+
+  Lemma polyRedEqArrExt {Γ l A A' B B' C C'}
+    (PAB : PolyRed Γ l A B) (PAC : PolyRed Γ l A C) 
+    (PAB' : PolyRed Γ l A' B') (PAC' : PolyRed Γ l A' C') 
+    (PABC : PolyRed Γ l A (arr B C))
+    (PABeq : PolyRedEq PAB A' B')
+    (PACeq : PolyRedEq PAC A' C')
+    : PolyRedEq PABC A' (arr B' C').
+  Proof.
+    constructor.
+    + intros; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+    + intros; irrelevance0; rewrite subst_arr; refold; [reflexivity|].
+      apply arrRedCong.
+      * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
+        eapply LRTmRedConv; tea; irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+      * eapply escape; unshelve eapply (PolyRed.posRed); cycle 1; tea.
+        eapply LRTmRedConv; tea. irrelevanceRefl; now unshelve eapply (PolyRedEq.shpRed PABeq).
+      * unshelve eapply (PolyRedEq.posRed PABeq); tea; now irrelevanceRefl.
+      * unshelve eapply (PolyRedEq.posRed PACeq); tea; now irrelevanceRefl.
+  Qed.
 
   Lemma idred {Γ l A} (RA : [Γ ||-<l> A]) :
     [Γ ||-<l> idterm A : arr A A | ArrRedTy RA RA].
@@ -133,9 +214,6 @@ Section SimpleArrow.
     now bsimpl.
   Qed.
 
-  Lemma arr_wk {Γ Δ A B} {ρ : Δ ≤ Γ} : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
-  Proof. cbn; now bsimpl. Qed.
-
   Lemma wkRedArr {Γ l A B f} 
     (RA : [Γ ||-<l> A]) 
     (RB : [Γ ||-<l> B]) 
@@ -145,7 +223,7 @@ Section SimpleArrow.
   Proof.
     intro; irrelevance0.
     2: unshelve eapply wkTerm; cycle 3; tea.
-    symmetry; apply arr_wk.
+    symmetry; apply wk_arr.
   Qed.
 
   Lemma compred {Γ l A B C f g} 
@@ -188,10 +266,10 @@ Section SimpleArrow.
       + now eapply h.
       + eapply redtm_comp_beta.
         6: cbn in *; now escape.
-        5: erewrite arr_wk; eapply ty_wk; tea.
+        5: erewrite wk_arr; eapply ty_wk; tea.
         4: eapply typing_meta_conv.
         4: eapply ty_wk; tea.
-        4: now rewrite <- arr_wk.
+        4: now rewrite <- wk_arr.
         1-3: now eapply wft_wk.
     }
     econstructor.

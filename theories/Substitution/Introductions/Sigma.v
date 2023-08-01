@@ -601,7 +601,7 @@ Section PairRed.
       eapply LRTyEqSym.
       eapply transEq; tea.
       now eapply LRTyEqSym.
-      Unshelve. 1: tea.
+      Unshelve. tea.
   Qed.
 
   Lemma subst_sig {A B σ} : (tSig A B)[σ] = (tSig A[σ] B[up_term_term σ]).
