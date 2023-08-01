@@ -408,6 +408,8 @@ Section Boundary.
       + now eapply sig_ty_inv.
     - now econstructor.
     - now econstructor.
+    - intros.
+      now eapply typing_subst1. 
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
@@ -536,6 +538,68 @@ Section Boundary.
     - intros * ? [? _] ? []; split; econstructor; tea.
       2: now econstructor.
       eapply ty_id; tea; now econstructor.
+    - intros * ? _ ? [] ? [] ? [] ? [] ? []; split.
+      + now eapply typing_subst1.
+      + now econstructor.
+      + econstructor.
+        1: econstructor.
+        * assumption.
+        * eapply stability1 ; tea.
+          all: now econstructor.
+        * econstructor ; tea.
+          eapply typing_subst1 ; tea.
+          now econstructor.
+        * econstructor ; tea.
+          now apply elimConsHypTy_conv.
+        * econstructor ; tea.
+          now econstructor.
+        * symmetry.
+          now eapply typing_subst1.
+    - intros * ? _ ? _ ?? ?? ? [] ; split.
+      + eapply typing_subst1 ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + econstructor ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + econstructor ; tea.
+        eapply typing_subst1.
+        2: now eapply TypeRefl.
+        now econstructor.
+    - intros * ? _ ? _ ?? ?? ? [] ?? ?? ; split.
+      + eapply typing_subst1 ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + econstructor ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + econstructor ; [econstructor|..].
+        2:{
+          do 3 (econstructor ; tea).
+          now symmetry.
+        }
+        1: eapply typing_meta_conv.
+        1: econstructor.
+        2: econstructor ; tea.
+        2: symmetry ; now econstructor.
+        1: eapply typing_meta_conv.
+        1: econstructor.
+        2: econstructor ; tea.
+        2: now symmetry.
+        1: eassumption.
+        1: cbn ; f_equal.
+        1: now bsimpl.
+        1: cbn ; f_equal.
+        1: now bsimpl.
+        replace (_[_]) with P[(tCons A hd tl)..]
+          by now bsimpl.
+        eapply typing_subst1.
+        2: now constructor.
+        econstructor ; tea.
+        all: constructor ; tea.
+        all: econstructor ; tea.
+        2: econstructor.
+        all: now symmetry.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].
@@ -833,6 +897,23 @@ Proof.
       now symmetry.
     + now eapply redtm_refl.
     + now eapply TermRefl.
+  - apply termGen' in Hty as [? [[-> ???? Hty'] Hconv]].
+    apply termGen' in Hty' as [? [[->] Hconv']].
+    eapply list_ty_inj in Hconv'.
+    econstructor ; tea.
+    econstructor ; tea.
+    now symmetry.
+  - apply termGen' in Hty as [? [[-> ???? Hty'] Hconv]].
+    apply termGen' in Hty' as [? [[->] Hconv']].
+    eapply list_ty_inj in Hconv'.
+    econstructor ; tea.
+    econstructor ; tea.
+    now symmetry.
+  - apply termGen' in Hty as [? [[-> ????]?]].
+    do 2 (econstructor; tea).
+    1-2: now econstructor.
+    1-2: now eapply TermRefl.
+    now eapply IHHred.
 Qed.
 
 Theorem subject_reduction_one_type Γ A A' :
