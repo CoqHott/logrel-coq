@@ -108,6 +108,27 @@ Section RedDefinitions.
         by (now rewrite Heq).
   Qed.
 
+
+  Lemma conv_subst_ext Γ Δ (σ σ' τ τ' : nat -> term) :
+    σ =1 σ' ->
+    τ =1 τ' ->
+    [Γ |-s σ ≅ τ : Δ] ->
+    [Γ |-s σ' ≅ τ' : Δ].
+  Proof.
+    intros Heqσ Heqτ.
+    induction 1 in σ', τ', Heqσ, Heqτ |- *.
+    all: constructor.
+    - eapply IHConvSubst.
+      + now rewrite Heqσ.
+      + now rewrite Heqτ.
+    - rewrite <- Heqσ, <- Heqτ.
+      replace A[↑ >> σ'] with A[↑ >> σ]
+        by (now rewrite Heqσ).
+      replace A[↑ >> τ'] with A[↑ >> τ]
+        by (now rewrite Heqτ).
+      eassumption.
+  Qed.
+
   Record well_typed Γ t :=
   {
     well_typed_type : term ;

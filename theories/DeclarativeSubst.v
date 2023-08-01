@@ -115,6 +115,37 @@ Section MoreSubst.
       all: gen_typing.
   Qed.
 
+  Lemma conv_subst_wk (Γ Δ Δ' : context) (ρ : Δ' ≤ Δ) σ τ :
+    [|- Δ'] ->
+    [Δ |-s σ ≅ τ : Γ] ->
+    [Δ' |-s σ⟨ρ⟩ ≅ τ⟨ρ⟩ : Γ].
+  Proof.
+    intros ?.
+    induction 1 as [|σ τ Γ A].
+    1: now econstructor.
+    econstructor.
+    - asimpl ; cbn in * ; asimpl.
+      eassumption.
+    - asimpl ; cbn in * ; asimpl.
+      eapply convtm_meta_conv.
+      1: eapply typing_wk ; eassumption.
+      1: now asimpl.
+      reflexivity.
+  Qed.
+
+  Corollary conv_subst_up (Γ Δ : context) A σ τ :
+    [Δ |- A] ->
+    [Δ |-s σ ≅ τ : Γ] ->
+    [Δ ,, A |-s σ⟨↑⟩ ≅ τ⟨↑⟩ : Γ].
+  Proof.
+    intros HA Hσ.
+    eapply conv_subst_wk with (ρ := wk_step A wk_id) in Hσ.
+    - eapply conv_subst_ext ; [..|eassumption].
+      all: now bsimpl.
+    - econstructor.
+      all: gen_typing.
+  Qed.
+
   Lemma id_subst (Γ : context) :
     [|- Γ] ->
     [Γ |-s tRel : Γ].
@@ -266,6 +297,145 @@ Proof.
   eapply typing_substmap1; tea.
   do 2 constructor; refine (wfVar _ (in_here _ _)).
   constructor; boundary.
+Qed.
+
+Lemma elimConsHypTy_ty Γ A P :
+  [Γ |- A] ->
+  [Γ,, tList A |- P] ->
+  [Γ |-[ de ] elimConsHypTy A P].
+Proof.
+  intros HΓ HP.
+  assert [|- Γ] by gen_typing.
+  assert [|- Γ,, A].
+  {
+    econstructor ; gen_typing.
+  }
+  assert [Γ,,A |- tList A⟨↑⟩].
+  {
+    erewrite <- wk1_ren_on, wk_list.
+    eapply typing_wk ; tea.
+    now econstructor.
+  }
+  assert [ |- (Γ,, A),, tList A⟨↑⟩] by
+    now econstructor.
+  unfold elimConsHypTy.
+  econstructor ; tea.
+  econstructor ; tea.
+  eapply wft_simple_arr.
+  1:{
+    unshelve eapply typing_wk in HP.
+    2: unshelve eapply wk_up.
+    2: unshelve eapply wk_step.
+    3: eapply wk_id.
+    1: exact A.
+    2: now rewrite wk1_ren_on.
+    erewrite <- wk1_ren_on.
+    replace P⟨up_ren ↑⟩ with (P⟨@wk_up (Γ,,A) _ (tList A) (wk_step A wk_id)⟩)
+      by now bsimpl.
+    eassumption.
+  }
+  eapply typing_subst ; tea.
+  econstructor.
+  1:{ eapply well_subst_ext.
+    2: eapply well_subst_up ; tea.
+    2: eapply well_subst_up ; tea.
+    2: eapply id_subst ; tea.
+    1: now bsimpl.
+  }
+  cbn.
+  econstructor.
+  1: econstructor.
+  + renToWk.
+    eapply typing_wk ; tea.
+    renToWk.
+    now eapply typing_wk.
+  + econstructor ; tea.
+    now do 2 econstructor.
+  + econstructor ; tea.
+    now econstructor.
+  + econstructor.
+    replace A[_ >> _] with A⟨↑⟩⟨↑⟩.
+    2: now substify ; bsimpl.
+    econstructor.
+    do 2 (renToWk ; eapply typing_wk ; tea).
+Qed.
+
+Lemma elimConsHypTy_conv Γ A A' P P' :
+  [Γ|- A] ->
+  [Γ |- A'] ->
+  [Γ |- A ≅ A'] ->
+  [Γ,, tList A |- P] ->
+  [Γ,, tList A |- P ≅ P' ] ->
+  [Γ |- elimConsHypTy A P ≅ elimConsHypTy A' P'].
+Proof.
+  intros HA HA' HAconv HP HPconv.
+  unfold elimConsHypTy.
+  assert [|- Γ] by gen_typing.
+  assert [|- Γ,, A].
+  {
+    econstructor ; gen_typing.
+  }
+  assert [Γ,,A |- tList A⟨↑⟩].
+  {
+    erewrite <- wk1_ren_on, wk_list.
+    eapply typing_wk ; tea.
+    now econstructor.
+  }
+  assert [Γ,,A |- tList A⟨↑⟩ ≅ tList A'⟨↑⟩].
+  {
+    erewrite <- ! wk1_ren_on, ! wk_list.
+    eapply typing_wk ; tea.
+    now econstructor.
+  }
+  assert [ |- (Γ,, A),, tList A⟨↑⟩] by
+    now econstructor.
+  constructor ; tea.
+  constructor ; tea.
+  eapply convty_simple_arr; tea.
+  - unshelve eapply typing_wk in HP.
+    2: unshelve eapply wk_up.
+    2: unshelve eapply wk_step.
+    3: eapply wk_id.
+    1: exact A.
+    2: now rewrite wk1_ren_on.
+    erewrite <- wk1_ren_on.
+    replace P⟨up_ren ↑⟩ with (P⟨@wk_up (Γ,,A) _ (tList A) (wk_step A wk_id)⟩)
+      by now bsimpl.
+    eassumption.
+  - unshelve eapply typing_wk in HPconv.
+    2: unshelve eapply wk_up.
+    2: unshelve eapply wk_step.
+    3: eapply wk_id.
+    1: exact A.
+    2: rewrite wk1_ren_on ; cbn ; econstructor ; tea.
+    replace P⟨up_ren ↑⟩ with (P⟨@wk_up (Γ,,A) _ (tList A) (wk_step A wk_id)⟩)
+      by now bsimpl.
+    replace P'⟨up_ren ↑⟩ with (P'⟨@wk_up (Γ,,A) _ (tList A) (wk_step A wk_id)⟩)
+      by now bsimpl.
+    erewrite <- wk1_ren_on.
+    eassumption.
+  - eapply typing_subst ; tea.
+    econstructor.
+    1:{ eapply conv_subst_ext.
+      3: eapply conv_subst_up ; tea.
+      3: eapply conv_subst_up ; tea.
+      3: eapply subst_refl, id_subst ; tea.
+      1,2: now bsimpl.
+    }
+    cbn.
+    econstructor.
+    1: eapply TermConsCong ; refold.
+    + renToWk.
+      eapply typing_wk ; tea.
+      renToWk.
+      now eapply typing_wk.
+    + repeat (econstructor ; tea).
+    + repeat (econstructor ; tea).
+    + econstructor.
+      replace A[_ >> _] with A⟨↑⟩⟨↑⟩.
+      2: now substify ; bsimpl.
+      econstructor.
+      do 2 (renToWk ; eapply typing_wk ; tea).
 Qed.
 
 Lemma conv_well_subst (Γ Δ : context) :
