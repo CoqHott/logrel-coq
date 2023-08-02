@@ -60,6 +60,7 @@ Inductive isType : term -> Type :=
   | NatType : isType tNat
   | EmptyType : isType tEmpty
   | SigType {A B} : isType (tSig A B)
+  | IdType {A x y} : isType (tId A x y)
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=

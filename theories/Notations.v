@@ -237,6 +237,12 @@ Reserved Notation "[ Γ ||-<0>  t : A | R ]" (at level 0, Γ, t, A, R at level 5
 (** The terms t and u are reducibly convertible at type A and level 0 in Γ, given the proof R that A is reducible *)
 Reserved Notation "[ Γ ||-<0> t ≅ u : A | R ]" (at level 0, Γ, t, u, A, R at level 50).
 
+(** Reducibility notations for identity types *)
+Reserved Notation "[ Γ ||-Id< l > A ]" (at level 0, Γ, l,  A at level 50).
+Reserved Notation "[ Γ ||-Id< l > A ≅ B | RA ]" (at level 0, Γ, l, A, B, RA at level 50).
+Reserved Notation "[ Γ ||-Id< l > t : A | RA ]" (at level 0, Γ, l, t, A, RA at level 50).
+Reserved Notation "[ Γ ||-Id< l > t ≅ u : A | RA ]" (at level 0, Γ, l, t, u, A, RA at level 50).
+
 
 
 
