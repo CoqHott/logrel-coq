@@ -69,6 +69,13 @@ Section Definitions.
     | neuSndCongAlg {Γ m n A B} :
       [ Γ |- m ~h n ▹ tSig A B ] ->
       [ Γ |- tSnd m ~ tSnd n ▹ B[(tFst m)..] ]
+    | neuListElimCong {Γ A A' P P' l l' hnil hnil' hcons hcons'} :
+      [Γ |- A ≅ A'] ->
+      [Γ |- l ~ l' :List A] ->
+      [Γ ,, tList A |- P ≅ P'] ->
+      [Γ |- hnil ≅ hnil' : P[(tNil A)..]] ->
+      [Γ |- hcons ≅ hcons' : elimConsHypTy A P] ->
+      [Γ |- tListElim A P hnil hcons l ~ tListElim A' P' hnil' hcons' l' ▹ P[l..]]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -252,6 +259,13 @@ Section Definitions.
       [Γ |- f ◃ arr A B] ->
       [Γ |- l ◃ tList A] ->
       [Γ |- tMap A B f l ▹ tList B]
+    | infListElim {Γ A P l hnil hcons} :
+      [Γ |- A] ->
+      [Γ,, tList A |- P] ->
+      [Γ |- l ◃ tList A] ->
+      [Γ |- hnil ◃ P[(tNil A)..]] ->
+      [Γ |- hcons ◃ elimConsHypTy A P] ->
+      [Γ |- tListElim A P hnil hcons l ▹ P[l..]]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -519,6 +533,19 @@ Section TypingWk.
     - intros ??? A? ? IH *; cbn.
       rewrite (subst_ren_wk_up (A:=A)).
       econstructor; now eapply IH.
+    - intros * ? IHA ? IHl ? IHP ? IHnil ? IHcons **.
+      cbn.
+      eapply convne_meta_conv ; [econstructor|..] ; refold.
+      all: try eauto. 
+      + eapply (IHP _ (wk_up (tList A) ρ)).
+      + eapply convtm_meta_conv.
+        1: now eauto.
+        all: now bsimpl.
+      + eapply convtm_meta_conv.
+        * now eauto.
+        * now eapply wk_elimConsHypTy.
+        * reflexivity.
+      + now bsimpl.
     - intros.
       econstructor.
       + eauto.
@@ -679,6 +706,20 @@ Section TypingWk.
     - intros * ????? h **; cbn; econstructor; eauto.
       eapply typing_meta_conv. 1: apply h.
       now bsimpl.
+    - intros * ?? ? IHP ?? ? IHnil ? IHcons **.
+      cbn.
+      eapply typing_meta_conv.
+      1: econstructor.
+      + eauto.
+      + eapply IHP with (ρ := wk_up _ ρ).
+      + eauto.
+      + eapply typing_meta_conv.
+        1: now eapply IHnil.
+        now bsimpl.
+      + eapply typing_meta_conv.
+        1: now eapply IHcons.
+        apply wk_elimConsHypTy.
+      + now bsimpl.  
     - intros.
       econstructor.
       + eauto.
@@ -799,6 +840,9 @@ Proof.
     inversion Hconv; subst; clear Hconv; refold.
     apply IH in H3.
     now inversion H3.
+  - intros * ? * ? IH ????????? Hconv.
+    inversion Hconv ; subst ; clear Hconv ; refold.
+    reflexivity. 
   - intros * ? IH ???? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
@@ -860,6 +904,9 @@ Proof.
     now inversion Hconv.
   - intros * ? _ ? _ ? _ ? _ ? Hconv.
     now inversion Hconv.
+  - intros * ??????????? Hconv.
+    inversion_clear Hconv.
+    now reflexivity.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H3 ; subst.

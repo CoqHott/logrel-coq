@@ -106,6 +106,11 @@ Proof.
     + econstructor.
       1: now econstructor.
       now eapply redty_red, red_ty_compl_univ_r.
+  - econstructor.
+    + intros Hcan; inversion Hcan.
+    + econstructor.
+      1: now econstructor.
+      now eapply redty_red, red_ty_compl_univ_r.
   - intros * ? [IH] **; subst.
     eapply IH.
     eapply subject_reduction_type ; tea.
@@ -258,6 +263,20 @@ Module AlgorithmicTypingProperties.
       1: tea.
       1: econstructor; tea; econstructor; tea; now eapply algo_conv_complete.
       now do 2 econstructor.
+    - intros_bn.
+      + econstructor ; tea.
+        * econstructor ; tea.
+          now eapply algo_conv_complete.
+        * econstructor ; tea.
+          now eapply algo_conv_complete.
+        * econstructor ; tea.
+          now eapply algo_conv_complete.
+      + econstructor.
+        eapply typing_subst1.
+        1: now eapply algo_typing_sound in bun_inf_conv_inf.
+        eapply stability1 ; tea.
+        1-2: boundary.
+        now apply algo_typing_sound. 
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -421,6 +440,29 @@ Module AlgorithmicTypingProperties.
       1: eapply ty_map ; tea.
       eapply convty_list.
       now symmetry.
+    - intros * tyA tyP tynil tycons **.
+      split.
+      1: now destruct tyA.
+      2: eapply redalg_one_step; now econstructor.
+      eapply ty_listElim ; tea.
+      eapply ty_conv.
+      1: now eapply ty_nil.
+      symmetry.
+      now eapply convty_list.
+    - intros * tyA tyP tynil tycons **.
+      split.
+      1: now destruct tyA.
+      2: eapply redalg_one_step; now econstructor.
+      eapply ty_listElim ; tea.
+      eapply ty_conv.
+      1: now eapply ty_cons.
+      symmetry.
+      now eapply convty_list.
+    - intros * tyA tyP tynil tycons [].
+      split.
+      1: now destruct tyA.
+      2: now eapply redalg_listElim.
+      now eapply ty_listElim.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.

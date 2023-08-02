@@ -113,6 +113,7 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
++ intros * ????? [] ; split ; now constructor. 
 Qed.
 
 
@@ -142,6 +143,7 @@ all: try now (intros; apply redalg_one_step; constructor).
 + intros; now apply redalg_fst.
 + intros; now apply redalg_snd.
 + intros; now apply redalg_map.
++ intros ; now apply redalg_listElim.
 + intros; assumption.
 + intros; reflexivity.
 Qed.

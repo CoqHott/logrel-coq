@@ -188,6 +188,36 @@ Section AlgoConvConv.
       eapply TermConv; refold; [|now symmetry].
       econstructor; eapply lrefl.
       now eapply stability.
+    - intros * ? IHA Hl IHl ? IHP ? IHnil ? IHcons ?
+        [? [? [[->]]]%termGen'] [? [? [[->]]]%termGen'] **.
+      (* edestruct IHl as [[T [Hl' h]][]] ; tea.
+      eapply red_ty_compl_list_r in h as [B' [h%redty_red]].
+      eapply red_whnf in h as ->.
+      2: now eapply algo_conv_wh in Hl' as []. *)
+      eexists ; split.
+      1: econstructor.
+      + now eapply IHA.
+      + eapply IHl ; tea.
+        econstructor.
+        now eapply stability.
+      + eapply IHP.
+        symmetry.
+        econstructor.
+        1: now symmetry.
+        eapply TypeRefl ; refold.
+        boundary.
+      + eapply IHnil ; tea.
+        econstructor.
+        eapply stability ; tea.
+        boundary.
+      + eapply IHcons ; tea.
+        eapply TypeRefl ; refold.
+        eapply stability ; tea.
+        boundary.
+      + econstructor.
+        eapply stability ; tea.
+        eapply typing_subst1.
+        all: now boundary.
     - intros * ? IHm **.
       edestruct IHm as [[A'' []] []]; tea.
       assert [Γ' |-[de] A' ≅ A''] as HconvA'.
@@ -616,6 +646,74 @@ Section Symmetry.
       eapply typing_subst1; tea.
       eapply TermConv; refold; [|now symmetry].
       eapply stability; [now econstructor|now symmetry].
+    - intros * ? IHA ? IHl ? IHP ? IHnil ? IHcons ? [? [? [[->] ]]%termGen'] [? [? [[->] ]]%termGen'] **.
+      edestruct IHl as[IHl'].
+      assert [Δ |- A ≅ A'].
+      {
+        eapply stability.
+        2: now symmetry.
+        eapply IHA.
+      } 
+      eexists ; split.
+      1: econstructor ; tea.
+      + now eapply IHA.
+      + eapply algo_conv_conv.
+        1: eapply IHl'.
+        all: tea.
+        * now eapply conv_ctx_refl_r.
+        * eapply stability.
+          2: now symmetry.
+          boundary.
+        * eapply stability.
+          2: now symmetry.
+          boundary. 
+      + eapply IHP.
+        econstructor ; tea.
+        now econstructor.
+      + assert [Γ |-[ de ] P[(tNil A)..] ≅ P'[(tNil A')..]].
+        {
+          eapply typing_subst1.
+          2: eapply IHP.
+          now econstructor.
+        }
+        eapply algo_conv_conv.
+        * now eapply IHnil.
+        * now eapply conv_ctx_refl_r.
+        * eapply stability ; tea.
+          now symmetry.
+        * eapply stability.
+          2: now symmetry.
+          econstructor ; tea.
+          now symmetry.
+        * eapply stability.
+          2: now symmetry.
+          assumption.
+      + assert [Γ |-[de] elimConsHypTy A P ≅ elimConsHypTy A' P'].
+        {
+          eapply elimConsHypTy_conv; tea.
+          1: now eapply IHA.
+          eapply IHP.
+        }
+        eapply algo_conv_conv.
+        * now eapply IHcons.
+        * now eapply conv_ctx_refl_r.
+        * eapply stability ; tea.
+          now symmetry.
+        * eapply stability.
+          2: now symmetry.
+          econstructor ; tea.
+          now symmetry.
+        * eapply stability ; tea.
+          now symmetry.
+      + eapply typing_subst1.
+        * eapply stability ; tea.
+          now symmetry.
+        * eapply stability.
+          1: now eapply IHP.
+          symmetry.
+          econstructor ; tea.
+          eapply TypeRefl ; refold.
+          boundary.
     - intros * ? IHm  **.
       edestruct IHm as [[A'' [IHm' Hconv]] [Hwf]] ; tea ; clear IHm.
       assert [Δ |-[de] A' ≅ A''] as Hconv'.
@@ -1535,6 +1633,29 @@ Section Transitivity.
       split; [now econstructor|].
       eapply typing_subst1; tea.
       eapply TermConv; refold; [now econstructor|now symmetry].
+    - intros * ? [IHA] ? IHl ? IHP ? IHnil ? IHcons ?
+        [? [? [[->] ]]%termGen'] [? [? [[->] ]]%termGen'] * ? Hconv.
+      inversion Hconv ; subst ; clear Hconv ; refold.
+      eapply IHl in H15 ; tea.
+      2: now symmetry. 
+      split.
+      + econstructor ; tea.
+        * now eapply IHA.
+        * eapply IHP ; tea.
+          econstructor ; tea.
+          now econstructor.
+        * eapply IHnil ; tea.
+          symmetry.
+          eapply typing_subst1.
+          2: now apply IHP.
+          now econstructor.
+        * eapply IHcons ; tea.
+          symmetry.
+          eapply elimConsHypTy_conv ; tea.
+          now apply IHP.
+      + eapply typing_subst1 ; tea.
+        * eapply IHl.
+        * eapply IHP.
     - intros * ? IH ? ? ? ? ? * ? Hconv.
       inversion Hconv ; subst ; clear Hconv ; refold.
       edestruct IH as [[? HconvA] ?] ; tea.
@@ -2216,6 +2337,32 @@ Qed.
       symmetry; econstructor; tea.
       1: boundary.
       now symmetry.
+  - intros_bn.
+    + eexists.
+      econstructor ; tea.
+    + now econstructor.
+    + eexists.
+      econstructor ; tea.
+      * eapply stability1 ; last first ; tea.
+        all: econstructor ; tea.
+        symmetry.
+        now eapply algo_conv_sound in bun_conv_ty0.
+      * econstructor ; tea.
+        eapply typing_subst1 ; tea.
+        2: eapply algo_conv_sound in bun_conv_ty ; tea.
+        econstructor.
+        now eapply algo_conv_sound in bun_conv_ty0.
+      * econstructor ; tea.
+        eapply elimConsHypTy_conv ; tea.
+        2: now eapply algo_conv_sound in bun_conv_ty.
+        now eapply algo_conv_sound in bun_conv_ty0.
+      * econstructor ; tea.
+        econstructor.
+        now eapply algo_conv_sound in bun_conv_ty0. 
+    + now econstructor.
+    + econstructor ; tea.
+    + econstructor.
+      eapply typing_subst1 ; tea.
   Qed.
 
   #[export, refine] Instance ConvNeuListAlglProperties : ConvNeuListProperties (ta := bn) := {}.
@@ -2331,6 +2478,7 @@ Module IntermediateTypingProperties.
     - gen_typing.
     - gen_typing.
     - gen_typing.
+    - gen_typing. 
     - intros * ? [].
       econstructor ; tea.
       symmetry.
@@ -2489,6 +2637,31 @@ Module IntermediateTypingProperties.
     - gen_typing.
     - gen_typing.
     - gen_typing.
+  - intros * ? [] [] [] [] [].
+    pose proof bun_conv_ty as ?%algo_conv_sound ; tea.
+    eexists ; tea.
+    + eexists.
+      econstructor ; tea.
+    + now econstructor.
+    + eexists.
+      econstructor ; tea.
+      * eapply stability1 ; last first ; tea.
+        all: econstructor ; tea.
+        now symmetry.
+      * econstructor ; tea.
+        eapply typing_subst1 ; tea.
+        2: eapply algo_conv_sound in bun_conv_ty0 ; tea.
+        now econstructor.
+      * econstructor ; tea.
+        eapply elimConsHypTy_conv ; tea.
+        now eapply algo_conv_sound in bun_conv_ty0.
+      * econstructor ; tea.
+        econstructor.
+        now eapply algo_conv_sound in bun_conv_ty0. 
+    + now econstructor.
+    + econstructor ; tea.
+    + econstructor.
+      eapply typing_subst1 ; tea.
   Qed.
 
   #[export, refine] Instance ConvNeuListIntProperties : ConvNeuListProperties (ta := bni) := {}.
@@ -2606,7 +2779,27 @@ Module IntermediateTypingProperties.
         econstructor.
         now symmetry.
       + eapply redalg_one_step.
-        now econstructor.   
+        now econstructor.
+    - intros * ????? ?%bn_conv_sound.
+      split ; tea.
+      + boundary.
+      + econstructor ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + apply redalg_one_step.
+        now constructor.
+    - intros * ????? ?%bn_conv_sound.
+      split ; tea.
+      + boundary.
+      + econstructor ; tea.
+        do 2 econstructor ; tea.
+        now symmetry.
+      + apply redalg_one_step.
+        now constructor.
+    - intros * ???? [].
+      split ; tea.
+      + now econstructor.
+      + now eapply redalg_listElim.
     - intros * [] [].
       econstructor ; tea.
       econstructor ; tea.
