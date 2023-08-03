@@ -134,3 +134,52 @@ Section IdRed.
       + now eapply UnivEqEq.
       Unshelve. now eapply IdRed.
   Qed.
+
+
+
+Lemma reflRed {Γ l A x} (RA : [Γ ||-<l> A]) (Rx : [RA | _ ||- x : _]) (RIA : [Γ ||-<l> tId A x x]) :
+  [RIA | _ ||- tRefl A x : _].
+Proof.
+  set (RIA' := invLRId RIA).
+  enough [LRId' RIA' | _ ||- tRefl A x : _] by irrelevance.
+  pose proof (IdRedTy_inv RIA') as [eA ex ex'].
+  assert (e : tId (IdRedTy.ty RIA') (IdRedTy.lhs RIA') (IdRedTy.rhs RIA') = tId A x x).
+  1: f_equal; now symmetry.
+  econstructor; unfold_id_outTy; cbn; rewrite ?e.
+  + eapply redtmwf_refl; eapply ty_refl; now escape.
+  + eapply convtm_refl; [eapply escapeEq; eapply reflLRTyEq|eapply escapeEqTerm; now eapply reflLRTmEq].
+  + constructor; cbn; irrelevance0; tea.
+    1: eapply reflLRTyEq.
+    * rewrite <- ex; now eapply reflLRTmEq.
+    * rewrite <- ex'; now eapply reflLRTmEq.
+  Unshelve.  all: tea.
+Qed.
+
+Lemma reflCongRed {Γ l A A' x x'} 
+  (RA : [Γ ||-<l> A])
+  (TA' : [Γ |- A'])
+  (RAA' : [RA | _ ||- _ ≅ A'])
+  (Rx : [RA | _ ||- x : _]) 
+  (Tx' : [Γ |- x' : A'])
+  (Rxx' : [RA | _ ||- x ≅ x' : _]) 
+  (RIA : [Γ ||-<l> tId A x x]) :
+  [RIA | _ ||- tRefl A x ≅ tRefl A' x' : _].
+Proof.
+  set (RIA' := invLRId RIA).
+  enough [LRId' RIA' | _ ||- tRefl A x ≅ tRefl A' x' : _] by irrelevance.
+  pose proof (IdRedTy_inv RIA') as [eA ex ex'].
+  assert (e : tId (IdRedTy.ty RIA') (IdRedTy.lhs RIA') (IdRedTy.rhs RIA') = tId A x x).
+  1: f_equal; now symmetry.
+  assert [Γ |- tId A x x ≅ tId A' x' x'] by (escape ; gen_typing).
+  econstructor; unfold_id_outTy; cbn; rewrite ?e.
+  1,2: eapply redtmwf_refl.
+  1: escape; gen_typing.
+  - eapply ty_conv; [| now symmetry]; now eapply ty_refl.
+  - eapply convtm_refl; now escape.
+  - constructor; cbn; irrelevance0; tea.
+    1: apply reflLRTyEq.
+    1,2: rewrite <- ex; tea; now eapply reflLRTmEq.
+    1,2: rewrite <- ex'; tea; now eapply reflLRTmEq.
+  Unshelve. all: tea.
+Qed.
+
