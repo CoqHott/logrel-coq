@@ -518,9 +518,10 @@ Proof.
     pose (IA := IdRedTy.from IAad); pose (IA' := IdRedTy.from IAad').
     assert (IA'.(IdRedTy.outTy) = he.(IdRedTyEq.outTy)) as eId.
     1: eapply whredty_det; constructor; try constructor; [apply IA'.(IdRedTy.red)| apply he.(IdRedTyEq.red)].
-    inversion eId; destruct he, IAP'; cbn in *; subst; clear eId.
+    inversion eId; destruct he, IAP'; cbn in *. subst; clear eId.
     eapply (IdIrrelevanceLRPack IA IA'); tea.
-    now eapply IHPar.
+    eapply IHPar; tea.
+    apply IA'.(IdRedTy.tyRed).
 Qed.
 
 
@@ -587,13 +588,17 @@ Proof.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
     + intros; now eapply IHdom.
     + intros; now eapply IHcod.
-  - intros [] IHPar IH. specialize (IHPar IH).
+  - intros [] IHPar IHKripke IH. 
+    specialize (IHPar IH). pose (IHK Δ ρ wfΔ := IHKripke Δ ρ wfΔ IH).
     cbn in *; eapply LRId'.
     assert (eqv: equivLRPack tyRed IHPar).
     1: eapply LRIrrelevantPreds; tea; try eapply reflLRTyEq; now eapply LRAd.adequate.
+    assert (eqvK : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), equivLRPack (tyKripke Δ ρ wfΔ) (IHK Δ ρ wfΔ)).
+    1: intros; eapply LRIrrelevantPreds; tea; try eapply reflLRTyEq; now eapply LRAd.adequate.
     unshelve econstructor.
-    4-6: tea.
+    4-7: tea.
     1-4: now apply eqv.
+    2-4: intros * ? ?%eqvK; apply eqvK; eauto.
     econstructor.
     + intros ?? ?%eqv; apply eqv; now symmetry.
     + intros ??? ?%eqv ?%eqv; apply eqv; now etransitivity.
@@ -907,7 +912,7 @@ Proof.
       eapply LRTmEqRedConv.
       2: eapply eqSnd.
       now eapply PolyRed.posExt.
-  - intros ??? [] ??? [????? hprop]; unshelve econstructor; unfold_id_outTy; cbn in *.
+  - intros ??? [] ???? [????? hprop]; unshelve econstructor; unfold_id_outTy; cbn in *.
     3,4: tea.
     1: now symmetry.
     destruct hprop; econstructor; tea.

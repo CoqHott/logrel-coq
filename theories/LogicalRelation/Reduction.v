@@ -42,6 +42,10 @@ Proof.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod; tea; cbn.
       unshelve econstructor;intros; apply reflLRTyEq.
+  - intros ? [ty lhs rhs] ih _ X redX; unshelve eexists.
+    + apply LRId'; unshelve eexists ty lhs rhs _ _; tea.
+      etransitivity; tea; constructor; tea; gen_typing.
+    + exists ty lhs rhs; tea; eapply reflLRTyEq.
 Qed.
 
 
@@ -127,6 +131,14 @@ Proof.
     unshelve refine (let rt : [LRSig' PA | Γ ||- t : A] := _ in _).
     1: unshelve eexists p _; tea; constructor; destruct red; tea; etransitivity; tea.
     split; tea; exists rt ru; tea; intros; cbn; now apply reflLRTmEq.
+  - intros ? IA ih _ t u [nf ?? prop] redt.
+    assert [Γ |- A ≅ IA.(IdRedTy.outTy)] by (destruct IA; unfold IdRedTy.outTy; cbn; gen_typing).
+    assert [Γ |-[ ta ] t ⇒* u : IA.(IdRedTy.outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t : IA.(IdRedTy.outTy)] by (eapply ty_conv; gen_typing).
+    assert [Γ |-[ ta ] t :⇒*: nf : IA.(IdRedTy.outTy)].
+    1: constructor; [apply red|etransitivity; tea; apply red].
+    split; eexists; tea.
+    now eapply reflIdPropEq.
 Qed.
 
 Lemma redSubstTerm' {Γ A t u l} (RA : [Γ ||-<l> A]) :
@@ -154,38 +166,41 @@ Lemma redFwd {Γ l A B} : [Γ ||-<l> A] -> [Γ |- A :⇒*: B] -> whnf B -> [Γ |
 Proof.
   intros RA; revert B; pattern l, Γ, A, RA; apply LR_rect_TyUr; clear l Γ A RA.
   - intros ??? [??? red] ? red' ?. 
-    eapply LRU_.  unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    eapply LRU_.  unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor. econstructor; tea. eapply redtywf_refl; gen_typing.
   - intros ??? [? red] ? red' ?.
     eapply LRne_.
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor; now eapply convneu_whne.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
   - intros ??? [?? red] ?? ? red' ?.
     eapply LRPi'. 
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
   - intros ??? [red] ? red' ?.
     eapply LRNat_.
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
   - intros ??? [red] ? red' ?.
     eapply LREmpty_.
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
   - intros ??? [?? red] ?? ? red' ?.
     eapply LRSig'. 
-    unshelve erewrite (redtywf_det _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
     econstructor; tea.
     eapply redtywf_refl; gen_typing.
+  - intros ??? [???? red] _ _ ? red' ?.
+    eapply LRId'; unshelve erewrite (redtywf_det _ _ red' red); tea; [constructor|].
+    econstructor; tea. eapply redtywf_refl; gen_typing.
 Qed.
 
 Lemma redFwdConv {Γ l A B} (RA : [Γ ||-<l> A]) : [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B] × [Γ ||-<l> A ≅ B | RA].
@@ -195,12 +210,15 @@ Proof.
   split; tea; irrelevance.
 Qed.
 
+Lemma IdProp_whnf {Γ l A} (IA : [Γ ||-Id<l> A]) t : IdProp IA t -> whnf t.
+Proof. intros []; constructor; destruct r; now eapply convneu_whne. Qed.
+
 Lemma redTmFwd {Γ l A t u} {RA : [Γ ||-<l> A]} : 
   [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA].
 Proof.
   revert t u; pattern l,Γ,A,RA; apply LR_rect_TyUr; clear l Γ A RA.
   - intros ?????? [? red] red' ?.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: now eapply isType_whnf.
     econstructor; tea.
     1: eapply redtmwf_refl; gen_typing.
@@ -208,29 +226,34 @@ Proof.
     2,3: gen_typing.
     now eapply RedTyRecFwd.
   - intros ??? ??? [? red] red' ?.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: constructor; now eapply convneu_whne.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: now eapply isFun_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ?????? Rt red' ?; inversion Rt; subst.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: now eapply NatProp_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ?????? Rt red' ?; inversion Rt; subst.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: now eapply EmptyProp_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
     Unshelve. 2: tea.
   - intros ???????? [? red] red' ?.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ red' red); tea.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
     1: now eapply isPair_whnf.
+    econstructor; tea.
+    eapply redtmwf_refl; gen_typing.
+  - intros ???????? [? red] red' ?.
+    unshelve erewrite (redtmwf_det _ _ red' red); tea.
+    1: now eapply IdProp_whnf.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
 Qed.

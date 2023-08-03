@@ -812,11 +812,12 @@ Module IdRedTyPack.
     rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
     tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
     tyKripke : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), LRPack@{i} Δ ty⟨ρ⟩ ;
-    tyKripkeAct : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
-      and3@{i i i} 
-        (forall B, [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ wfΔ | _ ||- _ ≅ B⟨ρ⟩])
-        (forall t, [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ wfΔ | _ ||- t⟨ρ⟩ : _])
-        (forall t u, [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ wfΔ | _ ||- t⟨ρ⟩ ≅ u⟨ρ⟩ : _])
+    tyKripkeEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) B,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ' wfΞ | _ ||- _ ≅ B⟨ρ''⟩];
+    tyKripkeTm : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ : _];
+    tyKripkeTmEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t u,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ ≅ u⟨ρ''⟩ : _];
   }.
 
   Record IdRedTyAdequate@{i j} `{ta : tag} `{WfContext ta} `{WfType ta} `{RedType ta} `{ConvType ta}
@@ -1384,11 +1385,12 @@ Section IdRedTy.
     rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
     tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
     tyKripke : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [ LogRel@{i j k l} l | Δ ||- ty⟨ρ⟩ ] ;
-    tyKripkeAct : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
-      and3@{k k k} 
-        (forall B, [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ wfΔ | _ ||- _ ≅ B⟨ρ⟩])
-        (forall t, [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ wfΔ | _ ||- t⟨ρ⟩ : _])
-        (forall t u, [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ wfΔ | _ ||- t⟨ρ⟩ ≅ u⟨ρ⟩ : _])
+    tyKripkeEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) B,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ' wfΞ | _ ||- _ ≅ B⟨ρ''⟩];
+    tyKripkeTm : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ : _];
+    tyKripkeTmEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t u,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ ≅ u⟨ρ''⟩ : _];
  }.
 
 
@@ -1404,8 +1406,9 @@ Section IdRedTy.
     - exact IA.(IdRedTyPack.lhsRedRefl).
     - exact IA.(IdRedTyPack.rhsRedRefl).
     - exact IA.(IdRedTyPack.tyPER).
-    - intros; refine (Times3@{k k k} _ _ _ _ _ _). (* split/ constructor leave unbound universes *)
-      all: intros; now apply IA.(IdRedTyPack.tyKripkeAct).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeEq).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeTm).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeTmEq).
   Defined.
 
   Definition toPack@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyPack@{k} Γ A.
@@ -1419,8 +1422,9 @@ Section IdRedTy.
     - exact IA.(IdRedTy.lhsRedRefl).
     - exact IA.(IdRedTy.rhsRedRefl).
     - exact IA.(IdRedTy.tyPER).
-    - intros; refine (Times3@{k k k} _ _ _ _ _ _). (* split/ constructor leave unbound universes *)
-      all: intros; now apply IA.(IdRedTy.tyKripkeAct).
+    - intros; now eapply IA.(IdRedTy.tyKripkeEq).
+    - intros; now eapply IA.(IdRedTy.tyKripkeTm).
+    - intros; now eapply IA.(IdRedTy.tyKripkeTmEq).
   Defined.
   
   Definition to@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) (toPack IA).
@@ -1428,17 +1432,16 @@ Section IdRedTy.
     econstructor; [apply IA.(tyRed)| intros; now apply IA.(tyKripke)]. 
   Defined.
 
-  (* Do not hold anymore because of the packing in tyKripkeAct; a simple solution if needs be is to unpack into 3 fields *)
-  (* Lemma beta_pack@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) :
+  Lemma beta_pack@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) :
     toPack (from IAad) = IA.
-  Proof. destruct IA, IAad; cbn. reflexivity. Qed.
+  Proof. reflexivity. Qed.
   
   Lemma beta_ad@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) :
     to (from IAad) = IAad.
   Proof. reflexivity. Qed.
 
   Lemma eta@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : from  (to IA) = IA. 
-  Proof. reflexivity. Qed. *)
+  Proof. reflexivity. Qed.
 
   Definition IdRedTyEq {Γ l A} (IA : @IdRedTy Γ l A) := IdRedTyEq (toPack IA).
   Definition IdRedTm {Γ l A} (IA : @IdRedTy Γ l A) := IdRedTm (toPack IA).

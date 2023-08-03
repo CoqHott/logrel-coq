@@ -156,7 +156,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     1,2,4,5: auto.
     - intros; eapply (HPi _ _ _ (ParamRedTy.from HAad)); eauto.
     - intros; eapply (HSig _ _ _ (ParamRedTy.from HAad)); eauto.
-    - intros. eapply (HId _ _ _ (IdRedTy.from IAad)). ; eauto.
+    - intros; eapply (HId _ _ _ (IdRedTy.from IAad)) ; eauto.
   Defined.
 
   Notation PolyHypTyUr P Γ ΠA G :=
@@ -184,7 +184,11 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
     
-    (forall l Γ A (IA :  [Γ ||-Id<l> A]), P (IA.(IdRedTy.tyRed)) -> P (LRId' IA)) ->
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      
+      P (LRId' IA)) ->
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
@@ -211,7 +215,10 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
     
-    (forall Γ A (IA :  [Γ ||-Id<l> A]), P (IA.(IdRedTy.tyRed)) -> P (LRId' IA)) ->
+    (forall Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed)) ->
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      P (LRId' IA)) ->
 
     forall (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
@@ -244,7 +251,10 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
     
-    (forall l Γ A (IA :  [Γ ||-Id<l> A]), P (IA.(IdRedTy.tyRed)) -> P (LRId' IA)) ->
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]),
+       P (IA.(IdRedTy.tyRed)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      P (LRId' IA)) ->
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
@@ -337,7 +347,7 @@ Section Inversions.
         eapply whred_det.
         1-3: gen_typing.
         eapply redty_red, redA.
-    - intros ??? IA _ A' red whA'.
+    - intros ??? IA _ _ A' red whA'.
       enough (∑ B x y, A' = tId B x y) as [?[?[? ->]]].
       + dependent inversion whA'; tea; inv_whne.
       + destruct IA; do 3 eexists; eapply whred_det.

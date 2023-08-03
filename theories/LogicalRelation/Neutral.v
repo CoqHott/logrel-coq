@@ -269,6 +269,19 @@ Proof.
     all: try first [assumption|now eapply lrefl].
 Qed.
 
+Lemma complete_Id {l Γ A} (IA : [Γ ||-Id<l> A]) :
+  complete (LRId' IA).
+Proof.
+  split; intros.
+  assert [Γ |- A ≅ IA.(IdRedTy.outTy)] by (destruct IA; unfold IdRedTy.outTy; cbn; gen_typing).
+  assert [Γ |- n : IA.(IdRedTy.outTy)] by now eapply ty_conv.
+  split; econstructor.
+  1,4,5: eapply redtmwf_refl; tea; now eapply ty_conv.
+  2,4: do 2 constructor; tea.
+  1,4: eapply convtm_convneu.
+  all: eapply convneu_conv; tea; now eapply lrefl.
+Qed.
+
 Lemma completeness {l Γ A} (RA : [Γ ||-<l> A]) : complete RA.
 Proof.
 revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
@@ -278,6 +291,7 @@ revert l Γ A RA; eapply LR_rect_TyUr; cbn; intros.
 - now apply complete_Nat.
 - now apply complete_Empty.
 - now apply complete_Sig.
+- now apply complete_Id.
 Qed.
 
 Lemma neuTerm {l Γ A} (RA : [Γ ||-<l> A]) {n} :

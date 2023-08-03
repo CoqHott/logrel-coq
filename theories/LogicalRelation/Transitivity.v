@@ -1,6 +1,7 @@
+From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance.
 
 Set Universe Polymorphism.
 
@@ -11,26 +12,26 @@ Set Printing Primitive Projection Parameters.
 
 Set Printing Universes.
 
-(* Lemma transEq@{i j k l} {Γ A B C lA lB} 
+ Lemma transEq@{i j k l} {Γ A B C lA lB} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]}
   {RB : [LogRel@{i j k l} lB | Γ ||- B]}
   (RAB : [Γ ||-<lA> A ≅ B | RA])
    (RBC : [Γ ||-<lB> B ≅ C | RB]) :
   [Γ ||-<lA> A ≅ C | RA].
-Proof. now eapply LRTransEq. Qed. *)
+Proof. now eapply LRTransEq. Qed.
 
-(* Lemma transEqTermU@{h i j k} {Γ l UU t u v} {h : [Γ ||-U<l> UU]} :
+Lemma transEqTermU@{h i j k} {Γ l UU t u v} {h : [Γ ||-U<l> UU]} :
   [LogRelRec@{i j k} l | Γ ||-U t ≅ u : UU| h] ->
   [LogRelRec@{i j k} l | Γ ||-U u ≅ v : UU| h] ->
   [LogRelRec@{i j k} l | Γ ||-U t ≅ v : UU| h].
 Proof.
   intros [rL ?? redL] [? rR] ; exists rL rR redL; tea.
   + etransitivity; tea.
-    unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (URedTm.red redR) (URedTm.red redL0))  ; tea.
+    unshelve erewrite (redtmwf_det _ _ (URedTm.red redR) (URedTm.red redL0))  ; tea.
     all: apply isType_whnf; apply URedTm.type.
   + apply TyEqRecFwd; unshelve eapply transEq@{h i j k}.
     4,5: now apply (TyEqRecFwd h). 
-Qed. *)
+Qed.
 
 Lemma transEqTermNeu {Γ A t u v} {RA : [Γ ||-ne A]} :
   [Γ ||-ne t ≅ u : A | RA] ->
@@ -39,7 +40,7 @@ Lemma transEqTermNeu {Γ A t u v} {RA : [Γ ||-ne A]} :
 Proof.
   intros [tL] [? tR]; exists tL tR; tea.
   etransitivity; tea.
-  unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ redR redL0); tea.
+  unshelve erewrite (redtmwf_det _ _ redR redL0); tea.
   all: eapply whnf_whne, convneu_whne; first [eassumption|symmetry; eassumption].
 Qed.
 
@@ -59,7 +60,7 @@ Lemma transEqTermΠ {Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]}
   [Γ ||-Π t ≅ v : A | ΠA ].
 Proof.
   intros [tL] [? tR];
-  unshelve epose proof (e := redtmwf_det _ _ _ _ _ _ _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
+  unshelve epose proof (e := redtmwf_det _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
   1,2: apply isFun_whnf; apply PiRedTm.isfun.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
@@ -83,7 +84,7 @@ Lemma transEqTermΣ {Γ lA A t u v} {ΣA : [Γ ||-Σ<lA> A]}
   [Γ ||-Σ t ≅ v : A | ΣA ].
 Proof.
   intros [tL ?? eqfst eqsnd] [? tR ? eqfst' eqsnd'];
-  unshelve epose proof (e := redtmwf_det _ _ _ _ _ _ _ _ (SigRedTm.red redR) (SigRedTm.red redL)); tea.
+  unshelve epose proof (e := redtmwf_det _ _ (SigRedTm.red redR) (SigRedTm.red redL)); tea.
   1,2: apply isPair_whnf; apply SigRedTm.isfun.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
@@ -121,7 +122,7 @@ Proof.
   apply NatRedEqInduction.
   - intros * ???? ih ? uv; inversion uv; subst.
     destruct (NatPropEq_whnf prop), (NatPropEq_whnf prop0). 
-    unshelve epose proof (redtmwf_det _ u _ _ _ _ _ _ redR redL0); tea; subst.
+    unshelve epose proof (redtmwf_det _ _ redR redL0); tea; subst.
     econstructor; tea.
     1: now etransitivity.
     now eapply ih.
@@ -159,11 +160,39 @@ Proof.
     inversion tu; subst.
     unshelve eapply EmptyPropEq_whnf in prop as HH1. 2: tea. destruct HH1.
     unshelve eapply EmptyPropEq_whnf in prop0 as HH2. 2: tea. destruct HH2.
-    unshelve epose proof (redtmwf_det _ u _ _ _ _ _ _ redL redR0); tea; subst.
+    unshelve epose proof (redtmwf_det _ _ redL redR0); tea; subst.
     econstructor; tea.
     1: now etransitivity.
     eapply HH; eauto.
 Qed.
+
+Lemma transIdPropEq {Γ l A} (IA : [Γ ||-Id<l> A]) t u v :
+  IdPropEq IA t u -> IdPropEq IA u v -> IdPropEq IA t v.
+Proof.
+  intros [] h; inversion h; subst.
+  - now econstructor.
+  - match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; apply convneu_whne in conv; inv_whne end.
+  - match goal with H : [_ ||-NeNf _ ≅ _ : _ ] |- _ => destruct H; symmetry in conv; apply convneu_whne in conv; inv_whne end.
+  - econstructor; now eapply transNeNfEq.
+Qed.
+
+Lemma IdPropEq_whnf {Γ l A} (IA : [Γ ||-Id<l> A]) t u : IdPropEq IA t u -> whnf t × whnf u.
+Proof.
+  intros []; split; constructor; destruct r; eapply convneu_whne; tea; now symmetry.
+Qed.
+
+Lemma transTmEqId {Γ l A} (IA : [Γ ||-Id<l> A]) t u v :
+  [Γ ||-Id<l> t ≅ u : _ | IA] -> [Γ ||-Id<l> u ≅ v : _| IA] -> [Γ ||-Id<l> t ≅ v : _| IA].
+Proof.
+  intros [??? red ? prop] [?? red' ?? prop'].
+  pose proof prop as [_ wh]%IdPropEq_whnf.
+  pose proof prop' as [wh' _]%IdPropEq_whnf.
+  pose proof (redtmwf_det wh wh' red red'); subst.
+  unshelve econstructor; cycle 2; tea.
+  1: now etransitivity.
+  now eapply transIdPropEq.
+Qed.
+
 
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]} :
@@ -178,6 +207,17 @@ Proof.
   - intros ? NA **; now eapply (fst (transEqTermNat NA)).
   - intros ? NA **; now eapply (fst (transEqTermEmpty NA)).
   - intros * ?????; apply transEqTermΣ; tea.
+  - intros; now eapply transTmEqId.
+Qed.
+
+
+#[global]
+Instance perLRTmEq@{i j k l} {Γ l A} (RA : [LogRel@{i j k l} l | Γ ||- A]):
+  PER (fun t u => [RA | _ ||- t ≅ u : _]).
+Proof.
+  econstructor.
+  - intros ???; now eapply LRTmEqSym.
+  - intros ???; now eapply transEqTerm.
 Qed.
 
 Lemma LREqTermSymConv {Γ t u G G' l RG RG'} :

@@ -45,7 +45,7 @@ Section Escapes.
     + intros ??? [] []; gen_typing.
     + intros ??? [] * ? ? []; cbn in *.
       eapply convty_exp. all: gen_typing.
-    + intros ??? [???? red] ? [???? red']; cbn in *. 
+    + intros ??? [???? red] ?? [???? red']; cbn in *. 
       eapply convty_exp; tea;[eapply red | eapply red'].
   Qed.
 
@@ -64,7 +64,7 @@ Section Escapes.
     - intros ??? [] []; gen_typing.
     - intros ??? [] * ?? [] ; cbn in *.
       gen_typing.
-    - intros ??? IA _ []. 
+    - intros ??? IA _ _ []. 
       unfold_id_outTy; destruct IA; cbn in *; gen_typing.
   Qed.
 
@@ -89,7 +89,7 @@ Section Escapes.
     - intros ??? [] * ?? [[termL] [termR]] ; cbn in *.
       eapply convtm_exp ; tea.
       all: gen_typing.
-    - intros ??? [] _ []; unfold_id_outTy; cbn in *.
+    - intros ??? [] _ _ []; unfold_id_outTy; cbn in *.
       eapply convtm_exp; tea; gen_typing.
   Qed.
 
@@ -105,7 +105,7 @@ Section Escapes.
     - intros * []; gen_typing.
     - intros * []; gen_typing.
     - intros * ??? []; gen_typing.
-    - intros * _ ? []; gen_typing.
+    - intros * _ _ ? []; gen_typing.
   Qed.
   
 End Escapes.

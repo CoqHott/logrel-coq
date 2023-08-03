@@ -1192,7 +1192,7 @@ Section GenericConsequences.
     intros ? ?%whnf_whne; now eapply redtywf_whnf.
   Qed.
 
-  Lemma redtmwf_det Γ t u u' A A' :
+  Lemma redtmwf_det {Γ t u u' A A'} :
     whnf u -> whnf u' ->
     [Γ |- t :⇒*: u : A] -> [Γ |- t :⇒*: u' : A'] ->
     u = u'.
@@ -1202,7 +1202,7 @@ Section GenericConsequences.
     all: now eapply redtm_sound.
   Qed.
 
-  Lemma redtywf_det Γ A B B' :
+  Lemma redtywf_det {Γ A B B'} :
     whnf B -> whnf B' ->
     [Γ |- A :⇒*: B] -> [Γ |- A :⇒*: B'] ->
     B = B'.
@@ -1212,6 +1212,7 @@ Section GenericConsequences.
     all: now eapply redty_sound.
   Qed.
 
+  (* Unused, consider removing*)
   Lemma whredtm_det Γ t u u' A A' :
     [Γ |- t ↘ u : A] -> [Γ |- t ↘ u' : A'] ->
     u = u'.
@@ -1221,6 +1222,7 @@ Section GenericConsequences.
     all: now eapply redtm_sound.
   Qed.
 
+  (* Unused, consider removing*)
   Lemma whredty_det Γ A B B' :
     [Γ |- A ↘ B] -> [Γ |- A ↘ B'] ->
     B = B'.
