@@ -53,6 +53,11 @@ Proof.
       econstructor ; tea.
       eapply zip_ored.
       now econstructor.
+  - inversion H ; subst.
+    2: now inversion H0.
+    split.
+    + now repeat econstructor.
+    + easy.   
 Qed.
 
 Lemma isType_tm_view1 t e :
@@ -93,7 +98,7 @@ Proof.
   all: intros v [] ; split ; [..|eassumption].
   all: etransitivity ; [..|eassumption].
   all: eapply zip_red.
-  1-7: econstructor ; [..|reflexivity] ; now econstructor.
+  1-9: econstructor ; [..|reflexivity] ; now econstructor.
   now destruct s ; cbn.
   Unshelve. 
   - eapply isType_tm_view1 in Heq as [].
@@ -126,46 +131,6 @@ Proof.
     easy.
   - eassumption.
 Qed.
-
-(* Lemma can_red_stack :
-  funrect wh_red_stack (fun '(c,π) => isCanonical c × π = [::]) (fun '(c,π) t => c = t).
-Proof.
-  intros ? Hcan.
-  funelim (wh_red_stack _).
-  all: cbn; try split; try easy.
-  all: try solve [destruct Hcan as [] ; congruence].
-  - destruct Hcan as [Hcan _].
-    inversion Hcan.
-  - destruct Hcan as [Hcan _].
-    destruct s ; cbn in *.
-    all: now inversion Hcan.
-  - destruct Hcan as [Hcan _].
-    destruct s ; cbn in *.
-    all: now inversion Hcan.
-Qed.
-
-Lemma can_red c t :
-  isCanonical c ->
-  graph wh_red c t ->
-  t = c.
-Proof.
-  intros Hcan Hgraph.
-  enough (funrect wh_red (fun c => isCanonical c) (fun c t => c = t)).
-  {
-    eapply funrect_graph in Hgraph ; cycle 1 ; tea.
-    cbn in *.
-    now easy.
-  }
-  intros ? ?.
-  funelim (wh_red _).
-  cbn.
-  intros ? Hgraph'.
-  eapply funrect_graph in Hgraph' ; cycle 1.
-  - eapply can_red_stack.
-  - now split.
-  - cbn in *.
-    easy.
-Qed. *)
 
 #[universes(polymorphic)]Corollary red_sound t t' :
   graph wh_red t t' ->
@@ -274,7 +239,7 @@ Section ConversionSound.
     funrect conv (fun _ => True) conv_sound_type.
   Proof.
     intros x _.
-    Time funelim_conv ; try exact I.
+    funelim_conv ; try exact I.
     all: match goal with
       | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
     end.
