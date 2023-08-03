@@ -100,6 +100,15 @@ induction π as [|[]] in t, B, Hty |- * ; cbn.
   intros; eapply Hstack.
   eapply TermConv; refold; tea.
   econstructor; tea; now (eapply TypeRefl + eapply TermRefl).
+- unfold typed_stack in * ; cbn in *.
+  eapply IHπ in Hty as (T&(?&[]&?)%termGen'&Hstack) ; subst.
+  eexists ; split ; tea.
+  intros u Htyu.
+  eapply Hstack.
+  econstructor.
+  1: eapply TermRedListElimCong ; tea ; refold.
+  1-4: now econstructor.
+  eassumption.
 Qed.
 
 Lemma well_typed_zip Γ t π :
@@ -145,168 +154,163 @@ Proof.
   eapply Hts.
   now econstructor.
 Qed.
+
+Definition good_ne (b : bool) (n : term) := if b then whne_list n else whne n.
+
+Lemma good_monotone b b' n : b ==> b' -> good_ne b n -> good_ne b' n.
+Proof.
+  destruct b, b' ; cbn ; try auto.
+  1: congruence.
+  now constructor.
+Qed.
   
-Definition nomap_stack π :=
-  forallb (fun s => match s with | sMap _ _ _ => false | _ => true end) π.
+(* The list should be good if it tranforms a good input neutral for bi into a good output neutral for bo *)
+Fixpoint good_stack (bi : bool) π :=
+  match π with
+  | [::] => true
+  | (sEmptyElim _)::π'
+  | (sNatElim _ _ _)::π'
+  | (sApp _)::π'
+  | sFst::π'
+  | sSnd::π' => (~~ bi) && good_stack false π' 
+  | (sMap _ _ _)::π' => (good_stack true π')
+  | (sListElim _ _ _ _)::π' => good_stack false π'
+  end.
 
-Definition ismap_stack π :=
-  forallb (fun s => match s with | sMap _ _ _ => true | _ => false end) π.
+Lemma good_stack_antitone π :
+  good_stack true π ->
+  good_stack false π.
+Proof.
+  intros Hπ.
+  induction π as [|[]] in Hπ |- * ; cbn in *.
+  all: try easy.
+  all: congruence.
+Qed.
 
-Lemma stack_ne n π :
-  nomap_stack π -> whne n -> whne (zip n π).
+(* Lemma stack_ne n bi bo π :
+  good_stack bi bo π ->
+  good_ne bi n ->
+  good_ne bo (zip n π).
 Proof.
   intros Hπ Hne.
-  induction π as [|[]] in n, Hne, Hπ |- * ; cbn.
-  1: eassumption.
-  1-5: cbn in * ; eapply IHπ ; tea ; now econstructor.
-  cbn in * ; congruence.
-Qed.
+  induction π as [|[]] in n, bi, bo, Hne, Hπ |- * ; cbn.
+  2-6: destruct bi ; cbn in * ; [congruence|..] ; eapply IHπ ; tea ; now constructor.
+  - now eapply good_monotone.
+  - destruct bi ; cbn in *.
+    + eapply IHπ ; tea.
+      cbn.
+      constructor. 
+    cbn in * ; congruence.
+  - cbn in * ; eapply IHπ ; tea ; now do 2 econstructor.
+Qed. *)
 
-Lemma list_stack_ismap Γ A t B (π : stack) :
-  [Γ |- t : tList A] ->
-  typed_stack Γ (tList A) t B π ->
-  ismap_stack π.
-Proof.
-  intros Ht Hπ.
-  induction π as [|[] π] in A, t, B, Ht, Hπ |- * ; cbn.
-  - easy.
-  - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen']] ; subst ; tea.
-    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen']] ; subst ; tea.
-    unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
-    2-3: now econstructor.
-    now cbn in *.
-  - eapply typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
-    eapply typed_stack_conv_in in Hstack.
-    2: now symmetry.
-    eapply IHπ.
-    2: eassumption.
-    now econstructor.
-Qed.
-  
 Lemma typed_stack_good Γ A t B (π : stack) :
   [Γ |- t : A] ->
   typed_stack Γ A t B π ->
-  ∑ π' π'', [× π = π' ++ π'', nomap_stack π' & ismap_stack π''].
+  (good_stack false π) × ((∑ A', A = tList A') -> good_stack true π).
 Proof.
-  intros Ht Hty.
-  induction π as [|[]] in A, t, B, Ht, Hty |- *.
-  - exists [::], [::] ; split ; eauto.
-  - eapply typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (sEmptyElim _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (sNatElim _ _ _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (sApp _ :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (sFst :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eapply typed_zip_cons in Hty as [? [? (π'&π''&[])%IHπ]] ; subst ; tea.
-    eexists (sSnd :: π'), _ ; split.
-    1: reflexivity.
-    all: eassumption.
-  - eexists [::], _ ; split.
-    1-2: reflexivity.
-    pose proof Hty as [? [(?&[->]&?)%termGen' ?]]%typed_zip_cons ; tea.
-    eapply list_stack_ismap.
-    2: eapply typed_stack_conv_in ; tea.
-    2: now eapply type_uniqueness.
-    eassumption.
+  intros Ht Hπ.
+  induction π as [|[] π] in A, t, B, Ht, Hπ |- * ; cbn.
+  - now split.
+  - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen' Hstack]] ; subst ; tea.
+    split.
+    + eapply IHπ in Hstack as [] ; tea.
+      do 2 (econstructor ; tea).
+    + intros [? ->].
+      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      2-3: now econstructor.
+      now cbn in *.
+  - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen' Hstack]] ; subst ; tea.
+    split.
+    + eapply IHπ in Hstack as [] ; tea.
+      do 2 (econstructor ; tea).
+    + intros [? ->].
+      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      2-3: now econstructor.
+      now cbn in *.
+  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
+    split.
+    + eapply IHπ in Hstack as [] ; tea.
+      do 2 (econstructor ; tea).
+    + intros [? ->].
+      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      2-3: now econstructor.
+      now cbn in *.
+  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
+    split.
+    + eapply IHπ in Hstack as [] ; tea.
+      cbn.
+      do 3 (econstructor ; tea).
+      1: boundary.
+      econstructor.
+      eapply sig_ty_inv.
+      boundary.
+    + intros [? ->].
+      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      2-3: now econstructor.
+      now cbn in *.
+  - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
+    split.
+    + eapply IHπ in Hstack as [] ; tea.
+      do 2 (econstructor ; tea).
+    + intros [? ->].
+      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      2-3: now econstructor.
+      now cbn in *.
+  - eapply typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
+    eapply typed_stack_conv_in in Hstack.
+    2: now symmetry.
+    enough (good_stack true π)
+      by now split.
+    eapply IHπ in Hstack as [] ; eauto.
+    cbn.
+    now econstructor.
+  - eapply typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
+    enough (good_stack false π) by easy.
+    eapply IHπ in Hstack as [] ; tea.
+    cbn.
+    econstructor ; tea.
+    now econstructor.
 Qed.
 
 Section CompactImplemComplete.
 
-
-  Lemma stack_compact_nomap n π :
-    whne n -> nomap_stack π -> graph compact (n,π) (zip n π).
+  Lemma stack_compact_good b n π :
+    good_ne b n -> good_stack b π -> domain compact (n,π).
   Proof.
   intros Hne Hπ.
-  unfold graph.
-  induction π as [|s π] in n, Hne, Hπ |- * ; cbn in * ; try fold (nomap_stack π) in Hπ.
-  all: simp compact. 
+  induction π as [|s π] in b, n, Hne, Hπ |- * ; cbn in *.
+  all: apply compute_domain.
+  all: simp compact ; cbn. 
   1: now constructor.
   destruct (Map.into_view n) ; cbn.
-  1: inversion Hne.
-  destruct s ; cbn in * ; try solve [congruence].
-  all: unfold rec ; econstructor ; [eapply IHπ|..] ; tea ; now econstructor.
-  Qed.
-
-  Lemma stack_compact_map n π :
-    whne_list n -> ismap_stack π -> domain compact (n,π).
-  Proof.
-  intros Hne Hπ.
-  unfold domain, graph.
-  induction π as [|s π] in n, Hne, Hπ |- * ; cbn in * ; try fold (ismap_stack π) in Hπ.
-  all: simp compact. 
-  1: eexists ; now constructor.
-  destruct (Map.into_view n) ; cbn.
-  - destruct s ; cbn in * ; try solve [congruence].
-    edestruct (IHπ (tMap A B0 (comp A f0 f) l)) ; tea.
-    1: inversion Hne ; subst ; [..|inversion H] ; now econstructor.
-    eexists.
-    unfold rec.
-    econstructor ; tea.
-    now econstructor.
-  - destruct s ; cbn in * ; try solve [congruence].
-    assert (whne u) by eauto using whne_list_not_map.
-    edestruct (IHπ (tMap A B f u)) ; tea.
-    1: now econstructor.
-    eexists.
-    unfold rec.
-    econstructor ; tea.
-    now econstructor.
-  Qed.
-
-  Lemma compact_app t π' π'' v :
-    graph compact (t,π') v ->
-    domain compact (v,π'') ->
-    domain compact (t,π'++π'').
-  Proof.
-    intros Hπ' Hπ''.
-    unfold domain, graph in *.
-    induction π' as [|s π] in t, Hπ' |- * ; cbn in *.
-    - simp compact in Hπ'.
-      inversion Hπ' ; subst.
-      eassumption.
-    - simp compact in *.
-      destruct (Map.into_view t) ; cbn in *.
-      + destruct s ; cbn in *.
-        1-5: now inversion Hπ'.
-        inversion Hπ' ; subst ; clear Hπ'.
-        inversion H3 ; subst ; clear H3.
-        eapply IHπ in H1 as [].
-        eexists.
-        unfold rec.
-        econstructor ; tea.
-        now econstructor.
-      + inversion Hπ' ; subst ; clear Hπ'.
-        inversion H3 ; subst ; clear H3.
-        eapply IHπ in H1 as [].
-        eexists.
-        unfold rec.
-        econstructor ; tea.
-        now econstructor.
+  - destruct b ; cbn in *.
+    all: inversion Hne ; subst.
+    2: now inversion H.
+    destruct s ; cbn in * ; try solve [congruence].
+    + split ; [..|easy].
+      eapply IHπ ; tea.
+      cbn.
+      now econstructor.
+    + split ; [..|easy].
+      eapply IHπ ; tea.
+      cbn.
+      now do 2 econstructor.  
+  - assert (whne u).
+    {
+     destruct b ; tea.
+     now eapply whne_list_not_map. 
+    }
+    destruct s ; cbn in * ; try solve [congruence].
+    all: split ; [..|easy].
+    1-5: destruct b ; cbn in * ; try solve [congruence].
+    1-5: eapply IHπ ; tea ; now constructor.
+    + eapply IHπ ; tea.
+      cbn.
+      now constructor.
+    + eapply IHπ ; tea.
+      cbn.
+      now do 2 constructor.
   Qed.
 
   Theorem compact_complete Γ t π :
@@ -314,13 +318,9 @@ Section CompactImplemComplete.
     well_typed Γ (zip t π) ->
     domain compact (t,π).
   Proof.
-    intros Hne [A (?&?&Hstack)%typed_zip].
-    eapply typed_stack_good in Hstack as (π'&π''&[->]) ; tea.
-    eapply compact_app.
-    - now eapply stack_compact_nomap.
-    - eapply stack_compact_map ; tea.
-      econstructor.
-      now eapply stack_ne.
+    intros Hne [A (?&?&[]%typed_stack_good)%typed_zip] ; tea.
+    eapply stack_compact_good ; tea.
+    assumption.
   Qed.
 
 End CompactImplemComplete.
@@ -488,6 +488,21 @@ Section RedImplemComplete.
       + eapply well_typed_zip in Hty as [? [? Hu]].
         eapply Hu, RedConvTeC, subject_reduction; tea.
         now do 2 econstructor.
+    - cbn in *; split; [|easy].
+      eapply IH; cbn.
+      + do 2 red; cbn.
+        left; constructor; eapply zip_ored; constructor.
+      + eapply well_typed_zip in Hty as [? [? Hu]].
+        eapply Hu, RedConvTeC, subject_reduction; tea.
+        now do 2 econstructor.
+    - cbn in *.
+      split ; [|easy].
+      eapply IH ; cbn in *.
+      + red. red. cbn.
+        left;constructor; eapply zip_ored; constructor.
+      + eapply well_typed_zip in Hty as [? [? Hu]].
+        eapply Hu, RedConvTeC, subject_reduction; tea.
+        now do 2 econstructor.
     - cbn in *.
       split ; [|easy].
       eapply IH ; cbn in *.
@@ -586,6 +601,7 @@ Definition whne_ne_view1 {N} (w : whne N) : ne_view1 N :=
   | whne_tEmptyElim _ => ne_view1_dest _ (eEmptyElim _)
   | whne_tFst _ => ne_view1_dest _ eFst
   | whne_tSnd _ => ne_view1_dest _ eSnd
+  | whne_tListElim _ => ne_view1_dest _ (eListElim _ _ _ _)
   end.
 
 Lemma whne_ty_view1 {N} (w : whne N) : build_ty_view1 N = ty_view1_small (whne_ne_view1 w).
@@ -754,6 +770,20 @@ Proof.
     econstructor.
     1: exact (IH tt).
     econstructor.
+  - intros * ? [IHA] ? [IHl] ? [IHP] ? [IHnil] ? [IHcons] **.
+    unfold graph.
+    simp conv conv_ne to_neutral_diag ; cbn.
+    econstructor.
+    1: exact (IHA tt).
+    econstructor.
+    1: exact IHl.
+    econstructor.
+    1: exact (IHP tt).
+    econstructor.
+    1: exact IHnil.
+    econstructor.
+    1: exact IHcons.
+    now econstructor.
   - intros * ? [IHm []] **.
     unfold graph.
     simp conv conv_ne_red ; cbn.
@@ -882,6 +912,7 @@ all: try solve [case c ; constructor].
   unshelve eapply ty_conv_inj in Hconv.
   1-2: econstructor.
   now cbn in *.
+- eapply (ne_view1_dest _ (eListElim _ _ _ _)). 
 Defined.
 
 Lemma can_ty_view1_small Γ T (c : ~ isCanonical T) (h : [Γ |- T : U]) :
@@ -998,6 +1029,12 @@ Proof.
     constructor.
   - econstructor; [exact (g2 tt)|].
     econstructor; [exact (g1 tt)|].
+    econstructor; [exact g0|].
+    econstructor; [exact g|].
+    constructor.
+  - econstructor; [exact (g3 tt)|].
+    econstructor; [exact (g2 tt)|].
+    econstructor; [exact g1|].
     econstructor; [exact g0|].
     econstructor; [exact g|].
     constructor.
