@@ -50,7 +50,12 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     | LRNat _ NA => LRNat _ NA
     | LREmpty _ NA => LREmpty _ NA
     | LRSig _ PA PAad => LRSig _ PA (embedPolyAd PAad)
-    | LRId _ IA IAad => LRId _ IA (LR_embedding l_ IAad)
+    | LRId _ IA IAad => 
+      let embedIdAd := 
+        {| IdRedTyPack.tyAd := LR_embedding l_ IAad.(IdRedTyPack.tyAd) ;
+          IdRedTyPack.tyKripkeAd (Δ : context) (ρ : Δ ≤ _) (wfΔ : [  |- Δ]) :=
+            LR_embedding l_ (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ) |} 
+      in LRId _ IA embedIdAd
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -60,6 +65,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
         (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : _ ]),
         P (HAad.(PolyRedPack.posAd) ρ h ha)) -> G).
+
 
   Theorem LR_rect@{i j k o}
     (l : TypeLevel)
@@ -84,7 +90,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       PolyHyp P Γ ΠA HAad (P (LRSig rec ΠA HAad))) ->
 
     (forall Γ A (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate (LR rec) IA), 
-      P IAad ->
+      P IAad.(IdRedTyPack.tyAd) ->
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ)) ->
       P (LRId rec IA IAad)) ->
 
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
@@ -103,7 +110,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     - eapply HEmpty.
     - eapply HSig.
       all: intros; eapply HRec.
-    - eapply HId; eapply HRec.
+    - eapply HId; intros; eapply HRec.
   Defined.
 
   Definition LR_rec@{i j k} := LR_rect@{i j k Set}.
@@ -135,7 +142,11 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypLogRel P Γ ΠA (P (LRSig' ΠA).(LRAd.adequate ))) ->
     
-    (forall l Γ A (IA :  [Γ ||-Id<l> A]), P (IA.(IdRedTy.tyRed).(LRAd.adequate)) -> P (LRId' IA).(LRAd.adequate)) ->
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed).(LRAd.adequate)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ).(LRAd.adequate)) ->
+      
+      P (LRId' IA).(LRAd.adequate)) ->
 
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
       (rTeEq  : term -> term -> Type@{k}) (lr : LR@{j k l} (LogRelRec@{i j k} l) Γ t rEq rTe rTeEq),
@@ -145,7 +156,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     1,2,4,5: auto.
     - intros; eapply (HPi _ _ _ (ParamRedTy.from HAad)); eauto.
     - intros; eapply (HSig _ _ _ (ParamRedTy.from HAad)); eauto.
-    - intros; eapply (HId _ _ _ (IdRedTy.from IAad)); eauto.
+    - intros. eapply (HId _ _ _ (IdRedTy.from IAad)). ; eauto.
   Defined.
 
   Notation PolyHypTyUr P Γ ΠA G :=
