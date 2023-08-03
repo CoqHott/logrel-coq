@@ -150,10 +150,10 @@ Proof.
     eapply (IHM tt A) ; tea.
     inversion Hty ; subst ; tea.
     1-6:  inv_whne.
-    now exists U.
+    now exists U. 
   - intros * ???? ? ? wu' ?.
     apply compute_domain.
-    destruct wu' as [n'| | | | |].
+    destruct wu' as [n'| | | | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct (Nat.eqb_spec n n') ; cbn.
     2: easy.
@@ -161,7 +161,7 @@ Proof.
     now econstructor.
   - intros ? ???? A B Hm [IHm []] ? [IHt] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [|m' t'| | | |].
+    destruct wu' as [|m' t'| | | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn; try exact I.
     split.
     + apply (IHm tt m') ; tea.
@@ -181,7 +181,7 @@ Proof.
       gen_typing.
   - intros * Hn [IHn] ? [IHP] ? [IHz] ? [IHs] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| |P'' hz'' hs'' n''| | |].
+    destruct wu' as [| |P'' hz'' hs'' n''| | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
@@ -216,7 +216,7 @@ Proof.
     now intros [|] ; cbn.
   - intros * He [IHe] ? [IHP] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | P'' e'' | | ].
+    destruct wu' as [| | | P'' e'' | | | ].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
@@ -230,7 +230,7 @@ Proof.
     intros [|] ; cbn ; easy.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | | t | ].
+    destruct wu' as [| | | | t | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
@@ -242,7 +242,7 @@ Proof.
     now cbn.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | | | t].
+    destruct wu' as [| | | | | t |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
@@ -252,6 +252,46 @@ Proof.
     eapply algo_conv_det in Hconv as ->.
     2: now eapply h.
     now cbn.
+  - intros * HA [IHA] Hl [IHl] ? [IHP] ? [IHnil] ? [IHcons] ??? ? u' wu' Hty.
+    apply compute_domain.
+    destruct wu' as [| | | | | | A'' P'' hnil'' hcons'' l''].
+    1-6: simp conv conv_ne to_neutral_diag ; cbn ; easy.
+    simp conv conv_ne to_neutral_diag ; cbn.
+    destruct Hty as [? (?&[]&?)%termGen'] ; subst.
+    split.
+    1: apply (IHA tt A'') ; tea ; now eexists.
+    intros [?|] ; cbn ; [|easy] ; intros ?%implem_conv_sound%algo_conv_sound ; cbn in *.
+    2-3: boundary.
+    assert [Γ |-[de] tList A ≅ tList A''] by now econstructor.
+    assert [Γ,, tList A |-[de] P''].
+    {
+     eapply stability1 ; last first ; tea.
+     all: econstructor.
+     all: now boundary. 
+    } 
+    split.
+    1: eapply (IHl l'') ; tea ; econstructor ; tea ; now symmetry.
+    intros [|] ; cbn ; [|easy] ; intros ?%implem_conv_sound ; cbn in *.
+    split.
+    1: now eapply (IHP tt P'').
+    intros [|] ; cbn ; [|easy] ; intros ?%implem_conv_sound%algo_conv_sound ; cbn in *.
+    2-3: boundary.
+    split.
+    1:{
+      specialize (IHnil hnil'') ; apply IHnil.
+      econstructor ; tea.
+      symmetry.
+      eapply typing_subst1 ; tea.
+      now econstructor.
+    }
+    intros [|] ; cbn ; [|easy] ; intros _ ; cbn in *.
+    split.
+    2: intros [|] ; cbn ; easy.
+    specialize (IHcons hcons'') ; apply IHcons.
+    econstructor ; tea.
+    symmetry.
+    eapply elimConsHypTy_conv ; tea.
+    all: boundary.
   - intros * ? [IHm] ?? ??? ? u' wu' Hty.
     apply compute_domain.
     simp conv conv_ne_red ; cbn.
@@ -751,7 +791,39 @@ Proof.
       now eapply wft_simple_arr.
     + eapply IH ; cbn ; tea.
       1: left ; now do 2 econstructor.
-      now econstructor. 
+      now econstructor.
+  - split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [[]|] ; cbn ; try easy.
+    intros Hn%implem_typing_sound%algo_typing_sound ; tea.
+    set (Γ' := _ ,, tList A).
+    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]). 
+    split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+    }
+    intros [|] ; cbn ; [|easy].
+    intros ?%implem_typing_sound%algo_typing_sound ; tea.
+    split.
+    1:{
+      apply IH ; cbn ; try easy.
+      left ; cbn ; now do 2 econstructor.
+      now econstructor.
+    }
+    intros [|] ; cbn ; [|easy].
+    split.
+    2: intros [|] ; cbn ; intros _ ; split; [|intros []] ; try (cbn ; easy).
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      eapply typing_subst1 ; tea.
+      now econstructor.
+    + apply IH ; cbn ; try easy.
+      1: left ; cbn ; now do 2 econstructor.
+      now eapply elimConsHypTy_ty.
   - split.
     + apply IH ; cbn ; try easy.
       1: now right ; cbn.
