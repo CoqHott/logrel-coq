@@ -227,6 +227,7 @@ Section IdIrrelevance.
     (RA' := LRId' IA')
     (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy)])
     (eqv : equivLRPack@{k k' v} IA.(IdRedTy.tyRed) IA'.(IdRedTy.tyRed))
+    (* (eqty : [Γ |- IA.(IdRedTy.ty) ≅  IA'.(IdRedTy.ty)]) *)
     (lhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.lhs) ≅  IA'.(IdRedTy.lhs) : _ ])
     (rhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.rhs) ≅  IA'.(IdRedTy.rhs) : _]).
 
@@ -522,6 +523,7 @@ Proof.
     eapply (IdIrrelevanceLRPack IA IA'); tea.
     eapply IHPar; tea.
     apply IA'.(IdRedTy.tyRed).
+    (* unshelve eapply escapeEq.  2: apply IdRedTy.tyRed.  now cbn. *)
 Qed.
 
 

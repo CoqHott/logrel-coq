@@ -93,6 +93,7 @@ Definition invLRcan {Γ l A} (lr : [Γ ||-<l> A]) (w : isType A) : [Γ ||-<l> A]
   | NatType => fun _ x => LRNat_ _ x
   | EmptyType => fun _ x => LREmpty_  _ x
   | SigType => fun _ x => LRSig' (normRedΣ0 x)
+  | IdType => fun _ x => LRId' x
   | NeType wh => fun _ x => LRne_ _ (normRedNe0 x wh)
   end lr (invLR lr (reflexivity A) w).
   

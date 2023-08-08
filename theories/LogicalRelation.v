@@ -869,6 +869,8 @@ Section IdRedTm.
 
   Inductive IdProp : term ->  Type:=
   | reflR {A x} : 
+    [Γ |- A] ->
+    [Γ |- x : A] ->
     [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A] ->
     [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.lhs) ≅ x : _ ] ->
     (* Should the index only be conversion ? *)
@@ -902,6 +904,10 @@ Section IdRedTmEq.
   
   Inductive IdPropEq : term -> term -> Type :=
   | reflReq {A A' x x'} : 
+    [Γ |- A] ->
+    [Γ |- A'] ->
+    [Γ |- x : A] ->
+    [Γ |- x' : A'] ->
     [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A] ->
     [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A'] ->
     [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.lhs) ≅ x : _ ] -> 
@@ -924,7 +930,7 @@ Section IdRedTmEq.
 
 End IdRedTmEq.
 Arguments IdRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
-Arguments IdPropEq {_ _ _ _ _ _ _ _}.
+Arguments IdPropEq {_ _ _ _ _ _ _ _ _}.
 End IdRedTmEq.
 
 Export IdRedTmEq(IdRedTmEq,Build_IdRedTmEq, IdPropEq).

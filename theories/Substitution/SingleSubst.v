@@ -47,8 +47,8 @@ Lemma substSEq {Γ F F' G G' t t' l} {VΓ : [||-v Γ]}
 Proof.
   constructor; intros.
   assert (VtF' : [Γ ||-v<l> t : F' | VΓ | VF']) by now eapply conv.
-  pose proof (consSubstSvalid _ _ Vσ _ Vt').
-  pose proof (consSubstSvalid _ _ Vσ _ VtF').
+  pose proof (consSubstSvalid Vσ Vt').
+  pose proof (consSubstSvalid Vσ VtF').
   rewrite singleSubstComm; irrelevance0.
   1: symmetry; apply singleSubstComm.
   eapply transEq.
@@ -107,9 +107,9 @@ Proof.
   + unshelve now eapply validTmEq.
     2: now eapply consSubstSvalid.
   + assert (Vσt : [Δ ||-v (t[σ] .: σ) : _ | VΓF' | wfΔ])
-     by (eapply consValid; tea; now eapply conv).
+     by (eapply consSubstSvalid; tea; now eapply conv).
     assert (Vσt' : [Δ ||-v (t'[σ] .: σ) : _ | VΓF' | wfΔ])
-     by (eapply consValid; tea; now eapply conv).
+     by (eapply consSubstSvalid; tea; now eapply conv).
     assert (Vσtσt' : [Δ ||-v (t[σ] .: σ) ≅ (t'[σ] .: σ) : _ | VΓF' | wfΔ | Vσt]).
     1:{
       constructor.
@@ -119,7 +119,7 @@ Proof.
     eapply LRTmEqRedConv.
     2: eapply (validTmExt Vf' _ Vσt Vσt' Vσtσt').
     eapply LRTyEqSym. now eapply validTyEq.
-    Unshelve. 2: now eapply consValid.
+    Unshelve. 2: now eapply consSubstSvalid.
 Qed.
 
 (* Skipping a series of lemmas on single substitution of a weakened term *)

@@ -260,6 +260,8 @@ Section Weakenings.
       destruct prop.
       2: constructor; unfold_id_outTy; cbn; rewrite wk_Id; now eapply wkNeNf.
       assert [|-Γ] by (escape; gen_typing); constructor; cbn.
+      1: now eapply wft_wk.
+      1: now eapply ty_wk.
       2,3: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
       eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
       Unshelve. all: tea.
@@ -346,6 +348,8 @@ Section Weakenings.
       destruct prop.
       2: constructor; unfold_id_outTy; cbn; rewrite wk_Id; now eapply wkNeNfEq.
       assert [|-Γ] by (escape; gen_typing); constructor; cbn.
+      1,2: now eapply wft_wk.
+      1,2: now eapply ty_wk.
       1,2:eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
       all: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
       Unshelve. all: tea.

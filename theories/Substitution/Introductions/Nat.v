@@ -292,9 +292,9 @@ Section NatElimRedEq.
       * eapply LRTmEqRedConv.
         + eapply RPext; tea. 
           eapply LRTmEqSym; eapply redwfSubstTerm; cycle 1; tea.
-        + unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RL) redL); tea.
+        + unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RL) redL); tea.
           1: dependent inversion RL; subst; cbn; now eapply NatProp_whnf.
-          unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RR) redR); tea.
+          unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RR) redR); tea.
           1: dependent inversion RR; subst; cbn; now eapply NatProp_whnf.
           now eapply ih.
         Unshelve. tea.

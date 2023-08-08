@@ -189,9 +189,9 @@ Section EmptyElimRedEq.
       * eapply LRTmEqRedConv.
         + eapply RPext; tea. 
           eapply LRTmEqSym; eapply redwfSubstTerm; cycle 1; tea.
-        + unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (EmptyRedTm.red RL) redL); tea.
+        + unshelve erewrite (redtmwf_det _ _ (EmptyRedTm.red RL) redL); tea.
           1: dependent inversion RL; subst; cbn; now eapply EmptyProp_whnf.
-          unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (EmptyRedTm.red RR) redR); tea.
+          unshelve erewrite (redtmwf_det _ _ (EmptyRedTm.red RR) redR); tea.
           1: dependent inversion RR; subst; cbn; now eapply EmptyProp_whnf.
           now eapply ih.
         Unshelve. tea. 2, 4: tea. 

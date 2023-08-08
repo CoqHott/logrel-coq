@@ -4,7 +4,7 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
   DeclarativeTyping GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Irrelevance Reflexivity Transitivity Universe Weakening Neutral Induction NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion Reflexivity SingleSubst Escape.
-From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma.
+From LogRel.Substitution.Introductions Require Import Application Universe Pi Lambda Var Nat Empty SimpleArr Sigma Id.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -688,6 +688,164 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
+  Lemma FundTyId : forall (Γ : context) (A x y : term),
+    FundTy Γ A -> FundTm Γ A x -> FundTm Γ A y -> FundTy Γ (tId A x y).
+  Proof.
+    intros * [] [] [].
+    unshelve econstructor; tea.
+    unshelve eapply IdValid; irrValid.
+  Qed.
+
+
+  Lemma FundTmId : forall (Γ : context) (A x y : term),
+    FundTm Γ U A -> FundTm Γ A x -> FundTm Γ A y -> FundTm Γ U (tId A x y).
+  Proof.
+      intros * [] [] [].
+      unshelve econstructor; tea.
+      1: eapply UValid.
+      unshelve eapply IdTmValid; cycle 1; try irrValid; tea.
+  Qed.
+
+  Lemma FundTmRefl : forall (Γ : context) (A x : term),
+    FundTy Γ A -> FundTm Γ A x -> FundTm Γ (tId A x x) (tRefl A x).
+  Proof.
+    intros * [] []; unshelve econstructor.
+    3: now eapply reflValid.
+    now eapply IdValid.
+  Qed.
+
+  Lemma FundTmIdElim : forall (Γ : context) (A x P hr y e : term),
+    FundTy Γ A ->
+    FundTm Γ A x ->
+    FundTy ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) P ->
+    FundTm Γ P[tRefl A x .: x..] hr ->
+    FundTm Γ A y -> FundTm Γ (tId A x y) e -> FundTm Γ P[e .: y..] (tIdElim A x P hr y e).
+  Proof.
+    intros * [] [] [] [] [] []; unshelve econstructor.
+    3: unshelve eapply IdElimValid; try irrValid.
+    tea.
+  Qed.
+
+  Lemma FundTyEqId : forall (Γ : context) (A A' x x' y y' : term),
+    FundTyEq Γ A A' ->
+    FundTmEq Γ A x x' -> FundTmEq Γ A y y' -> FundTyEq Γ (tId A x y) (tId A' x' y').
+  Proof.
+    intros * [] [] [].
+    unshelve econstructor; tea.
+    3: eapply IdCongValid; irrValid.
+    1,2: eapply IdValid; try irrValid.
+    1,2: eapply conv; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
+  Lemma FundTmEqIdCong : forall (Γ : context) (A A' x x' y y' : term),
+    FundTmEq Γ U A A' ->
+    FundTmEq Γ A x x' -> FundTmEq Γ A y y' -> FundTmEq Γ U (tId A x y) (tId A' x' y').
+  Proof.
+    intros * [] [] []; unshelve econstructor.
+    5: eapply IdTmCongValid; try irrValid; tea.
+    2,3: eapply IdTmValid; try irrValid; tea.
+    1: tea.
+    1,2: eapply conv; try irrValid; eapply univEqValid; irrValid.
+    Unshelve. all: first [eapply UValid| irrValid | tea].
+  Qed.
+
+  Lemma FundTmEqReflCong : forall (Γ : context) (A A' x x' : term),
+    FundTyEq Γ A A' -> FundTmEq Γ A x x' -> FundTmEq Γ (tId A x x) (tRefl A x) (tRefl A' x').
+  Proof.
+    intros * [] []; unshelve econstructor.
+    5: eapply reflCongValid; tea; irrValid.
+    3: eapply conv.
+    2,4: eapply reflValid; try irrValid.
+    2: eapply conv; irrValid.
+    2: eapply symValidEq; eapply IdCongValid; tea; try irrValid.
+    eapply IdValid; irrValid.
+    Unshelve. all: try eapply IdValid; try irrValid; eapply conv; irrValid.
+    Unshelve. all: irrValid.
+  Qed.
+
+  Lemma FundTmEqIdElimCong : forall (Γ : context) (A A' x x' P P' hr hr' y y' e e' : term),
+    FundTy Γ A ->
+    FundTm Γ A x ->
+    FundTyEq Γ A A' ->
+    FundTmEq Γ A x x' ->
+    FundTyEq ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) P P' ->
+    FundTmEq Γ P[tRefl A x .: x..] hr hr' ->
+    FundTmEq Γ A y y' ->
+    FundTmEq Γ (tId A x y) e e' -> FundTmEq Γ P[e .: y..] (tIdElim A x P hr y e) (tIdElim A' x' P' hr' y' e').
+  Proof.
+    intros * [] [] [] [] [] [] [] [].
+    assert [_ ||-v<one> x' : _ | _ | VB] by (eapply conv; irrValid).
+    assert [_ ||-v<one> y' : _ | _ | VB] by (eapply conv; irrValid).
+    assert (VId' : [_ ||-v<one> tId A' x' y' | VΓ]) by (eapply IdValid; irrValid).
+    assert [_ ||-v<one> _ ≅ tId A' x' y' | _ | VA6] by (eapply IdCongValid; irrValid).
+    assert [_ ||-v<one> e' : _ | _ | VId'] by (eapply conv; irrValid).
+    unshelve econstructor.
+    5: eapply IdElimCongValid; tea; irrValid.
+    1: eapply IdElimValid; irrValid.
+    eapply convsym.
+    2: eapply IdElimValid; eapply conv; [|irrValid].
+    1:{
+      eapply substEqIdElimMotive. 7: tea. 2,3,5-12: tea; try irrValid. 1,2: irrValid.
+    } 
+   eapply substEqIdElimMotive. 7: tea. 2,3,5-9: tea; try irrValid.
+    1,2: irrValid.
+    2: eapply convsym. 
+    1,3: eapply reflValid; first [irrValid| eapply conv; irrValid].
+    1:eapply IdCongValid; irrValid.
+    eapply reflCongValid; irrValid.
+    Unshelve. all: tea; try irrValid.
+    3,4: eapply IdValid; irrValid.
+    1: eapply validSnoc; now eapply idElimMotiveCtxIdValid.
+    assert (h : forall t, t⟨@wk1 Γ A'⟩ = t⟨@wk1 Γ A⟩) by reflexivity.
+      eapply convCtx2'; tea.
+      1: eapply convCtx1; tea; [eapply symValidEq; irrValid| ].
+      1,3: now eapply idElimMotiveCtxIdValid.
+      eapply idElimMotiveCtxIdCongValid; tea; irrValid.
+      Unshelve.
+      3: eapply idElimMotiveCtxIdValid. all: irrValid.
+  Qed.
+
+  Lemma FundTmEqIdElimRefl : forall (Γ : context) (A x P hr y A' z : term),
+    FundTy Γ A ->
+    FundTm Γ A x ->
+    FundTy ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A ⟩ (tRel 0)) P ->
+    FundTm Γ P[tRefl A x .: x..] hr ->
+    FundTm Γ A y ->
+    FundTy Γ A' ->
+    FundTm Γ A z ->
+    FundTyEq Γ A A' ->
+    FundTmEq Γ A x y ->
+    FundTmEq Γ A x z -> FundTmEq Γ P[tRefl A' z .: y..] (tIdElim A x P hr y (tRefl A' z)) hr.
+  Proof.
+    intros * [] [] [] [] [] [] [] [] [] [].
+    assert (VId : [_ ||-v<one> tId A x y | VΓ]) by (unshelve eapply IdValid; irrValid).
+    assert [Γ ||-v< one > tRefl A' z : tId A x y | _ | VId].
+    1:{
+      eapply convsym ; [| eapply reflValid; try irrValid].
+      2: eapply conv; irrValid.
+      eapply IdCongValid; try irrValid.
+      eapply transValidTmEq; [eapply symValidTmEq|]; irrValid.
+      Unshelve.
+       1: unshelve eapply IdValid; try eapply conv. 
+       all: try irrValid.
+       Unshelve. all: irrValid.
+    } 
+    unshelve econstructor.
+    5: eapply IdElimReflValid; tea; try irrValid.
+    3: eapply conv; irrValid.
+    2:{
+      eapply conv; [|irrValid].
+      eapply substExtIdElimMotive; cycle 1; tea.
+      + eapply reflValid; irrValid.
+      + irrValid.
+      + eapply reflCongValid; tea; irrValid.
+    }
+    eapply IdElimValid; irrValid.
+    Unshelve. all: tea; try irrValid.
+      unshelve eapply IdValid; irrValid.
+  Qed.
+    
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -702,6 +860,7 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTyNat.
   + intros; now apply FundTyEmpty.
   + intros; now apply FundTySig.
+  + intros; now apply FundTyId.
   + intros; now apply FundTyUniv.
   + intros; now apply FundTmVar.
   + intros; now apply FundTmProd.
@@ -717,9 +876,13 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTmPair.
   + intros; now eapply FundTmFst.
   + intros; now eapply FundTmSnd.
+  + intros; now eapply FundTmId.
+  + intros; now eapply FundTmRefl.
+  + intros; now eapply FundTmIdElim.
   + intros; now eapply FundTmConv.
   + intros; now apply FundTyEqPiCong.
   + intros; now apply FundTyEqSigCong.
+  + intros; now eapply FundTyEqId.
   + intros; now apply FundTyEqRefl.
   + intros; now apply FundTyEqUniv.
   + intros; now apply FundTyEqSym.
@@ -739,6 +902,10 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTmEqFstBeta.
   + intros; now eapply FundTmEqSndCong.
   + intros; now apply FundTmEqSndBeta.
+  + intros; now apply FundTmEqIdCong.
+  + intros; now apply FundTmEqReflCong.
+  + intros; now apply FundTmEqIdElimCong.
+  + intros; now apply FundTmEqIdElimRefl.
   + intros; now apply FundTmEqRefl.
   + intros; now eapply FundTmEqConv.
   + intros; now apply FundTmEqSym.

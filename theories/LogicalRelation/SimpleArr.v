@@ -17,7 +17,7 @@ Section SimpleArrow.
     - renToWk; eapply wft_wk; gen_typing.
     - intros; irrelevance0.
       2: replace (subst_term _ _) with B⟨ρ⟩.
-      2: eapply wkEq, LRTyEqRefl_.
+      2: eapply wkEq, reflLRTyEq.
       all: bsimpl; now rewrite rinstInst'_term.
       Unshelve. all: tea.
   Qed.

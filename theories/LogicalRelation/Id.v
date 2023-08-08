@@ -148,12 +148,19 @@ Proof.
   econstructor; unfold_id_outTy; cbn; rewrite ?e.
   + eapply redtmwf_refl; eapply ty_refl; now escape.
   + eapply convtm_refl; [eapply escapeEq; eapply reflLRTyEq|eapply escapeEqTerm; now eapply reflLRTmEq].
-  + constructor; cbn; irrelevance0; tea.
+  + constructor; cbn.
+    1,2: now escape.
+    all: irrelevance0; tea.
     1: eapply reflLRTyEq.
     * rewrite <- ex; now eapply reflLRTmEq.
     * rewrite <- ex'; now eapply reflLRTmEq.
   Unshelve.  all: tea.
 Qed.
+
+Lemma reflRed' {Γ l A x} (RA : [Γ ||-<l> A]) (Rx : [RA | _ ||- x : _]) 
+  (RIA := IdRed RA Rx Rx): [RIA | _ ||- tRefl A x : _].
+Proof. now eapply reflRed. Qed.
+
 
 Lemma reflCongRed {Γ l A A' x x'} 
   (RA : [Γ ||-<l> A])
@@ -176,10 +183,348 @@ Proof.
   1: escape; gen_typing.
   - eapply ty_conv; [| now symmetry]; now eapply ty_refl.
   - eapply convtm_refl; now escape.
-  - constructor; cbn; irrelevance0; tea.
+  - constructor; cbn.
+    1-4: now escape.  
+    all: irrelevance0; tea.
     1: apply reflLRTyEq.
     1,2: rewrite <- ex; tea; now eapply reflLRTmEq.
     1,2: rewrite <- ex'; tea; now eapply reflLRTmEq.
   Unshelve. all: tea.
 Qed.
 
+Definition idElimProp {Γ l} (A x P hr y e : term) {IA : [Γ ||-Id<l> tId A x y]} (Pe : IdProp IA e) : term :=
+  match Pe with
+  | IdRedTm.reflR _ _ _ _ _ => hr
+  | IdRedTm.neR _ => tIdElim A x P hr y e
+  end.
+
+Lemma idElimPropIrr {Γ l} {A x P hr y e : term} {IA : [Γ ||-Id<l> tId A x y]} (Pe Pe' : IdProp IA e) :
+  idElimProp A x P hr y e Pe = idElimProp A x P hr y e Pe'.
+Proof.
+  destruct Pe; cbn.
+  2: dependent inversion Pe'; try reflexivity.
+  2:  subst; match goal with H : [_ ||-NeNf _ : _] |- _ => destruct H as [_ ?%convneu_whne]; inv_whne end; tea.
+  refine (match Pe' as Pe0  in IdRedTm.IdProp _ e return match e as e return IdProp _ e -> Type with | tRefl A0 x0 => fun Pe0 => hr = idElimProp A x P hr y (tRefl A0 x0) Pe0 | _ => fun _ => unit end Pe0 with | IdRedTm.reflR _ _ _ _ _ => _ | IdRedTm.neR r  => _ end).
+  1: reflexivity.
+  1: match type of r with [_ ||-NeNf ?t : _] =>  destruct t ; try easy end. 
+  exfalso; destruct r as [_ ?%convneu_whne]; inv_whne.
+Qed.
+
+Lemma IdProp_refl_inv {Γ l A x y A' x'} {IA : [Γ ||-Id<l> tId A x y]} (Pe : IdProp IA (tRefl A' x')) :
+  IdProp IA (tRefl A' x').
+Proof.
+  econstructor; inversion Pe.
+  all: try match goal with H : [_ ||-NeNf _ : _] |- _ => destruct H as [_ ?%convneu_whne]; inv_whne end; tea.
+Defined.
+
+Lemma IdRedTm_whnf_prop {Γ l A x y e} {IA : [Γ ||-Id<l> tId A x y]} (Re : [_ ||-Id<l> e : _ | IA]) :
+  whnf e -> IdProp IA e.
+Proof.
+  intros wh; rewrite (redtmwf_whnf (IdRedTm.red Re) wh).
+  exact (IdRedTm.prop Re).
+Qed.
+
+Lemma idElimPropRed {Γ l A x P hr y e}
+  (RA : [Γ ||-<l> A])
+  (Rx : [RA | _ ||- x : _])
+  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
+    [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
+  (RPeq : forall A' x' y y' e e' 
+    (RA' : [Γ ||-<l> A'])
+    (RAA' : [RA | _ ||- _ ≅ A'])
+    (Rx' : [RA | _ ||- x' : _])
+    (Rxx' : [RA | _ ||- x ≅ x' : _])
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | _ ||- y' : _])
+    (Ryy' : [RA | Γ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A x y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry RIAxy Re | Γ ||- P[e .: y..] ≅ P[e' .: y' ..]])
+  (Rhr : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr : _])
+  (Ry : [RA | _ ||- y : _])
+  (RIAxy : [Γ ||-<l> tId A x y])
+  (Re : [RIAxy | _ ||- e : _]) 
+  (RIAxy0 : [Γ ||-Id<l> tId A x y])
+  (Pe : IdProp RIAxy0 e) :
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e : _] ×
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e ≅ idElimProp A x P hr y e Pe : _].
+Proof.
+  pose proof (IdRedTy_inv RIAxy0) as [eA ex ey].
+  eapply redSubstTerm.
+  - destruct Pe; cbn in *.
+    + eapply LRTmRedConv; tea.
+      unshelve eapply RPeq; cycle 3; tea.
+      2,3: eapply transEqTerm; [|eapply LRTmEqSym]; rewrite ?ex, ?ey; irrelevance.
+      * eapply reflLRTyEq.
+      * eapply reflCongRed; tea.
+        1: irrelevance0; [symmetry; tea|]; tea.
+        rewrite ex; irrelevance.
+    + eapply neuTerm.
+      * escape; eapply ty_IdElim; tea.
+      * destruct r.
+        pose proof (reflLRTyEq RA).
+        pose proof (reflLRTyEq RP0).
+        pose proof Rx as ?%reflLRTmEq.
+        pose proof Ry as ?%reflLRTmEq.
+        pose proof Rhr as ?%reflLRTmEq.
+        escape; eapply convneu_IdElim; tea.
+        eapply convneu_conv; tea. unfold_id_outTy.
+        rewrite <- eA, <- ex, <- ey; eapply convty_Id; tea.
+  - destruct Pe; cbn in *.
+    + escape; eapply redtm_idElimRefl; tea.
+      * eapply ty_conv; tea; rewrite eA; now symmetry.
+      * now rewrite eA.
+      * rewrite eA, ex, ey; etransitivity; tea; now symmetry.
+      * now rewrite eA, ex.
+    + eapply redtm_refl; escape; now eapply ty_IdElim.
+Qed.
+
+
+Lemma idElimRed {Γ l A x P hr y e}
+  (RA : [Γ ||-<l> A])
+  (Rx : [RA | _ ||- x : _])
+  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
+    [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
+  (RPeq : forall A' x' y y' e e' 
+    (RA' : [Γ ||-<l> A'])
+    (RAA' : [RA | _ ||- _ ≅ A'])
+    (Rx' : [RA | _ ||- x' : _])
+    (Rxx' : [RA | _ ||- x ≅ x' : _])
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | _ ||- y' : _])
+    (Ryy' : [RA | Γ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A x y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry RIAxy Re | Γ ||- P[e .: y..] ≅ P[e' .: y' ..]])
+  (Rhr : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr : _])
+  (Ry : [RA | _ ||- y : _])
+  (RIAxy : [Γ ||-<l> tId A x y])
+  (RIAxy' := LRId' (invLRId RIAxy))
+  (Re : [RIAxy' | _ ||- e : _]) :
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e : _] ×
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e ≅ tIdElim A x P hr y (IdRedTm.nf Re) : _].
+Proof.
+  pose proof (IdRedTy_inv (invLRId RIAxy)) as [eA ex ey].
+  pose proof (hred := Re.(IdRedTm.red)); unfold_id_outTy; rewrite <-eA,<-ex,<-ey in hred.
+  eapply redSubstTerm.
+  - pose proof (redTmFwdConv Re hred (IdProp_whnf _ _ (IdRedTm.prop Re))) as [Rnf Rnfeq].
+    eapply LRTmRedConv.
+    2: eapply idElimPropRed; tea; exact (IdRedTm.prop Re).
+    unshelve eapply LRTyEqSym.
+    2: now eapply RP.
+    eapply RPeq; cycle 2; first [eapply reflLRTyEq | now eapply reflLRTmEq | tea].
+    Unshelve. all: tea.
+  - escape; eapply redtm_idElim; tea; apply hred.
+Qed.
+
+
+Lemma idElimPropCongRed {Γ l A A' x x' P P' hr hr' y y' e e'}
+  (RA : [Γ ||-<l> A])
+  (RA' : [Γ ||-<l> A'])
+  (RAA' : [RA | Γ ||- A ≅ A'])
+  (Rx : [RA | _ ||- x : _])
+  (Rx' : [RA' | _ ||- x' : _])
+  (Rxx' : [RA | _ ||- x ≅ x' : _])
+  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0' : [Γ ,, A' ,, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
+  (RPP0 : [RP0 | _ ||- _ ≅ P'])
+  (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
+    [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
+  (RP' : forall y' e' (Ry' : [RA' | Γ ||- y' : _]) (RIAxy' : [Γ ||-<l> tId A' x' y']),
+    [ RIAxy' | _ ||- e' : _] -> [Γ ||-<l> P'[e' .: y'..]])
+  (RPP' : forall y y' e e' 
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | Γ ||- y' : _])
+    (Ryy' : [RA | _ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A' x' y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry _ Re | _ ||- P[e .: y..] ≅ P'[e' .: y'..]])
+  (RPeq : forall A' x' y y' e e' 
+    (RA' : [Γ ||-<l> A'])
+    (RAA' : [RA | _ ||- _ ≅ A'])
+    (Rx' : [RA | _ ||- x' : _])
+    (Rxx' : [RA | _ ||- x ≅ x' : _])
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | _ ||- y' : _])
+    (Ryy' : [RA | Γ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A x y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry RIAxy Re | Γ ||- P[e .: y..] ≅ P[e' .: y' ..]])
+  (RPeq' : forall A1 x1 y' y1 e' e1 
+    (RA1 : [Γ ||-<l> A1])
+    (RAA1 : [RA' | _ ||- _ ≅ A1])
+    (Rx1 : [RA' | _ ||- x1 : _])
+    (Rxx1 : [RA' | _ ||- x' ≅ x1 : _])
+    (Ry' : [RA' | Γ ||- y' : _])
+    (Ry1 : [RA1 | _ ||- y1 : _])
+    (Ryy1 : [RA' | Γ ||- y' ≅ y1 : _])
+    (RIAxy' : [Γ ||-<l> tId A' x' y'])
+    (RIAxy1 : [Γ ||-<l> tId A' x' y1])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Re1 : [ RIAxy1 | _ ||- e1 : _])
+    (Ree1 : [ RIAxy' | _ ||- e' ≅ e1 : _]),
+    [RP' y' e' Ry' RIAxy' Re' | Γ ||- P'[e' .: y'..] ≅ P'[e1 .: y1 ..]])
+  (Rhr : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr : _])
+  (Rhr' : [RP' x' (tRefl A' x') Rx' (IdRed RA' Rx' Rx') (reflRed' RA' Rx') | _ ||- hr' : _])
+  (Rhrhr' : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr ≅ hr' : _])
+  (Ry : [RA | _ ||- y : _])
+  (Ry' : [RA' | _ ||- y' : _])
+  (Ryy' : [RA | _ ||- y ≅ y' : _])
+  (RIAxy : [Γ ||-<l> tId A x y])
+  (RIAxy' : [Γ ||-<l> tId A' x' y'])
+  (Re : [RIAxy | _ ||- e : _]) 
+  (Re' : [RIAxy' | _ ||- e' : _]) 
+  (Ree' : [RIAxy | _ ||- e ≅ e' : _])
+  (RIAxy0 : [Γ ||-Id<l> tId A x y])
+  (Pee' : IdPropEq RIAxy0 e e') :
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e ≅ tIdElim A' x' P' hr' y' e' : _].
+Proof.
+  pose proof (IdRedTy_inv RIAxy0) as [eA ex ey].
+  (* pose proof (IdRedTy_inv (invLRId RIAxy))) as [eA ex ey].
+  pose proof (IdRedTy_inv (invLRId RIAxy')) as [eA' ex' ey']. *)
+  pose proof (IdPropEq_whnf _ _ _ Pee') as [whe whe'].
+  assert (Rei : [LRId' RIAxy0 | _ ||- e : _]) by irrelevance.
+  assert (Rei' : [LRId' (invLRId RIAxy') | _ ||- e' : _]) by irrelevance.
+  pose proof (IdRedTm_whnf_prop Rei whe).
+  pose proof (IdRedTm_whnf_prop Rei' whe').
+  eapply LREqTermHelper.
+  1,2: unshelve eapply idElimPropRed; tea.
+  1: now eapply RPP'.
+  destruct Pee'; cbn in *.
+  + unshelve erewrite (idElimPropIrr X), (idElimPropIrr X0).
+    1,2: now eapply IdProp_refl_inv.
+    cbn; eapply LRTmEqRedConv; tea.
+    eapply RPeq; cycle 3; tea.
+    1,4: rewrite ex, ey; eapply transEqTerm; [|eapply LRTmEqSym]; irrelevance.
+    2: eapply reflLRTyEq.
+    eapply reflCongRed; tea.
+    1: irrelevance.
+    rewrite ex; irrelevance.
+  + unshelve erewrite (idElimPropIrr X), (idElimPropIrr X0); destruct r; unfold_id_outTy.
+    * econstructor; escape ; constructor; unfold_id_outTy.
+      1: rewrite <- ex, <- ey, <-eA; tea.
+      now eapply lrefl.
+    * econstructor; pose proof (IdRedTy_inv (invLRId RIAxy')) as [eA' ex' ey'].
+      escape; constructor; unfold_id_outTy.
+      all: rewrite <- ex', <- ey', <-eA'; tea.
+      eapply convneu_conv; [now eapply urefl|].
+      rewrite <- ex, <- ey, <-eA; now eapply convty_Id.
+    * cbn. escape; eapply neuTermEq.
+      - now eapply ty_IdElim.
+      - eapply ty_conv; [now eapply ty_IdElim|].
+        symmetry; eapply escapeEq; now eapply RPP'.
+        Unshelve. all: tea.
+      - eapply convneu_IdElim; tea.
+        now rewrite ex, ey, eA.
+Qed.
+
+Lemma idElimCongRed {Γ l A A' x x' P P' hr hr' y y' e e'}
+  (RA : [Γ ||-<l> A])
+  (RA' : [Γ ||-<l> A'])
+  (RAA' : [RA | Γ ||- A ≅ A'])
+  (Rx : [RA | _ ||- x : _])
+  (Rx' : [RA' | _ ||- x' : _])
+  (Rxx' : [RA | _ ||- x ≅ x' : _])
+  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0' : [Γ ,, A' ,, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
+  (RPP0 : [RP0 | _ ||- _ ≅ P'])
+  (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
+    [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
+  (RP' : forall y' e' (Ry' : [RA' | Γ ||- y' : _]) (RIAxy' : [Γ ||-<l> tId A' x' y']),
+    [ RIAxy' | _ ||- e' : _] -> [Γ ||-<l> P'[e' .: y'..]])
+  (RPP' : forall y y' e e' 
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | Γ ||- y' : _])
+    (Ryy' : [RA | _ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A' x' y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry _ Re | _ ||- P[e .: y..] ≅ P'[e' .: y'..]])
+  (RPeq : forall A' x' y y' e e' 
+    (RA' : [Γ ||-<l> A'])
+    (RAA' : [RA | _ ||- _ ≅ A'])
+    (Rx' : [RA | _ ||- x' : _])
+    (Rxx' : [RA | _ ||- x ≅ x' : _])
+    (Ry : [RA | Γ ||- y : _])
+    (Ry' : [RA' | _ ||- y' : _])
+    (Ryy' : [RA | Γ ||- y ≅ y' : _])
+    (RIAxy : [Γ ||-<l> tId A x y])
+    (RIAxy' : [Γ ||-<l> tId A x y'])
+    (Re : [ RIAxy | _ ||- e : _])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Ree' : [ RIAxy | _ ||- e ≅ e' : _]),
+    [RP y e Ry RIAxy Re | Γ ||- P[e .: y..] ≅ P[e' .: y' ..]])
+  (RPeq' : forall A1 x1 y' y1 e' e1 
+    (RA1 : [Γ ||-<l> A1])
+    (RAA1 : [RA' | _ ||- _ ≅ A1])
+    (Rx1 : [RA' | _ ||- x1 : _])
+    (Rxx1 : [RA' | _ ||- x' ≅ x1 : _])
+    (Ry' : [RA' | Γ ||- y' : _])
+    (Ry1 : [RA1 | _ ||- y1 : _])
+    (Ryy1 : [RA' | Γ ||- y' ≅ y1 : _])
+    (RIAxy' : [Γ ||-<l> tId A' x' y'])
+    (RIAxy1 : [Γ ||-<l> tId A' x' y1])
+    (Re' : [ RIAxy' | _ ||- e' : _])
+    (Re1 : [ RIAxy1 | _ ||- e1 : _])
+    (Ree1 : [ RIAxy' | _ ||- e' ≅ e1 : _]),
+    [RP' y' e' Ry' RIAxy' Re' | Γ ||- P'[e' .: y'..] ≅ P'[e1 .: y1 ..]])
+  (Rhr : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr : _])
+  (Rhr' : [RP' x' (tRefl A' x') Rx' (IdRed RA' Rx' Rx') (reflRed' RA' Rx') | _ ||- hr' : _])
+  (Rhrhr' : [RP x (tRefl A x) Rx (IdRed RA Rx Rx) (reflRed' RA Rx) | _ ||- hr ≅ hr' : _])
+  (Ry : [RA | _ ||- y : _])
+  (Ry' : [RA' | _ ||- y' : _])
+  (Ryy' : [RA | _ ||- y ≅ y' : _])
+  (RIAxy : [Γ ||-<l> tId A x y])
+  (RIAxy' : [Γ ||-<l> tId A' x' y'])
+  (Re : [RIAxy | _ ||- e : _]) 
+  (Re' : [RIAxy' | _ ||- e' : _]) 
+  (Ree' : [RIAxy | _ ||- e ≅ e' : _])  :
+  [RP y e Ry _ Re | _ ||- tIdElim A x P hr y e ≅ tIdElim A' x' P' hr' y' e' : _].
+Proof.
+  pose proof (IdRedTy_inv (invLRId RIAxy)) as [eA ex ey].
+  assert (RIAxyeq : [RIAxy | _ ||- _ ≅ tId A' x' y']) by (escape; now eapply IdCongRed).
+  assert (Req : [LRId' (invLRId RIAxy) | _ ||- e ≅ e' : _]) by irrelevance.
+  cbn in Req; inversion Req; unfold_id_outTy.
+  pose proof redL as [? _]; pose proof redR as [? _].
+  rewrite <-eA,<-ex,<-ey in redL, redR.
+  pose proof (IdPropEq_whnf _ _ _ prop) as [whL whR].
+  pose proof (redTmFwdConv Re redL whL) as [RnfL RnfLeq].
+  unshelve epose proof (redTmFwdConv Re' _ whR) as [RnfR RnfReq].
+  1: eapply redtmwf_conv; tea; now escape.
+  eapply LREqTermHelper; cycle -1.
+  - eapply LRTmEqRedConv.
+    2: eapply idElimPropCongRed.
+    16: exact prop.
+    all: tea.
+    1: eapply RPeq; cycle 2; first [now eapply reflLRTmEq | now eapply LRTmEqSym| eapply reflLRTyEq| tea].
+    enough [LRId' (invLRId RIAxy) | _ ||- nfL ≅ nfR : _] by irrelevance.
+    exists nfL nfR; tea; eapply redtmwf_refl; unfold_id_outTy; tea.
+  - assert (Re1 : [LRId' (invLRId RIAxy) | _ ||- e : _]) by irrelevance.
+    rewrite (redtmwf_det whL (IdProp_whnf _ _ Re1.(IdRedTm.prop)) redL Re1.(IdRedTm.red)).
+    irrelevanceRefl; eapply idElimRed; tea.
+  - assert (Re1' : [LRId' (invLRId RIAxy') | _ ||- e' : _]) by irrelevance.
+    rewrite (redtmwf_det whR (IdProp_whnf _ _ Re1'.(IdRedTm.prop)) redR Re1'.(IdRedTm.red)).
+    irrelevanceRefl; eapply idElimRed; tea.
+    Unshelve. 
+    all: tea.
+    now eapply RP'.
+  - now eapply RPP'.
+Qed.
+
+End IdRed.

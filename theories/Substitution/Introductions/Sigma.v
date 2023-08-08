@@ -779,7 +779,7 @@ Section PairRed.
       instValid Vσ; instValidExt Vσ (reflSubst _ _ Vσ).
       pose (RVΣ0 := normRedΣ0 (invLRΣ RVΣ)).
       pose (RVB := snd (polyRedId RVΣ0)); fold subst_term in *.
-      pose (Vaσ := consSubstSvalid _ _ Vσ VA Va); instValid Vaσ.
+      pose (Vaσ := consSubstSvalid Vσ Va); instValid Vaσ.
       rewrite <- up_subst_single in RVB0.
       assert (RVb' : [RVB0 | Δ ||- b[σ] : B[up_term_term σ][(a[σ])..]])
         by (irrelevance0; tea; apply  singleSubstComm').
