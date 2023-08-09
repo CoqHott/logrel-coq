@@ -1,3 +1,4 @@
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Irrelevance.
@@ -73,10 +74,13 @@ Section Weakenings.
     - intros; apply LRSig'; now eapply wkΣ.
   Defined.
 
+  (* Sanity checks for Π and Σ: we do compute correctly with wk *)
+  #[local]
   Lemma wkΠ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) :
     wk ρ wfΔ (LRPi' ΠA) = LRPi' (wkΠ ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
   
+  #[local]
   Lemma wkΣ_eq {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) :
     wk ρ wfΔ (LRSig' ΠA) = LRSig' (wkΣ ρ wfΔ ΠA).
   Proof. reflexivity. Qed.

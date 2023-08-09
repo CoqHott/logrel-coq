@@ -356,5 +356,110 @@ Definition idSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel : Γ | VΓ | _] := (s
 Lemma reflIdSubstS {Γ} (VΓ : [||-v Γ]) : [Γ ||-v tRel ≅ tRel : Γ | VΓ | _ | idSubstS VΓ].
 Proof.  apply reflSubst. Qed.
 
+Lemma substS_wk {Γ Δ} (ρ : Δ ≤ Γ) :
+  forall (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ]) 
+  {Ξ σ} (wfΞ : [|- Ξ]), [VΔ | Ξ ||-v σ : _ | wfΞ] -> [VΓ | Ξ ||-v ρ >> σ : _ | wfΞ].
+Proof.
+  destruct ρ as [? wwk]; induction wwk.
+  + intros; rewrite (invValidityEmpty VΓ); constructor.
+  + intros.
+    pose proof (invValiditySnoc VΔ) as [? [? [? eq]]].
+    rewrite eq in X; cbn in X; inversion X.
+    eapply irrelevanceSubstExt.
+    1: rewrite <- (scons_eta' σ); reflexivity.
+    cbn. asimpl.
+    now eapply IHwwk.
+  + intros.
+    pose proof (invValiditySnoc VΔ) as [? [? [? eq]]].
+    rewrite eq in X; cbn in X; inversion X.
+    eapply irrelevanceSubstExt.
+    1:{ rewrite <- (scons_eta' σ); cbn; unfold up_ren; rewrite scons_comp'; cbn. reflexivity. }
+    asimpl.
+    pose proof (invValiditySnoc VΓ) as [? [? [? eq']]].
+    rewrite eq'.
+    unshelve eapply consSubstS.
+    * now eapply IHwwk.
+    * irrelevance.
+Defined.
+
+Lemma substSEq_wk {Γ Δ} (ρ : Δ ≤ Γ) :
+  forall (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ]) 
+  Ξ σ σ' (wfΞ : [|- Ξ])
+  (Vσ : [VΔ | Ξ ||-v σ : _ | wfΞ]),
+  [VΔ | Ξ ||-v σ' : _ | wfΞ] -> 
+  [VΔ | Ξ ||-v σ ≅ σ' : _ | wfΞ | Vσ] -> 
+  [VΓ | Ξ ||-v ρ >> σ ≅ ρ >> σ' : _ | wfΞ | substS_wk ρ VΓ VΔ wfΞ Vσ].
+Proof.
+  destruct ρ as [? wwk]; induction wwk.
+  + intros; rewrite (invValidityEmpty VΓ); constructor.
+  + intros.
+    pose proof (invValiditySnoc VΔ) as [? [? [? eq]]].
+    revert Vσ X X0; rewrite eq; intros Vσ Vσ' Vσσ'.
+    cbn; asimpl; eapply irrelevanceSubstEq.
+    unshelve eapply IHwwk; tea.
+    1,2: now eapply validTail.
+    now eapply eqTail.
+    Unshelve. tea.
++ intros ??????.
+  set (ρ0 := {| well_wk := _ |}); unfold ρ0.
+  pose proof (invValiditySnoc VΔ) as [? [VΓ0 [? eq]]].
+  pose proof (invValiditySnoc VΓ) as [? [VΔ0 [? eqΓ]]].
+  rewrite eq; intros Vσ Vσ' Vσσ'.
+  assert (subst_eq : forall τ : nat -> term, τ var_zero .: (ρ >> ↑ >> τ) =1 (0 .: ρ >> S) >> τ).
+  1:{ intros τ;  asimpl; reflexivity. }
+  pose proof (v := substS_wk ρ0 VΓ _ wfΞ Vσ).
+  cbn; asimpl ; eapply irrelevanceSubstEq; unshelve eapply irrelevanceSubstEqExt.
+  2,5: apply subst_eq.
+  - eapply irrelevanceSubstExt.
+    1: symmetry; apply subst_eq.
+    exact v.
+  - eapply irrelevanceSubstEq.
+    eapply consSubstSEq'.
+    * exact (IHwwk VΔ0 VΓ0 Ξ (↑ >> σ) (↑ >> σ') wfΞ (validTail Vσ) (validTail Vσ') (eqTail Vσσ')).
+    * irrelevance0. 
+      2: now eapply eqHead. 
+      now asimpl.
+    Unshelve. 2: tea.
+    rewrite eqΓ in v.
+    irrelevanceRefl.
+    eapply (validHead v).
+Qed.
+
+Lemma wkValid {l Γ Δ A} (ρ : Δ ≤ Γ)
+  (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ])
+  (VA : [Γ ||-v<l> A | VΓ]) :
+  [Δ ||-v<l> A⟨ρ⟩ | VΔ].
+Proof.
+  assert (h : forall σ, A⟨ρ⟩[σ] = A[ ρ >> σ]) by (intros; now asimpl).
+  unshelve econstructor.
+  - intros; rewrite h.
+    eapply validTy; tea.
+    now eapply substS_wk.
+  - intros; irrelevance0; rewrite h; [reflexivity|].
+    eapply validTyExt.
+    1: now eapply substS_wk.
+    now eapply substSEq_wk.
+    Unshelve. 2,3: tea.
+Qed.
+
+Lemma wkEqValid {l Γ Δ A B} (ρ : Δ ≤ Γ)
+  (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ])
+  (VA : [Γ ||-v<l> A | VΓ])
+  (VAB : [Γ ||-v<l> A ≅ B | VΓ | VA]) :
+  [Δ ||-v<l> A⟨ρ⟩ ≅ B⟨ρ⟩ | VΔ | wkValid ρ VΓ VΔ VA].
+Proof.
+  assert (h : forall A σ, A⟨ρ⟩[σ] = A[ ρ >> σ]) by (intros; now asimpl).
+  unshelve econstructor; intros; irrelevance0; rewrite h; [reflexivity|].
+  now eapply validTyEq.
+  Unshelve. 1: tea.
+    now eapply substS_wk.
+Qed.
+
+
+
 
 End Properties.

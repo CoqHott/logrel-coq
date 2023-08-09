@@ -1,4 +1,5 @@
 (** * LogRel.NormalForms: definition of normal and neutral forms, and properties. *)
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
 

@@ -819,6 +819,16 @@ Section GenericConsequences.
     eapply ty_app; tea.
   Qed.
 
+  Lemma convneu_simple_app {Γ f g t u A B} :
+      [ Γ |- f ~ g : arr A B ] ->
+      [ Γ |- t ≅ u : A ] ->
+      [ Γ |- tApp f t ~ tApp g u : B ].
+  Proof.
+    intros.
+    replace B with B⟨↑⟩[t..] by now asimpl.
+    now eapply convneu_app.
+  Qed.
+
   #[local]
   Hint Resolve ty_simple_app : gen_typing.
   
@@ -831,6 +841,17 @@ Section GenericConsequences.
     intros.
     eapply ty_conv.
     2: eapply convty_simple_arr; cycle 1; tea.
+    eapply ty_lam; tea.
+    now eapply ty_var0.
+  Qed.
+
+  Lemma ty_id' {Γ A} : 
+    [Γ |- A] ->
+    [Γ |- idterm A : arr A A].
+  Proof.
+    intros.
+    (* eapply ty_conv. *)
+    (* 2: eapply convty_simple_arr; cycle 1; tea. *)
     eapply ty_lam; tea.
     now eapply ty_var0.
   Qed.
@@ -938,6 +959,38 @@ Section GenericConsequences.
     + now asimpl.
   Qed.
 
+  Lemma convtm_comp_app {Γ A B C f f' g g'} :
+    [|- Γ] ->
+    [Γ |- A] ->
+    [Γ |- B] ->
+    [Γ |- C] ->
+    [Γ |- f : arr A B] ->
+    [Γ |- f' : arr A B] ->
+    [Γ |- g : arr B C] ->
+    [Γ |- g' : arr B C] ->
+    [Γ,, A |- tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) ≅ tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩] ->
+    [Γ ,, A |- tApp (comp A g f)⟨↑⟩ (tRel 0) ≅ tApp (comp A g' f')⟨↑⟩ (tRel 0) : C⟨↑⟩].
+  Proof.
+    intros.
+    eapply convtm_exp.
+    - eapply redty_refl;  now eapply wft_wk1.
+    - cbn.
+      do 2 rewrite <- shift_upRen.
+      eapply redtm_comp_beta.
+      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      1-3: now eapply wft_wk1.
+      now eapply ty_var0.
+    - cbn. do 2 rewrite <- shift_upRen.
+      eapply redtm_comp_beta.
+      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
+      1-3: now eapply wft_wk1.
+      now eapply ty_var0.
+    - assumption.
+  Qed.
+
+
   Lemma convtm_comp {Γ A B C f f' g g'} :
     [|- Γ] ->
     [Γ |- A] ->
@@ -950,7 +1003,6 @@ Section GenericConsequences.
     [Γ,, A |-[ ta ] tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) ≅ tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩] ->
     [Γ |- comp A g f ≅ comp A g' f' : arr A C].
   Proof.
-    assert (eq : forall t: term, t⟨↑⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ↑⟩) by (intros; now asimpl).
     intros.
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
@@ -958,21 +1010,7 @@ Section GenericConsequences.
     1,2: eapply ty_comp.
     4,5,9,10: tea.
     all: tea.
-    eapply convtm_exp.
-    - eapply redty_refl; now eapply wft_wk1.
-    - cbn. do 2 rewrite <- eq.
-      eapply redtm_comp_beta.
-      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      1-3: now eapply wft_wk1.
-      now eapply ty_var0.
-    - cbn. do 2 rewrite <- eq.
-      eapply redtm_comp_beta.
-      5: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      4: erewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
-      1-3: now eapply wft_wk1.
-      now eapply ty_var0.
-    - assumption.
+    eapply convtm_comp_app; cycle 4; tea.
   Qed.
 
   Lemma typing_eta (Γ : context) A B f :
@@ -989,6 +1027,66 @@ Section GenericConsequences.
     fold ren_term. bsimpl; rewrite scons_eta'; now asimpl.
   Qed.
 
+
+  Lemma lambda_cong {Γ A A' B B' t t'} :
+    [Γ |- A] ->
+    [Γ |- A'] ->
+    [Γ,, A |- B] ->
+    [Γ,, A |- t : B] ->
+    [Γ,, A' |- t' : B'] ->
+    [Γ |- A ≅ A'] ->
+    [Γ,, A |- B ≅ B'] ->
+    [Γ,, A |- t ≅ t' : B] ->
+    [Γ |- tLambda A t ≅ tLambda A' t' : tProd A B].
+  Proof.
+    intros.
+    assert [|- Γ,, A] by gen_typing.
+    apply convtm_eta ; tea.
+    1-2,4: gen_typing.
+    - eapply ty_conv.
+      1: eapply ty_lam ; tea.
+      symmetry.
+      now eapply convty_prod.
+    - eapply convtm_exp ; tea.
+      1: now eapply redty_refl.
+      2: eapply redtm_conv ; cbn ; [eapply redtm_meta_conv |..] ; [eapply redtm_beta |..].
+      1: eapply redtm_meta_conv ; cbn ; [eapply redtm_beta |..].
+      + renToWk.
+        now eapply wft_wk.
+      + renToWk.
+        eapply ty_wk ; tea.
+        eapply wfc_cons ; tea.
+        now eapply wft_wk.
+      + eapply ty_var ; tea.
+        now econstructor.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + renToWk.
+        now eapply wft_wk.
+      + renToWk.
+        eapply ty_wk ; tea.
+        eapply wfc_cons ; tea.
+        now eapply wft_wk.
+      + eapply ty_conv.
+        1: eapply ty_var0 ; tea.
+        renToWk.
+        now eapply convty_wk.
+      + shelve.
+      + bsimpl.
+        rewrite scons_eta'.
+        now bsimpl.
+      + symmetry. eassumption.
+      Unshelve.
+      bsimpl.
+      rewrite scons_eta'.
+      now bsimpl.
+  Qed.
+  
+  
   (** *** Lifting determinism properties from untyped reduction to typed reduction. *)
 
   Lemma redtm_whnf {Γ t u A} : [Γ |- t ⇒* u : A] -> whnf t -> t = u.

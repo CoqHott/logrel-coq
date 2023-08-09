@@ -1,5 +1,5 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
-From Coq Require Import Lia.
+From Coq Require Import Lia ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms.
 
@@ -139,7 +139,6 @@ Ltac change_well_wk :=
     change ren_term with (@ren1 _ _ _ Ren1_well_wk) in *.
 
 Smpl Add 10 change_well_wk : refold.
-
 
 (** Constructors of well-typed weakenings *)
 
@@ -297,6 +296,11 @@ Section RenWlWhnf.
     apply isType_ren.
   Qed.
   
+  Lemma isPosType_ren_wl A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    apply isPosType_ren.
+  Qed.
+  
   Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
   Proof.
     apply isFun_ren.
@@ -315,7 +319,7 @@ Section RenWlWhnf.
 End RenWlWhnf.
 
 #[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isCanonical_ren : gen_typing.
-#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isPosType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
 
 (** ** Adaptation of AutoSubst's asimpl to well typed weakenings *)
 
@@ -366,6 +370,12 @@ Lemma wk_up_ren_subst {Γ Δ Ξ P A n}  (ρ : Γ ≤ Δ) (ρ' : Δ ≤ Ξ) :
   P[n .: ρ ∘w ρ' >> tRel] = P⟨wk_up A ρ'⟩[n .: ρ >> tRel].
 Proof. now bsimpl. Qed.
 
+Lemma shift_subst_scons {B a Γ Δ} (ρ : Δ ≤ Γ) : B⟨↑⟩[a .: ρ >> tRel] = B⟨ρ⟩.
+Proof. bsimpl; now rewrite rinstInst'_term. Qed.
+
+Lemma shift_upRen ρ t : t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ρ⟩.
+Proof. now asimpl. Qed.
+
 Lemma wk_comp_ren_on {Γ Δ Ξ} (H : term) (ρ1 : Γ ≤ Δ) (ρ2 : Δ ≤ Ξ) :
   H⟨ρ2⟩⟨ρ1⟩ = H⟨ρ1 ∘w ρ2⟩.
 Proof. now bsimpl. Qed.
@@ -405,3 +415,7 @@ Proof. now cbn. Qed.
 
 Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
 Proof. now cbn. Qed.
+
+Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
+Proof. now bsimpl. Qed.
+

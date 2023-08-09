@@ -2,6 +2,7 @@
 
 (** This is the only file in the AutoSubst submodule that is not automatically generated. *)
 From smpl Require Import Smpl.
+From Coq Require Import ssrbool List.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst.
 
@@ -63,6 +64,28 @@ Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
 Proof.
   now asimpl.
 Qed.
+
+Lemma subst_arr A B σ : (arr A B)[σ] = arr A[σ] B[σ].
+Proof. now asimpl. Qed.
+
+Lemma subst_prod X Y σ : (tProd X Y)[σ] = tProd X[σ] Y[up_term_term σ].
+Proof. now asimpl. Qed.
+
+Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
+Proof. now asimpl. Qed.
+
+Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
+Proof.  now asimpl. Qed.
+
+Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
+Proof.
+  asimpl. eapply ext_term; intros [|n]; cbn.
+  1: reflexivity.
+  unfold funcomp; now rewrite  rinstInst'_term.
+Qed.
+
+Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
+Proof. now asimpl. Qed.
 
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).

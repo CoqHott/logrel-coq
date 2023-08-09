@@ -1,14 +1,31 @@
 
+From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedReduction Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction.
 
 Set Universe Polymorphism.
+
+Ltac redSubst :=
+  match goal with
+  | [H : [_ |- ?X :⇒*: ?Y] |- _] => 
+    assert (X = Y)by (eapply redtywf_whnf ; gen_typing); subst; clear H
+  end.
+
 
 Section Normalization.
 Context `{GenericTypingProperties}.
 
 Set Printing Primitive Projection Parameters.
+
+Program Definition normRedNe0 {Γ A} (h : [Γ ||-ne A]) (wh : whne A) :
+  [Γ ||-ne A] :=
+  {| neRedTy.ty := A |}.
+Next Obligation.
+  pose proof (LRne_ zero h); escape; now eapply redtywf_refl.
+Qed.
+Next Obligation. destruct h; now redSubst. Qed.
+
 
 Program Definition normRedΠ0 {Γ F G l} (h : [Γ ||-Π<l> tProd F G])
   : [Γ ||-Π<l> tProd F G] :=
@@ -69,6 +86,16 @@ Solve All Obligations with
   destruct Rp as [???? fstRed sndRed]; cbn in *; subst;
   first [eapply fstRed | irrelevanceRefl; now unshelve eapply sndRed| eassumption].
 
+Definition invLRcan {Γ l A} (lr : [Γ ||-<l> A]) (w : isType A) : [Γ ||-<l> A] :=
+  match w as w in isType A return forall (lr : [Γ ||-<l> A]), invLRTy lr (reflexivity A) w -> [Γ ||-<l> A] with
+  | UnivType => fun _ x => LRU_ x
+  | ProdType => fun _ x => LRPi' (normRedΠ0 x)
+  | NatType => fun _ x => LRNat_ _ x
+  | EmptyType => fun _ x => LREmpty_  _ x
+  | SigType => fun _ x => LRSig' (normRedΣ0 x)
+  | NeType wh => fun _ x => LRne_ _ (normRedNe0 x wh)
+  end lr (invLR lr (reflexivity A) w).
+  
 
 End Normalization.
 

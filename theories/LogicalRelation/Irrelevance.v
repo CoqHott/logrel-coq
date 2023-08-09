@@ -1,10 +1,12 @@
 (** * LogRel.LogicalRelation.Irrelevance: symmetry and irrelevance of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Escape.
 
 Set Universe Polymorphism.
 Set Printing Universes.
+Set Printing Primitive Projection Parameters.
+
 
 (** We show a general version of irrelevance, saying that if A and A' are reducible (at levels logical relation levels lA, lA')
 and A' is reducibly convertible to A, then the reducibility predicates they decode to are equivalent.
