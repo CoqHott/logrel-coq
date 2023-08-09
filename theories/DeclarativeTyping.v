@@ -47,6 +47,11 @@ Section Definitions.
           [ Γ |- A ] -> 
           [Γ ,, A |- B ] -> 
           [ Γ |- tSig A B ]
+      | wftTypeId {Γ} {A x y} :
+          [Γ |- A] ->
+          [Γ |- x : A] ->
+          [Γ |- y : A] ->
+          [Γ |- tId A x y]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -106,6 +111,23 @@ Section Definitions.
       | wfTermSnd {Γ A B p} :
         [Γ |- p : tSig A B] ->
         [Γ |- tSnd p : B[(tFst p)..]]
+      | wfTermId {Γ} {A x y} :
+          [Γ |- A : U] ->
+          [Γ |- x : A] ->
+          [Γ |- y : A] ->
+          [Γ |- tId A x y : U]
+      | wfTermRefl {Γ A x} :
+          [Γ |- A] ->
+          [Γ |- x : A] ->
+          [Γ |- tRefl A x : tId A x x]
+      | wfTermIdElim {Γ A x P hr y e} :
+          [Γ |- A] ->
+          [Γ |- x : A] ->
+          [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+          [Γ |- hr : P[tRefl A x .: x..]] ->
+          [Γ |- y : A] ->
+          [Γ |- e : tId A x y] ->
+          [Γ |- tIdElim A x P hr y e : P[e .: y..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -122,6 +144,12 @@ Section Definitions.
           [ Γ |- A ≅ B] ->
           [ Γ ,, A |- C ≅ D] ->
           [ Γ |- tSig A C ≅ tSig B D]
+      | TypeIdCong {Γ A A' x x' y y'} :
+          (* [Γ |- A] -> ?  *)
+          [Γ |- A ≅ A'] ->
+          [Γ |- x ≅ x' : A] ->
+          [Γ |- y ≅ y' : A] ->
+          [Γ |- tId A x y ≅ tId A' x' y' ]
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
@@ -212,6 +240,41 @@ Section Definitions.
         [Γ |- a : A] ->
         [Γ |- b : B[a..]] ->
         [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]]
+      | TermIdCong {Γ A A' x x' y y'} :
+        (* [Γ |- A] -> ?  *)
+        [Γ |- A ≅ A' : U] ->
+        [Γ |- x ≅ x' : A] ->
+        [Γ |- y ≅ y' : A] ->
+        [Γ |- tId A x y ≅ tId A' x' y' : U ]
+      | TermReflCong {Γ A A' x x'} :
+        [Γ |- A ≅ A'] ->
+        [Γ |- x ≅ x' : A] ->
+        [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x]
+      | TermIdElim {Γ A A' x x' P P' hr hr' y y' e e'} :
+        (* Parameters well formed: required for stability by weakening,
+          in order to show that the context Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)
+          remains well-formed under weakenings *)
+        [Γ |- A] ->
+        [Γ |- x : A] ->
+        [Γ |- A ≅ A'] ->
+        [Γ |- x ≅ x' : A] ->
+        [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+        [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
+        [Γ |- y ≅ y' : A] ->
+        [Γ |- e ≅ e' : tId A x y] ->
+        [Γ |- tIdElim A x P hr y e ≅ tIdElim A' x' P' hr' y' e' : P[e .: y..]]
+      | TermIdElimRefl {Γ A x P hr y A' z} :
+        [Γ |- A] ->
+        [Γ |- x : A] ->
+        [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+        [Γ |- hr : P[tRefl A x .: x..]] ->
+        [Γ |- y : A] ->
+        [Γ |- A'] ->
+        [Γ |- z : A] ->
+        [Γ |- A ≅ A'] ->
+        [Γ |- x ≅ y : A] ->
+        [Γ |- x ≅ z : A] ->
+        [Γ |- tIdElim A x P hr y (tRefl A' z) ≅ hr : P[tRefl A' z .: y..]]
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]

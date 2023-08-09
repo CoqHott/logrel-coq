@@ -199,6 +199,11 @@ Section GenericTyping.
       [ Γ |- A ] -> 
       [Γ ,, A |- B ] -> 
       [ Γ |- tSig A B ] ;
+    wft_Id {Γ} {A x y} :
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ |- y : A] ->
+      [Γ |- tId A x y] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] -> 
       [ Γ |- A ] ;
@@ -262,6 +267,23 @@ Section GenericTyping.
     ty_snd {Γ A B p} :
         [Γ |- p : tSig A B] ->
         [Γ |- tSnd p : B[(tFst p)..]] ;
+    ty_Id {Γ} {A x y} :
+      [Γ |- A : U] ->
+      [Γ |- x : A] ->
+      [Γ |- y : A] ->
+      [Γ |- tId A x y : U] ;
+    ty_refl {Γ A x} :
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ |- tRefl A x : tId A x x] ;
+    ty_IdElim {Γ A x P hr y e} :
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ |- hr : P[tRefl A x .: x..]] ->
+      [Γ |- y : A] ->
+      [Γ |- e : tId A x y] ->
+      [Γ |- tIdElim A x P hr y e : P[e .: y..]];
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⇒* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -285,6 +307,12 @@ Section GenericTyping.
       [Γ |- A] ->
       [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
       [Γ |- tSig A B ≅ tSig A' B'] ;
+    convty_Id {Γ A A' x x' y y'} :
+      (* [Γ |- A] -> ?  *)
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ |- y ≅ y' : A] ->
+      [Γ |- tId A x y ≅ tId A' x' y' ] ;
   }.
 
   Class ConvTermProperties :=
@@ -334,6 +362,16 @@ Section GenericTyping.
       [Γ |- p ≅ p' : tSig A B] ;
     convtm_empty {Γ} :
       [|-Γ] -> [Γ |- tEmpty ≅ tEmpty : U] ;
+    convtm_Id {Γ A A' x x' y y'} :
+      (* [Γ |- A] -> ?  *)
+      [Γ |- A ≅ A' : U] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ |- y ≅ y' : A] ->
+      [Γ |- tId A x y ≅ tId A' x' y' : U ] ;
+    convtm_refl {Γ A A' x x'} :
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x] ;
   }.
 
   Class ConvNeuProperties :=
@@ -365,6 +403,17 @@ Section GenericTyping.
     convneu_snd {Γ A B p p'} :
       [Γ |- p ~ p' : tSig A B] ->
       [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
+    convneu_IdElim {Γ A A' x x' P P' hr hr' y y' e e'} :
+      (* Parameters well formed: required by declarative instance *)
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+      [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
+      [Γ |- y ≅ y' : A] ->
+      [Γ |- e ~ e' : tId A x y] ->
+      [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' : P[e .: y..]];
   }.
 
   Class RedTypeProperties :=
@@ -436,6 +485,26 @@ Section GenericTyping.
     redtm_snd {Γ A B p p'} :
       [Γ |- p ⇒* p' : tSig A B] ->
       [Γ |- tSnd p ⇒* tSnd p' : B[(tFst p)..]] ;
+    redtm_idElimRefl {Γ A x P hr y A' z} :
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ |- hr : P[tRefl A x .: x..]] ->
+      [Γ |- y : A] ->
+      [Γ |- A'] ->
+      [Γ |- z : A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ y : A] ->
+      [Γ |- x ≅ z : A] ->
+      [Γ |- tIdElim A x P hr y (tRefl A' z) ⇒* hr : P[tRefl A' z .: y..]];
+    redtm_idElim {Γ A x P hr y e e'} :
+      [Γ |- A] ->
+      [Γ |- x : A] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ |- hr : P[tRefl A x .: x..]] ->
+      [Γ |- y : A] ->
+      [Γ |- e ⇒* e' : tId A x y] ->
+      [Γ |- tIdElim A x P hr y e ⇒* tIdElim A x P hr y e' : P[e .: y..]];
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⇒* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -475,11 +544,11 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_prod wft_sig | 2 : gen_typing.
-#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd | 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig | 2 : gen_typing.
-#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_U wft_prod wft_sig wft_Id | 2 : gen_typing.
+#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_Id ty_refl ty_IdElim| 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig convty_Id | 2 : gen_typing.
+#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_Id convtm_refl | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.

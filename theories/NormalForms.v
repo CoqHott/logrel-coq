@@ -15,6 +15,8 @@ Inductive whnf : term -> Type :=
   | whnf_tEmpty : whnf tEmpty
   | whnf_tSig {A B} : whnf (tSig A B)
   | whnf_tPair {A B a b} : whnf (tPair A B a b)
+  | whnf_tId {A x y} : whnf (tId A x y)
+  | whnf_tRefl {A x} : whnf (tRefl A x)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
@@ -22,7 +24,8 @@ with whne : term -> Type :=
   | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)
-  | whne_tSnd {p} : whne p -> whne (tSnd p).
+  | whne_tSnd {p} : whne p -> whne (tSnd p)
+  | whne_tIdElim {A x P hr y e} : whne e -> whne (tIdElim A x P hr y e).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
