@@ -191,7 +191,7 @@ Section PolyValidity.
     - intros ?? ρ wfΔ' ha; irrelevance0; rewrite eq_subst_2.
       1: reflexivity.
       unshelve epose proof (Vabwkσ := consWkSubstSEq' VF Vσ (reflSubst _ _ Vσ) ρ wfΔ' ha _).
-      2: now eapply LREqTermRefl_.
+      2: now eapply reflLRTmEq.
       unshelve eapply validTyEq; cycle 2; tea. 
       now eapply consWkSubstS.
   Qed.
@@ -206,7 +206,7 @@ Section PolyValidity.
     - intros ?? ρ wfΔ' ha; irrelevance0; rewrite eq_subst_2.
       1: reflexivity.
       unshelve epose proof (Vabwkσ := consWkSubstSEq' VF Vσ Vσσ' ρ wfΔ' ha _).
-      2: now eapply LREqTermRefl_.
+      2: now eapply reflLRTmEq.
       eapply validTyExt; tea.
       eapply consWkSubstS; tea.
       eapply LRTmRedConv; tea.

@@ -144,7 +144,7 @@ intros l Γ A ΠA0 ihdom ihcod; split.
     * intros; apply complete_reflect_simpl; [apply ihcod| |..].
       1: escape ; now eapply ty_app_ren.
       eapply convneu_app_ren. 1,2: eassumption.
-      eapply LREqTermRefl_ in ha.
+      eapply reflLRTmEq in ha.
       now escape.
     * intros. apply ihcod.
       + apply escapeTerm in ha; now eapply ty_app_ren.
@@ -164,7 +164,7 @@ intros l Γ A ΠA0 ihdom ihcod; split.
     + apply escapeTerm in ha; now eapply ty_app_ren.
     + apply escapeTerm in ha; now eapply ty_app_ren.
     + eapply convneu_app_ren. 1,2: eassumption.
-    eapply escapeEqTerm; eapply LREqTermRefl_; eassumption.
+    eapply escapeEqTerm; eapply reflLRTmEq; eassumption.
 Qed.
 
 Arguments ParamRedTy.outTy /.
@@ -314,7 +314,7 @@ Proof.
   apply var0conv.
   rewrite eq.
   unshelve eapply escapeEq; tea.
-  eapply LRTyEqRefl_.
+  eapply reflLRTyEq.
 Qed.
 
 End Neutral.

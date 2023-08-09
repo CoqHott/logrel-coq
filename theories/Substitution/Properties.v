@@ -223,7 +223,7 @@ Lemma liftSubstSEq {Γ σ σ' Δ lF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
 Proof.
   intros; unshelve econstructor.
   + now apply wk1SubstSEq.
-  + apply LREqTermRefl_; exact (validHead Vliftσ).
+  + apply reflLRTmEq; exact (validHead Vliftσ).
 Qed.
 
 Lemma liftSubstSEq' {Γ σ σ' Δ lF F} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}

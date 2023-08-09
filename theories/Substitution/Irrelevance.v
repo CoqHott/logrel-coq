@@ -51,7 +51,7 @@ Proof.
   - constructor.
   - intros * ih. unshelve econstructor.
     1: apply ih.
-    apply LREqTermRefl_. exact (validHead Vσ).
+    apply reflLRTmEq. exact (validHead Vσ).
 Qed.
 
 Lemma symmetrySubstEq {Γ} (VΓ VΓ' : [||-v Γ]) : forall {σ σ' Δ} (wfΔ wfΔ' : [|- Δ])

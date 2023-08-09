@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Irrelevance.
+From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity.
 
 Set Universe Polymorphism.
 
@@ -11,15 +11,15 @@ Set Printing Primitive Projection Parameters.
 
 Set Printing Universes.
 
-Lemma transEq@{i j k l} {Γ A B C lA lB} 
+(* Lemma transEq@{i j k l} {Γ A B C lA lB} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]}
   {RB : [LogRel@{i j k l} lB | Γ ||- B]}
   (RAB : [Γ ||-<lA> A ≅ B | RA])
    (RBC : [Γ ||-<lB> B ≅ C | RB]) :
   [Γ ||-<lA> A ≅ C | RA].
-Proof. now eapply LRTransEq. Qed.
+Proof. now eapply LRTransEq. Qed. *)
 
-Lemma transEqTermU@{h i j k} {Γ l UU t u v} {h : [Γ ||-U<l> UU]} :
+(* Lemma transEqTermU@{h i j k} {Γ l UU t u v} {h : [Γ ||-U<l> UU]} :
   [LogRelRec@{i j k} l | Γ ||-U t ≅ u : UU| h] ->
   [LogRelRec@{i j k} l | Γ ||-U u ≅ v : UU| h] ->
   [LogRelRec@{i j k} l | Γ ||-U t ≅ v : UU| h].
@@ -30,7 +30,7 @@ Proof.
     all: apply isType_whnf; apply URedTm.type.
   + apply TyEqRecFwd; unshelve eapply transEq@{h i j k}.
     4,5: now apply (TyEqRecFwd h). 
-Qed.
+Qed. *)
 
 Lemma transEqTermNeu {Γ A t u v} {RA : [Γ ||-ne A]} :
   [Γ ||-ne t ≅ u : A | RA] ->
@@ -89,7 +89,8 @@ Proof.
   + etransitivity; tea. now rewrite e.
   + intros; eapply ihdom ; [eapply eqfst| rewrite e; eapply eqfst'].
   + intros; eapply ihcod; [eapply eqsnd|].
-    rewrite e. eapply LRTmEqRedConv.
+    rewrite e. 
+    eapply LRTmEqRedConv.
     2: eapply eqsnd'.
     eapply PolyRed.posExt.
     1: eapply (SigRedTm.fstRed tL).

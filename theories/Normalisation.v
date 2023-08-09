@@ -308,7 +308,7 @@ Section NeutralConversion.
       1: eapply redtywf_refl; eapply (ParamRedTy.red ΣA).
       econstructor; tea;
       eapply LogicalRelation.Escape.escapeEq;
-      eapply LRTyEqRefl_.
+      eapply reflLRTyEq.
     }
     assert [Γ |-[ de ] tFst m : (ParamRedTy.dom ΣA)⟨@wk_id Γ⟩].
     1: rewrite wk_id_ren_on; now econstructor.

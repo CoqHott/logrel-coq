@@ -28,7 +28,7 @@ Proof.
     + apply LRPi'; unshelve eexists dom cod; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod; tea; cbn.
-      unshelve econstructor;intros; apply LRTyEqRefl_.
+      unshelve econstructor;intros; apply reflLRTyEq.
   - intros B [red] A ?; unshelve eexists.
     + apply LRNat_; constructor; tea; etransitivity; tea.
       constructor; tea; gen_typing.
@@ -41,7 +41,7 @@ Proof.
     + apply LRSig'; unshelve eexists dom cod; tea; etransitivity; tea.
       constructor; tea; gen_typing.
     + unshelve eexists dom cod; tea; cbn.
-      unshelve econstructor;intros; apply LRTyEqRefl_.
+      unshelve econstructor;intros; apply reflLRTyEq.
 Qed.
 
 
@@ -95,7 +95,7 @@ Proof.
     1: exists f; tea; constructor; destruct red; tea; etransitivity; tea.
     split; tea; exists rt ru; tea.
     intros; cbn. apply eq; tea.
-    now apply LREqTermRefl_.
+    now apply reflLRTmEq.
   - intros ? NA t ? Ru red; inversion Ru; subst.
     assert [Γ |- A ≅ tNat] by (destruct NA; gen_typing).
     assert [Γ |- t :⇒*: nf : tNat]. 1:{
@@ -126,7 +126,7 @@ Proof.
     assert [Γ |-[ ta ] t : PA.(outTy)] by (eapply ty_conv; gen_typing).
     unshelve refine (let rt : [LRSig' PA | Γ ||- t : A] := _ in _).
     1: unshelve eexists p _; tea; constructor; destruct red; tea; etransitivity; tea.
-    split; tea; exists rt ru; tea; intros; cbn; now apply LREqTermRefl_.
+    split; tea; exists rt ru; tea; intros; cbn; now apply reflLRTmEq.
 Qed.
 
 Lemma redSubstTerm' {Γ A t u l} (RA : [Γ ||-<l> A]) :

@@ -1,4 +1,5 @@
 (** * LogRel.LogicalRelation: Definition of the logical relation *)
+From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping.
 
@@ -806,6 +807,10 @@ Module IdRedTyPack.
     tyRed : LRPack@{i} Γ ty ;
     lhsRed : [ tyRed | Γ ||- lhs : _ ] ;
     rhsRed : [ tyRed | Γ ||- rhs : _ ] ;
+    (* Bake in PER property for reducible conversion at ty  to cut dependency cycles *)
+    lhsRedRefl : [ tyRed | Γ ||- lhs ≅ lhs : _ ] ;
+    rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
+    tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
   }.
 
   Definition IdRedTyAdequate@{i j} `{ta : tag} `{WfType ta} `{RedType ta} `{ConvType ta}
@@ -821,7 +826,7 @@ Export IdRedTyPack(IdRedTyPack, Build_IdRedTyPack, IdRedTyAdequate).
 
 Module IdRedTyEq.
 
-  Record IdRedTyEq `{ta : tag} `{WfType ta} `{RedType ta} `{ConvType ta}
+  Record IdRedTyEq `{ta : tag} `{WfType ta} `{RedType ta} `{ConvType ta} `{ConvTerm ta}
     {Γ : context} {A : term} {IA : IdRedTyPack Γ A} {B : term}
   : Type := {
     ty : term ;
@@ -832,11 +837,13 @@ Module IdRedTyEq.
     eq : [Γ |- IA.(IdRedTyPack.outTy) ≅ outTy] ;
     tyRed0 := IA.(IdRedTyPack.tyRed) ;
     tyRed : [ tyRed0 | _ ||- _ ≅ ty ] ;
+    (* lhsConv : [ Γ |- IA.(IdRedTyPack.lhs) ≅ lhs : IA.(IdRedTyPack.ty) ] ;
+    rhsConv : [ Γ |- IA.(IdRedTyPack.rhs) ≅ rhs : IA.(IdRedTyPack.ty) ] ; *)
     lhsRed : [ tyRed0 | _ ||- IA.(IdRedTyPack.lhs) ≅ lhs : _ ] ;
     rhsRed : [ tyRed0 | _ ||- IA.(IdRedTyPack.rhs) ≅ rhs : _ ] ;
   }.
   
-  Arguments IdRedTyEq {_ _ _ _ _ _}.
+  Arguments IdRedTyEq {_ _ _ _ _ _ _}.
 
 End IdRedTyEq.
 
@@ -1361,7 +1368,10 @@ Section IdRedTy.
     tyRed : [ LogRel@{i j k l} l | Γ ||- ty ] ;
     lhsRed : [ tyRed | Γ ||- lhs : _ ] ;
     rhsRed : [ tyRed | Γ ||- rhs : _ ] ;
-  }.
+    lhsRedRefl : [ tyRed | Γ ||- lhs ≅ lhs : _ ] ;
+    rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
+    tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
+ }.
 
   Definition from@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) 
     : @IdRedTy@{i j k l} Γ l A.
@@ -1372,6 +1382,9 @@ Section IdRedTy.
     - exact IA.(IdRedTyPack.eq).
     - exact IA.(IdRedTyPack.lhsRed).
     - exact IA.(IdRedTyPack.rhsRed).
+    - exact IA.(IdRedTyPack.lhsRedRefl).
+    - exact IA.(IdRedTyPack.rhsRedRefl).
+    - exact IA.(IdRedTyPack.tyPER).
   Defined.
 
   Definition toPack@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyPack@{k} Γ A.
@@ -1382,6 +1395,9 @@ Section IdRedTy.
     - exact IA.(eq).
     - exact IA.(lhsRed).
     - exact IA.(rhsRed).
+    - exact IA.(IdRedTy.lhsRedRefl).
+    - exact IA.(IdRedTy.rhsRedRefl).
+    - exact IA.(IdRedTy.tyPER).
   Defined.
   
   Definition to@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) (toPack IA).

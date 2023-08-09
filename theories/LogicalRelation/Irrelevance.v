@@ -1,4 +1,5 @@
 (** * LogRel.LogicalRelation.Irrelevance: symmetry and irrelevance of the logical relation. *)
+From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction ShapeView Reflexivity Escape.
@@ -203,7 +204,100 @@ Proof.
   - split; now apply ΣIrrelevanceTmEq.
 Qed.
 
+(** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
 
+Lemma NeNfconv {Γ k A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
+Proof.
+  intros ?? []; econstructor; tea. all: gen_typing.
+Qed.
+
+Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
+Proof.
+  intros ?? []; econstructor; tea. gen_typing.
+Qed.
+
+(** *** Irrelevance for Identity types *)
+
+Section IdIrrelevance.
+  Universe i j k l i' j' k' l' v.
+  Context {Γ lA A lA' A'} 
+    (IA : IdRedTy@{i j k l} Γ lA A) 
+    (IA' : IdRedTy@{i' j' k' l'} Γ lA' A')
+    (RA := LRId' IA)
+    (RA' := LRId' IA')
+    (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy)])
+    (eqv : equivLRPack@{k k' v} IA.(IdRedTy.tyRed) IA'.(IdRedTy.tyRed))
+    (lhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.lhs) ≅  IA'.(IdRedTy.lhs) : _ ])
+    (rhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.rhs) ≅  IA'.(IdRedTy.rhs) : _]).
+
+  Let APer := IA.(IdRedTy.tyPER).
+  #[local]
+  Existing Instance APer.
+
+  Lemma IdIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
+  Proof.
+    intros  [????] ; cbn in *; econstructor; tea; try now apply eqv.
+    - etransitivity; tea; now symmetry.
+    - apply eqv; etransitivity; tea; now symmetry.
+    - apply eqv; etransitivity; tea; now symmetry.
+  Qed.
+  
+  Lemma IdIrrelevanceProp t : IdProp IA t -> IdProp IA' t. 
+  Proof.
+    intros []; constructor; tea; cycle -1.
+    1: eapply NeNfconv; tea; unfold_id_outTy ; destruct IA'; escape; cbn in *; gen_typing.
+    all: apply eqv; tea.
+    all: etransitivity; [now symmetry|]; tea.
+  Qed.
+
+  Lemma IdIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
+  Proof.
+    intros []; cbn in *; unshelve econstructor; unfold_id_outTy; tea.
+    - now eapply redtmwf_conv.
+    - now eapply convtm_conv.
+    - now eapply IdIrrelevanceProp.
+  Qed.
+
+  Lemma IdIrrelevancePropEq t u : IdPropEq IA t u -> IdPropEq IA' t u.
+  Proof.
+    intros []; constructor ; tea; cycle -1.
+    1: eapply NeNfEqconv; tea; unfold_id_outTy ; destruct IA'; escape; cbn in *; gen_typing.
+    all: apply eqv; tea.
+    all: etransitivity; [now symmetry|]; tea.
+  Qed.
+  
+  Lemma IdIrrelevanceTmEq t u : [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA'].
+  Proof.
+    intros []; cbn in *; unshelve econstructor; unfold_id_outTy.
+    3,4: now eapply redtmwf_conv.
+    - now eapply convtm_conv.
+    - now eapply IdIrrelevancePropEq.
+  Qed.
+  
+End IdIrrelevance.
+
+Lemma IdIrrelevanceLRPack@{i j k l i' j' k' l' v}
+  {Γ lA A lA' A'} 
+  (IA : IdRedTy@{i j k l} Γ lA A) 
+  (IA' : IdRedTy@{i' j' k' l'} Γ lA' A')
+  (RA := LRId' IA)
+  (RA' := LRId' IA')
+  (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy)])
+  (eqv : equivLRPack@{k k' v} IA.(IdRedTy.tyRed) IA'.(IdRedTy.tyRed))
+  (lhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.lhs) ≅  IA'.(IdRedTy.lhs) : _ ])
+  (rhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.rhs) ≅  IA'.(IdRedTy.rhs) : _])
+  : equivLRPack@{k k' v} RA RA'.
+Proof.
+  pose proof (IA.(IdRedTy.tyPER)).
+  pose proof (symLRPack eqv).
+  assert (eqId' : [Γ |- IA'.(IdRedTy.outTy) ≅ IA.(IdRedTy.outTy)]) by now symmetry.
+  assert [IA'.(IdRedTy.tyRed) | Γ ||- IA'.(IdRedTy.lhs) ≅  IA.(IdRedTy.lhs) : _ ] by (apply eqv; now symmetry).
+  assert [IA'.(IdRedTy.tyRed) | Γ ||- IA'.(IdRedTy.rhs) ≅  IA.(IdRedTy.rhs) : _ ] by (apply eqv; now symmetry).
+  constructor.
+  - split; now apply IdIrrelevanceTyEq.
+  - split; now apply IdIrrelevanceTm.
+  - split; now apply IdIrrelevanceTmEq.
+Qed.
 
 (** *** Irrelevance for neutral types *)
 
@@ -231,17 +325,6 @@ Proof.
     all: now eapply convneu_conv; first [eassumption|symmetry; eassumption|gen_typing].
 Qed.
 
-(** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
-
-Lemma NeNfconv {Γ k A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
-Proof.
-  intros ?? []; econstructor; tea. all: gen_typing.
-Qed.
-
-Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
-Proof.
-  intros ?? []; econstructor; tea. gen_typing.
-Qed.
 
 
 Section NatIrrelevant.
@@ -391,13 +474,13 @@ Lemma LRIrrelevantPreds {lA lA'}
 Proof.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod]
+  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod | ?? IAP IAad IHPar]
     in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now apply UnivIrrelevanceLRPack.
   - destruct lrA'  ; try solve [destruct s] ; clear s.
     now unshelve eapply NeIrrelevanceLRPack.
-  - destruct lrA' as [| | ? A' ΠA' HAad'| | |] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -416,7 +499,7 @@ Proof.
     now unshelve eapply NatIrrelevanceLRPack.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now unshelve eapply EmptyIrrelevanceLRPack.
-  - destruct lrA' as [| | | | |? A' ΠA' HAad'] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -431,6 +514,13 @@ Proof.
     + intros; unshelve eapply IHcod.
       2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
+  - destruct lrA' as [| | | | | | ? A' IAP' IAad'] ; try solve [destruct s] ; clear s.
+    pose (IA := IdRedTy.from IAad); pose (IA' := IdRedTy.from IAad').
+    assert (IA'.(IdRedTy.outTy) = he.(IdRedTyEq.outTy)) as eId.
+    1: eapply whredty_det; constructor; try constructor; [apply IA'.(IdRedTy.red)| apply he.(IdRedTyEq.red)].
+    inversion eId; destruct he, IAP'; cbn in *; subst; clear eId.
+    eapply (IdIrrelevanceLRPack IA IA'); tea.
+    now eapply IHPar.
 Qed.
 
 
@@ -452,7 +542,7 @@ Proof.
     destruct (LRIrrelevantPreds IH _ _ _
              (LRAd.adequate shpRed)
              (LRAd.adequate (IHshp Δ ρ tΔ))
-             (LRTyEqRefl_ shpRed)) as [_ irrTmRed _].
+             (reflLRTyEq shpRed)) as [_ irrTmRed _].
     now eapply (snd (irrTmRed a)).
   + now destruct PA.
   + now destruct PA.
@@ -464,7 +554,7 @@ Proof.
     destruct (LRIrrelevantPreds IH _ _ _
                 (LRAd.adequate posRed)
                 (LRAd.adequate (IHpos Δ a ρ tΔ ra'))
-                (LRTyEqRefl_ posRed)) as [irrTyEq _ _].
+                (reflLRTyEq posRed)) as [irrTyEq _ _].
     eapply (fst (irrTyEq (pos[b .: ρ >> tRel]))).
     eapply PolyRed.posExt.
     1: exact (snd (irrTmRed b) rb).
@@ -479,22 +569,34 @@ Lemma LRIrrelevantCumTy {lA}
   (Γ : context) (A : term)
   : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
 Proof.
-  intros [ [] lrA ] ; cbn in lrA.
-  induction lrA as [? ? [l1 lt1] | ? | ? A [] ? IHdom IHcod|?? NEA|?? NEA| ?? [] ? IHdom IHcod].
-  - eapply LRU_. econstructor ; tea.
-  - eapply LRne_. exact neA.
-  - cbn in *. eapply LRPi'; unshelve econstructor.
+  intros lrA; revert IH; pattern lA, Γ, A, lrA; eapply LR_rect_TyUr ; clear lA Γ A lrA.
+  all: intros lA Γ A.
+  - intros [] ?; eapply LRU_; now econstructor.
+  - intros; now eapply LRne_.
+  - intros [] IHdom IHcod IH; cbn in *.
+    eapply LRPi'; unshelve econstructor.
     3,4: tea.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
-    1: now eapply PolyRed.from.
-    intros; now eapply IHcod.
-  - now eapply LRNat_.
-  - now eapply LREmpty_.
-  - cbn in *. eapply LRSig'; unshelve econstructor.
+    + intros; now eapply IHdom.
+    + intros; now eapply IHcod.
+  - intros; now eapply LRNat_.
+  - intros; now eapply LREmpty_.
+  - intros [] IHdom IHcod IH; cbn in *.
+    eapply LRSig'; unshelve econstructor.
     3,4: tea.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
-    1: now eapply PolyRed.from.
-    intros; now eapply IHcod.
+    + intros; now eapply IHdom.
+    + intros; now eapply IHcod.
+  - intros [] IHPar IH. specialize (IHPar IH).
+    cbn in *; eapply LRId'.
+    assert (eqv: equivLRPack tyRed IHPar).
+    1: eapply LRIrrelevantPreds; tea; try eapply reflLRTyEq; now eapply LRAd.adequate.
+    unshelve econstructor.
+    4-6: tea.
+    1-4: now apply eqv.
+    econstructor.
+    + intros ?? ?%eqv; apply eqv; now symmetry.
+    + intros ??? ?%eqv ?%eqv; apply eqv; now etransitivity.
 Qed.
 
 
@@ -530,7 +632,7 @@ Proof.
     destruct (LRIrrelevantPreds@{u i j k u i' j' k'} IrrRec0@{u i j k u i' j' k'} Γ t t
                 (lr1 : LRPackAdequate (LogRel@{u i j k} zero) lr1)
                 (lr2 : LRPackAdequate (LogRel@{u i' j' k'} zero) lr2)
-                (LRTyEqRefl_ lr1)) as [tyEq _ _].
+                (reflLRTyEq lr1)) as [tyEq _ _].
     exact (tyEq u).
 Qed.
 
@@ -805,6 +907,11 @@ Proof.
       eapply LRTmEqRedConv.
       2: eapply eqSnd.
       now eapply PolyRed.posExt.
+  - intros ??? [] ??? [????? hprop]; unshelve econstructor; unfold_id_outTy; cbn in *.
+    3,4: tea.
+    1: now symmetry.
+    destruct hprop; econstructor; tea.
+    now eapply NeNfEqSym.
 Qed.
 
 End Irrelevances.
