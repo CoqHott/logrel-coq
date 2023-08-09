@@ -40,6 +40,9 @@ Section RedDefinitions.
       tyred_whnf_red :> [ Γ |- A ⇒* B ]< l > ;
       tyred_whnf_whnf :> whnf B
     }.
+  Unset Printing Notations.
+  Print TypeRedWhnf.
+  Print red_ty.
 
   Record TermRedWhnf l (Γ : context) (A t u : term) : Type :=
     {
@@ -162,6 +165,7 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]< l >" := (ConvCtx (ta := ta) l Γ Δ) : typing
 (** ** Properties of the abstract interface *)
 
 Section GenericTyping.
+  
 
   Import DeclarativeTypingData.
 

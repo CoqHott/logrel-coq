@@ -28,10 +28,10 @@ Section Definitions.
           [ |- Γ ]< l > -> 
           [ Γ |- A ]< l > -> 
           [ |- Γ ,, A ]< l >
-  | ϝwfCon {Γ n} {ne : not_in_LCon (pi1 l) n} : 
+(*  | ϝwfCon {Γ n} {ne : not_in_LCon (pi1 l) n} : 
         [ |- Γ ]< l ,,l (ne, true) > ->
         [ |- Γ ]< l ,,l (ne, false) > ->
-        [ |- Γ ]< l >
+        [ |- Γ ]< l >*)
   (** **** Type well-formation *)
   with WfTypeDecl l : context -> term -> Type :=
       | wfTypeU {Γ} : 
@@ -242,6 +242,21 @@ Section Definitions.
   and   "[ Γ |- A ≅ B ]< l >" := (ConvTypeDecl l Γ A B)
   and   "[ Γ |- t ≅ t' : T ]< l >" := (ConvTermDecl l Γ T t t').
 
+Lemma ϝwfCon {l Γ n} {ne : not_in_LCon (pi1 l) n} : 
+        [ |- Γ ]< l ,,l (ne, true) > ->
+        [ |- Γ ]< l ,,l (ne, false) > ->
+        [ |- Γ ]< l >.
+Proof.
+  revert l n ne.
+  induction Γ ; intros.
+  - econstructor.
+  - inversion H ; subst.
+    inversion H0 ; subst.
+    econstructor.
+    + eapply IHΓ; eassumption.
+    + eapply ϝwfType ; eassumption.
+Qed.
+      
   (** (Typed) reduction is defined afterwards,
   rather than mutually with the other relations. *)
 
@@ -388,12 +403,12 @@ Section LConTranslation.
   Proof.
     intro IHΓ ; revert l' f.
     - induction IHΓ ; try now econstructor.
-      intros l' f.
+      (*intros l' f.
       case (decidInLCon l'.(pi1) n) ; intro H.
       + induction H ; [eapply IHIHΓ1 | eapply IHIHΓ2 ] ; now eapply LCon_le_in_LCon.
       + unshelve econstructor ; try assumption.
         * eapply IHIHΓ1 ; eapply LCon_le_up ; assumption.
-        * eapply IHIHΓ2 ; eapply LCon_le_up ; assumption.
+        * eapply IHIHΓ2 ; eapply LCon_le_up ; assumption.*)
     - intro IHA ; revert l' f.
       induction IHA ; try now econstructor.
       intros l' f.

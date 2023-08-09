@@ -92,8 +92,6 @@ Section TypingWk.
     - trivial.
     - intros ? ? IH.
       now econstructor.
-    - intros ? ? IH.
-      now econstructor.
     - intros ? Γ A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
@@ -374,9 +372,9 @@ Section Boundaries.
     induction 1.
     - discriminate.
     - injection H ; intros ; now subst.
-    - eapply ϝwfCon.
+(*    - eapply ϝwfCon.
       + now eapply IHWfContextDecl1. 
-      + now eapply IHWfContextDecl2.
+      + now eapply IHWfContextDecl2.*)
   Qed.
 
   Definition boundary_ctx_tip {l Γ A} : [|- Γ,, A]< l > -> [Γ |- A]< l >.
@@ -385,9 +383,9 @@ Section Boundaries.
     induction 1.
     - discriminate.
     - injection H ; intros ; now subst.
-    - eapply ϝwfType.
+    (*- eapply ϝwfType.
       + now eapply IHWfContextDecl1. 
-      + now eapply IHWfContextDecl2.
+      + now eapply IHWfContextDecl2.*)
   Qed.
 
   Definition boundary_tm_ctx {l Γ} {t A} :
@@ -449,7 +447,9 @@ Section Boundaries.
     [ Γ |- A ⇒* B ]< l > ->
     [ Γ |- A ]< l >.
   Proof.
-    apply @boundary_red_l with (K := istype).
+    Unset Printing Notations.
+    destruct 1.
+    eassumption.
   Qed.
 
 End Boundaries.
