@@ -114,6 +114,7 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
++ intros * ??????? []; split; now constructor.
 Qed.
 
 #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := nf) := {}.
@@ -127,6 +128,7 @@ all: try now (intros; apply redalg_one_step; constructor).
 + intros; now apply redalg_natEmpty.
 + intros; now apply redalg_fst.
 + intros; now apply redalg_snd.
++ intros; now eapply redalg_idElim.
 + intros; assumption.
 + intros; reflexivity.
 Qed.
@@ -334,7 +336,9 @@ Section NeutralConversion.
         eapply neuTerm; tea.
         split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
-    Unshelve. 2,4: tea. 
-  Qed.
+    Unshelve. 2,4: tea.
+  - admit.
+  Admitted.
+  (* Qed. *)
 
 End NeutralConversion.

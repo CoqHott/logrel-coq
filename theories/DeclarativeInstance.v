@@ -40,7 +40,7 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tId A x y => [× T = U, [Γ |- A : U], [Γ |- x : A] & [Γ |- y : A]]
     | tRefl A x => [× T = tId A x x, [Γ |- A] & [Γ |- x : A]]
     | tIdElim A x P hr y e => 
-      [× T = P[e .: y..], [Γ |- A], [Γ |- x : A], [Γ,, A,, tId A⟨↑⟩ x⟨↑⟩ (tRel 0) |- P], [Γ |- y : A] & [Γ |- e : tId A x y]]
+      [× T = P[e .: y..], [Γ |- A], [Γ |- x : A], [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P], [Γ |- hr : P[tRefl A x .: x..]], [Γ |- y : A] & [Γ |- e : tId A x y]]
   end.
 
 Lemma termGen Γ t A :
@@ -49,9 +49,6 @@ Lemma termGen Γ t A :
 Proof.
   induction 1.
   all: try (eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
-  + eexists ; split ; [..|left ; reflexivity].
-    cbn; prod_splitter; split; reflexivity + tea.
-    now rewrite <- 2!(wk1_ren_on Γ A).
   + destruct IHTypingDecl as [? [? [-> | ]]].
     * prod_splitter; tea; now right.
     * prod_splitter; tea; right; now eapply TypeTrans.
