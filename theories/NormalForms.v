@@ -67,6 +67,7 @@ Inductive isPosType : term -> Type :=
   | UnivPos {s} : isPosType (tSort s)
   | NatPos : isPosType tNat
   | EmptyPos : isPosType tEmpty
+  | IdPos {A x y} : isPosType (tId A x y)
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=

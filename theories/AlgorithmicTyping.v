@@ -34,6 +34,11 @@ Section Definitions.
       [ Γ |- A ≅ A'] ->
       [ Γ ,, A |- B ≅ B'] ->
       [ Γ |- tSig A B ≅h tSig A' B']
+    | typeIdCongAlg {Γ A A' x x' y y'} :
+      [ Γ |- A ≅ A'] ->
+      [ Γ |- x ≅ x' : A] ->
+      [ Γ |- y ≅ y' : A] ->
+      [ Γ |- tId A x y ≅h tId A' x' y']
     | typeNeuConvAlg {Γ M N T} :
       [ Γ |- M ~ N ▹ T] -> 
       [ Γ |- M ≅h N]
@@ -66,6 +71,20 @@ Section Definitions.
     | neuSndCongAlg {Γ m n A B} :
       [ Γ |- m ~h n ▹ tSig A B ] ->
       [ Γ |- tSnd m ~ tSnd n ▹ B[(tFst m)..] ]
+    | neuIdEmlimCong {Γ A A' A'' x x' x'' P P' hr hr' y y' y'' e e'} :
+      [Γ |- e ~h e' ▹ tId A'' x'' y''] ->
+      (* [Γ |- A'' ] -> *)
+      (* [Γ |- A'' ≅ A] -> *)
+      (* [Γ |- x'' ◃ A] -> *)
+      (* [Γ |- x'' ≅ x : A] -> *)
+      (* [Γ |- y'' ◃ A] -> *)
+      (* [Γ |- y'' ≅ y : A] -> *)
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+      [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
+      [Γ |- y ≅ y' : A] ->
+      [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' ▹ P[e .: y..] ]
   (** **** Conversion of neutral terms at a type reduced to weak-head normal form*)
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
@@ -111,6 +130,15 @@ Section Definitions.
       [ Γ |- tFst p ≅ tFst q : A] -> 
       [ Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] -> 
       [ Γ |- p ≅h q : tSig A B]
+    | termIdCongAlg {Γ A A' x x' y y'} :
+      [Γ |- A ≅ A' : U] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ |- y ≅ y' : A] ->
+      [Γ |- tId A x y ≅h tId A' x' y' : U]
+    | termIdReflCong {Γ A A' A'' x x' y y'} :
+      [Γ |- A ≅ A'] ->
+      [Γ |- x ≅ x' : A] ->
+      [Γ |- tRefl A x ≅h tRefl A' x' : tId A'' y y' ]
     | termNeuConvAlg {Γ m n T P} :
       [Γ |- m ~ n ▹ T] ->
       isPosType P ->
@@ -142,6 +170,11 @@ Section Definitions.
       [Γ |- A ] ->
       [Γ,, A |- B] ->
       [Γ |- tSig A B]
+    | wfTypeId {Γ A x y} :
+      [Γ |- A] ->
+      [Γ |- x ◃ A] ->
+      [Γ |- y ◃ A] ->
+      [Γ |- tId A x y]
     | wfTypeUniv {Γ A} :
       ~ isCanonical A ->
       [Γ |- A ▹h U] ->
@@ -198,6 +231,23 @@ Section Definitions.
     | infSnd {Γ A B p} :
       [Γ |- p ▹h tSig A B] ->
       [Γ |- tSnd p ▹ B[(tFst p)..]]
+    | infId {Γ A x y} :
+      [Γ |- A ◃ U] ->
+      [Γ |- x ◃ A] ->
+      [Γ |- y ◃ A] ->
+      [Γ |- tId A x y ▹ U]
+    | infRefl {Γ A x} :
+      [Γ |- A] ->
+      [Γ |- x ◃ A] ->
+      [Γ |- tRefl A x ▹ tId A x x]
+    | infIdElim {Γ A x P hr y e} :
+      [Γ |- A] ->
+      [Γ |- x ◃ A] ->
+      [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ |- hr ◃ P[tRefl A x .: x..]] ->
+      [Γ |- y ◃ A] ->
+      [Γ |- e ◃ tId A x y] ->
+      [Γ |- tIdElim A x P hr y e ▹ P[e .: y..]]
   (** **** Inference of a type reduced to weak-head normal form*)
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
@@ -404,8 +454,9 @@ Section TypingWk.
       econstructor.
       1: eauto.
       now eapply IHB.
+    - intros; now econstructor.
     - intros.
-      now econstructor.  
+      now econstructor.
     - intros * ? ? ?.
       eapply convne_meta_conv.
       1: econstructor ; eauto using in_ctx_wk.
@@ -445,6 +496,11 @@ Section TypingWk.
     - intros ??? A? ? IH *; cbn.
       rewrite (subst_ren_wk_up (A:=A)).
       econstructor; now eapply IH.
+    - intros * ? IHe (*?? ?? ??*) ?? ?? ? IHp **; erewrite <-2!wk_idElim, subst_ren_wk_up2.
+      econstructor; eauto.
+      + rewrite 2!(wk_up_wk1 ρ).
+        eapply IHp; constructor; tea.
+      + rewrite wk_refl, <- subst_ren_wk_up2; eauto.
     - intros.
       econstructor.
       + eauto.
@@ -483,6 +539,8 @@ Section TypingWk.
       1,2: gen_typing.
       1: eauto.
       rewrite wk_fst, <- subst_ren_wk_up; eauto.
+    - intros; econstructor; eauto.
+    - intros; econstructor; eauto.
     - intros.
       econstructor.
       + eauto.
@@ -516,6 +574,7 @@ Section TypingWk.
       econstructor.
       + now eauto.
       + now eapply IHB.
+    - intros; rewrite <- wk_Id; econstructor; eauto.
     - constructor.
       + now intros ?%isCanonical_ren.
       + eauto. 
@@ -578,6 +637,11 @@ Section TypingWk.
       rewrite <- wk_snd, (subst_ren_wk_up (A:=A)).
       econstructor.
       now eapply IH.
+    - intros; rewrite <- wk_Id; econstructor; eauto.
+    - intros; rewrite <- wk_refl; econstructor; eauto.
+    - intros; erewrite <- wk_idElim, subst_ren_wk_up2; econstructor; eauto.
+      + rewrite 2!(wk_up_wk1 ρ); eauto.
+      + rewrite wk_refl, <- subst_ren_wk_up2; eauto.
     - intros.
       econstructor.
       + eauto.
@@ -693,6 +757,8 @@ Proof.
     inversion Hconv; subst; clear Hconv; refold.
     apply IH in H3.
     now inversion H3.
+  - intros * ? IH (*? _ ? _ ? _*) ? _ ? _ ? _ ? _ ? _ * Hconv.
+    inversion Hconv; now subst.
   - intros * ? IH ???? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H2 as ->.
@@ -746,6 +812,9 @@ Proof.
     inversion Hconv; subst; refold.
     apply IH in H3; try constructor.
     now inversion H3.
+  - intros * ?????? * Hconv; inversion Hconv; now subst.
+  - intros * ???? * Hconv; now inversion Hconv.
+  - intros * ???????????? * Hconv; now inversion Hconv.
   - intros * ? IH ?? ?? Hconv.
     inversion Hconv ; subst ; clear Hconv ; refold.
     eapply IH in H3 ; subst.

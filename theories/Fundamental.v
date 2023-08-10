@@ -797,13 +797,12 @@ Section Fundamental.
     Unshelve. all: tea; try irrValid.
     3,4: eapply IdValid; irrValid.
     1: eapply validSnoc; now eapply idElimMotiveCtxIdValid.
-    assert (h : forall t, t⟨@wk1 Γ A'⟩ = t⟨@wk1 Γ A⟩) by reflexivity.
-      eapply convCtx2'; tea.
-      1: eapply convCtx1; tea; [eapply symValidEq; irrValid| ].
-      1,3: now eapply idElimMotiveCtxIdValid.
-      eapply idElimMotiveCtxIdCongValid; tea; irrValid.
-      Unshelve.
-      3: eapply idElimMotiveCtxIdValid. all: irrValid.
+    eapply convCtx2'; tea.
+    1: eapply convCtx1; tea; [eapply symValidEq; irrValid| ].
+    1,3: now eapply idElimMotiveCtxIdValid.
+    eapply idElimMotiveCtxIdCongValid; tea; irrValid.
+    Unshelve.
+    3: eapply idElimMotiveCtxIdValid. all: irrValid.
   Qed.
 
   Lemma FundTmEqIdElimRefl : forall (Γ : context) (A x P hr y A' z : term),

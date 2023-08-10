@@ -455,3 +455,5 @@ Lemma wk_comp_assoc {Γ Δ Ξ ζ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) (ρ'' : ζ 
 Proof. now bsimpl. Qed.
 
 
+Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
+Proof. intros; now rewrite 2!wk1_ren_on. Qed.

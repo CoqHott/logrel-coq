@@ -350,6 +350,40 @@ Section Boundary.
   Lemma shift_subst_eq t a : t⟨↑⟩[a..] = t.
   Proof. now asimpl. Qed.
 
+  Lemma idElimMotiveCtx {Γ A x} : 
+    [Γ |- A] ->
+    [Γ |- x : A] ->
+    [|- (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
+  Proof.
+    intros; assert [|- Γ] by boundary.
+    assert [|- Γ,, A] by now econstructor.
+    econstructor; tea.
+    econstructor.
+    1: now eapply wft_wk. 
+    1:  eapply ty_wk; tea; econstructor; tea.
+    rewrite wk1_ren_on; now eapply ty_var0.
+  Qed.
+
+  Lemma idElimMotiveCtxConv {Γ Γ' A A' x x'} :
+    [|- Γ ≅ Γ'] ->
+    [Γ |- A ≅ A'] ->
+    [Γ |- x ≅ x' : A] ->
+    [ |- (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)] ->
+    [ |- (Γ',, A'),, tId A'⟨@wk1 Γ' A'⟩ x'⟨@wk1 Γ' A'⟩ (tRel 0)] ->
+    [ |- (Γ',, A'),, tId A'⟨@wk1 Γ' A'⟩ x'⟨@wk1 Γ' A'⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
+  Proof.
+    intros.
+    assert [|- Γ] by boundary.
+    assert [Γ |- A] by boundary.
+    eapply convCtxSym0; tea.
+    econstructor.
+    1: econstructor; tea; now eapply ctx_refl.
+    erewrite (wk1_irr (t:=A')), (wk1_irr (t:=x')); econstructor.
+    1,2: eapply typing_wk; tea; gen_typing.
+    rewrite wk1_ren_on; eapply TermRefl; now eapply ty_var0.
+  Qed.
+
+
   Let PCon (Γ : context) := True.
   Let PTy (Γ : context) (A : term) := True.
   Let PTm (Γ : context) (A t : term) := [Γ |- A].
@@ -499,23 +533,9 @@ Section Boundary.
       1: now econstructor.
       econstructor.
       1: econstructor; tea; try eapply wfTermConv; refold; tea.
-      + assert [ |- (Γ,, A'),, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0)].
-        1:{
-          econstructor; tea.
-          econstructor.
-          1: now eapply wft_wk. 
-          1:  eapply ty_wk; tea; econstructor; tea.
-          rewrite wk1_ren_on; now eapply ty_var0.
-        }
-        eapply stability0; tea.
-        eapply convCtxSym0; tea.
-        1: now boundary.
-        econstructor.
-        1: econstructor; tea; now eapply ctx_refl.
-        assert (h : forall t, t⟨@wk1 Γ A'⟩ = t⟨@wk1 Γ A⟩) by reflexivity.
-        rewrite 2!h; econstructor.
-        1,2: eapply typing_wk; tea; gen_typing.
-        rewrite wk1_ren_on; eapply TermRefl; now eapply ty_var0.
+      + eapply stability0; tea.
+        2: eapply idElimMotiveCtxConv; tea; try now boundary + eapply ctx_refl.
+        1,2: eapply idElimMotiveCtx; tea; now eapply wfTermConv.
       + eapply typing_subst2; tea.
         cbn; rewrite 2!wk1_ren_on, 2!shift_subst_eq.
         now econstructor.
