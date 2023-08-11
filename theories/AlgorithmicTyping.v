@@ -232,7 +232,7 @@ Section Definitions.
       [Γ |- p ▹h tSig A B] ->
       [Γ |- tSnd p ▹ B[(tFst p)..]]
     | infId {Γ A x y} :
-      [Γ |- A ◃ U] ->
+      [Γ |- A ▹h U] ->
       [Γ |- x ◃ A] ->
       [Γ |- y ◃ A] ->
       [Γ |- tId A x y ▹ U]

@@ -967,7 +967,6 @@ Section BundledTyping.
       split;[eauto|now econstructor].
     - intros * ? ihA ? ihx ? ihy ?.
       edestruct ihA as []; tea.
-      1: now constructor.
       assert [Γ |-[de] A] by now econstructor.
       split; [eauto|].
       econstructor; tea; [now eapply ihx | now eapply ihy].

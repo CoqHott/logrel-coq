@@ -99,6 +99,12 @@ Section RedImplemComplete.
       intros; eapply Hsubst.
       eapply TermConv; refold; tea.
       now econstructor.
+  - cbn in H.
+    eapply IHπ in H as [T [[? [[->]]]%termGen' Hsubst]].
+      eexists; split; tea.
+      intros; eapply Hsubst.
+      eapply TermConv; refold; tea.
+      econstructor; tea; eapply TypeRefl + eapply TermRefl; refold; tea.
   Qed.
 
   Lemma isType_ty Γ T t :
@@ -205,6 +211,14 @@ Section RedImplemComplete.
       eapply well_typed_zip in Hty as (?&[??Hu]).
       eapply Hu, RedConvTeC, subject_reduction ; tea.
       now do 2 econstructor.
+  - cbn in *; split;[|easy].
+    eapply IH.
+    + do 2 red; cbn.
+      left; constructor; eapply zip_ored; constructor.
+    + cbn.
+      eapply well_typed_zip in Hty as [? [? Hu]] .
+      eapply Hu, RedConvTeC, subject_reduction; tea.
+      eapply redalg_one_step; constructor.
   - cbn in *.
     split ; [|easy].
     eapply IH ; cbn in *.
@@ -224,8 +238,8 @@ Section RedImplemComplete.
     all: rewrite wh_red_equation_1; cbn.
     all: split ; [|easy].
     - eapply wh_red_stack_complete ; tea.
-    - inversion w ; subst ; clear w.
-      6: eapply wh_red_stack_complete ; now econstructor.
+    - inversion w ; subst ; clear w; cycle -1.
+      1: eapply wh_red_stack_complete ; now econstructor.
       all: econstructor ; cbn ; red.
       all: simp wh_red_stack ; cbn.
       all: now econstructor.
@@ -296,6 +310,7 @@ Definition whne_ne_view1 {N} (w : whne N) : ne_view1 N :=
   | whne_tEmptyElim _ => ne_view1_dest _ (eEmptyElim _)
   | whne_tFst _ => ne_view1_dest _ eFst
   | whne_tSnd _ => ne_view1_dest _ eSnd
+  | whne_tIdElim _ => ne_view1_dest _ (eIdElim _ _ _ _ _)
   end.
 
 Lemma whne_ty_view1 {N} (w : whne N) : build_ty_view1 N = ty_view1_small (whne_ne_view1 w).
@@ -324,14 +339,9 @@ Lemma whne_nf_view3 P m n (wP : isPosType P) (wm : whne m) (wn : whne n) :
 Proof.
   simp build_nf_view3.
   destruct wP ; cbn.
+  2-4: unshelve erewrite whne_nf_view1 ; tea; cbn; now rewrite (whne_nf_view1 wn).
   - rewrite whne_ty_view2 ; cbn ; tea.
     reflexivity.
-  - unshelve erewrite whne_nf_view1 ; tea.
-    cbn.
-    now rewrite (whne_nf_view1 wn).
-  - unshelve erewrite whne_nf_view1 ; tea.
-    cbn.
-    now rewrite (whne_nf_view1 wn).
   - unshelve erewrite whne_ty_view1 ; tea.
     reflexivity.
 Qed.
@@ -395,6 +405,16 @@ Proof.
     cbn; patch_rec_ret; econstructor.
     1: exact (IHB tt).
     now econstructor.
+  - intros * hA [ihA] hx [ihx] hy [ihy] **; cbn in *.
+    unfold graph.
+    simp conv conv_ty_red.
+    econstructor.
+    1: exact (ihA tt).
+    econstructor.
+    1: exact ihx.
+    cbn; patch_rec_ret; econstructor.
+    1: exact ihy.
+    now econstructor.
   - intros * HM [IHM []] **.
     unfold graph.
     simp conv conv_ty_red ; cbn.
@@ -451,6 +471,22 @@ Proof.
     econstructor.
     1: exact (IH tt).
     econstructor.
+  - intros * ? [ihe []] ? [ihA] ? [ihx] ? [ihP] ? [ihhr] ? [ihy] **.
+    unfold graph.
+    simp conv conv_ne; cbn.
+    econstructor.
+    1: exact (ihe tt).
+    econstructor.
+    1: exact (ihA tt).
+    econstructor.
+    1: exact ihx.
+    econstructor.
+    1: do 2 erewrite <- Weakening.wk1_ren_on; exact (ihP tt).
+    econstructor.
+    1: exact ihhr.
+    cbn; patch_rec_ret; econstructor.
+    1: exact ihy.
+    now econstructor.
   - intros * ? [IHm []] **.
     unfold graph.
     simp conv conv_ne_red ; cbn.
@@ -519,6 +555,24 @@ Proof.
     cbn; patch_rec_ret; econstructor.
     1: exact ihSnd.
     now constructor.
+  - intros * ? [ihA] ? [ihx] ? [ihy] **.
+    unfold graph.
+    simp conv conv_tm_red ; cbn.
+    econstructor.
+    1: exact ihA.
+    econstructor.
+    1:exact ihx.
+    cbn; patch_rec_ret; econstructor.
+    1: exact ihy.
+    now econstructor.
+  - intros * ? [ihA] ? [ihx] **.
+    unfold graph.
+    simp conv conv_tm_red ; cbn.
+    econstructor.
+    1: exact (ihA tt).
+    cbn; patch_rec_ret; econstructor.
+    1: exact ihx.
+    now econstructor.
   - intros * ? [IHm []] wP **.
     unfold graph.
     simp conv conv_tm_red ; cbn.
@@ -543,6 +597,7 @@ all: try solve [case c ; constructor].
 - eapply (ne_view1_dest _ (eEmptyElim _)).
 - eapply (ne_view1_dest _ eFst).
 - eapply (ne_view1_dest _ eSnd).
+- eapply (ne_view1_dest _ (eIdElim _ _ _ _ _)).
 Defined.
 
 Lemma can_ty_view1_small T (c : ~ isCanonical T) :
@@ -552,6 +607,13 @@ Proof.
   all: try solve [case c ; constructor].
   all: reflexivity.
 Qed.
+
+Ltac patch_rec_ret :=
+  try (unfold rec;
+  match goal with 
+  | |- orec_graph _ (_rec _ (fun _ : ?Bx => _)) ?hBa => 
+    let Ba := type of hBa in change Bx with Ba
+  end).
 
 Let PTy Γ A := forall v, graph typing (wf_ty_state;Γ;v;A) (ok tt).
 Let PInf Γ A t := forall v, graph typing (inf_state;Γ;v;t) (ok A).
@@ -568,6 +630,14 @@ Proof.
   all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
   (* Well formed types *)
   1-5:repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
+  - cbn in *.
+    econstructor.
+    1: exact (g1 tt).
+    econstructor.
+    1: exact g0.
+    cbn; patch_rec_ret; econstructor.
+    1: exact g.
+    now econstructor.
   - unshelve erewrite can_ty_view1_small ; tea.
     cbn.
     econstructor.
@@ -635,6 +705,31 @@ Proof.
   - econstructor.
     1: exact (g tt whnf_tSig).
     econstructor.
+  - econstructor.
+    1: exact (g1 tt whnf_tSort).
+    econstructor.
+    1: exact g0.
+    econstructor.
+    1: exact g.
+    now econstructor.
+  - econstructor.
+    1: exact (g0 tt).
+    econstructor.
+    1: exact g.
+    now econstructor.
+  - econstructor.
+    1: exact (g4 tt).
+    econstructor.
+    1: exact g3.
+    econstructor.
+    1: erewrite <- 2!(Weakening.wk1_ren_on) ; exact (g2 tt).
+    econstructor.
+    1: exact g1.
+    econstructor.
+    1: exact g0.
+    econstructor.
+    1: exact g.
+    now econstructor.
   - econstructor.
     1: exact (g v).
     cbn.

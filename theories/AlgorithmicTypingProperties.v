@@ -33,64 +33,10 @@ Proof.
     now eapply redty_red, red_ty_compl_univ_r.
   }
   eapply BundledTypingInduction.
-  all: try solve [econstructor].
-  - intros.
-    econstructor.
-    + intros Hcan ; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros.
-    prod_hyp_splitter.
-    now econstructor.
-  - intros * ????? Hconv.
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    now cbn in Hconv.
-  - intros.
-    econstructor.
-    + intros Hcan ; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros * ? Hconv.
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    now cbn in Hconv.
-  - intros * ??? Hconv.
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    now cbn in Hconv.
-  - intros.
-    econstructor.
-    + intros Hcan ; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros.
-    econstructor.
-    + intros Hcan ; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros * ? [] ? [] **.
-    econstructor; eauto.
-  - intros * ????? ???? hconv.
-    unshelve eapply ty_conv_inj in hconv.
-    1,2: constructor.
-    cbn in hconv; destruct hconv.
-  - intros * ??? hconv.
-    econstructor.
-    + intros Hcan; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
-  - intros * ??? hconv.
-    econstructor.
-    + intros Hcan; inversion Hcan.
-    + econstructor.
-      1: now econstructor.
-      now eapply redty_red, red_ty_compl_univ_r.
+  all: try solve [
+    econstructor |
+    intros; econstructor; [intros Hcan; inversion Hcan| econstructor;[now econstructor|now eapply redty_red, red_ty_compl_univ_r]]|
+    intros; match goal with H : [_ |- _ ≅ _] |- _ => unshelve eapply ty_conv_inj in H; try now econstructor; now cbn in H end ].
   - intros * ? [IH] **; subst.
     eapply IH.
     eapply subject_reduction_type ; tea.
@@ -121,16 +67,11 @@ Module AlgorithmicTypingProperties.
 
   #[export, refine] Instance WfTypeAlgProperties : WfTypeProperties (ta := bn) := {}.
   Proof.
-    - intros_bn.
-      now eapply algo_typing_wk.
-    - intros_bn.
-      now econstructor.
-    - intros_bn.
-      now econstructor.
-    - intros_bn.
-      now econstructor.
-    - intros.
-      now eapply algo_typing_small_large.
+    all: cycle -1.
+    1: intros; now eapply algo_typing_small_large.
+    1: intros_bn; now eapply algo_typing_wk.
+    1-3: intros_bn; now econstructor.
+    intros_bn; econstructor; tea; econstructor; tea; now eapply algo_conv_complete.
   Qed.
 
   #[export, refine] Instance TypingAlgProperties : TypingProperties (ta := bn) := {}.
@@ -215,6 +156,29 @@ Module AlgorithmicTypingProperties.
       eapply TermConv; refold; [|now symmetry].
       econstructor. eapply TermRefl.
       now eapply inf_conv_decl.
+    - intros_bn.
+      + econstructor; tea.
+        2,3: econstructor ; tea; now eapply algo_conv_complete.
+        econstructor; tea; now eapply red_ty_compl_univ_r.
+      + now do 2 econstructor.
+    - intros * tyA tyx.
+      pose proof tyA as ?%bn_alg_typing_sound.
+      pose proof tyx as ?%bn_typing_sound.
+      destruct tyA, tyx.
+      do 3 (econstructor; tea); now eapply algo_conv_complete.
+    - intros * tyA tyx tyP tyhr tyy tye.
+      pose proof tyA as ?%bn_alg_typing_sound.
+      pose proof tyx as ?%bn_typing_sound.
+      pose proof tyP as ?%bn_alg_typing_sound.
+      pose proof tyhr as ?%bn_typing_sound.
+      pose proof tyy as ?%bn_typing_sound.
+      pose proof tye as ?%bn_typing_sound.
+      destruct tyA, tyx, tyP, tyhr, tyy, tye.
+      econstructor; tea.
+      + econstructor; tea; econstructor; tea.
+        all: now eapply algo_conv_complete.
+      + econstructor; eapply typing_subst2; tea.
+        cbn; now rewrite 2!wk1_ren_on, 2!shift_subst_eq.
     - intros_bn.
       1: eassumption.
       etransitivity ; tea.
@@ -353,6 +317,44 @@ Module AlgorithmicTypingProperties.
       2: now symmetry.
       eapply TermRefl; eapply wfTermConv; refold; [|now symmetry].
       econstructor; now eapply inf_conv_decl.
+    - intros * tyA tyx tyP tyhr tyy tyA' tyz convA convxy convxz.
+      pose proof tyA as ?%bn_alg_typing_sound.
+      pose proof tyx as ?%bn_typing_sound.
+      pose proof tyP as ?%bn_alg_typing_sound.
+      pose proof tyhr as ?%bn_typing_sound.
+      pose proof tyy as ?%bn_typing_sound.
+      pose proof convA as ?%bn_conv_sound.
+      pose proof convxy as ?%bn_conv_sound.
+      pose proof convxz as ?%bn_conv_sound.
+      destruct tyA, tyx, tyP, tyhr, tyy, tyA', tyz, convA, convxy, convxz.
+      econstructor; tea.
+      2: eapply redalg_one_step; constructor.
+      assert [Γ |-[ de ] tId A' z z ≅ tId A x y].
+      1:{
+        econstructor; symmetry; tea.
+        1,2: econstructor; tea.
+        etransitivity; tea; now symmetry.
+      }
+      econstructor; tea.
+      + econstructor; tea; econstructor; tea.
+        4: econstructor; tea; econstructor; tea.
+        all: eapply algo_conv_complete; tea.
+        now etransitivity.
+      + econstructor; eapply typing_subst2; tea.
+        cbn; rewrite 2!wk1_ren_on, 2!shift_subst_eq.
+        econstructor; [econstructor; tea|tea].
+        now econstructor.
+    - intros * tyA tyx tyP tyhr tyy [? tye].
+      pose proof tyP as ?%bn_alg_typing_sound.
+      pose proof tyy as ?%bn_typing_sound.
+      pose proof tye as ?%bn_typing_sound.
+      revert tyA tyx tyP tyhr tyy tye; intros_bn.
+      2: now eapply redalg_idElim.
+      econstructor; tea.
+      + econstructor; tea; econstructor; tea.
+        all: now eapply algo_conv_complete.
+      + econstructor; eapply typing_subst2; tea.
+        cbn; now rewrite 2!wk1_ren_on, 2!shift_subst_eq.
     - intros_bn.
       eapply algo_conv_sound in bun_conv_ty ; tea.
       econstructor ; tea.

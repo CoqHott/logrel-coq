@@ -946,6 +946,22 @@ Proof.
   all: now cbn in Hconv.
 Qed.
 
+Lemma id_isId Γ t {A x y} :
+  [Γ |-[de] t : tId A x y] ->
+  whnf t ->
+  whne t + ∑ A' x', t = tRefl A' x'.
+Proof.
+  intros Hty wh; destruct wh; try easy.
+  all: eapply termGen' in Hty; cbn in *; exfalso.
+  all: prod_hyp_splitter ; try easy; subst.
+  all:
+    match goal with
+      H : [_ |-[de] _ ≅ tId _ _ _] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+    end; try econstructor.
+  all: now cbn in Hconv.
+Qed.
+
+
 Lemma neutral_isNeutral Γ A t :
   [Γ |-[de] t : A] ->
   whne A ->
