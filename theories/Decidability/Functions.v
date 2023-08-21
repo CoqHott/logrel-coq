@@ -169,20 +169,20 @@ Arguments rec {_ _ _ _ _ _}.
 Equations wh_red_stack : term × stack ⇀[empty_store] term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
   wh_red_stack (?(tRel n)       ,π)                           (tm_view1_rel n) := ret (zip (tRel n) π) ;
-  wh_red_stack (?(zip1 t s)     ,π)                           (tm_view1_dest t s) := id <*> rec (t,cons s π) ;
+  wh_red_stack (?(zip1 t s)     ,π)                           (tm_view1_dest t s) := rec (t,cons s π) ;
   wh_red_stack (?(tLambda A t)  ,nil)                         (tm_view1_fun A t) := ret (tLambda A t) ;
-  wh_red_stack (?(tLambda A t)  ,cons (eApp u) π)             (tm_view1_fun A t) := id <*> rec (t[u..], π) ;
+  wh_red_stack (?(tLambda A t)  ,cons (eApp u) π)             (tm_view1_fun A t) := rec (t[u..], π) ;
   wh_red_stack (_               ,cons _ _)                    (tm_view1_fun _ _) := undefined ;
   wh_red_stack (t               ,nil)                         (tm_view1_nat _) := ret t ;
-  wh_red_stack (?(tZero)        ,cons (eNatElim _ hz _) π)    (tm_view1_nat eZero) := id <*> rec (hz,π) ;
-  wh_red_stack (?(tSucc t)      ,cons (eNatElim P hz hs) π)   (tm_view1_nat (eSucc t)) := id <*> rec (hs ,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
+  wh_red_stack (?(tZero)        ,cons (eNatElim _ hz _) π)    (tm_view1_nat eZero) := rec (hz,π) ;
+  wh_red_stack (?(tSucc t)      ,cons (eNatElim P hz hs) π)   (tm_view1_nat (eSucc t)) := rec (hs ,cons (eApp t) (cons (eApp (tNatElim P hz hs t)) π)) ;
   wh_red_stack (t               ,cons _ _)                    (tm_view1_nat _) := undefined ;
   wh_red_stack (?(tPair A B a b),nil)                         (tm_view1_sig A B a b) := ret (tPair A B a b) ;
-  wh_red_stack (?(tPair A B a b),cons eFst π)                 (tm_view1_sig A B a b) := id <*> rec (a , π) ;
-  wh_red_stack (?(tPair A B a b),cons eSnd π)                 (tm_view1_sig A B a b) := id <*> rec (b , π) ;
+  wh_red_stack (?(tPair A B a b),cons eFst π)                 (tm_view1_sig A B a b) := rec (a , π) ;
+  wh_red_stack (?(tPair A B a b),cons eSnd π)                 (tm_view1_sig A B a b) := rec (b , π) ;
   wh_red_stack (?(tPair A B a b),cons _ π)                    (tm_view1_sig A B a b) := undefined ;
   wh_red_stack (?(tRefl A x)    ,nil)                         (tm_view1_id A x) := ret (tRefl A x) ;
-  wh_red_stack (?(tRefl A x)    ,cons (eIdElim _ _ _ hr _) π) (tm_view1_id A x) := id <*> rec (hr, π) ;
+  wh_red_stack (?(tRefl A x)    ,cons (eIdElim _ _ _ hr _) π) (tm_view1_id A x) := rec (hr, π) ;
   wh_red_stack (_               ,cons _ _)                    (tm_view1_id _ _) := undefined ;
   wh_red_stack (t               ,nil)                         (tm_view1_type _) := ret t ;
   wh_red_stack (t               ,cons s _)                    (tm_view1_type _) := undefined.
@@ -631,12 +631,12 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
     | ty_view1_ty (eSort s) := success ;
     | ty_view1_ty (eProd A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
-        id <*> rec (wf_ty_state;Γ,,A;tt;B) ;
+        rec (wf_ty_state;Γ,,A;tt;B) ;
     | ty_view1_ty (eNat) := success ;
     | ty_view1_ty (eEmpty) := success ;
     | ty_view1_ty (eSig A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
-        id <*> rec (wf_ty_state;Γ,,A;tt;B) ;
+        rec (wf_ty_state;Γ,,A;tt;B) ;
     | ty_view1_ty (eId A x y) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
         rec (check_state;Γ;A;x) ;;

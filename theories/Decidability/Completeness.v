@@ -629,7 +629,7 @@ Proof.
   all: unfold graph in *.
   all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
   (* Well formed types *)
-  1-5:repeat match goal with | |- orec_graph typing _ _ => econstructor ; try eauto ; cbn end.
+  1-5:repeat match goal with | |- orec_graph typing _ _ => patch_rec_ret ; econstructor ; try eauto ; cbn end.
   - cbn in *.
     econstructor.
     1: exact (g1 tt).
