@@ -146,12 +146,12 @@ Section PolyValidity.
     : PolyRedEq PABt A B[u]⇑.
   Proof.
     constructor.
-    - intros; eapply LRTyEqRefl_.
+    - intros; eapply reflLRTyEq.
     - intros; irrelevance0; rewrite liftSubst_scons_eq; [reflexivity|].
       unshelve eapply PolyRed.posExt; cycle 1; tea.
       + eapply Rt; now irrelevanceRefl.
       + eapply Ru; now irrelevanceRefl.
-      + eapply Rtu; try eapply LREqTermRefl_; now irrelevanceRefl.
+      + eapply Rtu; try eapply reflLRTmEq; now irrelevanceRefl.
   Qed.
   
   Context {l Γ F G} (VΓ : [||-v Γ])
@@ -191,7 +191,7 @@ Section PolyValidity.
     - intros ?? ρ wfΔ' ha; irrelevance0; rewrite eq_subst_2.
       1: reflexivity.
       unshelve epose proof (Vabwkσ := consWkSubstSEq' VF Vσ (reflSubst _ _ Vσ) ρ wfΔ' ha _).
-      2: now eapply LREqTermRefl_.
+      2: now eapply reflLRTmEq.
       unshelve eapply validTyEq; cycle 2; tea. 
       now eapply consWkSubstS.
   Qed.
@@ -206,7 +206,7 @@ Section PolyValidity.
     - intros ?? ρ wfΔ' ha; irrelevance0; rewrite eq_subst_2.
       1: reflexivity.
       unshelve epose proof (Vabwkσ := consWkSubstSEq' VF Vσ Vσσ' ρ wfΔ' ha _).
-      2: now eapply LREqTermRefl_.
+      2: now eapply reflLRTmEq.
       eapply validTyExt; tea.
       eapply consWkSubstS; tea.
       eapply LRTmRedConv; tea.

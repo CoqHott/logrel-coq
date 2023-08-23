@@ -355,7 +355,7 @@ Section ProjRed.
       instAllValid Vσ Vσ' Vσσ'.
       pose (RΣinv := invLRΣ RVΣ); normRedΣin REVp; fold subst_term in *.
       destruct (fstRedEq RΣinv RVF REVp).
-      eapply LREqTermHelper; tea; eapply LRTyEqRefl_.
+      eapply LREqTermHelper; tea; eapply reflLRTyEq.
   Qed.  
   
   Lemma fstCongValid {p p'} 
@@ -521,7 +521,7 @@ Section PairRed.
         1: now eapply redtywf_refl.
         1: now eapply redtm_fst_beta.
         1: now eapply redtmwf_refl.
-        eapply escapeEqTerm; now eapply LREqTermRefl_.
+        eapply escapeEqTerm; now eapply reflLRTmEq.
       * enough [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]].
         1: transitivity b; tea; now symmetry.
         eapply convtm_conv; tea.
@@ -529,7 +529,7 @@ Section PairRed.
         1: now eapply redty_refl.
         1: eapply redtm_conv; [| now symmetry]; now eapply redtm_snd_beta.
         1: now eapply redtm_refl.
-        eapply escapeEqTerm; now eapply LREqTermRefl_.
+        eapply escapeEqTerm; now eapply reflLRTmEq.
     + intros ? ρ wfΔ.
       irrelevance0.
       2: rewrite wk_snd; eapply wkTerm; now eapply pairSndRed.
@@ -779,7 +779,7 @@ Section PairRed.
       instValid Vσ; instValidExt Vσ (reflSubst _ _ Vσ).
       pose (RVΣ0 := normRedΣ0 (invLRΣ RVΣ)).
       pose (RVB := snd (polyRedId RVΣ0)); fold subst_term in *.
-      pose (Vaσ := consSubstSvalid _ _ Vσ VA Va); instValid Vaσ.
+      pose (Vaσ := consSubstSvalid Vσ Va); instValid Vaσ.
       rewrite <- up_subst_single in RVB0.
       assert (RVb' : [RVB0 | Δ ||- b[σ] : B[up_term_term σ][(a[σ])..]])
         by (irrelevance0; tea; apply  singleSubstComm').

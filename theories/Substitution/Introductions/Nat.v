@@ -82,7 +82,7 @@ Lemma succRed {Γ l n} {NN : [Γ ||-Nat tNat]} :
 Proof.
   intros Rn; exists (tSucc n).
   + eapply redtmwf_refl; eapply ty_succ; now escape.
-  + eapply convtm_succ; eapply escapeEqTerm; now eapply LREqTermRefl_.
+  + eapply convtm_succ; eapply escapeEqTerm; now eapply reflLRTmEq.
   + now constructor.
 Defined.
 
@@ -207,9 +207,9 @@ Section NatElimRed.
       + now eapply ty_natElim.
       + now eapply ty_natElim.
       + eapply convneu_natElim; tea.
-        { eapply escapeEq, LRTyEqRefl_. }
-        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
-        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
+        { eapply escapeEq, reflLRTyEq. }
+        { eapply escapeEqTerm; now eapply reflLRTmEq. }
+        { eapply escapeEqTerm; now eapply reflLRTmEq. }
     Unshelve.
     * eapply ArrRedTy; now eapply RPpt.
     * rewrite subst_arr. eapply ArrRedTy.
@@ -256,7 +256,7 @@ Section NatElimRedEq.
       [Γ ||-<l> P[n..] ≅ P[n'..] | RPpt _ Rn].
   Proof.
     intros. eapply transEq; [| eapply LRTyEqSym ]; eapply RPQext; cycle 1; tea.
-    now eapply LREqTermRefl_.
+    now eapply reflLRTmEq.
     Unshelve. 2,3: eauto.
   Qed.
 
@@ -270,7 +270,7 @@ Section NatElimRedEq.
   Proof.
     eapply natElimRedAux; tea.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
-      now eapply LREqTermRefl_.
+      now eapply reflLRTmEq.
     Unshelve. all:tea.
   Qed.
 
@@ -292,9 +292,9 @@ Section NatElimRedEq.
       * eapply LRTmEqRedConv.
         + eapply RPext; tea. 
           eapply LRTmEqSym; eapply redwfSubstTerm; cycle 1; tea.
-        + unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RL) redL); tea.
+        + unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RL) redL); tea.
           1: dependent inversion RL; subst; cbn; now eapply NatProp_whnf.
-          unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RR) redR); tea.
+          unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RR) redR); tea.
           1: dependent inversion RR; subst; cbn; now eapply NatProp_whnf.
           now eapply ih.
         Unshelve. tea.

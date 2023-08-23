@@ -33,6 +33,11 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tSnd p ⇒ tSnd p']
 | sndPair {A B a b} :
     [ tSnd (tPair A B a b) ⇒ b ]
+| idElimRefl {A x P hr y A' z} :
+  [ tIdElim A x P hr y (tRefl A' z) ⇒ hr ]
+| idElimSubst {A x P hr y e e'} :
+  [e ⇒ e'] ->
+  [ tIdElim A x P hr y e ⇒ tIdElim A x P hr y e' ]
 
 where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
@@ -81,8 +86,8 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3,6,7,9: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
-  all: inversion nf; subst; inv_whne; subst; now inv_whne.
+  2,3,6,7,9,12: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  all: inversion nf; subst; inv_whne; subst; try now inv_whne.
 Qed.
 
 (** *** Determinism of reduction *)
@@ -125,6 +130,11 @@ Proof.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst; try reflexivity.
     exfalso; eapply whnf_nored; tea; constructor.
+  - inversion red'; subst; try reflexivity.
+    exfalso; eapply whnf_nored;tea; constructor.
+  - inversion red'; subst.
+    2: f_equal; eauto.
+    exfalso; eapply whnf_nored;tea; constructor.
 Qed.
 
 Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
@@ -176,7 +186,7 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5,6-10: cbn; asimpl; now econstructor.
+  2-5,6-12: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
@@ -225,6 +235,12 @@ Proof.
 Qed.
 
 Lemma redalg_snd {t t'} : [t ⇒* t'] -> [tSnd t ⇒* tSnd t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_idElim {A x P hr y t t'} : [t ⇒* t'] -> [tIdElim A x P hr y t ⇒* tIdElim A x P hr y t'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.

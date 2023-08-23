@@ -36,16 +36,6 @@ Lemma consSubstS {Γ σ t l A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   [Δ ||-v (t .: σ) : Γ ,, A | validSnoc VΓ VA | wfΔ].
 Proof.  unshelve econstructor; eassumption. Defined.
 
-Lemma consValid {Γ Δ σ a A l} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
-  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
-  {VA : [Γ ||-v<l> A| VΓ]}
-  (Va : [Γ ||-v<l> a : A | VΓ | VA])
-  (VΓA := validSnoc VΓ VA) :
-  [Δ ||-v (a[σ] .: σ) : Γ,, A | VΓA | wfΔ].
-Proof.
-  unshelve eapply consSubstS; tea; now eapply validTm.
-Qed.
-
 
 Lemma consSubstSEq {Γ σ σ' t l A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
@@ -71,21 +61,21 @@ Proof.
 Qed.  
 
 
-Lemma consSubstSvalid {Γ σ t l A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
-  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (VA : [Γ ||-v<l> A | VΓ])
+Lemma consSubstSvalid {Γ σ t l A Δ} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) {VA : [Γ ||-v<l> A | VΓ]}
   (Vt : [ Γ ||-v<l> t : A | VΓ | VA]) :
   [Δ ||-v (t[σ] .: σ) : Γ ,, A | validSnoc VΓ VA | wfΔ].
 Proof. unshelve eapply consSubstS; tea; now eapply validTm. Defined.
 
 Set Printing Primitive Projection Parameters.
 
-Lemma consSubstSEqvalid {Γ σ σ' t l A Δ} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
-  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) 
+Lemma consSubstSEqvalid {Γ σ σ' t l A Δ} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
+  (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ])
   (Vσ' : [Δ ||-v σ' : Γ | VΓ | wfΔ]) 
   (Vσσ' : [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ])
-  (VA : [Γ ||-v<l> A | VΓ])
+  {VA : [Γ ||-v<l> A | VΓ]}
   (Vt : [Γ ||-v<l> t : A | VΓ | VA]) :
-  [Δ ||-v (t[σ] .: σ) ≅  (t[σ'] .: σ') : Γ ,, A | validSnoc VΓ VA | wfΔ | consSubstSvalid VΓ wfΔ Vσ VA Vt].
+  [Δ ||-v (t[σ] .: σ) ≅  (t[σ'] .: σ') : Γ ,, A | validSnoc VΓ VA | wfΔ | consSubstSvalid Vσ Vt].
 Proof.
   unshelve econstructor; intros; tea.
   now apply validTmExt.
@@ -223,7 +213,7 @@ Lemma liftSubstSEq {Γ σ σ' Δ lF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
 Proof.
   intros; unshelve econstructor.
   + now apply wk1SubstSEq.
-  + apply LREqTermRefl_; exact (validHead Vliftσ).
+  + apply reflLRTmEq; exact (validHead Vliftσ).
 Qed.
 
 Lemma liftSubstSEq' {Γ σ σ' Δ lF F} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}

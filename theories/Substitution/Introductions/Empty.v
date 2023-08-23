@@ -123,7 +123,7 @@ Section EmptyElimRed.
       + now eapply ty_emptyElim.
       + now eapply ty_emptyElim.
       + eapply convneu_emptyElim; tea.
-        { eapply escapeEq, LRTyEqRefl_. }
+        { eapply escapeEq, reflLRTyEq. }
     Unshelve. all: tea.
   Qed.
 
@@ -153,7 +153,7 @@ Section EmptyElimRedEq.
       [Γ ||-<l> P[n..] ≅ P[n'..] | RPpt _ Rn].
   Proof.
     intros. eapply transEq; [| eapply LRTyEqSym ]; eapply RPQext; cycle 1; tea.
-    now eapply LREqTermRefl_.
+    now eapply reflLRTmEq.
     Unshelve. 2,3: eauto.
   Qed.
 
@@ -167,7 +167,7 @@ Section EmptyElimRedEq.
   Proof.
     eapply emptyElimRedAux; tea.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
-      now eapply LREqTermRefl_.
+      now eapply reflLRTmEq.
     Unshelve. all:tea.
   Qed.
 
@@ -189,9 +189,9 @@ Section EmptyElimRedEq.
       * eapply LRTmEqRedConv.
         + eapply RPext; tea. 
           eapply LRTmEqSym; eapply redwfSubstTerm; cycle 1; tea.
-        + unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (EmptyRedTm.red RL) redL); tea.
+        + unshelve erewrite (redtmwf_det _ _ (EmptyRedTm.red RL) redL); tea.
           1: dependent inversion RL; subst; cbn; now eapply EmptyProp_whnf.
-          unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (EmptyRedTm.red RR) redR); tea.
+          unshelve erewrite (redtmwf_det _ _ (EmptyRedTm.red RR) redR); tea.
           1: dependent inversion RR; subst; cbn; now eapply EmptyProp_whnf.
           now eapply ih.
         Unshelve. tea. 2, 4: tea. 

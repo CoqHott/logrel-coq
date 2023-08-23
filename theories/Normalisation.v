@@ -114,6 +114,7 @@ Proof.
 + intros * ? []; split; now constructor.
 + intros * []; split; now constructor.
 + intros * []; split; now constructor.
++ intros * ??????? []; split; now constructor.
 Qed.
 
 #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := nf) := {}.
@@ -127,6 +128,7 @@ all: try now (intros; apply redalg_one_step; constructor).
 + intros; now apply redalg_natEmpty.
 + intros; now apply redalg_fst.
 + intros; now apply redalg_snd.
++ intros; now eapply redalg_idElim.
 + intros; assumption.
 + intros; reflexivity.
 Qed.
@@ -308,7 +310,7 @@ Section NeutralConversion.
       1: eapply redtywf_refl; eapply (ParamRedTy.red ΣA).
       econstructor; tea;
       eapply LogicalRelation.Escape.escapeEq;
-      eapply LRTyEqRefl_.
+      eapply reflLRTyEq.
     }
     assert [Γ |-[ de ] tFst m : (ParamRedTy.dom ΣA)⟨@wk_id Γ⟩].
     1: rewrite wk_id_ren_on; now econstructor.
@@ -334,7 +336,12 @@ Section NeutralConversion.
         eapply neuTerm; tea.
         split; tea; now econstructor.
       * rewrite Sigma.wk_id_shift; now econstructor.
-    Unshelve. 2,4: tea. 
+    Unshelve. 2,4: tea.
+  - intros ??? [???? red] IH _ m n tym hconv; cbn in *.
+    econstructor.
+    1: apply red.
+    1,2: reflexivity.
+    econstructor; tea; constructor.
   Qed.
 
 End NeutralConversion.

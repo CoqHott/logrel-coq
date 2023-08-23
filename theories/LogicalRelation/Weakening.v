@@ -1,7 +1,7 @@
 From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Notations Utils BasicAst Context NormalForms UntypedValues Weakening GenericTyping LogicalRelation.
-From LogRel.LogicalRelation Require Import Induction Irrelevance.
+From LogRel.LogicalRelation Require Import Induction Irrelevance Transitivity Escape.
 
 Set Universe Polymorphism.
 
@@ -58,6 +58,39 @@ Section Weakenings.
     gen_typing. 
   Qed.
 
+  Lemma wkId@{i j k l} {Γ l A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
+    IdRedTy@{i j k l} Γ l A -> IdRedTy@{i j k l} Δ l A⟨ρ⟩.
+    (* [Γ ||-Id<l> A] -> [Δ ||-Id<l> A⟨ρ⟩]. *)
+  Proof. 
+    intros []; unshelve econstructor.
+    6: erewrite wk_Id; now eapply redtywf_wk.
+    3: rewrite wk_Id; gen_typing.
+    - now apply tyKripke.
+    - intros; rewrite wk_comp_ren_on; now apply tyKripke.
+    - unshelve eapply tyKripkeTm; [eapply wk_id| gen_typing| now rewrite wk_comp_runit| irrelevance].
+    - unshelve eapply tyKripkeTm; [eapply wk_id| gen_typing| now rewrite wk_comp_runit| irrelevance].
+    (* could also employ reflexivity instead *)
+    - unshelve eapply tyKripkeTmEq; [eapply wk_id| gen_typing| now rewrite wk_comp_runit|irrelevance].
+    - unshelve eapply tyKripkeTmEq; [eapply wk_id| gen_typing| now rewrite wk_comp_runit|irrelevance].
+    - apply perLRTmEq.
+    - intros; irrelevance0.  
+      1: now rewrite wk_comp_ren_on.
+      unshelve eapply tyKripkeEq; tea.
+      3: irrelevance; now rewrite wk_comp_ren_on.
+      bsimpl; setoid_rewrite H10; now bsimpl.
+    - intros; irrelevance0.  
+      1: now rewrite wk_comp_ren_on.
+      unshelve eapply tyKripkeTm; tea.
+      3: irrelevance; now rewrite wk_comp_ren_on.
+      bsimpl; setoid_rewrite H10; now bsimpl.
+    - intros; irrelevance0.  
+      1: now rewrite wk_comp_ren_on.
+      unshelve eapply tyKripkeTmEq; tea.
+      3: irrelevance; now rewrite wk_comp_ren_on.
+      bsimpl; setoid_rewrite H10; now bsimpl.
+  Defined.
+
+
   Lemma wk@{i j k l} {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) :
     [LogRel@{i j k l} l | Γ ||- A] -> [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩].
   Proof.
@@ -72,6 +105,7 @@ Section Weakenings.
     - intros; eapply LRNat_; now eapply wkNat.
     - intros; eapply LREmpty_; now eapply wkEmpty.
     - intros; apply LRSig'; now eapply wkΣ.
+    - intros; apply LRId'; now eapply wkId.
   Defined.
 
   (* Sanity checks for Π and Σ: we do compute correctly with wk *)
@@ -100,6 +134,7 @@ Section Weakenings.
       now bsimpl.
   Qed.
 
+
   Lemma wkEq@{i j k l} {Γ Δ A B l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [LogRel@{i j k l} l | Γ ||- A ≅ B | lrA] ->
     [LogRel@{i j k l} l | Δ ||- A⟨ρ⟩ ≅ B⟨ρ⟩ | wk ρ wfΔ lrA].
@@ -127,6 +162,12 @@ Section Weakenings.
       + rewrite wk_sig.
         replace (tSig _ _) with (ΠA.(outTy)⟨ρ⟩) by (cbn; now bsimpl).
         now eapply convty_wk.
+    - intros * _ _ * [] ; assert [|-Γ] by (escape; gen_typing); econstructor; cbn.
+      1: erewrite wk_Id; now eapply redtywf_wk.
+      1: unfold_id_outTy; cbn; rewrite 2!wk_Id; now eapply convty_wk.
+      2,3: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
+      eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
+      Unshelve. all: tea.
   Qed.
 
   (* TODO: use program or equivalent to have only the first field non-opaque *)
@@ -213,6 +254,17 @@ Section Weakenings.
         change tEmpty with tEmpty⟨ρ⟩.
         now eapply wkNeNf.
     - intros; now apply wkΣTerm. 
+    - intros * _ _ * [??? prop]; econstructor; unfold_id_outTy; cbn; rewrite ?wk_Id.
+      1: now eapply redtmwf_wk.
+      1: now eapply convtm_wk.
+      destruct prop.
+      2: constructor; unfold_id_outTy; cbn; rewrite wk_Id; now eapply wkNeNf.
+      assert [|-Γ] by (escape; gen_typing); constructor; cbn.
+      1: now eapply wft_wk.
+      1: now eapply ty_wk.
+      2,3: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
+      eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
+      Unshelve. all: tea.
   Qed.
 
   Lemma wkUTerm {Γ Δ l A t} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (h : [Γ ||-U<l> A]) :
@@ -290,5 +342,16 @@ Section Weakenings.
       + intros; cbn; irrelevance0.
         2: do 2 rewrite wk_comp_ren_on; now unshelve eapply eqSnd.
         rewrite wk_comp_ren_on; now rewrite <- wk_up_ren_subst.
+    - intros * _ _ * [????? prop]; econstructor; unfold_id_outTy; cbn; rewrite ?wk_Id.
+      1,2: now eapply redtmwf_wk.
+      1: now eapply convtm_wk.
+      destruct prop.
+      2: constructor; unfold_id_outTy; cbn; rewrite wk_Id; now eapply wkNeNfEq.
+      assert [|-Γ] by (escape; gen_typing); constructor; cbn.
+      1,2: now eapply wft_wk.
+      1,2: now eapply ty_wk.
+      1,2:eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
+      all: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
+      Unshelve. all: tea.
   Qed.
 End Weakenings.

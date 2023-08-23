@@ -4,24 +4,29 @@ From LogRel Require Import Utils BasicAst Context NormalForms Weakening GenericT
 From LogRel.LogicalRelation Require Import Induction Escape.
 
 Set Universe Polymorphism.
+Set Printing Universes.
 
 Section Reflexivities.
   Context `{GenericTypingProperties}.
 
-  Definition LRTyEqRefl {l Γ A eqTy redTm eqTm}
-    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
+  Definition reflLRTyEq {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
   Proof.
-    pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; intros ?? [] **.
-    all: try match goal with H : PolyRedPack _ _ _ |- _ => destruct H; econstructor; tea end.
-    all: now econstructor.
+    pattern l, Γ, A, lr; eapply LR_rect_TyUr; intros ??? [] **.
+    all: try match goal with H : PolyRed _ _ _ _ |- _ => destruct H; econstructor; tea end.
+    all: try now econstructor.
+    (* econstructor; tea; now eapply escapeEqTerm. *)
   Qed.
 
-  Corollary LRTyEqRefl_ {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
+
+  (* Deprecated *)
+  Corollary LRTyEqRefl {l Γ A eqTy redTm eqTm}
+    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    destruct lr as [[] lr].
-    cbn in *.
-    now eapply LRTyEqRefl.
+    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (Rad := Build_LRAdequate (pack:=R) lr).
+    change [Rad | _ ||- _ ≅ A ]; now eapply reflLRTyEq.
   Qed.
+
 
   Lemma NeNfEqRefl {Γ k A} : [Γ ||-NeNf k : A] -> [Γ ||-NeNf k ≅ k : A].
   Proof.
@@ -47,48 +52,57 @@ Section Reflexivities.
       econstructor; eauto.
       destruct prop; econstructor.
       now eapply NeNfEqRefl.
-    - intros ? []. econstructor. 
+    - intros ? []. econstructor.
       now eapply NeNfEqRefl.
   Qed.
 
-  Definition LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
-    forall t, redTm t -> eqTm t t.
+  Lemma reflIdPropEq {Γ l A} (IA : [Γ ||-Id<l> A]) t (Pt : IdProp IA t) : IdPropEq IA t t.
   Proof.
-    pattern l, Γ, A, eqTy, redTm, eqTm, lr; eapply LR_rect; 
-      clear Γ A eqTy redTm eqTm lr; intros Γ A.
-    - intros h t [? ? ? ? [[] rel]%RedTyRecFwd] ; cbn in *.
+    destruct Pt; constructor; tea; now eapply NeNfEqRefl.
+  Qed.
+
+  Lemma reflIdRedTmEq {Γ l A} (IA : [Γ ||-Id<l> A]) t (Rt : [Γ ||-Id<l> t : _ | IA]) : [Γ ||-Id<l> t ≅ t : _ | IA].
+  Proof. destruct Rt; econstructor; tea; now eapply reflIdPropEq. Qed.
+
+  Definition reflLRTmEq@{h i j k l} {l Γ A} (lr : [ LogRel@{i j k l} l | Γ ||- A ] ) :
+    forall t,
+      [ Γ ||-<l> t : A | lr ] ->
+      [ Γ ||-<l> t ≅ t : A | lr ].
+  Proof.
+    pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr; intros l Γ A.
+    - intros h t [? ? ? ? Rt%RedTyRecFwd@{j k h i k}] ; cbn in *.
       (* Need an additional universe level h < i *)
-      assert (eqTy t) by (eapply LRTyEqRefl@{h i j k}; exact rel).
+      Unset Printing Notations.
+      pose proof (reflLRTyEq@{h i k j} Rt).
       unshelve econstructor.
       all : cbn.
       1-2: econstructor ; tea ; cbn.
-      1-3,5: eapply RedTyRecBwd; apply (LRbuild@{h i j k} rel).
+      1-3,5: eapply RedTyRecBwd; tea.
       1: cbn; easy.
       now eapply TyEqRecBwd.
     - intros [] t [].
       econstructor ; cbn in *.
       all: eassumption.
-    - intros ???? t [].
+    - intros ??? t [].
       unshelve econstructor ; cbn in *.
       1-2: now econstructor.
-      all: cbn.
-      all: now eauto.
+      all: cbn; now eauto.
     - intros; now apply reflNatRedTmEq.
     - intros; now apply reflEmptyRedTmEq.
-    - intros ???? t [].
+    - intros ??? t [].
       unshelve econstructor ; cbn in *.
       1-2: now econstructor.
-      all: cbn.
-      all: now eauto.
+      all: cbn; now eauto.
+    - intros; now eapply reflIdRedTmEq.
   Qed.
-
-  Definition LREqTermRefl_ {l Γ A t} (lr : [ Γ ||-< l > A ] ) : 
-      [ Γ ||-< l > t : A | lr ] ->
-      [ Γ ||-< l > t ≅ t : A | lr ].
+  
+  (* Deprecated *)
+  Corollary LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
+    forall t, redTm t -> eqTm t t.
   Proof.
-    destruct lr as [[] lr].
-    cbn in *.
-    now eapply LRTmEqRefl.
+    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (Rad := Build_LRAdequate (pack:=R) lr).
+    intros t ?; change [Rad | _ ||- t ≅ t : _ ]; now eapply reflLRTmEq.
   Qed.
 
 End Reflexivities.

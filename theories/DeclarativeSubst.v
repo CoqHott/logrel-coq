@@ -276,3 +276,40 @@ Proof.
       rewrite <- rinstInst'_term; do 2 erewrite <- wk1_ren_on.
       now eapply typing_wk.
 Qed.
+
+(* Stability and symmetry with redundant hypothesis on the well-formed contexts *)
+
+Section Stability0.
+
+  Let PCon (Γ : context) := True.
+  Let PTy (Γ : context) (A : term) := forall Δ,
+    [|-Δ] -> [|- Δ ≅ Γ] -> [Δ |- A].
+  Let PTm (Γ : context) (A t : term) := forall Δ,
+    [|-Δ] -> [|- Δ ≅ Γ] -> [Δ |- t : A].
+  Let PTyEq (Γ : context) (A B : term) := forall Δ,
+    [|-Δ] -> [|- Δ ≅ Γ] -> [Δ |- A ≅ B].
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ,
+    [|-Δ] -> [|- Δ ≅ Γ] -> [Δ |- t ≅ u : A].
+
+  Theorem stability0 : WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq.
+  Proof.
+    red; prod_splitter; intros Γ * Hty; red.
+    1: easy.
+    all: intros ?? Hconv; eapply (conv_well_subst _) in Hconv ; tea.
+    all: pose proof (Hconv' := Hconv); apply  subst_refl in Hconv'.
+    all: eapply typing_subst in Hty; tea.
+    all: repeat (rewrite idSubst_term in Hty ; [..|reflexivity]).
+    all: eassumption.
+  Qed.
+
+  Definition convCtxSym0 {Γ Δ} : [|- Δ] -> [|-Γ] -> [|- Δ ≅ Γ] -> [|- Γ ≅ Δ].
+  Proof.
+    induction 3.
+    all: constructor; inversion H; inversion H0; subst; refold.
+    1: now eauto.
+    eapply stability0 ; tea.
+    1: now symmetry.
+    now eauto.
+  Qed.
+
+End Stability0.

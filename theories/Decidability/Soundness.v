@@ -195,6 +195,7 @@ Section ConversionSound.
     - econstructor ; tea.
       destruct H ; simp build_nf_view3 build_ty_view1 in Heq ; try solve [inversion Heq].
       all: try now econstructor.
+    - econstructor; tea; [intuition| now rewrite 2!Weakening.wk1_ren_on].
     - eapply convne_meta_conv.
       2: reflexivity.
       + econstructor.
@@ -267,7 +268,8 @@ Section TypingCorrect.
       | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
       | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst 
       end).
-    all: now econstructor.
+    all: try now econstructor.
+    econstructor; tea; now rewrite 2!Weakening.wk1_ren_on.
   Qed.
 
   Lemma implem_typing_sound x r:

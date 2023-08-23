@@ -75,7 +75,7 @@ Proof.
   - intros * ? [IHA] ? [IHB] ? []%prod_ty_inv []%prod_ty_inv ? B' wB' HtyB'.
     apply compute_domain.
     simp conv conv_ty_red.
-    destruct wB' as [|A'' B''| | | |? wB'].
+    destruct wB' as [|A'' B''| | | | |? wB'].
     all: simp build_nf_ty_view2 ; cbn ; try easy.
     2: now rewrite (whne_ty_view1 wB') ; cbn.
     apply prod_ty_inv in HtyB' as [].
@@ -107,7 +107,7 @@ Proof.
   - intros * ? [IHA] ? [IHB] ? []%sig_ty_inv []%sig_ty_inv ? B' wB' HtyB'.
     apply compute_domain.
     simp conv conv_ty_red.
-    destruct wB' as [| | | | A'' B'' |? wB'].
+    destruct wB' as [| | | | A'' B'' | | ? wB'].
     all: simp build_nf_ty_view2 ; cbn ; try easy.
     2: now rewrite (whne_ty_view1 wB') ; cbn.
     apply sig_ty_inv in HtyB' as [].
@@ -118,23 +118,42 @@ Proof.
     + apply (IHB tt B'').
       now eapply stability1.
     + intros x; destruct x; cbn; easy.
+  - intros * ? [ihA] ? [ihx] ? [ihy] ? [? []]%id_ty_inv [? []]%id_ty_inv * wB' htyB'.
+    apply compute_domain.
+    simp conv conv_ty_red.
+    destruct wB' as [| | | | |A'' x'' y''| ? wB'].
+    all: simp build_nf_ty_view2 ; cbn.
+    1-5: easy.
+    2: now rewrite (whne_ty_view1 wB') ; cbn.
+    apply id_ty_inv in htyB' as [? []].
+    split; cycle -1.
+    1: intros []; cbn;[|easy].
+    1: intros HconvA%implem_conv_sound%algo_conv_sound; tea; split; cycle -1.
+    1: intros []; cbn;[|easy].
+    1: intros Hconvx%implem_conv_sound%algo_conv_sound; tea.
+    1: split; cycle -1.
+    1: intros []; cbn;easy.
+    + apply (ihy y''); now econstructor.
+    + now econstructor.
+    + apply (ihx x''); now econstructor.
+    + now apply (ihA tt A'').
   - intros * HM [IHM []] ??? ? ? wB' Hty.
     apply compute_domain.
     simp conv conv_ty_red.
     eapply algo_conv_wh in HM as [].
     destruct wB'.
-    1-5: simp build_nf_ty_view2 ; cbn.
-    1-5: now unshelve erewrite whne_ty_view1 ; cbn.
+    1-6: simp build_nf_ty_view2 ; cbn.
+    1-6: now unshelve erewrite whne_ty_view1 ; cbn.
     erewrite whne_ty_view2 ; tea.
     split.
     2: intros [|] ; cbn ; easy.
     eapply (IHM tt A) ; tea.
     inversion Hty ; subst ; tea.
-    1-5:  inv_whne.
+    1-6:  inv_whne.
     now exists U.
   - intros * ???? ? ? wu' ?.
     apply compute_domain.
-    destruct wu' as [n'| | | | |].
+    destruct wu' as [n'| | | | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try easy.
     destruct (Nat.eqb_spec n n') ; cbn.
     2: easy.
@@ -142,7 +161,7 @@ Proof.
     now econstructor.
   - intros ? ???? A B Hm [IHm []] ? [IHt] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [|m' t'| | | |].
+    destruct wu' as [|m' t'| | | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn; try exact I.
     split.
     + apply (IHm tt m') ; tea.
@@ -162,7 +181,7 @@ Proof.
       gen_typing.
   - intros * Hn [IHn] ? [IHP] ? [IHz] ? [IHs] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| |P'' hz'' hs'' n''| | |].
+    destruct wu' as [| |P'' hz'' hs'' n''| | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
@@ -197,7 +216,7 @@ Proof.
     now intros [|] ; cbn.
   - intros * He [IHe] ? [IHP] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | P'' e'' | |].
+    destruct wu' as [| | | P'' e'' | | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? (?&[]&?)%termGen'].
     split.
@@ -211,7 +230,7 @@ Proof.
     intros [|] ; cbn ; easy.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | | t |].
+    destruct wu' as [| | | | t | |].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
@@ -223,7 +242,7 @@ Proof.
     now cbn.
   - intros * h [ih []] ??? ? u' wu' Hty.
     apply compute_domain.
-    destruct wu' as [| | | | | t].
+    destruct wu' as [| | | | | t | ].
     all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
     destruct Hty as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
     split.
@@ -233,6 +252,55 @@ Proof.
     eapply algo_conv_det in Hconv as ->.
     2: now eapply h.
     now cbn.
+  - intros * he [ihe []] ? [ihA] ? [ihx] ? [ihP] ? [ihhr] ? [ihy] ??? ?? wu' Hu'.
+    apply compute_domain.
+    destruct wu' as [| | | | | | A0 x0 P0 hr0 y0 e0].
+    all: simp conv conv_ne to_neutral_diag ; cbn ; try exact I.
+    destruct Hu' as [? hu'%termGen']; cbn in hu'; prod_hyp_splitter; subst.
+    split.
+    1: apply (ihe tt e0); tea; now eexists.
+    intros [T|]; cbn ; [|easy].
+    intros [Hconve ?]%implem_conv_sound.
+    eapply algo_conv_det in Hconve as ->.
+    2: now eapply he.
+    split.
+    1: apply (ihA tt A0); tea; now eexists.
+    intros [|]; cbn ; [|easy].
+    intros HconvA%implem_conv_sound%algo_conv_sound.
+    2,3: boundary.
+    split.
+    1: apply (ihx x0); try now econstructor.
+    intros [|]; cbn ; [|easy].
+    intros Hconvx%implem_conv_sound%algo_conv_sound.
+    rewrite <- !(Weakening.wk1_ren_on Γ A).
+    assert [(Γ,, A),, tId A⟨@Weakening.wk1 Γ A⟩ x⟨@Weakening.wk1 Γ A⟩ (tRel 0) |-[ de ] P0].
+    1:{
+      eapply stability; tea; symmetry; eapply idElimMotiveCtxConv; tea.
+      1: now eapply ctx_refl.
+      1,2: eapply idElimMotiveCtx; tea; boundary.
+    }
+    split.
+    1: apply (ihP tt P0); tea.
+    2: boundary.
+    2: econstructor; tea; now symmetry.
+    intros [|]; cbn; [|easy].
+    intros HconvP%implem_conv_sound%algo_conv_sound; tea.
+    2: boundary.
+    assert [Γ |-[ de ] hr0 : P[tRefl A x .: x..]].
+    1:{
+      econstructor; tea; symmetry.
+      eapply typing_subst2; tea.
+      cbn; rewrite 2!Weakening.wk1_ren_on, 2!shift_subst_eq.
+      now econstructor.
+    }
+    split.
+    1: apply (ihhr hr0); tea.
+    intros [|]; cbn; [|easy].
+    intros Hconvhr%implem_conv_sound%algo_conv_sound; tea.
+    2: boundary.
+    split.
+    1: apply (ihy y0); try now econstructor.
+    intros [|]; cbn; easy.
   - intros * ? [IHm] ?? ??? ? u' wu' Hty.
     apply compute_domain.
     simp conv conv_ne_red ; cbn.
@@ -280,7 +348,7 @@ Proof.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
-    destruct wu' as [ | A'' B'' | | | | ? wu'] ; cycle -1.
+    destruct wu' as [ | A'' B'' | | | | | ? wu'] ; cycle -1.
     1: rewrite (whne_ty_view1 wu').
     all: cbn ; try exact I.
     eapply termGen' in Hty as (?&[]&?) ; subst.
@@ -298,7 +366,7 @@ Proof.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
-    destruct wu' as [ | | | | | ? wu'] ; cycle -1.
+    destruct wu' as [ | | | | | | ? wu'] ; cycle -1.
     1: rewrite (whne_ty_view1 wu').
     all: now cbn.
   - intros * ??? u' wu' Hty.
@@ -323,7 +391,7 @@ Proof.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
-    destruct wu' as [ | | | | | ? wu'] ; cycle -1.
+    destruct wu' as [ | | | | | | ? wu'] ; cycle -1.
     1: rewrite (whne_ty_view1 wu').
     all: now cbn.
   - intros * ?? ? [IHf] ??? u' wu' Hty.
@@ -338,7 +406,7 @@ Proof.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
     eapply Uterm_isType in wu' ; tea.
-    destruct wu' as [ |  | | | A'' B'' | ? wu'] ; cycle -1.
+    destruct wu' as [ |  | | | A'' B'' | | ? wu'] ; cycle -1.
     1: rewrite (whne_ty_view1 wu').
     all: cbn ; try easy.
     eapply termGen' in Hty as (?&[]&?) ; subst.
@@ -366,17 +434,49 @@ Proof.
     symmetry. eapply typing_subst1; tea.
     apply boundary in Hty as []%sig_ty_inv.
     now apply TypeRefl.
+  - intros * ? [ihA] ? [ihx] ? [ihy] ? [? [[->]]]%termGen' [? [[->]]]%termGen' ? wu' Hu'.
+    apply compute_domain.
+    simp conv conv_tm_red build_nf_view3 build_nf_ty_view2 .
+    eapply Uterm_isType in wu' ; tea.
+    destruct wu' as [ |  | | | | A'' x'' y'' | ? wu'] ; cycle -1.
+    1: rewrite (whne_ty_view1 wu').
+    all: cbn ; try easy.
+    pose proof Hu' as [? [[->]]]%termGen'.
+    split.
+    1: apply (ihA A''); tea.
+    intros [|]; cbn; [|easy].
+    intros HconvA%implem_conv_sound%algo_conv_sound; tea.
+    assert [Γ |- A'' ≅ A] by (symmetry; now econstructor).
+    split.
+    1: apply (ihx x''); now econstructor.
+    intros [|]; cbn; [|easy].
+    intros Hconvx%implem_conv_sound%algo_conv_sound; tea.
+    2: now econstructor.
+    split; [|easy].
+    apply (ihy y''); now econstructor.
+  - intros * ? [ihA] ? [ihx] ? [? [[->]]]%termGen' [? [[->]]]%termGen' ? wu' Hu'.
+    apply compute_domain.
+    simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
+    eapply id_isId in wu' as [wu' | [A0 [x0 ->]] ]; tea.
+    1: rewrite (whne_nf_view1 wu'); now cbn.
+    pose proof Hu' as [? [[->]]]%termGen'.
+    cbn; split.
+    1: eapply (ihA tt A0); tea.
+    intros [|]; cbn; [|easy].
+    intros HconvA%implem_conv_sound%algo_conv_sound; tea.
+    split; [| easy].
+    eapply ihx; econstructor; tea; now symmetry.
   - intros * Hm [IHm []] Hpos ??? u' wu' Hu'.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3.
     eapply algo_conv_wh in Hm as [].
-    destruct Hpos as [[]| | | ].
+    destruct Hpos as [[]| | | |].
     + cbn.
       simp build_nf_ty_view2.
       unshelve erewrite whne_ty_view1 ; tea.
       cbn.
       eapply Uterm_isType in wu' ; tea.
-      destruct wu' as [ | | | | | u' wu'] ; cbn ; try easy.
+      destruct wu' as [|  | | | | | u' wu'] ; cbn ; try easy.
       rewrite (whne_ty_view1 wu').
       cbn.
       split.
@@ -399,6 +499,16 @@ Proof.
       unshelve erewrite whne_nf_view1 ; tea.
       cbn.
       eapply empty_isEmpty in wu' ; tea.
+      rewrite (whne_nf_view1 wu').
+      cbn.
+      split.
+      2: now intros [] ; cbn.
+      apply (IHm tt u') ; tea.
+      now eexists.
+    + cbn.
+      unshelve erewrite whne_nf_view1 ; tea.
+      cbn.
+      eapply  id_isId in wu' as [wu'| [? [? ->]]] ; cbn; try easy.
       rewrite (whne_nf_view1 wu').
       cbn.
       split.
@@ -602,6 +712,46 @@ Proof.
   - split.
     1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
     intros [[]|]; cbn; easy.
+  - split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: destruct t; cbn; try easy.
+    1: assert [Γ0 |-[de] A] by (destruct s; now econstructor).
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hx%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    1: intros [|]; cbn; easy.
+    all: eapply IH; cbn; tea; try easy.
+    all: left; cbn; do 2 constructor.
+  - split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    1: intros [|]; cbn; easy.
+    all: eapply IH; cbn; tea; try easy.
+    all: left; cbn; do 2 constructor.
+  - split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hx%implem_typing_sound%algo_typing_sound; tea.
+    1: rewrite <- !(Weakening.wk1_ren_on Γ0 A).
+    1: assert [ |-[ de ] (Γ0,, A),, tId A⟨@Weakening.wk1 Γ0 A⟩ x⟨@Weakening.wk1 Γ0 A⟩ (tRel 0)]
+      by now eapply idElimMotiveCtx.
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hP%implem_typing_sound%algo_typing_sound; tea.
+    1: assert [Γ0 |-[ de ] P[tRefl A x .: x..]].
+    1:{ 
+      eapply typing_subst2; tea; cbn.
+      rewrite 2!Weakening.wk1_ren_on, 2!shift_subst_eq.
+      now econstructor.
+    }
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hhr%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hy%implem_typing_sound%algo_typing_sound; tea.
+    1: assert [Γ0 |-[ de ] tId A x y] by now econstructor.
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros he%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    all: eapply IH; cbn; tea; try easy; left; cbn; do 2 constructor.
   - split.
     + apply IH ; cbn ; try easy.
       1: now right ; cbn.
@@ -642,12 +792,17 @@ Proof.
     apply IH ; cbn ; try easy.
     1: left ; cbn ; now do 2 econstructor.
     now econstructor.
-  - split.
-    1:{
-      apply IH ; cbn ; try easy.
-      right ; now cbn.
-    }
-    intros [[]|] ; now cbn.
+  - split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hx%implem_typing_sound%algo_typing_sound; tea.
+    1: split; [|easy].
+    all: eapply IH; cbn; tea; try easy.
+    all: left; do 2 constructor.
+  - split; cycle -1.
+    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: destruct t; cbn; try easy.
+    eapply IH; cbn; tea; try easy; right; now cbn.
 Qed.
 
 End TypingTerminates.

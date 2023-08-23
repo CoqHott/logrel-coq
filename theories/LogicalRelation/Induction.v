@@ -50,6 +50,12 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     | LRNat _ NA => LRNat _ NA
     | LREmpty _ NA => LREmpty _ NA
     | LRSig _ PA PAad => LRSig _ PA (embedPolyAd PAad)
+    | LRId _ IA IAad => 
+      let embedIdAd := 
+        {| IdRedTyPack.tyAd := LR_embedding l_ IAad.(IdRedTyPack.tyAd) ;
+          IdRedTyPack.tyKripkeAd (Δ : context) (ρ : Δ ≤ _) (wfΔ : [  |- Δ]) :=
+            LR_embedding l_ (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ) |} 
+      in LRId _ IA embedIdAd
     end.
 
   (** A basic induction principle, that handles only the first point in the list above *)
@@ -59,6 +65,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
         (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : _ ]),
         P (HAad.(PolyRedPack.posAd) ρ h ha)) -> G).
+
 
   Theorem LR_rect@{i j k o}
     (l : TypeLevel)
@@ -82,12 +89,17 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (forall (Γ : context) (A : term) (ΠA : SigRedTy@{j} Γ A) (HAad : SigRedTyAdequate (LR rec) ΠA),
       PolyHyp P Γ ΠA HAad (P (LRSig rec ΠA HAad))) ->
 
+    (forall Γ A (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate (LR rec) IA), 
+      P IAad.(IdRedTyPack.tyAd) ->
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ)) ->
+      P (LRId rec IA IAad)) ->
+
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
       (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
-    intros HU Hne HPi HNat HEmpty HSig.
+    intros HU Hne HPi HNat HEmpty HSig HId.
     fix HRec 6.
     destruct lr.
     - eapply HU.
@@ -98,6 +110,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     - eapply HEmpty.
     - eapply HSig.
       all: intros; eapply HRec.
+    - eapply HId; intros; eapply HRec.
   Defined.
 
   Definition LR_rec@{i j k} := LR_rect@{i j k Set}.
@@ -128,15 +141,22 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypLogRel P Γ ΠA (P (LRSig' ΠA).(LRAd.adequate ))) ->
+    
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed).(LRAd.adequate)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ).(LRAd.adequate)) ->
+      
+      P (LRId' IA).(LRAd.adequate)) ->
 
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
       (rTeEq  : term -> term -> Type@{k}) (lr : LR@{j k l} (LogRelRec@{i j k} l) Γ t rEq rTe rTeEq),
       P lr.
   Proof.
-    intros ?? HPi ?? HSig **; eapply LR_rect@{j k l o}.
+    intros ?? HPi ?? HSig HId **; eapply LR_rect@{j k l o}.
     1,2,4,5: auto.
     - intros; eapply (HPi _ _ _ (ParamRedTy.from HAad)); eauto.
     - intros; eapply (HSig _ _ _ (ParamRedTy.from HAad)); eauto.
+    - intros; eapply (HId _ _ _ (IdRedTy.from IAad)) ; eauto.
   Defined.
 
   Notation PolyHypTyUr P Γ ΠA G :=
@@ -163,13 +183,85 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
       PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
+    
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      
+      P (LRId' IA)) ->
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
       P lr.
   Proof.
-    intros HU Hne HPi HNat HEmpty HSig l Γ A lr.
+    intros HU Hne HPi HNat HEmpty HSig HId l Γ A lr.
     apply (LR_rect_LogRelRec@{i j k l o} (fun l Γ A _ _ _ lr => P l Γ A (LRbuild lr))).
     all: auto.
+  Defined.
+
+  (* Specialized version for level 0, used in the general version *)
+
+  Theorem LR_rect_TyUr0@{i j k l o} (l:=zero)
+    (P : forall {Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
+
+    (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]), P (LRne_ l neA)) ->
+
+    (forall (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tProd Γ l A),
+      PolyHypTyUr P Γ ΠA (P (LRPi' ΠA))) ->
+
+    (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat_ l NA)) ->
+
+    (forall Γ A (NA : [Γ ||-Empty A]), P (LREmpty_ l NA)) ->
+    
+    (forall (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
+      PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
+    
+    (forall Γ A (IA :  [Γ ||-Id<l> A]), 
+      P (IA.(IdRedTy.tyRed)) ->
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      P (LRId' IA)) ->
+
+    forall (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
+      P lr.
+  Proof.
+    intros HU Hne HPi HNat HEmpty HSig Γ A lr.
+    change _ with (match l as l return [Γ ||-<l> A] -> Type@{o} with zero => P Γ A | one => fun _ => unit end lr).
+    generalize l Γ A lr.
+    eapply LR_rect_TyUr; intros [] *; constructor + auto.
+    exfalso. pose (x := URedTy.lt h). inversion x.
+  Defined. 
+
+  (* Induction principle with inductive hypothesis for the universe at lower levels *)
+    
+  Theorem LR_rect_TyUrGen@{i j k l o}
+    (P : forall {l Γ A}, [LogRel@{i j k l} l | Γ ||- A] -> Type@{o}) :
+
+    (forall l (Γ : context) A (h : [Γ ||-U<l> A]),
+     (forall X (RX : [Γ ||-< URedTy.level h > X ]), P RX) -> P (LRU_ h)) ->
+
+    (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+      P (LRne_ l neA)) ->
+
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tProd Γ l A),
+      PolyHypTyUr P Γ ΠA (P (LRPi' ΠA))) ->
+
+    (forall l Γ A (NA : [Γ ||-Nat A]), P (LRNat_ l NA)) ->
+
+    (forall l Γ A (NA : [Γ ||-Empty A]), P (LREmpty_ l NA)) ->
+    
+    (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tSig Γ l A),
+      PolyHypTyUr P Γ ΠA (P (LRSig' ΠA))) ->
+    
+    (forall l Γ A (IA :  [Γ ||-Id<l> A]),
+       P (IA.(IdRedTy.tyRed)) -> 
+      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IA.(IdRedTy.tyKripke) ρ wfΔ)) ->
+      P (LRId' IA)) ->
+
+    forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
+      P lr.
+  Proof.
+    intros HU Hne HPi HNat HEmpty HSig HId.
+    apply LR_rect_TyUr; tea; intros l Γ A h ; pose proof (x :=URedTy.lt h); inversion x ; subst.
+    eapply HU. rewrite <- H0. clear h H0 x. revert Γ. eapply LR_rect_TyUr0; auto.
   Defined.
 
 End Inductions.
@@ -190,6 +282,7 @@ Section Inversions.
     | NatType => [Γ ||-Nat A]
     | EmptyType => [Γ ||-Empty A]
     | SigType => [Γ ||-Σ<l> A]
+    | IdType => [Γ||-Id<l> A]
     | NeType _ => [Γ ||-ne A]
     end.
 
@@ -254,6 +347,12 @@ Section Inversions.
         eapply whred_det.
         1-3: gen_typing.
         eapply redty_red, redA.
+    - intros ??? IA _ _ A' red whA'.
+      enough (∑ B x y, A' = tId B x y) as [?[?[? ->]]].
+      + dependent inversion whA'; tea; inv_whne.
+      + destruct IA; do 3 eexists; eapply whred_det.
+        1-3: gen_typing.
+        now eapply redtywf_red.
   Qed.
 
   Lemma invLRU {Γ l} : [Γ ||-<l> U] -> [Γ ||-U<l> U].
@@ -278,6 +377,12 @@ Section Inversions.
   Proof.
     intros.
     now unshelve eapply  (invLR _ redIdAlg SigType).
+  Qed.
+
+  Lemma invLRId {Γ l A x y} : [Γ ||-<l> tId A x y] -> [Γ ||-Id<l> tId A x y].
+  Proof.
+    intros.
+    now unshelve eapply (invLR _ redIdAlg IdType).
   Qed.
 
   (* invLRNat is useless *)

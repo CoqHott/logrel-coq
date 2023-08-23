@@ -1,4 +1,5 @@
 (** * LogRel.LogicalRelation: Definition of the logical relation *)
+From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping.
 
@@ -648,7 +649,6 @@ Section NatRedTmEq.
     (prop : NatPropEq nfL nfR) : NatRedTmEq t u
 
   with NatPropEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
-  (* KM: plugging in the parameter type directly... Is that ok ? *)
   | zeroReq :
     NatPropEq tZero tZero
   | succReq {n n'} :
@@ -742,31 +742,6 @@ Section EmptyRedTm.
     (eq : [Γ |- nf ≅ nf : tEmpty])
     (prop : @EmptyProp Γ nf) : EmptyRedTm t.
 
-(* Scheme EmptyRedTm_mut_rect := Induction for EmptyRedTm Sort Type with *)
-(*     EmptyProp_mut_rect := Induction for EmptyProp Sort Type. *)
-
-(* Combined Scheme _EmptyRedInduction from *)
-(*   EmptyRedTm_mut_rect, *)
-(*   EmptyProp_mut_rect. *)
-
-(* Let _EmptyRedInductionType := *)
-(*   ltac:(let ind := fresh "ind" in *)
-(*       pose (ind := _EmptyRedInduction); *)
-(*       let ind_ty := type of ind in *)
-(*       exact ind_ty). *)
-
-(* Let EmptyRedInductionType := *)
-(*   ltac: (let ind := eval cbv delta [_EmptyRedInductionType] zeta *)
-(*     in _EmptyRedInductionType in *)
-(*     let ind' := polymorphise ind in *)
-(*   exact ind'). *)
-
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
-(* Lemma EmptyRedInduction : EmptyRedInductionType. *)
-(* Proof. *)
-(*   intros ??? PRed PProp **; split; now apply (_EmptyRedInduction _ _ _ PRed PProp). *)
-(* Defined. *)
-
 Definition nf {Γ A n} {NA : [Γ ||-Empty A]} : @EmptyRedTm _ _ NA n -> term.
 Proof.
   intros [? nf]. exact nf.
@@ -795,7 +770,6 @@ Section EmptyRedTmEq.
     `{RedTerm ta}.
 
   Inductive EmptyPropEq {Γ : context} : term -> term -> Set :=
-  (* KM: plugging in the parameter type directly... Is that ok ? *)
   | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : tEmpty] -> EmptyPropEq ne ne'.
 
   Inductive EmptyRedTmEq {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> term -> Set :=
@@ -814,6 +788,153 @@ End EmptyRedTmEq.
 Export EmptyRedTmEq(EmptyRedTmEq,Build_EmptyRedTmEq, EmptyPropEq).
 
 Notation "[ Γ ||-Empty t ≅ u : A | RA ]" := (@EmptyRedTmEq _ _ _ _ _ _ _ Γ A RA t u) (at level 0, Γ, t, u, A, RA at level 50).
+
+
+(** ** Logical relation for Identity types *)
+
+Module IdRedTyPack.
+  
+  Record IdRedTyPack@{i} `{ta : tag} `{WfContext ta} `{WfType ta} `{RedType ta} `{ConvType ta}
+    {Γ : context} {A : term}
+  : Type := 
+  {
+    ty : term ;
+    lhs : term ;
+    rhs : term ;
+    outTy := tId ty lhs rhs ;
+    red : [Γ |- A :⇒*: outTy] ;
+    eq : [Γ |- outTy ≅ outTy] ;
+    tyRed : LRPack@{i} Γ ty ;
+    lhsRed : [ tyRed | Γ ||- lhs : _ ] ;
+    rhsRed : [ tyRed | Γ ||- rhs : _ ] ;
+    (* Bake in PER property for reducible conversion at ty  to cut dependency cycles *)
+    lhsRedRefl : [ tyRed | Γ ||- lhs ≅ lhs : _ ] ;
+    rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
+    tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
+    tyKripke : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), LRPack@{i} Δ ty⟨ρ⟩ ;
+    tyKripkeEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) B,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ' wfΞ | _ ||- _ ≅ B⟨ρ''⟩];
+    tyKripkeTm : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ : _];
+    tyKripkeTmEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t u,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ ≅ u⟨ρ''⟩ : _];
+  }.
+
+  Record IdRedTyAdequate@{i j} `{ta : tag} `{WfContext ta} `{WfType ta} `{RedType ta} `{ConvType ta}
+    {Γ : context} {A : term} {R : RedRel@{i j}} {IA : IdRedTyPack@{i} (Γ:=Γ) (A:=A)} := 
+    {
+      tyAd : LRPackAdequate@{i j} R IA.(tyRed) ;
+      tyKripkeAd : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), LRPackAdequate@{i j} R (IA.(tyKripke) ρ wfΔ) ;
+    }.
+
+  Arguments IdRedTyPack {_ _ _ _ _}.
+  Arguments IdRedTyAdequate {_ _ _ _ _ _ _}.
+  
+End IdRedTyPack.
+
+Export IdRedTyPack(IdRedTyPack, Build_IdRedTyPack, IdRedTyAdequate, Build_IdRedTyAdequate).
+Set Printing Universes.
+
+Module IdRedTyEq.
+
+  Record IdRedTyEq@{i} `{ta : tag} `{WfContext ta} `{WfType ta} `{RedType ta} `{ConvType ta} `{ConvTerm ta}
+    {Γ : context} {A : term} {IA : IdRedTyPack@{i} Γ A} {B : term}
+  : Type := {
+    ty : term ;
+    lhs : term ;
+    rhs : term ;
+    outTy := tId ty lhs rhs ;
+    red : [Γ |- B :⇒*: outTy];
+    eq : [Γ |- IA.(IdRedTyPack.outTy) ≅ outTy] ;
+    tyRed0 := IA.(IdRedTyPack.tyRed) ;
+    tyRed : [ tyRed0 | _ ||- _ ≅ ty ] ;
+    (* lhsConv : [ Γ |- IA.(IdRedTyPack.lhs) ≅ lhs : IA.(IdRedTyPack.ty) ] ;
+    rhsConv : [ Γ |- IA.(IdRedTyPack.rhs) ≅ rhs : IA.(IdRedTyPack.ty) ] ; *)
+    lhsRed : [ tyRed0 | _ ||- IA.(IdRedTyPack.lhs) ≅ lhs : _ ] ;
+    rhsRed : [ tyRed0 | _ ||- IA.(IdRedTyPack.rhs) ≅ rhs : _ ] ;
+  }.
+  
+  Arguments IdRedTyEq {_ _ _ _ _ _ _ _}.
+
+End IdRedTyEq.
+
+Export IdRedTyEq(IdRedTyEq,Build_IdRedTyEq).
+
+Module IdRedTm.
+Section IdRedTm.
+  Universe i.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} 
+    `{RedType ta} `{Typing ta} `{ConvType ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} {Γ : context} {A: term} {IA : IdRedTyPack@{i} Γ A}.
+
+  Inductive IdProp : term ->  Type:=
+  | reflR {A x} : 
+    [Γ |- A] ->
+    [Γ |- x : A] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.lhs) ≅ x : _ ] ->
+    (* Should the index only be conversion ? *)
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.rhs) ≅ x : _ ] ->
+    IdProp (tRefl A x)
+  | neR {ne} : [Γ ||-NeNf ne : IA.(IdRedTyPack.outTy)] -> IdProp ne.
+
+  Record IdRedTm  {t : term} : Type :=
+    Build_IdRedTm {
+      nf : term ;
+      red : [Γ |- t :⇒*: nf : IA.(IdRedTyPack.outTy) ] ;
+      eq : [Γ |- nf ≅ nf : IA.(IdRedTyPack.outTy)] ;
+      prop : IdProp nf ;
+  }. 
+
+End IdRedTm.
+Arguments IdRedTm {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments IdProp {_ _ _ _ _ _ _ _ _}.
+
+End IdRedTm.
+
+Export IdRedTm(IdRedTm,Build_IdRedTm, IdProp).
+
+
+Module IdRedTmEq.
+Section IdRedTmEq.
+  Universe i.
+  Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
+    `{RedType ta} `{Typing ta} `{ConvNeuConv ta} `{ConvTerm ta}
+    `{RedTerm ta} {Γ : context} {A: term} {IA : IdRedTyPack@{i} Γ A}.
+  
+  Inductive IdPropEq : term -> term -> Type :=
+  | reflReq {A A' x x'} : 
+    [Γ |- A] ->
+    [Γ |- A'] ->
+    [Γ |- x : A] ->
+    [Γ |- x' : A'] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- _ ≅ A'] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.lhs) ≅ x : _ ] -> 
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.lhs) ≅ x' : _ ] -> 
+    (* Should the indices only be conversion ? *)
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.rhs) ≅ x : _ ] ->
+    [IA.(IdRedTyPack.tyRed) | _ ||- IA.(IdRedTyPack.rhs) ≅ x' : _ ] ->
+    IdPropEq (tRefl A x) (tRefl A' x')
+  | neReq {ne ne'} : [Γ ||-NeNf ne ≅ ne' : IA.(IdRedTyPack.outTy)] -> IdPropEq ne ne'.
+
+  Record IdRedTmEq  {t u : term} : Type :=
+    Build_IdRedTmEq {
+      nfL : term ;
+      nfR : term ;
+      redL : [Γ |- t :⇒*: nfL : IA.(IdRedTyPack.outTy) ] ;
+      redR : [Γ |- u :⇒*: nfR : IA.(IdRedTyPack.outTy) ] ;
+      eq : [Γ |- nfL ≅ nfR : IA.(IdRedTyPack.outTy)] ;
+      prop : IdPropEq nfL nfR ;
+  }. 
+
+End IdRedTmEq.
+Arguments IdRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
+Arguments IdPropEq {_ _ _ _ _ _ _ _ _}.
+End IdRedTmEq.
+
+Export IdRedTmEq(IdRedTmEq,Build_IdRedTmEq, IdPropEq).
+
 
 (** ** Definition of the logical relation *)
 
@@ -847,7 +968,10 @@ Inductive LR@{i j k} `{ta : tag}
   | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
     LR rec Γ A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA)
   | LRSig {Γ : context} {A : term} (ΣA : SigRedTy@{j} Γ A) (ΣAad : SigRedTyAdequate@{j k} (LR rec) ΣA) :
-    LR rec Γ A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA).
+    LR rec Γ A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA)
+  | LRId {Γ A} (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate@{j k} (LR rec) IA) :
+    LR rec Γ A (IdRedTyEq IA) (IdRedTm IA) (IdRedTmEq IA)
+  .
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
   (* | LREmb {Γ A l'} (l_ : l' << l) (H : [ rec l' l_ | Γ ||- A]) :
@@ -929,6 +1053,11 @@ Section MoreDefs.
   Definition LREmpty_@{i j k l} l {Γ A} (NA : [Γ ||-Empty A]) 
     : [LogRel@{i j k l} l | Γ ||- A] :=
     LRbuild (LREmpty (LogRelRec l) NA).
+
+  Definition LRId_@{i j k l} l {Γ A} (IA : IdRedTyPack@{k} Γ A) 
+    (IAad : IdRedTyAdequate (LR (LogRelRec@{i j k} l)) IA)
+    : [LogRel@{i j k l} l | Γ ||- A] :=
+    LRbuild (LRId (LogRelRec l) IA IAad).
 
 End MoreDefs.
   
@@ -1238,3 +1367,118 @@ Proof.
     eapply X; eauto. destruct prop; eauto.
   - intros. induction n. eapply X0.
 Qed.
+
+Module IdRedTy.
+Section IdRedTy.
+  
+  Context `{ta : tag}
+    `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+    `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!RedType ta} `{!RedTerm ta}.
+
+  Record IdRedTy@{i j k l} {Γ : context} {l} {A : term} : Type := 
+  {
+    ty : term ;
+    lhs : term ;
+    rhs : term ;
+    outTy := tId ty lhs rhs ;
+    red : [Γ |- A :⇒*: outTy] ;
+    eq : [Γ |- outTy ≅ outTy] ;
+    tyRed : [ LogRel@{i j k l} l | Γ ||- ty ] ;
+    lhsRed : [ tyRed | Γ ||- lhs : _ ] ;
+    rhsRed : [ tyRed | Γ ||- rhs : _ ] ;
+    lhsRedRefl : [ tyRed | Γ ||- lhs ≅ lhs : _ ] ;
+    rhsRedRefl : [ tyRed | Γ ||- rhs ≅ rhs : _ ] ;
+    tyPER : PER (fun t u => [tyRed | _ ||- t ≅ u : _]) ;
+    tyKripke : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [ LogRel@{i j k l} l | Δ ||- ty⟨ρ⟩ ] ;
+    tyKripkeEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) B,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- _ ≅ B] -> [tyKripke ρ' wfΞ | _ ||- _ ≅ B⟨ρ''⟩];
+    tyKripkeTm : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ : _];
+    tyKripkeTmEq : forall {Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Γ) (ρ'' : Ξ ≤ Δ) (wfΔ : [|-Δ]) (wfΞ : [|-Ξ]) t u,
+      ρ' =1 ρ'' ∘w ρ -> [tyKripke ρ wfΔ | _ ||- t ≅ u : _] -> [tyKripke ρ' wfΞ | _ ||- t⟨ρ''⟩ ≅ u⟨ρ''⟩ : _];
+ }.
+
+
+  Definition from@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) 
+    : @IdRedTy@{i j k l} Γ l A.
+  Proof.
+    unshelve econstructor; try exact IA.(IdRedTyPack.red).
+    - econstructor; apply IAad.
+    - intros; econstructor; now unshelve eapply IAad.
+    - exact IA.(IdRedTyPack.eq).
+    - exact IA.(IdRedTyPack.lhsRed).
+    - exact IA.(IdRedTyPack.rhsRed).
+    - exact IA.(IdRedTyPack.lhsRedRefl).
+    - exact IA.(IdRedTyPack.rhsRedRefl).
+    - exact IA.(IdRedTyPack.tyPER).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeEq).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeTm).
+    - intros; now eapply IA.(IdRedTyPack.tyKripkeTmEq).
+  Defined.
+
+  Definition toPack@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyPack@{k} Γ A.
+  Proof. 
+    unshelve econstructor; try exact IA.(IdRedTy.red).
+    - apply IA.(tyRed).
+    - intros; now apply IA.(tyKripke).
+    - exact IA.(eq).
+    - exact IA.(lhsRed).
+    - exact IA.(rhsRed).
+    - exact IA.(IdRedTy.lhsRedRefl).
+    - exact IA.(IdRedTy.rhsRedRefl).
+    - exact IA.(IdRedTy.tyPER).
+    - intros; now eapply IA.(IdRedTy.tyKripkeEq).
+    - intros; now eapply IA.(IdRedTy.tyKripkeTm).
+    - intros; now eapply IA.(IdRedTy.tyKripkeTmEq).
+  Defined.
+  
+  Definition to@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) (toPack IA).
+  Proof. 
+    econstructor; [apply IA.(tyRed)| intros; now apply IA.(tyKripke)]. 
+  Defined.
+
+  Lemma beta_pack@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) :
+    toPack (from IAad) = IA.
+  Proof. reflexivity. Qed.
+  
+  Lemma beta_ad@{i j k l} {Γ l A} {IA : IdRedTyPack@{k} Γ A} (IAad : IdRedTyAdequate@{k l} (LogRel@{i j k l} l) IA) :
+    to (from IAad) = IAad.
+  Proof. reflexivity. Qed.
+
+  Lemma eta@{i j k l} {Γ l A} (IA : @IdRedTy@{i j k l} Γ l A) : from  (to IA) = IA. 
+  Proof. reflexivity. Qed.
+
+  Definition IdRedTyEq {Γ l A} (IA : @IdRedTy Γ l A) := IdRedTyEq (toPack IA).
+  Definition IdRedTm {Γ l A} (IA : @IdRedTy Γ l A) := IdRedTm (toPack IA).
+  Definition IdProp {Γ l A} (IA : @IdRedTy Γ l A) := IdProp (toPack IA).
+  Definition IdRedTmEq {Γ l A} (IA : @IdRedTy Γ l A) := IdRedTmEq (toPack IA).
+  Definition IdPropEq {Γ l A} (IA : @IdRedTy Γ l A) := IdPropEq (toPack IA).
+
+  Definition LRId'@{i j k l} {l Γ A} (IA : @IdRedTy@{i j k l} Γ l A)
+    : [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRId (LogRelRec l) _ (to IA)).
+End IdRedTy.
+
+Arguments IdRedTy {_ _ _ _ _ _ _ _ _}.
+End IdRedTy.
+
+Export IdRedTy(IdRedTy, Build_IdRedTy,IdRedTyEq,IdRedTm,IdProp,IdRedTmEq,IdPropEq,LRId').
+
+Ltac unfold_id_outTy := 
+  change (IdRedTyPack.outTy (IdRedTy.toPack ?IA)) with (tId IA.(IdRedTy.ty) IA.(IdRedTy.lhs) IA.(IdRedTy.rhs)) in *.
+
+Notation "[ Γ ||-Id< l > A ]" := (IdRedTy Γ l A) (at level 0, Γ, l,  A at level 50).
+Notation "[ Γ ||-Id< l > A ≅ B | RA ]" := (IdRedTyEq (Γ:=Γ) (l:=l) (A:=A) RA B) (at level 0, Γ, l, A, B, RA at level 50).
+Notation "[ Γ ||-Id< l > t : A | RA ]" := (IdRedTm (Γ:=Γ) (l:=l) (A:=A) RA t) (at level 0, Γ, l, t, A, RA at level 50).
+Notation "[ Γ ||-Id< l > t ≅ u : A | RA ]" := (IdRedTmEq (Γ:=Γ) (l:=l) (A:=A) RA t u) (at level 0, Γ, l, t, u, A, RA at level 50).
+
+
+
+
+
+
+
+
+
+

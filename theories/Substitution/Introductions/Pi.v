@@ -25,7 +25,7 @@ Section PolyRedPi.
   Proof.
     econstructor; tea; pose proof (polyRedId PAB) as []; escape.
     + eapply redtywf_refl; gen_typing.
-    + eapply convty_prod; tea; unshelve eapply escapeEq; tea; eapply LRTyEqRefl_.
+    + eapply convty_prod; tea; unshelve eapply escapeEq; tea; eapply reflLRTyEq.
   Defined.
 
   Definition LRPiPoly {Γ l A B} (PAB : PolyRed Γ l A B) : [Γ ||-<l> tProd A B] := LRPi' (LRPiPoly0 PAB).

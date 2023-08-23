@@ -25,6 +25,7 @@ Section Escapes.
     - intros ??? []; gen_typing.
     - intros ??? []; gen_typing.
     - intros ??? [] **; gen_typing.
+    - intros ??? [] **; gen_typing.
   Qed.
 
   Lemma escapeEq {l Γ A B} (lr : [Γ ||-< l > A]) :
@@ -44,8 +45,9 @@ Section Escapes.
     + intros ??? [] []; gen_typing.
     + intros ??? [] * ? ? []; cbn in *.
       eapply convty_exp. all: gen_typing.
+    + intros ??? [???? red] ?? [???? red']; cbn in *. 
+      eapply convty_exp; tea;[eapply red | eapply red'].
   Qed.
-
 
   Definition escapeTerm {l Γ t A} (lr : [Γ ||-< l > A ]) :
     [Γ ||-< l > t : A | lr ] ->
@@ -62,6 +64,8 @@ Section Escapes.
     - intros ??? [] []; gen_typing.
     - intros ??? [] * ?? [] ; cbn in *.
       gen_typing.
+    - intros ??? IA _ _ []. 
+      unfold_id_outTy; destruct IA; cbn in *; gen_typing.
   Qed.
 
   Definition escapeEqTerm {l Γ t u A} (lr : [Γ ||-< l > A ]) :
@@ -85,6 +89,8 @@ Section Escapes.
     - intros ??? [] * ?? [[termL] [termR]] ; cbn in *.
       eapply convtm_exp ; tea.
       all: gen_typing.
+    - intros ??? [] _ _ []; unfold_id_outTy; cbn in *.
+      eapply convtm_exp; tea; gen_typing.
   Qed.
 
   Lemma escapeConv {l Γ A} (RA : [Γ ||-<l> A]) :
@@ -99,6 +105,7 @@ Section Escapes.
     - intros * []; gen_typing.
     - intros * []; gen_typing.
     - intros * ??? []; gen_typing.
+    - intros * _ _ ? []; gen_typing.
   Qed.
   
 End Escapes.

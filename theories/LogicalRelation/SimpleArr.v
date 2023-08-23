@@ -17,7 +17,7 @@ Section SimpleArrow.
     - renToWk; eapply wft_wk; gen_typing.
     - intros; irrelevance0.
       2: replace (subst_term _ _) with B⟨ρ⟩.
-      2: eapply wkEq, LRTyEqRefl_.
+      2: eapply wkEq, reflLRTyEq.
       all: bsimpl; now rewrite rinstInst'_term.
       Unshelve. all: tea.
   Qed.
@@ -30,7 +30,7 @@ Section SimpleArrow.
     - eapply redtywf_refl.
       now eapply wft_simple_arr.
     - eapply convty_simple_arr; tea.
-      all: now unshelve eapply escapeEq, LRTyEqRefl_.
+      all: now unshelve eapply escapeEq, reflLRTyEq.
     - now eapply shiftPolyRed.
   Qed.
 
@@ -122,7 +122,7 @@ Section SimpleArrow.
     [Γ ||-<l> idterm A : arr A A | ArrRedTy RA RA].
   Proof.
     normRedΠ ΠAA.
-    pose proof (LRTyEqRefl_ RA).
+    pose proof (reflLRTyEq RA).
     escape.
     assert (h : forall Δ a (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) RA (ha : [Δ ||-<l> a : A⟨ρ⟩ | RA]),
       [Δ ||-<l> tApp (idterm A)⟨ρ⟩ a : A⟨ρ⟩| RA] ×
@@ -250,7 +250,7 @@ Section SimpleArrow.
     1:{
       intros.
       eapply simple_appcongTerm; [| | |eapply simple_appcongTerm; tea].
-      1,4: eapply LREqTermRefl_; eapply wkRedArr; irrelevance.
+      1,4: eapply reflLRTmEq; eapply wkRedArr; irrelevance.
       1,2: eapply simple_appTerm; tea; eapply wkRedArr; irrelevance.
       Unshelve. 1: eapply wk. all: tea.
     }
@@ -279,7 +279,7 @@ Section SimpleArrow.
     - cbn. eapply convtm_comp; cycle 3; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.
-      eapply LREqTermRefl_.
+      eapply reflLRTmEq.
       do 2 erewrite <- wk1_ren_on.
       eapply h.
       eapply var0; now bsimpl.

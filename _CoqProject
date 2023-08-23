@@ -35,6 +35,7 @@ theories/LogicalRelation/Reduction.v
 theories/LogicalRelation/NormalRed.v
 theories/LogicalRelation/Application.v
 theories/LogicalRelation/SimpleArr.v
+theories/LogicalRelation/Id.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v
@@ -54,6 +55,7 @@ theories/Substitution/Introductions/Var.v
 theories/Substitution/Introductions/Nat.v
 theories/Substitution/Introductions/Empty.v
 theories/Substitution/Introductions/Sigma.v
+theories/Substitution/Introductions/Id.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v

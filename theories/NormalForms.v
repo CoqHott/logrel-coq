@@ -15,6 +15,8 @@ Inductive whnf : term -> Type :=
   | whnf_tEmpty : whnf tEmpty
   | whnf_tSig {A B} : whnf (tSig A B)
   | whnf_tPair {A B a b} : whnf (tPair A B a b)
+  | whnf_tId {A x y} : whnf (tId A x y)
+  | whnf_tRefl {A x} : whnf (tRefl A x)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
@@ -22,7 +24,8 @@ with whne : term -> Type :=
   | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)
-  | whne_tSnd {p} : whne p -> whne (tSnd p).
+  | whne_tSnd {p} : whne p -> whne (tSnd p)
+  | whne_tIdElim {A x P hr y e} : whne e -> whne (tIdElim A x P hr y e).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
@@ -57,12 +60,14 @@ Inductive isType : term -> Type :=
   | NatType : isType tNat
   | EmptyType : isType tEmpty
   | SigType {A B} : isType (tSig A B)
+  | IdType {A x y} : isType (tId A x y)
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
   | UnivPos {s} : isPosType (tSort s)
   | NatPos : isPosType tNat
   | EmptyPos : isPosType tEmpty
+  | IdPos {A x y} : isPosType (tId A x y)
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
@@ -119,6 +124,8 @@ Inductive isCanonical : term -> Type :=
   | can_tSucc {n} : isCanonical (tSucc n)
   | can_tEmpty : isCanonical tEmpty
   | can_tSig {A B} : isCanonical (tSig A B)
-  | can_tPair {A B a b}: isCanonical (tPair A B a b).
+  | can_tPair {A B a b}: isCanonical (tPair A B a b)
+  | can_tId {A x y}: isCanonical (tId A x y)
+  | can_tRefl {A x}: isCanonical (tRefl A x).
 
 #[global] Hint Constructors isCanonical : gen_typing.

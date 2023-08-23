@@ -19,3 +19,7 @@ tSig : term -> (bind term in term) -> term
 tPair : term -> (bind term in term) -> term -> term -> term
 tFst : term -> term
 tSnd : term -> term
+
+tId : term -> term -> term -> term
+tRefl : term -> term -> term
+tIdElim : term -> term -> (bind term , term in term) -> term -> term -> term -> term

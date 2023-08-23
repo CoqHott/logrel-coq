@@ -94,7 +94,7 @@ Proof.
     }
     eapply convtm_exp; tea.
     1: now eapply redty_refl.
-    rewrite <- (eqσ t); eapply escapeEqTerm; now eapply LREqTermRefl_.
+    rewrite <- (eqσ t); eapply escapeEqTerm; now eapply reflLRTmEq.
   + eapply lamBetaRed; tea. 
   + pose proof (Vσa := consWkSubstS VF ρ h Vσ ha).
     pose proof (Vσb := consWkSubstS VF ρ h Vσ hb).
@@ -177,7 +177,7 @@ Proof.
     assert (Vσσa : [_ ||-v _ ≅ (a .: σ'⟨ρ⟩) : _ | _ | _ | Vσa]).
     {
       unshelve eapply consSubstSEq'.
-      2: eapply LREqTermRefl_; irrelevance0; [|exact ha]; now bsimpl.
+      2: eapply reflLRTmEq; irrelevance0; [|exact ha]; now bsimpl.
       eapply irrelevanceSubstEq; now eapply wkSubstSEq.
       Unshelve. all: tea.
     }
@@ -210,7 +210,7 @@ Proof.
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
   1: now eapply redty_refl.
-  3: rewrite eqσ; eapply escapeEqTerm; eapply LREqTermRefl_; irrelevance.
+  3: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
   * eapply redtm_meta_conv. 3: reflexivity.
     1: eapply redtm_app.
     2: eapply (ty_var wfΔF (in_here _ _)).

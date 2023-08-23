@@ -23,6 +23,7 @@ Section ShapeViews.
       | LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _ => True
       | LRSig _ _ _, LRSig _ _ _ => True
+      | LRId _ _ _, LRId _ _ _ => True
       | _, _ => False
     end.
 
@@ -55,7 +56,7 @@ when showing symmetry or transitivity of the logical relation. *)
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
     eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].
-    3,6: intros ??.
+    3,6,7: intros ??.
     all: intros []; eexists; split; tea; constructor; tea.
     eapply convneu_whne; now symmetry.
   Defined.
@@ -68,23 +69,23 @@ when showing symmetry or transitivity of the logical relation. *)
     intros eqAB.
     pose (x := eqTy_red_whnf lrA eqAB).
     pose (y:= red_whnf lrB).
-    pose proof (h := redtywf_det _ _ _ _ (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
+    pose proof (h := redtywf_det (snd x.π2) (snd y.π2) (fst x.π2) (fst y.π2)).
     revert eqAB x y h. 
     destruct lrA; destruct lrB; intros []; cbn; try easy; try discriminate.
-
     all: try now (intros e; destruct neA as [? ? ne]; subst; apply convneu_whne in ne; inversion ne).
     all: try now (intros e; subst; symmetry in eq; apply convneu_whne in eq; inversion eq).
   Qed.
 
 (** ** More properties *)
+(* KM: looks like it is not used anywhere anymore *)
 
+(*
   Corollary ShapeViewRefl@{i j k l i' j' k' l'} {Γ A lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i' j' k' l'} lA' Γ A eqTyA' redTmA' eqTmA') :
     ShapeView@{i j k l i' j' k' l'} Γ A A lrA lrA'.
   Proof.
     now eapply ShapeViewConv, LRTyEqRefl.
   Qed.
-
 
   Definition ShapeView3 Γ
     A {lA eqTyA redTmA redTyA}
@@ -101,6 +102,7 @@ when showing symmetry or transitivity of the logical relation. *)
       | LRNat _ _, LRNat _ _, LRNat _ _ => True
       | LREmpty _ _, LREmpty _ _, LREmpty _ _ => True
       | LRSig _ _ _, LRSig _ _ _, LRSig _ _ _ => True
+      | LRId _ _ _, LRId _ _ _, LRId _ _ _ => True
       | _, _, _ => False
     end.
 
@@ -117,5 +119,5 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrC : LogRel lC Γ C eqTyC redTmC redTyC) :
     ShapeView Γ A B lrA lrB -> ShapeView Γ B C lrB lrC -> ShapeView3 Γ A B C lrA lrB lrC.
   Proof.  destruct lrA, lrB, lrC; easy. Qed.
-
+*)
 End ShapeViews.
