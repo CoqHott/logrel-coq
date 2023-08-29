@@ -579,9 +579,9 @@ Section BundledConv.
       assert [Γ |-[de] x ≅ x' : A] by now eapply ihx.
       assert [Γ |-[de] y' : A] by (eapply wfTermConv; tea; refold; now symmetry). 
       assert [ |-[ de ] (Γ,, A),, tId A⟨wk1 A⟩ x⟨wk1 A⟩ (tRel 0)] by boundary.
-      assert [(Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |-[ de ] P'].
+      assert [(Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |-[ de ] P'].
       1: eapply stability; tea; symmetry; eapply idElimMotiveCtxConv; tea; now boundary + eapply ctx_refl.
-      assert [(Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |-[ de ] P ≅ P'] by now eapply ihP.
+      assert [(Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |-[ de ] P ≅ P'] by now eapply ihP.
       assert [Γ |-[ de ] hr' : P[tRefl A x .: x..]].
       1:{
         eapply wfTermConv; tea; refold; symmetry.
@@ -977,7 +977,7 @@ Section BundledTyping.
     - intros * ? ihA ? ihx ? ihP ? ihhr ? ihy ? ihe ?.
       assert [Γ |-[de] A] by now eapply ihA.
       assert [Γ |-[de] x : A] by now eapply ihx.
-      assert [ |-[ de ] (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)] by now eapply idElimMotiveCtx.
+      assert [ |-[ de ] (Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)] by now eapply idElimMotiveCtx.
       assert [Γ |-[de] P[tRefl A x .: x..]].
       1:{
           eapply typing_subst2; tea;[| now eapply ihP].

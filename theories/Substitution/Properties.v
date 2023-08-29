@@ -112,14 +112,14 @@ Qed.
 
 Lemma wk1SubstS {Γ σ Δ F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ]) (wfF : [Δ |- F]) :
   [Δ ||-v σ : Γ | VΓ | wfΔ ] ->
-  [Δ ,, F ||-v σ ⟨ @wk1 Δ F ⟩ : Γ | VΓ | wfc_cons wfΔ wfF].
+  [Δ ,, F ||-v σ ⟨ wk1 Δ F ⟩ : Γ | VΓ | wfc_cons wfΔ wfF].
 Proof. eapply wkSubstS. Defined.
 
 Lemma wk1SubstSEq {Γ σ σ' Δ F} (VΓ : [||-v Γ])
   (wfΔ : [|- Δ]) (wfF : [Δ |- F])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
-  let ρ := @wk1 Δ F in
+  let ρ := wk1 Δ F in
   [Δ ,, F ||-v σ ⟨ ρ ⟩ ≅ σ' ⟨ ρ ⟩ : Γ | VΓ | wfc_cons wfΔ wfF | wk1SubstS VΓ wfΔ wfF Vσ].
 Proof.
   intro vσσ'. eapply wkSubstSEq ; eassumption.
@@ -157,7 +157,7 @@ Lemma liftSubstS {Γ σ Δ lF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc VΓ VF in
-  let ρ := @wk1 Δ F[σ] in
+  let ρ := wk1 Δ F[σ] in
   let wfΔF := wfc_cons wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ,, F[σ] ||-v (tRel 0 .: σ ⟨ ρ ⟩) : Γ ,, F | VΓF | wfΔF ].
 Proof.
@@ -171,7 +171,7 @@ Lemma liftSubstSrealign {Γ σ σ' Δ lF F} {VΓ : [||-v Γ]} {wfΔ : [|- Δ]}
   (VF : [Γ ||-v<lF> F | VΓ])
   {Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]} :
   let VΓF := validSnoc VΓ VF in
-  let ρ := @wk1 Δ F[σ]  in
+  let ρ := wk1 Δ F[σ]  in
   let wfΔF := wfc_cons wfΔ (escape (validTy VF wfΔ Vσ)) in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
   [Δ ||-v σ' : Γ | VΓ | wfΔ ] ->
@@ -205,7 +205,7 @@ Lemma liftSubstSEq {Γ σ σ' Δ lF F} (VΓ : [||-v Γ]) (wfΔ : [|- Δ])
   (VF : [Γ ||-v<lF> F | VΓ])
   (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ ]) :
   let VΓF := validSnoc VΓ VF in
-  let ρ := @wk1 Δ F[σ] in
+  let ρ := wk1 Δ F[σ] in
   let wfΔF := wfc_cons wfΔ (escape (validTy VF wfΔ Vσ)) in
   let Vliftσ := liftSubstS VΓ wfΔ VF Vσ in
   [Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | Vσ] ->
@@ -252,9 +252,9 @@ Qed.
 
 Lemma wk1ValidTy {Γ lA A lF F} {VΓ : [||-v Γ]} (VF : [Γ ||-v<lF> F | VΓ]) :
   [Γ ||-v<lA> A | VΓ] -> 
-  [Γ ,, F ||-v<lA> A ⟨ @wk1 Γ F ⟩ | validSnoc VΓ VF ].
+  [Γ ,, F ||-v<lA> A ⟨ wk1 Γ F ⟩ | validSnoc VΓ VF ].
 Proof.
-  assert (forall σ, (A ⟨@wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren) ;
+  assert (forall σ, (A ⟨wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren) ;
   intros [VA VAext]; unshelve econstructor.
   - abstract (intros * [tl _]; rewrite h; exact (VA _ _ wfΔ tl)).
   - intros * [tl _] [tleq _].
@@ -268,9 +268,9 @@ Qed.
 Lemma wk1ValidTyEq {Γ lA A B lF F} {VΓ : [||-v Γ]} (VF : [Γ ||-v<lF> F | VΓ]) 
   {VA : [Γ ||-v<lA> A | VΓ]} :
   [Γ ||-v<lA> A ≅ B | VΓ | VA] -> 
-  [Γ ,, F ||-v<lA> A ⟨ @wk1 Γ F ⟩ ≅ B ⟨ @wk1 Γ F ⟩ | validSnoc VΓ VF | wk1ValidTy VF VA].
+  [Γ ,, F ||-v<lA> A ⟨ wk1 Γ F ⟩ ≅ B ⟨ wk1 Γ F ⟩ | validSnoc VΓ VF | wk1ValidTy VF VA].
 Proof.
-  assert (forall A σ, (A ⟨@wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  assert (forall A σ, (A ⟨wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
   intros []; constructor; intros.
   rewrite h. irrelevance0.
   1: symmetry; apply h.
@@ -280,10 +280,10 @@ Qed.
 Lemma wk1ValidTm {Γ lA t A lF F} {VΓ : [||-v Γ]}
   (VF : [Γ ||-v<lF> F | VΓ])
   (VA : [Γ ||-v<lA> A | VΓ])
-  (Vt : [Γ ||-v<lA> t : A | VΓ | VA]) (ρ := @wk1 Γ F):
+  (Vt : [Γ ||-v<lA> t : A | VΓ | VA]) (ρ := wk1 Γ F):
   [Γ,, F ||-v<lA> t⟨ρ⟩ : A⟨ρ⟩ | validSnoc VΓ VF | wk1ValidTy VF VA].
 Proof.
-  assert (forall A σ, (A ⟨@wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  assert (forall A σ, (A ⟨wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
   constructor; intros; repeat rewrite h.
   - instValid (validTail Vσ); irrelevance.
   - instValidExt (validTail Vσ') (eqTail Vσσ'); irrelevance.
@@ -292,10 +292,10 @@ Qed.
 Lemma wk1ValidTmEq {Γ lA t u A lF F} {VΓ : [||-v Γ]}
   (VF : [Γ ||-v<lF> F | VΓ])
   (VA : [Γ ||-v<lA> A | VΓ])
-  (Vtu : [Γ ||-v<lA> t ≅ u : A | VΓ | VA]) (ρ := @wk1 Γ F):
+  (Vtu : [Γ ||-v<lA> t ≅ u : A | VΓ | VA]) (ρ := wk1 Γ F):
   [Γ,, F ||-v<lA> t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩ | validSnoc VΓ VF | wk1ValidTy VF VA].
 Proof.
-  assert (forall A σ, (A ⟨@wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
+  assert (forall A σ, (A ⟨wk1 Γ F⟩)[σ] = A[↑ >> σ]) as h by (intros; asimpl; now rewrite wk1_ren).
   constructor; intros; repeat rewrite h.
   instValid (validTail Vσ); irrelevance.
 Qed.

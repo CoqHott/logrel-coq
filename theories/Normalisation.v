@@ -218,7 +218,7 @@ Qed.
 Section NeutralConversion.
   Import AlgorithmicTypingData.
 
-  Lemma var0_wk1_id {Γ A t} : t[tRel 0 .: @wk1 Γ A >> tRel] = t.
+  Lemma var0_wk1_id {Γ A t} : t[tRel 0 .: wk1 Γ A >> tRel] = t.
   Proof. bsimpl. rewrite scons_eta'. now asimpl. Qed.
 
   Lemma ne_conv_conv : forall (Γ : context) (A m n : term),
@@ -271,7 +271,7 @@ Section NeutralConversion.
           1: econstructor; tea; boundary.
           econstructor; tea. gen_typing.
         * rewrite wk1_ren_on; now eapply ty_var0.
-        * assert (cod⟨wk_up dom (@wk1 Γ dom)⟩[(tRel 0)..] = cod[tRel 0 .: @wk1 Γ dom >> tRel]) as -> by now bsimpl.
+        * assert (cod⟨wk_up dom (wk1 Γ dom)⟩[(tRel 0)..] = cod[tRel 0 .: wk1 Γ dom >> tRel]) as -> by now bsimpl.
           econstructor. now rewrite var0_wk1_id.
       + eapply convne_meta_conv.
         3: reflexivity.

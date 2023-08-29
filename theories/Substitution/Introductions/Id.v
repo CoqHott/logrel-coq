@@ -158,7 +158,7 @@ Context `{GenericTypingProperties}.
     (VΓ : [||-v Γ]) 
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA]) :
-    [Γ,, A ||-v< l > tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) | validSnoc VΓ VA].
+    [Γ,, A ||-v< l > tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) | validSnoc VΓ VA].
   Proof.
     unshelve eapply IdValid.
     - now eapply wk1ValidTy.
@@ -174,10 +174,10 @@ Context `{GenericTypingProperties}.
     (Vx : [_ ||-v<l> x : _ | _ | VA]) 
     (Vx' : [_ ||-v<l> x' : _ | _ | VA]) 
     (Vxx' : [_ ||-v<l> x ≅ x' : _ | _ | VA]) 
-    (VId : [Γ,, A ||-v< l > tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) | validSnoc VΓ VA]) :
-    [_ ||-v<l> _ ≅ tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0) | validSnoc VΓ VA | VId].
+    (VId : [Γ,, A ||-v< l > tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) | validSnoc VΓ VA]) :
+    [_ ||-v<l> _ ≅ tId A'⟨wk1 Γ A'⟩ x'⟨wk1 Γ A'⟩ (tRel 0) | validSnoc VΓ VA | VId].
   Proof.
-    assert (h : forall t, t⟨@wk1 Γ A'⟩ = t⟨@wk1 Γ A⟩) by reflexivity.
+    assert (h : forall t, t⟨wk1 Γ A'⟩ = t⟨wk1 Γ A⟩) by reflexivity.
     unshelve eapply IdCongValid.
     - now eapply wk1ValidTy.
     - rewrite h; now eapply wk1ValidTy.
@@ -198,7 +198,7 @@ Context `{GenericTypingProperties}.
     (Vy : [Γ ||-v<l> y : _ | _ | VA])
     (VId : [Γ ||-v<l> tId A x y | VΓ])
     (Ve : [_ ||-v<l> e : _ | _ | VId]) 
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     Δ σ (wfΔ: [ |-[ ta ] Δ]) (vσ: [VΓ | Δ ||-v σ : _ | wfΔ]) :
       [VΓext | Δ ||-v (e[σ] .: (y[σ] .: σ)) : _ | wfΔ].
   Proof.
@@ -212,7 +212,7 @@ Context `{GenericTypingProperties}.
     (VΓ : [||-v Γ]) 
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (Vy : [Γ ||-v<l> y : _ | _ | VA])
     (VId : [Γ ||-v<l> tId A x y | VΓ])
@@ -240,7 +240,7 @@ Context `{GenericTypingProperties}.
     (VA : [_ ||-v<l> A | VΓ]) 
     (RVA := validTy VA wfΔ Vσ)
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (Ry : [ RVA |  _ ||- y : _])
     (RId : [Δ ||-<l> tId A[σ] x[σ] y])
@@ -263,7 +263,7 @@ Context `{GenericTypingProperties}.
   Qed.
 
   Lemma idElimMotive_Idsubst_eq {Γ Δ A x σ} : 
-    tId A[σ]⟨@wk1 Δ A[σ]⟩ x[σ]⟨@wk1 Δ A[σ]⟩ (tRel 0) = (tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0))[up_term_term σ].
+    tId A[σ]⟨wk1 Δ A[σ]⟩ x[σ]⟨wk1 Δ A[σ]⟩ (tRel 0) = (tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0))[up_term_term σ].
   Proof. now bsimpl. Qed.
   
   Lemma red_idElimMotive_substupup {Γ Δ l A x P σ}
@@ -272,9 +272,9 @@ Context `{GenericTypingProperties}.
     (Vσ : [_ ||-v σ : _ | VΓ | wfΔ])
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext]) :
-    [(Δ ,, A[σ]),, tId A[σ]⟨@wk1 Δ A[σ]⟩ x[σ]⟨@wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]].
+    [(Δ ,, A[σ]),, tId A[σ]⟨wk1 Δ A[σ]⟩ x[σ]⟨wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]].
   Proof.
     pose (VΓA := validSnoc VΓ VA). 
     instValid Vσ.
@@ -310,9 +310,9 @@ Context `{GenericTypingProperties}.
     (Vσσ' : [_ ||-v σ ≅ σ' : _ | VΓ | wfΔ | Vσ])
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext]) 
-    (RPσ : [(Δ ,, A[σ]),, tId A[σ]⟨@wk1 Δ A[σ]⟩ x[σ]⟨@wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]]) :
+    (RPσ : [(Δ ,, A[σ]),, tId A[σ]⟨wk1 Δ A[σ]⟩ x[σ]⟨wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]]) :
     [RPσ | _ ||- _ ≅ P[up_term_term (up_term_term σ')]].
   Proof.
     pose (VΓA := validSnoc VΓ VA). 
@@ -356,11 +356,11 @@ Context `{GenericTypingProperties}.
     (Vx : [_ ||-v<l> x : _ | _ | VA])
     (Vx' : [_ ||-v<l> x' : _ | _ | VA])
     (Vxx' : [_ ||-v<l> x ≅ x' : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VP' : [_ ||-v<l> P' | VΓext])
     (VPP' : [_ ||-v<l> P ≅ P' | _ | VP]) 
-    (VPsubstupup : [(Δ ,, A[σ]),, tId A[σ]⟨@wk1 Δ A[σ]⟩ x[σ]⟨@wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]]) :
+    (VPsubstupup : [(Δ ,, A[σ]),, tId A[σ]⟨wk1 Δ A[σ]⟩ x[σ]⟨wk1 Δ A[σ]⟩ (tRel 0) ||-<l> P[up_term_term (up_term_term σ)]]) :
     [_ ||-<l> _ ≅ P'[up_term_term (up_term_term σ)] | VPsubstupup].
   Proof.
     pose (VΓA := validSnoc VΓ VA). 
@@ -392,7 +392,7 @@ Context `{GenericTypingProperties}.
     (RVA := validTy VA wfΔ Vσ)
     (RVA' := validTy VA wfΔ Vσ')
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (Ry : [ RVA |  _ ||- y : _])
     (Ry' : [ RVA' |  _ ||- y' : _])
@@ -429,7 +429,7 @@ Context `{GenericTypingProperties}.
     (VA : [_ ||-v<l> A | VΓ]) 
     (RVA := validTy VA wfΔ Vσ)
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (Ry : [ RVA |  _ ||- y : _])
     (Ry' : [ RVA |  _ ||- y' : _])
@@ -458,7 +458,7 @@ Context `{GenericTypingProperties}.
     (Vx : [_ ||-v<l> x : _ | _ | VA])
     (Vx' : [_ ||-v<l> x' : _ | _ | VA])
     (Vxx' : [_ ||-v<l> x ≅ x' : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VP' : [_ ||-v<l> P' | VΓext])
     (VPP' : [_ ||-v<l> P ≅ P' | _ | VP]) 
@@ -492,7 +492,7 @@ Context `{GenericTypingProperties}.
     (VΓ : [||-v Γ]) 
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (Vy : [Γ ||-v<l> y : _ | _ | VA])
     (Vy' : [Γ ||-v<l> y' : _ | _ | VA])
@@ -525,7 +525,7 @@ Context `{GenericTypingProperties}.
     (Vx : [_ ||-v<l> x : _ | _ | VA])
     (Vx' : [_ ||-v<l> x' : _ | _ | VA])
     (Vxx' : [_ ||-v<l> x ≅ x' : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VP' : [_ ||-v<l> P | VΓext])
     (VPP' : [_ ||-v<l> P ≅ P' | _ | VP])
@@ -575,7 +575,7 @@ Context `{GenericTypingProperties}.
     (VΓ : [||-v Γ]) 
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VPhr := substIdElimMotive VΓ VA Vx VΓext VP Vx (IdValid VΓ VA Vx Vx) (reflValid VΓ VA Vx _))
     (Vhr : [_ ||-v<l> hr : _ | _ | VPhr ])
@@ -629,7 +629,7 @@ Context `{GenericTypingProperties}.
     (Vx : [_ ||-v<l> x : _ | _ | VA])
     (Vx' : [_ ||-v<l> x' : _ | _ | VA])
     (Vxx' : [_ ||-v<l> x ≅ x' : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VP' : [_ ||-v<l> P' | VΓext])
     (VPP' : [_ ||-v<l> P ≅ P' | _ | VP])
@@ -649,9 +649,9 @@ Context `{GenericTypingProperties}.
   Proof.
     assert [_ ||-v<l> x' : _ | _ | VA'] by now eapply conv.
     assert [_ ||-v<l> y' : _ | _ | VA'] by now eapply conv.
-    assert (VΓext' : [||-v (Γ ,, A'),, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0)]).
+    assert (VΓext' : [||-v (Γ ,, A'),, tId A'⟨wk1 Γ A'⟩ x'⟨wk1 Γ A'⟩ (tRel 0)]).
     1: eapply validSnoc; now eapply idElimMotiveCtxIdValid.
-    assert (h : forall t, t⟨@wk1 Γ A'⟩ = t⟨@wk1 Γ A⟩) by reflexivity.
+    assert (h : forall t, t⟨wk1 Γ A'⟩ = t⟨wk1 Γ A⟩) by reflexivity.
     assert (VPalt' : [_ ||-v<l> P' | VΓext']).
     1:{
       eapply convCtx2'; tea.
@@ -708,7 +708,7 @@ Context `{GenericTypingProperties}.
     (VΓ : [||-v Γ]) 
     (VA : [_ ||-v<l> A | VΓ]) 
     (Vx : [_ ||-v<l> x : _ | _ | VA])
-    (VΓext : [||-v (Γ ,, A) ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)])
+    (VΓext : [||-v (Γ ,, A) ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)])
     (VP : [_ ||-v<l> P | VΓext])
     (VPhr := substIdElimMotive VΓ VA Vx VΓext VP Vx (IdValid VΓ VA Vx Vx) (reflValid VΓ VA Vx _))
     (Vhr : [_ ||-v<l> hr : _ | _ | VPhr ])

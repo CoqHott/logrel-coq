@@ -8,7 +8,7 @@ From LogRel.Substitution.Introductions Require Import Universe.
 
 Set Universe Polymorphism.
 
-Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ @wk1 Δ F[σ] ⟩].
+Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ wk1 Δ F[σ] ⟩].
 Proof.
   now bsimpl.
 Qed.
@@ -38,10 +38,10 @@ Section PolyValidity.
   Proof.
     assert [Γ |- A] by (eapply escape; now eapply instKripke).
     unshelve econstructor; tea.
-    unshelve epose proof (RB _ (tRel 0) (@wk1 Γ A) _ _).
+    unshelve epose proof (RB _ (tRel 0) (wk1 Γ A) _ _).
     + gen_typing.
     + eapply var0; tea; now rewrite wk1_ren_on.
-    + enough (B = B[tRel 0 .: @wk1 Γ A >> tRel]) as -> by now escape.
+    + enough (B = B[tRel 0 .: wk1 Γ A >> tRel]) as -> by now escape.
       setoid_rewrite wk1_ren; rewrite scons_eta'; now asimpl.
   Qed.
 
@@ -81,7 +81,7 @@ Section PolyValidity.
   Proof.
     intros [?? RF RG]; split.
     -  rewrite <- (wk_id_ren_on Γ F). eapply RF; gen_typing.
-    - replace G with G[tRel 0 .: @wk1 Γ F >> tRel].
+    - replace G with G[tRel 0 .: wk1 Γ F >> tRel].
       2: bsimpl; rewrite scons_eta'; now asimpl.
       eapply RG. eapply var0; tea; now bsimpl.
       Unshelve. gen_typing.
@@ -94,7 +94,7 @@ Section PolyValidity.
     - rewrite <- (wk_id_ren_on Γ F'); irrelevance0.
       2: unshelve eapply RFF'; gen_typing.
       apply wk_id_ren_on.
-    - replace G' with G'[tRel 0 .: @wk1 Γ F >> tRel].
+    - replace G' with G'[tRel 0 .: wk1 Γ F >> tRel].
       2: bsimpl; rewrite scons_eta'; now asimpl.
       irrelevance0.
       2: eapply RGG'.
@@ -117,14 +117,14 @@ Section PolyValidity.
     destruct PAB; opector; tea.
     + intros; rewrite liftSubst_scons_eq.
       unshelve eapply posRed; tea; eapply Rt; now irrelevanceRefl.
-    + unshelve epose proof (posRed _ t (@wk1 Γ A) _ _).
+    + unshelve epose proof (posRed _ t (wk1 Γ A) _ _).
       - escape; gen_typing.
-      - replace t with t[tRel 0 .: @wk1 Γ A >> tRel].
+      - replace t with t[tRel 0 .: wk1 Γ A >> tRel].
         2:{ bsimpl; rewrite scons_eta'; now asimpl. }
         eapply Rt.
         eapply var0; tea; now rewrite wk1_ren_on.
       - escape. 
-        replace (B[_]) with B[t .: @wk1 Γ A >> tRel]; tea.
+        replace (B[_]) with B[t .: wk1 Γ A >> tRel]; tea.
         now setoid_rewrite wk1_ren.
     + intros; irrelevance0; rewrite liftSubst_scons_eq;[reflexivity|].
       unshelve eapply posExt; tea; eapply Rt + eapply Rtext; now irrelevanceRefl.

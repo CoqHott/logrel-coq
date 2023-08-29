@@ -134,7 +134,7 @@ Lemma substLiftS {Γ F G t l} (VΓ : [||-v Γ])
   (VΓF := validSnoc VΓ VF)
   (VG : [Γ,, F ||-v<l> G | VΓF])
   (VF' := wk1ValidTy VF VF)
-  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  (Vt : [Γ,, F ||-v<l> t : F⟨wk1 Γ F⟩ | VΓF | VF']) :
   [Γ ,, F ||-v<l> G[t]⇑ | VΓF].
 Proof.
   assert (h : forall Δ σ (wfΔ: [|- Δ])
@@ -170,7 +170,7 @@ Lemma substLiftSEq {Γ F G G' t l} (VΓ : [||-v Γ])
   (VG' : [Γ,, F ||-v<l> G' | VΓF])
   (VGeq : [Γ,, F ||-v<l> G ≅ G' | VΓF | VG])
   (VF' := wk1ValidTy VF VF)
-  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  (Vt : [Γ,, F ||-v<l> t : F⟨wk1 Γ F⟩ | VΓF | VF']) :
   [Γ ,, F ||-v<l> G[t]⇑ ≅ G'[t]⇑ | VΓF | substLiftS _ VF VG Vt].
 Proof.
   constructor; intros; rewrite liftSubstComm.
@@ -189,9 +189,9 @@ Lemma substLiftSEq' {Γ F G G' t t' l} (VΓ : [||-v Γ])
   (VG' : [Γ,, F ||-v<l> G' | VΓF])
   (VGeq : [Γ,, F ||-v<l> G ≅ G' | VΓF | VG])
   (VF' := wk1ValidTy VF VF)
-  (Vt : [Γ,, F ||-v<l> t : F⟨@wk1 Γ F⟩ | VΓF | VF']) 
-  (Vt' : [Γ,, F ||-v<l> t' : F⟨@wk1 Γ F⟩ | VΓF | VF'])
-  (Vtt' : [Γ,, F ||-v<l> t ≅ t' : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
+  (Vt : [Γ,, F ||-v<l> t : F⟨wk1 Γ F⟩ | VΓF | VF']) 
+  (Vt' : [Γ,, F ||-v<l> t' : F⟨wk1 Γ F⟩ | VΓF | VF'])
+  (Vtt' : [Γ,, F ||-v<l> t ≅ t' : F⟨wk1 Γ F⟩ | VΓF | VF']) :
   [Γ ,, F ||-v<l> G[t]⇑ ≅ G'[t']⇑ | VΓF | substLiftS _ VF VG Vt].
 Proof.
   eapply transValidTyEq.

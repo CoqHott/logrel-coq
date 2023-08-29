@@ -192,7 +192,7 @@ Section AlgoConvConv.
       pose proof (redty_whnf red (isType_whnf _ isTy)); subst.
       assert [Γ' |-[de] A ≅ A] by (eapply stability; tea; now eapply lrefl).
       assert [Γ' |-[de] x ≅ x : A] by (eapply stability; tea; now eapply lrefl). 
-      assert [|- (Γ',, A),, tId A⟨@wk1 Γ' A⟩ x⟨@wk1 Γ' A⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
+      assert [|- (Γ',, A),, tId A⟨wk1 Γ' A⟩ x⟨wk1 Γ' A⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)].
       1: eapply idElimMotiveCtxConv; first [now econstructor| now symmetry| boundary].
       assert [Γ' |-[ de ] P[tRefl A x .: x..] ≅ P[tRefl A x .: x..]].
       1: eapply TypeRefl; refold; now boundary.

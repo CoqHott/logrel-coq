@@ -352,7 +352,7 @@ Section Boundary.
   Lemma idElimMotiveCtx {Γ A x} : 
     [Γ |- A] ->
     [Γ |- x : A] ->
-    [|- (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
+    [|- (Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)].
   Proof.
     intros; assert [|- Γ] by boundary.
     assert [|- Γ,, A] by now econstructor.
@@ -367,9 +367,9 @@ Section Boundary.
     [|- Γ ≅ Γ'] ->
     [Γ |- A ≅ A'] ->
     [Γ |- x ≅ x' : A] ->
-    [ |- (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)] ->
-    [ |- (Γ',, A'),, tId A'⟨@wk1 Γ' A'⟩ x'⟨@wk1 Γ' A'⟩ (tRel 0)] ->
-    [ |- (Γ',, A'),, tId A'⟨@wk1 Γ' A'⟩ x'⟨@wk1 Γ' A'⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
+    [ |- (Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)] ->
+    [ |- (Γ',, A'),, tId A'⟨wk1 Γ' A'⟩ x'⟨wk1 Γ' A'⟩ (tRel 0)] ->
+    [ |- (Γ',, A'),, tId A'⟨wk1 Γ' A'⟩ x'⟨wk1 Γ' A'⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)].
   Proof.
     intros.
     assert [|- Γ] by boundary.

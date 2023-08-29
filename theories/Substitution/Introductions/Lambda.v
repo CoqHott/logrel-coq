@@ -215,7 +215,7 @@ Qed.
 
 
 
-Lemma ηeqEqTermConvNf {σ Δ f} (ρ := @wk1 Γ F)
+Lemma ηeqEqTermConvNf {σ Δ f} (ρ := wk1 Γ F)
   (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ| wfΔ])
   (RΠFG := normRedΠ (validTy VΠFG wfΔ Vσ))
   (Rf : [Δ ||-<l> f[σ] : (tProd F G)[σ] | RΠFG ]) :
@@ -226,10 +226,10 @@ Proof.
   instValid Vσ; instValid VσUp; escape.
   destruct (PiRedTm.red Rf); cbn in *.
   assert (wfΔF : [|- Δ,, F[σ]]) by gen_typing.
-  unshelve epose proof (r := PiRedTm.app Rf (@wk1 Δ F[σ]) wfΔF (var0 _ _ _)).
+  unshelve epose proof (r := PiRedTm.app Rf (wk1 Δ F[σ]) wfΔF (var0 _ _ _)).
   1: now rewrite wk1_ren_on.
   assumption.
-  assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ][(tRel 0) .: @wk1 Δ F[σ] >> tRel])
+  assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ][(tRel 0) .: wk1 Δ F[σ] >> tRel])
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
   7: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
@@ -237,7 +237,7 @@ Proof.
     1: eapply redtm_app.
     2: eapply (ty_var wfΔF (in_here _ _)).
     1:{
-      replace (f⟨_⟩[_]) with f[σ]⟨@wk1 Δ F[σ]⟩ by (unfold ρ; now bsimpl).
+      replace (f⟨_⟩[_]) with f[σ]⟨wk1 Δ F[σ]⟩ by (unfold ρ; now bsimpl).
       eapply redtm_meta_conv. 3: reflexivity.
       1: eapply redtm_wk; tea.
       now rewrite wk1_ren_on.
@@ -307,7 +307,7 @@ destruct isfun as [A t vA vt|]; simpl in *; constructor; tea.
   all: tea.
 Qed.
 
-Lemma ηeqEqTerm {σ Δ f g} (ρ := @wk1 Γ F)
+Lemma ηeqEqTerm {σ Δ f g} (ρ := wk1 Γ F)
   (Vfg : [Γ ,, F ||-v<l> tApp f⟨ρ⟩ (tRel 0) ≅ tApp g⟨ρ⟩ (tRel 0) : G | VΓF | VG ])
   (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ| wfΔ])
   (RΠFG := validTy VΠFG wfΔ Vσ)
@@ -352,7 +352,7 @@ Proof.
       now bsimpl.
 Qed.
 
-Lemma etaeqValid {f g} (ρ := @wk1 Γ F)
+Lemma etaeqValid {f g} (ρ := wk1 Γ F)
   (Vf : [Γ ||-v<l> f : tProd F G | VΓ | VΠFG ])
   (Vg : [Γ ||-v<l> g : tProd F G | VΓ | VΠFG ]) 
   (Vfg : [Γ ,, F ||-v<l> tApp f⟨ρ⟩ (tRel 0) ≅ tApp g⟨ρ⟩ (tRel 0) : G | VΓF | VG ]) :

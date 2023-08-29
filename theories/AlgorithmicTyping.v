@@ -81,7 +81,7 @@ Section Definitions.
       (* [Γ |- y'' ≅ y : A] -> *)
       [Γ |- A ≅ A'] ->
       [Γ |- x ≅ x' : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+      [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
       [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
       [Γ |- y ≅ y' : A] ->
       [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' ▹ P[e .: y..] ]
@@ -243,7 +243,7 @@ Section Definitions.
     | infIdElim {Γ A x P hr y e} :
       [Γ |- A] ->
       [Γ |- x ◃ A] ->
-      [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ,, A,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
       [Γ |- hr ◃ P[tRefl A x .: x..]] ->
       [Γ |- y ◃ A] ->
       [Γ |- e ◃ tId A x y] ->
@@ -664,8 +664,8 @@ Section TypingWk.
     repeat match goal with |- _ × _ => split end.
     all: intros Γ * Hty T.
     all: eapply algo_conv_wk in Hty.
-    all: specialize (Hty _ (@wk1 Γ T)).
-    all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ T)) ; refold.
+    all: specialize (Hty _ (wk1 Γ T)).
+    all: repeat rewrite <- (extRen_term _ _ (wk1_ren Γ T)) ; refold.
     all: now eapply Hty.
   Qed.
 
@@ -679,8 +679,8 @@ Section TypingWk.
   repeat match goal with |- _ × _ => split end.
   all: intros Γ * Hty T.
   all: eapply algo_typing_wk in Hty.
-  all: specialize (Hty _ (@wk1 Γ T)).
-  all: repeat rewrite <- (extRen_term _ _ (@wk1_ren Γ T)) ; refold.
+  all: specialize (Hty _ (wk1 Γ T)).
+  all: repeat rewrite <- (extRen_term _ _ (wk1_ren Γ T)) ; refold.
   all: now eapply Hty.
   Qed.
 

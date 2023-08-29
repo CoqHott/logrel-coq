@@ -875,7 +875,7 @@ Section Fundamental.
   Lemma FundTmIdElim : forall (Γ : context) (A x P hr y e : term),
     FundTy Γ A ->
     FundTm Γ A x ->
-    FundTy ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) P ->
+    FundTy ((Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)) P ->
     FundTm Γ P[tRefl A x .: x..] hr ->
     FundTm Γ A y -> FundTm Γ (tId A x y) e -> FundTm Γ P[e .: y..] (tIdElim A x P hr y e).
   Proof.
@@ -927,7 +927,7 @@ Section Fundamental.
     FundTm Γ A x ->
     FundTyEq Γ A A' ->
     FundTmEq Γ A x x' ->
-    FundTyEq ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) P P' ->
+    FundTyEq ((Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)) P P' ->
     FundTmEq Γ P[tRefl A x .: x..] hr hr' ->
     FundTmEq Γ A y y' ->
     FundTmEq Γ (tId A x y) e e' -> FundTmEq Γ P[e .: y..] (tIdElim A x P hr y e) (tIdElim A' x' P' hr' y' e').
@@ -966,7 +966,7 @@ Section Fundamental.
   Lemma FundTmEqIdElimRefl : forall (Γ : context) (A x P hr y A' z : term),
     FundTy Γ A ->
     FundTm Γ A x ->
-    FundTy ((Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A ⟩ (tRel 0)) P ->
+    FundTy ((Γ,, A),, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A ⟩ (tRel 0)) P ->
     FundTm Γ P[tRefl A x .: x..] hr ->
     FundTm Γ A y ->
     FundTy Γ A' ->

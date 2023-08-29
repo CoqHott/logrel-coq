@@ -8,7 +8,7 @@ From LogRel.Substitution.Introductions Require Import Universe Poly.
 
 Set Universe Polymorphism.
 
-(* Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ @wk1 Δ F[σ] ⟩].
+(* Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ wk1 Δ F[σ] ⟩].
 Proof.
   now bsimpl.
 Qed.

@@ -364,7 +364,7 @@ Section NatElimValid.
     eapply irrelevanceTm.
     eapply succValid.
     eapply irrelevanceTm.
-    change tNat with tNat⟨@wk1 Γ tNat⟩ at 2.
+    change tNat with tNat⟨wk1 Γ tNat⟩ at 2.
     eapply var0Valid.
     Unshelve. all: tea.
   Qed.
@@ -550,7 +550,7 @@ Lemma elimSuccHypTyCongValid {Γ l P P'}
       eapply irrelevanceTm.
       eapply succValid.
       eapply irrelevanceTm.
-      change tNat with tNat⟨@wk1 Γ tNat⟩ at 2.
+      change tNat with tNat⟨wk1 Γ tNat⟩ at 2.
       eapply var0Valid.
     }
     eapply PiCong.

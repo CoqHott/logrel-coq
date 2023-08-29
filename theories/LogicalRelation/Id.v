@@ -227,7 +227,7 @@ Qed.
 Lemma idElimPropRed {Γ l A x P hr y e}
   (RA : [Γ ||-<l> A])
   (Rx : [RA | _ ||- x : _])
-  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0 : [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) ||-<l> P])
   (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
     [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
   (RPeq : forall A' x' y y' e e' 
@@ -287,7 +287,7 @@ Qed.
 Lemma idElimRed {Γ l A x P hr y e}
   (RA : [Γ ||-<l> A])
   (Rx : [RA | _ ||- x : _])
-  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0 : [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) ||-<l> P])
   (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
     [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
   (RPeq : forall A' x' y y' e e' 
@@ -333,8 +333,8 @@ Lemma idElimPropCongRed {Γ l A A' x x' P P' hr hr' y y' e e'}
   (Rx : [RA | _ ||- x : _])
   (Rx' : [RA' | _ ||- x' : _])
   (Rxx' : [RA | _ ||- x ≅ x' : _])
-  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
-  (RP0' : [Γ ,, A' ,, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
+  (RP0 : [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0' : [Γ ,, A' ,, tId A'⟨wk1 Γ A'⟩ x'⟨wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
   (RPP0 : [RP0 | _ ||- _ ≅ P'])
   (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
     [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
@@ -439,8 +439,8 @@ Lemma idElimCongRed {Γ l A A' x x' P P' hr hr' y y' e e'}
   (Rx : [RA | _ ||- x : _])
   (Rx' : [RA' | _ ||- x' : _])
   (Rxx' : [RA | _ ||- x ≅ x' : _])
-  (RP0 : [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) ||-<l> P])
-  (RP0' : [Γ ,, A' ,, tId A'⟨@wk1 Γ A'⟩ x'⟨@wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
+  (RP0 : [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) ||-<l> P])
+  (RP0' : [Γ ,, A' ,, tId A'⟨wk1 Γ A'⟩ x'⟨wk1 Γ A'⟩ (tRel 0) ||-<l> P'])
   (RPP0 : [RP0 | _ ||- _ ≅ P'])
   (RP : forall y e (Ry : [RA | Γ ||- y : _]) (RIAxy : [Γ ||-<l> tId A x y]),
     [ RIAxy | _ ||- e : _] -> [Γ ||-<l> P[e .: y..]])
