@@ -23,3 +23,7 @@ tSnd : term -> term
 tId : term -> term -> term -> term
 tRefl : term -> term -> term
 tIdElim : term -> term -> (bind term , term in term) -> term -> term -> term -> term
+
+tW : term -> (bind term in term) -> term
+tSup : term -> (bind term in term) -> term -> term -> term
+tWElim : term -> (bind term in term) -> (bind term in term) -> term -> term -> term 
