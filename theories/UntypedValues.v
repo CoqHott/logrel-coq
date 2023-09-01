@@ -4,16 +4,16 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedR
 Unset Elimination Schemes.
 
 Inductive snf (r : term) : Type :=
-  | snf_tSort {s} : [ r ⇒* tSort s ] -> snf r
-  | snf_tProd {A B} : [ r ⇒* tProd A B ] -> snf A -> snf B -> snf r
-  | snf_tLambda {A t} : [ r ⇒* tLambda A t ] -> snf A -> snf t -> snf r
-  | snf_tNat : [ r ⇒* tNat ] -> snf r
-  | snf_tZero : [ r ⇒* tZero ] -> snf r
-  | snf_tSucc {n} : [ r ⇒* tSucc n ] -> snf n -> snf r
-  | snf_tEmpty : [ r ⇒* tEmpty ] -> snf r
-  | snf_tSig {A B} : [r ⇒* tSig A B] -> snf A -> snf B -> snf r
-  | snf_tPair {A B a b} : [r ⇒* tPair A B a b] -> snf A -> snf B -> snf a -> snf b -> snf r
-  | snf_sne {n} : [ r ⇒* n ] -> sne n -> snf r
+  | snf_tSort {s} : [ r ⤳* tSort s ] -> snf r
+  | snf_tProd {A B} : [ r ⤳* tProd A B ] -> snf A -> snf B -> snf r
+  | snf_tLambda {A t} : [ r ⤳* tLambda A t ] -> snf A -> snf t -> snf r
+  | snf_tNat : [ r ⤳* tNat ] -> snf r
+  | snf_tZero : [ r ⤳* tZero ] -> snf r
+  | snf_tSucc {n} : [ r ⤳* tSucc n ] -> snf n -> snf r
+  | snf_tEmpty : [ r ⤳* tEmpty ] -> snf r
+  | snf_tSig {A B} : [r ⤳* tSig A B] -> snf A -> snf B -> snf r
+  | snf_tPair {A B a b} : [r ⤳* tPair A B a b] -> snf A -> snf B -> snf a -> snf b -> snf r
+  | snf_sne {n} : [ r ⤳* n ] -> sne n -> snf r
 with sne (r : term) : Type :=
   | sne_tRel {v} : r = tRel v -> sne r
   | sne_tApp {n t} : r = tApp n t -> sne n -> snf t -> sne r
@@ -56,7 +56,7 @@ Proof.
 apply sne_rect with (P := fun _ _ => True); intros; subst; constructor; assumption.
 Qed.
 
-Lemma snf_red : forall t u, [ t ⇒* u ] -> snf u -> snf t.
+Lemma snf_red : forall t u, [ t ⤳* u ] -> snf u -> snf t.
 Proof.
 intros t u Hr Hu; destruct Hu.
 + eapply snf_tSort.

@@ -307,7 +307,7 @@ Section Definitions.
     reddecl_conv : match A with istype => [ Γ |- t ≅ u ] | isterm A => [Γ |- t ≅ u : A] end;
   }.
 
-  Notation "[ Γ |- t ⇒* t' ∈ A ]" := (RedClosureDecl Γ A t t').
+  Notation "[ Γ |- t ⤳* t' ∈ A ]" := (RedClosureDecl Γ A t t').
 
   Record ConvNeuConvDecl (Γ : context) (A : term) (t u : term) := {
     convnedecl_whne_l : whne t;
@@ -320,7 +320,7 @@ End Definitions.
 Definition TermRedClosure Γ A t u := RedClosureDecl Γ (isterm A) t u.
 Definition TypeRedClosure Γ A B := RedClosureDecl Γ istype A B.
 
-Notation "[ Γ |- t ⇒* u ∈ A ]" := (RedClosureDecl Γ A t u).
+Notation "[ Γ |- t ⤳* u ∈ A ]" := (RedClosureDecl Γ A t u).
 
 (** ** Instances *)
 (** Used for printing (see Notations) and as a support for the generic typing
@@ -419,15 +419,15 @@ Section TypeErasure.
   Import DeclarativeTypingData.
 
 Lemma redtmdecl_red Γ t u A : 
-  [Γ |- t ⇒* u : A] ->
-  [t ⇒* u].
+  [Γ |- t ⤳* u : A] ->
+  [t ⤳* u].
 Proof.
 apply reddecl_red.
 Qed.
 
 Lemma redtydecl_red Γ A B : 
-  [Γ |- A ⇒* B] ->
-  [A ⇒* B].
+  [Γ |- A ⤳* B] ->
+  [A ⤳* B].
 Proof.
 apply reddecl_red.
 Qed.

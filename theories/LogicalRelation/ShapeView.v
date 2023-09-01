@@ -43,7 +43,7 @@ when showing symmetry or transitivity of the logical relation. *)
 
   Lemma red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
-    ∑ nf, [Γ |- A :⇒*: nf] × whnf nf.
+    ∑ nf, [Γ |- A :⤳*: nf] × whnf nf.
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA; eapply LR_rect; intros ??[].
     all: eexists; split; tea; constructor; tea.
@@ -52,7 +52,7 @@ when showing symmetry or transitivity of the logical relation. *)
 
   Lemma eqTy_red_whnf@{i j k l} {Γ A lA eqTyA redTmA eqTmA B}
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
-    eqTyA B -> ∑ nf, [Γ |- B :⇒*: nf] × whnf nf.
+    eqTyA B -> ∑ nf, [Γ |- B :⤳*: nf] × whnf nf.
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
     eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].

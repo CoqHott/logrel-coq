@@ -8,7 +8,7 @@ Set Universe Polymorphism.
 
 Ltac redSubst :=
   match goal with
-  | [H : [_ |- ?X :⇒*: ?Y] |- _] => 
+  | [H : [_ |- ?X :⤳*: ?Y] |- _] => 
     assert (X = Y)by (eapply redtywf_whnf ; gen_typing); subst; clear H
   end.
 

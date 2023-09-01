@@ -374,7 +374,7 @@ End TypingWk.
 (** ** A first set of boundary conditions *)
 
 (** These lemmas assert that various boundary conditions, ie that if a certain typing-like relation
-holds, some of its components are themselves well-formed. For instance, if [Γ |- t ⇒* u : A] then
+holds, some of its components are themselves well-formed. For instance, if [Γ |- t ⤳* u : A] then
 [Γ |- t : A ]. The tactic boundary automates usage of these lemmas. *)
 
 (** We cannot prove yet that all boundaries are well-typed: this needs stability of typing
@@ -423,21 +423,21 @@ Section Boundaries.
 
 
   Definition boundary_red_l {Γ t u K} : 
-    [ Γ |- t ⇒* u ∈ K] ->
+    [ Γ |- t ⤳* u ∈ K] ->
     match K with istype => [ Γ |- t ] | isterm A => [ Γ |- t : A ] end.
   Proof.
     destruct 1; assumption.
   Qed.
 
   Definition boundary_red_tm_l {Γ t u A} : 
-    [ Γ |- t ⇒* u : A] ->
+    [ Γ |- t ⤳* u : A] ->
     [ Γ |- t : A ].
   Proof.
     apply @boundary_red_l with (K := isterm A).
   Qed.
 
   Definition boundary_red_ty_l {Γ A B} : 
-    [ Γ |- A ⇒* B ] ->
+    [ Γ |- A ⤳* B ] ->
     [ Γ |- A ].
   Proof.
     apply @boundary_red_l with (K := istype).
@@ -454,21 +454,21 @@ End Boundaries.
 (** ** Inclusion of the various reductions in conversion *)
 
 Definition RedConvC {Γ} {t u : term} {K} :
-    [Γ |- t ⇒* u ∈ K] -> 
+    [Γ |- t ⤳* u ∈ K] -> 
     match K with istype => [Γ |- t ≅ u] | isterm A => [Γ |- t ≅ u : A] end.
 Proof.
 apply reddecl_conv.
 Qed.
 
 Definition RedConvTeC {Γ} {t u A : term} :
-    [Γ |- t ⇒* u : A] -> 
+    [Γ |- t ⤳* u : A] -> 
     [Γ |- t ≅ u : A].
 Proof.
 apply @RedConvC with (K := isterm A).
 Qed.
 
 Definition RedConvTyC {Γ} {A B : term} :
-    [Γ |- A ⇒* B] -> 
+    [Γ |- A ⤳* B] -> 
     [Γ |- A ≅ B].
 Proof.
 apply @RedConvC with (K := istype).
@@ -477,7 +477,7 @@ Qed.
 (** ** Weakenings of reduction *)
 
 Lemma redtmdecl_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- t ⇒* u : A] -> [Δ |- t⟨ρ⟩ ⇒* u⟨ρ⟩ : A⟨ρ⟩].
+  [|- Δ ] -> [Γ |- t ⤳* u : A] -> [Δ |- t⟨ρ⟩ ⤳* u⟨ρ⟩ : A⟨ρ⟩].
 Proof.
   intros * ? []; split.
   - now apply typing_wk.
@@ -486,7 +486,7 @@ Proof.
 Qed.
 
 Lemma redtydecl_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-  [|- Δ ] -> [Γ |- A ⇒* B] -> [Δ |- A⟨ρ⟩ ⇒* B⟨ρ⟩].
+  [|- Δ ] -> [Γ |- A ⤳* B] -> [Δ |- A⟨ρ⟩ ⤳* B⟨ρ⟩].
 Proof.
   intros * ? []; split.
   - now apply typing_wk.
@@ -497,9 +497,9 @@ Qed.
 (** ** Derived rules for multi-step reduction *)
 
 Lemma redtmdecl_app Γ A B f f' t :
-  [ Γ |- f ⇒* f' : tProd A B ] ->
+  [ Γ |- f ⤳* f' : tProd A B ] ->
   [ Γ |- t : A ] ->
-  [ Γ |- tApp f t ⇒* tApp f' t : B[t..] ].
+  [ Γ |- tApp f t ⤳* tApp f' t : B[t..] ].
 Proof.
   intros [] ?; split.
   + now econstructor.
@@ -508,9 +508,9 @@ Proof.
 Qed.
 
 Lemma redtmdecl_conv Γ t u A A' : 
-  [Γ |- t ⇒* u : A] ->
+  [Γ |- t ⤳* u : A] ->
   [Γ |- A ≅ A'] ->
-  [Γ |- t ⇒* u : A'].
+  [Γ |- t ⤳* u : A'].
 Proof.
   intros [] ?; split.
   + now econstructor.
@@ -519,7 +519,7 @@ Proof.
 Qed.
 
 Lemma redtydecl_term Γ A B :
-  [ Γ |- A ⇒* B : U] -> [Γ |- A ⇒* B ].
+  [ Γ |- A ⤳* B : U] -> [Γ |- A ⤳* B ].
 Proof.
   intros []; split.
   + now constructor.

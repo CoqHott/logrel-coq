@@ -375,7 +375,7 @@ Section TermTypeConv.
   Let PTyEq (Γ : context) (A B : term) := True.
   Let PNeEq (Γ : context) (A t u : term) := True.
   Let PTmEq (Γ : context) (A t u : term) :=
-      [A ⇒* U] ->
+      [A ⤳* U] ->
       [Γ |-[al] t ≅ u].
   Let PTmRedEq (Γ : context) (A t u : term) := 
     A = U ->

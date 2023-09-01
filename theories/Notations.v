@@ -104,27 +104,27 @@ Class OneStepRedTerm (ta : tag) := osred_tm : context -> term -> term -> term ->
 Class RedTerm (ta : tag) := red_tm : context -> term -> term -> term -> Set.
 
 (** Term t untyped one-step weak-head reduces to term t' *)
-Reserved Notation "[ t ⇒ t' ]" (at level 0, t, t' at level 50).
+Reserved Notation "[ t ⤳ t' ]" (at level 0, t, t' at level 50).
 (** Term t untyped multi-step weak-head reduces to term t' *)
-Reserved Notation "[ t ⇒* t' ]" (at level 0, t, t' at level 50).
+Reserved Notation "[ t ⤳* t' ]" (at level 0, t, t' at level 50).
 
 (** Type A one-step weak-head reduces to type B in Γ *)
-Reserved Notation "[ Γ |- A ⇒ B ]" (at level 0, Γ, A, B at level 50).
+Reserved Notation "[ Γ |- A ⤳ B ]" (at level 0, Γ, A, B at level 50).
 (** Term or type t one-step weak-head reduces to term or type type u as class A in Γ *)
-Reserved Notation "[ Γ |- t ⇒ u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
+Reserved Notation "[ Γ |- t ⤳ u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
 (** Term or type t multi-step weak-head reduces to term or type type u as class A in Γ *)
-Reserved Notation "[ Γ |- t ⇒* u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
+Reserved Notation "[ Γ |- t ⤳* u ∈ A ]" (at level 0, Γ, t, u, A at level 50).
 (** Term t one-step weak-head reduces to term u at type A in Γ *)
-Notation "[ Γ |- t ⇒ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t ⇒ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
+Notation "[ Γ |- t ⤳ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ⤳ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
 (** Type A multi-step weak-head reduces to type B in Γ *)
-Notation "[ Γ |- A ⇒* B ]" := (red_ty Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ⇒* B ]" := (red_ty (ta := ta) Γ A B)
+Notation "[ Γ |- A ⤳* B ]" := (red_ty Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A ⤳* B ]" := (red_ty (ta := ta) Γ A B)
 (at level 0, ta, Γ, A, B at level 50) : typing_scope.
 (** Term t multi-step weak-head reduces to term t' at type A in Γ *)
-Notation "[ Γ |- t ⇒* t' : A ]" := (red_tm Γ A t t')
+Notation "[ Γ |- t ⤳* t' : A ]" := (red_tm Γ A t t')
 (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t ⇒* t' : A ]" := (red_tm (ta := ta) Γ A t t')
+Notation "[ Γ |-[ ta  ] t ⤳* t' : A ]" := (red_tm (ta := ta) Γ A t t')
 (at level 0, ta, Γ, t, t', A at level 50) : typing_scope.
 (** Set A weak-head normalizes to B in Γ, ie it multi-step reduces to the weak-head normal form B*)
 Reserved Notation "[ Γ |- A ↘ B ]" (at level 0, Γ, A, B at level 50).
@@ -150,11 +150,11 @@ Reserved Notation "[ Γ |-[ ta  ] A :≅: B ]" (at level 0, ta, Γ, A, B at leve
 Reserved Notation "[ Γ |- t :≅: u : A ]" (at level 0, Γ, t, u, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t :≅: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).
 (** Set A and B are well-formed and A weak-head reduces to B in Γ *)
-Reserved Notation "[ Γ |- A :⇒*: B ]" (at level 0, Γ, A, B at level 50).
-Reserved Notation "[ Γ |-[ ta  ] A :⇒*: B ]" (at level 0, ta, Γ, A, B at level 50).
+Reserved Notation "[ Γ |- A :⤳*: B ]" (at level 0, Γ, A, B at level 50).
+Reserved Notation "[ Γ |-[ ta  ] A :⤳*: B ]" (at level 0, ta, Γ, A, B at level 50).
 (** Terms t and u have type A in Γ and t weak-head reduces to u *)
-Reserved Notation "[ Γ |- t :⇒*: u : A ]" (at level 0, Γ, t, u, A at level 50).
-Reserved Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).
+Reserved Notation "[ Γ |- t :⤳*: u : A ]" (at level 0, Γ, t, u, A at level 50).
+Reserved Notation "[ Γ |-[ ta  ] t :⤳*: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).
 
 (** ** Weakenings *)
 (** Well-formed weakening *)

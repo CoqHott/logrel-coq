@@ -144,7 +144,7 @@ Record RedTypeBun Γ A B :=
 {
   bun_red_ty_ctx : [|-[de] Γ] ;
   bun_red_ty_ty : [Γ |-[al] A] ;
-  bun_red_ty : [A ⇒* B] ;
+  bun_red_ty : [A ⤳* B] ;
 }.
 
 Record OneStepRedTermBun Γ A t u :=
@@ -153,35 +153,35 @@ Record OneStepRedTermBun Γ A t u :=
   (** We do not have the instance yet, so we have to specify it by hand,
   but this really is [Γ |-[bn] t : A]. *)
   bun_osred_tm_tm : typing (ta := bn) (Typing := InferConvBun) Γ A t ;
-  bun_osred_tm : [t ⇒ u]
+  bun_osred_tm : [t ⤳ u]
 }.
 
 Record RedTermBun Γ A t u :=
 {
   bun_red_tm_ctx : [|-[de] Γ] ;
   bun_red_tm_tm : typing (ta := bn) (Typing := InferConvBun) Γ A t ;
-  bun_red_tm : [t ⇒* u] ;
+  bun_red_tm : [t ⤳* u] ;
 }.
 
 Record RedTypeBunI Γ A B :=
 {
   buni_red_ty_ctx : [|-[de] Γ] ;
   buni_red_ty_ty : [Γ |-[de] A] ;
-  buni_red_ty : [A ⇒* B] ;
+  buni_red_ty : [A ⤳* B] ;
 }.
 
 Record OneStepRedTermBunI Γ A t u :=
 {
   buni_osred_tm_ctx : [|-[de] Γ] ;
   buni_osred_tm_tm : [Γ |-[de] t : A] ;
-  buni_osred_tm : [t ⇒ u]
+  buni_osred_tm : [t ⤳ u]
 }.
 
 Record RedTermBunI Γ A t u :=
 {
   buni_red_tm_ctx : [|-[de] Γ] ;
   buni_red_tm_tm : [Γ |-[de] t : A] ;
-  buni_red_tm : [t ⇒* u] ;
+  buni_red_tm : [t ⤳* u] ;
 }.
 
 (** ** Instances *)

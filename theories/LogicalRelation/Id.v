@@ -11,7 +11,7 @@ Section IdRed.
   Lemma mkIdRedTy {Γ l A} :
     forall (ty lhs rhs  : term)
       (tyRed : [Γ ||-<l> ty]),
-      [Γ |- A :⇒*: tId ty lhs rhs] ->
+      [Γ |- A :⤳*: tId ty lhs rhs] ->
       [tyRed | Γ ||- lhs : _] ->
       [tyRed | Γ ||- rhs : _] ->
       [Γ ||-Id<l> A].

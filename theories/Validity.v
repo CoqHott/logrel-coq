@@ -216,7 +216,7 @@ Section MoreDefs.
     {
       validRed : forall {Δ σ}
         (wfΔ : [|- Δ]) (Vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]),
-        [Δ |- t[σ] :⇒*: u[σ] : A[σ]]
+        [Δ |- t[σ] :⤳*: u[σ] : A[σ]]
     }.
 End MoreDefs.
 
@@ -244,7 +244,7 @@ Notation "[ Γ ||-v< l > t : A | VΓ | VA ]"     := (termValidity Γ l t A VΓ V
 Notation "[ Γ ||-v< l > A ≅ B | VΓ | VA ]"     := (typeEqValidity Γ l A B VΓ VA) (at level 0, Γ, l, A, B, VΓ, VA at level 50).
 Notation "[ Γ ||-v< l > t ≅ u : A | VΓ | VA ]" := (termEqValidity Γ l t u A VΓ VA) (at level 0, Γ, l, t, u, A, VΓ, VA at level 50).
 Notation "[ Γ ||-v< l > t ≅ u : A | VΓ ]"      := (tmEqValidity Γ l t u A VΓ) (at level 0, Γ, l, t, u, A, VΓ at level 50).
-Notation "[ Γ ||-v t :⇒*: u : A | VΓ ]"      := (redValidity Γ t u A VΓ) (at level 0, Γ, t, u, A, VΓ at level 50).
+Notation "[ Γ ||-v t :⤳*: u : A | VΓ ]"      := (redValidity Γ t u A VΓ) (at level 0, Γ, t, u, A, VΓ at level 50).
 
 Section Inductions.
   Context `{ta : tag} `{WfContext ta} `{WfType ta} `{Typing ta}
