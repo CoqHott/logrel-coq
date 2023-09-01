@@ -89,3 +89,25 @@ Proof. now asimpl. Qed.
 
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
+
+
+(* type of k in sup A B a k
+  e.g. B a -> W A B *)
+Definition supContTy A B a :=
+  arr B[a..] (tW A B).
+
+(* type of the inductive hypothesis hs in the eliminator for W 
+  tWElim A B P hs e
+  hs : (a : A) (k : B a -> W A B) -> ((b : B a) -> P[k b..]) -> P[tSup A B a k]
+*)  
+Definition elimSupHypTy A B P :=
+  let kTy := supContTy A⟨↑⟩ B⟨up_ren ↑⟩ (tRel 0) in
+  let ρ0 := ↑ >> ↑ in
+  let ρ := up_ren ρ0 in
+  let B' := B⟨ρ⟩ in
+  let P' := P⟨up_ren (↑ >>  ρ0)⟩ in 
+  let P'' := P⟨ρ⟩ in
+  tProd A (tProd kTy (arr (tProd B'[(tRel 1)..] P'[(tApp (tRel 1) (tRel 0))..]) P''[(tSup A⟨ρ0⟩ B' (tRel 1) (tRel 0))..])).
+
+Definition elimSupRed A B P hs a k :=
+  tApp (tApp (tApp hs a) k) (tLambda (B[a..]) (tWElim A⟨↑⟩ B⟨up_ren ↑⟩ P⟨up_ren ↑⟩ hs⟨↑⟩ (tApp k⟨↑⟩ (tRel 0)))).

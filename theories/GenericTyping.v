@@ -225,6 +225,10 @@ Section GenericTyping.
       [Γ |- x : A] ->
       [Γ |- y : A] ->
       [Γ |- tId A x y] ;
+    wft_W {Γ A B} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- tW A B] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] -> 
       [ Γ |- A ] ;
@@ -300,11 +304,28 @@ Section GenericTyping.
     ty_IdElim {Γ A x P hr y e} :
       [Γ |- A] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
       [Γ |- e : tId A x y] ->
       [Γ |- tIdElim A x P hr y e : P[e .: y..]];
+    ty_W {Γ A B} :
+      [Γ |- A : U] ->
+      [Γ ,, A |- B : U] ->
+      [Γ |- tW A B : U] ;
+    ty_sup {Γ A B a k} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- a : A] ->
+      [Γ |- k : supContTy A B a] ->
+      [Γ |- tSup A B a k : tW A B] ;
+    ty_wElim {Γ A B P hs e} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ ,, tW A B |- P] ->
+      [Γ |- hs : elimSupHypTy' Γ A B P] ->
+      [Γ |- e : tW A B] ->
+      [Γ |- tWElim A B P hs e : P[e..]] ;
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⤳* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.
@@ -334,6 +355,11 @@ Section GenericTyping.
       [Γ |- x ≅ x' : A] ->
       [Γ |- y ≅ y' : A] ->
       [Γ |- tId A x y ≅ tId A' x' y' ] ;
+    convty_W {Γ A A' B B'} :
+      [Γ |- A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ ,, A |- B ≅ B'] ->
+      [Γ |- tW A B ≅ tW A' B'] ;
   }.
 
   Class ConvTermProperties :=
@@ -394,6 +420,18 @@ Section GenericTyping.
       [Γ |- A ≅ A'] ->
       [Γ |- x ≅ x' : A] ->
       [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x] ;
+    convtm_W {Γ A A' B B'} :
+      [Γ |- A] ->
+      [Γ |- A ≅ A' : U] ->
+      [Γ ,, A |- B ≅ B' : U] ->
+      [Γ |- tW A B ≅ tW A' B' : U] ;
+    convtm_sup {Γ A A' B B' a a' k k'} :
+      [Γ |- A] ->
+      [Γ |- A ≅ A'] ->
+      [Γ ,, A |- B ≅ B'] ->
+      [Γ |- a ≅ a' : A] ->
+      [Γ |- k ≅ k' : supContTy A B a] ->
+      [Γ |- tSup A B a k ≅ tSup A' B' a' k' : tW A B] ;
   }.
 
   Class ConvNeuProperties :=
@@ -431,11 +469,20 @@ Section GenericTyping.
       [Γ |- x : A] ->
       [Γ |- A ≅ A'] ->
       [Γ |- x ≅ x' : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+      [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
       [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
       [Γ |- y ≅ y' : A] ->
       [Γ |- e ~ e' : tId A x y] ->
       [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' : P[e .: y..]];
+    convneu_wElim {Γ A A' B B' P P' hs hs' e e'} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- A ≅ A'] ->
+      [Γ ,, A |- B ≅ B'] ->
+      [Γ ,, tW A B |- P ≅ P'] ->
+      [Γ |- hs ≅ hs' : elimSupHypTy' Γ A B P] ->
+      [Γ |- e ~ e' : tW A B] ->
+      [Γ |- tWElim A B P hs e ~ tWElim A' B' P' hs' e' : P[e..]] ;
   }.
 
   Class RedTypeProperties :=
@@ -510,7 +557,7 @@ Section GenericTyping.
     redtm_idElimRefl {Γ A x P hr y A' z} :
       [Γ |- A] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
       [Γ |- A'] ->
@@ -522,11 +569,30 @@ Section GenericTyping.
     redtm_idElim {Γ A x P hr y e e'} :
       [Γ |- A] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
       [Γ |- e ⤳* e' : tId A x y] ->
       [Γ |- tIdElim A x P hr y e ⤳* tIdElim A x P hr y e' : P[e .: y..]];
+    redtm_wElimSup {Γ A A' B B' P hs a k} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ ,, tW A B |- P] ->
+      [Γ |- hs : elimSupHypTy' Γ A B P] ->
+      [Γ |- A'] ->
+      [Γ |- A ≅ A'] ->
+      [Γ ,, A' |- B'] ->
+      [Γ ,, A |- B ≅ B'] ->
+      [Γ |- a : A'] ->
+      [Γ |- k : supContTy A' B' a] ->
+      [Γ |- tWElim A B P hs (tSup A' B' a k) ⤳* elimSupRed' Γ A B P hs a k : P[(tSup A' B' a k)..]] ;
+    redtm_wElimSubst {Γ A B P hs e e'} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ ,, tW A B |- P] ->
+      [Γ |- hs : elimSupHypTy' Γ A B P] ->
+      [Γ |- e ⇒* e' : tW A B] ->
+      [Γ |- tWElim A B P hs e ⤳* tWElim A B P hs e' : P[e..]] ;
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⤳* u : A] ->
       [Γ |- A ≅ A'] ->
@@ -566,11 +632,11 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_prod wft_sig wft_Id | 2 : gen_typing.
-#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_Id ty_refl ty_IdElim| 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig convty_Id | 2 : gen_typing.
-#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_Id convtm_refl | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_U wft_prod wft_sig wft_Id wft_W | 2 : gen_typing.
+#[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_Id ty_refl ty_IdElim ty_W ty_sup ty_wElim | 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig convty_Id convty_W | 2 : gen_typing.
+#[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_Id convtm_refl convtm_W convtm_sup | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim convneu_wElim | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
 #[export] Hint Resolve wft_term convty_term convtm_convneu | 4 : gen_typing.
@@ -584,28 +650,28 @@ Ltac renToWk0 judg :=
   lazymatch judg with
   (** Type judgement, weakening *)
   | [?X ,, ?Y |- ?T⟨↑⟩ ] =>
-    replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply (wk1_ren_on X Y T)
+    replace T⟨↑⟩ with T⟨wk1 X Y⟩ by apply (wk1_ren_on X Y T)
   (** Type judgement, lifting of weakening *)
   | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ ] =>
-    replace Z⟨↑⟩ with Z⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace Z⟨↑⟩ with Z⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ] =>
-    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   (* Type judgement, lifting *)
   | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_wk1_ren_on
 
   (** Type conversion judgement, weakening *)
   | [?X ,, ?Y |- ?T⟨↑⟩ ≅ _ ] =>
-    replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply (wk1_ren_on X Y T)
+    replace T⟨↑⟩ with T⟨wk1 X Y⟩ by apply (wk1_ren_on X Y T)
   | [?X ,, ?Y |- _ ≅ ?T⟨↑⟩ ] =>
-    replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply (wk1_ren_on X Y T)
+    replace T⟨↑⟩ with T⟨wk1 X Y⟩ by apply (wk1_ren_on X Y T)
   (** Type conversion judgement, lifting of weakening *)
   | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ ≅ _ ] =>
-    replace Z⟨↑⟩ with Z⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace Z⟨↑⟩ with Z⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ≅ _ ] =>
-    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ ≅ ?T⟨upRen_term_term ↑⟩ ] =>
-    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   (* Type conversion judgement, lifting *)
   | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ≅ _ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_wk1_ren_on
@@ -614,16 +680,16 @@ Ltac renToWk0 judg :=
 
   (** Term judgement, weakening *)
   | [?X ,, ?Y |- _ : ?T⟨↑⟩ ] =>
-    replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace T⟨↑⟩ with T⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y |- ?t⟨↑⟩ : _ ] =>
-    replace t⟨↑⟩ with t⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace t⟨↑⟩ with t⟨wk1 X Y⟩ by apply wk1_ren_on
   (** Term judgement, lifting of weakening *)
   | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ : _ ] =>
-    replace Z⟨↑⟩ with Z⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace Z⟨↑⟩ with Z⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ : ?T⟨upRen_term_term ↑⟩ ] =>
-    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?t⟨upRen_term_term ↑⟩ : _ ] =>
-    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   (** Term judgement, lifting *)
   | [?X ,, ?Y⟨wk_to_ren ?r⟩ |- _ : ?T⟨upRen_term_term _⟩ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_ren_on
@@ -632,20 +698,20 @@ Ltac renToWk0 judg :=
 
   (** Term conversion judgement, weakening *)
   | [?X ,, ?Y |- _ ≅ _ : ?T⟨↑⟩ ] =>
-    replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace T⟨↑⟩ with T⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y |- ?t⟨↑⟩ ≅ _ : _ ] =>
-    replace t⟨↑⟩ with t⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace t⟨↑⟩ with t⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y |- _ ≅ ?t⟨↑⟩ : _ ] =>
-    replace t⟨↑⟩ with t⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace t⟨↑⟩ with t⟨wk1 X Y⟩ by apply wk1_ren_on
   (** Term conversion judgement, lifting of weakening *)
   | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ ≅ _ : _ ] =>
-    replace Z⟨↑⟩ with Z⟨@wk1 X Y⟩ by apply wk1_ren_on
+    replace Z⟨↑⟩ with Z⟨wk1 X Y⟩ by apply wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ ≅ _ : ?T⟨upRen_term_term ↑⟩ ] =>
-    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?t⟨upRen_term_term ↑⟩ ≅ _ : _ ] =>
-    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ ≅ ?t⟨upRen_term_term ↑⟩ : _ ] =>
-    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
+    replace t⟨upRen_term_term ↑⟩ with t⟨wk_up Z (wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   (** Term conversion judgement, lifting *)
   | [?X ,, ?Y⟨wk_to_ren ?r⟩ |- _ ≅ _ : ?T⟨upRen_term_term _⟩ ] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_ren_on
@@ -983,7 +1049,7 @@ Section GenericConsequences.
         now apply wfc_cons. }
     1,2: eapply ty_id; tea; now symmetry.
     assert [|- Γ,, A] by gen_typing.
-    assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk. 
+    assert [Γ,, A |-[ ta ] A⟨wk1 Γ A⟩] by now eapply wft_wk. 
     eapply convtm_exp.
     - cbn. eapply redtm_id_beta.
       3: now eapply ty_var0.
@@ -1016,7 +1082,7 @@ Section GenericConsequences.
     intros tyA tyB **. 
     eapply ty_lam; tea.
     assert [|- Γ,, A] by gen_typing.
-    pose (r := @wk1 Γ A).
+    pose (r := wk1 Γ A).
     eapply ty_simple_app; renToWk.
     - unshelve eapply (wft_wk _ _ tyB) ; tea. 
     - now eapply wft_wk.

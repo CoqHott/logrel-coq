@@ -52,6 +52,10 @@ Section Definitions.
           [Γ |- x : A] ->
           [Γ |- y : A] ->
           [Γ |- tId A x y]
+      | wftTypeW {Γ A B} :
+          [Γ |- A] ->
+          [Γ ,, A |- B] ->
+          [Γ |- tW A B]
       | wfTypeUniv {Γ} {A} :
           [ Γ |- A : U ] -> 
           [ Γ |- A ]
@@ -123,11 +127,28 @@ Section Definitions.
       | wfTermIdElim {Γ A x P hr y e} :
           [Γ |- A] ->
           [Γ |- x : A] ->
-          [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+          [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
           [Γ |- hr : P[tRefl A x .: x..]] ->
           [Γ |- y : A] ->
           [Γ |- e : tId A x y] ->
           [Γ |- tIdElim A x P hr y e : P[e .: y..]]
+      | wfTermW {Γ A B} :
+        [Γ |- A : U] ->
+        [Γ ,, A |- B : U] ->
+        [Γ |- tW A B : U]
+      | wfTermSup {Γ A B a k} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ |- a : A] ->
+        [Γ |- k : supContTy A B a] ->
+        [Γ |- tSup A B a k : tW A B]
+      | wfTermWElim {Γ A B P hs e} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ ,, tW A B |- P] ->
+        [Γ |- hs : elimSupHypTy' Γ A B P] ->
+        [Γ |- e : tW A B] ->
+        [Γ |- tWElim A B P hs e : P[e..]]
       | wfTermConv {Γ} {t A B} :
           [ Γ |- t : A ] -> 
           [ Γ |- A ≅ B ] -> 
@@ -145,11 +166,15 @@ Section Definitions.
           [ Γ ,, A |- C ≅ D] ->
           [ Γ |- tSig A C ≅ tSig B D]
       | TypeIdCong {Γ A A' x x' y y'} :
-          (* [Γ |- A] -> ?  *)
           [Γ |- A ≅ A'] ->
           [Γ |- x ≅ x' : A] ->
           [Γ |- y ≅ y' : A] ->
           [Γ |- tId A x y ≅ tId A' x' y' ]
+      | TypeWCong {Γ A A' B B'} :
+          [Γ |- A] ->
+          [Γ |- A ≅ A'] ->
+          [Γ ,, A |- B ≅ B'] ->
+          [Γ |- tW A B ≅ tW A' B']
       | TypeRefl {Γ} {A} : 
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
@@ -255,13 +280,13 @@ Section Definitions.
         [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x]
       | TermIdElim {Γ A A' x x' P P' hr hr' y y' e e'} :
         (* Parameters well formed: required for stability by weakening,
-          in order to show that the context Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)
+          in order to show that the context Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)
           remains well-formed under weakenings *)
         [Γ |- A] ->
         [Γ |- x : A] ->
         [Γ |- A ≅ A'] ->
         [Γ |- x ≅ x' : A] ->
-        [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+        [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
         [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
         [Γ |- y ≅ y' : A] ->
         [Γ |- e ≅ e' : tId A x y] ->
@@ -269,7 +294,7 @@ Section Definitions.
       | TermIdElimRefl {Γ A x P hr y A' z} :
         [Γ |- A] ->
         [Γ |- x : A] ->
-        [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+        [Γ ,, A ,, tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0) |- P] ->
         [Γ |- hr : P[tRefl A x .: x..]] ->
         [Γ |- y : A] ->
         [Γ |- A'] ->
@@ -278,6 +303,39 @@ Section Definitions.
         [Γ |- x ≅ y : A] ->
         [Γ |- x ≅ z : A] ->
         [Γ |- tIdElim A x P hr y (tRefl A' z) ≅ hr : P[tRefl A' z .: y..]]
+      | TermWCong {Γ A A' B B'} :
+        [Γ |- A] ->
+        [Γ |- A ≅ A' : U] ->
+        [Γ ,, A |- B ≅ B' : U] ->
+        [Γ |- tW A B ≅ tW A' B' : U]
+      | TermSupCong {Γ A A' B B' a a' k k'} :
+        [Γ |- A] ->
+        [Γ |- A ≅ A'] ->
+        [Γ ,, A |- B ≅ B'] ->
+        [Γ |- a ≅ a' : A] ->
+        [Γ |- k ≅ k' : supContTy A B a] ->
+        [Γ |- tSup A B a k ≅ tSup A' B' a' k' : tW A B]
+      | TermWElimSup {Γ A A' B B' P hs a k} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ ,, tW A B |- P] ->
+        [Γ |- hs : elimSupHypTy' Γ A B P] ->
+        [Γ |- A'] ->
+        [Γ |- A ≅ A'] ->
+        [Γ ,, A' |- B'] ->
+        [Γ ,, A |- B ≅ B'] ->
+        [Γ |- a : A'] ->
+        [Γ |- k : supContTy A' B' a] ->
+        [Γ |- tWElim A B P hs (tSup A' B' a k) ≅ elimSupRed' Γ A B P hs a k  : P[(tSup A' B' a k)..]]
+      | TermWElimCong {Γ A A' B B' P P' hs hs' e e'} :
+        [Γ |- A] ->
+        [Γ ,, A |- B] ->
+        [Γ |- A ≅ A'] ->
+        [Γ ,, A |- B ≅ B'] ->
+        [Γ ,, tW A B |- P ≅ P'] ->
+        [Γ |- hs ≅ hs' : elimSupHypTy' Γ A B P] ->
+        [Γ |- e ≅ e' : tW A B] ->
+        [Γ |- tWElim A B P hs e ≅ tWElim A' B' P' hs' e' : P[e..]] 
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]

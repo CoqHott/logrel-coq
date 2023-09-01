@@ -581,6 +581,9 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tRefl A x => [× T = tId A x x, [Γ |- A] & [Γ |- x : A]]
     | tIdElim A x P hr y e => 
       [× T = P[e .: y..], [Γ |- A], [Γ |- x : A], [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P], [Γ |- hr : P[tRefl A x .: x..]], [Γ |- y : A] & [Γ |- e : tId A x y]]
+    | tW A B => [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
+    | tSup A B a k => [× T = tW A B, [Γ |- A], [Γ ,, A |- B], [Γ |- a : A] & [Γ |- k : supContTy A B a]]
+    | tWElim A B P hs e => [× T = P[e..], [Γ |- A], [Γ,, A |- B], [Γ,, tW A B |- P], [Γ |- hs : elimSupHypTy' Γ A B P] & [Γ |- e : tW A B]]
   end.
 
 Lemma termGen Γ t A :
@@ -631,6 +634,17 @@ Proof.
   intros Hty.
   apply TypeRefl, id_ty_inj in Hty as [HA HB].
   prod_splitter; boundary.
+Qed.
+
+Lemma w_ty_inv Γ A B :
+  [Γ |- tW A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.  
+  intros Hty.
+  inversion Hty ; subst ; clear Hty.
+  1: easy.
+  eapply termGen in H as (?&[-> ]&_).
+  split ; now econstructor.
 Qed.
 
 Lemma termGen' Γ t A :

@@ -43,6 +43,9 @@ Section TypingWk.
       eapply ih; constructor; eauto.
     - intros * _ IHA _ IHx _ IHy **; rewrite <- wk_Id.
       constructor; eauto.
+    - intros * _ ihA _ ihB **; rewrite <- wk_w.
+      constructor; eauto.
+      eapply ihB; econstructor; eauto.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
@@ -122,7 +125,23 @@ Section TypingWk.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; eauto.
         * rewrite <- wk_up_wk1, wk1_ren_on; cbn; constructor; tea; constructor.
       + rewrite wk_refl, <- subst_ren_wk_up2; eauto.
-    - intros * _ IHt _ IHAB ? ρ ?.
+    - intros * _ ihA _ ihB **; rewrite <- wk_w.
+      econstructor; eauto.
+      eapply ihB; econstructor; tea.
+      econstructor; eauto.
+    - intros * _ ihA _ ihB _ iha _ ihk **.
+      rewrite <- wk_w, <-wk_sup; econstructor; eauto.
+      1: eapply ihB; econstructor; eauto.
+      rewrite wk_supContTy; eauto.
+    - intros * _ ihA _ ihB _ ihP _ ihhs _ ihe **.
+      erewrite <-wk_wElim, subst_ren_wk_up.
+      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      econstructor; eauto.
+      + eapply ihP; econstructor; tea.
+        rewrite <- wk_w; econstructor; eauto.
+      + rewrite wk_elimSupHypTy'; eauto.
+      + rewrite wk_w; eauto.
+    - intros * _ IHt _ IHAB **.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
@@ -139,6 +158,9 @@ Section TypingWk.
       eapply ih; constructor; eauto.
     - intros * _ IHA _ IHx _ IHy **.
       rewrite <- 2!wk_Id; constructor; eauto.
+    - intros * _ ? _ ihA _ ihB **.
+      rewrite <-2!wk_w; econstructor; eauto.
+      eapply ihB; econstructor; eauto.
     - intros * _ IHA ? ρ ?.
       eapply TypeRefl.
       now eapply IHA.
@@ -271,6 +293,32 @@ Section TypingWk.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; eauto.
         * rewrite <- wk_up_wk1, wk1_ren_on; cbn; constructor; tea; constructor.
       + rewrite wk_refl, <- subst_ren_wk_up2; eauto.
+    - intros * _ ihA _ ihAA' _ IHBB' **.
+      rewrite <-2!wk_w; econstructor; eauto.
+      eapply IHBB'; econstructor; eauto.
+    - intros * _ ? _ ihA _ ihB _ iha _ ihk **.
+      rewrite <-2!wk_sup, <- wk_w.
+      econstructor; eauto.
+      + eapply ihB; econstructor; eauto.
+      + rewrite wk_supContTy; eauto.
+    - intros * _ ihA _ ihB _ ihP _ ? _ ? _ ? _ ? _ ihB' _ iha _ ihk **.
+      erewrite <- wk_elimSupRed', <-wk_wElim, <-wk_sup, subst_ren_wk_up.
+      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      assert [|- Δ ,, A'⟨ρ⟩] by (constructor; tea; eauto).
+      econstructor; eauto.
+      + eapply ihP; econstructor; tea; rewrite <-wk_w; econstructor; eauto.
+      + rewrite wk_elimSupHypTy'; eauto.
+      + change ?B⟨wk_up A' ?ρ⟩ with (B⟨wk_up A ρ⟩); eauto.
+      + rewrite wk_supContTy; eauto.
+    - intros * _ ihA _ ihB _ ihAA' _ ihBB' _ ihP _ ihhs _ ihe **.
+      erewrite <-2!wk_wElim, subst_ren_wk_up.
+      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      assert [|- Δ ,, (tW A B)⟨ρ⟩] by (constructor; tea; rewrite <-wk_w; constructor; eauto).
+      econstructor; eauto.
+      + change ?B⟨wk_up A' ?ρ⟩ with (B⟨wk_up A ρ⟩); eauto.
+      + change ?P⟨wk_up _ ?ρ⟩ with (P⟨wk_up (tW A B) ρ⟩); eauto.
+      + rewrite wk_elimSupHypTy'; eauto.
+      + rewrite wk_w; eauto.
     - intros * _ IHt ? ρ ?.
       now econstructor.
     - intros * _ IHt _ IHA ? ρ ?.
@@ -501,6 +549,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - now econstructor.
   - now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
@@ -535,6 +584,8 @@ Module DeclarativeTypingProperties.
   - now do 2 econstructor.
   - now econstructor.
   - now econstructor.
+  - now econstructor.
+  - now econstructor.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -555,6 +606,7 @@ Module DeclarativeTypingProperties.
   - intros ????? []; split; now econstructor.
   - intros ????? []; split; now econstructor.
   - intros * ??????? []; split; now econstructor.
+  - intros * ?????? []; split; now econstructor.
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.
@@ -616,6 +668,16 @@ Module DeclarativeTypingProperties.
     + now econstructor.
     + now eapply redalg_idElim.
     + econstructor; tea; now (eapply TypeRefl + eapply TermRefl).
+  - intros **; split; refold.
+    + econstructor; tea; econstructor.
+      1: econstructor; tea.
+      symmetry; now econstructor.
+    + apply redalg_one_step; rewrite <-elimSupRed_wktyeq; constructor.
+    + now econstructor.
+  - intros * ???? []; split; refold.
+    + now econstructor.
+    + now eapply redalg_wElim.
+    + econstructor; tea; now eapply TermRefl + eapply TypeRefl.
   - intros; now eapply redtmdecl_conv.
   - intros; split.
     + assumption.

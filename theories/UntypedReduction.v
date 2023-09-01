@@ -38,6 +38,11 @@ Inductive OneRedAlg : term -> term -> Type :=
 | idElimSubst {A x P hr y e e'} :
   [e ⤳ e'] ->
   [ tIdElim A x P hr y e ⤳ tIdElim A x P hr y e' ]
+| wElimSup {A A' B B' P hs a k} :
+  [ tWElim A B P hs (tSup A' B' a k) ⤳ elimSupRed A B P hs a k ]
+| wElimSubst {A B P hs e e'} :
+  [e ⤳ e'] ->
+  [tWElim A B P hs e ⤳ tWElim A B P hs e']
 
 where "[ t ⤳ t' ]" := (OneRedAlg t t') : typing_scope.
 
@@ -86,7 +91,7 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3,6,7,9,12: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  2,3,6,7,9,12,14: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
   all: inversion nf; subst; inv_whne; subst; try now inv_whne.
 Qed.
 
@@ -132,6 +137,11 @@ Proof.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst; try reflexivity.
     exfalso; eapply whnf_nored;tea; constructor.
+  - inversion red'; subst.
+    2: f_equal; eauto.
+    exfalso; eapply whnf_nored;tea; constructor.
+  - inversion red'; subst; try reflexivity.
+    exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst.
     2: f_equal; eauto.
     exfalso; eapply whnf_nored;tea; constructor.
@@ -186,12 +196,18 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5,6-12: cbn; asimpl; now econstructor.
+  2-5,6-12,14: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
     all: subst t'.
     1: econstructor.
+    now asimpl.
+  - unfold elimSupRed; asimpl. cbn.
+    evar (t' : term).
+    replace (tLambda _ _) with t'.
+    all: subst t'.
+    1:econstructor.
     now asimpl.
 Qed.
 
@@ -241,6 +257,14 @@ Proof.
 Qed.
 
 Lemma redalg_idElim {A x P hr y t t'} : [t ⤳* t'] -> [tIdElim A x P hr y t ⤳* tIdElim A x P hr y t'].
+Proof.
+  induction 1; [reflexivity|].
+  econstructor; tea; now constructor.
+Qed.
+
+Lemma redalg_wElim {A B P hs e e'} :
+  [e ⤳* e'] ->
+  [tWElim A B P hs e ⤳* tWElim A B P hs e'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.

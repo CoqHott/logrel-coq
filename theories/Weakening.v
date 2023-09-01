@@ -159,7 +159,7 @@ Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
 
 (** ** The ubiquitous operation of adding one variable at the end of a context *)
 
-Definition wk1 {Γ} A : Γ,, A ≤ Γ := wk_step A (wk_id (Γ := Γ)).
+Definition wk1 Γ A : Γ,, A ≤ Γ := wk_step A (wk_id (Γ := Γ)).
 
 Lemma well_length {Γ Δ : context} (ρ : Γ ≤ Δ) : #|Δ| <= #|Γ|.
 Proof.
@@ -185,7 +185,7 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma wk1_ren {Γ A} : @wk1 Γ A =1 ↑.
+Lemma wk1_ren {Γ A} : wk1 Γ A =1 ↑.
 Proof.
   intros ? ; cbv -[wk_to_ren _wk_id]. cbn.
   now rewrite wk_to_ren_id.
@@ -333,13 +333,13 @@ Proof. now bsimpl. Qed.
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
 
-Lemma wk1_ren_on Γ F (H : term) : H⟨@wk1 Γ F⟩ = H⟨↑⟩.
+Lemma wk1_ren_on Γ F (H : term) : H⟨wk1 Γ F⟩ = H⟨↑⟩.
 Proof. now bsimpl. Qed.
   
 Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) F (H : term) : H⟨wk_up F ρ⟩ = H⟨upRen_term_term ρ⟩.
 Proof. now bsimpl. Qed.
 
-Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
+Lemma wk_up_wk1_ren_on Γ F G (H : term) : H⟨wk_up F (wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
 Proof. now bsimpl. Qed.
 
 Lemma wk_arr {A B Γ Δ} (ρ : Δ ≤ Γ) : arr A⟨ρ⟩ B⟨ρ⟩ = (arr A B)⟨ρ⟩.
@@ -376,15 +376,15 @@ Lemma wk_refl {A x Γ Δ} (ρ : Δ ≤ Γ) : tRefl A⟨ρ⟩ x⟨ρ⟩ = (tRefl 
 Proof. now cbn. Qed.
 
 
-Lemma wk_step_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟩ = t⟨wk_step A ρ⟩.
+Lemma wk_step_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨wk1 Δ A⟩ = t⟨wk_step A ρ⟩.
 Proof. now bsimpl. Qed.
 
-Lemma wk_up_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟨ρ⟩⟩ = t⟨@wk1 Γ A⟩⟨wk_up A ρ⟩.
+Lemma wk_up_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨wk1 Δ A⟨ρ⟩⟩ = t⟨wk1 Γ A⟩⟨wk_up A ρ⟩.
 Proof. now bsimpl. Qed.
 
 
 Lemma wk_idElim {A x P hr y e Δ Γ} (ρ : Δ ≤ Γ) :
-  tIdElim A⟨ρ⟩ x⟨ρ⟩ P⟨wk_up (tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) (wk_up A ρ)⟩ hr⟨ρ⟩ y⟨ρ⟩ e⟨ρ⟩ = (tIdElim A x P hr y e)⟨ρ⟩.
+  tIdElim A⟨ρ⟩ x⟨ρ⟩ P⟨wk_up (tId A⟨wk1 Γ A⟩ x⟨wk1 Γ A⟩ (tRel 0)) (wk_up A ρ)⟩ hr⟨ρ⟩ y⟨ρ⟩ e⟨ρ⟩ = (tIdElim A x P hr y e)⟨ρ⟩.
 Proof.  now cbn. Qed.
 
 Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ =1 ρ.
@@ -398,5 +398,79 @@ Lemma wk_comp_assoc {Γ Δ Ξ ζ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) (ρ'' : ζ 
 Proof. now bsimpl. Qed.
 
 
-Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
+Lemma wk1_irr {Γ Γ' A A' t} : t⟨wk1 Γ A⟩ = t⟨wk1 Γ' A'⟩.
 Proof. intros; now rewrite 2!wk1_ren_on. Qed.
+
+
+Lemma wk_w {A B Γ Δ} (ρ : Γ ≤ Δ) : tW A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tW A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_sup {A B a k Γ Δ} (ρ : Γ ≤ Δ) : tSup A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ k⟨ρ⟩ = (tSup A B a k)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_wElim {A B P hs e Γ Δ} (ρ : Γ ≤ Δ) : tWElim A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ hs⟨ρ⟩ e⟨ρ⟩ = (tWElim A B P hs e)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_supContTy {A B a Γ Δ} (ρ : Γ ≤ Δ) : supContTy A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ = (supContTy A B a)⟨ρ⟩.
+Proof. unfold supContTy; now bsimpl. Qed.
+
+(* type of the inductive hypothesis hs in the eliminator for W 
+  tWElim A B P hs e
+  hs : (a : A) (k : B a -> W A B) -> ((b : B a) -> P[k b..]) -> P[tSup A B a k]
+
+  Γ ,, A |- B
+  Γ ,, A ,, A⟨wk1 Γ A⟩ |- B
+*)  
+Definition elimSupHypTy' Γ A B P :=
+  let kTy := supContTy A⟨wk1 Γ A⟩ B⟨wk_up A (wk1 Γ A)⟩ (tRel 0) in
+  let ρ0 := (wk_step kTy (wk1 Γ A)) in
+  let ρ T := wk_up T ρ0 in
+  let B' := B⟨ρ A⟩ in
+  let P' := P⟨wk_up (tW A B) (wk_step B'[(tRel 1)..] ρ0)⟩ in 
+  let P'' := P⟨ρ (tW A B)⟩ in
+  tProd A (tProd kTy
+      (arr (tProd B'[(tRel 1)..] P'[(tApp (tRel 1) (tRel 0))..]) P''[(tSup A⟨ρ0⟩ B' (tRel 1) (tRel 0))..])).
+
+Lemma elimSupHypTy_wktyeq Γ A B P : elimSupHypTy A B P = elimSupHypTy' Γ A B P.
+Proof. unfold elimSupHypTy, elimSupHypTy'.
+  do 2 f_equal.
+  - unfold supContTy; f_equal; now bsimpl.
+  - f_equal.
+    + f_equal; now bsimpl.
+    + now bsimpl.
+Qed.
+
+Lemma wk_elimSupHypTy {A B P Γ Δ} (ρ : Δ ≤ Γ) : elimSupHypTy A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ = (elimSupHypTy A B P)⟨ρ⟩.
+Proof.
+  unfold elimSupHypTy.
+  rewrite <- wk_prod; f_equal.
+  rewrite <- wk_prod; f_equal.
+  - rewrite <- wk_supContTy; f_equal; now bsimpl.
+  - rewrite <- wk_arr; f_equal.
+    1: rewrite <- wk_prod; f_equal; now bsimpl.
+    bsimpl; cbn; now bsimpl.
+Qed.
+
+Lemma wk_elimSupHypTy' {A B P Γ Δ} (ρ : Δ ≤ Γ) : elimSupHypTy' Δ A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ = (elimSupHypTy' Γ A B P)⟨ρ⟩.
+Proof.
+  now rewrite <- 2!elimSupHypTy_wktyeq, wk_elimSupHypTy.
+Qed.
+
+Lemma wk_elimSupRed {A B P hs a k Γ Δ} (ρ : Δ ≤ Γ) :
+  elimSupRed A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ hs⟨ρ⟩ a⟨ρ⟩ k⟨ρ⟩ = (elimSupRed A B P hs a k)⟨ρ⟩.
+Proof.
+  unfold elimSupRed.
+  now bsimpl.
+Qed.
+
+Definition elimSupRed' Γ A B P hs a k :=
+  let ρ := wk1 Γ B[a..] in
+  tApp (tApp (tApp hs a) k) (tLambda (B[a..]) (tWElim A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ hs⟨ρ⟩ (tApp k⟨ρ⟩ (tRel 0)))).
+
+Lemma elimSupRed_wktyeq Γ A B P hs a k : elimSupRed A B P hs a k = elimSupRed' Γ A B P hs a k.
+Proof. unfold elimSupRed, elimSupRed'; now bsimpl. Qed.
+
+Lemma wk_elimSupRed' {A B P hs a k Γ Δ} (ρ : Δ ≤ Γ) :
+  elimSupRed' Δ A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩ hs⟨ρ⟩ a⟨ρ⟩ k⟨ρ⟩ = (elimSupRed' Γ A B P hs a k)⟨ρ⟩.
+Proof. now rewrite <- 2!elimSupRed_wktyeq, wk_elimSupRed. Qed.
+
