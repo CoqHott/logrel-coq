@@ -245,9 +245,9 @@ Reserved Notation "[ Γ ||-Id< l > t ≅ u : A | RA ]" (at level 0, Γ, l, t, u,
 
 (** Reducibility notations for W types *)
 Reserved Notation "[ Γ ||-W< l > A ]" (at level 0, Γ, l,  A at level 50).
-Reserved Notation "[ Γ ||-W< l > A ≅ B | RA ]" (at level 0, Γ, l, A, B, RA at level 50).
-Reserved Notation "[ Γ ||-W< l > t : A | RA ]" (at level 0, Γ, l, t, A, RA at level 50).
-Reserved Notation "[ Γ ||-W< l > t ≅ u : A | RA ]" (at level 0, Γ, l, t, u, A, RA at level 50).
+Reserved Notation "[ Γ ||-W A ≅ B | RA ]" (at level 0, Γ, A, B, RA at level 50).
+Reserved Notation "[ Γ ||-W t : A | RA | wfΓ ]"  (at level 0, Γ, t, A, RA, wfΓ at level 50).
+Reserved Notation "[ Γ ||-W t ≅ u : A | RA | wfΓ ]"  (at level 0, Γ, t, u, A, RA, wfΓ at level 50).
 
 
 

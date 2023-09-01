@@ -1166,7 +1166,7 @@ Section WRedTm.
   Inductive WRedTm  Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : term -> Type :=
     | mkWRedTm
      t nf
-      (red : [Δ |- t ⤳* nf : T⟨ρ⟩ ])
+      (red : [Δ |- t :⤳*: nf : T⟨ρ⟩ ])
       (eq : [Δ |- nf ≅ nf : T⟨ρ⟩ ])
       (prop : WProp Δ ρ wfΔ nf)
       :
@@ -1184,8 +1184,8 @@ Section WRedTm.
     | neR {k} : [Δ ||-NeNf k : T⟨ρ⟩] -> WProp Δ ρ wfΔ k
   with WRedTmEq Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : term -> term -> Type :=
     | mkWRedTmEq t u nfL nfR 
-      (redL : [Δ |- t ⤳* nfL : T⟨ρ⟩])
-      (redR : [Δ |- u ⤳* nfR : T⟨ρ⟩])
+      (redL : [Δ |- t :⤳*: nfL : T⟨ρ⟩])
+      (redR : [Δ |- u :⤳*: nfR : T⟨ρ⟩])
       (eq : [Δ |- nfL ≅ nfR : T⟨ρ⟩])
       (prop : WPropEq Δ ρ wfΔ nfL nfR)
       : WRedTmEq Δ ρ wfΔ t u
@@ -1217,7 +1217,7 @@ Section WRedTm.
         (Pp : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t, WProp Δ ρ wfΔ t -> Type@{o})
         (Prte : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t u, WRedTmEq Δ ρ wfΔ t u -> Type@{o})
         (Ppe : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t u, WPropEq Δ ρ wfΔ t u -> Type@{o})
-        (ihMkrt : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t nf : term) (red : [Δ |-[ ta ] t ⤳* nf : T⟨ρ⟩])
+        (ihMkrt : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t nf : term) (red : [Δ |-[ ta ] t :⤳*: nf : T⟨ρ⟩])
               (eq : [Δ |-[ ta ] nf ≅ nf : T⟨ρ⟩]) (prop : WProp Δ ρ wfΔ nf),
             Pp Δ ρ wfΔ nf prop -> Prt Δ ρ wfΔ t (mkWRedTm Δ ρ wfΔ t nf red eq prop))
         (ihsupR : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (A B a k : term) (wtyA : [Δ |-[ ta ] A])
@@ -1231,7 +1231,7 @@ Section WRedTm.
         (ihneR : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (k : term) (r : [Δ ||-NeNf k : T⟨ρ⟩]),
               Pp Δ ρ wfΔ k (neR Δ ρ wfΔ r))
         (ihMkrte : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t u nfL nfR : term)
-                (redL : [Δ |-[ ta ] t ⤳* nfL : T⟨ρ⟩]) (redR : [Δ |-[ ta ] u ⤳* nfR : T⟨ρ⟩])
+                (redL : [Δ |-[ ta ] t :⤳*: nfL : T⟨ρ⟩]) (redR : [Δ |-[ ta ] u :⤳*: nfR : T⟨ρ⟩])
                 (eq : [Δ |-[ ta ] nfL ≅ nfR : T⟨ρ⟩]) (prop : WPropEq Δ ρ wfΔ nfL nfR),
               Ppe Δ ρ wfΔ nfL nfR prop -> Prte Δ ρ wfΔ t u (mkWRedTmEq Δ ρ wfΔ t u nfL nfR redL redR eq prop))
         (ihsupReq : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (A A' B B' a a' k k' : term) 
@@ -1371,7 +1371,13 @@ Section WRedTm.
         for
         F2.
 
-      Definition WRedInduction := (WRedTm_mut_rect, WProp_mut_rect, WRedTmEq_mut_rect, WPropEq_mut_rect).
+      Definition WRedInductionConcl :=
+        (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t (w : WRedTm _ ρ wfΔ t), Prt Δ ρ wfΔ t w)
+        × (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t (w : WProp _ ρ wfΔ t), Pp Δ ρ wfΔ t w)
+        × (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t t0 (w : WRedTmEq _ ρ wfΔ t t0), Prte Δ ρ wfΔ t t0 w)
+        × (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t t0 (w : WPropEq _ ρ wfΔ t t0), Ppe Δ ρ wfΔ t t0 w).
+
+      Definition WRedInduction : WRedInductionConcl := (WRedTm_mut_rect, WProp_mut_rect, WRedTmEq_mut_rect, WPropEq_mut_rect).
     End Induction.
   End WRedTm.
 
@@ -1379,6 +1385,7 @@ Section WRedTm.
   Arguments WProp {_ _ _ _ _ _ _ _ _ _ _} _ {_}.
   Arguments WRedTmEq {_ _ _ _ _ _ _ _ _ _ _} _ {_}.
   Arguments WPropEq {_ _ _ _ _ _ _ _ _ _ _} _ {_}.
+  Arguments WRedInductionConcl {_ _ _ _ _ _ _ _ _ _ _}.
 
   Section WRedTmHelpers.
     Context `{ta : tag} `{WfContext ta} `{WfType ta} `{ConvType ta}
@@ -1397,7 +1404,7 @@ Section WRedTm.
     Definition nf {Δ} {ρ : Δ ≤ Γ} {wfΔ t} (Rt : WRedTm WA ρ wfΔ t) : term :=
       let '(mkWRedTm _ _ _ _ nf _ _ _) := Rt in nf.
 
-    Definition red {Δ} {ρ : Δ ≤ Γ} {wfΔ t} (Rt : WRedTm WA ρ wfΔ t) : [Δ |- t ⤳* nf Rt : _ ] :=
+    Definition red {Δ} {ρ : Δ ≤ Γ} {wfΔ t} (Rt : WRedTm WA ρ wfΔ t) : [Δ |- t :⤳*: nf Rt : _ ] :=
       let '(mkWRedTm _ _ _ _ _ red _ _) := Rt in red.
 
     Definition eq {Δ} {ρ : Δ ≤ Γ} {wfΔ t} (Rt : WRedTm WA ρ wfΔ t) : [Δ |- nf Rt ≅ nf Rt : _ ] :=
@@ -1407,6 +1414,8 @@ Section WRedTm.
       let '(mkWRedTm _ _ _ _ _ _ _ prop) := Rt in prop.
 
   End WRedTmHelpers.
+  Arguments WProp' {_ _ _ _ _ _ _ _ _ _ _} _ _ _.
+  Arguments WRedTm' {_ _ _ _ _ _ _ _ _ _ _} _ _ _.
 
   Module WRedTmEqHelpers.
   Section WRedTmEqHelpers.
@@ -1428,10 +1437,10 @@ Section WRedTm.
     Definition nfR {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : term :=
       let '(mkWRedTmEq  _ _ _ _ _ _ nfR _ _ _ _) := Rtu in nfR.
 
-    Definition redL {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : [Δ |- t ⤳* nfL Rtu : _ ] :=
+    Definition redL {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : [Δ |- t :⤳*: nfL Rtu : _ ] :=
       let '(mkWRedTmEq  _ _ _ _ _ _ _ redL _ _ _) := Rtu in redL.
 
-    Definition redR {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : [Δ |- u ⤳* nfR Rtu : _ ] :=
+    Definition redR {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : [Δ |- u :⤳*: nfR Rtu : _ ] :=
       let '(mkWRedTmEq  _ _ _ _ _ _ _ _ redR _ _) := Rtu in redR.
 
     Definition eq {Δ} {ρ : Δ ≤ Γ} {wfΔ t u} (Rtu : WRedTmEq WA ρ wfΔ t u) : [Δ |- nfL Rtu ≅ nfR Rtu : _ ] :=
@@ -1445,13 +1454,15 @@ Section WRedTm.
     Definition neReq := neReq (WA:=WA).
 
   End WRedTmEqHelpers.
+  Arguments WPropEq' {_ _ _ _ _ _ _ _ _ _ _} _ _ _ _.
+  Arguments WRedTmEq' {_ _ _ _ _ _ _ _ _ _ _} _ _ _ _.
   End WRedTmEqHelpers.
 
  End WRedTm.
 
-Export WRedTm(WRedTm, WProp, WRedTmEq, WPropEq, WRedInduction).
+Export WRedTm(WRedTm, WProp, WRedTmEq, WPropEq,WRedInductionConcl, WRedInduction, WRedTm', WProp').
 Module WRedTmEq := WRedTm.WRedTmEqHelpers.
-
+Export WRedTmEq(WRedTmEq',WPropEq').
 
 (** ** Definition of the logical relation *)
 
@@ -1489,7 +1500,7 @@ Inductive LR@{i j k} `{ta : tag}
   | LRId {Γ A} (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate@{j k} (LR rec) IA) :
     LR rec Γ A (IdRedTyEq IA) (IdRedTm IA) (IdRedTmEq IA)
   | LRW {Γ A} (wfΓ : [|-Γ]) (WA : WRedTyPack@{j} Γ A) (WAad : WRedTyAdequate@{j k} (LR rec) WA) :
-    LR rec Γ A (WRedTyEq WA) (WRedTm.WRedTm' (WA:=WA) wfΓ) (WRedTmEq.WRedTmEq' (WA:=WA) wfΓ)
+    LR rec Γ A (WRedTyEq WA) (WRedTm' WA wfΓ) (WRedTmEq' WA wfΓ)
   .
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
@@ -1830,9 +1841,13 @@ Section WRedTy.
     [ LogRel@{i j k l} l | Γ ||- A ] :=
     LRbuild (LRW (LogRelRec l) (ctx_wf WA) _ (toAd WA)).
 
+  Definition LRW@{i j k l} (wfΓ: [|-Γ]) (WA : WRedTy@{i j k l}) :
+    [ LogRel@{i j k l} l | Γ ||- A ] :=
+    LRbuild (LRW (LogRelRec l) wfΓ _ (toAd WA)).
+
   Definition WRedTyEq@{i j k l} (WA : WRedTy@{i j k l}) := WRedTyEq (toPack WA).
-  Definition WRedTm@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTm.WRedTm' (WA:=toPack WA) (ctx_wf WA).
-  Definition WRedTmEq@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTmEq.WRedTmEq' (WA:=toPack WA) (ctx_wf WA).
+  Definition WRedTm@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTm' (toPack WA) (ctx_wf WA).
+  Definition WRedTmEq@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTmEq' (toPack WA) (ctx_wf WA).
 
 End WRedTy.
 Arguments WRedTy {_ _ _ _ _ _ _ _ _}.
@@ -1842,10 +1857,10 @@ Export WRedTy(WRedTy, Build_WRedTy, LRW').
 Coercion WRedTy.toPack : WRedTy >-> WRedTyPack.
 Coercion WRedTy.PRT : WRedTy >-> ParamRedTy.
 
-Notation "[ Γ ||-W< l > A ]" := (WRedTy Γ l A) (at level 0, Γ, l,  A at level 50).
-Notation "[ Γ ||-W< l > A ≅ B | RA ]" := (WRedTy.WRedTyEq (Γ:=Γ) (l:=l) (A:=A) RA B) (at level 0, Γ, l, A, B, RA at level 50).
-Notation "[ Γ ||-W< l > t : A | RA ]" := (WRedTy.WRedTm (Γ:=Γ) (l:=l) (A:=A) RA t) (at level 0, Γ, l, t, A, RA at level 50).
-Notation "[ Γ ||-W< l > t ≅ u : A | RA ]" := (WRedTy.WRedTmEq (Γ:=Γ) (l:=l) (A:=A) RA t u) (at level 0, Γ, l, t, u, A, RA at level 50).
+Notation "[ Γ ||-W< l > A ]" := (WRedTy Γ l A).
+Notation "[ Γ ||-W A ≅ B | RA ]" := (WRedTyEq (Γ:=Γ) (A:=A) RA B).
+Notation "[ Γ ||-W t : A | RA | wfΓ ]" := (WRedTm' (Γ:=Γ) (A:=A) RA wfΓ t).
+Notation "[ Γ ||-W t ≅ u : A | RA | wfΓ ]" := (WRedTmEq' (Γ:=Γ) (A:=A) RA wfΓ t u).
 
 (** ** Folding and unfolding lemmas of the logical relation wrt levels *)
 

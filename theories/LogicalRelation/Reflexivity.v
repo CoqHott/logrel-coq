@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation.Reflexivity: reflexivity of the logical relation. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context NormalForms Weakening GenericTyping LogicalRelation.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation.
 From LogRel.LogicalRelation Require Import Induction Escape.
 
 Set Universe Polymorphism.
@@ -11,7 +11,8 @@ Section Reflexivities.
 
   Definition reflLRTyEq {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
   Proof.
-    pattern l, Γ, A, lr; eapply LR_rect_TyUr; intros ??? [] **.
+    pattern l, Γ, A, lr; eapply LR_rect_TyUr; try intros ??? [] **.
+    8: intros ???? [[]] **.
     all: try match goal with H : PolyRed _ _ _ _ |- _ => destruct H; econstructor; tea end.
     all: try now econstructor.
     (* econstructor; tea; now eapply escapeEqTerm. *)
@@ -64,6 +65,22 @@ Section Reflexivities.
   Lemma reflIdRedTmEq {Γ l A} (IA : [Γ ||-Id<l> A]) t (Rt : [Γ ||-Id<l> t : _ | IA]) : [Γ ||-Id<l> t ≅ t : _ | IA].
   Proof. destruct Rt; econstructor; tea; now eapply reflIdPropEq. Qed.
 
+  Lemma reflWRed_mut {Γ l A} (wfΓ : [|-Γ]) (WA : [Γ ||-W<l> A])
+    (ihdom : forall Δ  (ρ : Δ ≤ Γ) (h : [|- Δ]) t, [PolyRed.shpRed WA ρ h | _ ||- t : _] -> [PolyRed.shpRed WA ρ h | _ ||- t ≅ t : _]) :
+    WRedInductionConcl WA
+      (fun Δ ρ wfΔ t _ => WRedTmEq WA ρ wfΔ t t) 
+      (fun Δ ρ wfΔ t _ => WPropEq WA ρ wfΔ t t)
+      (fun _ _ _ _ _ _ => True)
+      (fun _ _ _ _ _ _ => True).
+  Proof.
+    apply WRedInduction; try solve [intros ; exact I].
+    - intros; now econstructor.
+    - intros ???????????? Rk ih * ; econstructor; tea; eauto.
+      unshelve econstructor; tea; destruct Rk; cbn; tea.
+      intros; now eapply ih.
+    - intros; constructor; now eapply NeNfEqRefl.
+  Qed.
+
   Definition reflLRTmEq@{h i j k l} {l Γ A} (lr : [ LogRel@{i j k l} l | Γ ||- A ] ) :
     forall t,
       [ Γ ||-<l> t : A | lr ] ->
@@ -94,8 +111,9 @@ Section Reflexivities.
       1-2: now econstructor.
       all: cbn; now eauto.
     - intros; now eapply reflIdRedTmEq.
+    - intros; now eapply reflWRed_mut.
   Qed.
-  
+
   (* Deprecated *)
   Corollary LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
