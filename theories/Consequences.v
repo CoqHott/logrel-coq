@@ -40,6 +40,8 @@ Proof.
   eapply empty_isEmpty; tea.
 Qed.
 
+Print Assumptions consistency.
+
 (** *** Canonicity: every closed natural number is a numeral, i.e. an iteration of [tSucc] on [tZero]. *)
 
 Section NatCanonicityInduction.
