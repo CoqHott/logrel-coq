@@ -275,7 +275,7 @@ Section Inversions.
     `{!RedType ta} `{!RedTerm ta} `{!RedTypeProperties}
     `{!ConvNeuProperties}.
   
-  Definition invLRTy {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') :=
+  Definition invLRTy {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⤳* A']) (w : isType A') :=
     match w return Type with
     | UnivType => [Γ ||-U<l> A]
     | ProdType => [Γ ||-Π<l> A]
@@ -286,7 +286,7 @@ Section Inversions.
     | NeType _ => [Γ ||-ne A]
     end.
 
-  Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⇒* A']) (w : isType A') : invLRTy lr r w.
+  Lemma invLR {Γ l A A'} (lr : [Γ ||-<l> A]) (r : [A ⤳* A']) (w : isType A') : invLRTy lr r w.
   Proof.
     unfold invLRTy.
     revert A' r w.

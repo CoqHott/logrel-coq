@@ -9,7 +9,7 @@ From LogRel.Substitution Require Import Escape Poly.
 
 Record WN (t : term) := {
   wn_val : term;
-  wn_red : [ t ⇒* wn_val ];
+  wn_red : [ t ⤳* wn_val ];
   wn_whnf : whnf wn_val;
 }.
 
@@ -21,7 +21,7 @@ exists r⟨ρ⟩.
 + now apply whnf_ren.
 Qed.
 
-Lemma WN_exp : forall t u, [t ⇒* u] -> WN u -> WN t.
+Lemma WN_exp : forall t u, [t ⤳* u] -> WN u -> WN t.
 Proof.
 intros t u ? [r].
 exists r; tea.
@@ -57,8 +57,8 @@ Qed.
 #[export] Instance ConvTypeNf : ConvType nf := fun Γ A B => WN A × WN B.
 #[export] Instance ConvTermNf : ConvTerm nf := fun Γ A t u => WN t × WN u.
 #[export] Instance ConvNeuConvNf : ConvNeuConv nf := fun Γ A m n => whne m × whne n.
-#[export] Instance RedTypeNf : RedType nf := fun Γ A B => [A ⇒* B].
-#[export] Instance RedTermNf : RedTerm nf := fun Γ A t u => [t ⇒* u].
+#[export] Instance RedTypeNf : RedType nf := fun Γ A B => [A ⤳* B].
+#[export] Instance RedTermNf : RedTerm nf := fun Γ A t u => [t ⤳* u].
 
 #[export, refine] Instance WfCtxDeclProperties : WfContextProperties (ta := nf) := {}.
 Proof.
@@ -168,11 +168,19 @@ Section Normalisation.
       apply escapeTmEq in H as []; now split.
   Qed.
 
+  Import DeclarativeTypingData.
+
+  Corollary normalisation {Γ A t} : [Γ |-[de] t : A] -> WN t.
+  Proof. now intros ?%TermRefl%typing_nf. Qed.
+
+  Corollary type_normalisation {Γ A} : [Γ |-[de] A] -> WN A.
+  Proof. now intros ?%TypeRefl%typing_nf. Qed.
+
 End Normalisation.
 
 Import DeclarativeTypingProperties.
 
-Record cored t t' : Prop := { _ : [t' ⇒ t] }.
+Record cored t t' : Prop := { _ : [t' ⤳ t] }.
 
 Theorem typing_SN Γ t :
   well_formed Γ t ->

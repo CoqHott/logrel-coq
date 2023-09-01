@@ -62,6 +62,8 @@ theories/AlgorithmicTyping.v
 theories/DeclarativeSubst.v
 theories/TypeConstructorsInj.v
 theories/Normalisation.v
+theories/Consequences.v
+
 theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicConvProperties.v
 theories/AlgorithmicTypingProperties.v

@@ -11,7 +11,7 @@ Section AlgorithmicUnique.
   Lemma algo_typing_unique : AlgoTypingInductionConcl
     (fun Γ A => True)
     (fun Γ A t => forall A', [Γ |-[al] t ▹ A'] -> A' = A)
-    (fun Γ A t => forall A', [Γ |-[al] t ▹h A'] -> ∑ A'', [A'' ⇒* A] × [A'' ⇒* A'])
+    (fun Γ A t => forall A', [Γ |-[al] t ▹h A'] -> ∑ A'', [A'' ⤳* A] × [A'' ⤳* A'])
     (fun Γ A t => True).
   Proof.
     apply AlgoTypingInduction.

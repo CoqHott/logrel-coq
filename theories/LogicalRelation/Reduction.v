@@ -12,7 +12,7 @@ Set Printing Primitive Projection Parameters.
 
 Lemma redSubst {Γ A B l} :
   [Γ ||-<l> B] ->
-  [Γ |- A ⇒* B] ->
+  [Γ |- A ⤳* B] ->
   ∑ (RA : [Γ ||-<l> A]), [Γ ||-<l> A ≅ B | RA].
 Proof.
   intros RB; revert A; pattern l, Γ, B, RB; apply LR_rect_TyUr; clear l Γ B RB; intros l Γ.
@@ -51,7 +51,7 @@ Qed.
 
 Lemma redwfSubst {Γ A B l} :
   [Γ ||-<l> B] ->
-  [Γ |- A :⇒*: B] ->
+  [Γ |- A :⤳*: B] ->
   ∑ (RA : [Γ ||-<l> A]), [Γ ||-<l> A ≅ B | RA].
 Proof.
   intros ? []; now eapply redSubst.
@@ -59,14 +59,14 @@ Qed.
 
 Lemma redSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
-  [Γ |- t ⇒* u : A ] ->
+  [Γ |- t ⤳* u : A ] ->
   [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
   revert t u; pattern l, Γ, A, RA; apply LR_rect_TyUr; clear l Γ A RA; intros l Γ.
   - intros ? h ?? ru' redtu; pose (ru := ru'); destruct ru' as [T].
     assert [Γ |- A ≅ U] by (destruct h; gen_typing).
     assert [Γ |- t : U] by (eapply ty_conv; [gen_typing| now escape]).
-    assert (redtu' : [Γ |-[ ta ] t ⇒* u]) by gen_typing.
+    assert (redtu' : [Γ |-[ ta ] t ⤳* u]) by gen_typing.
     destruct (redSubst (A:=t) (RedTyRecFwd h rel) redtu') as [rTyt0].
     pose proof (rTyt := RedTyRecBwd h rTyt0).
     unshelve refine (let rt : [LRU_ h | Γ ||- t : A]:= _ in _).
@@ -82,7 +82,7 @@ Proof.
        2: apply convty_term; now apply convtm_convneu.
        gen_typing.
     }
-    assert [Γ |-[ ta ] t ⇒* u : neRedTy.ty neA] by (eapply redtm_conv; tea). 
+    assert [Γ |-[ ta ] t ⤳* u : neRedTy.ty neA] by (eapply redtm_conv; tea). 
     assert [Γ |-[ ta ] t : neRedTy.ty neA] by (eapply ty_conv; tea; gen_typing). 
     unshelve refine (let rt : [LRne_ l neA | Γ ||- t : A] := _ in _).
     + exists n; tea; destruct red; constructor; tea; now etransitivity.
@@ -93,7 +93,7 @@ Proof.
       eapply convty_exp; tea.
       now apply redtywf_refl.
     }
-    assert [Γ |-[ ta ] t ⇒* u : ΠA.(outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t ⤳* u : ΠA.(outTy)] by now eapply redtm_conv. 
     assert [Γ |-[ ta ] t : ΠA.(outTy)] by (eapply ty_conv; gen_typing).
     unshelve refine (let rt : [LRPi' ΠA | Γ ||- t : A] := _ in _).
     1: exists f; tea; constructor; destruct red; tea; etransitivity; tea.
@@ -102,7 +102,7 @@ Proof.
     now apply reflLRTmEq.
   - intros ? NA t ? Ru red; inversion Ru; subst.
     assert [Γ |- A ≅ tNat] by (destruct NA; gen_typing).
-    assert [Γ |- t :⇒*: nf : tNat]. 1:{
+    assert [Γ |- t :⤳*: nf : tNat]. 1:{
       constructor. 1: gen_typing.
       etransitivity. 2: gen_typing.
       now eapply redtm_conv.
@@ -111,7 +111,7 @@ Proof.
     now eapply reflNatRedTmEq.
   - intros ? NA t ? Ru red; inversion Ru; subst.
     assert [Γ |- A ≅ tEmpty] by (destruct NA; gen_typing).
-    assert [Γ |- t :⇒*: nf : tEmpty]. 1:{
+    assert [Γ |- t :⤳*: nf : tEmpty]. 1:{
       constructor. 
       1: eapply ty_conv; gen_typing.
       etransitivity. 2: gen_typing.
@@ -126,16 +126,16 @@ Proof.
       eapply convty_exp; tea.
       now apply redtywf_refl.
     }
-    assert [Γ |-[ ta ] t ⇒* u : PA.(outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t ⤳* u : PA.(outTy)] by now eapply redtm_conv. 
     assert [Γ |-[ ta ] t : PA.(outTy)] by (eapply ty_conv; gen_typing).
     unshelve refine (let rt : [LRSig' PA | Γ ||- t : A] := _ in _).
     1: unshelve eexists p _; tea; constructor; destruct red; tea; etransitivity; tea.
     split; tea; exists rt ru; tea; intros; cbn; now apply reflLRTmEq.
   - intros ? IA ih _ t u [nf ?? prop] redt.
     assert [Γ |- A ≅ IA.(IdRedTy.outTy)] by (destruct IA; unfold IdRedTy.outTy; cbn; gen_typing).
-    assert [Γ |-[ ta ] t ⇒* u : IA.(IdRedTy.outTy)] by now eapply redtm_conv. 
+    assert [Γ |-[ ta ] t ⤳* u : IA.(IdRedTy.outTy)] by now eapply redtm_conv. 
     assert [Γ |-[ ta ] t : IA.(IdRedTy.outTy)] by (eapply ty_conv; gen_typing).
-    assert [Γ |-[ ta ] t :⇒*: nf : IA.(IdRedTy.outTy)].
+    assert [Γ |-[ ta ] t :⤳*: nf : IA.(IdRedTy.outTy)].
     1: constructor; [apply red|etransitivity; tea; apply red].
     split; eexists; tea.
     now eapply reflIdPropEq.
@@ -143,7 +143,7 @@ Qed.
 
 Lemma redSubstTerm' {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
-  [Γ |- t ⇒* u : A ] ->
+  [Γ |- t ⤳* u : A ] ->
   [Γ ||-<l> t : A | RA] ×  
   [Γ ||-<l> u : A | RA] ×
   [Γ ||-<l> t ≅ u : A | RA].
@@ -155,14 +155,14 @@ Qed.
 
 Lemma redwfSubstTerm {Γ A t u l} (RA : [Γ ||-<l> A]) :
   [Γ ||-<l> u : A | RA] ->
-  [Γ |- t :⇒*: u : A ] ->
+  [Γ |- t :⤳*: u : A ] ->
   [Γ ||-<l> t : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
   intros ? []; now eapply redSubstTerm.
 Qed.
 
 
-Lemma redFwd {Γ l A B} : [Γ ||-<l> A] -> [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B].
+Lemma redFwd {Γ l A B} : [Γ ||-<l> A] -> [Γ |- A :⤳*: B] -> whnf B -> [Γ ||-<l> B].
 Proof.
   intros RA; revert B; pattern l, Γ, A, RA; apply LR_rect_TyUr; clear l Γ A RA.
   - intros ??? [??? red] ? red' ?. 
@@ -203,7 +203,7 @@ Proof.
     econstructor; tea. eapply redtywf_refl; gen_typing.
 Qed.
 
-Lemma redFwdConv {Γ l A B} (RA : [Γ ||-<l> A]) : [Γ |- A :⇒*: B] -> whnf B -> [Γ ||-<l> B] × [Γ ||-<l> A ≅ B | RA].
+Lemma redFwdConv {Γ l A B} (RA : [Γ ||-<l> A]) : [Γ |- A :⤳*: B] -> whnf B -> [Γ ||-<l> B] × [Γ ||-<l> A ≅ B | RA].
 Proof.
   intros red wh. pose (RB := redFwd RA red wh).
   destruct (redwfSubst RB red).
@@ -214,7 +214,7 @@ Lemma IdProp_whnf {Γ l A} (IA : [Γ ||-Id<l> A]) t : IdProp IA t -> whnf t.
 Proof. intros []; constructor; destruct r; now eapply convneu_whne. Qed.
 
 Lemma redTmFwd {Γ l A t u} {RA : [Γ ||-<l> A]} : 
-  [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA].
+  [Γ ||-<l> t : A | RA] -> [Γ |- t :⤳*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA].
 Proof.
   revert t u; pattern l,Γ,A,RA; apply LR_rect_TyUr; clear l Γ A RA.
   - intros ?????? [? red] red' ?.
@@ -259,7 +259,7 @@ Proof.
 Qed.
 
 Lemma redTmFwdConv {Γ l A t u} {RA : [Γ ||-<l> A]} : 
-  [Γ ||-<l> t : A | RA] -> [Γ |- t :⇒*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
+  [Γ ||-<l> t : A | RA] -> [Γ |- t :⤳*: u : A] -> whnf u -> [Γ ||-<l> u : A | RA] × [Γ ||-<l> t ≅ u : A | RA].
 Proof.
   intros Rt red wh. pose (Ru := redTmFwd Rt red wh).
   destruct (redwfSubstTerm RA Ru red); now split.

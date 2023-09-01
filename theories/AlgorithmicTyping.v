@@ -14,8 +14,8 @@ Section Definitions.
   (** **** Conversion of types *)
   Inductive ConvTypeAlg : context -> term -> term  -> Type :=
     | typeConvRed {Γ A A' B B'} :
-      [A ⇒* A'] ->
-      [B ⇒* B'] ->
+      [A ⤳* A'] ->
+      [B ⤳* B'] ->
       [Γ |- A' ≅h B'] ->
       [Γ |- A ≅ B]
   (** **** Conversion of types reduced to weak-head normal forms *)
@@ -89,15 +89,15 @@ Section Definitions.
   with ConvNeuRedAlg : context -> term -> term -> term -> Type :=
     | neuConvRed {Γ m n A A'} :
       [Γ |- m ~ n ▹ A] ->
-      [A ⇒* A'] ->
+      [A ⤳* A'] ->
       whnf A' ->
       [Γ |- m ~h n ▹ A']
   (** **** Conversion of terms *)
   with ConvTermAlg : context -> term -> term -> term -> Type :=
     | termConvRed {Γ t t' u u' A A'} :
-      [A ⇒* A'] ->
-      [t ⇒* t'] ->
-      [u ⇒* u' ] ->
+      [A ⤳* A'] ->
+      [t ⤳* t'] ->
+      [u ⤳* u' ] ->
       [Γ |- t' ≅h u' : A'] ->
       [Γ |- t ≅ u : A]
   (** **** Conversion of terms reduced to a weak-head normal form at a reduced type *)
@@ -150,8 +150,8 @@ Section Definitions.
   and "[ Γ |- m ~h n ▹ T ]" := (ConvNeuRedAlg Γ T m n)
   and "[ Γ |- t ≅ u : T ]" := (ConvTermAlg Γ T t u)
   and "[ Γ |- t ≅h u : T ]" := (ConvTermRedAlg Γ T t u)
-  and "[ t ⇒ t' ]" := (OneRedAlg t t')
-  and "[ t ⇒* t' ]" := (RedClosureAlg t t').
+  and "[ t ⤳ t' ]" := (OneRedAlg t t')
+  and "[ t ⤳* t' ]" := (RedClosureAlg t t').
 
 (** ** Typing *)
 
@@ -252,7 +252,7 @@ Section Definitions.
   with InferRedAlg : context -> term -> term -> Type :=
     | infRed {Γ t A A'} :
       [Γ |- t ▹ A ] ->
-      [ A ⇒* A'] ->
+      [ A ⤳* A'] ->
       [Γ |- t ▹h A']
   (** **** Type-checking *)
   with CheckAlg : context -> term -> term -> Type :=

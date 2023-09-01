@@ -11,7 +11,7 @@ Set Printing Primitive Projection Parameters.
 
 Lemma redwfSubstValid {Γ A t u l}
   (VΓ : [||-v Γ])
-  (red : [Γ ||-v t :⇒*: u : A | VΓ])
+  (red : [Γ ||-v t :⤳*: u : A | VΓ])
   (VA : [Γ ||-v<l> A | VΓ])
   (Vu : [Γ ||-v<l> u : A | VΓ | VA]) :
   [Γ ||-v<l> t : A | VΓ | VA] × [Γ ||-v<l> t ≅ u : A | VΓ | VA].

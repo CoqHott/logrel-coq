@@ -118,7 +118,7 @@ Module neRedTy.
     {Γ : context} {A : term}
   : Set := {
     ty : term;
-    red : [ Γ |- A :⇒*: ty];
+    red : [ Γ |- A :⤳*: ty];
     eq : [ Γ |- ty ~ ty : U] ;
   }.
 
@@ -136,7 +136,7 @@ Module neRedTyEq.
     {Γ : context} {A B : term} {neA : [ Γ ||-ne A ]}
   : Set := {
     ty   : term;
-    red  : [ Γ |- B :⇒*: ty];
+    red  : [ Γ |- B :⤳*: ty];
     eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
   }.
 
@@ -155,7 +155,7 @@ Module neRedTm.
     {Γ : context} {t A : term} {R : [ Γ ||-ne A ]}
   : Set := {
     te  : term;
-    red  : [ Γ |- t :⇒*: te : R.(neRedTy.ty)];
+    red  : [ Γ |- t :⤳*: te : R.(neRedTy.ty)];
     eq : [Γ |- te ~ te : R.(neRedTy.ty)] ;
   }.
 
@@ -176,8 +176,8 @@ Module neRedTmEq.
   : Set := {
     termL     : term;
     termR     : term;
-    redL      : [ Γ |- t :⇒*: termL : R.(neRedTy.ty) ];
-    redR      : [ Γ |- u :⇒*: termR : R.(neRedTy.ty) ];
+    redL      : [ Γ |- t :⤳*: termL : R.(neRedTy.ty) ];
+    redR      : [ Γ |- u :⤳*: termR : R.(neRedTy.ty) ];
     eq : [ Γ |- termL ~ termR : R.(neRedTy.ty)] ;
   }.
 
@@ -198,7 +198,7 @@ Module URedTy.
     level  : TypeLevel;
     lt  : level << l;
     wfCtx : [|- Γ] ;
-    red : [ Γ |- A  :⇒*: U ]
+    red : [ Γ |- A  :⤳*: U ]
   }.
 
   Arguments URedTy {_ _ _ _}.
@@ -214,7 +214,7 @@ Module URedTyEq.
 
   Record URedTyEq `{ta : tag} `{!WfType ta} `{!RedType ta} 
     {Γ : context} {B : term} : Set := {
-    red : [Γ |- B :⇒*: U]
+    red : [Γ |- B :⤳*: U]
   }.
 
   Arguments URedTyEq : clear implicits.
@@ -234,7 +234,7 @@ Module URedTm.
     {Γ : context} {t A : term} {R : [Γ ||-U<l> A]}
   : Type@{j} := {
     te : term;
-    red : [ Γ |- t :⇒*: te : U ];
+    red : [ Γ |- t :⤳*: te : U ];
     type : isType te;
     eqr : [Γ |- te ≅ te : U];
     rel : [rec R.(URedTy.lt) | Γ ||- t ] ;
@@ -342,7 +342,7 @@ Module ParamRedTyPack.
     dom : term ;
     cod : term ;
     outTy := T dom cod ;
-    red : [Γ |- A :⇒*: T dom cod];
+    red : [Γ |- A :⤳*: T dom cod];
     eq : [Γ |- T dom cod ≅ T dom cod];
     polyRed : PolyRedPack@{i} Γ dom cod
   }.
@@ -364,7 +364,7 @@ Module ParamRedTyEq.
   : Type := {
     dom : term;
     cod : term;
-    red : [Γ |- B :⇒*: T dom cod ];
+    red : [Γ |- B :⤳*: T dom cod ];
     eq  : [Γ |- T ΠA.(ParamRedTyPack.dom) ΠA.(ParamRedTyPack.cod) ≅ T dom cod ];
     polyRed : PolyRedEq ΠA dom cod
   }.
@@ -406,7 +406,7 @@ Module PiRedTm.
     {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     nf : term;
-    red : [ Γ |- t :⇒*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
+    red : [ Γ |- t :⤳*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     isfun : isFun nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
@@ -472,7 +472,7 @@ Module SigRedTm.
     {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t : term}
   : Type := {
     nf : term;
-    red : [ Γ |- t :⇒*: nf : ΣA.(outTy) ];
+    red : [ Γ |- t :⤳*: nf : ΣA.(outTy) ];
     isfun : isPair nf;
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
@@ -542,7 +542,7 @@ Module NatRedTy.
     {Γ : context} {A : term}
   : Set := 
   {
-    red : [Γ |- A :⇒*: tNat]
+    red : [Γ |- A :⤳*: tNat]
   }.
 
   Arguments NatRedTy {_ _ _}.
@@ -556,7 +556,7 @@ Module NatRedTyEq.
   Record NatRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
     {Γ : context} {A : term} {NA : NatRedTy Γ A} {B : term}
   : Set := {
-    red : [Γ |- B :⇒*: tNat];
+    red : [Γ |- B :⤳*: tNat];
   }.
 
   Arguments NatRedTyEq {_ _ _ _ _}.
@@ -576,7 +576,7 @@ Section NatRedTm.
   Inductive NatRedTm {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> Set :=
   | Build_NatRedTm {t}
     (nf : term)
-    (red : [Γ |- t :⇒*: nf : tNat ])
+    (red : [Γ |- t :⤳*: nf : tNat ])
     (eq : [Γ |- nf ≅ nf : tNat])
     (prop : NatProp nf) : NatRedTm t
 
@@ -618,7 +618,7 @@ Proof.
   intros [? nf]. exact nf.
 Defined.
 
-Definition red {Γ A n} {NA : [Γ ||-Nat A]} (Rn : @NatRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tNat].
+Definition red {Γ A n} {NA : [Γ ||-Nat A]} (Rn : @NatRedTm _ _ NA n) : [Γ |- n :⤳*: nf Rn : tNat].
 Proof.
   dependent inversion Rn; subst; cbn; tea.
 Defined.
@@ -643,8 +643,8 @@ Section NatRedTmEq.
   Inductive NatRedTmEq {Γ : context} {A: term} {NA : NatRedTy Γ A} : term -> term -> Set :=
   | Build_NatRedTmEq {t u}
     (nfL nfR : term)
-    (redL : [Γ |- t :⇒*: nfL : tNat])
-    (redR : [Γ |- u :⇒*: nfR : tNat ])
+    (redL : [Γ |- t :⤳*: nfL : tNat])
+    (redR : [Γ |- u :⤳*: nfR : tNat ])
     (eq : [Γ |- nfL ≅ nfR : tNat])
     (prop : NatPropEq nfL nfR) : NatRedTmEq t u
 
@@ -701,7 +701,7 @@ Module EmptyRedTy.
     {Γ : context} {A : term}
   : Set := 
   {
-    red : [Γ |- A :⇒*: tEmpty]
+    red : [Γ |- A :⤳*: tEmpty]
   }.
 
   Arguments EmptyRedTy {_ _ _}.
@@ -715,7 +715,7 @@ Module EmptyRedTyEq.
   Record EmptyRedTyEq `{ta : tag} `{WfType ta} `{RedType ta}
     {Γ : context} {A : term} {NA : EmptyRedTy Γ A} {B : term}
   : Set := {
-    red : [Γ |- B :⇒*: tEmpty];
+    red : [Γ |- B :⤳*: tEmpty];
   }.
 
   Arguments EmptyRedTyEq {_ _ _ _ _}.
@@ -738,7 +738,7 @@ Section EmptyRedTm.
   Inductive EmptyRedTm {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> Set :=
   | Build_EmptyRedTm {t}
     (nf : term)
-    (red : [Γ |- t :⇒*: nf : tEmpty ])
+    (red : [Γ |- t :⤳*: nf : tEmpty ])
     (eq : [Γ |- nf ≅ nf : tEmpty])
     (prop : @EmptyProp Γ nf) : EmptyRedTm t.
 
@@ -747,7 +747,7 @@ Proof.
   intros [? nf]. exact nf.
 Defined.
 
-Definition red {Γ A n} {NA : [Γ ||-Empty A]} (Rn : @EmptyRedTm _ _ NA n) : [Γ |- n :⇒*: nf Rn : tEmpty].
+Definition red {Γ A n} {NA : [Γ ||-Empty A]} (Rn : @EmptyRedTm _ _ NA n) : [Γ |- n :⤳*: nf Rn : tEmpty].
 Proof.
   dependent inversion Rn; subst; cbn; tea.
 Defined.
@@ -775,8 +775,8 @@ Section EmptyRedTmEq.
   Inductive EmptyRedTmEq {Γ : context} {A: term} {NA : EmptyRedTy Γ A} : term -> term -> Set :=
   | Build_EmptyRedTmEq {t u}
     (nfL nfR : term)
-    (redL : [Γ |- t :⇒*: nfL : tEmpty])
-    (redR : [Γ |- u :⇒*: nfR : tEmpty ])
+    (redL : [Γ |- t :⤳*: nfL : tEmpty])
+    (redR : [Γ |- u :⤳*: nfR : tEmpty ])
     (eq : [Γ |- nfL ≅ nfR : tEmpty])
     (prop : @EmptyPropEq Γ nfL nfR) : EmptyRedTmEq t u.
 
@@ -802,7 +802,7 @@ Module IdRedTyPack.
     lhs : term ;
     rhs : term ;
     outTy := tId ty lhs rhs ;
-    red : [Γ |- A :⇒*: outTy] ;
+    red : [Γ |- A :⤳*: outTy] ;
     eq : [Γ |- outTy ≅ outTy] ;
     tyRed : LRPack@{i} Γ ty ;
     lhsRed : [ tyRed | Γ ||- lhs : _ ] ;
@@ -844,7 +844,7 @@ Module IdRedTyEq.
     lhs : term ;
     rhs : term ;
     outTy := tId ty lhs rhs ;
-    red : [Γ |- B :⇒*: outTy];
+    red : [Γ |- B :⤳*: outTy];
     eq : [Γ |- IA.(IdRedTyPack.outTy) ≅ outTy] ;
     tyRed0 := IA.(IdRedTyPack.tyRed) ;
     tyRed : [ tyRed0 | _ ||- _ ≅ ty ] ;
@@ -881,7 +881,7 @@ Section IdRedTm.
   Record IdRedTm  {t : term} : Type :=
     Build_IdRedTm {
       nf : term ;
-      red : [Γ |- t :⇒*: nf : IA.(IdRedTyPack.outTy) ] ;
+      red : [Γ |- t :⤳*: nf : IA.(IdRedTyPack.outTy) ] ;
       eq : [Γ |- nf ≅ nf : IA.(IdRedTyPack.outTy)] ;
       prop : IdProp nf ;
   }. 
@@ -922,8 +922,8 @@ Section IdRedTmEq.
     Build_IdRedTmEq {
       nfL : term ;
       nfR : term ;
-      redL : [Γ |- t :⇒*: nfL : IA.(IdRedTyPack.outTy) ] ;
-      redR : [Γ |- u :⇒*: nfR : IA.(IdRedTyPack.outTy) ] ;
+      redL : [Γ |- t :⤳*: nfL : IA.(IdRedTyPack.outTy) ] ;
+      redR : [Γ |- u :⤳*: nfR : IA.(IdRedTyPack.outTy) ] ;
       eq : [Γ |- nfL ≅ nfR : IA.(IdRedTyPack.outTy)] ;
       prop : IdPropEq nfL nfR ;
   }. 
@@ -1171,7 +1171,7 @@ Section ParamRedTy.
     {
       dom : term ;
       cod : term ;
-      red : [Γ |- A :⇒*: T dom cod] ;
+      red : [Γ |- A :⤳*: T dom cod] ;
       outTy := T dom cod ;
       eq : [Γ |- T dom cod ≅ T dom cod] ;
       polyRed :> PolyRed@{i j k l} Γ l dom cod
@@ -1332,7 +1332,7 @@ Lemma EmptyRedInduction :
     (Γ : context) (A : term) (NA : [Γ ||-Empty A])
     (P : forall t : term, [Γ ||-Empty t : A | NA] -> Type)
     (P0 : forall t : term, EmptyProp Γ t -> Type),
-    (forall (t nf : term) (red : [Γ |-[ ta ] t :⇒*: nf : tEmpty])
+    (forall (t nf : term) (red : [Γ |-[ ta ] t :⤳*: nf : tEmpty])
        (eq : [Γ |-[ ta ] nf ≅ nf : tEmpty]) (prop : EmptyProp Γ nf),
         P0 nf prop -> P t (Build_EmptyRedTm nf red eq prop)) ->
     (forall (ne : term) (r : [Γ ||-NeNf ne : tEmpty]), P0 ne (EmptyRedTm.neR r)) ->
@@ -1352,8 +1352,8 @@ Lemma EmptyRedEqInduction :
     (Γ : context) (A : term) (NA : [Γ ||-Empty A])
     (P : forall t t0 : term, [Γ ||-Empty t ≅ t0 : A | NA] -> Type)
     (P0 : forall t t0 : term, EmptyPropEq Γ t t0 -> Type),
-    (forall (t u nfL nfR : term) (redL : [Γ |-[ ta ] t :⇒*: nfL : tEmpty])
-       (redR : [Γ |-[ ta ] u :⇒*: nfR : tEmpty]) (eq : [Γ |-[ ta ] nfL ≅ nfR : tEmpty])
+    (forall (t u nfL nfR : term) (redL : [Γ |-[ ta ] t :⤳*: nfL : tEmpty])
+       (redR : [Γ |-[ ta ] u :⤳*: nfR : tEmpty]) (eq : [Γ |-[ ta ] nfL ≅ nfR : tEmpty])
        (prop : EmptyPropEq Γ nfL nfR),
         P0 nfL nfR prop -> P t u (Build_EmptyRedTmEq nfL nfR redL redR eq prop)) ->
     (forall (ne ne' : term) (r : [Γ ||-NeNf ne ≅ ne' : tEmpty]),
@@ -1382,7 +1382,7 @@ Section IdRedTy.
     lhs : term ;
     rhs : term ;
     outTy := tId ty lhs rhs ;
-    red : [Γ |- A :⇒*: outTy] ;
+    red : [Γ |- A :⤳*: outTy] ;
     eq : [Γ |- outTy ≅ outTy] ;
     tyRed : [ LogRel@{i j k l} l | Γ ||- ty ] ;
     lhsRed : [ tyRed | Γ ||- lhs : _ ] ;

@@ -14,7 +14,7 @@ Set Universe Polymorphism.
 
 Section RedImplemSound.
 
-Lemma zip_ored t t' π : [t ⇒ t'] -> [zip t π ⇒ zip t' π].
+Lemma zip_ored t t' π : [t ⤳ t'] -> [zip t π ⤳ zip t' π].
 Proof.
   intros Hred.
   induction π as [|[]] in t, t', Hred |- * ; cbn in *.
@@ -22,7 +22,7 @@ Proof.
   all: apply IHπ ; now econstructor.
 Qed.
 
-Lemma zip_red t t' π : [t ⇒* t'] -> [zip t π ⇒* zip t' π].
+Lemma zip_red t t' π : [t ⤳* t'] -> [zip t π ⤳* zip t' π].
 Proof.
   induction 1.
   1: reflexivity.
@@ -31,7 +31,7 @@ Proof.
 Qed.
 
 Lemma red_stack_sound :
-  funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => [zip t π ⇒* t']).
+  funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => [zip t π ⤳* t']).
 Proof.
   intros ? _.
   funelim (wh_red_stack _).
@@ -83,7 +83,7 @@ Proof.
 Qed.
 
 Corollary _red_sound :
-  funrect wh_red (fun _ => True) (fun t t' => [t ⇒* t'] × whnf t').
+  funrect wh_red (fun _ => True) (fun t t' => [t ⤳* t'] × whnf t').
 Proof.
   intros ? _.
   funelim (wh_red _).
@@ -100,7 +100,7 @@ Qed.
 
 #[universes(polymorphic)]Corollary red_sound t t' :
   graph wh_red t t' ->
-  [t ⇒* t'] × whnf t'.
+  [t ⤳* t'] × whnf t'.
 Proof.
   intros H.
   eapply (funrect_graph wh_red _ _ _ _ _red_sound). (* weird universe inconsistency? *)

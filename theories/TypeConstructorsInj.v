@@ -29,7 +29,7 @@ Section TypeConstructors.
   Lemma red_ty_complete : forall (Γ : context) (T T' : term),
     isType T ->
     [Γ |- T ≅ T'] ->
-    ∑ T'', [Γ |- T' ⇒* T''] × isType T''.
+    ∑ T'', [Γ |- T' ⤳* T''] × isType T''.
   Proof.
     intros * tyT Hconv.
     eapply Fundamental in Hconv as [HΓ HT HT' Hconv].
@@ -39,7 +39,7 @@ Section TypeConstructors.
     clear HT.
     destruct HTred as [[] lr] ; cbn in *.
     destruct lr.
-    all: destruct Hconv; eexists; split; [lazymatch goal with H : [_ |- _ :⇒*: _] |- _ => apply H end|]; constructor.
+    all: destruct Hconv; eexists; split; [lazymatch goal with H : [_ |- _ :⤳*: _] |- _ => apply H end|]; constructor.
     eapply convneu_whne; now symmetry.
   Qed.
 
@@ -130,7 +130,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_univ_l Γ T :
     [Γ |- U ≅ T] ->
-    [Γ |- T ⇒* U].
+    [Γ |- T ⤳* U].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -147,7 +147,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_univ_r Γ T :
     [Γ |- T ≅ U] ->
-    [Γ |- T ⇒* U].
+    [Γ |- T ⤳* U].
   Proof.
     intros.
     eapply red_ty_compl_univ_l.
@@ -156,7 +156,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_nat_l Γ T :
     [Γ |- tNat ≅ T] ->
-    [Γ |- T ⇒* tNat].
+    [Γ |- T ⤳* tNat].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -173,7 +173,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_nat_r Γ T :
     [Γ |- T ≅ tNat] ->
-    [Γ |- T ⇒* tNat].
+    [Γ |- T ⤳* tNat].
   Proof.
     intros.
     eapply red_ty_compl_nat_l.
@@ -182,7 +182,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_empty_l Γ T :
     [Γ |- tEmpty ≅ T] ->
-    [Γ |- T ⇒* tEmpty].
+    [Γ |- T ⤳* tEmpty].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -199,7 +199,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_empty_r Γ T :
     [Γ |- T ≅ tEmpty] ->
-    [Γ |- T ⇒* tEmpty].
+    [Γ |- T ⤳* tEmpty].
   Proof.
     intros.
     eapply red_ty_compl_empty_l.
@@ -208,7 +208,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_prod_l Γ A B T :
     [Γ |- tProd A B ≅ T] ->
-    ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
+    ∑ A' B', [× [Γ |- T ⤳* tProd A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -236,7 +236,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_sig_l Γ A B T :
     [Γ |- tSig A B ≅ T] ->
-    ∑ A' B', [× [Γ |- T ⇒* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
+    ∑ A' B', [× [Γ |- T ⤳* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -254,7 +254,7 @@ Section TypeConstructors.
   
   Corollary red_ty_compl_sig_r Γ A B T :
     [Γ |- T ≅ tSig A B] ->
-    ∑ A' B', [× [Γ |- T ⇒* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
+    ∑ A' B', [× [Γ |- T ⤳* tSig A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B ≅ B']].
   Proof.
     intros; eapply red_ty_compl_sig_l; now symmetry.
   Qed.
@@ -271,7 +271,7 @@ Section TypeConstructors.
 
   Corollary red_ty_compl_id_l Γ A x y T :
     [Γ |- tId A x y ≅ T] ->
-    ∑ A' x' y', [× [Γ |- T ⇒* tId A' x' y'], [Γ |- A' ≅ A], [Γ |- x ≅ x' : A] & [Γ |- y ≅ y' : A]].
+    ∑ A' x' y', [× [Γ |- T ⤳* tId A' x' y'], [Γ |- A' ≅ A], [Γ |- x ≅ x' : A] & [Γ |- y ≅ y' : A]].
   Proof.
     intros HT.
     pose proof HT as HT'.
@@ -288,7 +288,7 @@ Section TypeConstructors.
   
   Corollary red_ty_compl_id_r Γ A x y T :
     [Γ |- T ≅ tId A x y] ->
-    ∑ A' x' y', [× [Γ |- T ⇒* tId A' x' y'], [Γ |- A' ≅ A], [Γ |- x ≅ x' : A] & [Γ |- y ≅ y' : A]].
+    ∑ A' x' y', [× [Γ |- T ⤳* tId A' x' y'], [Γ |- A' ≅ A], [Γ |- x ≅ x' : A] & [Γ |- y ≅ y' : A]].
   Proof.
     intros; eapply red_ty_compl_id_l; now symmetry.
   Qed.
@@ -584,7 +584,7 @@ Proof.
   now intros ?%boundary.
 Qed.
 
-Corollary boundary_red_ty_r Γ A B : [Γ |- A ⇒* B] -> [Γ |- B].
+Corollary boundary_red_ty_r Γ A B : [Γ |- A ⤳* B] -> [Γ |- B].
 Proof.
   now intros ?%RedConvTyC%boundary.
 Qed.
@@ -604,12 +604,12 @@ Proof.
   now intros []%boundary.
 Qed.
 
-Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- u : A].
+Corollary boundary_red_tm_r Γ A t u : [Γ |- t ⤳* u : A] -> [Γ |- u : A].
 Proof.
   now intros []%RedConvTeC%boundary.
 Qed.
 
-Corollary boundary_red_tm_ty Γ A t u : [Γ |- t ⇒* u : A] -> [Γ |- A].
+Corollary boundary_red_tm_ty Γ A t u : [Γ |- t ⤳* u : A] -> [Γ |- A].
 Proof.
   now intros []%RedConvTeC%boundary.
 Qed.
@@ -652,7 +652,7 @@ Qed.
 
 Corollary red_ty_compl_prod_r Γ A B T :
   [Γ |- T ≅ tProd A B] ->
-  ∑ A' B', [× [Γ |- T ⇒* tProd A' B'], [Γ |- A ≅ A'] & [Γ,, A |- B' ≅ B]].
+  ∑ A' B', [× [Γ |- T ⤳* tProd A' B'], [Γ |- A ≅ A'] & [Γ,, A |- B' ≅ B]].
 Proof.
   intros HT.
   symmetry in HT.
@@ -735,7 +735,7 @@ Qed.
 
 Theorem subject_reduction_one Γ A t t' :
     [Γ |- t : A] ->
-    [t ⇒ t'] ->
+    [t ⤳ t'] ->
     [Γ |- t ≅ t' : A].
 Proof.
   intros Hty Hred.
@@ -805,7 +805,7 @@ Proof.
 
   Theorem subject_reduction_one_type Γ A A' :
   [Γ |- A] ->
-  [A ⇒ A'] ->
+  [A ⤳ A'] ->
   [Γ |- A ≅ A'].
 Proof.
   intros Hty Hred.
@@ -818,8 +818,8 @@ Qed.
 
 Theorem subject_reduction Γ t t' A :
   [Γ |- t : A] ->
-  [t ⇒* t'] ->
-  [Γ |- t ⇒* t' : A].
+  [t ⤳* t'] ->
+  [Γ |- t ⤳* t' : A].
 Proof.
   intros Hty Hr; split ; refold.
   - assumption.
@@ -834,8 +834,8 @@ Qed.
 
 Theorem subject_reduction_type Γ A A' :
 [Γ |- A] ->
-[A ⇒* A'] ->
-[Γ |- A ⇒* A'].
+[A ⤳* A'] ->
+[Γ |- A ⤳* A'].
 Proof.
   intros Hty Hr; split; refold.
   - assumption.
@@ -848,7 +848,7 @@ Proof.
       now boundary.
 Qed.
 
-Corollary conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⇒* A] -> [Γ |-[de] A ≅ A''].
+Corollary conv_red_l Γ A A' A'' : [Γ |-[de] A' ≅ A''] -> [A' ⤳* A] -> [Γ |-[de] A ≅ A''].
 Proof.
   intros Hconv **.
   etransitivity ; tea.

@@ -9,37 +9,37 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
 
 Inductive OneRedAlg : term -> term -> Type :=
 | BRed {A a t} :
-    [ tApp (tLambda A t) a ⇒ t[a..] ]
+    [ tApp (tLambda A t) a ⤳ t[a..] ]
 | appSubst {t u a} :
-    [ t ⇒ u ] ->
-    [ tApp t a ⇒ tApp u a ]
+    [ t ⤳ u ] ->
+    [ tApp t a ⤳ tApp u a ]
 | natElimSubst {P hz hs n n'} :
-    [ n ⇒ n' ] ->
-    [ tNatElim P hz hs n ⇒ tNatElim P hz hs n' ]
+    [ n ⤳ n' ] ->
+    [ tNatElim P hz hs n ⤳ tNatElim P hz hs n' ]
 | natElimZero {P hz hs} :
-    [ tNatElim P hz hs tZero ⇒ hz ]
+    [ tNatElim P hz hs tZero ⤳ hz ]
 | natElimSucc {P hz hs n} :
-    [ tNatElim P hz hs (tSucc n) ⇒ tApp (tApp hs n) (tNatElim P hz hs n) ]
+    [ tNatElim P hz hs (tSucc n) ⤳ tApp (tApp hs n) (tNatElim P hz hs n) ]
 | emptyElimSubst {P e e'} :
-    [e ⇒ e'] ->
-    [tEmptyElim P e ⇒ tEmptyElim P e']        
+    [e ⤳ e'] ->
+    [tEmptyElim P e ⤳ tEmptyElim P e']        
 | fstSubst {p p'} :
-    [ p ⇒ p'] ->
-    [ tFst p ⇒ tFst p']
+    [ p ⤳ p'] ->
+    [ tFst p ⤳ tFst p']
 | fstPair {A B a b} :
-    [ tFst (tPair A B a b) ⇒ a ]
+    [ tFst (tPair A B a b) ⤳ a ]
 | sndSubst {p p'} :
-    [ p ⇒ p'] ->
-    [ tSnd p ⇒ tSnd p']
+    [ p ⤳ p'] ->
+    [ tSnd p ⤳ tSnd p']
 | sndPair {A B a b} :
-    [ tSnd (tPair A B a b) ⇒ b ]
+    [ tSnd (tPair A B a b) ⤳ b ]
 | idElimRefl {A x P hr y A' z} :
-  [ tIdElim A x P hr y (tRefl A' z) ⇒ hr ]
+  [ tIdElim A x P hr y (tRefl A' z) ⤳ hr ]
 | idElimSubst {A x P hr y e e'} :
-  [e ⇒ e'] ->
-  [ tIdElim A x P hr y e ⇒ tIdElim A x P hr y e' ]
+  [e ⤳ e'] ->
+  [ tIdElim A x P hr y e ⤳ tIdElim A x P hr y e' ]
 
-where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
+where "[ t ⤳ t' ]" := (OneRedAlg t t') : typing_scope.
 
 (* Keep in sync with OneRedTermDecl! *)
 
@@ -47,12 +47,12 @@ where "[ t ⇒ t' ]" := (OneRedAlg t t') : typing_scope.
 
 Inductive RedClosureAlg : term -> term -> Type :=
   | redIdAlg {t} :
-    [ t ⇒* t ]
+    [ t ⤳* t ]
   | redSuccAlg {t t' u} :
-    [ t ⇒ t'] ->
-    [ t' ⇒* u ] ->
-    [ t ⇒* u ]
-  where "[ t ⇒* t' ]" := (RedClosureAlg t t') : typing_scope.
+    [ t ⤳ t'] ->
+    [ t' ⤳* u ] ->
+    [ t ⤳* u ]
+  where "[ t ⤳* t' ]" := (RedClosureAlg t t') : typing_scope.
 
 #[export] Instance RedAlgTrans : PreOrder RedClosureAlg.
   Proof.
@@ -72,7 +72,7 @@ Ltac inv_whne :=
   match goal with [ H : whne _ |- _ ] => inversion H end.
 
 Lemma whne_nored n u :
-  whne n -> [n ⇒ u] -> False.
+  whne n -> [n ⤳ u] -> False.
 Proof.
   intros ne red.
   induction red in ne |- *.
@@ -82,7 +82,7 @@ Proof.
 Qed.
 
 Lemma whnf_nored n u :
-  whnf n -> [n ⇒ u] -> False.
+  whnf n -> [n ⤳ u] -> False.
 Proof.
   intros nf red.
   induction red in nf |- *.
@@ -93,7 +93,7 @@ Qed.
 (** *** Determinism of reduction *)
 
 Lemma ored_det {t u v} :
-  [t ⇒ u] -> [t ⇒ v] ->
+  [t ⤳ u] -> [t ⤳ v] ->
   u = v.
 Proof.
   intros red red'.
@@ -137,7 +137,7 @@ Proof.
     exfalso; eapply whnf_nored;tea; constructor.
 Qed.
 
-Lemma red_whne t u : [t ⇒* u] -> whne t -> t = u.
+Lemma red_whne t u : [t ⤳* u] -> whne t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -145,7 +145,7 @@ Proof.
   eauto using whne_nored.
 Qed.
 
-Lemma red_whnf t u : [t ⇒* u] -> whnf t -> t = u.
+Lemma red_whnf t u : [t ⤳* u] -> whnf t -> t = u.
 Proof.
   intros [] ?.
   1: reflexivity.
@@ -155,8 +155,8 @@ Qed.
 
 Lemma whred_red_det t u u' :
   whnf u ->
-  [t ⇒* u] -> [t ⇒* u'] ->
-  [u' ⇒* u].
+  [t ⤳* u] -> [t ⤳* u'] ->
+  [u' ⤳* u].
 Proof.
   intros whnf red red'.
   induction red in whnf, u', red' |- *.
@@ -170,7 +170,7 @@ Qed.
 
 Corollary whred_det t u u' :
   whnf u -> whnf u' ->
-  [t ⇒* u] -> [t ⇒* u'] ->
+  [t ⤳* u] -> [t ⤳* u'] ->
   u = u'.
 Proof.
   intros.
@@ -181,8 +181,8 @@ Qed.
 (** *** Stability by weakening *)
 
 Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
-[t ⇒ u] ->
-[t⟨ρ⟩ ⇒ u⟨ρ⟩].
+[t ⤳ u] ->
+[t⟨ρ⟩ ⤳ u⟨ρ⟩].
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
@@ -196,15 +196,15 @@ Proof.
 Qed.
 
 Lemma credalg_wk (ρ : nat -> nat) (t u : term) :
-[t ⇒* u] ->
-[t⟨ρ⟩ ⇒* u⟨ρ⟩].
+[t ⤳* u] ->
+[t⟨ρ⟩ ⤳* u⟨ρ⟩].
 Proof.
   induction 1 ; econstructor ; eauto using oredalg_wk.
 Qed.
 
 (** Derived rules *)
 
-Lemma redalg_app {t t' u} : [t ⇒* t'] -> [tApp t u ⇒* tApp t' u].
+Lemma redalg_app {t t' u} : [t ⤳* t'] -> [tApp t u ⤳* tApp t' u].
 Proof.
 induction 1.
 + reflexivity.
@@ -212,7 +212,7 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_natElim {P hs hz t t'} : [t ⇒* t'] -> [tNatElim P hs hz t ⇒* tNatElim P hs hz t'].
+Lemma redalg_natElim {P hs hz t t'} : [t ⤳* t'] -> [tNatElim P hs hz t ⤳* tNatElim P hs hz t'].
 Proof.
 induction 1.
 + reflexivity.
@@ -220,7 +220,7 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_natEmpty {P t t'} : [t ⇒* t'] -> [tEmptyElim P t ⇒* tEmptyElim P t'].
+Lemma redalg_natEmpty {P t t'} : [t ⤳* t'] -> [tEmptyElim P t ⤳* tEmptyElim P t'].
 Proof.
 induction 1.
 + reflexivity.
@@ -228,23 +228,23 @@ induction 1.
   now econstructor.
 Qed.
 
-Lemma redalg_fst {t t'} : [t ⇒* t'] -> [tFst t ⇒* tFst t'].
+Lemma redalg_fst {t t'} : [t ⤳* t'] -> [tFst t ⤳* tFst t'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.
 Qed.
 
-Lemma redalg_snd {t t'} : [t ⇒* t'] -> [tSnd t ⇒* tSnd t'].
+Lemma redalg_snd {t t'} : [t ⤳* t'] -> [tSnd t ⤳* tSnd t'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.
 Qed.
 
-Lemma redalg_idElim {A x P hr y t t'} : [t ⇒* t'] -> [tIdElim A x P hr y t ⇒* tIdElim A x P hr y t'].
+Lemma redalg_idElim {A x P hr y t t'} : [t ⤳* t'] -> [tIdElim A x P hr y t ⤳* tIdElim A x P hr y t'].
 Proof.
   induction 1; [reflexivity|].
   econstructor; tea; now constructor.
 Qed.
 
-Lemma redalg_one_step {t t'} : [t ⇒ t'] -> [t ⇒* t'].
+Lemma redalg_one_step {t t'} : [t ⤳ t'] -> [t ⤳* t'].
 Proof. intros; econstructor;[tea|reflexivity]. Qed.

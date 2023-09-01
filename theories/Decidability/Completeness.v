@@ -246,7 +246,7 @@ Section RedImplemComplete.
   Qed.
 
   Corollary wh_red_complete_whnf_class Γ K t t' :
-  [Γ |- t ⇒* t' ∈ K] ->
+  [Γ |- t ⤳* t' ∈ K] ->
   whnf t' ->
   graph wh_red t t'.
   Proof.
@@ -265,7 +265,7 @@ Section RedImplemComplete.
   
   Corollary wh_red_complete_whnf_ty Γ A A' :
   [Γ |-[de] A] ->
-  [A ⇒* A'] ->
+  [A ⤳* A'] ->
   whnf A' ->
   graph wh_red A A'.
   Proof.
@@ -276,7 +276,7 @@ Section RedImplemComplete.
   
   Corollary wh_red_complete_whnf_tm Γ A t t' :
   [Γ |-[de] t : A] ->
-  [t ⇒* t'] ->
+  [t ⤳* t'] ->
   whnf t' ->
   graph wh_red t t'.
   Proof.
