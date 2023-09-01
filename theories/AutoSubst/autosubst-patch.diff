@@ -1,7 +1,7 @@
-diff --git a/theories/AutoSubst/Ast.v b/theories/AutoSubst/Ast.v
-index 06cd3ced..1cbb89ff 100644
---- a/theories/AutoSubst/Ast.v
-+++ b/theories/AutoSubst/Ast.v
+diff --git b/theories/AutoSubst/Ast.v a/theories/AutoSubst/Ast.v
+index 575239b..35f3e85 100644
+--- b/theories/AutoSubst/Ast.v
++++ a/theories/AutoSubst/Ast.v
 @@ -1,6 +1,6 @@
 -Require Import core unscoped.
 -
@@ -9,40 +9,40 @@ index 06cd3ced..1cbb89ff 100644
 +From LogRel.AutoSubst Require Import core unscoped.
 +From LogRel Require Import BasicAst.
 +From Coq Require Import Setoid Morphisms Relation_Definitions.
- 
- 
+
+
  Module Core.
-@@ -857,13 +857,13 @@ Qed.
+@@ -1054,13 +1054,13 @@ Qed.
  Class Up_term X Y :=
      up_term : X -> Y.
- 
+
 -Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 +#[global] Instance Subst_term : (Subst1 _ _ _) := @subst_term.
- 
+
 -Instance Up_term_term : (Up_term _ _) := @up_term_term.
 +#[global] Instance Up_term_term : (Up_term _ _) := @up_term_term.
- 
+
 -Instance Ren_term : (Ren1 _ _ _) := @ren_term.
 +#[global] Instance Ren_term : (Ren1 _ _ _) := @ren_term.
- 
+
 -Instance VarInstance_term : (Var _ _) := @tRel.
 +#[global] Instance VarInstance_term : (Var _ _) := @tRel.
- 
+
  Notation "[ sigma_term ]" := (subst_term sigma_term)
    ( at level 1, left associativity, only printing) : fscope.
-@@ -889,7 +889,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
+@@ -1086,7 +1086,7 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
  Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
    subst_scope.
- 
+
 -Instance subst_term_morphism :
 +#[global] Instance subst_term_morphism :
   (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
      (@subst_term)).
  Proof.
-@@ -898,14 +898,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+@@ -1095,14 +1095,14 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
           (ext_term f_term g_term Eq_term s) t Eq_st).
  Qed.
- 
+
 -Instance subst_term_morphism2 :
 +#[global] Instance subst_term_morphism2 :
   (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
@@ -50,38 +50,110 @@ index 06cd3ced..1cbb89ff 100644
  Proof.
  exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
  Qed.
- 
+
 -Instance ren_term_morphism :
 +#[global] Instance ren_term_morphism :
   (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
      (@ren_term)).
  Proof.
-@@ -914,7 +914,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
+@@ -1111,7 +1111,7 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
           (extRen_term f_term g_term Eq_term s) t Eq_st).
  Qed.
- 
+
 -Instance ren_term_morphism2 :
 +#[global] Instance ren_term_morphism2 :
   (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
      (@ren_term)).
  Proof.
-diff --git a/theories/AutoSubst/core.v b/theories/AutoSubst/core.v
-index 9caf457b..83b47256 100644
---- a/theories/AutoSubst/core.v
-+++ b/theories/AutoSubst/core.v
+@@ -1622,11 +1622,23 @@ exact (fun x => match x with
+                 end).
+ Qed.
+
++Lemma upAllfvRenL_term_term2 (p : nat -> Prop) (xi : nat -> nat) :
++  forall x,
++      upAllfv_term_term (upAllfv_term_term p) (upRen_term_term (upRen_term_term xi) x) ->
++      upAllfv_term_term (upAllfv_term_term (funcomp p xi)) x.
++Proof.
++   intros x.
++   refine (match x with S n' => fun H => upAllfvRenL_term_term p xi _ H | 0 => fun i => i end).
++Qed.
++
++
+ Fixpoint allfvRenL_term (p_term : nat -> Prop) (xi_term : nat -> nat)
+ (s : term) {struct s} :
+ allfv_term p_term (ren_term xi_term s) ->
+ allfv_term (funcomp p_term xi_term) s :=
+-  match s with
++  match s as s return
++      allfv_term p_term (ren_term xi_term s) ->
++      allfv_term (funcomp p_term xi_term) s  with
+   | tRel s0 => fun H => H
+   | tSort s0 => fun H => conj I I
+   | tProd s0 s1 =>
+@@ -1849,7 +1861,7 @@ allfv_term (funcomp p_term xi_term) s :=
+                             end
+               end)
+            (conj
+-              (allfvImpl_term _ _ (upAllfvRenL_term_term p_term xi_term) s2
++              (allfvImpl_term _ _ (upAllfvRenL_term_term2 p_term xi_term) s2
+                  (allfvRenL_term
+                     (upAllfv_term_term (upAllfv_term_term p_term))
+                     (upRen_term_term (upRen_term_term xi_term)) s2
+@@ -1924,11 +1936,27 @@ exact (fun x => match x with
+                 end).
+ Qed.
+
++Lemma upAllfvRenR_term_term2 (p : nat -> Prop) (xi : nat -> nat) :
++  forall x,
++   upAllfv_term_term (upAllfv_term_term (funcomp p xi)) x ->
++   upAllfv_term_term (upAllfv_term_term p) (upRen_term_term (upRen_term_term xi) x).
++Proof.
++exact (fun x => match x with
++                | S n' => fun H => upAllfvRenR_term_term p xi _ H
++                | O => fun i => i
++                end).
++Qed.
++
++
+ Fixpoint allfvRenR_term (p_term : nat -> Prop) (xi_term : nat -> nat)
+ (s : term) {struct s} :
+ allfv_term (funcomp p_term xi_term) s ->
+ allfv_term p_term (ren_term xi_term s) :=
+-  match s with
++  match s
++   return
++allfv_term (funcomp p_term xi_term) s ->
++allfv_term p_term (ren_term xi_term s)
++  with
+   | tRel s0 => fun H => H
+   | tSort s0 => fun H => conj I I
+   | tProd s0 s1 =>
+@@ -2155,7 +2183,7 @@ allfv_term p_term (ren_term xi_term s) :=
+            (conj
+               (allfvRenR_term (upAllfv_term_term (upAllfv_term_term p_term))
+                  (upRen_term_term (upRen_term_term xi_term)) s2
+-                 (allfvImpl_term _ _ (upAllfvRenR_term_term p_term xi_term)
++                 (allfvImpl_term _ _ (upAllfvRenR_term_term2 p_term xi_term)
+                     s2
+                     match H with
+                     | conj _ H =>
+diff --git b/theories/AutoSubst/core.v a/theories/AutoSubst/core.v
+index 9caf457..83b4725 100644
+--- b/theories/AutoSubst/core.v
++++ a/theories/AutoSubst/core.v
 @@ -73,7 +73,7 @@ Defined.
  (* a.d. TODO hints outside of sections without explicit locality are deprecated. Is this even used in the first place?  *)
  (* but with 8.13.1 the attribute is forbidden. So what's the correct way to use this? *)
  (* #[ global ] *)
 -Hint Rewrite in_map_iff : FunctorInstances.
 +#[global] Hint Rewrite in_map_iff : FunctorInstances.
- 
+
  (* Declaring the scopes that all our notations will live in *)
  Declare Scope fscope.
 @@ -106,7 +106,7 @@ Proof.
    trivial.
  Qed.
- 
+
 -Instance funcomp_morphism {X Y Z} :
 +#[global] Instance funcomp_morphism {X Y Z} :
    Proper (@pointwise_relation Y Z eq ==> @pointwise_relation X Y eq ==> @pointwise_relation X Z eq) funcomp.
@@ -90,16 +162,16 @@ index 9caf457b..83b47256 100644
 @@ -115,7 +115,7 @@ Proof.
    reflexivity.
  Qed.
- 
+
 -Instance funcomp_morphism2 {X Y Z} :
 +#[global] Instance funcomp_morphism2 {X Y Z} :
    Proper (@pointwise_relation Y Z eq ==> @pointwise_relation X Y eq ==> eq ==> eq) funcomp.
  Proof.
    intros g0 g1 Hg f0 f1 Hf ? x ->.
-diff --git a/theories/AutoSubst/unscoped.v b/theories/AutoSubst/unscoped.v
-index 27cb4e79..3b590532 100644
---- a/theories/AutoSubst/unscoped.v
-+++ b/theories/AutoSubst/unscoped.v
+diff --git b/theories/AutoSubst/unscoped.v a/theories/AutoSubst/unscoped.v
+index 27cb4e7..3b59053 100644
+--- b/theories/AutoSubst/unscoped.v
++++ a/theories/AutoSubst/unscoped.v
 @@ -7,8 +7,8 @@ Version: December 11, 2019.
   I changed this library a bit to work better with my generated code.
   1. I use nat directly instead of defining fin to be nat and using Some/None as S/O
@@ -108,21 +180,21 @@ index 27cb4e79..3b590532 100644
 -Require Import Setoid Morphisms Relation_Definitions.
 +From LogRel.AutoSubst Require Import core.
 +From Coq Require Import Setoid Morphisms Relation_Definitions.
- 
+
  Definition ap {X Y} (f : X -> Y) {x y : X} (p : x = y) : f x = f y :=
    match p with eq_refl => eq_refl end.
 @@ -97,7 +97,7 @@ End SubstNotations.
  Class Var X Y :=
    ids : X -> Y.
- 
+
 -Instance idsRen : Var nat nat := id.
 +#[global] Instance idsRen : Var nat nat := id.
- 
+
  (** ** Proofs for the substitution primitives. *)
- 
+
 @@ -144,7 +144,7 @@ Lemma scons_comp' (T: Type) {U} (s: T) (sigma: nat -> T) (tau: T -> U) :
  Proof. intros x. destruct x; reflexivity. Qed.
- 
+
  (* Morphism for Setoid Rewriting. The only morphism that can be defined statically. *)
 -Instance scons_morphism {X: Type} :
 +#[global] Instance scons_morphism {X: Type} :
@@ -132,16 +204,16 @@ index 27cb4e79..3b590532 100644
 @@ -153,7 +153,7 @@ Proof.
    apply H.
  Qed.
- 
+
 -Instance scons_morphism2 {X: Type} :
 +#[global] Instance scons_morphism2 {X: Type} :
    Proper (eq ==> pointwise_relation _ eq ==> eq ==> eq) (@scons X).
  Proof.
    intros ? t -> sigma tau H ? x ->.
 @@ -177,8 +177,6 @@ Module UnscopedNotations.
- 
+
    Notation "↑" := (shift) : subst_scope.
- 
+
 -  #[ global ]
 -  Open Scope fscope.
    #[ global ]
