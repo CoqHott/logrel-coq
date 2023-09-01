@@ -48,14 +48,14 @@ Record equivPolyRed@{i j k l i' j' k' l' v}
   {PA : PolyRed@{i j k l} Γ l shp pos}
   {PA' : PolyRed@{i' j' k' l'} Γ l' shp' pos'} :=
   {
-    eqvShp : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
-          equivLRPack@{k k' v} (PolyRed.shpRed PA ρ wfΔ) (PolyRed.shpRed PA' ρ wfΔ) ;
-    eqvPos : forall {Δ a} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ])
+    eqvShp : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [  |- Δ]),
+          equivLRPack@{k k' v} (PolyRed.shpRed PA ρ wfΔ) (PolyRed.shpRed PA' ρ wfΔ') ;
+    eqvPos : forall {Δ a} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [  |- Δ])
           (ha : [PolyRed.shpRed PA ρ wfΔ| Δ ||- a : _])
-          (ha' : [PolyRed.shpRed PA' ρ wfΔ | Δ ||- a : _]),
+          (ha' : [PolyRed.shpRed PA' ρ wfΔ' | Δ ||- a : _]),
           equivLRPack@{k k' v} 
             (PolyRed.posRed PA ρ wfΔ ha)
-            (PolyRed.posRed PA' ρ wfΔ ha')
+            (PolyRed.posRed PA' ρ wfΔ' ha')
   }.
 
 Arguments equivPolyRed : clear implicits.
@@ -96,8 +96,8 @@ Proof.
   - now gen_typing.
   - transitivity (ParamRedTyPack.dom ΠA); [now symmetry|tea].
   - cbn; etransitivity; [|tea]; now symmetry.
-  - intros; now apply eqv.(eqvShp).
-  - intros; cbn; unshelve eapply eqv.(eqvPos).
+  - intros; now unshelve eapply eqv.(eqvShp).
+  - intros; cbn; unshelve eapply eqv.(eqvPos); tea.
     2: eauto.
     now eapply eqv.(eqvShp).
 Qed.
@@ -114,11 +114,11 @@ Proof.
     + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.
-  - intros; unshelve eapply eqv.(eqvPos).
+  - intros; unshelve eapply eqv.(eqvPos); tea.
     2: now auto.
-    now apply eqv.(eqvShp).
-  - intros; unshelve eapply eqv.(eqvPos), eq.
-    all: now eapply eqv.(eqvShp).
+    now unshelve eapply eqv.(eqvShp).
+  - intros; unshelve eapply eqv.(eqvPos), eq; tea.
+    all: now unshelve eapply eqv.(eqvShp).
 Defined.
 
 Lemma ΠIrrelevanceTmEq t u : [Γ ||-<lA> t ≅ u : A | RA] -> [Γ ||-<lA'> t ≅ u : A' | RA'].
@@ -126,9 +126,9 @@ Proof.
   intros [] ; cbn in *; unshelve econstructor.
   1,2: now eapply ΠIrrelevanceTm.
   - now eapply convtm_conv.
-  - intros; unshelve eapply eqv.(eqvPos).
+  - intros; unshelve eapply eqv.(eqvPos); tea.
     2: now auto.
-    now apply eqv.(eqvShp).
+    now unshelve eapply eqv.(eqvShp).
 Qed.
 
 End ΠIrrelevanceLemmas.
@@ -171,8 +171,8 @@ Proof.
   - now gen_typing.
   - transitivity (ParamRedTyPack.dom ΣA); [now symmetry|tea].
   - cbn; etransitivity; [|tea]; now symmetry.
-  - intros; now apply eqv.(eqvShp).
-  - intros; cbn; unshelve eapply eqv.(eqvPos).
+  - intros; now unshelve eapply eqv.(eqvShp).
+  - intros; cbn; unshelve eapply eqv.(eqvPos); tea.
     2: eauto.
     now eapply eqv.(eqvShp).
 Qed.
@@ -249,10 +249,12 @@ Context {Γ lA A lA' A'} (wfΓ wfΓ' : [|-Γ])
   (cod':=WA'.(ParamRedTy.cod))
   (RA := WRedTy.LRW wfΓ WA)
   (RA' := WRedTy.LRW wfΓ' WA')
+  (codRedConv : forall Δ a (ρ : Δ ≤ Γ) (h :[|- Δ]) (ha : [PolyRedPack.shpRed WA ρ h | Δ ||- a : _]),
+         [PolyRedPack.posRed WA ρ h ha | Δ ||- cod[a .: ρ >> tRel] ≅ cod'[a .: ρ >> tRel]])
   (eqW : [Γ |- WA.(outTy) ≅ WA'.(outTy)])
-  (eqv : equivPolyRed WA WA')
-  (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    equivLRPack (WA.(WRedTy.codRed0) ρ wfΔ) (WA'.(WRedTy.codRed0) ρ wfΔ)).
+  (eqv : equivPolyRed WA WA').
+  (* (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ wfΔ': [|-Δ]), 
+    equivLRPack (WA.(WRedTy.codRed0) ρ wfΔ) (WA'.(WRedTy.codRed0) ρ wfΔ')). *)
 
 (* TODO: factor this lemma with one for Π and Σ *)
 Lemma WIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
@@ -260,102 +262,126 @@ Proof.
   intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
   - now gen_typing.
   - cbn; etransitivity; [|tea]; now symmetry.
-  - intros; now apply eqv.(eqvShp).
-  - intros; cbn; unshelve eapply eqv.(eqvPos).
+  - intros; now unshelve eapply eqv.(eqvShp).
+  - intros; cbn; unshelve eapply eqv.(eqvPos); tea.
     2: eauto.
     now eapply eqv.(eqvShp).
 Qed.
 
+
+Lemma supContTy_conv {Δ a} (ρ : Δ ≤ Γ) (h :[|- Δ]) (Ra : [PolyRedPack.shpRed WA (wk_id ∘w ρ) h | Δ ||- a⟨@wk_id Δ⟩ : _])
+    (coda := cod⟨wk_up dom ρ⟩[a..])
+    (coda' := cod'⟨wk_up dom' ρ⟩[a..]) :
+  [Δ |- tProd coda WA.(outTy)⟨wk_step coda ρ⟩ ≅ tProd coda' WA'.(outTy)⟨wk_step coda' ρ⟩].
+Proof.
+  rewrite <-2!wk_step_wk1,2!wk1_ren_on.
+  assert (eq : forall cod, cod[a.:ρ >>tRel] = cod[a.: (wk_id ∘wρ) >>tRel]) by (intros; now bsimpl).
+  apply convty_simple_arr; tea.
+  3: now eapply convty_wk.
+  + unfold coda; rewrite <-wk_up_ren_subst_id, eq.
+    eapply escape. unshelve eapply WA.(PolyRed.posRed); tea.
+    now erewrite <- (wk_id_ren_on _ a).
+  + unfold coda, coda'.
+    rewrite <-2!wk_up_ren_subst_id, 2!eq.
+    eapply escapeEq.
+    unshelve eapply codRedConv; tea.  
+    now erewrite <- (wk_id_ren_on _ a). 
+Qed.
+
+#[local]
+Lemma instWCodRed_irrelevance {Δ} {a} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|- Δ])
+  (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
+  (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA'.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
+  Ξ (ρ' : Ξ ≤ Δ) (wfΞ wfΞ' : [|-Ξ]) :
+  equivLRPack@{v v v} (WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ) (WRedTm.instWCodRed ρ wfΔ' Ra' Ξ ρ' wfΞ').
+Proof.
+  unfold WRedTm.instWCodRed.
+  set (e := eq_ind_r _ _ _); set (e' := eq_ind_r _ _ _); clearbody e e'. cbn in e, e'.
+  set (P := @eq_rect _ _ _ _).
+  set (P' := @eq_rect _ _ _ _).
+  refine (match e as e in _ = A return equivLRPack (P A e) (P' _ e') with | eq_refl => _ end).
+  refine (match e' as e' in _ = A' return equivLRPack (P _ eq_refl) (P' _ e') with | eq_refl => _ end).
+  cbn. eapply eqv.
+Qed.
+
+Lemma funRedTm_irrelevance {Δ} {a k} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|- Δ])
+  (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
+  (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA'.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
+  (Rk : WRedTm.funRedTm Δ ρ wfΔ k Ra (fun Δ => WRedTm WA (Δ:=Δ)) (fun Δ => WRedTmEq WA (Δ:=Δ)))
+  (ihRed : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]) (b : term),
+    [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b : _] -> forall wfΔ' : [ |-[ ta ] Ξ], WRedTm WA' (ρ' ∘w ρ) wfΔ' (tApp (PiRedTm.nf Rk)⟨ρ'⟩ b))
+  (ihRedEq : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]) (b b' : term),
+     [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b : _] ->
+     [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b' : _] ->
+     [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b ≅ b' : _] ->
+     forall wfΔ' : [ |-[ ta ] Ξ], WRedTmEq WA' (ρ' ∘w ρ) wfΔ' (tApp (PiRedTm.nf Rk)⟨ρ'⟩ b) (tApp (PiRedTm.nf Rk)⟨ρ'⟩ b')) :
+  WRedTm.funRedTm Δ ρ wfΔ' k Ra' (fun Δ => WRedTm WA' (Δ:=Δ)) (fun Δ => WRedTmEq WA' (Δ:=Δ)).
+Proof.
+  pose proof (supContTy_conv ρ wfΔ (Ra _ wk_id wfΔ)).
+  destruct Rk; cbn in *; unshelve econstructor; cycle 2; tea.
+  * now eapply convtm_conv.
+  * intros; unshelve eapply ihRed; tea.
+    now eapply instWCodRed_irrelevance.
+  * intros; cbn in *. unshelve eapply ihRedEq; tea.
+    all: now eapply instWCodRed_irrelevance.
+  * now eapply redtmwf_conv.
+Defined.
+
 Lemma WIrrelevanceTm_mut :
   WRedInductionConcl WA
-    (fun Δ ρ wfΔ t Rt => WRedTm WA' ρ wfΔ t)
-    (fun Δ ρ wfΔ t Pt => WProp WA' ρ wfΔ t)
-    (fun Δ ρ wfΔ t u Rtu => WRedTmEq WA' ρ wfΔ t u)
-    (fun Δ ρ wfΔ t u Ptu => WPropEq WA' ρ wfΔ t u).
+    (fun Δ ρ wfΔ t Rt => forall wfΔ', WRedTm WA' ρ wfΔ' t)
+    (fun Δ ρ wfΔ t Pt => forall wfΔ', WProp WA' ρ wfΔ' t)
+    (fun Δ ρ wfΔ t u Rtu => forall wfΔ', WRedTmEq WA' ρ wfΔ' t u)
+    (fun Δ ρ wfΔ t u Ptu => forall wfΔ', WPropEq WA' ρ wfΔ' t u).
 Proof.
   unfold outTy in *.
   apply WRedInduction.
   - intros; econstructor; tea.
     + eapply redtmwf_conv; tea; now eapply convty_wk.
     + eapply convtm_conv; tea; now eapply convty_wk.
+    + eauto.
   - intros; unshelve econstructor; tea.
-    + intros; eapply eqv; eauto.  
+    + intros; unshelve eapply eqv; eauto.
     + now eapply eqv.
-    + now eapply eqvcod0.
-    + set (coda := cod⟨wk_up dom ρ⟩[a..]).
-      set (coda' := cod'⟨wk_up dom' ρ⟩[a..]).
-      assert [Δ |- coda ≅ coda'].
-      1:{ admit. }
-      assert [Δ |- tProd coda WA.(outTy)⟨wk_step coda ρ⟩ ≅ tProd coda' WA'.(outTy)⟨wk_step coda' ρ⟩].
-      1:{
-        rewrite <-2!wk_step_wk1,2!wk1_ren_on.
-        apply convty_simple_arr; tea.
-        2: now eapply convty_wk.
-        unfold coda; rewrite <-wk_up_ren_subst_id.
-        assert (cod[a.:ρ >>tRel] = cod[a.: (wk_id ∘wρ) >>tRel]) as -> by now bsimpl.
-        eapply escape. unshelve eapply WA.(PolyRed.posRed); tea.
-        erewrite <- (wk_id_ren_on _ a); unshelve eapply Ra.
-      }
-      (* assert [assert [Δ |- cod⟨wk_up dom ρ⟩[a..] ≅ cod'⟨wk_up dom' ρ⟩[a..]].] *)
-      destruct Rk; cbn in *; unshelve econstructor; cycle 2; tea.
-      * now eapply convtm_conv.
-      * intros; eapply X. admit.
-      * intros; cbn in *. eapply X0. all: admit.
-      * now eapply redtmwf_conv.
+    + intros; unshelve eapply eqv; eauto.
+    + now eapply funRedTm_irrelevance.
   - intros. constructor; eapply NeNfconv; tea.
     2: now eapply convty_wk.
-    eapply wft_wk; tea; eapply wft_W; destruct WA' as [[?????[]]]; tea.
+    eapply wft_wk; tea; eapply wft_W; destruct WA' as [?????[]]; tea.
   - intros; econstructor; tea.
+    4: eauto.
     1,2: eapply redtmwf_conv; tea; now eapply convty_wk.
     eapply convtm_conv; tea; now eapply convty_wk.
   - intros.
-    set (coda := cod⟨wk_up dom ρ⟩[a..]).
-    set (coda' := cod'⟨wk_up dom' ρ⟩[a..]).
-    set (coda1 := cod⟨wk_up dom ρ⟩[a'..]).
-    set (coda1' := cod'⟨wk_up dom' ρ⟩[a'..]).
-    assert [Δ |- coda ≅ coda'].
-    1:{ admit. }
-    assert [Δ |- tProd coda WA.(outTy)⟨wk_step coda ρ⟩ ≅ tProd coda' WA'.(outTy)⟨wk_step coda' ρ⟩].
-    1:{
-      rewrite <-2!wk_step_wk1,2!wk1_ren_on.
-      apply convty_simple_arr; tea.
-      2: now eapply convty_wk.
-      unfold coda; rewrite <-wk_up_ren_subst_id.
-      assert (cod[a.:ρ >>tRel] = cod[a.: (wk_id ∘wρ) >>tRel]) as -> by now bsimpl.
-      eapply escape. unshelve eapply WA.(PolyRed.posRed); tea.
-      erewrite <- (wk_id_ren_on _ a); unshelve eapply Ra.
-    } 
-    assert [Δ |- tProd coda1 WA.(outTy)⟨wk_step coda1 ρ⟩ ≅ tProd coda1' WA'.(outTy)⟨wk_step coda1' ρ⟩].
-    1: admit.
+    pose proof (supContTy_conv ρ wfΔ (Ra _ wk_id wfΔ)).
+    pose proof (supContTy_conv ρ wfΔ' (Ra' _ wk_id wfΔ')).
     unshelve econstructor; tea.
-    + intros; eapply eqv; eauto.  
-    + intros; eapply eqv; eauto.  
+    + intros; unshelve eapply eqv; eauto.  
+    + intros; unshelve eapply eqv.
+      2: tea.  
     + now eapply eqv.
-    + now eapply eqv.
-    + now eapply eqvcod0.
-    + now eapply eqvcod0.
-    + intros; now eapply eqv.
-    + destruct Rk; cbn in *; unshelve econstructor; cycle 2; tea.
-      * now eapply convtm_conv.
-      * intros; eapply X. admit.
-      * intros; cbn in *. eapply X0. all: admit.
-      * now eapply redtmwf_conv.
-    + destruct Rk'; cbn in *; unshelve econstructor; cycle 2; tea.
-      * now eapply convtm_conv.
-      * intros; eapply X1. admit.
-      * intros; cbn in *. eapply X2. all: admit.
-      * now eapply redtmwf_conv.
+    (* + now eapply eqv. *)
+    + intros; unshelve eapply eqv; eauto.
+    + intros; unshelve eapply eqv; eauto.
+    + intros; now unshelve eapply eqv.
+    + intros; now unshelve eapply eqv.
+    (* + now eapply funRedTm_irrelevance.
+    + now eapply funRedTm_irrelevance. *)
     + destruct Rkk'; cbn in *; unshelve econstructor; cbn; tea.
-      1-4: admit.
+      * eapply funRedTm_irrelevance; tea.
+      * eapply funRedTm_irrelevance; tea.
+      * cbn; eapply convtm_conv; tea.
+      * intros. unshelve eapply X3; tea.
+        unshelve eapply instWCodRed_irrelevance; tea.
   - intros; constructor; eapply NeNfEqconv; tea. 
     2: now eapply convty_wk.
-    eapply wft_wk; tea; eapply wft_W; destruct WA' as [[?????[]]]; tea.
-  Admitted.
+    eapply wft_wk; tea; eapply wft_W; destruct WA' as [?????[]]; tea.
+  Qed.
   
 End WIrrelevanceLemmas.
 
-Lemma WIrrelecance@{i j k l i' j' k' l' v}
-  {Γ lA A lA' A'} (wfΓ : [|-Γ])
+Lemma WIrrelevance@{i j k l i' j' k' l' v}
+  {Γ lA A lA' A'} (wfΓ wfΓ' : [|-Γ])
   (WA : WRedTy@{i j k l} Γ lA A) 
   (WA' : WRedTy@{i' j' k' l'} Γ lA' A')
   (dom:=WA.(ParamRedTy.dom))
@@ -363,22 +389,26 @@ Lemma WIrrelecance@{i j k l i' j' k' l' v}
   (cod:=WA.(ParamRedTy.cod))
   (cod':=WA'.(ParamRedTy.cod))
   (RA := WRedTy.LRW wfΓ WA)
-  (RA' := WRedTy.LRW wfΓ WA')
+  (RA' := WRedTy.LRW wfΓ' WA')
+  (codRedConv : forall Δ a (ρ : Δ ≤ Γ) (h :[|- Δ]) (ha : [PolyRedPack.shpRed WA ρ h | Δ ||- a : _]),
+         [PolyRedPack.posRed WA ρ h ha | Δ ||- cod[a .: ρ >> tRel] ≅ cod'[a .: ρ >> tRel]])
   (eqW : [Γ |- WA.(outTy) ≅ WA'.(outTy)])
-  (eqv : equivPolyRed WA WA')
-  (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-    equivLRPack@{v v v} (WA.(WRedTy.codRed0) ρ wfΔ) (WA'.(WRedTy.codRed0) ρ wfΔ)) :
+  (eqv : equivPolyRed WA WA') :
+  (* (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|-Δ]), 
+    equivLRPack@{v v v} (WA.(WRedTy.codRed0) ρ wfΔ) (WA'.(WRedTy.codRed0) ρ wfΔ')) : *)
   equivLRPack@{v v v } RA RA'.
 Proof.
+  assert (forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (ha : [PolyRedPack.shpRed WA' ρ h | _ ||- a : _]),
+    [PolyRedPack.posRed WA' ρ h ha | _ ||- _ ≅ (ParamRedTy.cod WA)[a .: ρ >> tRel]]).
+  1:{
+    intros. unshelve eapply eqv; tea.
+    1: now eapply eqv.
+    eapply reflLRTyEq.
+  }
   pose proof (equivPolyRedSym eqv).
   split.
-  - split; now eapply WIrrelevanceTyEq.
-  - split; intros; eapply WIrrelevanceTm_mut; tea.
-    1: now symmetry.
-    intros; now eapply symLRPack.
-  - split; intros; eapply WIrrelevanceTm_mut; tea.
-    1: now symmetry.
-    intros; now eapply symLRPack.
+  2,3: split; intros; eapply WIrrelevanceTm_mut; tea; now symmetry.
+  split; now eapply WIrrelevanceTyEq.
 Qed.
 
 (** *** Irrelevance for Identity types *)
@@ -640,13 +670,13 @@ Lemma LRIrrelevantPreds {lA lA'}
 Proof.
   intros he.
   set (s := ShapeViewConv lrA lrA' he).
-  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod | ?? IAP IAad IHPar]
+  induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod | ?? IAP IAad IHPar | ?? wfΓ WAP WAad IHdom IHcod]
     in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now apply UnivIrrelevanceLRPack.
   - destruct lrA'  ; try solve [destruct s] ; clear s.
     now unshelve eapply NeIrrelevanceLRPack.
-  - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| | | | |] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -666,7 +696,7 @@ Proof.
     now unshelve eapply NatIrrelevanceLRPack.
   - destruct lrA' ; try solve [destruct s] ; clear s.
     now unshelve eapply EmptyIrrelevanceLRPack.
-  - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | |? A' ΠA' HAad'| |] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
@@ -682,7 +712,7 @@ Proof.
     + intros; unshelve eapply IHcod.
       2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
-  - destruct lrA' as [| | | | | | ? A' IAP' IAad'] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | | | ? A' IAP' IAad'| ] ; try solve [destruct s] ; clear s.
     pose (IA := IdRedTy.from IAad); pose (IA' := IdRedTy.from IAad').
     assert (IA'.(IdRedTy.outTy) = he.(IdRedTyEq.outTy)) as eId.
     1: eapply whredty_det; constructor; try constructor; [apply IA'.(IdRedTy.red)| apply he.(IdRedTyEq.red)].
@@ -691,6 +721,23 @@ Proof.
     eapply IHPar; tea.
     apply IA'.(IdRedTy.tyRed).
     (* unshelve eapply escapeEq.  2: apply IdRedTy.tyRed.  now cbn. *)
+  - destruct lrA' as [| | | | | | | ?? wfΓ' WAP' WAad']; try solve [destruct s]; clear s.
+    pose (WA := WRedTy.from WAad).
+    pose (WA' := WRedTy.from WAad').
+    destruct he as [dom cod redeq ? [domRed codRed]].
+    destruct WAP' as [[??? red']]; cbn in *.
+    assert (eW : tW dom cod = WA'.(ParamRedTy.outTy)).
+    1: unfold outTy; cbn; eapply whredty_det; gen_typing.
+    inversion eW; subst; clear eW.
+    eapply (WIrrelevance _ _ WA WA'); [ | |unshelve econstructor].
+    + intros; eapply codRed.
+    + unfold outTy; cbn. destruct WAP; cbn in *. gen_typing.
+    + intros. unshelve eapply IHdom.
+      2: eapply (LRAd.adequate (PolyRed.shpRed WA' _ _)).
+      eapply domRed.
+    + intros; unshelve eapply IHcod.
+      2: eapply (LRAd.adequate (PolyRed.posRed WA' _ _ _)).
+      eapply codRed.
 Qed.
 
 
@@ -771,6 +818,12 @@ Proof.
     econstructor.
     + intros ?? ?%eqv; apply eqv; now symmetry.
     + intros ??? ?%eqv ?%eqv; apply eqv; now etransitivity.
+  - intros ? [] IHdom IHcod IH; cbn in *.
+    eapply LRW'; unshelve econstructor.
+    3,4: tea.
+    unshelve eapply LRIrrelevantCumPolyRed; tea.
+    + intros; now eapply IHdom.
+    + intros; now eapply IHcod.
 Qed.
 
 
@@ -966,8 +1019,8 @@ Qed.
 
 
 
-Corollary TyEqSym Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
+Corollary TyEqSym@{i j k l i' j' k' l'} Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel@{i' j' k' l'} lA' Γ A' eqTyA' redTmA' eqTmA') :
   eqTyA A' -> eqTyA' A.
 Proof.
   intros.
@@ -1049,6 +1102,29 @@ Proof.
   intros []; constructor; tea; now symmetry.
 Qed.
 
+Lemma WRedTmEqSym {Γ l A} (WA: [Γ ||-W<l> A]) 
+  (ihdom : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (t u : term),
+      [PolyRed.shpRed WA ρ h | Δ ||- t ≅ u : (ParamRedTy.dom WA)⟨ρ⟩] -> [PolyRed.shpRed WA ρ h | Δ ||- u ≅ t : (ParamRedTy.dom WA)⟨ρ⟩])
+  (ihcod : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (ha : [PolyRed.shpRed WA ρ h | Δ ||- a : (ParamRedTy.dom WA)⟨ρ⟩]) (t u : term),
+      [PolyRed.posRed WA ρ h ha | Δ ||- t ≅ u : (ParamRedTy.cod WA)[a .: ρ >> tRel]] ->
+      [PolyRed.posRed WA ρ h ha | Δ ||- u ≅ t : (ParamRedTy.cod WA)[a .: ρ >> tRel]]) :
+  WRedInductionConcl WA
+      (fun Δ ρ wfΔ t _ => True) 
+      (fun Δ ρ wfΔ t _ => True)
+      (fun Δ ρ wfΔ t u _ => WRedTmEq WA ρ wfΔ u t)
+      (fun Δ ρ wfΔ t u _ => WPropEq WA ρ wfΔ u t).
+Proof.
+  apply WRedInduction; try solve [intros; exact I].
+  - intros; econstructor; tea; now symmetry.
+  - intros; unshelve eapply WRedTm.supReq; tea; eauto.
+    + intros. admit.
+    + intros. admit.
+    + destruct Rkk'; unshelve econstructor; tea.
+    all: admit.
+  - intros * [] ; do 2 constructor; now symmetry.
+Admitted.
+
+
 Lemma LRTmEqSym@{h i j k l} lA Γ A (lrA : [LogRel@{i j k l} lA | Γ ||- A]) : forall t u,
   [Γ ||-<lA> t ≅ u : A |lrA] -> [Γ ||-<lA> u ≅ t : A |lrA].
 Proof.
@@ -1086,6 +1162,8 @@ Proof.
     1: now symmetry.
     destruct hprop; econstructor; tea.
     now eapply NeNfEqSym.
+  - intros.
+  
 Qed.
 
 End Irrelevances.

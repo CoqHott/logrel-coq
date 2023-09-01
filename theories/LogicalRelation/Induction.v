@@ -57,10 +57,12 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
             LR_embedding l_ (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ) |} 
       in LRId _ IA embedIdAd
     | LRW _ wfΓ WA WAad =>
-      let embedWAad := {| 
+      let embedWAad := 
+        {| 
         WRedTyPack.PRTAd := embedPolyAd WAad ; 
-        WRedTyPack.codAd0 (Δ : context) (ρ : Δ ≤ _) (wfΔ : [  |- Δ]) :=
-          LR_embedding l_  (WAad.(WRedTyPack.codAd0 _ _) ρ wfΔ) |}
+        (* WRedTyPack.codAd0 (Δ : context) (ρ : Δ ≤ _) (wfΔ : [  |- Δ]) :=
+          LR_embedding l_  (WAad.(WRedTyPack.codAd0 _ _) ρ wfΔ)  *)
+          |}
       in
       LRW _ wfΓ WA embedWAad
     end.
@@ -102,7 +104,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (LRId rec IA IAad)) ->
     
     (forall Γ A (wfΓ : [|-Γ]) (WA : WRedTyPack@{j} Γ A) (WAad : WRedTyAdequate (LR rec) WA),
-      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WAad.(WRedTyPack.codAd0 _ _) ρ wfΔ)) ->
+      (* (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WAad.(WRedTyPack.codAd0 _ _) ρ wfΔ)) -> *)
       PolyHyp P Γ WA WAad (P (LRW rec wfΓ WA WAad))) ->
 
     forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
@@ -161,7 +163,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (LRId' IA).(LRAd.adequate)) ->
 
     (forall l Γ A (wfΓ : [|-Γ]) (WA :  [Γ ||-W<l> A]), 
-      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ).(LRAd.adequate)) ->
+      (* (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ).(LRAd.adequate)) -> *)
       PolyHypLogRel P Γ WA (P (WRedTy.LRW wfΓ WA).(LRAd.adequate ))) ->
 
     forall (l : TypeLevel) (Γ : context) (t : term) (rEq rTe : term -> Type@{k})
@@ -207,7 +209,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (LRId' IA)) ->
 
     (forall l Γ A (wfΓ : [|-Γ]) (WA :  [Γ ||-W<l> A]), 
-      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) ->
+      (* (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) -> *)
       PolyHypTyUr P Γ WA (P (WRedTy.LRW wfΓ WA))) ->
 
 
@@ -242,7 +244,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (LRId' IA)) ->
 
     (forall Γ A (wfΓ : [|-Γ]) (WA :  [Γ ||-W<l> A]), 
-      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) ->
+      (* (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) -> *)
       PolyHypTyUr P Γ WA (P (WRedTy.LRW wfΓ WA))) ->
 
     forall (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
@@ -282,7 +284,7 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
       P (LRId' IA)) ->
 
     (forall l Γ A (wfΓ : [|-Γ]) (WA :  [Γ ||-W<l> A]), 
-      (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) ->
+      (* (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (WA.(WRedTy.codRed0) ρ wfΔ)) -> *)
       PolyHypTyUr P Γ WA (P (WRedTy.LRW wfΓ WA))) ->
 
     forall (l : TypeLevel) (Γ : context) (A : term) (lr : [LogRel@{i j k l} l | Γ ||- A]),
@@ -383,11 +385,11 @@ Section Inversions.
       + destruct IA; do 3 eexists; eapply whred_det.
         1-3: gen_typing.
         now eapply redtywf_red.
-    - intros ???? WA _ _ _ A' red whA.
+    - intros ???? WA _ _ A' red whA.
       enough (∑ dom cod, A' = tW cod dom) as (?&?&->).
       + dependent inversion whA ; subst; tea.
         inv_whne. 
-      + destruct WA as [[?? redA]].
+      + destruct WA as [?? redA].
         do 2 eexists.
         eapply whred_det.
         1-3: gen_typing.

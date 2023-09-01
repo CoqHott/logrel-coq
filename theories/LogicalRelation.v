@@ -1076,8 +1076,8 @@ Section WRedTyPack.
       (* domRed0 : LRPack@{i} Γ PRTPack.(ParamRedTyPack.dom) ; *)
       (* Required since we do not have yet that tRel 0 is reducible on a reducible type  *)
       (* codRed0 : LRPack@{i} (Γ ,, PRTPack.(ParamRedTyPack.dom)) PRTPack.(ParamRedTyPack.cod) ; *)
-      codRed0 : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
-        LRPack@{i} (Δ ,, PRTPack.(ParamRedTyPack.dom)⟨ρ⟩) PRTPack.(ParamRedTyPack.cod)⟨wk_up PRTPack.(ParamRedTyPack.dom) ρ⟩ ;
+      (* codRed0 : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
+        LRPack@{i} (Δ ,, PRTPack.(ParamRedTyPack.dom)⟨ρ⟩) PRTPack.(ParamRedTyPack.cod)⟨wk_up PRTPack.(ParamRedTyPack.dom) ρ⟩ ; *)
     }.
 
   (* Definition contTyRed (WA : WRedTyPack) {a}
@@ -1096,8 +1096,8 @@ Record WRedTyAdequate@{i j} (R : RedRel@{i j}) (WA : WRedTyPack@{i})
     PRTAd :> PolyRedPackAdequate R WA ;
     (* redAd0 : LRPackAdequate R WA.(redRed0) ; *)
     (* codAd0 : LRPackAdequate R WA.(codRed0) ; *)
-    codAd0 : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
-      LRPackAdequate R (WA.(codRed0) ρ wfΔ) ;
+    (* codAd0 : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), 
+      LRPackAdequate R (WA.(codRed0) ρ wfΔ) ; *)
   }.
 End WRedTyPack.
 Arguments WRedTyPack {_ _ _ _ _}.
@@ -1130,10 +1130,12 @@ Section WRedTm.
       forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), LRPack@{i} Ξ cod⟨wk_up dom ρ⟩[a..]⟨ρ'⟩.
   Proof.
     intros.
-    rewrite subst_ren_subst_mixed, <-wk_up_ren_subst. 
+    assert (eq : cod[a⟨ρ'⟩ .: (ρ' ∘w ρ) >> tRel] = cod⟨wk_up dom ρ⟩[a..]⟨ρ'⟩)
+    by now rewrite subst_ren_subst_mixed, <-wk_up_ren_subst.
+    rewrite <-eq. 
     unshelve eapply WA.(PolyRedPack.posRed); tea.
     now eapply Ra.
-  Qed.
+  Defined.
 
   Definition funRedTm Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) {a} k
     (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
@@ -1179,7 +1181,7 @@ Section WRedTm.
       (RAeq : [WA.(PolyRedPack.shpRed) ρ wfΔ | _ ||- _ ≅ A]) 
       (* dom⟨ρ⟩ instead of A in the context ? *)
       (wtyB : [Δ ,, A |- B ])
-      (RBeq : [WA.(WRedTyPack.codRed0) ρ wfΔ | _ ||- _ ≅ B])
+      (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
       (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
       (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq) :
       WProp Δ ρ wfΔ (tSup A B a k)
@@ -1199,13 +1201,13 @@ Section WRedTm.
       (RAeq' : [WA.(PolyRedPack.shpRed) ρ wfΔ | _ ||- _ ≅ A']) 
       (wtyB : [Δ ,, A |- B ])
       (wtyB' : [Δ ,, A' |- B' ])
-      (RBeq : [WA.(WRedTyPack.codRed0) ρ wfΔ | _ ||- _ ≅ B])
-      (RBeq' : [WA.(WRedTyPack.codRed0) ρ wfΔ | _ ||- _ ≅ B'])
+      (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RBeq' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
       (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
       (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]) 
       (Raa' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a'⟨ρ'⟩ : _]) 
-      (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq)
-      (Rk' : funRedTm Δ ρ wfΔ k' Ra' WRedTm WRedTmEq)
+      (* (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq)
+      (Rk' : funRedTm Δ ρ wfΔ k' Ra' WRedTm WRedTmEq) *)
       (Rkk' : funRedTmEq Δ ρ wfΔ k k' Ra WRedTm WRedTmEq) :
       WPropEq Δ ρ wfΔ (tSup A B a k) (tSup A' B' a' k')
     | neReq {k k'} : [Δ ||-NeNf k ≅ k' : T⟨ρ⟩] -> WPropEq Δ ρ wfΔ k k'
@@ -1224,7 +1226,7 @@ Section WRedTm.
             Pp Δ ρ wfΔ nf prop -> Prt Δ ρ wfΔ t (mkWRedTm Δ ρ wfΔ t nf red eq prop))
         (ihsupR : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (A B a k : term) (wtyA : [Δ |-[ ta ] A])
                 (RAeq : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A]) (wtyB : [Δ,, A |-[ ta ] B])
-                (RBeq : [WRedTyPack.codRed0 WA ρ wfΔ | _ ||- _ ≅ B])
+                (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]), [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq),
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk (a:=b) ρ' wfΞ Rb)) ->
@@ -1239,24 +1241,27 @@ Section WRedTm.
         (ihsupReq : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (A A' B B' a a' k k' : term) 
                 (wtyA : [Δ |-[ ta ] A]) (wtyA' : [Δ |-[ ta ] A']) (RAeq : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A])
                 (RAeq' : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A']) (wtyB : [Δ,, A |-[ ta ] B])
-                (wtyB' : [Δ,, A' |-[ ta ] B']) (RBeq : [WRedTyPack.codRed0 WA ρ wfΔ | _ ||- _ ≅ B])
-                (RBeq' : [WRedTyPack.codRed0 WA ρ wfΔ | _ ||- _ ≅ B'])
+                (wtyB' : [Δ,, A' |-[ ta ] B']) 
+                (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RBeq' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
                       [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Ra' : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
                       [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _])
                 (Raa' : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
                         [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a'⟨ρ'⟩ : _])
-                (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq)
-                (Rk' : funRedTm Δ ρ wfΔ k' Ra' WRedTm WRedTmEq)
-                (Rkk' : funRedTmEq Δ ρ wfΔ k k' Ra WRedTm WRedTmEq),
+                (* (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq)
+                (Rk' : funRedTm Δ ρ wfΔ k' Ra' WRedTm WRedTmEq) *)
+                (Rkk' : funRedTmEq Δ ρ wfΔ k k' Ra WRedTm WRedTmEq)
+                (Rk := PiRedTmEq.redL Rkk')
+                (Rk' := PiRedTmEq.redR Rkk'),
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk (a:=b) ρ' wfΞ Rb)) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk' (a:=b) ρ' wfΞ Rb)) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk' (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTmEq.eqApp Rkk' (a:=b) ρ' wfΞ Rb)) ->
               Ppe Δ ρ wfΔ (tSup A B a k) (tSup A' B' a' k')
-                (supReq Δ ρ wfΔ wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk'))
+                (supReq Δ ρ wfΔ wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk'))
         (ihneReq : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (k k' : term) (r : [Δ ||-NeNf k ≅ k' : T⟨ρ⟩]),
               Ppe Δ ρ wfΔ k k' (neReq Δ ρ wfΔ r)).
 
@@ -1282,8 +1287,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1310,8 +1315,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1338,8 +1343,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1366,8 +1371,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rk Rk' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1793,26 +1798,29 @@ Section WRedTy.
     `{!RedType ta} `{!RedTerm ta}
     {Γ : context} {l : TypeLevel} {A : term}.
 
-  Record WRedTy@{i j k l} :=
+    Definition WRedTy@{i j k l} := ParamRedTy@{i j k l} tW Γ l A.
+
+  (* Record WRedTy@{i j k l} :=
     {
       PRT :> ParamRedTy@{i j k l} tW Γ l A ;
       codRed0 : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]),
         [LogRel@{i j k l} l | Δ,, PRT.(ParamRedTy.dom)⟨ρ⟩ ||- PRT.(ParamRedTy.cod)⟨wk_up PRT.(ParamRedTy.dom) ρ⟩]
-    }.
+    }. *)
 
   Definition from@{i j k l} {WA : WRedTyPack@{k} Γ A}
     (WAad : WRedTyAdequate@{k l} (LogRel@{i j k l} l) WA) :
     WRedTy@{i j k l}.
-  Proof.
-    exists (ParamRedTy.from WAad); intros.
-    econstructor; now unshelve eapply WRedTyPack.codAd0.
+  Proof. exact (ParamRedTy.from WAad).
+    (* exists (ParamRedTy.from WAad); intros.
+    econstructor; now unshelve eapply WRedTyPack.codAd0. *)
   Defined.
 
   Definition toPack@{i j k l} (WA : WRedTy@{i j k l}) :
     WRedTyPack@{k} Γ A.
   Proof.
-    exists (ParamRedTy.toPack WA).
-    intros; now eapply  codRed0.
+    econstructor; exact (ParamRedTy.toPack WA).
+    (* exists (ParamRedTy.toPack WA).
+    intros; now eapply  codRed0. *)
   Defined.
 
   Definition toAd@{i j k l} (WA : WRedTy@{i j k l}) :  
@@ -1820,7 +1828,7 @@ Section WRedTy.
   Proof.
     split.
     - exact (ParamRedTy.toAd WA).
-    - intros; eapply  codRed0.
+    (* - intros; eapply  codRed0. *)
   Defined.
 
   Lemma eta@{i j k l} (WA : WRedTy@{i j k l}) : from (toAd WA) = WA.
@@ -1834,7 +1842,7 @@ Section WRedTy.
   Lemma beta_ad@{i j k l} {WA : WRedTyPack@{k} Γ A} 
     (WAad : WRedTyAdequate@{k l} (LogRel@{i j k l} l) WA)
     : toAd (from WAad) = WAad.
-  Proof. reflexivity. Qed.
+  Proof. reflexivity. Qed. 
 
   Lemma ctx_wf@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) : [|-Γ].
   Proof. destruct WA as [[]]; gen_typing. Qed.
@@ -1855,9 +1863,9 @@ End WRedTy.
 Arguments WRedTy {_ _ _ _ _ _ _ _ _}.
 End WRedTy.
 
-Export WRedTy(WRedTy, Build_WRedTy, LRW').
+Export WRedTy(WRedTy, LRW').
 Coercion WRedTy.toPack : WRedTy >-> WRedTyPack.
-Coercion WRedTy.PRT : WRedTy >-> ParamRedTy.
+(* Coercion WRedTy.PRT : WRedTy >-> ParamRedTy. *)
 
 Notation "[ Γ ||-W< l > A ]" := (WRedTy Γ l A).
 Notation "[ Γ ||-W A ≅ B | RA ]" := (WRedTyEq (Γ:=Γ) (A:=A) RA B).

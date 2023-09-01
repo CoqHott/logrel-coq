@@ -48,7 +48,7 @@ Section Escapes.
       eapply convty_exp. all: gen_typing.
     + intros ??? [???? red] ?? [???? red']; cbn in *. 
       eapply convty_exp; tea;[eapply red | eapply red'].
-    + intros ???? [[]] ??? []; cbn in *; gen_typing.
+    + intros ???? [[]] ?? []; cbn in *; gen_typing.
   Qed.
 
   Definition escapeTerm {l Γ t A} (lr : [Γ ||-< l > A ]) :
@@ -68,7 +68,7 @@ Section Escapes.
       gen_typing.
     - intros ??? IA _ _ []. 
       unfold_id_outTy; destruct IA; cbn in *; gen_typing.
-    - intros ???? [[]] _ _ _ [k ? redk].
+    - intros ???? [] _ _ [k ? redk].
       rewrite Weakening.wk_id_ren_on in redk; cbn in *.
       gen_typing.
   Qed.
@@ -103,7 +103,7 @@ Section Escapes.
     - intros ??? [ty lhs rhs] _ _ []; unfold_id_outTy; cbn in *.
       eapply (convtm_conv (A := tId ty lhs rhs)); [|gen_typing].
       eapply convtm_exp; tea; gen_typing.
-    - intros ???? [[]] _ _ _ [???? redL redR eq'].
+    - intros ???? [] _ _ [???? redL redR eq'].
       rewrite Weakening.wk_id_ren_on in redL, redR, eq'; cbn in *.
       gen_typing.
   Qed.
@@ -121,7 +121,7 @@ Section Escapes.
     - intros * []; gen_typing.
     - intros * ??? []; gen_typing.
     - intros * _ _ ? []; gen_typing.
-    - intros * _ _ _ ? []; gen_typing.
+    - intros * _ _ ? []; gen_typing.
   Qed.
   
 End Escapes.

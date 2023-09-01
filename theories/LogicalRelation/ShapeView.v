@@ -58,7 +58,7 @@ when showing symmetry or transitivity of the logical relation. *)
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
     eapply LR_rect_LogRelRec@{i j k l k}; try intros ??? [].
-    8: intros ???? [[]] ???.
+    8: intros ???? [] ??.
     3,6,7: intros ??.
     all: intros []; eexists; split; tea; constructor; tea.
     eapply convneu_whne; now symmetry.
