@@ -1140,7 +1140,8 @@ Section WRedTm.
     (WRedTm : forall  Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), term -> Type@{i}) 
     (WRedTmEq : forall  Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), term -> term -> Type@{i}) 
     : Type@{i} :=
-    PiRedTm.FunRedTm Δ k cod⟨wk_up dom ρ⟩[a..] T⟨ρ⟩ (instWCodRed ρ wfΔ Ra)
+      let coda := cod⟨wk_up dom ρ⟩[a..] in
+    PiRedTm.FunRedTm Δ k coda T⟨wk_step coda ρ⟩ (instWCodRed ρ wfΔ Ra)
       (fun Ξ _ ρ' wfΞ _ t => WRedTm Ξ (ρ' ∘w ρ) wfΞ t)
       (fun Ξ _ ρ' wfΞ _ t u => WRedTmEq Ξ (ρ' ∘w ρ) wfΞ t u).
 
@@ -1149,7 +1150,8 @@ Section WRedTm.
     (WRedTm : forall  Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), term -> Type@{i}) 
     (WRedTmEq : forall  Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]), term -> term -> Type@{i}) 
     : Type@{i} :=
-    PiRedTmEq.FunRedTmEq Δ k k' cod⟨wk_up dom ρ⟩[a..] T⟨ρ⟩ (instWCodRed ρ wfΔ Ra)
+    let coda := cod⟨wk_up dom ρ⟩[a..] in
+    PiRedTmEq.FunRedTmEq Δ k k' coda T⟨wk_step coda ρ⟩ (instWCodRed ρ wfΔ Ra)
       (fun Ξ _ ρ' wfΞ _ t => WRedTm Ξ (ρ' ∘w ρ) wfΞ t)
       (fun Ξ _ ρ' wfΞ _ t u => WRedTmEq Ξ (ρ' ∘w ρ) wfΞ t u).
 

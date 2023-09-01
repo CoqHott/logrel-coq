@@ -24,6 +24,7 @@ Section ShapeViews.
       | LREmpty _ _, LREmpty _ _ => True
       | LRSig _ _ _, LRSig _ _ _ => True
       | LRId _ _ _, LRId _ _ _ => True
+      | LRW _ _ _ _, LRW _ _ _ _ => True
       | _, _ => False
     end.
 
@@ -45,7 +46,8 @@ when showing symmetry or transitivity of the logical relation. *)
     (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA) : 
     ∑ nf, [Γ |- A :⤳*: nf] × whnf nf.
   Proof.
-    pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA; eapply LR_rect; intros ??[].
+    pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA; eapply LR_rect; try intros ??[].
+    8: intros ??? [[]].
     all: eexists; split; tea; constructor; tea.
     now eapply convneu_whne.
   Defined.
@@ -55,7 +57,8 @@ when showing symmetry or transitivity of the logical relation. *)
     eqTyA B -> ∑ nf, [Γ |- B :⤳*: nf] × whnf nf.
   Proof.
     pattern lA, Γ, A, eqTyA, redTmA, eqTmA, lrA.
-    eapply LR_rect_LogRelRec@{i j k l k}; intros ??? [].
+    eapply LR_rect_LogRelRec@{i j k l k}; try intros ??? [].
+    8: intros ???? [[]] ???.
     3,6,7: intros ??.
     all: intros []; eexists; split; tea; constructor; tea.
     eapply convneu_whne; now symmetry.

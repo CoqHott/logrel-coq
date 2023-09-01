@@ -315,6 +315,9 @@ Proof. now bsimpl. Qed.
 Lemma subst_ren_subst_mixed2 {Γ Δ P a b} (ρ : Γ ≤ Δ): P[a .: b..]⟨ρ⟩ = P[a⟨ρ⟩ .: (b⟨ρ⟩ .: ρ >> tRel)].
 Proof. now bsimpl. Qed.
 
+Lemma wk_up_ren_subst_id {Γ Δ P A n}  (ρ : Γ ≤ Δ) :
+  P[n .: ρ >> tRel] = P⟨wk_up A ρ⟩[n..].
+Proof. now bsimpl. Qed.
 
 Lemma wk_up_ren_subst {Γ Δ Ξ P A n}  (ρ : Γ ≤ Δ) (ρ' : Δ ≤ Ξ) : 
   P[n .: ρ ∘w ρ' >> tRel] = P⟨wk_up A ρ'⟩[n .: ρ >> tRel].
