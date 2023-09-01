@@ -591,7 +591,7 @@ Section GenericTyping.
       [Γ ,, A |- B] ->
       [Γ ,, tW A B |- P] ->
       [Γ |- hs : elimSupHypTy' Γ A B P] ->
-      [Γ |- e ⇒* e' : tW A B] ->
+      [Γ |- e ⤳* e' : tW A B] ->
       [Γ |- tWElim A B P hs e ⤳* tWElim A B P hs e' : P[e..]] ;
     redtm_conv {Γ t u A A'} : 
       [Γ |- t ⤳* u : A] ->
