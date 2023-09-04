@@ -47,6 +47,7 @@ jobs:
             startGroup "Build project"
               opam exec -- make -j 2
               opam exec -- make coqdoc
+              opam exec -- make depgraph
             endGroup
           uninstall: |
             startGroup "Clean project"

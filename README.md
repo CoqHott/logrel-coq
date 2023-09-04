@@ -15,12 +15,12 @@ Building
 
 The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
 
-The `make depgraph` recipe can be used to regenerate the [dependency graph](./docs/dependency_graph.png).
+The `make depgraph` recipe can be used to generate the [dependency graph](https://coqhott.github.io/logrel-coq/dependency_graph.png).
 
-Browsing the Development
+Browsing the development
 ==================
 
-The development, rendered using `coqdoc`, can be [browsed online](https://coqhott.github.io/logrel-coq/). A dependency graph for the project is available [here](./docs/dependency_graph.png).
+The development, rendered using `coqdoc`, can be [browsed online](https://coqhott.github.io/logrel-coq/). A dependency graph for the project is available [here](https://coqhott.github.io/logrel-coq/dependency_graph.png).
 
 Syntax (re)generation
 ============
@@ -32,7 +32,7 @@ re-generating the syntax.
 - change the imports at the beginning of the files;
 - add the `#[global]` keyword to all instances.
 
-Getting Started with Using Development
+Getting started with using the development
 =================
 
 A few things to get accustomed to if you want to use the development.
