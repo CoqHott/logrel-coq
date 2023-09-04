@@ -47,7 +47,6 @@ jobs:
             startGroup "Build project"
               opam exec -- make -j 2
               opam exec -- make coqdoc
-              opam exec -- make depgraph
             endGroup
           uninstall: |
             startGroup "Clean project"
@@ -57,6 +56,11 @@ jobs:
         # to avoid a warning at cleanup time
         if: ${{ always() }}
         run: sudo chown -R 1001:116 .  # <--
+      - name: Install graphviz
+        uses: ts-graphviz/setup-graphviz@v1
+
+      - name: Build dependency graph
+        run: make depgraph
 
       - name: Build doc overview
         uses: docker://pandoc/core:2.9
