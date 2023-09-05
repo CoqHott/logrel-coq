@@ -16,3 +16,5 @@ Makefile.coq.conf
 *.cache
 
 _opam
+
+*.dot
