@@ -47,6 +47,7 @@ jobs:
             startGroup "Build project"
               opam exec -- make -j 2
               opam exec -- make coqdoc
+              opam exec -- make docs/dependency_graph.pre
             endGroup
           uninstall: |
             startGroup "Clean project"
@@ -56,11 +57,14 @@ jobs:
         # to avoid a warning at cleanup time
         if: ${{ always() }}
         run: sudo chown -R 1001:116 .  # <--
+
       - name: Install graphviz
         uses: ts-graphviz/setup-graphviz@v1
 
       - name: Build dependency graph
-        run: make depgraph
+        run: |
+          tred docs/dependency_graph.pre > docs/dependency_graph.dot
+          dot -T png docs/dependency_graph.dot -o docs/dependency_graph.png
 
       - name: Build doc overview
         uses: docker://pandoc/core:2.9
@@ -78,7 +82,6 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v1
         with:
-          # Upload entire repository
           path: 'docs'
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/master'
