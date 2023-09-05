@@ -200,6 +200,33 @@ Proof.
 Qed.
 
 
+Lemma transTmEqW {Γ l A} (WA : [Γ ||-W<l> A]) :
+  WRedInductionConcl WA
+      (fun Δ ρ wfΔ t _ => True) 
+      (fun Δ ρ wfΔ t _ => True)
+      (fun Δ ρ wfΔ t u _ => forall v, WRedTmEq WA ρ wfΔ u v -> WRedTmEq WA ρ wfΔ t v)
+      (fun Δ ρ wfΔ t u _ => forall v, WPropEq WA ρ wfΔ u v -> WPropEq WA ρ wfΔ t v).
+Proof.
+  apply WRedInduction; try solve [intros; exact I].
+  - intros * ? red ? []%WRedTmEq.to_whnf ih ? Ruv; inversion Ruv; subst.
+    unshelve epose proof (redtmwf_det _ _ red _).
+    3,5: tea.
+    1: eapply fst;  now eapply WRedTmEq.to_whnf.
+    econstructor; tea.
+    + subst; now etransitivity.
+    + eapply ih; now subst.
+  - intros * ?????????? Ra Ra' Raa' Rkk' Rk Rk' ih1 ih2 ih3 ih4 ih5 ? Puv.
+    inversion Puv; subst.
+    2:{ 
+      unshelve epose proof (h := NeNf.conv _); cycle 4; tea. 
+      eapply convneu_whne in h; inv_whne.
+    }
+    econstructor; tea.
+
+  econstructor.
+
+
+
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
   {RA : [LogRel@{i j k l} lA | Γ ||- A]} :
   [Γ ||-<lA> t ≅ u : A | RA] ->

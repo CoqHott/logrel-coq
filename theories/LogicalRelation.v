@@ -1201,8 +1201,10 @@ Section WRedTm.
       (RAeq' : [WA.(PolyRedPack.shpRed) ρ wfΔ | _ ||- _ ≅ A']) 
       (wtyB : [Δ ,, A |- B ])
       (wtyB' : [Δ ,, A' |- B' ])
-      (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
-      (RBeq' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a'⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a'⟨ρ'⟩ .: ρ' >> tRel ]])
       (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
       (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]) 
       (Raa' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a'⟨ρ'⟩ : _]) 
@@ -1242,8 +1244,10 @@ Section WRedTm.
                 (wtyA : [Δ |-[ ta ] A]) (wtyA' : [Δ |-[ ta ] A']) (RAeq : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A])
                 (RAeq' : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A']) (wtyB : [Δ,, A |-[ ta ] B])
                 (wtyB' : [Δ,, A' |-[ ta ] B']) 
-                (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
-                (RBeq' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a'⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a'⟨ρ'⟩ .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
                       [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Ra' : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
@@ -1261,7 +1265,7 @@ Section WRedTm.
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk' (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTmEq.eqApp Rkk' (a:=b) ρ' wfΞ Rb)) ->
               Ppe Δ ρ wfΔ (tSup A B a k) (tSup A' B' a' k')
-                (supReq Δ ρ wfΔ wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk'))
+                (supReq Δ ρ wfΔ wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk'))
         (ihneReq : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (k k' : term) (r : [Δ ||-NeNf k ≅ k' : T⟨ρ⟩]),
               Ppe Δ ρ wfΔ k k' (neReq Δ ρ wfΔ r)).
 
@@ -1287,8 +1291,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1315,8 +1319,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1343,8 +1347,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1371,8 +1375,8 @@ Section WRedTm.
         with F2 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WPropEq Δ ρ wfΔ t t0) {struct w} :
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
-          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBeq RBeq' Ra Ra' Raa' Rkk' _ _ _ _ _
+          | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
@@ -1858,6 +1862,20 @@ Section WRedTy.
   Definition WRedTyEq@{i j k l} (WA : WRedTy@{i j k l}) := WRedTyEq (toPack WA).
   Definition WRedTm@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTm' (toPack WA) (ctx_wf WA).
   Definition WRedTmEq@{i j k l} `{!WfContextProperties} (WA : WRedTy@{i j k l}) := WRedTmEq' (toPack WA) (ctx_wf WA).
+
+  Lemma instWCodRed (WA : WRedTy) {Δ} {a} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (dom:=WA.(ParamRedTy.dom)) (cod:=WA.(ParamRedTy.cod))
+    (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRed.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) :
+      forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), [Ξ ||-<l> cod⟨wk_up dom ρ⟩[a..]⟨ρ'⟩].
+  Proof.
+    intros. 
+    unshelve eexists (WRedTm.instWCodRed (WA:=toPack WA) ρ wfΔ _  _ ρ' wfΞ).
+    - intros. eapply Ra.
+    - unfold WRedTm.instWCodRed.
+      set (e := eq_ind_r _ _ _).
+      set (P := @eq_rect _ _ _ _).
+      refine (match e as e in _ = y return LRPackAdequate (LogRel l) (P y e) with | eq_refl => _ end).
+      cbn. eapply LRAd.adequate.
+  Defined.
 
 End WRedTy.
 Arguments WRedTy {_ _ _ _ _ _ _ _ _}.
