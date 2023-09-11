@@ -1157,6 +1157,9 @@ Section WRedTm.
       (fun Ξ _ ρ' wfΞ _ t => WRedTm Ξ (ρ' ∘w ρ) wfΞ t)
       (fun Ξ _ ρ' wfΞ _ t u => WRedTmEq Ξ (ρ' ∘w ρ) wfΞ t u).
 
+  Definition supContTy {Γ Δ} (ρ : Δ ≤ Γ) a :=
+    let coda := cod⟨wk_up dom ρ⟩[a..] in
+    tProd coda T⟨wk_step coda ρ⟩.
 
   (* Reducibility of terms at W types and reducible conversion of terms at W types.
     The two notions have to be defined mutually in order to state that the continuation k
@@ -1181,7 +1184,9 @@ Section WRedTm.
       (RAeq : [WA.(PolyRedPack.shpRed) ρ wfΔ | _ ||- _ ≅ A]) 
       (* dom⟨ρ⟩ instead of A in the context ? *)
       (wtyB : [Δ ,, A |- B ])
-      (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a'} (Ra' : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a' : _])
+        (Raa' : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a' : _]),
+        [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra' | _ ||- _ ≅ B[a' .: ρ' >> tRel ]])
       (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
       (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq) :
       WProp Δ ρ wfΔ (tSup A B a k)
@@ -1201,10 +1206,18 @@ Section WRedTm.
       (RAeq' : [WA.(PolyRedPack.shpRed) ρ wfΔ | _ ||- _ ≅ A']) 
       (wtyB : [Δ ,, A |- B ])
       (wtyB' : [Δ ,, A' |- B' ])
-      (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
-      (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
-      (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a'⟨ρ'⟩ .: ρ' >> tRel ]])
-      (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a'⟨ρ'⟩ .: ρ' >> tRel ]])
+      (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+        (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a0 : _]),
+        [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B[a0 .: ρ' >> tRel ]])
+      (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+        (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a0 : _]),
+        [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B'[a0 .: ρ' >> tRel ]])
+      (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+        (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ ≅ a0 : _]),
+        [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B[a0 .: ρ' >> tRel ]])
+      (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+        (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ ≅ a0 : _]),
+        [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B'[a0 .: ρ' >> tRel ]])
       (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
       (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]) 
       (Raa' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a'⟨ρ'⟩ : _]) 
@@ -1228,7 +1241,9 @@ Section WRedTm.
             Pp Δ ρ wfΔ nf prop -> Prt Δ ρ wfΔ t (mkWRedTm Δ ρ wfΔ t nf red eq prop))
         (ihsupR : forall (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (A B a k : term) (wtyA : [Δ |-[ ta ] A])
                 (RAeq : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A]) (wtyB : [Δ,, A |-[ ta ] B])
-                (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RBeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a'} (Ra' : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a' : _])
+                  (Raa' : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a' : _]),
+                  [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra' | _ ||- _ ≅ B[a' .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]), [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq),
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk (a:=b) ρ' wfΞ Rb)) ->
@@ -1244,10 +1259,18 @@ Section WRedTm.
                 (wtyA : [Δ |-[ ta ] A]) (wtyA' : [Δ |-[ ta ] A']) (RAeq : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A])
                 (RAeq' : [PolyRedPack.shpRed WA ρ wfΔ | _ ||- _ ≅ A']) (wtyB : [Δ,, A |-[ ta ] B])
                 (wtyB' : [Δ,, A' |-[ ta ] B']) 
-                (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a⟨ρ'⟩ .: ρ' >> tRel ]])
-                (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a⟨ρ'⟩ .: ρ' >> tRel ]])
-                (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B[a'⟨ρ'⟩ .: ρ' >> tRel ]])
-                (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) (Ra : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ : _]), [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra | _ ||- _ ≅ B'[a'⟨ρ'⟩ .: ρ' >> tRel ]])
+                (RBaeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+                  (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a0 : _]),
+                  [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B[a0 .: ρ' >> tRel ]])
+                (RB'aeq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+                  (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a0 : _]),
+                  [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B'[a0 .: ρ' >> tRel ]])
+                (RBa'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+                  (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ ≅ a0 : _]),
+                  [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B[a0 .: ρ' >> tRel ]])
+                (RB'a'eq : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {a0} (Ra0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a0 : _])
+                  (Raa0 : [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a'⟨ρ'⟩ ≅ a0 : _]),
+                  [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra0 | _ ||- _ ≅ B'[a0 .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),
                       [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Ra' : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]),

@@ -200,7 +200,11 @@ Proof.
 Qed.
 
 
-Lemma transTmEqW {Γ l A} (WA : [Γ ||-W<l> A]) :
+Lemma transTmEqW {Γ l A} (WA : [Γ ||-W<l> A]) 
+        (ihdom : forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]) (t u v : term),
+          [PolyRed.shpRed WA ρ h | Δ ||- t ≅ u : (ParamRedTy.dom WA)⟨ρ⟩] ->
+          [PolyRed.shpRed WA ρ h | Δ ||- u ≅ v : (ParamRedTy.dom WA)⟨ρ⟩] ->
+          [PolyRed.shpRed WA ρ h | Δ ||- t ≅ v : (ParamRedTy.dom WA)⟨ρ⟩]) :
   WRedInductionConcl WA
       (fun Δ ρ wfΔ t _ => True) 
       (fun Δ ρ wfΔ t _ => True)
@@ -222,9 +226,37 @@ Proof.
       eapply convneu_whne in h; inv_whne.
     }
     econstructor; tea.
-
-  econstructor.
-
+    + intros. eapply RB'aeq0.
+      eapply ihdom; tea.
+      eapply LRTmEqSym; eauto.
+      Unshelve. eauto.
+    + intros. eapply RBa'eq.
+      eapply ihdom; tea; eauto.
+    + intros; eapply ihdom; eauto.
+    + destruct Rkk' as [? redR], Rkk'0 as [redL0].
+      assert (e: PiRedTm.nf redR = PiRedTm.nf redL0).
+      1:{
+        eapply redtmwf_det.
+        1,2:  eapply isFun_whnf; now eapply PiRedTm.isfun.
+        1,2: now eapply PiRedTm.red.
+      }
+     unshelve econstructor; tea.
+      * eapply funRedTm_conv_irrelevance; tea.
+        intros. eapply LRTmEqSym; eauto.
+      * cbn; etransitivity; tea.
+        rewrite e; eapply convtm_conv; tea.
+        symmetry; now eapply supContTy_inst_conv.
+      * cbn in *; intros.
+        eapply ih5; tea.
+        rewrite e; eapply eqApp0.
+        eapply instWCodRed_conv_irrelevance.
+        2: tea.
+        intros; eapply LRTmEqSym; eauto.
+  - intros ??? k k' nekk' v hk'v.
+    assert (whne k') by (eapply convneu_whne; symmetry; now destruct nekk').
+    inversion hk'v; subst; [inv_whne|].
+    constructor; now eapply transNeNfEq.
+Qed.
 
 
 Lemma transEqTerm@{h i j k l} {Γ lA A t u v} 
@@ -241,6 +273,7 @@ Proof.
   - intros ? NA **; now eapply (fst (transEqTermEmpty NA)).
   - intros * ?????; apply transEqTermΣ; tea.
   - intros; now eapply transTmEqId.
+  - intros; now eapply transTmEqW.
 Qed.
 
 

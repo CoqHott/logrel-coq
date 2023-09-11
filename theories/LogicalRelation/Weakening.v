@@ -45,6 +45,15 @@ Section Weakenings.
     1,3: rewrite wk_sig; now eapply redtywf_wk + now eapply convty_wk.
     now apply convty_wk.
   Defined.
+  
+  Lemma wkW  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (WA : [Γ ||-W< l > A]) :
+    [Δ ||-W< l > A⟨ρ⟩].
+  Proof.
+    destruct WA; econstructor.
+    3: now eapply wkPoly.
+    1,2: rewrite wk_w; now eapply redtywf_wk + now eapply convty_wk.
+  Defined.
+
 
   Lemma wkNat {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Nat A] -> [Δ ||-Nat A⟨ρ⟩].
   Proof. 
@@ -108,6 +117,7 @@ Section Weakenings.
     - intros; eapply LREmpty_; now eapply wkEmpty.
     - intros; apply LRSig'; now eapply wkΣ.
     - intros; apply LRId'; now eapply wkId.
+    - intros; apply WRedTy.LRW; tea; now eapply wkW.
   Defined.
 
   (* Sanity checks for Π and Σ: we do compute correctly with wk *)
@@ -121,14 +131,20 @@ Section Weakenings.
     wk ρ wfΔ (LRSig' ΠA) = LRSig' (wkΣ ρ wfΔ ΠA).
   Proof. reflexivity. Qed.
 
+  #[local]
+  Lemma wkW_eq {Γ Δ A l} (ρ : Δ ≤ Γ) {wfΓ} (wfΔ : [|- Δ]) (ΠA : [Γ ||-W< l > A]) :
+    wk ρ wfΔ (WRedTy.LRW wfΓ ΠA) = WRedTy.LRW wfΔ (wkW ρ wfΔ ΠA).
+  Proof. reflexivity. Qed.
+
   Set Printing Primitive Projection Parameters.
 
   Lemma wkPolyEq {Γ l shp shp' pos pos' Δ}  (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (PA : PolyRed Γ l shp pos) : 
     PolyRedEq PA shp' pos' -> PolyRedEq (wkPoly ρ wfΔ PA) shp'⟨ρ⟩ pos'⟨wk_up shp' ρ⟩.
   Proof.
     intros []; opector.
-    - intros ? ρ' wfΔ'; replace (_⟨_⟩) with (shp'⟨ρ' ∘w ρ⟩) by now bsimpl.
-      pose (shpRed _ (ρ' ∘w ρ) wfΔ'); irrelevance.
+    - intros ? ρ' wfΔ'; 
+      irrelevance0; rewrite wk_comp_ren_on; [reflexivity|]; eauto.
+      Unshelve. tea.
     - intros ?? ρ' wfΔ' ha.
       replace (_[_ .: ρ' >> tRel]) with (pos'[ a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
       irrelevance0.
@@ -172,6 +188,12 @@ Section Weakenings.
       2,3: eapply IA.(IdRedTy.tyKripkeTmEq); [now rewrite wk_comp_runit| irrelevance].
       eapply IA.(IdRedTy.tyKripkeEq); [now rewrite wk_comp_runit| irrelevance].
       Unshelve. all: tea.
+    - intros * ?? * []; rewrite wkW_eq ; eexists.
+      3: now eapply wkPolyEq.
+      + rewrite wk_w;  gen_typing.
+      + rewrite wk_w.
+        replace (tW _ _) with (WA.(outTy)⟨ρ⟩) by (cbn; now bsimpl).
+        now eapply convty_wk.
   Qed.
 
   Lemma isLRFun_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]),
@@ -205,13 +227,11 @@ Section Weakenings.
     + now eapply redtmwf_wk.
     + now apply isLRFun_ren.
     + now apply convtm_wk.
-    + intros ? a ρ' ??.
-      replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
+    + intros ? a ρ' ??; rewrite wk_comp_ren_on.
       irrelevance0.
       2: unshelve apply app; [eassumption|]; subst ΠA'; irrelevance. 
       subst ΠA'; bsimpl; try rewrite scons_comp'; reflexivity.
-    + intros ??? ρ' ?????.
-      replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
+    + intros ??? ρ' ????; rewrite wk_comp_ren_on.
       irrelevance0.
       2: unshelve apply eq; [eassumption|..]; subst ΠA'; irrelevance.
       subst ΠA'; bsimpl; try rewrite scons_comp'; reflexivity.
@@ -269,6 +289,111 @@ Section Weakenings.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.
       rewrite <- wk_comp_ren_on; cbn; now rewrite <- wk_up_ren_subst.
   Defined.
+
+  Lemma wk_up_comp {A Γ Δ Ξ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) {t} : t⟨wk_up A (ρ' ∘w ρ)⟩ = t⟨wk_up A ρ⟩⟨wk_up A⟨ρ⟩ ρ'⟩.
+  Proof. now bsimpl. Qed.
+
+  Arguments pointwise_rewrite {_ _ _ _ _}.
+
+  Lemma WRedTm_ren_irrelevance {Γ l A} (WA : [Γ ||-W<l> A]) :
+    WRedInductionConcl WA
+      (fun Δ ρ wfΔ t _ => forall (ρ' : Δ ≤ Γ), ρ =1 ρ' -> WRedTm WA ρ' wfΔ t) 
+      (fun Δ ρ wfΔ t _ => forall (ρ': Δ ≤ Γ), ρ =1 ρ' -> WProp WA ρ' wfΔ t) 
+      (fun Δ ρ wfΔ t u _ => forall (ρ': Δ ≤ Γ), ρ =1 ρ' -> WRedTmEq WA ρ' wfΔ t u) 
+      (fun Δ ρ wfΔ t u _ => forall (ρ': Δ ≤ Γ), ρ =1 ρ' -> WPropEq WA ρ' wfΔ t u). 
+  Proof.
+    apply WRedInduction.
+    - intros * ??? ih ? eq ; econstructor.
+      1,2: now rewrite <- (pointwise_rewrite eq).
+      eauto.
+    - intros * ????????? eq; econstructor; tea.
+      + irrelevance. now rewrite (pointwise_rewrite eq).
+      + intros. irrelevance0.
+        2: eapply RBeq.
+        1: bsimpl; now setoid_rewrite eq.
+        irrelevance.
+        bsimpl; now setoid_rewrite eq.
+        Unshelve. 2: tea.
+        2: irrelevance; bsimpl; now setoid_rewrite eq.
+        intros; irrelevance0.
+        2: eapply Ra.
+        bsimpl; now setoid_rewrite eq.
+      + destruct Rk; econstructor.
+        * replace (tProd _ _) with (WRedTm.supContTy (WA:=WA) ρ a); tea.
+          unfold WRedTm.supContTy; bsimpl; setoid_rewrite eq. reflexivity.
+        * tea.
+        * replace (tProd _ _) with (WRedTm.supContTy (WA:=WA) ρ a); tea.
+          unfold WRedTm.supContTy; bsimpl; now setoid_rewrite eq.
+        * intros. eapply X.
+          2: bsimpl; now setoid_rewrite eq. 
+          Unshelve.
+          2: tea.
+          irrelevance
+          irrelevance0.
+        .(ParamRedTy.dom) WA.(ParamRedTy.cod)). unfold supContTy in t. rewrite wk_supContTy. replace (tProd _ _ ). bsimpl.
+
+
+
+
+  Lemma wkWTerm_mut {Γ l A} (WA : [Γ ||-W<l> A]) :
+    WRedInductionConcl WA
+      (fun Δ ρ wfΔ t _ => forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), WRedTm WA (ρ' ∘w ρ) wfΞ t⟨ρ'⟩) 
+      (fun Δ ρ wfΔ t _ => forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), WProp WA (ρ' ∘w ρ) wfΞ t⟨ρ'⟩)
+      (fun Δ ρ wfΔ t u _ => forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), WRedTmEq WA (ρ' ∘w ρ) wfΞ t⟨ρ'⟩ u⟨ρ'⟩) 
+      (fun Δ ρ wfΔ t u _ => forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|-Ξ]), WPropEq WA (ρ' ∘w ρ) wfΞ t⟨ρ'⟩ u⟨ρ'⟩).
+  Proof.
+    apply WRedInduction.
+    - intros * ??? ih ** ; econstructor.
+      1,2: rewrite <- wk_comp_ren_on.
+      + now eapply redtmwf_wk.
+      + now eapply convtm_wk.
+      + eapply ih.
+    - intros * ?????? ihapp iheq **. 
+      rewrite <-wk_sup; unshelve eapply WRedTm.supR.
+      + intros. rewrite wk_comp_ren_on.
+        irrelevance0.
+        2: eapply Ra.
+        now bsimpl. (* Should work here but does not: rewrite wk_comp_assoc. *)
+        Unshelve. tea.
+      + now eapply wft_wk.
+      + irrelevance0.
+        1: apply wk_comp_ren_on.
+        now eapply wkEq.
+      + eapply wft_wk; tea.
+        gen_typing.
+      + intros.
+        irrelevance0.
+        1: now rewrite <- wk_comp_assoc.
+        rewrite <-wk_up_ren_subst.
+        eapply RBeq.
+        rewrite <-wk_comp_ren_on.
+        irrelevance.
+      + set (w := outTy WA).
+        set (dom := (ParamRedTy.dom WA)).
+        set (cod := (ParamRedTy.cod WA)).
+        set (domContTy := cod⟨wk_up dom (ρ' ∘w ρ)⟩[a⟨ρ'⟩..]).
+        set (domContTy0 := cod⟨wk_up dom (ρ)⟩[a..]).
+        assert (eq: tProd domContTy w⟨wk_step domContTy (ρ' ∘w ρ)⟩ = (tProd domContTy0 w⟨wk_step domContTy0 ρ⟩)⟨ρ'⟩).
+        1:{
+          rewrite <- wk_prod; f_equal; unfold domContTy, domContTy0.
+          1: now erewrite subst_ren_wk_up, <-wk_up_comp.
+          now bsimpl.
+        } 
+        destruct Rk; econstructor. 
+        1,3:replace (tProd _ _) with(tProd domContTy0 w⟨wk_step domContTy0 ρ⟩)⟨ρ'⟩.
+        * now eapply redtmwf_wk.
+        * now eapply convtm_wk.
+        * now eapply isFun_ren.
+        * intros. eapply 
+        unfold outTy in w.
+        
+        3:rewrite eq.
+        1,3: rewrite eq. 
+      
+      econstructor. 
+
+
+
 
   Lemma wkTerm {Γ Δ t A l} (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]) (lrA : [Γ ||-<l> A]) : 
     [Γ ||-<l> t : A | lrA] -> [Δ ||-<l> t⟨ρ⟩ : A⟨ρ⟩ | wk ρ wfΔ lrA].

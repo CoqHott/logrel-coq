@@ -300,6 +300,31 @@ Ltac bsimpl := check_no_evars;
                   Ren1_subst, Ren1_wk, Ren1_well_wk
                   in *; bsimpl'; minimize.
 
+
+(*
+From Coq Require Import Morphisms.
+
+#[global] Instance ren_well_wk_term_morphism {Γ Δ : context} :
+ (Proper (respectful (fun (ρ ρ' : Δ ≤ Γ) => ρ =1 ρ') (respectful eq eq))
+    (@ren1 _ _ _ Ren1_well_wk)).
+Proof.
+  intros ρ ρ' eq s t eqst; bsimpl; setoid_rewrite eq; now f_equal.
+Qed.
+
+#[global] Instance ren_well_wk_term_morphism2 {Γ Δ : context} :
+ (Proper (respectful (fun (ρ ρ' : Δ ≤ Γ) => ρ =1 ρ') (pointwise_relation _ eq))
+    (@ren1 _ _ _ Ren1_well_wk)).
+Proof.
+  intros ρ ρ' eq s; bsimpl; setoid_rewrite eq; now f_equal.
+Qed.
+*)
+
+(* I don't manage to find the right instance of Proper that would allow me to use setoid_rewrite 
+  with pointwise equalities between weakenings, so I add this specific lemma *)
+Lemma pointwise_rewrite {Γ Δ} (ρ ρ' : Δ ≤ Γ) {t} : ρ =1 ρ' -> t⟨ρ⟩ = t⟨ρ'⟩. 
+Proof. intros eq. bsimpl; now setoid_rewrite eq. Qed.
+
+
 (** Lemmas for easier rewriting *)
 
 Lemma subst_ren_wk_up {Γ Δ P A n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].

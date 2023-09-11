@@ -242,7 +242,6 @@ Lemma subst_single_wk_id_left cod a {Γ Δ} (ρ : Δ ≤ Γ) :
   cod[a.:ρ >>tRel] = cod[a.: (wk_id ∘wρ) >>tRel].
 Proof. intros; now bsimpl. Qed.
 
-
 Section WIrrelevanceLemmas.
 Universe i j k l i' j' k' l' v.
 Context {Γ lA A lA' A'} (wfΓ wfΓ' : [|-Γ])
@@ -330,6 +329,7 @@ Proof.
   * now eapply redtmwf_conv.
 Defined.
 
+
 Lemma WIrrelevanceTm_mut :
   WRedInductionConcl WA
     (fun Δ ρ wfΔ t Rt => forall wfΔ', WRedTm WA' ρ wfΔ' t)
@@ -346,7 +346,10 @@ Proof.
   - intros; unshelve econstructor; tea.
     + intros; unshelve eapply eqv; eauto.
     + now eapply eqv.
-    + intros; unshelve eapply eqv; eauto.
+    + intros; unshelve eapply eqv; tea.
+      1: now unshelve eapply eqv.
+      eapply RBeq.
+      now unshelve eapply eqv.
     + now eapply funRedTm_irrelevance.
   - intros. constructor; eapply NeNfconv; tea.
     2: now eapply convty_wk.
@@ -364,10 +367,22 @@ Proof.
       2: tea.  
     + now eapply eqv.
     (* + now eapply eqv. *)
-    + intros; unshelve eapply eqv; eauto.
-    + intros; unshelve eapply eqv; eauto.
-    + intros; now unshelve eapply eqv.
-    + intros; now unshelve eapply eqv.
+    + intros; unshelve eapply eqv; tea.
+      1: now unshelve eapply eqv.
+      eapply RBaeq.
+      now unshelve eapply eqv.
+    + intros; unshelve eapply eqv; tea.
+      1: now unshelve eapply eqv.
+      eapply RB'aeq.
+      now unshelve eapply eqv.
+    + intros; unshelve eapply eqv; tea.
+      1: now unshelve eapply eqv.
+      eapply RBa'eq.
+      now unshelve eapply eqv.
+    + intros; unshelve eapply eqv; tea.
+      1: now unshelve eapply eqv.
+      eapply RB'a'eq.
+      now unshelve eapply eqv.
     + intros; now unshelve eapply eqv.
     + intros; now unshelve eapply eqv.
     (* + now eapply funRedTm_irrelevance.
