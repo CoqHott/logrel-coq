@@ -599,10 +599,8 @@ Lemma prod_ty_inv Γ A B :
   [Γ |- A] × [Γ,, A |- B].
 Proof.
   intros Hty.
-  inversion Hty ; subst ; clear Hty.
-  1: easy.
-  eapply termGen in H as (?&[-> ]&_).
-  split ; now econstructor.
+  apply TypeRefl, prod_ty_inj in Hty as [HA HB].
+  split; boundary.
 Qed.
 
 Lemma sig_ty_inv Γ A B :
@@ -610,10 +608,8 @@ Lemma sig_ty_inv Γ A B :
   [Γ |- A] × [Γ,, A |- B].
 Proof.
   intros Hty.
-  inversion Hty ; subst ; clear Hty.
-  1: easy.
-  eapply termGen in H as (?&[-> ]&_).
-  split ; now econstructor.
+  apply TypeRefl, sig_ty_inj in Hty as [HA HB].
+  split; boundary.
 Qed.
 
 Lemma id_ty_inv Γ A x y :
@@ -621,10 +617,8 @@ Lemma id_ty_inv Γ A x y :
   [Γ |- A] × [Γ |- x : A] × [Γ |- y : A].
 Proof.
   intros Hty.
-  inversion Hty ; subst ; clear Hty.
-  1: easy.
-  eapply termGen in H as (?&[-> ]&_).
-  split ; now econstructor.
+  apply TypeRefl, id_ty_inj in Hty as [HA HB].
+  prod_splitter; boundary.
 Qed.
 
 Lemma termGen' Γ t A :
