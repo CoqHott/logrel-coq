@@ -436,14 +436,12 @@ Section BundledConv.
       assert [Γ |-[de] M : U].
       {
         eapply algo_conv_wh in Hconv as [neM neN].
-        inversion HM ; subst ; clear HM.
-        all: solve [now inversion neM| assumption].
+        now eapply neutral_ty_inv.
       }
       assert [Γ |-[de] N : U].
       {
         eapply algo_conv_wh in Hconv as [neM neN].
-        inversion HN ; subst ; clear HN.
-        all: solve [now inversion neN| assumption].
+        now eapply neutral_ty_inv.
       }
       assert (well_typed (ta := de) Γ M) by now eexists.
       assert (well_typed (ta := de) Γ N) by now eexists.

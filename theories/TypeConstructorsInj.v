@@ -594,6 +594,18 @@ Proof.
     * prod_splitter; tea; right; now eapply TypeTrans.
 Qed.
 
+Lemma neutral_ty_inv Γ A :
+  [Γ |- A] -> whne A -> [Γ |- A : U].
+Proof.
+  intros Hty Hne.
+  unshelve eapply TypeRefl, ty_conv_inj in Hty.
+  - now constructor.
+  - now constructor.
+  - cbn in *.
+    apply Fundamental in Hty; destruct Hty.
+    now eapply escapeTm.
+Qed.
+
 Lemma prod_ty_inv Γ A B :
   [Γ |- tProd A B] ->
   [Γ |- A] × [Γ,, A |- B].

@@ -148,8 +148,7 @@ Proof.
     split.
     2: intros [|] ; cbn ; easy.
     eapply (IHM tt A) ; tea.
-    inversion Hty ; subst ; tea.
-    1-6:  inv_whne.
+    apply neutral_ty_inv in Hty; [|tea].
     now exists U.
   - intros * ???? ? ? wu' ?.
     apply compute_domain.
