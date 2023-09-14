@@ -278,3 +278,29 @@ Section TypingCorrect.
   Qed.
 
 End TypingCorrect.
+
+Section CtxTypingSound.
+
+  Lemma _check_ctx_sound :
+    funrect check_ctx (fun _ => True) (fun Γ r => if r then [|- Γ] else True).
+  Proof.
+    intros ? _.
+    funelim (check_ctx _) ; cbn.
+    - now constructor.
+    - split ; [easy|].
+      intros [|] ; cbn ; try easy.
+      intros ? [] ?%implem_typing_sound ; cbn in *.
+      2: easy.
+      now econstructor.
+  Qed.
+     
+  Lemma check_ctx_sound Γ :
+    graph check_ctx Γ (ok tt) ->
+    [|-[al] Γ].
+  Proof.
+    eintros ?%funrect_graph.
+    2: eapply _check_ctx_sound.
+    all: easy.
+  Qed.
+
+End CtxTypingSound.
