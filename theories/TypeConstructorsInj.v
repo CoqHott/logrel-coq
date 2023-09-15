@@ -11,7 +11,6 @@ Set Printing Primitive Projection Parameters.
 
 Import DeclarativeTypingProperties.
 
-
 Section TypeConstructors.
 
   Definition type_hd_view (Γ : context) {T T' : term} (nfT : isType T) (nfT' : isType T') : Type :=
@@ -475,18 +474,6 @@ Proof.
   eapply ctx_refl ; boundary.
 Qed.
 
-Lemma typing_eta' (Γ : context) A B f :
-  [Γ |- f : tProd A B] ->
-  [Γ,, A |- eta_expand f : B].
-Proof.
-  intros Hf.
-  eapply typing_eta ; tea.
-  - eapply prod_ty_inv.
-    boundary.
-  - eapply prod_ty_inv.
-    boundary.
-Qed.
-
 Corollary red_ty_compl_prod_r Γ A B T :
   [Γ |- T ≅ tProd A B] ->
   ∑ A' B', [× [Γ |- T ⤳* tProd A' B'], [Γ |- A ≅ A'] & [Γ,, A |- B' ≅ B]].
@@ -558,6 +545,94 @@ Section Stability.
 
 End Stability.
 
+(** ** Generation *)
+
+(** The generation lemma (the name comes from the PTS literature), gives a 
+stronger inversion principle on typing derivations, that give direct access
+to the last non-conversion rule, and bundle together all conversions.
+
+Note that because we do not yet know that [Γ |- t : T] implies [Γ |- T],
+we cannot use reflexivity in the case where the last rule was not a conversion
+one, and we get the slightly clumsy disjunction of either an equality or a
+conversion proof. We get a better version of generation later on, once we have
+this implication. *)
+
+Definition termGenData (Γ : context) (t T : term) : Type :=
+  match t with
+    | tRel n => ∑ decl, [× T = decl, [|- Γ]& in_ctx Γ n decl]
+    | tProd A B =>  [× T = U, [Γ |- A : U] & [Γ,, A |- B : U]]
+    | tLambda A t => ∑ B, [× T = tProd A B, [Γ |- A] & [Γ,, A |- t : B]]
+    | tApp f a => ∑ A B, [× T = B[a..], [Γ |- f : tProd A B] & [Γ |- a : A]]
+    | tSort _ => False
+    | tNat => T = U
+    | tZero => T = tNat
+    | tSucc n => T = tNat × [Γ |- n : tNat]
+    |  tNatElim P hz hs n =>
+      [× T = P[n..], [Γ,, tNat |- P], [Γ |- hz : P[tZero..]], [Γ |- hs : elimSuccHypTy P] & [Γ |- n : tNat]]
+    | tEmpty => T = U
+    | tEmptyElim P e =>
+      [× T = P[e..], [Γ,, tEmpty |- P] & [Γ |- e : tEmpty]]
+    | tSig A B => [× T = U, [Γ |- A : U] & [Γ ,, A |- B : U]]
+    | tPair A B a b =>
+     [× T = tSig A B, [Γ |- A], [Γ,, A |- B], [Γ |- a : A] & [Γ |- b : B[a..]]]
+    | tFst p => ∑ A B, T = A × [Γ |- p : tSig A B]
+    | tSnd p => ∑ A B, T = B[(tFst p)..] × [Γ |- p : tSig A B]
+    | tId A x y => [× T = U, [Γ |- A : U], [Γ |- x : A] & [Γ |- y : A]]
+    | tRefl A x => [× T = tId A x x, [Γ |- A] & [Γ |- x : A]]
+    | tIdElim A x P hr y e => 
+      [× T = P[e .: y..], [Γ |- A], [Γ |- x : A], [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P], [Γ |- hr : P[tRefl A x .: x..]], [Γ |- y : A] & [Γ |- e : tId A x y]]
+  end.
+
+Lemma termGen Γ t A :
+  [Γ |- t : A] ->
+  ∑ A', (termGenData Γ t A') × ((A' = A) + [Γ |- A' ≅ A]).
+Proof.
+  induction 1.
+  all: try (eexists ; split ; [..|left ; reflexivity] ; cbn ; by_prod_splitter).
+  + destruct IHTypingDecl as [? [? [-> | ]]].
+    * prod_splitter; tea; now right.
+    * prod_splitter; tea; right; now eapply TypeTrans.
+Qed.
+
+Lemma neutral_ty_inv Γ A :
+  [Γ |- A] -> whne A -> [Γ |- A : U].
+Proof.
+  intros Hty Hne.
+  unshelve eapply TypeRefl, ty_conv_inj in Hty.
+  - now constructor.
+  - now constructor.
+  - cbn in *.
+    apply Fundamental in Hty; destruct Hty.
+    now eapply escapeTm.
+Qed.
+
+Lemma prod_ty_inv Γ A B :
+  [Γ |- tProd A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.
+  intros Hty.
+  apply TypeRefl, prod_ty_inj in Hty as [HA HB].
+  split; boundary.
+Qed.
+
+Lemma sig_ty_inv Γ A B :
+  [Γ |- tSig A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.
+  intros Hty.
+  apply TypeRefl, sig_ty_inj in Hty as [HA HB].
+  split; boundary.
+Qed.
+
+Lemma id_ty_inv Γ A x y :
+  [Γ |- tId A x y] ->
+  [Γ |- A] × [Γ |- x : A] × [Γ |- y : A].
+Proof.
+  intros Hty.
+  apply TypeRefl, id_ty_inj in Hty as [HA HB].
+  prod_splitter; boundary.
+Qed.
+
 Lemma termGen' Γ t A :
 [Γ |- t : A] ->
 ∑ A', (termGenData Γ t A') × [Γ |- A' ≅ A].
@@ -568,6 +643,18 @@ destruct (termGen _ _ _ H) as [? [? [->|]]].
 eexists ; split ; tea.
 econstructor.
 boundary.
+Qed.
+
+Lemma typing_eta' (Γ : context) A B f :
+  [Γ |- f : tProd A B] ->
+  [Γ,, A |- eta_expand f : B].
+Proof.
+  intros Hf.
+  eapply typing_eta ; tea.
+  - eapply prod_ty_inv.
+    boundary.
+  - eapply prod_ty_inv.
+    boundary.
 Qed.
 
 Theorem subject_reduction_one Γ A t t' :
