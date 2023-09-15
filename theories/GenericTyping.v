@@ -123,7 +123,16 @@ Section RedDefinitions.
     | isterm A => [Γ |- t : A]
     end
   }.
-  
+
+  Inductive isWfFun (Γ : context) (A B : term) : term -> Set :=
+    LamWfFun : forall A' t : term, [Γ |- A ≅ A'] -> isWfFun Γ A B (tLambda A' t)
+  | NeWfFun : forall f : term, whne f -> isWfFun Γ A B f.
+
+  Lemma isWfFun_isFun : forall Γ A B t, isWfFun Γ A B t -> isFun t.
+  Proof.
+  intros * []; now constructor.
+  Qed.
+
 End RedDefinitions.
 
 Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_scope.
@@ -338,9 +347,9 @@ Section GenericTyping.
       [ Γ |- A ] ->
       [ Γ,, A |- B ] ->
       [ Γ |- f : tProd A B ] ->
-      isFun f ->
+      isWfFun Γ A B f ->
       [ Γ |- g : tProd A B ] ->
-      isFun g ->
+      isWfFun Γ A B g ->
       [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ] ->
       [ Γ |- f ≅ g : tProd A B ] ;
     convtm_nat {Γ} :
@@ -954,7 +963,7 @@ Section GenericConsequences.
     2: eapply convty_simple_arr; cycle 1; tea.
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: constructor.
+    2,4: constructor; first [now apply lrefl|tea].
     1,2: eapply ty_id; tea; now symmetry.
     assert [|- Γ,, A] by gen_typing.
     assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk. 
@@ -1063,6 +1072,7 @@ Section GenericConsequences.
   Lemma convtm_comp {Γ A B C f f' g g'} :
     [|- Γ] ->
     [Γ |- A] ->
+    [Γ |- A ≅ A] ->
     [Γ |- B] ->
     [Γ |- C] ->
     [Γ |- f : arr A B] ->
@@ -1075,7 +1085,7 @@ Section GenericConsequences.
     intros.
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: constructor.
+    2,4: now constructor.
     1,2: eapply ty_comp.
     4,5,9,10: tea.
     all: tea.
@@ -1111,11 +1121,13 @@ Section GenericConsequences.
     intros.
     assert [|- Γ,, A] by gen_typing.
     apply convtm_eta ; tea.
-    1-2,4: gen_typing.
+    - gen_typing.
+    - constructor; now eapply lrefl.
     - eapply ty_conv.
       1: eapply ty_lam ; tea.
       symmetry.
       now eapply convty_prod.
+    - now constructor.
     - eapply convtm_exp ; tea.
       1: now eapply redty_refl.
       2: eapply redtm_conv ; cbn ; [eapply redtm_meta_conv |..] ; [eapply redtm_beta |..].

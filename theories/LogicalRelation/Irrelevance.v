@@ -87,13 +87,15 @@ Context {Γ lA A lA' A'}
   (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
+  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom)])
   (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy)])
   (eqv : equivPolyRed ΠA ΠA').
 
 Lemma ΠIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
 Proof.
-  intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
+  intros  [????? []] ; cbn in *; econstructor; [| | |econstructor].
   - now gen_typing.
+  - transitivity (ParamRedTyPack.dom ΠA); [now symmetry|tea].
   - cbn; etransitivity; [|tea]; now symmetry.
   - intros; now apply eqv.(eqvShp).
   - intros; cbn; unshelve eapply eqv.(eqvPos).
@@ -105,6 +107,9 @@ Lemma ΠIrrelevanceTm t : [Γ ||-<lA> t : A | RA] -> [Γ ||-<lA'> t : A' | RA'].
 Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
+  - destruct isfun as [A₀ t₀|n Hn].
+    + constructor; transitivity (PiRedTy.dom ΠA); [now symmetry|tea].
+    + now constructor.
   - eapply (convtm_conv refl).
     apply eqPi.
   - intros; unshelve eapply eqv.(eqvPos).
@@ -132,6 +137,7 @@ Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
   (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
+  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom)])
   (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy) ])
   (eqv : equivPolyRed ΠA ΠA')
   : equivLRPack@{k k' v} RA RA'.
@@ -153,13 +159,15 @@ Context {Γ lA A lA' A'}
   (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
   (RA := LRSig' ΣA)
   (RA' := LRSig' ΣA')
+  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom)])
   (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy)])
   (eqv : equivPolyRed ΣA ΣA').
 
 Lemma ΣIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
 Proof.
-  intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
+  intros  [????? []] ; cbn in *; econstructor; [| | |econstructor].
   - now gen_typing.
+  - transitivity (ParamRedTyPack.dom ΣA); [now symmetry|tea].
   - cbn; etransitivity; [|tea]; now symmetry.
   - intros; now apply eqv.(eqvShp).
   - intros; cbn; unshelve eapply eqv.(eqvPos).
@@ -193,6 +201,7 @@ Lemma ΣIrrelevanceLRPack@{i j k l i' j' k' l' v}
   (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
   (RA := LRSig' ΣA)
   (RA' := LRSig' ΣA')
+  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom)])
   (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy) ])
   (eqv : equivPolyRed ΣA ΣA')
   : equivLRPack@{k k' v} RA RA'.
@@ -484,11 +493,12 @@ Proof.
   - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
-    destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
+    destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
     assert (tProd dom0 cod0 = tProd dom1 cod1) as ePi
     by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
-    eapply (ΠIrrelevanceLRPack PA PA'); [|unshelve econstructor].
+    eapply (ΠIrrelevanceLRPack PA PA'); [| |unshelve econstructor].
+    + eassumption.
     + eassumption.
     + intros; unshelve eapply IHdom.
       2: eapply (LRAd.adequate (PolyRed.shpRed PA' _ _)).
@@ -503,11 +513,12 @@ Proof.
   - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
-    destruct he as [dom0 cod0 ?? [domRed codRed]], ΠA' as [dom1 cod1];
+    destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
     assert (tSig dom0 cod0 = tSig dom1 cod1) as ePi
     by (eapply whredty_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
-    eapply (ΣIrrelevanceLRPack PA PA'); [|unshelve econstructor].
+    eapply (ΣIrrelevanceLRPack PA PA'); [| |unshelve econstructor].
+    + eassumption.
     + eassumption.
     + intros; unshelve eapply IHdom.
       2: eapply (LRAd.adequate (PolyRed.shpRed PA' _ _)).
@@ -578,7 +589,7 @@ Proof.
   - intros; now eapply LRne_.
   - intros [] IHdom IHcod IH; cbn in *.
     eapply LRPi'; unshelve econstructor.
-    3,4: tea.
+    3,4,5: tea.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
     + intros; now eapply IHdom.
     + intros; now eapply IHcod.
@@ -586,7 +597,7 @@ Proof.
   - intros; now eapply LREmpty_.
   - intros [] IHdom IHcod IH; cbn in *.
     eapply LRSig'; unshelve econstructor.
-    3,4: tea.
+    3,4,5: tea.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
     + intros; now eapply IHdom.
     + intros; now eapply IHcod.

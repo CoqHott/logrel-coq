@@ -61,7 +61,7 @@ Lemma transEqTermΠ {Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]}
 Proof.
   intros [tL] [? tR];
   unshelve epose proof (e := redtmwf_det _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
-  1,2: apply isFun_whnf; apply PiRedTm.isfun.
+  1,2: apply isFun_whnf; eapply isWfFun_isFun, PiRedTm.isfun.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
   + intros. eapply ihcod.

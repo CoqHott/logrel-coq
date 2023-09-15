@@ -1181,14 +1181,14 @@ Qed.
         symmetry.
         now constructor.
       + now do 2 econstructor.
-    - intros_bn.
+    - intros * [] [] [] ? [] ? []; constructor; tea.
       + boundary.
       + eauto using inf_conv_decl.
       + eauto using inf_conv_decl.
       + econstructor.
         1-3: reflexivity.
         econstructor.
-        1-2: gen_typing.
+        1-2: now eapply isFun_whnf, (isWfFun_isFun (ta := bn)).
         eassumption.
     - intros_bn.
       1-3: gen_typing.
@@ -1573,7 +1573,8 @@ Module IntermediateTypingProperties.
       split ; tea.
       + gen_typing.
       + boundary.
-      + do 2 econstructor ; gen_typing.
+      + do 2 econstructor ; [| |gen_typing].
+        all: now eapply isFun_whnf, isWfFun_isFun.
     - intros.
       eapply (convtm_nat (ta := bn)).
       now econstructor.

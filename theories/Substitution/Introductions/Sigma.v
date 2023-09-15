@@ -25,6 +25,7 @@ Section SigmaValidity.
     destruct (polyRedEqId p (substPolyRedEq VΓ VF VG _ Vσ Vσ (reflSubst _ _ Vσ))); escape.
     - apply redtywf_refl; gen_typing.
     - gen_typing.
+    - gen_typing.
   Defined.
 
   Lemma SigEqRed {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])

@@ -25,6 +25,7 @@ Section PolyRedPi.
   Proof.
     econstructor; tea; pose proof (polyRedId PAB) as []; escape.
     + eapply redtywf_refl; gen_typing.
+    + unshelve eapply escapeEq; tea; eapply reflLRTyEq.
     + eapply convty_prod; tea; unshelve eapply escapeEq; tea; eapply reflLRTyEq.
   Defined.
 
@@ -36,6 +37,7 @@ Section PolyRedPi.
   Proof.
     econstructor; cbn; tea.
     + eapply redtywf_refl; gen_typing.
+    + pose proof (polyRedEqId PAB Peq) as []; now escape.
     + pose proof (polyRedEqId PAB Peq) as []; escape.
       eapply convty_prod; tea.
       eapply escape; now apply (polyRedId PAB).
@@ -75,6 +77,7 @@ Section PiTyValidity.
     destruct (polyRedId p);
     destruct (polyRedEqId p (substPolyRedEq vΓ vF vG _ vσ vσ (reflSubst _ _ vσ))); escape.
     - apply redtywf_refl; gen_typing.
+    - gen_typing.
     - gen_typing.
   Defined.
 
