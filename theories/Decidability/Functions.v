@@ -611,9 +611,9 @@ Definition typing_full_dom := ∑ (c : typing_state), typing_dom c.
 Definition typing_cod (c : typing_state) := result (tstate_output c).
 Definition typing_full_cod (x : typing_full_dom) := typing_cod (x.π1).
 
-Definition ϕ := (binary_store wh_red conv).
-Definition wh_red_key := true.
-Definition conv_key := false.
+#[local]Definition ϕ := (binary_store wh_red conv).
+#[local]Definition wh_red_key := true.
+#[local]Definition conv_key := false.
 
 #[local]
 Notation M0 := (irec ϕ (typing_full_dom) (typing_full_cod)).
@@ -778,34 +778,16 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
 
 End Typing.
 
+Section CtxTyping.
 
+  #[local] Instance: forall x, PFun (singleton_store typing x) := singleton_pfun typing.
 
-(* #[local] Definition infer (Γ : context) (t : term) : Fueled (result term) := 
-  (fueled typing 1000 (inf_state;Γ;tt;t)).
+  #[local] Instance: Monad (errrec (singleton_store typing) (A:=context) (B:=(fun _ => result unit))) := monad_erec.
 
-#[local] Definition check (Γ : context) (T t : term) : Fueled (result unit) := 
-  (fueled typing 1000 (check_state;Γ;T;t)).
-
-#[local] Definition check_ty (Γ : context) (t : term) : Fueled (result unit) := 
-  (fueled typing 1000 (wf_ty_state;Γ;tt;t)).
-
-Check (eq_refl :
-  (infer ε
-  (tNatElim
-    tNat
-    tZero
-  (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
-  (tSucc (tSucc tZero))))
-  = (Success (ok tNat))).
-
-Check (eq_refl : (infer ε (tProd U (tRel 0))) = (Success (error type_error))).
-Check (eq_refl : (check_ty ε (tProd U (tRel 0))) = (Success (ok tt))).
-
-Check (eq_refl :
-  (infer ε
-    (tLambda tNat (tNatElim
-      tNat
-      tZero
-    (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
-    (tRel 0))))
-  = (Success (ok (tProd tNat tNat)))). *)
+  Equations check_ctx : context ⇀[singleton_store typing] result unit :=
+    check_ctx ε := ret tt ;
+    check_ctx (Γ,,A) :=
+      rec Γ ;;
+      call tt (wf_ty_state;Γ;tt;A).
+  
+End CtxTyping.
