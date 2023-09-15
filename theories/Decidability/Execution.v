@@ -4,6 +4,8 @@ From LogRel Require Import Utils Notations BasicAst Context GenericTyping Declar
 From PartialFun Require Import Monad PartialFun.
 From LogRel.Decidability Require Import Functions Soundness.
 
+From LogRel Require TermNotations.
+
 Import DeclarativeTypingProperties.
 Import IndexedDefinitions.
 
@@ -51,40 +53,30 @@ Ltac check_auto :=
     auto
 end.
 
+
+Import TermNotations.
+
 (*** A series of example, each time the term in Coq first, then a proof that it type-checks
   in our system, proven via reification. *)
 
 Check ((0;0) : ∑ x : nat, nat).
 
-Goal [ε |- tPair tNat tNat tZero tZero : tSig tNat tNat].
+Goal ⟪ ε |- (0 : ℕ; 0 : ℕ) : ℕ × ℕ⟫.
 Proof.
   infer_auto.
 Qed.
 
 Check ((fun x => nat_rec (fun _ => nat) 0 (fun _ ih => S (S ih)) x) : nat -> nat).
 
-Goal [ε |-
-  (tLambda tNat (tNatElim
-    tNat
-    tZero
-    (tLambda tNat (tLambda tNat (tSucc (tSucc (tRel 0)))))
-    (tSucc (tSucc tZero))))
-  : arr tNat tNat].
+Goal ⟪ε |- λ ℕ, indℕ ℕ 0 (λ ℕ, λ ℕ, x₀.+2) 2 : ℕ → ℕ⟫.
 Proof.
   infer_auto.
 Qed.
 
 Check (eq_refl : (nat_rect (fun _ => Type) nat (fun _ ih => nat -> ih) 3) = (nat -> nat -> nat -> nat)).
 
-Goal [ε |-
-  tRefl U (arr tNat (arr tNat (arr tNat tNat))) : 
-  tId U
-    (arr tNat (arr tNat (arr tNat tNat)))
-    (tNatElim
-      U
-      tNat
-      (tLambda tNat (tLambda U (arr tNat (tRel 0))))
-    (tSucc (tSucc (tSucc (tZero)))))].
+Goal ⟪ ε |- rfl □ (ℕ → ℕ → ℕ → ℕ) :
+  (ℕ → ℕ → ℕ → ℕ) =⟨ □ ⟩ indℕ □ ℕ (λ ℕ, λ □, ℕ → x₀) 3⟫.
 Proof.
   check_auto.
 Qed.
