@@ -97,7 +97,7 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? ? ? []; split; now eapply WN_exp.
 + intros * []; split; now apply WN_whnf, whnf_whne.
 + intros * ? ? ? ? ? ? []; split; now eapply WN_isFun, isWfFun_isFun.
-+ intros; split; now apply WN_isPair.
++ intros; split; now eapply WN_isPair, isWfPair_isPair.
 Qed.
 
 #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := nf) := {}.

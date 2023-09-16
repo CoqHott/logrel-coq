@@ -254,7 +254,7 @@ Proof.
     Unshelve. 2: tea.
   - intros ???????? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ red' red); tea.
-    1: now eapply isPair_whnf.
+    1: now eapply isPair_whnf, isWfPair_isPair.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.

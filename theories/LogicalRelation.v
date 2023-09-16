@@ -475,7 +475,7 @@ Module SigRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : ΣA.(outTy) ];
-    isfun : isPair nf;
+    isfun : isWfPair Γ ΣA.(PiRedTy.dom) ΣA.(PiRedTy.cod) nf;
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;

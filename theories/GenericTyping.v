@@ -128,7 +128,16 @@ Section RedDefinitions.
     LamWfFun : forall A' t : term, [Γ |- A ≅ A'] -> isWfFun Γ A B (tLambda A' t)
   | NeWfFun : forall f : term, whne f -> isWfFun Γ A B f.
 
+  Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
+    PairWfPair : forall A' B' a b : term, [Γ |- A ≅ A'] -> isWfPair Γ A B (tPair A' B' a b)
+  | NeWfPair : forall n : term, whne n -> isWfPair Γ A B n.
+
   Lemma isWfFun_isFun : forall Γ A B t, isWfFun Γ A B t -> isFun t.
+  Proof.
+  intros * []; now constructor.
+  Qed.
+
+  Lemma isWfPair_isPair : forall Γ A B t, isWfPair Γ A B t -> isPair t.
   Proof.
   intros * []; now constructor.
   Qed.
@@ -363,9 +372,9 @@ Section GenericTyping.
       [Γ |- A] ->
       [Γ ,, A |- B] ->
       [Γ |- p : tSig A B] ->
-      isPair p ->
+      isWfPair Γ A B p ->
       [Γ |- p' : tSig A B] ->
-      isPair p' ->
+      isWfPair Γ A B p' ->
       [Γ |- tFst p ≅ tFst p' : A] ->
       [Γ |- tSnd p ≅ tSnd p' : B[(tFst p)..]] ->
       [Γ |- p ≅ p' : tSig A B] ;

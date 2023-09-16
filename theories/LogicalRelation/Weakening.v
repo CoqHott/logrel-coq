@@ -212,6 +212,15 @@ Section Weakenings.
     intros []; constructor. all: gen_typing.
   Qed.  
   
+  Lemma isWfPair_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
+    [|- Δ] ->
+    isWfPair Γ A B t -> isWfPair Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Proof.
+  intros * ? []; constructor; tea.
+  + now apply convty_wk.
+  + now eapply whne_ren.
+  Qed.
+
   Lemma wkΣTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) 
     (ΠA' := wkΣ ρ wfΔ ΠA) : 
     [Γ||-Σ u : A | ΠA] -> 
@@ -223,7 +232,7 @@ Section Weakenings.
       2: now unshelve eapply fstRed.
       cbn; symmetry; apply wk_comp_ren_on.
     + now eapply redtmwf_wk.
-    + apply isPair_ren; assumption.
+    + apply isWfPair_ren; assumption.
     + eapply convtm_wk; eassumption.
     + intros ? ρ' ?;  irrelevance0.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.

@@ -1199,13 +1199,14 @@ Qed.
     - intros_bn.
       1-2: gen_typing.
       now do 2 econstructor.
-    - intros_bn.
+   - intros * [] [] [] ? [] ? [] []; constructor; tea.
       + boundary.
       + eauto using inf_conv_decl.
       + eauto using inf_conv_decl.
       + econstructor.
         1-3: reflexivity.
-        econstructor; tea; gen_typing.
+        econstructor; tea.
+        1-2: now eapply isPair_whnf, (isWfPair_isPair (ta := bn)).
     - intros_bn.
       1-3: gen_typing.
       now do 2 econstructor.
@@ -1588,7 +1589,8 @@ Module IntermediateTypingProperties.
       + gen_typing.
       + econstructor.
         1-3: reflexivity.
-        econstructor; gen_typing.
+        econstructor; [| |gen_typing|gen_typing].
+        1-2: now eapply isPair_whnf, isWfPair_isPair.
     - intros ? HΓ.
       eapply (convtm_empty (ta := bn)).
       now econstructor.

@@ -85,7 +85,7 @@ Lemma transEqTermΣ {Γ lA A t u v} {ΣA : [Γ ||-Σ<lA> A]}
 Proof.
   intros [tL ?? eqfst eqsnd] [? tR ? eqfst' eqsnd'];
   unshelve epose proof (e := redtmwf_det _ _ (SigRedTm.red redR) (SigRedTm.red redL)); tea.
-  1,2: apply isPair_whnf; apply SigRedTm.isfun.
+  1,2: eapply isPair_whnf, isWfPair_isPair; apply SigRedTm.isfun.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
   + intros; eapply ihdom ; [eapply eqfst| rewrite e; eapply eqfst'].
