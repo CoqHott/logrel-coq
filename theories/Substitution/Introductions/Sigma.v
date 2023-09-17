@@ -519,18 +519,22 @@ Section PairRed.
       * enough [Γ |- tFst (tPair A B a b) ≅ a : A].
         1: transitivity a; tea; now symmetry.
         eapply convtm_exp.
-        1: now eapply redtywf_refl.
-        1: now eapply redtm_fst_beta.
-        1: now eapply redtmwf_refl.
-        eapply escapeEqTerm; now eapply reflLRTmEq.
+        - now eapply redtywf_refl.
+        - now eapply redtm_fst_beta.
+        - now eapply redtmwf_refl.
+        - tea.
+        - tea.
+        - eapply escapeEqTerm; now eapply reflLRTmEq.
       * enough [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]].
         1: transitivity b; tea; now symmetry.
         eapply convtm_conv; tea.
         eapply convtm_exp.
-        1: now eapply redty_refl.
-        1: eapply redtm_conv; [| now symmetry]; now eapply redtm_snd_beta.
-        1: now eapply redtm_refl.
-        eapply escapeEqTerm; now eapply reflLRTmEq.
+        - now eapply redty_refl.
+        - eapply redtm_conv; [| now symmetry]; now eapply redtm_snd_beta.
+        - now eapply redtm_refl.
+        - tea.
+        - tea.
+        - eapply escapeEqTerm; now eapply reflLRTmEq.
     + intros ? ρ wfΔ.
       irrelevance0.
       2: rewrite wk_snd; eapply wkTerm; now eapply pairSndRed.

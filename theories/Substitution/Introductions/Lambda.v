@@ -93,8 +93,10 @@ Proof.
       * fold ren_term; refine (ty_var _ (in_here _ _)); gen_typing.
     }
     eapply convtm_exp; tea.
-    1: now eapply redty_refl.
-    rewrite <- (eqσ t); eapply escapeEqTerm; now eapply reflLRTmEq.
+    - now eapply redty_refl.
+    - rewrite <- eqσ; tea.
+    - rewrite <- eqσ; tea.
+    - rewrite <- (eqσ t); eapply escapeEqTerm; now eapply reflLRTmEq.
   + eapply lamBetaRed; tea. 
   + pose proof (Vσa := consWkSubstS VF ρ h Vσ ha).
     pose proof (Vσb := consWkSubstS VF ρ h Vσ hb).
@@ -161,6 +163,9 @@ Proof.
         -- fold ren_term. eapply ty_conv.
            refine (ty_var _ (in_here _ _)). 1: gen_typing.
            cbn; renToWk; eapply convty_wk; tea; gen_typing.
+      * fold ren_term; rewrite <- eqσ; tea.
+      * fold ren_term; rewrite <- eqσ.
+        eapply ty_conv; [tea|symmetry; tea].
       * fold ren_term. 
         set (x := ren_term _ _); change x with (t[up_term_term σ]⟨upRen_term_term S⟩); clear x.
         set (x := ren_term _ _); change x with (t[up_term_term σ']⟨upRen_term_term S⟩); clear x.
@@ -210,7 +215,7 @@ Proof.
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
   1: now eapply redty_refl.
-  3: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
+  5: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
   * eapply redtm_meta_conv. 3: reflexivity.
     1: eapply redtm_app.
     2: eapply (ty_var wfΔF (in_here _ _)).
@@ -224,6 +229,10 @@ Proof.
   * rewrite <- (wk1_ren_on Δ F[σ]); unshelve eapply redtmwf_refl.
     rewrite eqσ; eapply escapeTerm ; irrelevance.
     Unshelve. 2,4: rewrite <- eqσ; tea.
+  * rewrite eqσ; eapply escapeTerm ; irrelevance.
+    Unshelve. 2: rewrite <- eqσ; tea.
+  * rewrite eqσ; eapply escapeTerm ; irrelevance.
+    Unshelve. 2: rewrite <- eqσ; tea.
 Qed.
 
 

@@ -1137,7 +1137,7 @@ Qed.
     - intros_bn.
       1-3: now apply typing_wk.
       now apply algo_conv_wk.
-    - intros_bn.
+    - intros *; intros HRA HRt HRu _ _; revert HRA HRt HRu. intros_bn.
       all: eapply algo_typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
       + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
         symmetry in bun_red_ty.
@@ -1535,7 +1535,7 @@ Module IntermediateTypingProperties.
     - intros.
       apply (convtm_wk (ta := bn)) ; tea.
       now econstructor.
-    - intros * [] [] [] [].
+    - intros * [] [] [] _ _ [].
       econstructor ; tea.
       + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.
         symmetry in buni_red_ty.
