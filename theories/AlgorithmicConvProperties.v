@@ -1137,18 +1137,16 @@ Qed.
     - intros_bn.
       1-3: now apply typing_wk.
       now apply algo_conv_wk.
-    - intros *; intros HRA HRt HRu _ _ _ _; revert HRA HRt HRu. intros_bn.
-      all: eapply algo_typing_sound in bun_red_ty_ty, bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
-      + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
-        symmetry in bun_red_ty.
-        now gen_typing.
-      + eapply subject_reduction_type, RedConvTyC in bun_red_ty ; tea.
-        symmetry in bun_red_ty.
-        now gen_typing.
+    - intros *; intros HRt HRu _ _ _ _; revert HRt HRu. intros_bn.
+      all: eapply algo_typing_sound in bun_inf_conv_inf0, bun_inf_conv_inf ; tea.
+      + gen_typing.
+      + gen_typing.
       + inversion bun_conv_tm ; subst ; clear bun_conv_tm.
         econstructor.
-        1-3: now etransitivity.
-        eassumption.
+        * eassumption.
+        * now etransitivity.
+        * now etransitivity.
+        * eassumption.
     - intros Γ n n' A [? ? ? ? ? A' Hconvn HconvA].
       assert [Γ |-[de] A] by boundary.
       assert [Γ |-[de] n : A'] by
@@ -1535,14 +1533,8 @@ Module IntermediateTypingProperties.
     - intros.
       apply (convtm_wk (ta := bn)) ; tea.
       now econstructor.
-    - intros * [] [] [] _ _ _ _ [].
+    - intros * [] [] _ _ _ _ [].
       econstructor ; tea.
-      + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.
-        symmetry in buni_red_ty.
-        now gen_typing.
-      + eapply subject_reduction_type, RedConvTyC in buni_red_ty ; tea.
-          symmetry in buni_red_ty.
-          now gen_typing.
       + inversion bun_conv_tm ; subst ; clear bun_conv_tm ; refold.
         econstructor.
         4: eassumption.

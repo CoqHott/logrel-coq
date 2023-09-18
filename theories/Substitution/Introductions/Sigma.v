@@ -519,7 +519,6 @@ Section PairRed.
       * enough [Γ |- tFst (tPair A B a b) ≅ a : A].
         1: transitivity a; tea; now symmetry.
         eapply convtm_exp.
-        - now eapply redtywf_refl.
         - now eapply redtm_fst_beta.
         - now eapply redtmwf_refl.
         - tea.
@@ -531,7 +530,6 @@ Section PairRed.
         1: transitivity b; tea; now symmetry.
         eapply convtm_conv; tea.
         eapply convtm_exp.
-        - now eapply redty_refl.
         - eapply redtm_conv; [| now symmetry]; now eapply redtm_snd_beta.
         - now eapply redtm_refl.
         - tea.

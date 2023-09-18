@@ -93,7 +93,6 @@ Proof.
       * fold ren_term; refine (ty_var _ (in_here _ _)); gen_typing.
     }
     eapply convtm_exp; tea.
-    - now eapply redty_refl.
     - rewrite <- eqσ; tea.
     - rewrite <- eqσ; tea.
     - unshelve eapply escapeEq, reflLRTyEq; [|tea].
@@ -150,7 +149,6 @@ Proof.
     + assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
       by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
       eapply convtm_exp. 
-      * now eapply redty_refl.
       * rewrite (eqσ σ G). eapply redtm_beta.
         -- renToWk; eapply wft_wk; tea; gen_typing.
         -- renToWk; eapply ty_wk; tea.
@@ -217,7 +215,6 @@ Proof.
   assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ][(tRel 0) .: @wk1 Δ F[σ] >> tRel])
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
-  1: now eapply redty_refl.
   7: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
   * eapply redtm_meta_conv. 3: reflexivity.
     1: eapply redtm_app.
