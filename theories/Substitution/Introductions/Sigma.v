@@ -524,6 +524,8 @@ Section PairRed.
         - now eapply redtmwf_refl.
         - tea.
         - tea.
+        - tea.
+        - unshelve eapply escapeEq, reflLRTyEq; [|tea].
         - eapply escapeEqTerm; now eapply reflLRTmEq.
       * enough [Γ |- tSnd (tPair A B a b) ≅ b : B[(tFst (tPair A B a b))..]].
         1: transitivity b; tea; now symmetry.
@@ -534,6 +536,8 @@ Section PairRed.
         - now eapply redtm_refl.
         - tea.
         - tea.
+        - tea.
+        - unshelve eapply escapeEq, reflLRTyEq; [|tea].
         - eapply escapeEqTerm; now eapply reflLRTmEq.
     + intros ? ρ wfΔ.
       irrelevance0.
