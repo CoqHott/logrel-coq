@@ -343,6 +343,7 @@ Module ParamRedTyPack.
     cod : term ;
     outTy := T dom cod ;
     red : [Γ |- A :⤳*: T dom cod];
+    eqdom : [Γ |- dom ≅ dom];
     eq : [Γ |- T dom cod ≅ T dom cod];
     polyRed : PolyRedPack@{i} Γ dom cod
   }.
@@ -365,6 +366,7 @@ Module ParamRedTyEq.
     dom : term;
     cod : term;
     red : [Γ |- B :⤳*: T dom cod ];
+    eqdom : [Γ |- ΠA.(ParamRedTyPack.dom) ≅ dom];
     eq  : [Γ |- T ΠA.(ParamRedTyPack.dom) ΠA.(ParamRedTyPack.cod) ≅ T dom cod ];
     polyRed : PolyRedEq ΠA dom cod
   }.
@@ -407,7 +409,7 @@ Module PiRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isFun nf;
+    isfun : isWfFun Γ ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
@@ -473,7 +475,7 @@ Module SigRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : ΣA.(outTy) ];
-    isfun : isPair nf;
+    isfun : isWfPair Γ ΣA.(PiRedTy.dom) ΣA.(PiRedTy.cod) nf;
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;
@@ -1172,6 +1174,7 @@ Section ParamRedTy.
       dom : term ;
       cod : term ;
       red : [Γ |- A :⤳*: T dom cod] ;
+      eqdom : [Γ |- dom ≅ dom];
       outTy := T dom cod ;
       eq : [Γ |- T dom cod ≅ T dom cod] ;
       polyRed :> PolyRed@{i j k l} Γ l dom cod
@@ -1183,6 +1186,7 @@ Section ParamRedTy.
   Proof.
     exists (ParamRedTyPack.dom PA) (ParamRedTyPack.cod PA).
     - eapply ParamRedTyPack.red.
+    - eapply ParamRedTyPack.eqdom.
     - eapply ParamRedTyPack.eq.
     - now eapply PolyRed.from.
   Defined.
@@ -1192,6 +1196,7 @@ Section ParamRedTy.
   Proof.
     exists (dom PA) (cod PA).
     - now eapply red.
+    - apply eqdom.
     - now eapply eq.
     - exact (PolyRed.toPack PA).
   Defined.

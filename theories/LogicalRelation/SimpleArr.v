@@ -29,6 +29,7 @@ Section SimpleArrow.
     unshelve econstructor; [exact A| exact B⟨↑⟩|..]; tea.
     - eapply redtywf_refl.
       now eapply wft_simple_arr.
+    - now unshelve eapply escapeEq, reflLRTyEq.
     - eapply convty_simple_arr; tea.
       all: now unshelve eapply escapeEq, reflLRTyEq.
     - now eapply shiftPolyRed.
@@ -58,6 +59,7 @@ Section SimpleArrow.
     intros RAA' RBB'; escape.
     unshelve econstructor; cycle 2.
     + eapply redtywf_refl; now eapply wft_simple_arr.
+    + now cbn.
     + now eapply convty_simple_arr.
     + now eapply shiftPolyRedEq.
   Qed.
@@ -138,7 +140,7 @@ Section SimpleArrow.
     econstructor; cbn.
     - eapply redtmwf_refl.
       now eapply ty_id.
-    - constructor.
+    - now constructor.
     - eapply convtm_id; tea.
       eapply wfc_wft; now escape.
     - intros; cbn; irrelevance0.
@@ -275,8 +277,9 @@ Section SimpleArrow.
     econstructor.
     - eapply redtmwf_refl.
       eapply ty_comp; cycle 2; tea.
-    - constructor.
-    - cbn. eapply convtm_comp; cycle 3; tea.
+    - constructor; cbn.
+      unshelve eapply escapeEq, reflLRTyEq; [|tea].
+    - cbn. eapply convtm_comp; cycle 4; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.
       eapply reflLRTmEq.
@@ -284,6 +287,7 @@ Section SimpleArrow.
       eapply h.
       eapply var0; now bsimpl.
       { now eapply wfc_ty. }
+      unshelve eapply escapeEq, reflLRTyEq; tea.
       Unshelve. 1: gen_typing.
       eapply wk; tea; gen_typing.
     - intros; cbn.

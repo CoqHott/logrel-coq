@@ -290,7 +290,7 @@ Proof.
   eapply singleSubstPoly2; tea.
   pose (hΠ := normRedΠ0 (invLRΠ ΠFG)).
   assert (heq : [Γ ||-<l> tProd F G ≅ tProd F' G' | LRPi' hΠ]) by irrelevance.
-  destruct heq as [?? red' ? polyRed]; cbn in *.
+  destruct heq as [?? red' ?? polyRed]; cbn in *.
   assert (h' :=redtywf_whnf red' whnf_tProd).
   symmetry in h'; injection h'; clear h'; intros ;  subst.
   exact polyRed.

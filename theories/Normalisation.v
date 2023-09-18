@@ -96,8 +96,8 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? []; split; now eapply WN_exp.
 + intros * []; split; now apply WN_whnf, whnf_whne.
-+ intros * ? ? ? ? ? ? []; split; now apply WN_isFun.
-+ intros; split; now apply WN_isPair.
++ intros * ? ? ? ? ? ? []; split; now eapply WN_isFun, isWfFun_isFun.
++ intros; split; now eapply WN_isPair, isWfPair_isPair.
 Qed.
 
 #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := nf) := {}.
@@ -249,7 +249,7 @@ Section NeutralConversion.
       1: eassumption.
       econstructor; eapply (convneu_whne eq).
     - intros ? ? ? ΠA IHdom IHcod m n mty Hconv ; cbn in *.
-      destruct ΠA  as [????? []]; cbn in *.
+      destruct ΠA  as [?????? []]; cbn in *.
       econstructor.
       1: gen_typing.
       1-2: reflexivity.

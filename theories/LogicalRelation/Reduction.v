@@ -178,8 +178,11 @@ Proof.
     eapply LRPi'. 
     unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
-    econstructor; tea.
-    eapply redtywf_refl; gen_typing.
+    econstructor.
+    + eapply redtywf_refl; gen_typing.
+    + eassumption.
+    + eassumption.
+    + eassumption.
   - intros ??? [red] ? red' ?.
     eapply LRNat_.
     unshelve erewrite (redtywf_det _ _ red' red); tea.
@@ -196,8 +199,11 @@ Proof.
     eapply LRSig'. 
     unshelve erewrite (redtywf_det _ _ red' red); tea.
     1: constructor.
-    econstructor; tea.
-    eapply redtywf_refl; gen_typing.
+    econstructor.
+    + eapply redtywf_refl; gen_typing.
+    + eassumption.
+    + eassumption.
+    + eassumption.
   - intros ??? [???? red] _ _ ? red' ?.
     eapply LRId'; unshelve erewrite (redtywf_det _ _ red' red); tea; [constructor|].
     econstructor; tea. eapply redtywf_refl; gen_typing.
@@ -232,7 +238,7 @@ Proof.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ red' red); tea.
-    1: now eapply isFun_whnf.
+    1: now eapply isFun_whnf, isWfFun_isFun.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ?????? Rt red' ?; inversion Rt; subst.
@@ -248,7 +254,7 @@ Proof.
     Unshelve. 2: tea.
   - intros ???????? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ red' red); tea.
-    1: now eapply isPair_whnf.
+    1: now eapply isPair_whnf, isWfPair_isPair.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.

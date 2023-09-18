@@ -79,9 +79,9 @@ Proof.
   assert [Δ |- (tLambda F t)[σ] : (tProd F G)[σ]] by (escape; cbn; gen_typing).
   exists (tLambda F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
-  + constructor.
-  + eapply convtm_eta; tea. 
-    1,2: now constructor.
+  + constructor;  unshelve eapply escapeEq, reflLRTyEq; [|tea].
+  + eapply convtm_eta; tea.
+    1,2: constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
     by (intro; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
     assert [Δ,, F[σ] |-[ ta ] tApp (tLambda F[σ] t[up_term_term σ])⟨S⟩ (tRel 0) ⤳*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
@@ -140,8 +140,8 @@ Proof.
     eapply LRTyEqSym. eapply (validTyExt VΠFG); tea.
     Unshelve. 2: now eapply validTy.
   - refold; cbn; escape.
-    eapply convtm_eta; tea. 
-    2,4: now constructor.
+    eapply convtm_eta; tea.
+    2,4: constructor; first [assumption|now eapply lrefl].
     + gen_typing.
     + eapply ty_conv; [gen_typing| now symmetry].
     + assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
@@ -244,8 +244,9 @@ Proof.
     instValid Vσ; instValid VσUp; escape.
     destruct (PiRedTm.red p); destruct (PiRedTm.red p0); cbn in *.
     eapply convtm_eta; tea.
-    1,2: eapply PiRedTm.isfun.
-    etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
+    + apply (PiRedTm.isfun p0).
+    + apply (PiRedTm.isfun p).
+    + etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
   - match goal with H : [_ ||-Π f[σ] : _ | _] |- _ => rename H into Rfσ end.
     match goal with H : [_ ||-Π g[σ] : _ | _] |- _ => rename H into Rgσ end.
     cbn; intros ?? ρ' h ha.

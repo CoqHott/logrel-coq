@@ -32,16 +32,18 @@ Section Weakenings.
     [Δ ||-Π< l > A⟨ρ⟩].
   Proof.
     destruct ΠA; econstructor.
-    3: now eapply wkPoly.
-    1,2: rewrite wk_prod; now eapply redtywf_wk + now eapply convty_wk.
+    4: now eapply wkPoly.
+    1,3: rewrite wk_prod; now eapply redtywf_wk + now eapply convty_wk.
+    now apply convty_wk.
   Defined.
 
   Lemma wkΣ  {Γ Δ A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΣA : [Γ ||-Σ< l > A]) :
     [Δ ||-Σ< l > A⟨ρ⟩].
   Proof.
     destruct ΣA; econstructor.
-    3: now eapply wkPoly.
-    1,2: rewrite wk_sig; now eapply redtywf_wk + now eapply convty_wk.
+    4: now eapply wkPoly.
+    1,3: rewrite wk_sig; now eapply redtywf_wk + now eapply convty_wk.
+    now apply convty_wk.
   Defined.
 
   Lemma wkNat {Γ A Δ} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) : [Γ ||-Nat A] -> [Δ ||-Nat A⟨ρ⟩].
@@ -147,8 +149,9 @@ Section Weakenings.
       1: gen_typing.
       cbn ; change U with U⟨ρ⟩; eapply convneu_wk; assumption.
     - intros * ?? * []; rewrite wkΠ_eq ; eexists.
-      3: now eapply wkPolyEq.
+      4: now eapply wkPolyEq.
       + rewrite wk_prod;  gen_typing.
+      + now eapply convty_wk.
       + rewrite wk_prod.
         replace (tProd _ _) with (ΠA.(outTy)⟨ρ⟩) by (cbn; now bsimpl).
         now eapply convty_wk.
@@ -157,8 +160,9 @@ Section Weakenings.
     - intros * []; constructor.
       change tEmpty with tEmpty⟨ρ⟩; gen_typing.
     - intros * ?? * []; rewrite wkΣ_eq ; eexists.
-      3: now eapply wkPolyEq.
+      4: now eapply wkPolyEq.
       + rewrite wk_sig;  gen_typing.
+      + now eapply convty_wk.
       + rewrite wk_sig.
         replace (tSig _ _) with (ΠA.(outTy)⟨ρ⟩) by (cbn; now bsimpl).
         now eapply convty_wk.
@@ -170,6 +174,15 @@ Section Weakenings.
       Unshelve. all: tea.
   Qed.
 
+  Lemma isWfFun_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
+    [|- Δ] ->
+    isWfFun Γ A B t -> isWfFun Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Proof.
+  intros * ? []; constructor; tea.
+  + now apply convty_wk.
+  + now eapply whne_ren.
+  Qed.
+
   (* TODO: use program or equivalent to have only the first field non-opaque *)
   Lemma wkΠTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]) 
     (ΠA' := wkΠ ρ wfΔ ΠA) : 
@@ -179,7 +192,7 @@ Section Weakenings.
     intros [t].
     exists (t⟨ρ⟩); try change (tProd _ _) with (ΠA.(outTy)⟨ρ⟩).
     + now eapply redtmwf_wk.
-    + apply isFun_ren; assumption.
+    + now apply isWfFun_ren.
     + now apply convtm_wk.
     + intros ? a ρ' ??.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
@@ -199,6 +212,15 @@ Section Weakenings.
     intros []; constructor. all: gen_typing.
   Qed.  
   
+  Lemma isWfPair_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
+    [|- Δ] ->
+    isWfPair Γ A B t -> isWfPair Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Proof.
+  intros * ? []; constructor; tea.
+  + now apply convty_wk.
+  + now eapply whne_ren.
+  Qed.
+
   Lemma wkΣTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) 
     (ΠA' := wkΣ ρ wfΔ ΠA) : 
     [Γ||-Σ u : A | ΠA] -> 
@@ -210,7 +232,7 @@ Section Weakenings.
       2: now unshelve eapply fstRed.
       cbn; symmetry; apply wk_comp_ren_on.
     + now eapply redtmwf_wk.
-    + apply isPair_ren; assumption.
+    + apply isWfPair_ren; assumption.
     + eapply convtm_wk; eassumption.
     + intros ? ρ' ?;  irrelevance0.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.

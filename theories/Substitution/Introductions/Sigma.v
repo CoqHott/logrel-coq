@@ -25,6 +25,7 @@ Section SigmaValidity.
     destruct (polyRedEqId p (substPolyRedEq VΓ VF VG _ Vσ Vσ (reflSubst _ _ Vσ))); escape.
     - apply redtywf_refl; gen_typing.
     - gen_typing.
+    - gen_typing.
   Defined.
 
   Lemma SigEqRed {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
@@ -509,12 +510,12 @@ Section PairRed.
       2: unshelve eapply pairFstRed; tea.
     + eapply redtmwf_refl; cbn.
       eapply ty_pair; tea.
-    + constructor.
+    + constructor; apply PiRedTyPack.eqdom.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
-      * constructor.
+      * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
       * now eapply ty_pair.
-      * constructor.
+      * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
       * enough [Γ |- tFst (tPair A B a b) ≅ a : A].
         1: transitivity a; tea; now symmetry.
         eapply convtm_exp.
@@ -557,9 +558,9 @@ Section PairRed.
     exists Rp Rp'.
     - destruct (polyRedId (normRedΣ0 RΣ0)) as [_ RB].
       assert ([Γ ||-<l> SigRedTm.nf Rp : _ | RΣ] × [Γ ||-<l> p ≅ SigRedTm.nf Rp : _ | RΣ]) as [Rnf Rpnf].
-      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp) (isPair_whnf _ (SigRedTm.isfun Rp))).
+      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp)), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
       assert ([Γ ||-<l> SigRedTm.nf Rp' : _ | RΣ]× [Γ ||-<l> p' ≅ SigRedTm.nf Rp' : _ | RΣ]) as [Rnf' Rpnf'].
-      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp') (isPair_whnf _ (SigRedTm.isfun Rp'))).
+      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp')), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
       destruct (fstRed RΣ0 RA Rp) as [[Rfstp Rfsteq] Rfstnf].
       destruct (fstRed RΣ0 RA Rp') as [[Rfstp' Rfsteq'] Rfstnf'].
       destruct (sndRed RΣ0 RA Rp RBfst RBfstEq).
