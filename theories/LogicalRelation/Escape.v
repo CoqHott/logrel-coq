@@ -74,22 +74,29 @@ Section Escapes.
   Proof.
     pattern l, Γ, A, lr ; eapply LR_rect_TyUr.
     - intros ??? [] [[] []] ; cbn in *.
+      eapply (convtm_conv (A := U)).
       eapply convtm_exp ; tea.
       all: gen_typing.
-    - intros ??? [] [] ; cbn in *.
+    - intros ??? [ty] [] ; cbn in *.
+      eapply (convtm_conv (A := ty)).
       eapply convtm_exp ; tea.
       all: gen_typing.
-    - intros ??? [] * ?? [[termL] [termR]] ; cbn in *.
+    - intros ??? [dom cod] * ?? [[termL] [termR]] ; cbn in *.
+      eapply (convtm_conv (A := tProd dom cod)).
       eapply convtm_exp ; tea.
       all: gen_typing.
     - intros ??? [] []; cbn in *.
+      eapply (convtm_conv (A := tNat)); [|gen_typing].
       eapply convtm_exp; tea; gen_typing.
     - intros ??? [] []; cbn in *.
+      eapply (convtm_conv (A := tEmpty)); [|gen_typing].
       eapply convtm_exp; tea; gen_typing.
-    - intros ??? [] * ?? [[termL] [termR]] ; cbn in *.
+    - intros ??? [dom cod] * ?? [[termL] [termR]] ; cbn in *.
+      eapply (convtm_conv (A := tSig dom cod)).
       eapply convtm_exp ; tea.
       all: gen_typing.
-    - intros ??? [] _ _ []; unfold_id_outTy; cbn in *.
+    - intros ??? [ty lhs rhs] _ _ []; unfold_id_outTy; cbn in *.
+      eapply (convtm_conv (A := tId ty lhs rhs)); [|gen_typing].
       eapply convtm_exp; tea; gen_typing.
   Qed.
 

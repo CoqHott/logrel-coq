@@ -279,7 +279,7 @@ Section SimpleArrow.
       eapply ty_comp; cycle 2; tea.
     - constructor; cbn.
       unshelve eapply escapeEq, reflLRTyEq; [|tea].
-    - cbn. eapply convtm_comp; cycle 4; tea.
+    - cbn. eapply convtm_comp; cycle 6; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.
       eapply reflLRTmEq.
@@ -287,6 +287,7 @@ Section SimpleArrow.
       eapply h.
       eapply var0; now bsimpl.
       { now eapply wfc_ty. }
+      unshelve eapply escapeEq, reflLRTyEq; tea.
       unshelve eapply escapeEq, reflLRTyEq; tea.
       Unshelve. 1: gen_typing.
       eapply wk; tea; gen_typing.
