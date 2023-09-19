@@ -1,3 +1,18 @@
+TL;DR HOWTO INSTALL
+===================
+
+- Install opam through your favourite means.
+- Launch the following commands in the folder of this development.
+```
+opam switch create . --empty
+eval $(opam env)
+opam install ocaml-base-compiler=4.11.2
+opam repo --this-switch add coq-released https://coq.inria.fr/opam/released
+opam install . --deps-only
+git submodule update --init
+make
+```
+
 Presentation
 =======
 
@@ -9,9 +24,6 @@ The definition of the logical relation (**LR**) ressembles Pujet's in many ways,
 - Since Coq and Agda's positivity checking for inductive types is different, it turns out that **LR**'s definition, even though it does not use any induction-induction or induction-recursion in Agda, is not accepted in Coq. As such, the predicate over Π-types for **LR** has been modified compared to Agda. You can find a MWE of the difference in positivity checking in the two systems in [Positivity.v] and [Positivity.agda].
 
 In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate.
-
-Building
-===========
 
 The project builds with Coq version `8.16.1`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
 
