@@ -218,7 +218,6 @@ Definition Shelved (A:Type) := A.
 
 (** Opaque econstructor:
   similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals.
-  Provided by Gaetan Gilbert, modified K.M for recursive dependencies
 *)
 Ltac gen_shelved_evar_rec :=
   repeat match goal with

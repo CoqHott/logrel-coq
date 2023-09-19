@@ -1,13 +1,7 @@
 opam-version: "2.0"              
 version: "8.16.dev"
-maintainer: "Meven.Bertrand@univ-nantes.fr"
-dev-repo: "git+https://github.com/CoqHott/logrel-coq.git"
-bug-reports: "https://github.com/CoqHott/logrel-coq/issues"
-authors: ["Meven Lennon-Bertrand <Meven.Bertrand@univ-nantes.fr>"
-          "Loic Pujet <loic.pujet@ens.fr>"
-          "Kenji Maillard <kenji.maillard@inria.fr>"
-          "Pierre-Marie Pédrot <pierre-marie.pedrot@inria.fr>"
-]
+maintainer: "anonymous"
+authors: ["anonymous"]
 license: "MIT"
 depends: [
   "coq" { >= "8.16" & < "8.17~" }

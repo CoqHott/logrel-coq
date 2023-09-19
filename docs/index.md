@@ -1,8 +1,7 @@
 Browsing the sources
 ============================
 
-The full table of content of the development is accessible [here](https://coqhott.github.io/logrel-coq/coqdoc/toc.html).
-To complement it, here is a rough description of the content of every file.
+Here is a rough description of the content of every file.
 
 Utilities and AST
 ---------
@@ -64,32 +63,29 @@ Miscellaneous
 |---|----|
 | [Positivity.v] and [Positivity.agda] | Showcase the difference between Coq and Agda's positivity checkers. |
 
-[Utils]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Utils.html
-[BasicAst]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.BasicAst.html
-[Context]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Context.html
-[AutoSubst/]: ./theories/AutoSubst/
-[AutoSubst/Extra]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.AutoSubst.Extra.html
-[Notations]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Notations.html
-[Automation]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Automation.html
-[NormalForms]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.NormalForms.html
-[UntypedReduction]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.UntypedReduction.html
-[GenericTyping]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.GenericTyping.html
-[DeclarativeTyping]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.DeclarativeTyping.html
-[Properties]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Properties.html
-[DeclarativeInstance]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.DeclarativeInstance.html
-[LogicalRelation]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.html
-[Induction]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.Induction.html
-[Escape]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.Escape.html
-[Reflexivity]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.Reflexivity.html
-[Irrelevance]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.Irrelevance.html
-[ShapeView]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogicalRelation.ShapeView.html
-[Positivity.v]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Positivity.html
-[Weakening]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Weakening.html
-[AlgorithmicTyping]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.AlgorithmicTyping.html
-[AlgorithmicConvProperties]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.AlgorithmicConvProperties.html
-[AlgorithmicTypingProperties]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.AlgorithmicTypingProperties.html
-[LogRelConsequences]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.LogRelConsequences.html
-[BundledAlgorithmicTyping]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.BundledAlgorithmicTyping.html
-
-[autosubst-ocaml]: https://github.com/uds-psl/autosubst-ocaml
-[Positivity.agda]: https://coqhott.github.io/logrel-coq/coqdoc/LogRel.Posit.htmlity.agda
+[Utils]
+[BasicAst]
+[Context]
+[AutoSubst/]
+[AutoSubst/Extra]
+[Notations]
+[Automation]
+[NormalForms]
+[UntypedReduction]
+[GenericTyping]
+[DeclarativeTyping]
+[Properties]
+[DeclarativeInstance]
+[LogicalRelation]
+[Induction]
+[Escape]
+[Reflexivity]
+[Irrelevance]
+[ShapeView]
+[Positivity.v]
+[Weakening]
+[AlgorithmicTyping]
+[AlgorithmicConvProperties]
+[AlgorithmicTypingProperties]
+[LogRelConsequences]
+[BundledAlgorithmicTyping]
