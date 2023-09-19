@@ -10,9 +10,15 @@ eval $(opam env)
 opam install ocaml-base-compiler=4.11.2
 opam repo --this-switch add coq-released https://coq.inria.fr/opam/released
 opam install . --deps-only
-git submodule update --init
 make
 ```
+
+IMPORTANT NOTE
+==============
+
+The coqdocjs and coq-partialfun subfolders are **not** part of this development, but independent projects vendored here for simplicity of the build process. The upstream repositories can be respectively found at:
+- https://github.com/coq-community/coqdocjs/
+- https://github.com/TheoWinterhalter/coq-partialfun.git
 
 Presentation
 =======
