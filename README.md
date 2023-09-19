@@ -2,6 +2,7 @@ TL;DR HOWTO INSTALL
 ===================
 
 - Install opam through your favourite means.
+- Double-check that no Coq-related environment variables like COQBIN or COQPATH are set.
 - Launch the following commands in the folder of this development.
 ```
 opam switch create . --empty
