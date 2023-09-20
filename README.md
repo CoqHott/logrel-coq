@@ -51,14 +51,16 @@ Definitions
 
 The abstract syntax tree of terms is in [Ast], the declarative typing and conversion predicates are in [DeclarativeTyping], reduction is in [UntypedReduction], and algorithmic typing is in [AlgorithmicTyping].
 
-The logical relation is defined with respect to a generic notion of typing, which is defined in [GenericTyping].
+The logical relation is defined with respect to a generic notion of typing, given in [GenericTyping].
 
 Proofs
 ----------
 
 The logical relation is defined in [LogicalRelation]. It is first defined component by component, before the components are all brought together by inductive `LR` at the end of the file. The fundamental lemma of the logical relation, saying that every well-typed term is reducible, is in [Fundamental].
 
-Injectivity and no-confusion of type constructor, and subject reduction, are proven in [TypeConstructorsInj]. `typing_SN`, in [Normalisation], shows that reduction on well-typed terms is (strongly) normalizing; this is phrased in a constructively acceptable way, as accessibility of every well-typed term under reduction, i.e. as well-foundation of the reduction relation.
+Injectivity and no-confusion of type constructor, and subject reduction, are proven in [TypeConstructorsInj]. `typing_SN`, in [Normalisation], shows that reduction on well-typed terms is normalizing; this is phrased in a constructively acceptable way, as accessibility of every well-typed term under reduction, i.e. as well-foundation of the reduction relation.
+
+Consistency and canonicity are derived in [Consequences].
 
 `algo_typing_sound` in [BundledAlgorithmicTyping] says that algorithmic typing (assuming its inputs are well-formed), is sound with respect to declarative typing, and `algo_typing_complete` in [AlgorithmicTypingProperties] says that it is complete.
 
@@ -82,3 +84,4 @@ Some sample execution of our certified checker are given in [Execution].
 [AlgorithmicTypingProperties]: ./theories/AlgorithmicTypingProperties.v
 [Decidability]: ./theories/Decidability.v
 [Execution]: ./theories/Decidability/Execution.v
+[Consequences]: ./theories/Consequences.v
