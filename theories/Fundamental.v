@@ -317,6 +317,164 @@ Section Fundamental.
     Unshelve. all: irrValid.
   Qed.
 
+  Lemma FundTmEqLambdaCong : forall (Γ : context) (t u A A' A'' B : term),
+    FundTy Γ A ->
+    FundTyEq Γ A A' ->
+    FundTyEq Γ A A'' ->
+    FundTmEq (Γ,, A) B t u -> FundTmEq Γ (tProd A B) (tLambda A' t) (tLambda A'' u).
+  Proof.
+    intros * [VΓ] [? ? VA'] [? ? VA''] [].
+    assert (VΠAB : [Γ ||-v< one > tProd A B | VΓ]).
+    { unshelve eapply PiValid; irrValid. }
+    assert (VB' : [Γ,, A' ||-v< one > B | validSnoc _ VA']).
+    { eapply irrelevanceLift; [tea|]; irrValid. }
+    assert (VB'' : [Γ,, A'' ||-v< one > B | validSnoc _ VA'']).
+    { eapply irrelevanceLift; [tea|]; irrValid. }
+    assert (Vλt : [Γ ||-v< one > tLambda A' t : tProd A B | VΓ | VΠAB ]).
+    { eapply conv; [|eapply lamValid].
+      + eapply symValidEq, PiCong; tea; try irrValid.
+        eapply reflValidTy.
+      + eapply irrelevanceTmLift; irrValid.
+    }
+    assert (Vλu : [Γ ||-v< one > tLambda A'' u : tProd A B | VΓ | VΠAB ]).
+    { eapply conv; [|eapply lamValid].
+      + eapply symValidEq, PiCong; tea; try irrValid.
+        eapply reflValidTy.
+      + eapply irrelevanceTmLift; irrValid.
+    }
+    Unshelve. all: try irrValid.
+    assert [Γ,, A ||-v< one > A⟨@wk1 Γ A⟩ | validSnoc VΓ VA].
+    { apply wk1ValidTy; irrValid. }
+    assert (VΓAA' : [Γ,, A ||-v< one > A'⟨@wk1 Γ A⟩ | validSnoc VΓ VA]).
+    { apply wk1ValidTy; irrValid. }
+    assert (VΓAA'' : [Γ,, A ||-v< one > A''⟨@wk1 Γ A⟩ | validSnoc VΓ VA]).
+    { apply wk1ValidTy; irrValid. }
+    assert (VAdequate (ta := ta) (Γ,, A) VR).
+    { now eapply validSnoc. }
+    assert (VAdequate (ta := ta) (Γ,, A,, A'⟨@wk1 Γ A⟩) VR).
+    { unshelve eapply validSnoc; tea; try irrValid. }
+    assert (VAdequate (ta := ta) (Γ,, A,, A''⟨@wk1 Γ A⟩) VR).
+    { unshelve eapply validSnoc; tea; try irrValid. }
+    assert (eq0 : forall t, t⟨upRen_term_term ↑⟩[(tRel 0)..] = t).
+    { clear; intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+    econstructor; tea.
+    eapply irrelevanceTmEq, etaeqValid; try irrValid.
+    eapply transValidTmEq; [|eapply transValidTmEq]; [|eapply irrelevanceTmEq; tea|].
+    + eapply irrelevanceTmEq'; [eapply eq0|].
+      eapply transValidTmEq; [eapply betaValid|]; refold.
+      - eapply irrelevanceTm'.
+        2: eapply (wkTmValid  (A := B)) with (ρ := wk_up A' (@wk1 Γ A)).
+        * now bsimpl.
+        * eapply irrelevanceTmLift; irrValid.
+      - eapply irrelevanceTmEq'; [symmetry; eapply eq0|].
+        match goal with |- [_ ||-v< _ > ?t ≅ ?u : _ | _ | _ ] => assert (Hrw : t = u) end.
+        { bsimpl; apply idSubst_term; intros []; reflexivity. }
+        set (t' := t) at 2; rewrite Hrw.
+        apply reflValidTm; tea.
+    + apply symValidTmEq; eapply irrelevanceTmEq'; [eapply eq0|].
+      eapply transValidTmEq; [eapply betaValid|]; refold.
+      - eapply irrelevanceTm'.
+        2: eapply (wkTmValid  (A := B)) with (ρ := wk_up A'' (@wk1 Γ A)).
+        * now bsimpl.
+        * eapply irrelevanceTmLift; irrValid.
+      - eapply irrelevanceTmEq'; [symmetry; eapply eq0|].
+        match goal with |- [_ ||-v< _ > ?t ≅ ?u : _ | _ | _ ] => assert (Hrw : t = u) end.
+        { bsimpl; apply idSubst_term; intros []; reflexivity. }
+        set (u' := u) at 2; rewrite Hrw.
+        apply reflValidTm; tea.
+    Unshelve.
+    all: refold; try irrValid.
+    * unshelve eapply irrelevanceValidity; tea.
+      rewrite <- (wk_up_wk1_ren_on Γ A' A).
+      eapply wkValid, irrelevanceLift; irrValid.
+    * eapply conv; [now eapply irrelevanceEq, wk1ValidTyEq|].
+      eapply irrelevanceTm'; [symmetry; eapply wk1_ren_on|].
+      eapply var0Valid'.
+    * eapply irrelevanceValidity.
+      rewrite <- (wk_up_wk1_ren_on Γ A'' A).
+      eapply wkValid, irrelevanceLift; irrValid.
+    * eapply conv; [now eapply irrelevanceEq, wk1ValidTyEq|].
+      eapply irrelevanceTm'; [symmetry; eapply wk1_ren_on|].
+      eapply var0Valid'.
+  Unshelve.
+  all: try irrValid.
+  2,4: rewrite <- (wk1_ren_on Γ A); irrValid.
+  Qed.
+
+  Lemma FundTmEqFunEta : forall (Γ : context) (f A B : term),
+    FundTm Γ (tProd A B) f -> FundTmEq Γ (tProd A B) (tLambda A (tApp f⟨↑⟩ (tRel 0))) f.
+  Proof.
+  intros * [VΓ VΠ Vf].
+  assert (eq0 : forall t, t⟨upRen_term_term ↑⟩[(tRel 0)..] = t).
+  { clear; intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert (VA : [Γ ||-v< one > A | VΓ]).
+  { now eapply PiValidDom. }
+  assert (VΓA := validSnoc VΓ VA).
+  assert (VΓAA : [Γ,, A ||-v< one > A⟨@wk1 Γ A⟩ | VΓA]).
+  { now eapply irrelevanceValidity, wk1ValidTy. }
+  assert (VΓAA0 : VAdequate (ta := ta) (Γ,, A,, A⟨@wk1 Γ A⟩) VR).
+  { now eapply validSnoc. }
+  assert (VΓAA' : [Γ,, A ||-v< one > A⟨↑⟩ | VΓA]).
+  { now rewrite wk1_ren_on in VΓAA. }
+  assert [Γ,, A ||-v< one > B | VΓA].
+  { eapply irrelevanceValidity, PiValidCod. }
+  assert ([Γ,, A ||-v< one > tProd A⟨@wk1 Γ A⟩ B⟨upRen_term_term ↑⟩ | VΓA]).
+  { rewrite <- (wk_up_wk1_ren_on Γ A A).
+    now eapply irrelevanceValidity, (wk1ValidTy (A := tProd A B)). }
+  assert ([Γ,, A ||-v< one > tRel 0 : A⟨wk1 A⟩ | VΓA | VΓAA]).
+  { eapply irrelevanceTm'; [rewrite wk1_ren_on; reflexivity|].
+    unshelve apply var0Valid'. }
+  assert ([(Γ,, A),, A⟨wk1 A⟩ ||-v< one > tProd A⟨↑⟩⟨↑⟩ B⟨upRen_term_term ↑⟩⟨upRen_term_term ↑⟩ | VΓAA0]).
+  { assert (eq1 : (tProd A B)⟨@wk1 Γ A⟩⟨@wk1 (Γ,, A) A⟨@wk1 Γ A⟩⟩ = tProd (A⟨↑⟩⟨↑⟩) (B⟨upRen_term_term ↑⟩⟨upRen_term_term ↑⟩)).
+    { rewrite wk1_ren_on, wk1_ren_on; reflexivity. }
+    eapply irrelevanceValidity'; [|eapply eq1|reflexivity].
+    now eapply wkValid, wkValid. }
+  assert ([Γ ||-v< one > tLambda A (tApp f⟨↑⟩ (tRel 0)) : tProd A B | VΓ | VΠ]).
+  { eapply irrelevanceTm, lamValid.
+    eapply irrelevanceTm'; [apply eq0|eapply (appValid (F := A⟨@wk1 Γ A⟩))].
+    rewrite <- (wk1_ren_on Γ A).
+    eapply irrelevanceTm'; [|now eapply wkTmValid].
+    rewrite <- (wk_up_wk1_ren_on Γ A A).
+    reflexivity. }
+  Unshelve. all: try irrValid.
+  econstructor; tea.
+  eapply irrelevanceTmEq, etaeqValid; try irrValid.
+  eapply transValidTmEq; refold.
+  + eapply irrelevanceTmEq'; [eapply eq0|].
+    eapply betaValid; refold.
+    eapply irrelevanceTm'; [apply eq0|].
+    eapply appValid.
+    rewrite <- shift_upRen.
+    assert (eq1 : (tProd A B)⟨@wk1 Γ A⟩⟨@wk1 (Γ,, A) A⟨@wk1 Γ A⟩⟩ = tProd (A⟨↑⟩⟨↑⟩) (B⟨upRen_term_term ↑⟩⟨upRen_term_term ↑⟩)).
+    { rewrite wk1_ren_on, wk1_ren_on; reflexivity. }
+    eapply irrelevanceTm'; [eapply eq1|].
+    rewrite <- (wk1_ren_on (Γ,, A)  A⟨@wk1 Γ A⟩).
+    now eapply wkTmValid, wkTmValid.
+  + refold.
+    match goal with |- [_ ||-v< _ > ?t ≅ ?u : _ | _ | _ ] => assert (Hrw : t = u) end.
+    { rewrite <- eq0; now bsimpl. }
+    rewrite Hrw.
+    apply reflValidTm; tea.
+    eapply irrelevanceTm'; [apply eq0|].
+    eapply (appValid (F := A⟨@wk1 Γ A⟩)).
+    eapply irrelevanceTm'; [|now eapply wk1ValidTm].
+    now rewrite <- (wk_up_wk1_ren_on Γ A A).
+  Unshelve.
+  all: refold; try irrValid.
+  { unshelve eapply irrelevanceValidity; [tea|].
+    rewrite <- (wk_up_wk1_ren_on Γ A A).
+    now eapply wkValid. }
+  { eapply (irrelevanceValidity' (A := A⟨↑⟩⟨@wk1 (Γ,, A) A⟨@wk1 Γ A⟩⟩)); [|now rewrite wk1_ren_on|reflexivity].
+    now eapply wkValid. }
+  { eapply (irrelevanceTm' (A := A⟨@wk1 Γ A⟩⟨↑⟩)); [now rewrite wk1_ren_on|].
+    apply var0Valid'. }
+  Unshelve.
+  all: try irrValid.
+  { shelve. }
+  { rewrite <- (wk1_ren_on (Γ,, A)  A⟨@wk1 Γ A⟩).
+    now eapply wkValid. }
+  Qed.
+
   Lemma FundTmEqFunExt : forall (Γ : context) (f g A B : term),
     FundTy Γ A ->
     FundTm Γ (tProd A B) f ->
@@ -844,7 +1002,7 @@ Section Fundamental.
     Unshelve. all: tea; try irrValid.
       unshelve eapply IdValid; irrValid.
   Qed.
-    
+
 Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) Γ)
     × (forall (Γ : context) (A : term), [Γ |-[ de ] A] -> FundTy (ta := ta) Γ A)
     × (forall (Γ : context) (A t : term), [Γ |-[ de ] t : A] -> FundTm (ta := ta) Γ A t)
@@ -889,7 +1047,8 @@ Lemma Fundamental : (forall Γ : context, [ |-[ de ] Γ ] -> FundCon (ta := ta) 
   + intros; now apply FundTmEqBRed.
   + intros; now apply FundTmEqPiCong.
   + intros; now eapply FundTmEqAppCong.
-  + intros; now apply FundTmEqFunExt.
+  + intros; now apply FundTmEqLambdaCong.
+  + intros; now apply FundTmEqFunEta.
   + intros; now apply FundTmEqSuccCong.
   + intros; now apply FundTmEqNatElimCong.
   + intros; now apply FundTmEqNatElimZero.

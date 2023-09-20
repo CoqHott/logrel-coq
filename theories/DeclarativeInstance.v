@@ -180,19 +180,14 @@ Section TypingWk.
       + now eapply IHu.
       + now asimpl.
       + now asimpl.
-    - intros Γ f f' A B _ IHA _ IHf _ IHg _ IHe ? ρ ?.
+    - intros * _ IHA _ IHA' _ IHA'' _ IHe ? ρ ?.
+      cbn; econstructor; try easy.
+      apply (IHe _ (wk_up _ ρ)).
+      now constructor.
+    - intros * _ IHf ? ρ ?.
       cbn.
-      econstructor.
-      1-3: easy.
-      specialize (IHe _ (wk_up _ ρ)).
-      cbn in IHe.
-      repeat rewrite renRen_term in IHe.
-      cbn in * ; refold.
-      do 2 rewrite shift_up_ren.
-      erewrite <- wk_up_ren_on.
-      eapply IHe.
-      econstructor ; tea.
-      now eapply IHA.
+      rewrite <- shift_upRen.
+      now apply TermFunEta, IHf.
     - intros * ? ih **; cbn; constructor; now apply ih.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
       erewrite subst_ren_wk_up.
@@ -328,7 +323,7 @@ Section Boundaries.
       [ Γ |- t ≅ u : A ] -> 
       [ |- Γ ].
   Proof.
-      induction 1 ; now eauto using boundary_tm_ctx.
+      induction 1 ; now eauto using boundary_tm_ctx, boundary_ty_ctx.
   Qed.
 
   Definition boundary_ty_conv_ctx {Γ} {A B} :
@@ -529,7 +524,10 @@ Module DeclarativeTypingProperties.
   - intros.
     now econstructor.
   - intros.
-    now econstructor.
+    eapply TermTrans; [|now eapply TermFunEta].
+    eapply TermTrans; [now eapply TermSym, TermFunEta|].
+    constructor; tea.
+    all: now econstructor.
   - now do 2 econstructor.
   - now do 2 econstructor.
   - now econstructor.

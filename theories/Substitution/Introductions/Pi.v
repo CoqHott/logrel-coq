@@ -105,6 +105,102 @@ Section PiTyValidity.
 
 End PiTyValidity.
 
+Section PiTyDomValidity.
+
+  Context `{GenericTypingProperties}.
+  Context {l Γ F G} (vΓ : [||-v Γ])
+    (vΠFG : [Γ ||-v< l > tProd F G | vΓ ]).
+
+  Lemma PiValidDom : [Γ ||-v< l > F | vΓ].
+  Proof.
+  unshelve econstructor.
+  - intros Δ σ vΔ vσ; instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    destruct RvΠFG as [dom ? red ? ? ? [? ? Hdom]].
+    assert (Hrw : F[σ] = dom); [|subst dom].
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    rewrite <- (wk_id_ren_on Δ F[σ]).
+    now eapply Hdom.
+  - cbn; refold.
+    intros Δ σ σ' vΔ vσ vσ' vσσ'.
+    match goal with |- [ LRAd.pack ?P | _ ||- _ ≅ _] => set (vF := P); clearbody vF end.
+    instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    assert (vΠ := validTyExt vΠFG _ vσ vσ' vσσ').
+    eapply LRTyEqIrrelevant' with (lrA' := LRPi' RvΠFG) in vΠ; [|reflexivity].
+    destruct RvΠFG as [dom ? red ? ? ? []].
+    destruct vΠ as [dom' ? red' ? ? [Heq _]]; simpl in *.
+    specialize (Heq Δ wk_id vΔ).
+    assert (Hrw : F[σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (Hrw' : F[σ'] = dom').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    rewrite wk_id_ren_on, <- Hrw' in Heq.
+    eapply Transitivity.transEq; [|eapply Heq].
+    rewrite <- (wk_id_ren_on Δ dom) in Hrw; rewrite <- Hrw.
+    eapply LRTyEqIrrelevant' with (lrA := vF); [reflexivity|].
+    eapply reflLRTyEq.
+  Qed.
+
+  Lemma PiValidCod : [Γ,, F ||-v< l > G | validSnoc vΓ PiValidDom].
+  Proof.
+  unshelve econstructor.
+  - intros Δ σ vΔ [vσ v0].
+    instValid vσ; cbn in *.
+    apply Induction.invLRΠ in RvΠFG.
+    destruct RvΠFG as [dom cod red ? ? ? [? ? Hdom Hcod _]].
+    specialize (Hcod Δ (σ 0) wk_id vΔ).
+    assert (HF : F[↑ >> σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG0 : G[up_term_term (↑ >> σ)] = cod).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG : G[σ] = cod[σ 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0; bsimpl; apply ext_term; intros []; reflexivity. }
+    rewrite HG; apply Hcod.
+    irrelevance0; [|eapply v0].
+    now rewrite wk_id_ren_on.
+  - cbn; refold.
+    intros Δ σ σ' vΔ [vσ v0] [vσ' v0'] [vσσ' v00'].
+    match goal with |- [ LRAd.pack ?P | _ ||- _ ≅ _] => set (vG := P); clearbody vG end.
+    instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    assert (vΠ := validTyExt vΠFG _ vσ vσ' vσσ').
+    eapply LRTyEqIrrelevant' with (lrA' := LRPi' RvΠFG) in vΠ; [|reflexivity].
+    destruct RvΠFG as [dom cod red ? ? ? [? ? ? ? Hcod]].
+    destruct vΠ as [dom' cod' red' ? ? [Hdom' Hcod']]; simpl in *.
+    specialize (Hcod' Δ (σ' 0) wk_id vΔ).
+    assert (HF : F[↑ >> σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HF' : F[↑ >> σ'] = dom').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    assert (HG0 : G[up_term_term (↑ >> σ)] = cod).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG : G[σ] = cod[σ 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0; bsimpl; apply ext_term; intros []; reflexivity. }
+    assert (HG0' : G[up_term_term (↑ >> σ')] = cod').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    assert (HG' : G[σ'] = cod'[σ' 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0'; bsimpl; apply ext_term; intros []; reflexivity. }
+    rewrite HG'.
+    assert (Hσ0 : [shpRed Δ wk_id vΔ | _ ||- σ 0 : _]).
+    { irrelevance0; [|eapply v0].
+      now rewrite wk_id_ren_on. }
+    assert (Hσ0' : [shpRed Δ wk_id vΔ | _ ||- σ' 0 : _]).
+    { eapply LRTmRedConv; [|eapply v0'].
+      eapply LRTyEqSym; rewrite HF'.
+      rewrite <- (wk_id_ren_on Δ dom').
+      apply (Hdom' _ _ vΔ). }
+    eassert (Hcod0 := Hcod Δ (σ 0) (σ' 0) wk_id vΔ Hσ0 Hσ0').
+    eapply Transitivity.transEq; [|now unshelve eapply Hcod'].
+    eapply Transitivity.transEq; [|unshelve eapply Hcod0].
+    + unshelve (irrelevance0; [|eapply reflLRTyEq]); try now symmetry.
+      shelve.
+      now eauto.
+    + irrelevance0; [|eapply v00'].
+      now rewrite wk_id_ren_on.
+  Qed.
+
+End PiTyDomValidity.
 
 Section PiTyCongruence.
 
