@@ -21,7 +21,8 @@ theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
 
-theories/Directions.v
+theories/DirectedDirections.v
+theories/DirectedErasure.v
 theories/DirectedContext.v
 theories/DirectedDeclarativeTyping.v
 
