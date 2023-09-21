@@ -21,6 +21,10 @@ theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
 
+theories/Directions.v
+theories/DirectedContext.v
+theories/DirectedDeclarativeTyping.v
+
 theories/LogicalRelation.v
 theories/LogicalRelation/Induction.v
 theories/LogicalRelation/Escape.v
