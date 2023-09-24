@@ -182,7 +182,7 @@ Proof.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
     + constructor; transitivity (PiRedTy.dom ΣA); [now symmetry|tea].
-    + now constructor.
+    + constructor; now eapply convneu_conv.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.
 Defined.

@@ -470,7 +470,7 @@ Module SigRedTm.
 
   Record SigRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t : term}
   : Type := {
     nf : term;
@@ -483,7 +483,7 @@ Module SigRedTm.
       [ΣA.(PolyRedPack.posRed) ρ h (fstRed ρ h) | Δ ||- tSnd nf⟨ρ⟩ : _] ;
   }.
 
-  Arguments SigRedTm {_ _ _ _ _ _ _ _ _ _}.
+  Arguments SigRedTm {_ _ _ _ _ _ _ _ _ _ _}.
 
 End SigRedTm.
 
@@ -494,7 +494,7 @@ Module SigRedTmEq.
 
   Record SigRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t u : term}
   : Type := {
     redL : [ Γ ||-Σ t : A | ΣA ] ;
@@ -506,7 +506,7 @@ Module SigRedTmEq.
       [ΣA.(PolyRedPack.posRed) ρ h redfstL | Δ ||- tSnd redL.(SigRedTm.nf)⟨ρ⟩ ≅ tSnd redR.(SigRedTm.nf)⟨ρ⟩ : _] ;
   }.
 
-  Arguments SigRedTmEq {_ _ _ _ _ _ _ _ _ _}.
+  Arguments SigRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
 
 End SigRedTmEq.
 

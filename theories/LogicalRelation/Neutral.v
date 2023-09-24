@@ -196,7 +196,7 @@ Proof.
       }
       exists n hfst.
       + eapply redtmwf_refl; now eapply ty_conv.
-      + constructor; now eapply convneu_whne.
+      + constructor; now eapply convneu_conv.
       + eapply convtm_convneu; now eapply convneu_conv.
       + intros; irrelevanceRefl.
         eapply complete_reflect_simpl; [unshelve eapply ihcod|..]; tea.

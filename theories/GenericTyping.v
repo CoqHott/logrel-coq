@@ -130,7 +130,7 @@ Section RedDefinitions.
 
   Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
     PairWfPair : forall A' B' a b : term, [Γ |- A ≅ A'] -> isWfPair Γ A B (tPair A' B' a b)
-  | NeWfPair : forall n : term, whne n -> isWfPair Γ A B n.
+  | NeWfPair : forall n : term, [Γ |- n ~ n : tSig A B] -> isWfPair Γ A B n.
 
 End RedDefinitions.
 
@@ -1271,7 +1271,7 @@ Section GenericConsequences.
 
   Lemma isWfPair_isPair : forall Γ A B t, isWfPair Γ A B t -> isPair t.
   Proof.
-  intros * []; now constructor.
+  intros * []; constructor; now eapply convneu_whne.
   Qed.
 
 End GenericConsequences.
