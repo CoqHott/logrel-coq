@@ -126,21 +126,11 @@ Section RedDefinitions.
 
   Inductive isWfFun (Γ : context) (A B : term) : term -> Set :=
     LamWfFun : forall A' t : term, [Γ |- A ≅ A'] -> isWfFun Γ A B (tLambda A' t)
-  | NeWfFun : forall f : term, whne f -> isWfFun Γ A B f.
+  | NeWfFun : forall f : term, [Γ |- f ~ f : tProd A B] -> isWfFun Γ A B f.
 
   Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
     PairWfPair : forall A' B' a b : term, [Γ |- A ≅ A'] -> isWfPair Γ A B (tPair A' B' a b)
   | NeWfPair : forall n : term, whne n -> isWfPair Γ A B n.
-
-  Lemma isWfFun_isFun : forall Γ A B t, isWfFun Γ A B t -> isFun t.
-  Proof.
-  intros * []; now constructor.
-  Qed.
-
-  Lemma isWfPair_isPair : forall Γ A B t, isWfPair Γ A B t -> isPair t.
-  Proof.
-  intros * []; now constructor.
-  Qed.
 
 End RedDefinitions.
 
@@ -1271,6 +1261,17 @@ Section GenericConsequences.
     intros [] [].
     eapply whred_det; tea.
     all: now eapply redty_sound.
+  Qed.
+
+
+  Lemma isWfFun_isFun : forall Γ A B t, isWfFun Γ A B t -> isFun t.
+  Proof.
+  intros * []; constructor; now eapply convneu_whne.
+  Qed.
+
+  Lemma isWfPair_isPair : forall Γ A B t, isWfPair Γ A B t -> isPair t.
+  Proof.
+  intros * []; now constructor.
   Qed.
 
 End GenericConsequences.

@@ -404,7 +404,7 @@ Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     nf : term;
@@ -421,7 +421,7 @@ Module PiRedTm.
       : [ ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
   }.
 
-  Arguments PiRedTm {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTm.
 
@@ -432,7 +432,7 @@ Module PiRedTmEq.
 
   Record PiRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t u A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     redL : [ Γ ||-Π t : A | ΠA ] ;
@@ -444,7 +444,7 @@ Module PiRedTmEq.
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
   }.
 
-  Arguments PiRedTmEq {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTmEq {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTmEq.
 

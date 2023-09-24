@@ -1186,7 +1186,9 @@ Qed.
       + econstructor.
         1-3: reflexivity.
         econstructor.
-        1-2: now eapply isFun_whnf, (isWfFun_isFun (ta := bn)).
+        1-2: eapply isFun_whnf;
+          match goal with H : isWfFun _ _ _ ?f |- isFun ?f => destruct H end; constructor;
+          match goal with H : [_ |-[bn] ?f ~ ?f : _] |- whne ?f => apply H end.
         eassumption.
     - intros_bn.
       1-3: gen_typing.
@@ -1567,7 +1569,9 @@ Module IntermediateTypingProperties.
       + gen_typing.
       + boundary.
       + do 2 econstructor ; [| |gen_typing].
-        all: now eapply isFun_whnf, isWfFun_isFun.
+        all: eapply isFun_whnf;
+          match goal with H : isWfFun _ _ _ ?f |- isFun ?f => destruct H end; constructor;
+          match goal with H : [_ |-[bni] ?f ~ ?f : _] |- whne ?f => apply H end.
     - intros.
       eapply (convtm_nat (ta := bn)).
       now econstructor.

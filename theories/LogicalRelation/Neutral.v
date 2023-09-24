@@ -138,7 +138,7 @@ intros l Γ A ΠA0 ihdom ihcod; split.
   {
     intros. exists n; cbn.
     * eapply redtmwf_refl ; gen_typing.
-    * constructor; now eapply convneu_whne.
+    * constructor; now eapply convneu_conv.
     * eapply convtm_conv; [|eassumption].
       now apply convtm_convneu.
     * intros; apply complete_reflect_simpl; [apply ihcod| |..].

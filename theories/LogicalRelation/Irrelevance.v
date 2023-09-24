@@ -109,7 +109,7 @@ Proof.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
     + constructor; transitivity (PiRedTy.dom ΠA); [now symmetry|tea].
-    + now constructor.
+    + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.
   - intros; unshelve eapply eqv.(eqvPos).
