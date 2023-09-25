@@ -73,7 +73,6 @@ Proof.
   - eapply symLRPack; eapply eqv.(eqvPos).
 Qed.
 
-
 (** *** Lemmas for product types *)
 
 (** A difficulty is that we need to show the equivalence right away, rather than only an implication,
@@ -108,7 +107,8 @@ Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
-    + constructor; transitivity (PiRedTy.dom ΠA); [now symmetry|tea].
+    + constructor.
+      intros; now eapply eqv.(eqvShp).
     + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.

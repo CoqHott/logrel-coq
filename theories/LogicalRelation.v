@@ -400,6 +400,15 @@ Definition PiRedTyEq `{ta : tag}
 Module PiRedTyEq := ParamRedTyEq.
 Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq (Γ:=Γ) (A:=A) ΠA B).
 
+Inductive isLRFun `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  {Γ : context} {A : term} (ΠA : PiRedTy Γ A) : term -> Type :=
+| LamLRFun : forall A' t : term,
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΠA.(PolyRedPack.shpRed) ρ h),
+      [domRed | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+  isLRFun ΠA (tLambda A' t)
+| NeLRFun : forall f : term, [Γ |- f ~ f : tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA)] -> isLRFun ΠA f.
+
 Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
@@ -409,7 +418,7 @@ Module PiRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isWfFun Γ ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) nf;
+    isfun : isLRFun ΠA nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])

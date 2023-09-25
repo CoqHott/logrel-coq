@@ -59,9 +59,12 @@ Lemma transEqTermΠ {Γ lA A t u v} {ΠA : [Γ ||-Π<lA> A]}
   [Γ ||-Π u ≅ v : A | ΠA ] ->
   [Γ ||-Π t ≅ v : A | ΠA ].
 Proof.
-  intros [tL] [? tR];
+  intros [tL] [? tR].
+  assert (forall t (red : [Γ ||-Π t : _ | ΠA]), whnf (PiRedTm.nf red)).
+  { intros ? [? ? isfun]; simpl; destruct isfun; constructor; tea.
+    now eapply convneu_whne. }
   unshelve epose proof (e := redtmwf_det _ _ (PiRedTm.red redR) (PiRedTm.red redL)); tea.
-  1,2: apply isFun_whnf; eapply isWfFun_isFun, PiRedTm.isfun.
+  1,2: now eauto.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
   + intros. eapply ihcod.

@@ -140,7 +140,8 @@ Section SimpleArrow.
     econstructor; cbn.
     - eapply redtmwf_refl.
       now eapply ty_id.
-    - now constructor.
+    - constructor.
+      intros; cbn; apply reflLRTyEq.
     - eapply convtm_id; tea.
       eapply wfc_wft; now escape.
     - intros; cbn; irrelevance0.
@@ -277,8 +278,8 @@ Section SimpleArrow.
     econstructor.
     - eapply redtmwf_refl.
       eapply ty_comp; cycle 2; tea.
-    - constructor; cbn.
-      unshelve eapply escapeEq, reflLRTyEq; [|tea].
+    - constructor; intros; cbn.
+      apply reflLRTyEq.
     - cbn. eapply convtm_comp; cycle 6; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.

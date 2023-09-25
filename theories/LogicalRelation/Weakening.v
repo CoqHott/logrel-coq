@@ -174,13 +174,16 @@ Section Weakenings.
       Unshelve. all: tea.
   Qed.
 
-  Lemma isWfFun_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
-    [|- Δ] ->
-    isWfFun Γ A B t -> isWfFun Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Lemma isLRFun_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]),
+    isLRFun ΠA t -> isLRFun (wkΠ ρ wfΔ ΠA) t⟨ρ⟩.
   Proof.
-  intros * ? []; constructor; tea.
-  + now apply convty_wk.
-  + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd A B)⟨ρ⟩].
+  intros * [A' t' Hdom|]; constructor; tea.
+  + intros Ξ ρ' *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    irrelevance0; [apply eq|].
+    rewrite <- eq.
+    now unshelve apply Hdom.
+  + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA))⟨ρ⟩].
     now eapply convneu_wk.
   Qed.
 
@@ -193,7 +196,7 @@ Section Weakenings.
     intros [t].
     exists (t⟨ρ⟩); try change (tProd _ _) with (ΠA.(outTy)⟨ρ⟩).
     + now eapply redtmwf_wk.
-    + now apply isWfFun_ren.
+    + now apply isLRFun_ren.
     + now apply convtm_wk.
     + intros ? a ρ' ??.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.

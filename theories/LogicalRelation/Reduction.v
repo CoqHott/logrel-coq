@@ -238,7 +238,7 @@ Proof.
     eapply redtmwf_refl; gen_typing.
   - intros ???????? [? red] red' ?.
     unshelve erewrite (redtmwf_det _ _ red' red); tea.
-    1: now eapply isFun_whnf, isWfFun_isFun.
+    1: eapply isFun_whnf; destruct isfun; constructor; tea; now eapply convneu_whne.
     econstructor; tea.
     eapply redtmwf_refl; gen_typing.
   - intros ?????? Rt red' ?; inversion Rt; subst.
