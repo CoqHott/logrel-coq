@@ -404,7 +404,7 @@ Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     nf : term;
@@ -421,7 +421,7 @@ Module PiRedTm.
       : [ ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]
   }.
 
-  Arguments PiRedTm {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTm.
 
@@ -432,7 +432,7 @@ Module PiRedTmEq.
 
   Record PiRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {t u A : term} {ΠA : PiRedTy Γ A}
   : Type := {
     redL : [ Γ ||-Π t : A | ΠA ] ;
@@ -444,7 +444,7 @@ Module PiRedTmEq.
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]
   }.
 
-  Arguments PiRedTmEq {_ _ _ _ _ _ _ _}.
+  Arguments PiRedTmEq {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTmEq.
 
@@ -470,7 +470,7 @@ Module SigRedTm.
 
   Record SigRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t : term}
   : Type := {
     nf : term;
@@ -483,7 +483,7 @@ Module SigRedTm.
       [ΣA.(PolyRedPack.posRed) ρ h (fstRed ρ h) | Δ ||- tSnd nf⟨ρ⟩ : _] ;
   }.
 
-  Arguments SigRedTm {_ _ _ _ _ _ _ _ _ _}.
+  Arguments SigRedTm {_ _ _ _ _ _ _ _ _ _ _}.
 
 End SigRedTm.
 
@@ -494,7 +494,7 @@ Module SigRedTmEq.
 
   Record SigRedTmEq `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
-    `{Typing ta} `{ConvTerm ta} `{RedTerm ta}
+    `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
     {Γ : context} {A : term} {ΣA : SigRedTy Γ A} {t u : term}
   : Type := {
     redL : [ Γ ||-Σ t : A | ΣA ] ;
@@ -506,7 +506,7 @@ Module SigRedTmEq.
       [ΣA.(PolyRedPack.posRed) ρ h redfstL | Δ ||- tSnd redL.(SigRedTm.nf)⟨ρ⟩ ≅ tSnd redR.(SigRedTm.nf)⟨ρ⟩ : _] ;
   }.
 
-  Arguments SigRedTmEq {_ _ _ _ _ _ _ _ _ _}.
+  Arguments SigRedTmEq {_ _ _ _ _ _ _ _ _ _ _}.
 
 End SigRedTmEq.
 

@@ -96,8 +96,12 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? ? ? ? []; split; now eapply WN_exp.
 + intros * []; split; now apply WN_whnf, whnf_whne.
-+ intros * ? ? ? ? ? ? []; split; now eapply WN_isFun, isWfFun_isFun.
-+ intros; split; now eapply WN_isPair, isWfPair_isPair.
++ intros * ? ? ? Hf ? Hg []; split.
+  - apply WN_isFun; destruct Hf as [|? []]; now constructor.
+  - apply WN_isFun; destruct Hg as [|? []]; now constructor.
++ intros * ? ? ? Hp ? Hp' ?; split; apply WN_isPair.
+  - destruct Hp as [|? []]; now constructor.
+  - destruct Hp' as [|? []]; now constructor.
 Qed.
 
 #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := nf) := {}.

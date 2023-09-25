@@ -180,7 +180,8 @@ Section Weakenings.
   Proof.
   intros * ? []; constructor; tea.
   + now apply convty_wk.
-  + now eapply whne_ren.
+  + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd A B)⟨ρ⟩].
+    now eapply convneu_wk.
   Qed.
 
   (* TODO: use program or equivalent to have only the first field non-opaque *)
@@ -218,7 +219,8 @@ Section Weakenings.
   Proof.
   intros * ? []; constructor; tea.
   + now apply convty_wk.
-  + now eapply whne_ren.
+  + change [Δ |- n⟨ρ⟩ ~ n⟨ρ⟩ : (tSig A B)⟨ρ⟩].
+    now eapply convneu_wk.
   Qed.
 
   Lemma wkΣTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) 
