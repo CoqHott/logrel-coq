@@ -673,7 +673,9 @@ Section BundledConv.
       eapply typing_eta' in Hf'.
       eapply typing_eta' in Hg'.
       split ; [now gen_typing|..].
-      econstructor ; tea.
+      etransitivity; [|now eapply TermFunEta].
+      etransitivity; [symmetry; now eapply TermFunEta|].
+      econstructor ; tea; try now constructor.
       now eapply IH ; gen_typing.
     - intros * ? ihA ? ihB ? hty hty'.
       pose proof hty as [?[[->]]]%termGen'.

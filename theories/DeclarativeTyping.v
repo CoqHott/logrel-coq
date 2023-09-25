@@ -179,12 +179,15 @@ Section Definitions.
           [ Γ |- f ≅ g : tProd A B ] ->
           [ Γ |- a ≅ b : A ] ->
           [ Γ |- tApp f a ≅ tApp g b : B[a..] ]
-      | TermFunExt {Γ} {f g A B} :
+      | TermLambdaCong {Γ} {t u A A' A'' B} :
           [ Γ |- A ] ->
+          [ Γ |- A ≅ A' ] ->
+          [ Γ |- A ≅ A'' ] ->
+          [ Γ,, A |- t ≅ u : B ] ->
+          [ Γ |- tLambda A' t ≅ tLambda A'' u : tProd A B ]
+      | TermFunEta {Γ} {f A B} :
           [ Γ |- f : tProd A B ] ->
-          [ Γ |- g : tProd A B ] ->
-          [ Γ ,, A |- eta_expand f ≅ eta_expand g : B ] ->
-          [ Γ |- f ≅ g : tProd A B ]
+          [ Γ |- tLambda A (eta_expand f) ≅ f : tProd A B ]
       | TermSuccCong {Γ} {n n'} :
           [Γ |- n ≅ n' : tNat] ->
           [Γ |- tSucc n ≅ tSucc n' : tNat]

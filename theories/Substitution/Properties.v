@@ -435,6 +435,27 @@ Proof.
     Unshelve. 2,3: tea.
 Qed.
 
+Lemma wkTmValid {l Γ Δ A t} (ρ : Δ ≤ Γ)
+  (VΓ : [||-v Γ])
+  (VΔ : [||-v Δ])
+  (VA : [Γ ||-v<l> A | VΓ])
+  (Vt : [Γ ||-v<l> t : A | VΓ | VA]) :
+  [Δ ||-v<l> t⟨ρ⟩ : A⟨ρ⟩ | VΔ | wkValid ρ VΓ VΔ VA].
+Proof.
+  assert (hA : forall σ, A⟨ρ⟩[σ] = A[ρ >> σ]) by (intros; now asimpl).
+  assert (ht : forall σ, t⟨ρ⟩[σ] = t[ρ >> σ]) by (intros; now asimpl).
+  unshelve econstructor.
+  - intros; rewrite ht.
+    irrelevance0; [symmetry; apply hA|].
+    eapply validTm, Vt.
+  - intros; do 2 rewrite ht.
+    irrelevance0; [symmetry; apply hA|].
+    eapply validTmExt; [apply Vt|now eapply substS_wk|].
+    now eapply substSEq_wk.
+    Unshelve. all: tea.
+    now eapply substS_wk.
+Qed.
+
 Lemma wkEqValid {l Γ Δ A B} (ρ : Δ ≤ Γ)
   (VΓ : [||-v Γ])
   (VΔ : [||-v Δ])
