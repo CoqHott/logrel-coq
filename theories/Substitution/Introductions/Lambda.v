@@ -80,7 +80,15 @@ Proof.
   exists (tLambda F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
   + constructor; cbn; intros.
-    apply reflLRTyEq.
+    - apply reflLRTyEq.
+    - rewrite Poly.eq_subst_2.
+      irrelevance0; [symmetry; apply Poly.eq_subst_2|].
+      unshelve apply Vt; tea.
+      eapply consSubstS.
+      irrelevance0; [|tea].
+      now bsimpl.
+      Unshelve.
+      now unshelve eapply wkSubstS.
   + eapply convtm_eta; tea.
     1,2: constructor; eapply escapeEq, reflLRTyEq.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])

@@ -108,7 +108,9 @@ Proof.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
     + constructor.
-      intros; now eapply eqv.(eqvShp).
+      * intros; now eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); [|eauto].
+        now apply eqv.(eqvShp).
     + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.

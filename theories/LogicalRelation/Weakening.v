@@ -177,12 +177,19 @@ Section Weakenings.
   Lemma isLRFun_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]),
     isLRFun ΠA t -> isLRFun (wkΠ ρ wfΔ ΠA) t⟨ρ⟩.
   Proof.
-  intros * [A' t' Hdom|]; constructor; tea.
+  intros * [A' t' Hdom Ht|]; constructor; tea.
   + intros Ξ ρ' *; cbn.
     assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
     irrelevance0; [apply eq|].
     rewrite <- eq.
     now unshelve apply Hdom.
+  + intros Ξ a ρ' wfΞ *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    unshelve eassert (Ht0 := Ht Ξ a (ρ' ∘w ρ) wfΞ _).
+    { cbn in ha; irrelevance0; [symmetry; apply eq|tea]. }
+    replace (t'⟨upRen_term_term ρ⟩[a .: ρ' >> tRel]) with (t'[a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
+    irrelevance0; [|apply Ht0].
+    now bsimpl.
   + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA))⟨ρ⟩].
     now eapply convneu_wk.
   Qed.

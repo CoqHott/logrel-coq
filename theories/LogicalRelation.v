@@ -406,6 +406,9 @@ Inductive isLRFun `{ta : tag} `{WfContext ta}
 | LamLRFun : forall A' t : term,
   (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΠA.(PolyRedPack.shpRed) ρ h),
       [domRed | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+    (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
+      [ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- t[a .: (ρ >> tRel)] : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]) ->
   isLRFun ΠA (tLambda A' t)
 | NeLRFun : forall f : term, [Γ |- f ~ f : tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA)] -> isLRFun ΠA f.
 
