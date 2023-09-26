@@ -90,7 +90,7 @@ Proof.
       Unshelve.
       now unshelve eapply wkSubstS.
   + eapply convtm_eta; tea.
-    1,2: constructor; eapply escapeEq, reflLRTyEq.
+    1,2: constructor; tea; eapply escapeEq, reflLRTyEq.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
     by (intro; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
     assert [Δ,, F[σ] |-[ ta ] tApp (tLambda F[σ] t[up_term_term σ])⟨S⟩ (tRel 0) ⤳*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
@@ -154,6 +154,13 @@ Proof.
     eapply convtm_eta; refold; tea.
     2,4: constructor; first [assumption|now eapply lrefl|idtac].
     + gen_typing.
+    + eapply ty_conv; [tea|now symmetry].
+    + eapply ty_conv; [tea|].
+      assert (Vσ'σ := symmetrySubstEq _ _ _ _ _ Vσ' Vσσ').
+      assert (Vupσ'σ := liftSubstSEq' VF Vσ'σ).
+      unshelve eassert (VG' := validTyExt VG _ _ _ Vupσ'σ).
+      { eapply liftSubstSrealign'; tea. }
+      eapply escapeEq, VG'.
     + eapply ty_conv; [now eapply ty_lam|].
       symmetry; now eapply convty_prod.
     + assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
@@ -247,16 +254,57 @@ Proof.
   * unshelve eapply escapeEq, reflLRTyEq; [|tea].
 Qed.
 
-Lemma isLRFun_isWfFun : forall {σ Δ f} (wfΔ : [|- Δ]) (RΠFG : [Δ ||-< l > (tProd F G)[σ]])
+Lemma isLRFun_isWfFun : forall {σ Δ f} (wfΔ : [|- Δ]) (vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (RΠFG : [Δ ||-< l > (tProd F G)[σ]])
   (p : [Δ ||-Π f[σ] : tProd F[σ] G[up_term_term σ] | normRedΠ0 (Induction.invLRΠ RΠFG)]),
   isWfFun Δ F[σ] G[up_term_term σ] (PiRedTm.nf p).
 Proof.
 intros.
+instValid vσ.
 destruct RΠFG; simpl in *.
 destruct p as [nf ? isfun]; simpl in *.
-destruct isfun as [A t vA|]; simpl in *; constructor; tea.
-rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
-now unshelve eapply escapeEq, vA.
+destruct isfun as [A t vA vt|]; simpl in *; constructor; tea.
++ rewrite <- (@wk_id_ren_on Δ).
+  unshelve eapply escapeConv, vA; tea.
++ rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+  now unshelve eapply escapeEq, vA.
++ assert (Hrw : forall t, t[tRel 0 .: @wk1 Δ A >> tRel] = t).
+  { intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert [Δ |- F[σ]] by now eapply escape.
+  assert (wfΔF : [|- Δ,, F[σ]]) by now apply wfc_cons.
+  unshelve eassert (vt0 := vt _ (tRel 0) (@wk1 Δ F[σ]) _ _); tea.
+  { eapply var0; [now bsimpl|tea]. }
+  eapply escapeTerm in vt0.
+  now rewrite !Hrw in vt0.
++ assert (Hrw : forall t, t[tRel 0 .: @wk1 Δ A >> tRel] = t).
+  { intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert [Δ |- A].
+  { rewrite <- (@wk_id_ren_on Δ).
+    unshelve eapply escapeConv, vA; tea. }
+  assert (wfΔA : [|- Δ,, A]) by now apply wfc_cons.
+  assert [Δ |-[ ta ] A ≅ F[σ]].
+  { rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+    symmetry; now unshelve eapply escapeEq, vA. }
+  assert [Δ,, A ||-< l > G[up_term_term σ]].
+  { eapply validTy with (wfΔ := wfΔA); tea.
+    unshelve econstructor; [shelve|]; cbn.
+    apply var0conv; [|tea].
+    replace F[↑ >> up_term_term σ] with F[σ]⟨@wk1 Δ A⟩ by now bsimpl.
+    rewrite <- (wk1_ren_on Δ A); eapply convty_wk; tea.
+    Unshelve.
+    eapply irrelevanceSubstExt with (σ := σ⟨@wk1 Δ A⟩).
+    { now bsimpl. }
+    now eapply wkSubstS.
+  }
+  rewrite <- (Hrw t); eapply escapeTerm.
+  irrelevance0; [apply Hrw|unshelve apply vt].
+  - apply wfc_cons; tea.
+  - apply var0conv; tea.
+    rewrite <- (wk1_ren_on Δ A A).
+    apply convty_wk; [now apply wfc_cons|].
+    rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+    symmetry; now unshelve eapply escapeEq, vA.
+  Unshelve.
+  all: tea.
 Qed.
 
 Lemma ηeqEqTerm {σ Δ f g} (ρ := @wk1 Γ F)
@@ -276,9 +324,9 @@ Proof.
     instValid Vσ; instValid VσUp; escape.
     eapply convtm_eta; tea.
     + destruct (PiRedTm.red p0); cbn in *; tea.
-    + now apply isLRFun_isWfFun.
+    + now eapply isLRFun_isWfFun.
     + destruct (PiRedTm.red p); cbn in *; tea.
-    + now apply isLRFun_isWfFun.
+    + now eapply isLRFun_isWfFun.
     + etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
   - match goal with H : [_ ||-Π f[σ] : _ | _] |- _ => rename H into Rfσ end.
     match goal with H : [_ ||-Π g[σ] : _ | _] |- _ => rename H into Rgσ end.
