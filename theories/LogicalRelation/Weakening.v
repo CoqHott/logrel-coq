@@ -236,12 +236,28 @@ Section Weakenings.
   Lemma isLRPair_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΣA : [Γ ||-Σ< l > A]),
     isLRPair ΣA t -> isLRPair (wkΣ ρ wfΔ ΣA) t⟨ρ⟩.
   Proof.
-  intros * [A' B' a b Hdom|]; constructor; tea.
+  intros * [A' B' a b Hdom Hcod Hfst Hsnd|]; unshelve econstructor; tea.
+  + refold; intros Ξ ρ' wfΞ.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    rewrite <- eq; irrelevance0; [|now unshelve apply Hfst].
+    now bsimpl.
   + intros Ξ ρ' *; cbn.
     assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
     irrelevance0; [apply eq|].
     rewrite <- eq.
     now unshelve apply Hdom.
+  + intros Ξ a' ρ' wfΞ ha'; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    unshelve eassert (Hcod0 := Hcod Ξ a' (ρ' ∘w ρ) wfΞ _).
+    { cbn in ha'; irrelevance0; [symmetry; apply eq|tea]. }
+    replace (B'⟨upRen_term_term ρ⟩[a' .: ρ' >> tRel]) with B'[a' .: (ρ' ∘w ρ) >> tRel] by now bsimpl.
+    irrelevance0; [|apply Hcod0].
+    now bsimpl.
+  + refold; intros Ξ ρ' wfΞ.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    rewrite <- eq.
+    irrelevance0; [|now unshelve apply Hsnd].
+    now bsimpl.
   + change [Δ |- p⟨ρ⟩ ~ p⟨ρ⟩ : (tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA))⟨ρ⟩].
     now eapply convneu_wk.
   Qed.

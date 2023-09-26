@@ -183,8 +183,12 @@ Proof.
   - intros; unshelve eapply eqv.(eqvShp); now auto.
   - now eapply redtmwf_conv.
   - destruct ispair as [A₀ B₀ a b|n Hn].
-    + constructor.
+    + unshelve econstructor.
+      * intros; now unshelve eapply eqv.(eqvShp).
       * intros; now eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); [|now eauto].
+        now unshelve eapply eqv.(eqvShp).
+      * intros; now eapply eqv.(eqvPos).
     + constructor; now eapply convneu_conv.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.

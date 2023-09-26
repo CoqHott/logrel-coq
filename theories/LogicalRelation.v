@@ -483,10 +483,19 @@ Module SigRedTy := ParamRedTyPack.
 Inductive isLRPair `{ta : tag} `{WfContext ta}
   `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
   {Γ : context} {A : term} (ΣA : SigRedTy Γ A) : term -> Type :=
-| PairLRpair : forall A' B' a b : term,
-  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΣA.(PolyRedPack.shpRed) ρ h),
-      [domRed | Δ ||- (SigRedTy.dom ΣA)⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+| PairLRpair : forall (A' B' a b : term)
+  (rdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- (SigRedTy.dom ΣA)⟨ρ⟩ ≅ A'⟨ρ⟩])
+  (rcod : forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+    (ha : [ ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΣA.(PiRedTy.dom)⟨ρ⟩ ]),
+      [ΣA.(PolyRedPack.posRed) ρ h ha | Δ ||- (SigRedTy.cod ΣA)[a .: (ρ >> tRel)] ≅ B'[a .: (ρ >> tRel)]])
+  (rfst : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- a⟨ρ⟩ : (SigRedTy.dom ΣA)⟨ρ⟩])
+  (rsnd : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.posRed) ρ h (rfst ρ h) | Δ ||- b⟨ρ⟩ : (SigRedTy.cod ΣA)[a⟨ρ⟩ .: (ρ >> tRel)] ]),
+
   isLRPair ΣA (tPair A' B' a b)
+
 | NeLRPair : forall p : term, [Γ |- p ~ p : tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA)] -> isLRPair ΣA p.
 
 Module SigRedTm.

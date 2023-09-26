@@ -510,8 +510,16 @@ Section PairRed.
       2: unshelve eapply pairFstRed; tea.
     + eapply redtmwf_refl; cbn.
       eapply ty_pair; tea.
-    + constructor; cbn; intros.
-      apply reflLRTyEq.
+    + unshelve econstructor; cbn; intros.
+      - irrelevance0; [reflexivity|eapply wkTerm].
+        apply Ra.
+        Unshelve. tea.
+      - apply reflLRTyEq.
+      - apply reflLRTyEq.
+      - assert (Hrw : B[a⟨ρ⟩ .: ρ >> tRel] = B[a..]⟨ρ⟩) by now bsimpl.
+        irrelevance0; [symmetry; apply Hrw|eapply wkTerm].
+        apply Rb.
+        Unshelve. tea.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
       * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
