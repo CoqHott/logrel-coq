@@ -130,7 +130,19 @@ Section RedDefinitions.
   | NeWfFun : forall f : term, [Γ |- f ~ f : tProd A B] -> isWfFun Γ A B f.
 
   Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
-    PairWfPair : forall A' B' a b : term, [Γ |- A ≅ A'] -> isWfPair Γ A B (tPair A' B' a b)
+    PairWfPair : forall A' B' a b : term,
+      [Γ |- A'] -> [Γ |- A ≅ A'] ->
+      [Γ,, A' |- B] ->
+      [Γ,, A' |- B'] ->
+      [Γ,, A |- B'] ->
+      [Γ,, A |- B ≅ B'] ->
+      [Γ,, A' |- B ≅ B'] ->
+      [Γ |- a : A] ->
+      [Γ |- B[a..]] ->
+      [Γ |- B'[a..]] ->
+      [Γ |- B[a..] ≅ B'[a..]] ->
+      [Γ |- b : B[a..]] ->
+      isWfPair Γ A B (tPair A' B' a b)
   | NeWfPair : forall n : term, [Γ |- n ~ n : tSig A B] -> isWfPair Γ A B n.
 
 End RedDefinitions.

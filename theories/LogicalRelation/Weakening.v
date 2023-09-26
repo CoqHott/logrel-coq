@@ -223,16 +223,6 @@ Section Weakenings.
     intros []; constructor. all: gen_typing.
   Qed.  
   
-  Lemma isWfPair_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
-    [|- Δ] ->
-    isWfPair Γ A B t -> isWfPair Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
-  Proof.
-  intros * ? []; constructor; tea.
-  + now apply convty_wk.
-  + change [Δ |- n⟨ρ⟩ ~ n⟨ρ⟩ : (tSig A B)⟨ρ⟩].
-    now eapply convneu_wk.
-  Qed.
-
   Lemma isLRPair_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΣA : [Γ ||-Σ< l > A]),
     isLRPair ΣA t -> isLRPair (wkΣ ρ wfΔ ΣA) t⟨ρ⟩.
   Proof.
