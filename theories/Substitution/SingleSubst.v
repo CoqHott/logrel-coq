@@ -194,7 +194,7 @@ Lemma substLiftSEq' {Γ F G G' t t' l} (VΓ : [||-v Γ])
   (Vtt' : [Γ,, F ||-v<l> t ≅ t' : F⟨@wk1 Γ F⟩ | VΓF | VF']) :
   [Γ ,, F ||-v<l> G[t]⇑ ≅ G'[t']⇑ | VΓF | substLiftS _ VF VG Vt].
 Proof.
-  eapply transValidEq.
+  eapply transValidTyEq.
   1: eapply substLiftSEq; [| exact VGeq]; tea.
   constructor; intros; irrelevance0; rewrite liftSubstComm ; [reflexivity|].
   instValid Vσ.

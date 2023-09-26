@@ -125,11 +125,11 @@ Lemma convCtx1 {Γ A B P l}
   [_ ||-v<l> P | VΓB].
 Proof.
   opector; intros.
-  - eapply validTy; tea; eapply convSubstCtx1; tea; now eapply symValidEq.
+  - eapply validTy; tea; eapply convSubstCtx1; tea; now eapply symValidTyEq.
   - irrelevanceRefl; unshelve eapply validTyExt.
     3,4: tea. 
-    1,2:  eapply convSubstCtx1; tea; now eapply symValidEq.
-    eapply convSubstEqCtx1; cycle 2; tea; now eapply symValidEq.
+    1,2:  eapply convSubstCtx1; tea; now eapply symValidTyEq.
+    eapply convSubstEqCtx1; cycle 2; tea; now eapply symValidTyEq.
     Unshelve. all: tea.
 Qed.
 
@@ -148,7 +148,7 @@ Proof.
   constructor; intros; irrelevanceRefl.
   eapply validTyEq; tea.
   Unshelve. 1: tea. 
-  unshelve eapply convSubstCtx1; cycle 5; tea; now eapply symValidEq.
+  unshelve eapply convSubstCtx1; cycle 5; tea; now eapply symValidTyEq.
 Qed.
 
 Lemma convSubstCtx2 {Γ Δ A1 B1 A2 B2 l σ} 
@@ -288,8 +288,8 @@ Lemma convCtx2 {Γ A1 B1 A2 B2 P l}
   [_ ||-v<l> P | VΓB12].
 Proof.
   assert [_ ||-v<l> A2 | VΓB1] by now eapply convCtx1.
-  assert [_ ||-v<l> B1 ≅ A1 | _ | VB1] by now eapply symValidEq.
-  assert [_ ||-v<l> B2 ≅ A2 | _ | VB2'] by (eapply convEqCtx1; tea; now eapply symValidEq).
+  assert [_ ||-v<l> B1 ≅ A1 | _ | VB1] by now eapply symValidTyEq.
+  assert [_ ||-v<l> B2 ≅ A2 | _ | VB2'] by (eapply convEqCtx1; tea; now eapply symValidTyEq).
   opector; intros.
   - eapply validTy; tea; now eapply convSubstCtx2'.
   - irrelevanceRefl; unshelve eapply validTyExt.
@@ -315,7 +315,7 @@ Lemma convCtx2' {Γ A1 A2 B1 B2 P l}
   (VP : [_ ||-v<l> P | VΓA12]) :
   [_ ||-v<l> P | VΓB12].
 Proof.
-  eapply irrelevanceValidity; eapply convCtx2; irrValid.
+  eapply irrelevanceTy; eapply convCtx2; irrValid.
   Unshelve. all: tea; irrValid.
 Qed.
 
