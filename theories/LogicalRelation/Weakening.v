@@ -233,6 +233,19 @@ Section Weakenings.
     now eapply convneu_wk.
   Qed.
 
+  Lemma isLRPair_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΣA : [Γ ||-Σ< l > A]),
+    isLRPair ΣA t -> isLRPair (wkΣ ρ wfΔ ΣA) t⟨ρ⟩.
+  Proof.
+  intros * [A' B' a b Hdom|]; constructor; tea.
+  + intros Ξ ρ' *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    irrelevance0; [apply eq|].
+    rewrite <- eq.
+    now unshelve apply Hdom.
+  + change [Δ |- p⟨ρ⟩ ~ p⟨ρ⟩ : (tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA))⟨ρ⟩].
+    now eapply convneu_wk.
+  Qed.
+
   Lemma wkΣTerm {Γ Δ u A l} (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Σ< l > A]) 
     (ΠA' := wkΣ ρ wfΔ ΠA) : 
     [Γ||-Σ u : A | ΠA] -> 
@@ -244,7 +257,7 @@ Section Weakenings.
       2: now unshelve eapply fstRed.
       cbn; symmetry; apply wk_comp_ren_on.
     + now eapply redtmwf_wk.
-    + apply isWfPair_ren; assumption.
+    + apply isLRPair_ren; assumption.
     + eapply convtm_wk; eassumption.
     + intros ? ρ' ?;  irrelevance0.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.

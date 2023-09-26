@@ -478,6 +478,17 @@ Definition SigRedTyEq `{ta : tag}
   {Γ : context} {A : term} (ΠA : SigRedTy Γ A) (B : term) :=
   ParamRedTyEq (T:=tSig) Γ A B ΠA.
 
+Module SigRedTy := ParamRedTyPack.
+
+Inductive isLRPair `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  {Γ : context} {A : term} (ΣA : SigRedTy Γ A) : term -> Type :=
+| PairLRpair : forall A' B' a b : term,
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΣA.(PolyRedPack.shpRed) ρ h),
+      [domRed | Δ ||- (SigRedTy.dom ΣA)⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+  isLRPair ΣA (tPair A' B' a b)
+| NeLRPair : forall p : term, [Γ |- p ~ p : tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA)] -> isLRPair ΣA p.
+
 Module SigRedTm.
 
   Record SigRedTm `{ta : tag} `{WfContext ta}
@@ -487,7 +498,7 @@ Module SigRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : ΣA.(outTy) ];
-    isfun : isWfPair Γ ΣA.(PiRedTy.dom) ΣA.(PiRedTy.cod) nf;
+    ispair : isLRPair ΣA nf;
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;

@@ -510,7 +510,8 @@ Section PairRed.
       2: unshelve eapply pairFstRed; tea.
     + eapply redtmwf_refl; cbn.
       eapply ty_pair; tea.
-    + constructor; apply PiRedTyPack.eqdom.
+    + constructor; cbn; intros.
+      apply reflLRTyEq.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
       * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
@@ -544,6 +545,22 @@ Section PairRed.
       Unshelve. all: tea.
   Qed.
 
+  Lemma isLRPair_isWfPair {Γ A B l p} (wfΓ : [|- Γ]) (ΣA : [Γ ||-Σ<l> tSig A B]) (Rp : [Γ ||-Σ p : _ | normRedΣ0 ΣA]) :
+    isWfPair Γ A B (SigRedTm.nf Rp).
+  Proof.
+  destruct Rp; simpl; intros.
+  destruct ispair as [A' B' a b HA|]; constructor; tea.
+  rewrite <- (wk_id_ren_on Γ A), <- (wk_id_ren_on Γ A').
+  eapply escapeEq; now unshelve apply HA.
+  Qed.
+
+  Lemma isLRPair_isPair {Γ A B l p} (ΣA : [Γ ||-Σ<l> tSig A B]) (Rp : [Γ ||-Σ p : _ | normRedΣ0 ΣA]) :
+    isPair (SigRedTm.nf Rp).
+  Proof.
+  destruct Rp; simpl; intros.
+  destruct ispair; constructor; tea.
+  now eapply convneu_whne.
+  Qed.
 
   Lemma sigEtaRed {Γ A B l p p'}
     (RΣ0 : [Γ ||-Σ<l> tSig A B])
@@ -564,16 +581,17 @@ Section PairRed.
     exists Rp Rp'.
     - destruct (polyRedId (normRedΣ0 RΣ0)) as [_ RB].
       assert ([Γ ||-<l> SigRedTm.nf Rp : _ | RΣ] × [Γ ||-<l> p ≅ SigRedTm.nf Rp : _ | RΣ]) as [Rnf Rpnf].
-      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp)), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
+      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp)), isPair_whnf, isLRPair_isPair.
       assert ([Γ ||-<l> SigRedTm.nf Rp' : _ | RΣ]× [Γ ||-<l> p' ≅ SigRedTm.nf Rp' : _ | RΣ]) as [Rnf' Rpnf'].
-      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp')), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
+      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp')), isPair_whnf, isLRPair_isPair.
       destruct (fstRed RΣ0 RA Rp) as [[Rfstp Rfsteq] Rfstnf].
       destruct (fstRed RΣ0 RA Rp') as [[Rfstp' Rfsteq'] Rfstnf'].
       destruct (sndRed RΣ0 RA Rp RBfst RBfstEq).
       destruct (sndRed RΣ0 RA Rp' RBfst' RBfstEq').
       escape.
+      assert [|- Γ] by now eapply wfc_wft.
       eapply convtm_eta_sig; tea.
-      1,2: now eapply SigRedTm.isfun.
+      1, 2: now eapply isLRPair_isWfPair.
       + transitivity (tFst p).
         1: now symmetry.
         transitivity (tFst p'); tea.

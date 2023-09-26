@@ -182,8 +182,9 @@ Proof.
   intros []; cbn in *; unshelve econstructor; tea.
   - intros; unshelve eapply eqv.(eqvShp); now auto.
   - now eapply redtmwf_conv.
-  - destruct isfun as [A₀ t₀|n Hn].
-    + constructor; transitivity (PiRedTy.dom ΣA); [now symmetry|tea].
+  - destruct ispair as [A₀ B₀ a b|n Hn].
+    + constructor.
+      * intros; now eapply eqv.(eqvShp).
     + constructor; now eapply convneu_conv.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.

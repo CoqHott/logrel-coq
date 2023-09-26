@@ -86,9 +86,12 @@ Lemma transEqTermΣ {Γ lA A t u v} {ΣA : [Γ ||-Σ<lA> A]}
   [Γ ||-Σ u ≅ v : A | ΣA ] ->
   [Γ ||-Σ t ≅ v : A | ΣA ].
 Proof.
-  intros [tL ?? eqfst eqsnd] [? tR ? eqfst' eqsnd'];
+  intros [tL ?? eqfst eqsnd] [? tR ? eqfst' eqsnd'].
+  assert (forall t (red : [Γ ||-Σ t : _ | ΣA]), whnf (SigRedTm.nf red)).
+  { intros ? [? ? ispair]; simpl; destruct ispair; constructor; tea.
+    now eapply convneu_whne. }
   unshelve epose proof (e := redtmwf_det _ _ (SigRedTm.red redR) (SigRedTm.red redL)); tea.
-  1,2: eapply isPair_whnf, isWfPair_isPair; apply SigRedTm.isfun.
+  1,2: now eauto.
   exists tL tR.
   + etransitivity; tea. now rewrite e.
   + intros; eapply ihdom ; [eapply eqfst| rewrite e; eapply eqfst'].
