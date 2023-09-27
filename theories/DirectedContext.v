@@ -9,23 +9,34 @@ Set Primitive Projections.
 (** Context: list of declarations *)
 (** Terms use de Bruijn indices to refer to context entries.*)
 
-Definition context := list (direction × term).
+Record context_decl :=
+  { ty: term ;
+    ty_dir: direction ; (* merely an invariant *)
+    dir: direction ;
+  }.
 
-Notation "'ε'" := (@nil (direction × term)).
-Notation " Γ ,, d " := (@cons (direction × term) d Γ) (at level 20, d at next level).
-Notation " Γ ,,, Δ " := (@app (direction × term) Δ Γ) (at level 25, Δ at next level, left associativity).
+Definition context := list context_decl.
+
+Notation "'ε'" := (@nil context_decl).
+Notation " Γ ,, d " := (@cons context_decl d Γ) (at level 20, d at next level).
+Notation " Γ ,,, Δ " := (@app context_decl Δ Γ) (at level 25, Δ at next level, left associativity).
 
 (** States that a definition, correctly weakened, is in a context. *)
-Inductive in_ctx : context -> nat -> (direction × term) -> Type :=
-  | in_here (Γ : context) d t : in_ctx (Γ,, (d, t)) 0 (d, t⟨↑⟩)
-  | in_there (Γ : context) d t d' t' n : in_ctx Γ n (d, t) -> in_ctx (Γ,,(d', t')) (S n) (d, ren_term shift t).
+Inductive in_ctx : context -> nat -> context_decl -> Type :=
+  | in_here (Γ : context) T dT d :
+    in_ctx (Γ,, {| ty := T; ty_dir := dT; dir := d |}) 0
+           {| ty := T⟨↑⟩; ty_dir := dT; dir := d |}
+  | in_there (Γ : context) T dT d T' dT' d' n :
+    in_ctx Γ n {| ty := T; ty_dir := dT; dir := d |} ->
+    in_ctx (Γ,,{| ty := T'; ty_dir := dT'; dir := d' |}) (S n) {| ty := ren_term shift T; ty_dir := dT; dir := d |}.
 
 Lemma in_ctx_inj Γ n decl decl' :
   in_ctx Γ n decl -> in_ctx Γ n decl' -> decl = decl'.
 Proof.
   induction 1 in decl' |- * ; inversion 1 ; subst.
   1: reflexivity.
-  have eq: (d, t) = (d0, t0) by now trivial.
+  have eq: {| ty := T; ty_dir := dT; dir := d |}
+           = {| ty := T0; ty_dir := dT0; dir := d0 |} by now trivial.
   inversion eq.
   f_equal.
 Qed.

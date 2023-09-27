@@ -8,10 +8,10 @@ Set Primitive Projections.
 
 
 Reserved Notation "[ Γ |-( d ) A ]" (at level 0, Γ, d, A at level 50, only parsing).
-Reserved Notation "[ Γ |-( d ) t : A ]" (at level 0, Γ, d, t, A at level 50, only parsing).
+Reserved Notation "[ Γ |-( dt ) t : A @ dA ]" (at level 0, Γ, dt, t, A, dA at level 50, only parsing).
 Reserved Notation "[ Γ |-( d ) A ≅ B ]" (at level 0, Γ, d, A, B at level 50, only parsing).
-Reserved Notation "[ Γ |-( d ) t ≅ t' : A ]" (at level 0, Γ, d, t, t', A at level 50, only parsing).
-Reserved Notation "[ Γ |-( d ) t ⤳* u ∈ A ]" (at level 0, Γ, d, t, u, A at level 50).
+Reserved Notation "[ Γ |-( dt ) t ≅ t' : A @ dA ]" (at level 0, Γ, dt, t, t', A, dA at level 50, only parsing).
+Reserved Notation "[ Γ |-( dt ) t ⤳* u ∈ A @ dA ]" (at level 0, Γ, dt, t, u, A, dA at level 50).
 
 Fixpoint is_kind (t: term) : Type :=
   match t with
@@ -41,17 +41,17 @@ Section Definitions.
       | conconsDiscr {Γ dA A} :
           [ |- Γ ] ->
           [ Γ |-( dA ) A ] ->
-          [ |-  Γ ,, (Discr, A) ]
+          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Discr |} ]
       | conconsFun {Γ dA A} :
           [ |- Γ ] ->
           [ Γ |-( dA ) A ] ->
           is_kind A ->
-          [ |-  Γ ,, (Fun, A) ]
+          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Fun |} ]
       | conconsCofun {Γ dA A} :
           [ |- Γ ] ->
           [ Γ |-( dA ) A ] ->
           is_kind A ->
-          [ |-  Γ ,, (Cofun, A) ]
+          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Cofun |} ]
 
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> direction -> term -> Type :=
@@ -60,7 +60,7 @@ Section Definitions.
           [ Γ |-( d ) U ]
       | wfTypeProd {Γ d} {A B} :
           [ Γ |-( dir_op d ) A ] ->
-          [Γ ,, (Discr, A) |-( d ) B ] ->
+          [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B ] ->
           [ Γ |-( d ) tProd A B ]
       (* | wfTypeNat {Γ} : *)
       (*     [|- Γ] -> *)
@@ -78,27 +78,27 @@ Section Definitions.
       (*     [Γ |- y : A] -> *)
       (*     [Γ |- tId A x y] *)
       | wfTypeUniv {Γ d} {A} :
-          [ Γ |-( d ) A : U ] ->
+          [ Γ |-( d ) A : U @ Discr ] ->
           [ Γ |-( d ) A ]
   (** **** Typing *)
-  with TypingDecl : context -> direction -> term -> term -> Type :=
-      | wfVar {Γ d} {n dT T} :
+  with TypingDecl : context -> direction -> term -> direction -> term -> Type :=
+      | wfVar {Γ d'} {n d T dT} :
           [   |- Γ ] ->
-          in_ctx Γ n (dT, T) ->
-          dir_leq dT d ->
-          [ Γ |-( d ) tRel n : T ]
+          in_ctx Γ n {| ty := T; ty_dir := dT; dir := d |} ->
+          dir_leq d d' ->
+          [ Γ |-( d' ) tRel n : T @ dT ]
       | wfTermProd {Γ d} {A B} :
-          [ Γ |-( dir_op d ) A : U] ->
-          [Γ ,, (Discr, A) |-( d ) B : U ] ->
-          [ Γ |-( d ) tProd A B : U ]
-      | wfTermLam {Γ d} {dA A B t} :
-          [ Γ |-( dA ) A ] ->
-          [ Γ ,, (Discr, A) |-( d ) t : B ] ->
-          [ Γ |-( d ) tLambda A t : tProd A B]
-      | wfTermApp {Γ d} {f a A B} :
-          [ Γ |-( d ) f : tProd A B ] ->
-          [ Γ |-( Discr ) a : A ] ->
-          [ Γ |-( d ) tApp f a : B[a..] ]
+          [ Γ |-( dir_op d ) A : U @ Discr ] ->
+          [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B : U @ Discr ] ->
+          [ Γ |-( d ) tProd A B : U @ Discr ]
+      | wfTermLam {Γ d} {dT A B t} :
+          [ Γ |-( dir_op dT ) A ] ->
+          [ Γ ,, {| ty := A ; ty_dir := dir_op dT ; dir := Discr |} |-( d ) t : B @ dT ] ->
+          [ Γ |-( d ) tLambda A t : tProd A B @ dT ]
+      | wfTermApp {Γ d} {dT f a A B} :
+          [ Γ |-( d ) f : tProd A B @ dT ] ->
+          [ Γ |-( Discr ) a : A @ dir_op dT ] ->
+          [ Γ |-( d ) tApp f a : B[a..] @ dT ]
   (*     | wfTermNat {Γ} : *)
   (*         [|-Γ] -> *)
   (*         [Γ |- tNat : U] *)
@@ -139,7 +139,7 @@ Section Definitions.
   (*       [Γ |- tSnd p : B[(tFst p)..]] *)
   (*     | wfTermId {Γ} {A x y} : *)
   (*         [Γ |- A : U] -> *)
-  (*         [Γ |- x : A] -> *)
+  (*         [Γ |- x : A] ->  *)
   (*         [Γ |- y : A] -> *)
   (*         [Γ |- tId A x y : U] *)
   (*     | wfTermRefl {Γ A x} : *)
@@ -155,15 +155,15 @@ Section Definitions.
   (*         [Γ |- e : tId A x y] -> *)
   (*         [Γ |- tIdElim A x P hr y e : P[e .: y..]] *)
       | wfTermConv {Γ d} {t dA A B} :
-          [ Γ |-( d ) t : A ] ->
+          [ Γ |-( d ) t : A @ dA ] ->
           [ Γ |-( dA ) A ≅ B ] ->
-          [ Γ |-( d ) t : B ]
+          [ Γ |-( d ) t : B @ dA ]
   (** **** Conversion of types *)
   with ConvTypeDecl : context -> direction -> term -> term  -> Type :=
       | TypePiCong {Γ d} {A B C D} :
           [ Γ |-( dir_op d ) A] ->
           [ Γ |-( dir_op d ) A ≅ B] ->
-          [ Γ ,, (Discr, A) |-( d ) C ≅ D] ->
+          [ Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) C ≅ D] ->
           [ Γ |-( d ) tProd A C ≅ tProd B D]
   (*     | TypeSigCong {Γ} {A B C D} : *)
   (*         [ Γ |- A] -> *)
@@ -180,7 +180,7 @@ Section Definitions.
           [ Γ |-( d ) A ] ->
           [ Γ |-( d ) A ≅ A]
       | convUniv {Γ d} {A B} :
-        [ Γ |-( d ) A ≅ B : U ] ->
+        [ Γ |-( d ) A ≅ B : U @ Discr ] ->
         [ Γ |-( d ) A ≅ B ]
       | TypeSym {Γ d} {A B} :
           [ Γ |-( d ) A ≅ B ] ->
@@ -190,7 +190,7 @@ Section Definitions.
           [ Γ |-( d ) B ≅ C] ->
           [ Γ |-( d ) A ≅ C]
   (** **** Conversion of terms *)
-  with ConvTermDecl : context -> direction -> term -> term -> term -> Type :=
+  with ConvTermDecl : context -> direction -> term -> direction -> term -> term -> Type :=
   (*     | TermBRed {Γ} {a t A B} : *)
   (*             [ Γ |- A ] -> *)
   (*             [ Γ ,, A |- t : B ] -> *)
@@ -301,52 +301,52 @@ Section Definitions.
   (*       [Γ |- x ≅ y : A] -> *)
   (*       [Γ |- x ≅ z : A] -> *)
   (*       [Γ |- tIdElim A x P hr y (tRefl A' z) ≅ hr : P[tRefl A' z .: y..]] *)
-      | TermRefl {Γ d} {t A} :
-          [ Γ |-( d ) t : A ] ->
-          [ Γ |-( d ) t ≅ t : A ]
+      | TermRefl {Γ d} {dA t A} :
+          [ Γ |-( d ) t : A @ dA ] ->
+          [ Γ |-( d ) t ≅ t : A @ dA ]
       | TermConv {Γ d} {t t' dA A B} :
-          [ Γ |-( d ) t ≅ t': A ] ->
+          [ Γ |-( d ) t ≅ t': A @ dA ] ->
           [ Γ |-( dA ) A ≅ B ] ->
-          [ Γ |-( d ) t ≅ t': B ]
-      | TermSym {Γ d} {t t' A} :
-          [ Γ |-( d ) t ≅ t' : A ] ->
-          [ Γ |-( d ) t' ≅ t : A ]
-      | TermTrans {Γ d} {t t' t'' A} :
-          [ Γ |-( d ) t ≅ t' : A ] ->
-          [ Γ |-( d ) t' ≅ t'' : A ] ->
-          [ Γ |-( d ) t ≅ t'' : A ]
+          [ Γ |-( d ) t ≅ t': B @ dA ]
+      | TermSym {Γ d} {dA t t' A} :
+          [ Γ |-( d ) t ≅ t' : A @ dA ] ->
+          [ Γ |-( d ) t' ≅ t : A @ dA ]
+      | TermTrans {Γ d} {dA t t' t'' A} :
+          [ Γ |-( d ) t ≅ t' : A @ dA ] ->
+          [ Γ |-( d ) t' ≅ t'' : A @ dA ] ->
+          [ Γ |-( d ) t ≅ t'' : A @ dA ]
 
   where "[   |- Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |-( d ) T ]" := (WfTypeDecl Γ d T)
-  and   "[ Γ |-( d ) t : T ]" := (TypingDecl Γ d T t)
+  and   "[ Γ |-( dt ) t : T @ dT ]" := (TypingDecl Γ dt T dT t)
   and   "[ Γ |-( d ) A ≅ B ]" := (ConvTypeDecl Γ d A B)
-  and   "[ Γ |-( d ) t ≅ t' : T ]" := (ConvTermDecl Γ d T t t').
+  and   "[ Γ |-( dt ) t ≅ t' : T @ dT ]" := (ConvTermDecl Γ dt T dT t t').
 
   (** (Typed) reduction is defined afterwards,
   rather than mutually with the other relations. *)
 
-  Local Coercion isterm : term >-> class.
+  (* Local Coercion isterm : term >-> class. *)
 
-  Record RedClosureDecl (Γ : context) (d: direction) (A : class) (t u : term) := {
-    reddecl_typ : match A with istype => [Γ |-( d ) t] | isterm A => [Γ |-( d ) t : A] end;
-    reddecl_red : RedClosureAlg t u;
-    reddecl_conv : match A with istype => [ Γ |-( d ) t ≅ u ] | isterm A => [Γ |-( d ) t ≅ u : A] end;
-  }.
+  (* Record RedClosureDecl (Γ : context) (d: direction) (A : class) (t u : term) := { *)
+  (*   reddecl_typ : match A with istype => [Γ |-( d ) t] | isterm A => [Γ |-( d ) t : A] end; *)
+  (*   reddecl_red : RedClosureAlg t u; *)
+  (*   reddecl_conv : match A with istype => [ Γ |-( d ) t ≅ u ] | isterm A => [Γ |-( d ) t ≅ u : A] end; *)
+  (* }. *)
 
-  Notation "[ Γ |-( d ) t ⤳* t' ∈ A ]" := (RedClosureDecl Γ d A t t').
+  (* Notation "[ Γ |-( d ) t ⤳* t' ∈ A ]" := (RedClosureDecl Γ d A t t'). *)
 
-  Record ConvNeuConvDecl (Γ : context) (d: direction) (A : term) (t u : term) := {
-    convnedecl_whne_l : whne t;
-    convnedecl_whne_r : whne u;
-    convnedecl_conv : [ Γ |-( d ) t ≅ u : A ];
-  }.
+  (* Record ConvNeuConvDecl (Γ : context) (d: direction) (A : term) (t u : term) := { *)
+  (*   convnedecl_whne_l : whne t; *)
+  (*   convnedecl_whne_r : whne u; *)
+  (*   convnedecl_conv : [ Γ |-( d ) t ≅ u : A ]; *)
+  (* }. *)
 
 End Definitions.
 
-Definition TermRedClosure Γ d A t u := RedClosureDecl Γ d (isterm A) t u.
-Definition TypeRedClosure Γ d A B := RedClosureDecl Γ d istype A B.
+(* Definition TermRedClosure Γ d A t u := RedClosureDecl Γ d (isterm A) t u. *)
+(* Definition TypeRedClosure Γ d A B := RedClosureDecl Γ d istype A B. *)
 
-Notation "[ Γ |-( d ) t ⤳* u ∈ A ]" := (RedClosureDecl Γ A t u).
+(* Notation "[ Γ |-( d ) t ⤳* u ∈ A ]" := (RedClosureDecl Γ A t u). *)
 
 (** ** Instances *)
 (** Used for printing (see Notations) and as a support for the generic typing
@@ -369,16 +369,16 @@ Module DeclarativeTypingData.
   (* #[export] Instance RedType_Decl : RedType de := TypeRedClosure. *)
   (* #[export] Instance RedTerm_Decl : RedTerm de := TermRedClosure. *)
 
-  Ltac fold_decl :=
-    change WfContextDecl with (wf_context (ta := de)) in * ;
-    change WfTypeDecl with (wf_type (ta := de)) in *;
-    change TypingDecl with (typing (ta := de)) in * ;
-    change ConvTypeDecl with (conv_type (ta := de)) in * ;
-    change ConvTermDecl with (conv_term (ta := de)) in * ;
-    change TypeRedClosure with (red_ty (ta := de)) in *;
-    change TermRedClosure with (red_tm (ta := de)) in *.
+  (* Ltac fold_decl := *)
+  (*   change WfContextDecl with (wf_context (ta := de)) in * ; *)
+  (*   change WfTypeDecl with (wf_type (ta := de)) in *; *)
+  (*   change TypingDecl with (typing (ta := de)) in * ; *)
+  (*   change ConvTypeDecl with (conv_type (ta := de)) in * ; *)
+  (*   change ConvTermDecl with (conv_term (ta := de)) in * ; *)
+  (*   change TypeRedClosure with (red_ty (ta := de)) in *; *)
+  (*   change TermRedClosure with (red_tm (ta := de)) in *. *)
 
-  Smpl Add fold_decl : refold.
+  (* Smpl Add fold_decl : refold. *)
 
 End DeclarativeTypingData.
 
