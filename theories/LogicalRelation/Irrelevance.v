@@ -73,7 +73,6 @@ Proof.
   - eapply symLRPack; eapply eqv.(eqvPos).
 Qed.
 
-
 (** *** Lemmas for product types *)
 
 (** A difficulty is that we need to show the equivalence right away, rather than only an implication,
@@ -108,7 +107,10 @@ Proof.
   intros []; cbn in *; econstructor; tea.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
-    + constructor; transitivity (PiRedTy.dom ΠA); [now symmetry|tea].
+    + constructor.
+      * intros; now eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); [|eauto].
+        now apply eqv.(eqvShp).
     + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.
@@ -180,8 +182,13 @@ Proof.
   intros []; cbn in *; unshelve econstructor; tea.
   - intros; unshelve eapply eqv.(eqvShp); now auto.
   - now eapply redtmwf_conv.
-  - destruct isfun as [A₀ t₀|n Hn].
-    + constructor; transitivity (PiRedTy.dom ΣA); [now symmetry|tea].
+  - destruct ispair as [A₀ B₀ a b|n Hn].
+    + unshelve econstructor.
+      * intros; now unshelve eapply eqv.(eqvShp).
+      * intros; now eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); [|now eauto].
+        now unshelve eapply eqv.(eqvShp).
+      * intros; now eapply eqv.(eqvPos).
     + constructor; now eapply convneu_conv.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.

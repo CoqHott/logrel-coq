@@ -174,13 +174,23 @@ Section Weakenings.
       Unshelve. all: tea.
   Qed.
 
-  Lemma isWfFun_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
-    [|- Δ] ->
-    isWfFun Γ A B t -> isWfFun Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Lemma isLRFun_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΠA : [Γ ||-Π< l > A]),
+    isLRFun ΠA t -> isLRFun (wkΠ ρ wfΔ ΠA) t⟨ρ⟩.
   Proof.
-  intros * ? []; constructor; tea.
-  + now apply convty_wk.
-  + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd A B)⟨ρ⟩].
+  intros * [A' t' Hdom Ht|]; constructor; tea.
+  + intros Ξ ρ' *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    irrelevance0; [apply eq|].
+    rewrite <- eq.
+    now unshelve apply Hdom.
+  + intros Ξ a ρ' wfΞ *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    unshelve eassert (Ht0 := Ht Ξ a (ρ' ∘w ρ) wfΞ _).
+    { cbn in ha; irrelevance0; [symmetry; apply eq|tea]. }
+    replace (t'⟨upRen_term_term ρ⟩[a .: ρ' >> tRel]) with (t'[a .: (ρ' ∘w ρ) >> tRel]) by now bsimpl.
+    irrelevance0; [|apply Ht0].
+    now bsimpl.
+  + change [Δ |- f⟨ρ⟩ ~ f⟨ρ⟩ : (tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA))⟨ρ⟩].
     now eapply convneu_wk.
   Qed.
 
@@ -193,7 +203,7 @@ Section Weakenings.
     intros [t].
     exists (t⟨ρ⟩); try change (tProd _ _) with (ΠA.(outTy)⟨ρ⟩).
     + now eapply redtmwf_wk.
-    + now apply isWfFun_ren.
+    + now apply isLRFun_ren.
     + now apply convtm_wk.
     + intros ? a ρ' ??.
       replace ((t ⟨ρ⟩)⟨ ρ' ⟩) with (t⟨ρ' ∘w ρ⟩) by now bsimpl.
@@ -213,13 +223,32 @@ Section Weakenings.
     intros []; constructor. all: gen_typing.
   Qed.  
   
-  Lemma isWfPair_ren : forall Γ Δ A B t (ρ : Δ ≤ Γ),
-    [|- Δ] ->
-    isWfPair Γ A B t -> isWfPair Δ A⟨ρ⟩ B⟨upRen_term_term ρ⟩ t⟨ρ⟩.
+  Lemma isLRPair_ren : forall Γ Δ t A l (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (ΣA : [Γ ||-Σ< l > A]),
+    isLRPair ΣA t -> isLRPair (wkΣ ρ wfΔ ΣA) t⟨ρ⟩.
   Proof.
-  intros * ? []; constructor; tea.
-  + now apply convty_wk.
-  + change [Δ |- n⟨ρ⟩ ~ n⟨ρ⟩ : (tSig A B)⟨ρ⟩].
+  intros * [A' B' a b Hdom Hcod Hfst Hsnd|]; unshelve econstructor; tea.
+  + refold; intros Ξ ρ' wfΞ.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    rewrite <- eq; irrelevance0; [|now unshelve apply Hfst].
+    now bsimpl.
+  + intros Ξ ρ' *; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    irrelevance0; [apply eq|].
+    rewrite <- eq.
+    now unshelve apply Hdom.
+  + intros Ξ a' ρ' wfΞ ha'; cbn.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    unshelve eassert (Hcod0 := Hcod Ξ a' (ρ' ∘w ρ) wfΞ _).
+    { cbn in ha'; irrelevance0; [symmetry; apply eq|tea]. }
+    replace (B'⟨upRen_term_term ρ⟩[a' .: ρ' >> tRel]) with B'[a' .: (ρ' ∘w ρ) >> tRel] by now bsimpl.
+    irrelevance0; [|apply Hcod0].
+    now bsimpl.
+  + refold; intros Ξ ρ' wfΞ.
+    assert (eq : forall t, t⟨ρ' ∘w ρ⟩ = t⟨ρ⟩⟨ρ'⟩) by now bsimpl.
+    rewrite <- eq.
+    irrelevance0; [|now unshelve apply Hsnd].
+    now bsimpl.
+  + change [Δ |- p⟨ρ⟩ ~ p⟨ρ⟩ : (tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA))⟨ρ⟩].
     now eapply convneu_wk.
   Qed.
 
@@ -234,7 +263,7 @@ Section Weakenings.
       2: now unshelve eapply fstRed.
       cbn; symmetry; apply wk_comp_ren_on.
     + now eapply redtmwf_wk.
-    + apply isWfPair_ren; assumption.
+    + apply isLRPair_ren; assumption.
     + eapply convtm_wk; eassumption.
     + intros ? ρ' ?;  irrelevance0.
       2: rewrite wk_comp_ren_on; now unshelve eapply sndRed.

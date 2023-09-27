@@ -400,6 +400,18 @@ Definition PiRedTyEq `{ta : tag}
 Module PiRedTyEq := ParamRedTyEq.
 Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq (Γ:=Γ) (A:=A) ΠA B).
 
+Inductive isLRFun `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  {Γ : context} {A : term} (ΠA : PiRedTy Γ A) : term -> Type :=
+| LamLRFun : forall A' t : term,
+  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (domRed:= ΠA.(PolyRedPack.shpRed) ρ h),
+      [domRed | Δ ||- (PiRedTy.dom ΠA)⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+    (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]),
+      [ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- t[a .: (ρ >> tRel)] : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]) ->
+  isLRFun ΠA (tLambda A' t)
+| NeLRFun : forall f : term, [Γ |- f ~ f : tProd (PiRedTy.dom ΠA) (PiRedTy.cod ΠA)] -> isLRFun ΠA f.
+
 Module PiRedTm.
 
   Record PiRedTm `{ta : tag} `{WfContext ta}
@@ -409,7 +421,7 @@ Module PiRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
-    isfun : isWfFun Γ ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) nf;
+    isfun : isLRFun ΠA nf;
     refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
       (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ])
@@ -466,6 +478,26 @@ Definition SigRedTyEq `{ta : tag}
   {Γ : context} {A : term} (ΠA : SigRedTy Γ A) (B : term) :=
   ParamRedTyEq (T:=tSig) Γ A B ΠA.
 
+Module SigRedTy := ParamRedTyPack.
+
+Inductive isLRPair `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  {Γ : context} {A : term} (ΣA : SigRedTy Γ A) : term -> Type :=
+| PairLRpair : forall (A' B' a b : term)
+  (rdom : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- (SigRedTy.dom ΣA)⟨ρ⟩ ≅ A'⟨ρ⟩])
+  (rcod : forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+    (ha : [ ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- a : ΣA.(PiRedTy.dom)⟨ρ⟩ ]),
+      [ΣA.(PolyRedPack.posRed) ρ h ha | Δ ||- (SigRedTy.cod ΣA)[a .: (ρ >> tRel)] ≅ B'[a .: (ρ >> tRel)]])
+  (rfst : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- a⟨ρ⟩ : (SigRedTy.dom ΣA)⟨ρ⟩])
+  (rsnd : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      [ΣA.(PolyRedPack.posRed) ρ h (rfst ρ h) | Δ ||- b⟨ρ⟩ : (SigRedTy.cod ΣA)[a⟨ρ⟩ .: (ρ >> tRel)] ]),
+
+  isLRPair ΣA (tPair A' B' a b)
+
+| NeLRPair : forall p : term, [Γ |- p ~ p : tSig (SigRedTy.dom ΣA) (SigRedTy.cod ΣA)] -> isLRPair ΣA p.
+
 Module SigRedTm.
 
   Record SigRedTm `{ta : tag} `{WfContext ta}
@@ -475,7 +507,7 @@ Module SigRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : ΣA.(outTy) ];
-    isfun : isWfPair Γ ΣA.(PiRedTy.dom) ΣA.(PiRedTy.cod) nf;
+    ispair : isLRPair ΣA nf;
     refl : [ Γ |- nf ≅ nf : ΣA.(outTy) ];
     fstRed {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) :
       [ΣA.(PolyRedPack.shpRed) ρ h | Δ ||- tFst nf⟨ρ⟩ : ΣA.(ParamRedTyPack.dom)⟨ρ⟩] ;

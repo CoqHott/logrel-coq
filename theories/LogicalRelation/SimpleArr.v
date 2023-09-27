@@ -140,7 +140,11 @@ Section SimpleArrow.
     econstructor; cbn.
     - eapply redtmwf_refl.
       now eapply ty_id.
-    - now constructor.
+    - constructor.
+      + intros; cbn; apply reflLRTyEq.
+      + intros; cbn.
+        irrelevance0; [|apply ha].
+        cbn; bsimpl; now rewrite rinstInst'_term.
     - eapply convtm_id; tea.
       eapply wfc_wft; now escape.
     - intros; cbn; irrelevance0.
@@ -277,8 +281,12 @@ Section SimpleArrow.
     econstructor.
     - eapply redtmwf_refl.
       eapply ty_comp; cycle 2; tea.
-    - constructor; cbn.
-      unshelve eapply escapeEq, reflLRTyEq; [|tea].
+    - constructor; intros; cbn.
+      + apply reflLRTyEq.
+      + assert (Hrw : forall t, t⟨↑⟩[a .: ρ >> tRel] = t⟨ρ⟩).
+        { intros; bsimpl; symmetry; now apply rinstInst'_term. }
+        do 2 rewrite Hrw; irrelevance0; [symmetry; apply Hrw|].
+        unshelve eapply h; tea.
     - cbn. eapply convtm_comp; cycle 6; tea.
       erewrite <- wk1_ren_on.
       eapply escapeEqTerm.
@@ -302,6 +310,6 @@ Section SimpleArrow.
       + eapply LRTmEqSym.
         unshelve eapply beta; tea.
       + cbn; bsimpl; now rewrite rinstInst'_term.
-  Qed. 
+  Qed.
 
 End SimpleArrow.

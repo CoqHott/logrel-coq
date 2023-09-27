@@ -510,12 +510,21 @@ Section PairRed.
       2: unshelve eapply pairFstRed; tea.
     + eapply redtmwf_refl; cbn.
       eapply ty_pair; tea.
-    + constructor; apply PiRedTyPack.eqdom.
+    + unshelve econstructor; cbn; intros.
+      - irrelevance0; [reflexivity|eapply wkTerm].
+        apply Ra.
+        Unshelve. tea.
+      - apply reflLRTyEq.
+      - apply reflLRTyEq.
+      - assert (Hrw : B[a⟨ρ⟩ .: ρ >> tRel] = B[a..]⟨ρ⟩) by now bsimpl.
+        irrelevance0; [symmetry; apply Hrw|eapply wkTerm].
+        apply Rb.
+        Unshelve. tea.
     + eapply convtm_eta_sig; tea.
       * now eapply ty_pair.
-      * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
+      * constructor; tea; (unshelve eapply escapeEq, reflLRTyEq; [|tea]).
       * now eapply ty_pair.
-      * constructor; unshelve eapply escapeEq, reflLRTyEq; [|tea].
+      * constructor; tea; (unshelve eapply escapeEq, reflLRTyEq; [|tea]).
       * enough [Γ |- tFst (tPair A B a b) ≅ a : A].
         1: transitivity a; tea; now symmetry.
         eapply convtm_exp.
@@ -544,6 +553,73 @@ Section PairRed.
       Unshelve. all: tea.
   Qed.
 
+  Lemma isLRPair_isWfPair {Γ A B l p} (wfΓ : [|- Γ]) (ΣA : [Γ ||-Σ<l> tSig A B])
+  (RA : [Γ ||-<l> A])
+  (Rp : [Γ ||-Σ p : _ | normRedΣ0 ΣA]) :
+    isWfPair Γ A B (SigRedTm.nf Rp).
+  Proof.
+  destruct Rp; simpl; intros.
+  destruct ispair as [A' B' a b HA HB Ha Hb|]; [|constructor; tea].
+  assert (Hrw : forall A t, t[tRel 0 .: @wk1 Γ A >> tRel] = t).
+  { intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert (Hrw' : forall a t, t[a .: @wk_id Γ >> tRel] = t[a..]).
+  { intros; now bsimpl. }
+  assert [Γ |-[ ta ] A].
+  { now unshelve eapply escape. }
+  assert [Γ |-[ ta ] A'].
+  { rewrite <- (wk_id_ren_on Γ A'); now unshelve eapply escapeConv, HA. }
+  assert [|-[ ta ] Γ,, A'].
+  { now eapply wfc_cons. }
+  assert [Γ |-[ ta ] A ≅ A'].
+  { rewrite <- (wk_id_ren_on Γ A), <- (wk_id_ren_on Γ A').
+    eapply escapeEq; now unshelve apply HA. }
+  assert (RB :
+    forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
+       (ha : [PolyRedPack.shpRed (normRedΣ0 ΣA) ρ h | Δ ||- a
+             : (ParamRedTyPack.dom (normRedΣ0 ΣA))⟨ρ⟩]),
+     [Δ ||-<l> B[a .: ρ >> tRel]]
+  ).
+  { intros Δ a0 ? ? ha0.
+    unshelve econstructor.
+    + eapply PolyRedPack.posRed, ha0.
+    + eapply PolyRedPack.posAd, PolyRed.toAd. }
+  constructor; tea.
+  - rewrite <- (Hrw A' B); unshelve eapply escape, RB; tea.
+    apply var0conv; cbn; [|tea].
+    rewrite <- (@wk1_ren_on Γ A' A'); apply convty_wk; [tea|now symmetry].
+  - rewrite <- (Hrw A' B'); unshelve eapply escapeConv, HB; tea.
+    apply var0conv; cbn; [|tea].
+    rewrite <- (@wk1_ren_on Γ A' A'); apply convty_wk; [tea|now symmetry].
+  - rewrite <- (Hrw A B'); unshelve eapply escapeConv, HB.
+    + apply wfc_cons; tea.
+    + apply var0; cbn; [now bsimpl|tea].
+  - rewrite <- (Hrw A B), <- (Hrw A B'); unshelve eapply escapeEq, HB.
+    + apply wfc_cons; tea.
+    + apply var0; cbn; [now bsimpl|tea].
+  - rewrite <- (Hrw A' B), <- (Hrw A' B'); unshelve eapply escapeEq, HB.
+    + apply wfc_cons; tea.
+    + apply var0conv; cbn; tea.
+      rewrite <- (@wk1_ren_on Γ A' A'); apply convty_wk; [tea|now symmetry].
+  - rewrite <- (wk_id_ren_on Γ A), <- (wk_id_ren_on Γ a).
+    now unshelve eapply escapeTerm, Ha.
+  - rewrite <- Hrw'.
+    unshelve eapply escape, RB; tea.
+    rewrite <- (wk_id_ren_on Γ a); now unshelve apply Ha.
+  - rewrite <- Hrw'; unshelve eapply escapeConv, HB; tea.
+    rewrite <- (wk_id_ren_on Γ a); now unshelve apply Ha.
+  - rewrite <- !Hrw'; unshelve eapply escapeEq, HB; tea.
+    rewrite <- (wk_id_ren_on Γ a); now unshelve apply Ha.
+  - rewrite <- Hrw', <- (wk_id_ren_on Γ b), <- (wk_id_ren_on Γ a).
+    now unshelve eapply escapeTerm, Hb.
+  Qed.
+
+  Lemma isLRPair_isPair {Γ A B l p} (ΣA : [Γ ||-Σ<l> tSig A B]) (Rp : [Γ ||-Σ p : _ | normRedΣ0 ΣA]) :
+    isPair (SigRedTm.nf Rp).
+  Proof.
+  destruct Rp; simpl; intros.
+  destruct ispair; constructor; tea.
+  now eapply convneu_whne.
+  Qed.
 
   Lemma sigEtaRed {Γ A B l p p'}
     (RΣ0 : [Γ ||-Σ<l> tSig A B])
@@ -564,16 +640,17 @@ Section PairRed.
     exists Rp Rp'.
     - destruct (polyRedId (normRedΣ0 RΣ0)) as [_ RB].
       assert ([Γ ||-<l> SigRedTm.nf Rp : _ | RΣ] × [Γ ||-<l> p ≅ SigRedTm.nf Rp : _ | RΣ]) as [Rnf Rpnf].
-      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp)), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
+      1: eapply (redTmFwdConv Rp (SigRedTm.red Rp)), isPair_whnf, isLRPair_isPair.
       assert ([Γ ||-<l> SigRedTm.nf Rp' : _ | RΣ]× [Γ ||-<l> p' ≅ SigRedTm.nf Rp' : _ | RΣ]) as [Rnf' Rpnf'].
-      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp')), isPair_whnf, isWfPair_isPair, SigRedTm.isfun.
+      1: eapply (redTmFwdConv Rp' (SigRedTm.red Rp')), isPair_whnf, isLRPair_isPair.
       destruct (fstRed RΣ0 RA Rp) as [[Rfstp Rfsteq] Rfstnf].
       destruct (fstRed RΣ0 RA Rp') as [[Rfstp' Rfsteq'] Rfstnf'].
       destruct (sndRed RΣ0 RA Rp RBfst RBfstEq).
       destruct (sndRed RΣ0 RA Rp' RBfst' RBfstEq').
       escape.
+      assert [|- Γ] by now eapply wfc_wft.
       eapply convtm_eta_sig; tea.
-      1,2: now eapply SigRedTm.isfun.
+      1, 2: now eapply isLRPair_isWfPair.
       + transitivity (tFst p).
         1: now symmetry.
         transitivity (tFst p'); tea.

@@ -125,11 +125,24 @@ Section RedDefinitions.
   }.
 
   Inductive isWfFun (Γ : context) (A B : term) : term -> Set :=
-    LamWfFun : forall A' t : term, [Γ |- A ≅ A'] -> isWfFun Γ A B (tLambda A' t)
+    LamWfFun : forall A' t : term,
+      [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ,, A |- t : B] -> [Γ,, A' |- t : B] -> isWfFun Γ A B (tLambda A' t)
   | NeWfFun : forall f : term, [Γ |- f ~ f : tProd A B] -> isWfFun Γ A B f.
 
   Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
-    PairWfPair : forall A' B' a b : term, [Γ |- A ≅ A'] -> isWfPair Γ A B (tPair A' B' a b)
+    PairWfPair : forall A' B' a b : term,
+      [Γ |- A'] -> [Γ |- A ≅ A'] ->
+      [Γ,, A' |- B] ->
+      [Γ,, A' |- B'] ->
+      [Γ,, A |- B'] ->
+      [Γ,, A |- B ≅ B'] ->
+      [Γ,, A' |- B ≅ B'] ->
+      [Γ |- a : A] ->
+      [Γ |- B[a..]] ->
+      [Γ |- B'[a..]] ->
+      [Γ |- B[a..] ≅ B'[a..]] ->
+      [Γ |- b : B[a..]] ->
+      isWfPair Γ A B (tPair A' B' a b)
   | NeWfPair : forall n : term, [Γ |- n ~ n : tSig A B] -> isWfPair Γ A B n.
 
 End RedDefinitions.
@@ -963,7 +976,11 @@ Section GenericConsequences.
     2: eapply convty_simple_arr; cycle 1; tea.
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: constructor; first [now apply lrefl|tea].
+    2:{ constructor; first [now eapply lrefl|now apply ty_var0|tea]. }
+    3:{ constructor; first [now eapply lrefl|now apply ty_var0|tea].
+        eapply ty_conv; [now apply ty_var0|].
+        do 2 rewrite <- (@wk1_ren_on Γ A'); apply convty_wk; [|now symmetry].
+        now apply wfc_cons. }
     1,2: eapply ty_id; tea; now symmetry.
     assert [|- Γ,, A] by gen_typing.
     assert [Γ,, A |-[ ta ] A⟨@wk1 Γ A⟩] by now eapply wft_wk. 
@@ -1101,9 +1118,22 @@ Section GenericConsequences.
     [Γ |- comp A g f ≅ comp A g' f' : arr A C].
   Proof.
     intros.
+    assert (Hup : forall X Y h, [Γ |- h : arr X Y] -> [Γ,, A |- h⟨↑⟩ : arr X⟨↑⟩ Y⟨↑⟩]).
+    { intros; rewrite <- arr_ren1, <- !(wk1_ren_on Γ A).
+      apply (ty_wk (@wk1 Γ A)); [|now rewrite wk1_ren_on].
+      now apply wfc_cons. }
     eapply convtm_eta; tea.
     { renToWk; apply wft_wk; [apply wfc_cons|]; tea. }
-    2,4: now constructor.
+    2:{ assert [Γ,, A |-[ ta ] tApp g⟨↑⟩ (tApp f⟨↑⟩ (tRel 0)) : C⟨↑⟩].
+        { eapply (ty_simple_app (A := B⟨↑⟩)); first [now apply wft_wk1|now apply Hup|idtac].
+          eapply (ty_simple_app (A := A⟨↑⟩)); first [now apply wft_wk1|now apply Hup|idtac].
+          now apply ty_var0. }
+        constructor; tea. }
+    3:{ assert [Γ,, A |-[ ta ] tApp g'⟨↑⟩ (tApp f'⟨↑⟩ (tRel 0)) : C⟨↑⟩].
+        { eapply (ty_simple_app (A := B⟨↑⟩)); first [now apply wft_wk1|now apply Hup|idtac].
+          eapply (ty_simple_app (A := A⟨↑⟩)); first [now apply wft_wk1|now apply Hup|idtac].
+          now apply ty_var0. }
+        constructor; tea. }
     1,2: eapply ty_comp.
     4,5,9,10: tea.
     all: tea.
@@ -1134,6 +1164,7 @@ Section GenericConsequences.
     [Γ,, A' |- t' : B'] ->
     [Γ |- A ≅ A'] ->
     [Γ,, A |- B ≅ B'] ->
+    [Γ,, A' |- B ≅ B'] ->
     [Γ,, A |- t ≅ t' : B] ->
     [Γ |- tLambda A t ≅ tLambda A' t' : tProd A B].
   Proof.
@@ -1141,12 +1172,13 @@ Section GenericConsequences.
     assert [|- Γ,, A] by gen_typing.
     apply convtm_eta ; tea.
     - gen_typing.
-    - constructor; now eapply lrefl.
+    - constructor; first[now eapply lrefl|tea].
     - eapply ty_conv.
       1: eapply ty_lam ; tea.
       symmetry.
       now eapply convty_prod.
-    - now constructor.
+    - constructor; tea.
+      now eapply ty_conv.
     - eapply @convtm_exp with (t' := t) (u' := t'); tea.
       3: now eapply lrefl.
       2: eapply redtm_conv ; cbn ; [eapply redtm_meta_conv |..] ; [eapply redtm_beta |..].
