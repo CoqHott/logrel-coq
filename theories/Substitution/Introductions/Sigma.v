@@ -185,7 +185,7 @@ Section SigTmValidity.
       exact (SigRedU tΔ Vσ).
     - intros Δ σ σ' tΔ Vσ Vσ' Vσσ'.
       pose proof (univValid (l' := zero) _ _ VFU) as VF0.
-      pose proof (irrelevanceValidity (validSnoc VΓ VF)
+      pose proof (irrelevanceTy (validSnoc VΓ VF)
                     (validSnoc (l := zero) VΓ VF0)
                     (univValid (l' := zero) _ _ VGU)) as VG0.
       unshelve econstructor ; cbn.
@@ -227,10 +227,10 @@ Section SigTmCongruence.
     pose proof (Vuσ := liftSubstS' VF Vσ).
     pose proof (Vuσσ := liftSubstSEq' VF Vσσ).
     instAllValid Vσ Vσ Vσσ; instAllValid Vuσ Vuσ Vuσσ; escape.
-    pose proof (irrelevanceValidity (validSnoc VΓ VF)
+    pose proof (irrelevanceTy (validSnoc VΓ VF)
                   (validSnoc (l := zero) VΓ VF0)
                   (univValid (l' := zero) _ _ VGU)) as VG0.
-    pose proof (irrelevanceValidity (validSnoc VΓ VF')
+    pose proof (irrelevanceTy (validSnoc VΓ VF')
                   (validSnoc (l := zero) VΓ VF'0)
                   (univValid (l' := zero) _ _ VG'U)) as VG'0.
     unshelve econstructor ; cbn.
@@ -243,7 +243,7 @@ Section SigTmCongruence.
       refine (SigCongRed VΓ VF0 VG0 VF'0 VG'0 _ _ tΔ Vσ).
       + exact (univEqValid VΓ (UValid VΓ) VF0 VFF').
       + pose proof (univEqValid (validSnoc VΓ VF) VU (univValid (l' := zero) _ _ VGU) VGG') as VGG'0.
-        refine (irrelevanceEq _ _ _ _ VGG'0).
+        refine (irrelevanceTyEq _ _ _ _ VGG'0).
   Qed.
 
 End SigTmCongruence.

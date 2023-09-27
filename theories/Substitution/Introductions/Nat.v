@@ -544,7 +544,7 @@ Lemma elimSuccHypTyCongValid {Γ l P P'}
     [Γ ||-v<l> elimSuccHypTy P ≅ elimSuccHypTy P' | VΓ | elimSuccHypTyValid VΓ VP].
   Proof.
     unfold elimSuccHypTy.
-    eapply irrelevanceEq.
+    eapply irrelevanceTyEq.
     assert [Γ,, tNat ||-v< l > P'[tSucc (tRel 0)]⇑ | validSnoc VΓ VN]. 1:{
       eapply substLiftS; tea.
       eapply irrelevanceTm.

@@ -547,7 +547,7 @@ Context `{GenericTypingProperties}.
       1: eapply reflValidTy.
       now eapply reflValidTm.
     }
-    eapply transValidEq.
+    eapply transValidTyEq.
     - eapply substExtIdElimMotive.
       2: tea. all: tea.
       Unshelve. eapply substIdElimMotive; cycle 1; tea.
@@ -655,7 +655,7 @@ Context `{GenericTypingProperties}.
     assert (VPalt' : [_ ||-v<l> P' | VΓext']).
     1:{
       eapply convCtx2'; tea.
-      1: eapply convCtx1; tea; [now eapply symValidEq| ].
+      1: eapply convCtx1; tea; [now eapply symValidTyEq| ].
       1,3: now eapply idElimMotiveCtxIdValid.
       eapply idElimMotiveCtxIdCongValid; tea.
       Unshelve. 1: now eapply idElimMotiveCtxIdValid. tea.
@@ -696,7 +696,7 @@ Context `{GenericTypingProperties}.
       6,7: tea.  5-8: tea. 2-4: tea. 1: tea.
       2: eapply conv.
       1,3: now eapply reflValid.
-      1: eapply symValidEq; now eapply IdCongValid.
+      1: eapply symValidTyEq; now eapply IdCongValid.
       now eapply reflCongValid.
       Unshelve. all: now eapply IdValid.
     + eapply LRTmRedConv; tea.
@@ -730,7 +730,7 @@ Context `{GenericTypingProperties}.
       1: now eapply reflValid.
       eapply reflCongValid; tea.
       eapply conv; tea.
-      now eapply symValidEq.
+      now eapply symValidTyEq.
       Unshelve. now eapply IdValid.
     }
     eapply redwfSubstValid; cycle 1.

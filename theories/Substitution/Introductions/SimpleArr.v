@@ -30,14 +30,14 @@ Section SimpleArrValidity.
     (VeqG : [Γ ||-v< l > G ≅ G' | VΓ | VG]) :
     [Γ ||-v<l> arr F G ≅ arr F' G' | VΓ | simpleArrValid _ VF VG].
   Proof.
-    eapply irrelevanceEq.
+    eapply irrelevanceTyEq.
     unshelve eapply PiCong; tea.
     + replace G⟨↑⟩ with G⟨@wk1 Γ F⟩ by now bsimpl.
       now eapply wk1ValidTy.
     + replace G'⟨↑⟩ with G'⟨@wk1 Γ F'⟩ by now bsimpl.
       now eapply wk1ValidTy.
     + replace G'⟨↑⟩ with G'⟨@wk1 Γ F⟩ by now bsimpl.
-      eapply irrelevanceEq'.
+      eapply irrelevanceTyEq'.
       2: now eapply wk1ValidTyEq.
       now bsimpl.
     Unshelve. 2: tea.

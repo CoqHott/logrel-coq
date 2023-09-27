@@ -92,7 +92,7 @@ Proof.
     now eapply validTail.
 Qed.
 
-Lemma irrelevanceValidity {Γ} : forall (VΓ VΓ' : [||-v Γ]) {l A},
+Lemma irrelevanceTy {Γ} : forall (VΓ VΓ' : [||-v Γ]) {l A},
   [Γ ||-v<l> A | VΓ] -> [Γ ||-v<l> A | VΓ'].
 Proof.
   intros VΓ VΓ' l A [VA VAext]; unshelve econstructor; intros.
@@ -100,10 +100,10 @@ Proof.
   - eapply VAext; [eapply irrelevanceSubst| eapply irrelevanceSubstEq]; eassumption.
 Qed.
 
-Lemma irrelevanceValidity' {Γ Γ' A A' l} (VΓ : [||-v Γ]) (VΓ' : [||-v Γ']) (VA : [Γ ||-v<l> A | VΓ]) : 
+Lemma irrelevanceTy' {Γ Γ' A A' l} (VΓ : [||-v Γ]) (VΓ' : [||-v Γ']) (VA : [Γ ||-v<l> A | VΓ]) : 
   A = A' -> Γ = Γ' -> [Γ' ||-v<l> A' | VΓ'].
 Proof.
-  intros eqA eqΓ; subst; now eapply irrelevanceValidity.
+  intros eqA eqΓ; subst; now eapply irrelevanceTy.
 Qed.
 
 Lemma irrelevanceLift {l A F G Γ} (VΓ : [||-v Γ])
@@ -126,7 +126,7 @@ Proof.
       eapply LRTyEqSym; unshelve eapply VFeqG; eassumption.
 Qed.
 
-Lemma irrelevanceEq {Γ l A B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
+Lemma irrelevanceTyEq {Γ l A B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A | VΓ']) :
   [Γ ||-v< l > A ≅ B | VΓ | VA] -> [Γ ||-v< l > A ≅ B | VΓ' | VA'].
 Proof.
   intros [h]; constructor; intros.
@@ -135,13 +135,13 @@ Proof.
   eapply irrelevanceSubst; eassumption.
 Qed.
 
-Lemma irrelevanceEq' {Γ l A A' B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) : A = A' ->
+Lemma irrelevanceTyEq' {Γ l A A' B} (VΓ VΓ' : [||-v Γ]) (VA : [Γ ||-v<l> A | VΓ]) (VA' : [Γ||-v<l> A' | VΓ']) : A = A' ->
   [Γ ||-v< l > A ≅ B | VΓ | VA] -> [Γ ||-v< l > A' ≅ B | VΓ' | VA'].
 Proof.
-  intros ->; now eapply irrelevanceEq.
+  intros ->; now eapply irrelevanceTyEq.
 Qed.
 
-Lemma symValidEq {Γ l A B} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} (VB : [Γ ||-v<l> B | VΓ]) :
+Lemma symValidTyEq {Γ l A B} {VΓ : [||-v Γ]} {VA : [Γ ||-v<l> A | VΓ]} (VB : [Γ ||-v<l> B | VΓ]) :
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ A | VΓ | VB].
 Proof.
   intros; constructor; intros.
@@ -149,7 +149,7 @@ Proof.
   Unshelve. all: tea.
 Qed.
 
-Lemma transValidEq {Γ l A B C} {VΓ : [||-v Γ]}
+Lemma transValidTyEq {Γ l A B C} {VΓ : [||-v Γ]}
   {VA : [Γ ||-v<l> A | VΓ]} {VB : [Γ ||-v<l> B | VΓ]} :
   [Γ ||-v<l> A ≅ B | VΓ | VA] -> [Γ ||-v<l> B ≅ C | VΓ | VB] -> [Γ ||-v<l> A ≅ C | VΓ | VA].
 Proof.
@@ -280,8 +280,8 @@ Ltac irrValid :=
   | [_ : _ |- [||-v _]] => idtac
   | [_ : _ |- [ _ ||-v _ : _ | _ | _]] => eapply irrelevanceSubst
   | [_ : _ |- [ _ ||-v _ ≅ _ : _ | _ | _ | _]] => eapply irrelevanceSubstEq
-  | [_ : _ |- [_ ||-v<_> _ | _]] => eapply irrelevanceValidity
-  | [_ : _ |- [_ ||-v<_> _ ≅ _ | _ | _]] => eapply irrelevanceEq
+  | [_ : _ |- [_ ||-v<_> _ | _]] => eapply irrelevanceTy
+  | [_ : _ |- [_ ||-v<_> _ ≅ _ | _ | _]] => eapply irrelevanceTyEq
   | [_ : _ |- [_ ||-v<_> _ : _ | _ | _]] => eapply irrelevanceTm
   | [_ : _ |- [_ ||-v<_> _ ≅ _ : _ | _ | _]] => eapply irrelevanceTmEq
   end; eassumption.

@@ -417,7 +417,7 @@ Proof.
     eapply (validHead v).
 Qed.
 
-Lemma wkValid {l Γ Δ A} (ρ : Δ ≤ Γ)
+Lemma wkValidTy {l Γ Δ A} (ρ : Δ ≤ Γ)
   (VΓ : [||-v Γ])
   (VΔ : [||-v Δ])
   (VA : [Γ ||-v<l> A | VΓ]) :
@@ -435,12 +435,12 @@ Proof.
     Unshelve. 2,3: tea.
 Qed.
 
-Lemma wkTmValid {l Γ Δ A t} (ρ : Δ ≤ Γ)
+Lemma wkValidTm {l Γ Δ A t} (ρ : Δ ≤ Γ)
   (VΓ : [||-v Γ])
   (VΔ : [||-v Δ])
   (VA : [Γ ||-v<l> A | VΓ])
   (Vt : [Γ ||-v<l> t : A | VΓ | VA]) :
-  [Δ ||-v<l> t⟨ρ⟩ : A⟨ρ⟩ | VΔ | wkValid ρ VΓ VΔ VA].
+  [Δ ||-v<l> t⟨ρ⟩ : A⟨ρ⟩ | VΔ | wkValidTy ρ VΓ VΔ VA].
 Proof.
   assert (hA : forall σ, A⟨ρ⟩[σ] = A[ρ >> σ]) by (intros; now asimpl).
   assert (ht : forall σ, t⟨ρ⟩[σ] = t[ρ >> σ]) by (intros; now asimpl).
@@ -456,12 +456,12 @@ Proof.
     now eapply substS_wk.
 Qed.
 
-Lemma wkEqValid {l Γ Δ A B} (ρ : Δ ≤ Γ)
+Lemma wkValidTyEq {l Γ Δ A B} (ρ : Δ ≤ Γ)
   (VΓ : [||-v Γ])
   (VΔ : [||-v Δ])
   (VA : [Γ ||-v<l> A | VΓ])
   (VAB : [Γ ||-v<l> A ≅ B | VΓ | VA]) :
-  [Δ ||-v<l> A⟨ρ⟩ ≅ B⟨ρ⟩ | VΔ | wkValid ρ VΓ VΔ VA].
+  [Δ ||-v<l> A⟨ρ⟩ ≅ B⟨ρ⟩ | VΔ | wkValidTy ρ VΓ VΔ VA].
 Proof.
   assert (h : forall A σ, A⟨ρ⟩[σ] = A[ ρ >> σ]) by (intros; now asimpl).
   unshelve econstructor; intros; irrelevance0; rewrite h; [reflexivity|].
