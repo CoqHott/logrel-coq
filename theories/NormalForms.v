@@ -129,3 +129,61 @@ Inductive isCanonical : term -> Type :=
   | can_tRefl {A x}: isCanonical (tRefl A x).
 
 #[global] Hint Constructors isCanonical : gen_typing.
+
+(** ** Normal and neutral forms are stable by renaming *)
+
+Section RenWhnf.
+
+  Variable (ρ : nat -> nat).
+
+  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: now econstructor.
+  Qed.
+
+  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    destruct 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isPair_ren f : isPair f -> isPair (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isCanonical_ren t : isCanonical t <~> isCanonical (t⟨ρ⟩).
+  Proof.
+    split.
+    all: destruct t ; cbn ; inversion 1.
+    all: now econstructor.
+  Qed.
+
+End RenWhnf.
+
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isCanonical_ren : gen_typing.
