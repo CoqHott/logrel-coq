@@ -3,7 +3,7 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance DeclarativeSubst Weakening GenericTyping.
 
 From LogRel Require Import DirectedDirections DirectedErasure.
 From LogRel Require DirectedDeclarativeTyping DirectedContext.
@@ -12,6 +12,7 @@ Reserved Notation "[ Δ |- t -( d )- u : A ]" (at level 0, Δ, d, t, u, A at lev
 Reserved Notation "[ Δ |- σ -( Θ )- τ ]" (at level 0, Δ, Θ, σ, τ at level 50).
 
 Import DeclarativeTypingData.
+Import DeclarativeTypingProperties.
 
 Inductive TermRel (Δ: context) (t u: term) : direction -> term -> Type :=
 | termRelFun { f } :
@@ -85,15 +86,16 @@ where "[ Δ |- t -( d )- u : A ]" := (TermRel Δ t u d A).
 (*   all: by cbn. *)
 (* Qed. *)
 
-(* Lemma TermRel_WellTyped_l {Δ t u d A} : *)
-(*   [ Δ |- t -( d )- u : A ] -> [ Δ |- t : A ]. *)
-(* Proof. *)
-(* Admitted. *)
-
-(* Lemma TermRel_WellTyped_r {Δ t u d A} : *)
-(*   [ Δ |- t -( d )- u : A ] -> [ Δ |- u : A ]. *)
-(* Proof. *)
-(* Admitted. *)
+Lemma TermRel_WellTyped {Δ t u d A} :
+  [ Δ |- t -( d )- u : A ] -> [ Δ |- t : A ] × [ Δ |- u : A ].
+Proof.
+  induction 1.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+Admitted.
 
 Inductive SubstRel (Δ: context) :
   (nat -> term) -> (nat -> term) -> DirectedContext.context -> Type :=
@@ -124,6 +126,14 @@ where "[ Δ |- σ -( Θ )- τ ]" := (SubstRel Δ σ τ Θ).
 Lemma TermRel_WellSubst_l {Δ σ τ Θ} :
   [ Δ |- σ -( Θ )- τ ] -> [ Δ |-s σ : erase_dir Θ ].
 Proof.
+  induction 1.
+  - constructor.
+  - constructor; tea.
+    unshelve eapply (fst (TermRel_WellTyped _)).
+    3: eassumption.
+  - constructor; tea.
+    admit.
+  - admit.
 Admitted.
 
 
@@ -135,7 +145,7 @@ Admitted.
 
 (* TODO: check polarity of types! is it possible to use a different each time? *)
 (* TODO: use definition concl stuff *)
-Definition DirectedAction {Δ} :
+Definition DirectedAction {Δ} (wfΔ: [ |- Δ ]) :
   (forall Θ : DirectedContext.context,
       DirectedDeclarativeTyping.WfContextDecl Θ -> unit)
     × (forall (Θ : DirectedContext.context) (d: direction) (A : term),
@@ -151,8 +161,8 @@ Definition DirectedAction {Δ} :
         DirectedDeclarativeTyping.TypingDecl Θ dt A dA t ->
         forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
                            match dA with
-                           | Fun => forall (f: term), [Δ |- f : arr A[σ] A[τ] ] -> [ Δ |- tApp f t[σ] -( dt )- t[τ] : A[τ] ]
-                           | Cofun => forall (f: term), [Δ |- f : arr A[τ] A[σ] ] -> [ Δ |- t[σ] -( dt )- tApp f t[τ] : A[σ] ]
+                           | Fun => ∑ (f: term), [Δ |- f : arr A[σ] A[τ] ] × [ Δ |- tApp f t[σ] -( dt )- t[τ] : A[τ] ]
+                           | Cofun => ∑ (f: term), [Δ |- f : arr A[τ] A[σ] ] × [ Δ |- t[σ] -( dt )- tApp f t[τ] : A[σ] ]
                            | Discr => [ Δ |- t[σ] -( dt )- t[τ] : A[σ] ]
                            end)
     × (forall (Θ : DirectedContext.context) (d: direction) (A B : term),
@@ -164,11 +174,22 @@ Proof.
   all: try (intros; exact tt).
   - (* wfTypeU *)
     intros Θ d wfΘ _ σ τ rel.
+    have wfU : [ Δ |- U ] by now constructor.
     destruct d.
-    all: admit.
+    1-2: exists (idterm U); now apply ty_id'.
+    constructor. now constructor.
   - (* wfTypeProd *)
     intros Θ d A B wfA IHA wfB IHB σ τ rel.
-    admit.
+    destruct d.
+    + admit.
+    + admit.
+    + cbn in *.
+      constructor.
+      * eapply typing_subst; tea.
+        now eapply typing_erased.
+        now eapply TermRel_WellSubst_l.
+      * now trivial.
+      * admit.
   - (* wfTypeUniv *)
     intros Θ d A wfA IHA σ τ rel.
     pose (X := IHA _ _ rel).
@@ -184,7 +205,10 @@ Proof.
     admit.
   - (* wfTermProd *)
     intros Θ d A B wfA IHA wfB IHB σ τ rel.
-    admit.
+    destruct d.
+    + admit.
+    + admit.
+    + admit.
   - (* wfTermLam *)
     intros Θ dt dT A B t wfA IHA wfB IHB σ τ rel.
     destruct dT; simpl in *.
@@ -192,12 +216,21 @@ Proof.
     + admit.
     + destruct dt.
       * constructor.
-        1-2: admit.
+        {
+          eapply typing_subst; tea.
+          now eapply typing_erased.
+          now eapply TermRel_WellSubst_l.
+        }
+        { admit. }
       * admit.
       * constructor.
         admit.
   - (* wfTermApp *)
-    admit.
+    intros Θ d dA f a A B wtf IHf wta IHa σ τ rel.
+    destruct dA.
+    + cbn in *. admit.
+    + admit.
+    + cbn in *. admit.
   - (* wfTermConv *)
     admit.
 Abort.
