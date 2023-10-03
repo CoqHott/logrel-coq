@@ -142,95 +142,100 @@ Lemma TermRel_WellSubst_r {Δ σ τ Θ} :
 Proof.
 Admitted.
 
+Module DDT := DirectedDeclarativeTyping.
 
-(* TODO: check polarity of types! is it possible to use a different each time? *)
-(* TODO: use definition concl stuff *)
-Definition DirectedAction {Δ} (wfΔ: [ |- Δ ]) :
-  (forall Θ : DirectedContext.context,
-      DirectedDeclarativeTyping.WfContextDecl Θ -> unit)
-    × (forall (Θ : DirectedContext.context) (d: direction) (A : term),
-        DirectedDeclarativeTyping.WfTypeDecl Θ d A ->
-        forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
-                           match d with
-                           | Fun => ∑ (w: term), [ Δ |- w : arr A[σ] A[τ] ]
-                           | Cofun => ∑ (w: term), [ Δ |- w : arr A[τ] A[σ] ]
-                           | Discr => [ Δ |- A[σ] ≅ A[τ] ]
-                           end
-    )
-    × (forall (Θ : DirectedContext.context) (dt: direction) (A: term) (dA: direction) (t : term),
-        DirectedDeclarativeTyping.TypingDecl Θ dt A dA t ->
-        forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
-                           match dA with
-                           | Fun => ∑ (f: term), [Δ |- f : arr A[σ] A[τ] ] × [ Δ |- tApp f t[σ] -( dt )- t[τ] : A[τ] ]
-                           | Cofun => ∑ (f: term), [Δ |- f : arr A[τ] A[σ] ] × [ Δ |- t[σ] -( dt )- tApp f t[τ] : A[σ] ]
-                           | Discr => [ Δ |- t[σ] -( dt )- t[τ] : A[σ] ]
-                           end)
-    × (forall (Θ : DirectedContext.context) (d: direction) (A B : term),
-        DirectedDeclarativeTyping.ConvTypeDecl Θ d A B -> unit)
-    × (forall (Θ : DirectedContext.context) (dt: direction) (A : term) (dA: direction) (t u : term),
-        DirectedDeclarativeTyping.ConvTermDecl Θ dt A dA t u -> unit).
-Proof.
-  eapply DirectedDeclarativeTyping.WfDeclInduction.
-  all: try (intros; exact tt).
-  - (* wfTypeU *)
-    intros Θ d wfΘ _ σ τ rel.
-    have wfU : [ Δ |- U ] by now constructor.
-    destruct d.
-    1-2: exists (idterm U); now apply ty_id'.
-    constructor. now constructor.
-  - (* wfTypeProd *)
-    intros Θ d A B wfA IHA wfB IHB σ τ rel.
-    destruct d.
-    + admit.
-    + admit.
-    + cbn in *.
-      constructor.
-      * eapply typing_subst; tea.
-        now eapply typing_erased.
-        now eapply TermRel_WellSubst_l.
-      * now trivial.
-      * admit.
-  - (* wfTypeUniv *)
-    intros Θ d A wfA IHA σ τ rel.
-    pose (X := IHA _ _ rel).
-    destruct d.
-    + inversion X.
-      eexists. eassumption.
-    + inversion X.
-      eexists. eassumption.
-    + inversion X. eapply convUniv.
-      exact H.
-  - (* wfVar *)
-    intros Θ d' n d A dA wfΘ _ inctx dleq σ τ rel.
-    admit.
-  - (* wfTermProd *)
-    intros Θ d A B wfA IHA wfB IHB σ τ rel.
-    destruct d.
-    + admit.
-    + admit.
-    + admit.
-  - (* wfTermLam *)
-    intros Θ dt dT A B t wfA IHA wfB IHB σ τ rel.
-    destruct dT; simpl in *.
-    + admit.
-    + admit.
-    + destruct dt.
-      * constructor.
-        {
-          eapply typing_subst; tea.
+Section DirectedAction.
+
+  Context {Δ} (wfΔ: [ |- Δ ]).
+
+  Let Pctx θ := DDT.WfContextDecl θ -> unit.
+
+  Let Pty Θ d A := DDT.WfTypeDecl Θ d A ->
+    forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
+      match d with
+      | Fun => ∑ (w: term), [ Δ |- w : arr A[σ] A[τ] ]
+      | Cofun => ∑ (w: term), [ Δ |- w : arr A[τ] A[σ] ]
+      | Discr => [ Δ |- A[σ] ≅ A[τ] ]
+      end.
+
+  Let Ptm Θ dt A dA t := DDT.TypingDecl Θ dt A dA t ->
+    forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
+      match dA with
+      | Fun => ∑ (f: term), [Δ |- f : arr A[σ] A[τ] ] × [ Δ |- tApp f t[σ] -( dt )- t[τ] : A[τ] ]
+      | Cofun => ∑ (f: term), [Δ |- f : arr A[τ] A[σ] ] × [ Δ |- t[σ] -( dt )- tApp f t[τ] : A[σ] ]
+      | Discr => [ Δ |- t[σ] -( dt )- t[τ] : A[σ] ]
+      end.
+
+  Let Pconvty Θ d A B := DDT.ConvTypeDecl Θ d A B -> unit.
+
+  Let Pconvtm Θ dt A dA t u := DDT.ConvTermDecl Θ dt A dA t u -> unit.
+
+  Definition DirectedAction :
+    DDT.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
+  Proof.
+    eapply DirectedDeclarativeTyping.WfDeclInduction.
+    all: try (intros; exact tt).
+    - (* wfTypeU *)
+      intros Θ d wfΘ _ σ τ rel.
+      have wfU : [ Δ |- U ] by now constructor.
+      destruct d.
+      1-2: exists (idterm U); now apply ty_id'.
+      constructor. now constructor.
+    - (* wfTypeProd *)
+      intros Θ d A B wfA IHA wfB IHB σ τ rel.
+      destruct d.
+      + admit.
+      + admit.
+      + cbn in *.
+        constructor.
+        * eapply typing_subst; tea.
           now eapply typing_erased.
           now eapply TermRel_WellSubst_l.
-        }
-        { admit. }
-      * admit.
-      * constructor.
-        admit.
-  - (* wfTermApp *)
-    intros Θ d dA f a A B wtf IHf wta IHa σ τ rel.
-    destruct dA.
-    + cbn in *. admit.
-    + admit.
-    + cbn in *. admit.
-  - (* wfTermConv *)
-    admit.
-Abort.
+        * now trivial.
+        * admit.
+    - (* wfTypeUniv *)
+      intros Θ d A wfA IHA σ τ rel.
+      pose (X := IHA _ _ rel).
+      destruct d.
+      + inversion X.
+        eexists. eassumption.
+      + inversion X.
+        eexists. eassumption.
+      + inversion X. eapply convUniv.
+        exact H.
+    - (* wfVar *)
+      intros Θ d' n d A dA wfΘ _ inctx dleq σ τ rel.
+      admit.
+    - (* wfTermProd *)
+      intros Θ d A B wfA IHA wfB IHB σ τ rel.
+      destruct d.
+      + admit.
+      + admit.
+      + admit.
+    - (* wfTermLam *)
+      intros Θ dt dT A B t wfA IHA wfB IHB σ τ rel.
+      destruct dT; simpl in *.
+      + admit.
+      + admit.
+      + destruct dt.
+        * constructor.
+          {
+            eapply typing_subst; tea.
+            now eapply typing_erased.
+            now eapply TermRel_WellSubst_l.
+          }
+          { admit. }
+        * admit.
+        * constructor.
+          admit.
+    - (* wfTermApp *)
+      intros Θ d dA f a A B wtf IHf wta IHa σ τ rel.
+      destruct dA.
+      + cbn in *. admit.
+      + admit.
+      + cbn in *. admit.
+    - (* wfTermConv *)
+      admit.
+  Abort.
+  
+End DirectedAction.
