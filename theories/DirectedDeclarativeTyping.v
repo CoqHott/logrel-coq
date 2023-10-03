@@ -7,6 +7,7 @@ From LogRel Require Import Utils BasicAst Notations DirectedDirections DirectedC
 Set Primitive Projections.
 
 
+Reserved Notation "[ |-( ) Γ ]" (at level 0, Γ at level 50, only parsing).
 Reserved Notation "[ Γ |-( d ) A ]" (at level 0, Γ, d, A at level 50, only parsing).
 Reserved Notation "[ Γ |-( dt ) t : A @ dA ]" (at level 0, Γ, dt, t, A, dA at level 50, only parsing).
 Reserved Notation "[ Γ |-( d ) A ≅ B ]" (at level 0, Γ, d, A, B at level 50, only parsing).
@@ -25,7 +26,7 @@ or typing, done in a declarative fashion. For instance, we _demand_ that convers
 be transitive by adding a corresponding rule. *)
 
 (** ** Definitions *)
-Section Definitions.
+(* Section Definitions. *)
 
   (* We locally disable typing notations to be able to use them in the definition
   here before declaring the instance to which abstract notations are bound. *)
@@ -37,26 +38,26 @@ Section Definitions.
 
   (** **** Context well-formation *)
   Inductive WfContextDecl : context -> Type :=
-      | connil : [ |- ε ]
+      | connil : [ |-( ) ε ]
       | conconsDiscr {Γ dA A} :
-          [ |- Γ ] ->
+          [ |-( ) Γ ] ->
           [ Γ |-( dA ) A ] ->
-          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Discr |} ]
+          [ |-( )  Γ ,, {| ty := A ; ty_dir := dA ; dir := Discr |} ]
       | conconsFun {Γ dA A} :
-          [ |- Γ ] ->
+          [ |-( ) Γ ] ->
           [ Γ |-( dA ) A ] ->
           is_kind A ->
-          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Fun |} ]
+          [ |-( )  Γ ,, {| ty := A ; ty_dir := dA ; dir := Fun |} ]
       | conconsCofun {Γ dA A} :
-          [ |- Γ ] ->
+          [ |-( ) Γ ] ->
           [ Γ |-( dA ) A ] ->
           is_kind A ->
-          [ |-  Γ ,, {| ty := A ; ty_dir := dA ; dir := Cofun |} ]
+          [ |-( )  Γ ,, {| ty := A ; ty_dir := dA ; dir := Cofun |} ]
 
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> direction -> term -> Type :=
       | wfTypeU {Γ d} :
-          [ |- Γ ] ->
+          [ |-( ) Γ ] ->
           [ Γ |-( d ) U ]
       | wfTypeProd {Γ d} {A B} :
           [ Γ |-( dir_op d ) A ] ->
@@ -83,7 +84,7 @@ Section Definitions.
   (** **** Typing *)
   with TypingDecl : context -> direction -> term -> direction -> term -> Type :=
       | wfVar {Γ d'} {n d T dT} :
-          [   |- Γ ] ->
+          [   |-( ) Γ ] ->
           in_ctx Γ n {| ty := T; ty_dir := dT; dir := d |} ->
           dir_leq d d' ->
           [ Γ |-( d' ) tRel n : T @ dT ]
@@ -316,7 +317,7 @@ Section Definitions.
           [ Γ |-( d ) t' ≅ t'' : A @ dA ] ->
           [ Γ |-( d ) t ≅ t'' : A @ dA ]
 
-  where "[   |- Γ ]" := (WfContextDecl Γ)
+  where "[   |-( ) Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |-( d ) T ]" := (WfTypeDecl Γ d T)
   and   "[ Γ |-( dt ) t : T @ dT ]" := (TypingDecl Γ dt T dT t)
   and   "[ Γ |-( d ) A ≅ B ]" := (ConvTypeDecl Γ d A B)
@@ -351,7 +352,7 @@ Section Definitions.
     - constructor.
   Qed.
 
-End Definitions.
+(* End Definitions. *)
 
 (* Definition TermRedClosure Γ d A t u := RedClosureDecl Γ d (isterm A) t u. *)
 (* Definition TypeRedClosure Γ d A B := RedClosureDecl Γ d istype A B. *)

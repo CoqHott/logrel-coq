@@ -3,18 +3,18 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import DirectedDirections DirectedErasure DirectedDeclarativeTyping DirectedContext.
 From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance DeclarativeSubst Weakening GenericTyping.
 
-From LogRel Require Import DirectedDirections DirectedErasure.
-From LogRel Require DirectedDeclarativeTyping DirectedContext.
 
 Reserved Notation "[ Δ |- t -( d )- u : A ]" (at level 0, Δ, d, t, u, A at level 50).
 Reserved Notation "[ Δ |- σ -( Θ )- τ ]" (at level 0, Δ, Θ, σ, τ at level 50).
 
 Import DeclarativeTypingData.
 Import DeclarativeTypingProperties.
+Import Notations.
 
-Inductive TermRel (Δ: context) (t u: term) : direction -> term -> Type :=
+Inductive TermRel (Δ: Context.context) (t u: term) : direction -> term -> Type :=
 | termRelFun { f } :
   [ Δ |- f : arr t u ] ->
   [ Δ |- t -( Fun )- u : U ]
@@ -142,15 +142,13 @@ Lemma TermRel_WellSubst_r {Δ σ τ Θ} :
 Proof.
 Admitted.
 
-Module DDT := DirectedDeclarativeTyping.
-
 Section DirectedAction.
 
   Context {Δ} (wfΔ: [ |- Δ ]).
 
-  Let Pctx θ := DDT.WfContextDecl θ -> unit.
+  Let Pctx θ := [ |-() θ ] -> unit.
 
-  Let Pty Θ d A := DDT.WfTypeDecl Θ d A ->
+  Let Pty Θ d A := [ Θ |-( d ) A ] ->
     forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
       match d with
       | Fun => ∑ (w: term), [ Δ |- w : arr A[σ] A[τ] ]
@@ -158,7 +156,7 @@ Section DirectedAction.
       | Discr => [ Δ |- A[σ] ≅ A[τ] ]
       end.
 
-  Let Ptm Θ dt A dA t := DDT.TypingDecl Θ dt A dA t ->
+  Let Ptm Θ dt A dA t := [ Θ |-( dt ) t : A @ dA ] ->
     forall (σ τ: nat -> term), [ Δ |- σ -( Θ )- τ ] ->
       match dA with
       | Fun => ∑ (f: term), [Δ |- f : arr A[σ] A[τ] ] × [ Δ |- tApp f t[σ] -( dt )- t[τ] : A[τ] ]
@@ -166,23 +164,24 @@ Section DirectedAction.
       | Discr => [ Δ |- t[σ] -( dt )- t[τ] : A[σ] ]
       end.
 
-  Let Pconvty Θ d A B := DDT.ConvTypeDecl Θ d A B -> unit.
+  Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] -> unit.
 
-  Let Pconvtm Θ dt A dA t u := DDT.ConvTermDecl Θ dt A dA t u -> unit.
+  Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @ dA ] -> unit.
 
   Definition DirectedAction :
-    DDT.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
+    DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
   Proof.
     eapply DirectedDeclarativeTyping.WfDeclInduction.
+    all: revert Pctx Pty Ptm Pconvty Pconvtm; simpl.
     all: try (intros; exact tt).
     - (* wfTypeU *)
-      intros Θ d wfΘ _ σ τ rel.
-      have wfU : [ Δ |- U ] by now constructor.
+      intros Θ d wfΘ _ wfU σ τ rel.
       destruct d.
-      1-2: exists (idterm U); now apply ty_id'.
+      (* 1-2: exists (idterm U); now apply ty_id'. *)
+      1-2: admit.
       constructor. now constructor.
     - (* wfTypeProd *)
-      intros Θ d A B wfA IHA wfB IHB σ τ rel.
+      intros Θ d A B wfA IHA wfB IHB wfProd σ τ rel.
       destruct d.
       + admit.
       + admit.
@@ -194,8 +193,8 @@ Section DirectedAction.
         * now trivial.
         * admit.
     - (* wfTypeUniv *)
-      intros Θ d A wfA IHA σ τ rel.
-      pose (X := IHA _ _ rel).
+      intros Θ d A wtA IHA wfA σ τ rel.
+      pose (X := IHA wtA _ _ rel).
       destruct d.
       + inversion X.
         eexists. eassumption.
@@ -207,13 +206,13 @@ Section DirectedAction.
       intros Θ d' n d A dA wfΘ _ inctx dleq σ τ rel.
       admit.
     - (* wfTermProd *)
-      intros Θ d A B wfA IHA wfB IHB σ τ rel.
+      intros Θ d A B wfA IHA wfB IHB wfProd σ τ rel.
       destruct d.
       + admit.
       + admit.
       + admit.
     - (* wfTermLam *)
-      intros Θ dt dT A B t wfA IHA wfB IHB σ τ rel.
+      intros Θ dt dT A B t wfA IHA wfB IHB wtLam σ τ rel.
       destruct dT; simpl in *.
       + admit.
       + admit.
@@ -229,7 +228,7 @@ Section DirectedAction.
         * constructor.
           admit.
     - (* wfTermApp *)
-      intros Θ d dA f a A B wtf IHf wta IHa σ τ rel.
+      intros Θ d dA f a A B wtf IHf wta IHa wtApp σ τ rel.
       destruct dA.
       + cbn in *. admit.
       + admit.
@@ -237,5 +236,5 @@ Section DirectedAction.
     - (* wfTermConv *)
       admit.
   Abort.
-  
+
 End DirectedAction.
