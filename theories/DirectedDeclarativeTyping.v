@@ -341,6 +341,16 @@ Section Definitions.
   (*   convnedecl_conv : [ Γ |-( d ) t ≅ u : A ]; *)
   (* }. *)
 
+  #[local]
+  Example var_fun : [ ε ,, {| ty := U ; ty_dir := Discr ; dir := Discr |} |-( Fun ) tRel 0 ].
+  Proof.
+    constructor.
+    econstructor.
+    - repeat constructor.
+    - constructor.
+    - constructor.
+  Qed.
+
 End Definitions.
 
 (* Definition TermRedClosure Γ d A t u := RedClosureDecl Γ d (isterm A) t u. *)
