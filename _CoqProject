@@ -25,6 +25,7 @@ theories/DirectedDirections.v
 theories/DirectedErasure.v
 theories/DirectedContext.v
 theories/DirectedDeclarativeTyping.v
+theories/DirectedSemantics.v
 theories/DirectedPartialTranslation.v
 
 

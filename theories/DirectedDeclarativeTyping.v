@@ -9,10 +9,10 @@ Set Primitive Projections.
 
 Reserved Notation "[ |-( ) Γ ]" (at level 0, Γ at level 50, only parsing).
 Reserved Notation "[ Γ |-( d ) A ]" (at level 0, Γ, d, A at level 50, only parsing).
-Reserved Notation "[ Γ |-( dt ) t : A @ dA ]" (at level 0, Γ, dt, t, A, dA at level 50, only parsing).
+Reserved Notation "[ Γ |-( dt ) t : A @( dA ) ]" (at level 0, Γ, dt, t, A, dA at level 50, only parsing).
 Reserved Notation "[ Γ |-( d ) A ≅ B ]" (at level 0, Γ, d, A, B at level 50, only parsing).
-Reserved Notation "[ Γ |-( dt ) t ≅ t' : A @ dA ]" (at level 0, Γ, dt, t, t', A, dA at level 50, only parsing).
-Reserved Notation "[ Γ |-( dt ) t ⤳* u ∈ A @ dA ]" (at level 0, Γ, dt, t, u, A, dA at level 50).
+Reserved Notation "[ Γ |-( dt ) t ≅ t' : A @( dA ) ]" (at level 0, Γ, dt, t, t', A, dA at level 50, only parsing).
+Reserved Notation "[ Γ |-( dt ) t ⤳* u ∈ A @( dA ) ]" (at level 0, Γ, dt, t, u, A, dA at level 50).
 
 Fixpoint is_kind (t: term) : Type :=
   match t with
@@ -79,7 +79,7 @@ be transitive by adding a corresponding rule. *)
       (*     [Γ |- y : A] -> *)
       (*     [Γ |- tId A x y] *)
       | wfTypeUniv {Γ d} {A} :
-          [ Γ |-( d ) A : U @ Discr ] ->
+          [ Γ |-( d ) A : U @( Discr ) ] ->
           [ Γ |-( d ) A ]
   (** **** Typing *)
   with TypingDecl : context -> direction -> term -> direction -> term -> Type :=
@@ -87,19 +87,19 @@ be transitive by adding a corresponding rule. *)
           [   |-( ) Γ ] ->
           in_ctx Γ n {| ty := T; ty_dir := dT; dir := d |} ->
           dir_leq d d' ->
-          [ Γ |-( d' ) tRel n : T @ dT ]
+          [ Γ |-( d' ) tRel n : T @( dT ) ]
       | wfTermProd {Γ d} {A B} :
-          [ Γ |-( dir_op d ) A : U @ Discr ] ->
-          [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B : U @ Discr ] ->
-          [ Γ |-( d ) tProd A B : U @ Discr ]
+          [ Γ |-( dir_op d ) A : U @( Discr ) ] ->
+          [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B : U @( Discr ) ] ->
+          [ Γ |-( d ) tProd A B : U @( Discr ) ]
       | wfTermLam {Γ d} {dT A B t} :
           [ Γ |-( dir_op dT ) A ] ->
-          [ Γ ,, {| ty := A ; ty_dir := dir_op dT ; dir := Discr |} |-( d ) t : B @ dT ] ->
-          [ Γ |-( d ) tLambda A t : tProd A B @ dT ]
+          [ Γ ,, {| ty := A ; ty_dir := dir_op dT ; dir := Discr |} |-( d ) t : B @( dT ) ] ->
+          [ Γ |-( d ) tLambda A t : tProd A B @( dT ) ]
       | wfTermApp {Γ d} {dT f a A B} :
-          [ Γ |-( d ) f : tProd A B @ dT ] ->
-          [ Γ |-( Discr ) a : A @ dir_op dT ] ->
-          [ Γ |-( d ) tApp f a : B[a..] @ dT ]
+          [ Γ |-( d ) f : tProd A B @( dT ) ] ->
+          [ Γ |-( Discr ) a : A @( dir_op dT ) ] ->
+          [ Γ |-( d ) tApp f a : B[a..] @( dT ) ]
   (*     | wfTermNat {Γ} : *)
   (*         [|-Γ] -> *)
   (*         [Γ |- tNat : U] *)
@@ -156,9 +156,9 @@ be transitive by adding a corresponding rule. *)
   (*         [Γ |- e : tId A x y] -> *)
   (*         [Γ |- tIdElim A x P hr y e : P[e .: y..]] *)
       | wfTermConv {Γ d} {t dA A B} :
-          [ Γ |-( d ) t : A @ dA ] ->
+          [ Γ |-( d ) t : A @( dA ) ] ->
           [ Γ |-( dA ) A ≅ B ] ->
-          [ Γ |-( d ) t : B @ dA ]
+          [ Γ |-( d ) t : B @( dA ) ]
   (** **** Conversion of types *)
   with ConvTypeDecl : context -> direction -> term -> term  -> Type :=
       | TypePiCong {Γ d} {A B C D} :
@@ -181,7 +181,7 @@ be transitive by adding a corresponding rule. *)
           [ Γ |-( d ) A ] ->
           [ Γ |-( d ) A ≅ A]
       | convUniv {Γ d} {A B} :
-        [ Γ |-( d ) A ≅ B : U @ Discr ] ->
+        [ Γ |-( d ) A ≅ B : U @( Discr ) ] ->
         [ Γ |-( d ) A ≅ B ]
       | TypeSym {Γ d} {A B} :
           [ Γ |-( d ) A ≅ B ] ->
@@ -303,25 +303,25 @@ be transitive by adding a corresponding rule. *)
   (*       [Γ |- x ≅ z : A] -> *)
   (*       [Γ |- tIdElim A x P hr y (tRefl A' z) ≅ hr : P[tRefl A' z .: y..]] *)
       | TermRefl {Γ d} {dA t A} :
-          [ Γ |-( d ) t : A @ dA ] ->
-          [ Γ |-( d ) t ≅ t : A @ dA ]
+          [ Γ |-( d ) t : A @( dA ) ] ->
+          [ Γ |-( d ) t ≅ t : A @( dA ) ]
       | TermConv {Γ d} {t t' dA A B} :
-          [ Γ |-( d ) t ≅ t': A @ dA ] ->
+          [ Γ |-( d ) t ≅ t': A @( dA ) ] ->
           [ Γ |-( dA ) A ≅ B ] ->
-          [ Γ |-( d ) t ≅ t': B @ dA ]
+          [ Γ |-( d ) t ≅ t': B @( dA ) ]
       | TermSym {Γ d} {dA t t' A} :
-          [ Γ |-( d ) t ≅ t' : A @ dA ] ->
-          [ Γ |-( d ) t' ≅ t : A @ dA ]
+          [ Γ |-( d ) t ≅ t' : A @( dA ) ] ->
+          [ Γ |-( d ) t' ≅ t : A @( dA ) ]
       | TermTrans {Γ d} {dA t t' t'' A} :
-          [ Γ |-( d ) t ≅ t' : A @ dA ] ->
-          [ Γ |-( d ) t' ≅ t'' : A @ dA ] ->
-          [ Γ |-( d ) t ≅ t'' : A @ dA ]
+          [ Γ |-( d ) t ≅ t' : A @( dA ) ] ->
+          [ Γ |-( d ) t' ≅ t'' : A @( dA ) ] ->
+          [ Γ |-( d ) t ≅ t'' : A @( dA ) ]
 
   where "[   |-( ) Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |-( d ) T ]" := (WfTypeDecl Γ d T)
-  and   "[ Γ |-( dt ) t : T @ dT ]" := (TypingDecl Γ dt T dT t)
+  and   "[ Γ |-( dt ) t : T @( dT ) ]" := (TypingDecl Γ dt T dT t)
   and   "[ Γ |-( d ) A ≅ B ]" := (ConvTypeDecl Γ d A B)
-  and   "[ Γ |-( dt ) t ≅ t' : T @ dT ]" := (ConvTermDecl Γ dt T dT t t').
+  and   "[ Γ |-( dt ) t ≅ t' : T @( dT ) ]" := (ConvTermDecl Γ dt T dT t t').
 
   (** (Typed) reduction is defined afterwards,
   rather than mutually with the other relations. *)

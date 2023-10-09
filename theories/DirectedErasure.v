@@ -31,11 +31,11 @@ Lemma typing_erased :
     × (forall Θ d A,
         [ Θ |-( d ) A] -> [ erase_dir Θ |- A ])
     × (forall Θ dt A dA t,
-        [ Θ |-( dt ) t : A @ dA ] -> [ erase_dir Θ |- t : A ])
+        [ Θ |-( dt ) t : A @( dA ) ] -> [ erase_dir Θ |- t : A ])
     × (forall Θ d A B,
         [ Θ |-( d ) A ≅ B ] -> [ erase_dir Θ |- A ≅ B ])
     × (forall Θ dt A dA t u,
-        [ Θ |-( dt ) t ≅ u : A @ dA ] -> [ erase_dir Θ |- t ≅ u : A ]).
+        [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> [ erase_dir Θ |- t ≅ u : A ]).
 Proof.
   eapply DirectedDeclarativeTyping.WfDeclInduction.
   all: try now econstructor.
