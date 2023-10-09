@@ -7,7 +7,7 @@ From LogRel Require Import DirectedDirections DirectedErasure DirectedDeclarativ
 From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance DeclarativeSubst Weakening GenericTyping.
 
 From PartialFun Require Import Monad PartialFun.
-
+From LogRel.Decidability Require Import Functions.
 
 Import DeclarativeTypingData.
 Import DeclarativeTypingProperties.
@@ -16,10 +16,13 @@ Import Notations.
 Import MonadNotations.
 Set Universe Polymorphism.
 Import IndexedDefinitions.
-Import StdInstance.
+(* Import StdInstance. *)
+
+Section TypeAction.
+  #[local] Instance: forall x, PFun (singleton_store wh_red x) := singleton_pfun wh_red.
 
 (* NOTE: no need to handle lambda, because we only look at types in whnf *)
-Equations type_action : ((nat -> term) × (nat -> term) × witList × direction × term) ⇀ term :=
+Equations type_action : ((nat -> term) × (nat -> term) × witList × direction × term) ⇀[singleton_store wh_red] term :=
   type_action (σ, τ, γ, d, tSort s) := ret (tLambda (tSort s) (tRel 0)) ;
   type_action (σ, τ, γ, Fun, tProd A B) :=
     tA ← rec (σ, τ, γ, Cofun, A) ;;
@@ -50,12 +53,18 @@ Equations type_action : ((nat -> term) × (nat -> term) × witList × direction 
   type_action (σ, τ, γ, d, tApp f a) := tf ← rec (σ, τ, γ, d, f) ;; ret (tApp tf a[σ]) ;
   (* NOTE: we have the invariant that the type of the argument is something with type as a conclusion and thus A[σ] is convertible to A[τ] *)
   (* plus because we are always Discr for application, a[σ] is convertible to a[τ]*)
-  type_action _ := undefined.
+  type_action (σ, τ, γ, d, t) :=
+    wh ← call_single wh_red t ;;
+    r ← rec (σ, τ, γ, d, wh) ;;
+    ret r.
+
+End TypeAction.
 
 (* Definition type_action_domain {Θ d A γ} : [ Θ |-( d ) A ] -> domain (type_action γ) A. *)
 (*   intro wfA. *)
 (*   (* funelim (type_action γ A). *) *)
 (* Admitted. *)
+
 
 (* Definition wfty_action {Θ d A} (ϕ: witList) (wfA: [ Θ |-( d ) A ]) : term := *)
 (*   def (type_action ϕ) A (type_action_domain wfA). *)
