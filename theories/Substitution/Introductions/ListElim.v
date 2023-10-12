@@ -143,10 +143,7 @@ Context {Γ l A P} {hnil hcons hd tl : term}
     (RLA' := LRList' RLiA')
     (RLAeq : [Γ ||-<l> _ ≅ tList A' | RLA])
     (RP' : forall t, [Γ ||-<l> t : _ | RLA'] -> [Γ ||-<l> P'[t..]])
-    (* (RPeq' : forall t u (Rt : [Γ ||-<l> t : _ | RLA']), [Γ ||-<l> u : _ | RLA'] -> [Γ ||-<l> t ≅ u : _ | RLA'] -> [Γ ||-<l> P'[t..] ≅ P'[u..]| RP' t Rt]) *)
     (RPP' : forall t u (Rt : [Γ ||-<l> t : _ | RLA]), [Γ ||-<l> u : _ | RLA] -> [Γ ||-<l> t ≅ u : _ | RLA] -> [Γ ||-<l> P[t..] ≅ P'[u..]| RP t Rt]).
-    (* (PolyP' : PolyRed Γ l (tList A') P')
-    (PolyPeq : PolyRedEq PolyP (tList A') P'). *)
 
 
   Lemma elimConsHypAppEqRed
