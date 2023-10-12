@@ -32,7 +32,7 @@ The logical relation is defined with respect to a generic notion of typing, whic
 Proofs
 ----------
 
-The logical relation is defined in [LogicalRelation]. It is first defined component by component, before the components are all brought together by inductive `LR` at the end of the file. The fundamental lemma of the logical relation, saying that every well-typed term is reducible, is in [Fundamental].
+The logical relation is defined in [LogicalRelation]. It is first defined component by component, before the components are all brought together by inductive `LR` at the end of the file. The fundamental lemma of the logical relation, saying that every well-typed term is reducible, is in [Fundamental]. Validty of list components, in particular `map` and functor laws for `map` can be found in [ValidList] and [ValidListElim].
 
 Injectivity and no-confusion of type constructor, and subject reduction, are proven in [TypeConstructorsInj]. `typing_SN`, in [Normalisation], shows that reduction on well-typed terms is (strongly) normalizing; this is phrased in a constructively acceptable way, as accessibility of every well-typed term under reduction, i.e. as well-foundation of the reduction relation.
 
@@ -47,6 +47,10 @@ We have formalized a variant of example 1.1 in [Example_1_1]. Since we do not ha
 
 Rather than building the derivation of conversion by hand, we use our certified checker. So this also serves as a demonstration that our functions are effectively executable.
 
+
+A version of example 1.1 using rewrite rules in Agda (as presented at the end of section 3.3) can be found in [ExampleAgda].
+
+
 [Ast]: ./theories/AutoSubst/Ast.v
 [DeclarativeTyping]: ./theories/DeclarativeTyping.v
 [UntypedReduction]: ./theories/UntypedReduction.v
@@ -60,3 +64,6 @@ Rather than building the derivation of conversion by hand, we use our certified 
 [AlgorithmicTypingProperties]: ./theories/AlgorithmicTypingProperties.v
 [Decidability]: ./theories/Decidability.v
 [Example_1_1]: ./theories/Example_1_1.v
+[ValidList]: ./theories/Substitution/Introductions/List.v
+[ValidListElim]: ./theories/Substitution/Introductions/ListElim.v
+[ExampleAgda]: ./map.agda

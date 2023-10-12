@@ -217,7 +217,7 @@ Proof.
     + eapply IHπ in Hstack as [] ; tea.
       do 2 (econstructor ; tea).
     + intros [? ->].
-      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
       2-3: now econstructor.
       now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[[-> ? Ht']])%termGen' Hstack]] ; subst ; tea.
@@ -225,7 +225,7 @@ Proof.
     + eapply IHπ in Hstack as [] ; tea.
       do 2 (econstructor ; tea).
     + intros [? ->].
-      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
       2-3: now econstructor.
       now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
@@ -233,7 +233,7 @@ Proof.
     + eapply IHπ in Hstack as [] ; tea.
       do 2 (econstructor ; tea).
     + intros [? ->].
-      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
       2-3: now econstructor.
       now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
@@ -246,7 +246,7 @@ Proof.
       eapply sig_ty_inv.
       boundary.
     + intros [? ->].
-      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
       2-3: now econstructor.
       now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [(?&[(?&?&[->])])%termGen' Hstack]] ; subst ; tea.
@@ -254,7 +254,7 @@ Proof.
     + eapply IHπ in Hstack as [] ; tea.
       do 2 (econstructor ; tea).
     + intros [? ->].
-      unshelve eapply typing_unique, ty_conv_inj in Ht ; last first ; tea.
+      unshelve eapply type_uniqueness, ty_conv_inj in Ht ; last first ; tea.
       2-3: now econstructor.
       now cbn in *.
   - eapply typed_zip_cons in Hπ as [? [[? [[] Hconv]]%termGen' Hstack]] ; subst ; tea.
