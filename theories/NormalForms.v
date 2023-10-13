@@ -57,7 +57,6 @@ Let whne_mutType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma whne_mut : whne_mutType.
 Proof.
   intros PRed PProp **; split; now apply (_whne_mut PRed PProp).

@@ -457,14 +457,6 @@ Proof. now cbn. Qed.
 Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
 Proof. now bsimpl. Qed.
 
-
-(* Γ |- A 
-  Γ, x : list A |- P
-  Δ |- ρ : Γ
-
-  Δ |- A⟨ρ⟩
-  Δ, x : list A⟨ρ⟩ |- P⟨wk_up (list A) ρ⟩
-*)
 Lemma wk_elimConsHypTy {A P Γ Δ} (ρ : Δ ≤ Γ) :
   elimConsHypTy A⟨ρ⟩ P⟨wk_up (tList A) ρ⟩ = (elimConsHypTy A P)⟨ρ⟩.
 Proof.

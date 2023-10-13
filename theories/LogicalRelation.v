@@ -79,8 +79,6 @@ Export LRAd(LRAdequate,Build_LRAdequate).
 Coercion LRAd.pack : LRAdequate >-> LRPack.
 Coercion LRAd.adequate : LRAdequate >-> LRPackAdequate.
 
-(* TODO : update these for LRAdequate *)
-
 Notation "[ R | Γ ||- A ]"              := (@LRAdequate Γ A R).
 Notation "[ R | Γ ||- A ≅ B | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.eqTy) B).
 Notation "[ R | Γ ||- t : A | RA ]"     := (RA.(@LRAd.pack Γ A R).(LRPack.redTm) t).
@@ -384,7 +382,6 @@ Definition PiRedTyAdequate@{i j} `{ta : tag} `{WfContext ta} `{WfType ta} `{Conv
     {Γ : context} {A : term} (R : RedRel@{i j}) (ΠA : PiRedTy@{i} Γ A)
   : Type@{j} := PolyRedPackAdequate R ΠA.
 
-(* keep ? *)
 Module PiRedTy := ParamRedTyPack.
 Notation "[ Γ ||-Πd A ]" := (PiRedTy Γ A).
   
@@ -393,7 +390,6 @@ Definition PiRedTyEq `{ta : tag}
   {Γ : context} {A : term} (ΠA : PiRedTy Γ A) (B : term) :=
   ParamRedTyEq (T:=tProd) Γ A B ΠA.
 
-(* keep ?*)
 Module PiRedTyEq := ParamRedTyEq.
 Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq (Γ:=Γ) (A:=A) ΠA B).
 
@@ -739,30 +735,6 @@ Section EmptyRedTm.
     (eq : [Γ |- nf ≅ nf : tEmpty])
     (prop : @EmptyProp Γ nf) : EmptyRedTm t.
 
-(* Scheme EmptyRedTm_mut_rect := Induction for EmptyRedTm Sort Type with *)
-(*     EmptyProp_mut_rect := Induction for EmptyProp Sort Type. *)
-
-(* Combined Scheme _EmptyRedInduction from *)
-(*   EmptyRedTm_mut_rect, *)
-(*   EmptyProp_mut_rect. *)
-
-(* Let _EmptyRedInductionType := *)
-(*   ltac:(let ind := fresh "ind" in *)
-(*       pose (ind := _EmptyRedInduction); *)
-(*       let ind_ty := type of ind in *)
-(*       exact ind_ty). *)
-
-(* Let EmptyRedInductionType := *)
-(*   ltac: (let ind := eval cbv delta [_EmptyRedInductionType] zeta *)
-(*     in _EmptyRedInductionType in *)
-(*     let ind' := polymorphise ind in *)
-(*   exact ind'). *)
-
-(* Lemma EmptyRedInduction : EmptyRedInductionType. *)
-(* Proof. *)
-(*   intros ??? PRed PProp **; split; now apply (_EmptyRedInduction _ _ _ PRed PProp). *)
-(* Defined. *)
-
 Definition nf {Γ A n} {NA : [Γ ||-Empty A]} : @EmptyRedTm _ _ NA n -> term.
 Proof.
   intros [? nf]. exact nf.
@@ -1083,7 +1055,6 @@ Let ListRedEqInductionDepType :=
     let ind' := polymorphise ind in
   exact ind').
 
-(* KM: looks like there is a bunch of polymorphic universes appearing there... *)
 Lemma ListRedEqInductionDep : ListRedEqInductionDepType.
 Proof.
   intros PRed PProp **; split; now apply (_ListRedEqInductionDep PRed PProp).
@@ -1494,8 +1465,6 @@ Section EmptyPropProperties.
   Proof.  intros [ ? ? []]; split; econstructor; eapply convneu_whne; first [eassumption|symmetry; eassumption]. Qed.
 
 End EmptyPropProperties.
-
-(* A&Y: We prove the hand-crafted induction principles here: *)
 
 Lemma EmptyRedInduction :
   forall {ta : tag} {H : WfType ta} {H0 : RedType ta} {H1 : Typing ta}
