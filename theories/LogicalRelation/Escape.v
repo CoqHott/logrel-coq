@@ -105,7 +105,7 @@ Section Escapes.
       eapply convtm_exp; tea; gen_typing.
     - intros ???? [] _ _ [???? redL redR eq'].
       rewrite Weakening.wk_id_ren_on in redL, redR, eq'; cbn in *.
-      gen_typing.
+      eapply convtm_conv; gen_typing.
   Qed.
 
   Lemma escapeConv {l Γ A} (RA : [Γ ||-<l> A]) :

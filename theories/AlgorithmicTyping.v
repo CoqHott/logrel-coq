@@ -662,11 +662,8 @@ Section TypingWk.
   Proof.
     red.
     repeat match goal with |- _ × _ => split end.
-    all: intros Γ * Hty T.
-    all: eapply algo_conv_wk in Hty.
-    all: specialize (Hty _ (wk1 Γ T)).
-    all: repeat rewrite <- (extRen_term _ _ (wk1_ren Γ T)) ; refold.
-    all: now eapply Hty.
+    all: intros Γ * Hty%algo_conv_wk T.
+    all: generalize (Hty _ (wk1 Γ T)); now rewrite !wk1_ren_on.
   Qed.
 
   Corollary algo_typing_shift : AlgoTypingInductionConcl
@@ -677,11 +674,8 @@ Section TypingWk.
   Proof.
   red.
   repeat match goal with |- _ × _ => split end.
-  all: intros Γ * Hty T.
-  all: eapply algo_typing_wk in Hty.
-  all: specialize (Hty _ (wk1 Γ T)).
-  all: repeat rewrite <- (extRen_term _ _ (wk1_ren Γ T)) ; refold.
-  all: now eapply Hty.
+  all: intros Γ * Hty%algo_typing_wk T.
+  all: generalize (Hty _ (wk1 Γ T)); now rewrite !wk1_ren_on.
   Qed.
 
 End TypingWk.

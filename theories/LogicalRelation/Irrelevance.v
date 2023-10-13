@@ -108,9 +108,9 @@ Proof.
   - now eapply redtmwf_conv.
   - destruct isfun as [A₀ t₀|n Hn].
     + constructor.
-      * intros; now eapply eqv.(eqvShp).
-      * intros; unshelve eapply eqv.(eqvPos); [|eauto].
-        now apply eqv.(eqvShp).
+      * intros; now unshelve eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); tea; [|eauto].
+        now unshelve eapply eqv.(eqvShp).
     + constructor; now eapply convneu_conv.
   - eapply (convtm_conv refl).
     apply eqPi.
@@ -185,10 +185,10 @@ Proof.
   - destruct ispair as [A₀ B₀ a b|n Hn].
     + unshelve econstructor.
       * intros; now unshelve eapply eqv.(eqvShp).
-      * intros; now eapply eqv.(eqvShp).
-      * intros; unshelve eapply eqv.(eqvPos); [|now eauto].
+      * intros; now unshelve eapply eqv.(eqvShp).
+      * intros; unshelve eapply eqv.(eqvPos); tea; [|now eauto].
         now unshelve eapply eqv.(eqvShp).
-      * intros; now eapply eqv.(eqvPos).
+      * intros; now unshelve eapply eqv.(eqvPos).
     + constructor; now eapply convneu_conv.
   - now eapply convtm_conv.
   - intros; unshelve eapply eqv.(eqvPos); now auto.
@@ -255,6 +255,7 @@ Context {Γ lA A lA' A'} (wfΓ wfΓ' : [|-Γ])
   (RA' := WRedTy.LRW wfΓ' WA')
   (codRedConv : forall Δ a (ρ : Δ ≤ Γ) (h :[|- Δ]) (ha : [PolyRedPack.shpRed WA ρ h | Δ ||- a : _]),
          [PolyRedPack.posRed WA ρ h ha | Δ ||- cod[a .: ρ >> tRel] ≅ cod'[a .: ρ >> tRel]])
+  (eqWsom : [Γ |- dom ≅ dom'])
   (eqW : [Γ |- WA.(outTy) ≅ WA'.(outTy)])
   (eqv : equivPolyRed WA WA').
   (* (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ wfΔ': [|-Δ]), 
@@ -263,8 +264,8 @@ Context {Γ lA A lA' A'} (wfΓ wfΓ' : [|-Γ])
 (* TODO: factor this lemma with one for Π and Σ *)
 Lemma WIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
 Proof.
-  intros  [???? []] ; cbn in *; econstructor; [| |econstructor].
-  - now gen_typing.
+  intros  [????? []] ; cbn in *; econstructor ; tea; [| |econstructor].
+  - cbn; etransitivity; [|tea]; now symmetry.
   - cbn; etransitivity; [|tea]; now symmetry.
   - intros; now unshelve eapply eqv.(eqvShp).
   - intros; cbn; unshelve eapply eqv.(eqvPos); tea.
@@ -310,6 +311,13 @@ Lemma funRedTm_irrelevance {Δ} {a k} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|- Δ])
   (Ra : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
   (Ra' : forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]), [WA'.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _]) 
   (Rk : WRedTm.funRedTm Δ ρ wfΔ k Ra (fun Δ => WRedTm WA (Δ:=Δ)) (fun Δ => WRedTmEq WA (Δ:=Δ)))
+  (ihRedSubst : 
+    match PiRedTm.isfun Rk with
+    | LamLRFun _ t' _ _ => 
+      forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b},
+      [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b : _] -> forall wfΔ' : [ |-[ ta ] Ξ], WRedTm WA' (ρ' ∘w ρ) wfΔ' t'[b .: ρ' >> tRel]
+    | NeLRFun f _ => unit
+    end)
   (ihRed : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]) (b : term),
     [WRedTm.instWCodRed ρ wfΔ Ra Ξ ρ' wfΞ | _ ||- b : _] -> forall wfΔ' : [ |-[ ta ] Ξ], WRedTm WA' (ρ' ∘w ρ) wfΔ' (tApp (PiRedTm.nf Rk)⟨ρ'⟩ b))
   (ihRedEq : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]) (b b' : term),
@@ -321,6 +329,13 @@ Lemma funRedTm_irrelevance {Δ} {a k} (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|- Δ])
 Proof.
   pose proof (supContTy_conv ρ wfΔ (Ra _ wk_id wfΔ)).
   destruct Rk; cbn in *; unshelve econstructor; cycle 2; tea.
+  * destruct isfun.
+    + econstructor.
+      - intros; now unshelve eapply instWCodRed_irrelevance.
+      - intros. 
+        unshelve eapply ihRedSubst; tea.
+        now unshelve eapply instWCodRed_irrelevance. 
+    + econstructor; now eapply convneu_conv.
   * now eapply convtm_conv.
   * intros; unshelve eapply ihRed; tea.
     now eapply instWCodRed_irrelevance.
@@ -353,7 +368,7 @@ Proof.
     + now eapply funRedTm_irrelevance.
   - intros. constructor; eapply NeNfconv; tea.
     2: now eapply convty_wk.
-    eapply wft_wk; tea; eapply wft_W; destruct WA' as [?????[]]; tea.
+    eapply wft_wk; tea; eapply wft_W; destruct WA' as [??????[]]; tea.
   - intros; econstructor; tea.
     4: eauto.
     1,2: eapply redtmwf_conv; tea; now eapply convty_wk.
@@ -391,11 +406,11 @@ Proof.
       * eapply funRedTm_irrelevance; tea.
       * eapply funRedTm_irrelevance; tea.
       * cbn; eapply convtm_conv; tea.
-      * intros. unshelve eapply X3; tea.
+      * intros. unshelve eapply X5; tea.
         unshelve eapply instWCodRed_irrelevance; tea.
   - intros; constructor; eapply NeNfEqconv; tea. 
     2: now eapply convty_wk.
-    eapply wft_wk; tea; eapply wft_W; destruct WA' as [?????[]]; tea.
+    eapply wft_wk; tea; eapply wft_W; destruct WA' as [??????[]]; tea.
   Qed.
   
 End WIrrelevanceLemmas.
@@ -412,6 +427,7 @@ Lemma WIrrelevance@{i j k l i' j' k' l' v}
   (RA' := WRedTy.LRW wfΓ' WA')
   (codRedConv : forall Δ a (ρ : Δ ≤ Γ) (h :[|- Δ]) (ha : [PolyRedPack.shpRed WA ρ h | Δ ||- a : _]),
          [PolyRedPack.posRed WA ρ h ha | Δ ||- cod[a .: ρ >> tRel] ≅ cod'[a .: ρ >> tRel]])
+  (eqWdom : [Γ |- dom ≅ dom'])
   (eqW : [Γ |- WA.(outTy) ≅ WA'.(outTy)])
   (eqv : equivPolyRed WA WA') :
   (* (eqvcod0 : forall Δ (ρ : Δ ≤ Γ) (wfΔ wfΔ' : [|-Δ]), 
@@ -744,14 +760,12 @@ Proof.
   - destruct lrA' as [| | | | | | | ?? wfΓ' WAP' WAad']; try solve [destruct s]; clear s.
     pose (WA := WRedTy.from WAad).
     pose (WA' := WRedTy.from WAad').
-    destruct he as [dom cod redeq ? [domRed codRed]].
+    destruct he as [dom cod redeq ?? [domRed codRed]].
     destruct WAP' as [[??? red']]; cbn in *.
     assert (eW : tW dom cod = WA'.(ParamRedTy.outTy)).
     1: unfold outTy; cbn; eapply whredty_det; gen_typing.
     inversion eW; subst; clear eW.
-    eapply (WIrrelevance _ _ WA WA'); [ | |unshelve econstructor].
-    + intros; eapply codRed.
-    + unfold outTy; cbn. destruct WAP; cbn in *. gen_typing.
+    eapply (WIrrelevance _ _ WA WA'); tea; unshelve econstructor.
     + intros. unshelve eapply IHdom.
       2: eapply (LRAd.adequate (PolyRed.shpRed WA' _ _)).
       eapply domRed.
@@ -840,7 +854,7 @@ Proof.
     + intros ??? ?%eqv ?%eqv; apply eqv; now etransitivity.
   - intros ? [] IHdom IHcod IH; cbn in *.
     eapply LRW'; unshelve econstructor.
-    3,4: tea.
+    3,4,5: tea.
     unshelve eapply LRIrrelevantCumPolyRed; tea.
     + intros; now eapply IHdom.
     + intros; now eapply IHcod.
@@ -1172,6 +1186,10 @@ Proof.
   pose proof supContTy_inst_conv.
   destruct Rk; econstructor; tea.
   + eapply redtmwf_conv; tea.
+  + destruct isfun; econstructor.
+    3: now eapply convneu_conv.
+    - intros; unshelve eapply instWCodRed_conv_irrelevance; eauto.
+    - intros; eapply w0; unshelve eapply instWCodRed_conv_irrelevance; eauto.
   + eapply convtm_conv; tea.
   + intros. eapply app.
     eapply instWCodRed_conv_irrelevance; tea.

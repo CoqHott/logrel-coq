@@ -75,7 +75,7 @@ Section Reflexivities.
   Proof.
     apply WRedInduction; try solve [intros ; exact I].
     - intros; now econstructor.
-    - intros ???????????? Rk ih * ; econstructor; tea; eauto.
+    - intros ???????????? Rk ? ih * ; econstructor; tea; eauto.
       unshelve econstructor; tea; destruct Rk; cbn; tea.
       intros; now eapply ih.
     - intros; constructor; now eapply NeNfEqRefl.

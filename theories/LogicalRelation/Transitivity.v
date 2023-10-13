@@ -219,7 +219,7 @@ Proof.
     econstructor; tea.
     + subst; now etransitivity.
     + eapply ih; now subst.
-  - intros * ?????????? Ra Ra' Raa' Rkk' Rk Rk' ih1 ih2 ih3 ih4 ih5 ? Puv.
+  - intros * ?????????? Ra Ra' Raa' Rkk' Rk Rk' ih1 ih2 ih3 ih4 ih5 ih6 ih7 ? Puv.
     inversion Puv; subst.
     2:{ 
       unshelve epose proof (h := NeNf.conv _); cycle 4; tea. 
@@ -237,7 +237,7 @@ Proof.
       assert (e: PiRedTm.nf redR = PiRedTm.nf redL0).
       1:{
         eapply redtmwf_det.
-        1,2:  eapply isFun_whnf; now eapply PiRedTm.isfun.
+        1,2: eapply isLRFun_whnf, PiRedTm.isfun.
         1,2: now eapply PiRedTm.red.
       }
      unshelve econstructor; tea.
@@ -247,7 +247,7 @@ Proof.
         rewrite e; eapply convtm_conv; tea.
         symmetry; now eapply supContTy_inst_conv.
       * cbn in *; intros.
-        eapply ih5; tea.
+        eapply ih7; tea.
         rewrite e; eapply eqApp0.
         eapply instWCodRed_conv_irrelevance.
         2: tea.

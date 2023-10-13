@@ -400,21 +400,36 @@ Definition PiRedTyEq `{ta : tag}
 Module PiRedTyEq := ParamRedTyEq.
 Notation "[ Γ ||-Π A ≅ B | ΠA ]" := (PiRedTyEq (Γ:=Γ) (A:=A) ΠA B).
 
-Inductive isLRFun@{i} `{ta : tag} `{WfContext ta}
-  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+
+Section isLRFun.
+  Universe i.
+  Context `{ta : tag} `{WfContext ta}
+  `{ConvNeuConv ta}
   {Γ : context}
   {dom cod : term} 
   {domRed : forall {Δ} (ρ : Δ ≤ Γ), [ |- Δ ] -> LRPack@{i} Δ dom⟨ρ⟩}
-  {codRedTm : forall {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), [ domRed ρ h | _ ||- a : _] -> term -> Type@{i}} 
-  : term -> Type :=
-| LamLRFun : forall A' t : term,
-  (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), 
-      [domRed ρ h | Δ ||- dom⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
-  (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-    (ha : [ domRed ρ h | Δ ||- a : dom⟨ρ⟩ ]), 
-    codRedTm ρ h ha t[a .: (ρ >> tRel)]) ->
-  isLRFun (tLambda A' t)
-| NeLRFun : forall f : term, [Γ |- f ~ f : tProd dom cod] -> isLRFun f.
+  {codRedTm : forall {Δ} {a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), [ domRed ρ h | _ ||- a : _] -> term -> Type@{i}}.
+
+  Inductive isLRFun
+    : term -> Type :=
+  | LamLRFun : forall A' t : term,
+    (forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), 
+        [domRed _ ρ h | Δ ||- dom⟨ρ⟩ ≅ A'⟨ρ⟩]) ->
+    (forall {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
+      (ha : [ domRed _ ρ h | Δ ||- a : dom⟨ρ⟩ ]), 
+      codRedTm _ _ ρ h ha t[a .: (ρ >> tRel)]) ->
+    isLRFun (tLambda A' t)
+  | NeLRFun : forall f : term, [Γ |- f ~ f : tProd dom cod] -> isLRFun f.
+
+  Lemma isLRFun_whnf `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta}  
+  `{!ConvNeuProperties} {t} : isLRFun t -> whnf t.
+  Proof.
+    intros []; constructor; now eapply convneu_whne.
+  Qed.
+End isLRFun.
+
+Arguments isLRFun {_ _ _ _ } _ _ _ _ _.
+
 
 
 Module PiRedTm.
@@ -428,7 +443,7 @@ Module PiRedTm.
   : Type := {
     nf : term;
     red : [ Γ |- t :⤳*: nf : tProd dom cod ];
-    isfun : isLRFun (dom:=dom) (cod:=cod) (domRed:=@domRed) (codRedTm:=@codRedTm) nf;
+    isfun : isLRFun dom cod (@domRed) (@codRedTm) nf;
     refl : [ Γ |- nf ≅ nf : tProd dom cod ];
     app {Δ a} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) (ha : [ domRed ρ h | _ ||- a : _ ]) : codRedTm ρ h ha (tApp nf⟨ρ⟩ a) ;
     eq {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ]) 
@@ -1246,6 +1261,11 @@ Section WRedTm.
                   [WA.(PolyRedPack.posRed) (ρ' ∘w ρ) wfΞ Ra' | _ ||- _ ≅ B[a' .: ρ' >> tRel ]])
                 (Ra : forall (Ξ : context) (ρ' : Ξ ≤ Δ) (wfΞ : [ |-[ ta ] Ξ]), [PolyRedPack.shpRed WA (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ : _])
                 (Rk : funRedTm Δ ρ wfΔ k Ra WRedTm WRedTmEq),
+            (match PiRedTm.isfun Rk with 
+              | LamLRFun A' t' RA' Rt' =>
+                forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (Rt' Ξ b ρ' wfΞ Rb)
+              | _ => unit
+              end) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk (a:=b) ρ' wfΞ Rb)) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
               Pp Δ ρ wfΔ (tSup A B a k) (supR Δ ρ wfΔ wtyA RAeq wtyB RBeq Ra Rk))
@@ -1282,8 +1302,18 @@ Section WRedTm.
                 (Rkk' : funRedTmEq Δ ρ wfΔ k k' Ra WRedTm WRedTmEq)
                 (Rk := PiRedTmEq.redL Rkk')
                 (Rk' := PiRedTmEq.redR Rkk'),
+            (match PiRedTm.isfun Rk with 
+              | LamLRFun A' t' RA' Rt' =>
+                forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (Rt' Ξ b ρ' wfΞ Rb)
+              | _ => unit
+              end) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk (a:=b) ρ' wfΞ Rb)) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
+            (match PiRedTm.isfun Rk' with 
+              | LamLRFun A' t' RA' Rt' =>
+                forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (Rt' Ξ b ρ' wfΞ Rb)
+              | _ => unit
+              end) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prt Ξ (ρ' ∘w ρ) wfΞ _ (PiRedTm.app Rk' (a:=b) ρ' wfΞ Rb)) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b b'} Rb Rb' Rbb', Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTm.eq Rk' (a:=b) (b:=b') ρ' wfΞ Rb Rb' Rbb')) ->
             (forall Ξ (ρ' : Ξ ≤ Δ) (wfΞ : [|- Ξ]) {b} Rb, Prte Ξ (ρ' ∘w ρ) wfΞ _ _ (PiRedTmEq.eqApp Rkk' (a:=b) ρ' wfΞ Rb)) ->
@@ -1302,7 +1332,7 @@ Section WRedTm.
         with F0 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t : term) (w : WProp Δ ρ wfΔ t) {struct w} :
             Pp Δ ρ wfΔ t w :=
           match w as w0 in (WProp _ _ _ t0) return (Pp Δ ρ wfΔ t0 w0) with
-          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _
+          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _ _
           | @neR _ _ _ k r => ihneR Δ ρ wfΔ k r
           end
         with F1 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WRedTmEq Δ ρ wfΔ t t0) {struct w} :
@@ -1315,11 +1345,12 @@ Section WRedTm.
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
           | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
         F.
+        Solve All Obligations with intros; set (x := PiRedTm.isfun _); destruct x; [|exact tt]; intros; apply F.
 
       #[program]
       Definition WProp_mut_rect :=
@@ -1330,7 +1361,7 @@ Section WRedTm.
         with F0 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t : term) (w : WProp Δ ρ wfΔ t) {struct w} :
             Pp Δ ρ wfΔ t w :=
           match w as w0 in (WProp _ _ _ t0) return (Pp Δ ρ wfΔ t0 w0) with
-          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _
+          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _ _
           | @neR _ _ _ k r => ihneR Δ ρ wfΔ k r
           end
         with F1 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WRedTmEq Δ ρ wfΔ t t0) {struct w} :
@@ -1343,11 +1374,12 @@ Section WRedTm.
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
           | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
         F0.
+        Solve All Obligations with intros; set (x := PiRedTm.isfun _); destruct x; [|exact tt]; intros; apply F.
 
       #[program]
       Definition WRedTmEq_mut_rect :=
@@ -1358,7 +1390,7 @@ Section WRedTm.
         with F0 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t : term) (w : WProp Δ ρ wfΔ t) {struct w} :
             Pp Δ ρ wfΔ t w :=
           match w as w0 in (WProp _ _ _ t0) return (Pp Δ ρ wfΔ t0 w0) with
-          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _
+          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _ _
           | @neR _ _ _ k r => ihneR Δ ρ wfΔ k r
           end
         with F1 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WRedTmEq Δ ρ wfΔ t t0) {struct w} :
@@ -1371,11 +1403,12 @@ Section WRedTm.
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
           | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
         F1.
+        Solve All Obligations with intros; set (x := PiRedTm.isfun _); destruct x; [|exact tt]; intros; apply F.
 
       #[program]
       Definition WPropEq_mut_rect :=
@@ -1386,7 +1419,7 @@ Section WRedTm.
         with F0 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t : term) (w : WProp Δ ρ wfΔ t) {struct w} :
             Pp Δ ρ wfΔ t w :=
           match w as w0 in (WProp _ _ _ t0) return (Pp Δ ρ wfΔ t0 w0) with
-          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _
+          | @supR _ _ _ A B a k wtyA RAeq wtyB RBeq Ra Rk => ihsupR Δ ρ wfΔ A B a k wtyA RAeq wtyB RBeq Ra Rk _ _ _
           | @neR _ _ _ k r => ihneR Δ ρ wfΔ k r
           end
         with F1 (Δ : context) (ρ : Δ ≤ Γ) (wfΔ : [ |-[ ta ] Δ]) (t t0 : term) (w : WRedTmEq Δ ρ wfΔ t t0) {struct w} :
@@ -1399,11 +1432,12 @@ Section WRedTm.
             Ppe Δ ρ wfΔ t t0 w :=
           match w as w0 in (WPropEq _ _ _ t1 t2) return (Ppe Δ ρ wfΔ t1 t2 w0) with
           | @supReq _ _ _ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' =>
-              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _
+              ihsupReq Δ ρ wfΔ A A' B B' a a' k k' wtyA wtyA' RAeq RAeq' wtyB wtyB' RBaeq RB'aeq RBa'eq RB'a'eq Ra Ra' Raa' Rkk' _ _ _ _ _ _ _
           | @neReq _ _ _ k k' r => ihneReq Δ ρ wfΔ k k' r
           end
         for
         F2.
+        Solve All Obligations with intros; set (x := PiRedTm.isfun _); destruct x; [|exact tt]; intros; apply F.
 
       Definition WRedInductionConcl :=
         (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) t (w : WRedTm _ ρ wfΔ t), Prt Δ ρ wfΔ t w)
