@@ -5,6 +5,11 @@ This repo contains the formalisation work accompangy the paper *Definitional Fun
 
 The formalisation follows a similar [Agda formalization](https://github.com/mr-ohman/logrel-mltt/) (described in [*Decidability of conversion for Type Theory in Type Theory*, 2018](https://dl.acm.org/doi/10.1145/3158111)). In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate. It also includes code from Winterhalter's [partial-fun](https://github.com/TheoWinterhalter/coq-partialfun) library to handle the definition of partial functions.
 
+Browsing the development
+==================
+
+The development, rendered using the [coqdoc](https://coq.inria.fr/refman/using/tools/coqdoc.html) utility, can be browsed offline (as html files). To start navigating the sources, the best entry point is probably the [the table of content](./docs/coqdoc/toc.html). A [short description of the file contents](./docs/index.md) is also provided to make the navigation easier.
+
 Building
 ===========
 
@@ -14,10 +19,6 @@ Apart from a few harmless warnings, and the output of some examples, the build r
 
 For easiness, the html documentation built using `coqdoc` is included in the artefact. It can be built again invoking `make coqdoc`.
 
-Browsing the development
-==================
-
-The development, rendered using the [coqdoc](https://coq.inria.fr/refman/using/tools/coqdoc.html) utility, can be generated using `make coqdoc`, and then browed offline (as html files). To start navigating the sources, the best entry point is probably the [the table of content](./docs/coqdoc/toc.html). A [short description of the file contents](./docs/index.md) is also provided to make the navigation easier.
 
 Files of interest
 =================
