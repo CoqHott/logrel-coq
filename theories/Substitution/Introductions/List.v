@@ -167,7 +167,6 @@ Proof.
   - instValid Vσ. eassumption.
 Qed.
 
-(* TODO: cleanup!! *)
 Lemma nilRed' {Γ A A' l}
   (RA: [Γ ||-< l > A])
   (wtyA' : [Γ |- A'])
@@ -1505,8 +1504,6 @@ Proof.
         intros; eapply redfun_kripke_neutrals ; cycle 1; tea.
 Defined.
 
-(* TODO: same lemma with weakening, also reduction of weakened functions? *)
-
 Lemma comp_assoc_app_neutral
         {Γ A B C A0 f g h n l}
         (RA : [Γ ||-<l> A])
@@ -1787,7 +1784,6 @@ Proof.
       change [ normList RVLA | Δ ||- l[σ] ≅ l'[σ] : _ ].
       irrelevance.
   - cbn.
-    (* TODO: lemma + rewrite *)
     replace (tLambda A[σ] (tApp f⟨↑⟩[up_term_term σ] (tApp g⟨↑⟩[up_term_term σ] (tRel var_zero))))
       with (comp A[σ] f[σ] g[σ]) by now asimpl.
     cbn.
@@ -1964,7 +1960,7 @@ Proof.
         eapply convneulist_whne_list; tea.
       + cbn. destruct (Map.into_view u); try discriminate.
         constructor; tea.
-        3:{ (* TODO: check the lemmas above! *)
+        3:{ 
           intros.
           eapply redSubstTerm.
           - cbn. now eapply neuTerm.
