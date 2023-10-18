@@ -5,6 +5,32 @@ From Coq Require Import Setoid Morphisms Relation_Definitions.
 
 Module Core.
 
+Inductive typeLF : Type :=
+    lfArr : typeLF -> typeLF -> typeLF.
+
+Lemma congr_lfArr {s0 : typeLF} {s1 : typeLF} {t0 : typeLF} {t1 : typeLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfArr s0 s1 = lfArr t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfArr x s1) H0))
+         (ap (fun x => lfArr t0 x) H1)).
+Qed.
+
+Inductive ctxLF : Type :=
+  | lfCtxEmpty : ctxLF
+  | lfCtxCons : ctxLF -> typeLF -> ctxLF.
+
+Lemma congr_lfCtxEmpty : lfCtxEmpty = lfCtxEmpty.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_lfCtxCons {s0 : ctxLF} {s1 : typeLF} {t0 : ctxLF} {t1 : typeLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfCtxCons s0 s1 = lfCtxCons t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfCtxCons x s1) H0))
+         (ap (fun x => lfCtxCons t0 x) H1)).
+Qed.
+
 Inductive term : Type :=
   | tRel : nat -> term
   | tSort : sort -> term
@@ -23,7 +49,19 @@ Inductive term : Type :=
   | tSnd : term -> term
   | tId : term -> term -> term -> term
   | tRefl : term -> term -> term
-  | tIdElim : term -> term -> term -> term -> term -> term -> term.
+  | tIdElim : term -> term -> term -> term -> term -> term -> term
+  | tCtx : term
+  | tBox : ctxLF -> typeLF -> term
+  | tQuote : ctxLF -> termLF -> term
+  | tBoxRec : term -> term -> term -> term -> ctxLF -> term -> term
+with termLF : Type :=
+  | lfLam : typeLF -> termLF -> termLF
+  | lfApp : termLF -> termLF -> termLF
+  | lfSplice : term -> subLF -> termLF
+with subLF : Type :=
+  | lfSubEmpty : subLF
+  | lfWk : ctxLF -> subLF
+  | lfSubCons : subLF -> termLF -> subLF.
 
 Lemma congr_tSort {s0 : sort} {t0 : sort} (H0 : s0 = t0) :
   tSort s0 = tSort t0.
@@ -159,6 +197,83 @@ exact (eq_trans
          (ap (fun x => tIdElim t0 t1 t2 t3 t4 x) H5)).
 Qed.
 
+Lemma congr_tCtx : tCtx = tCtx.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_tBox {s0 : ctxLF} {s1 : typeLF} {t0 : ctxLF} {t1 : typeLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : tBox s0 s1 = tBox t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => tBox x s1) H0))
+         (ap (fun x => tBox t0 x) H1)).
+Qed.
+
+Lemma congr_tQuote {s0 : ctxLF} {s1 : termLF} {t0 : ctxLF} {t1 : termLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : tQuote s0 s1 = tQuote t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => tQuote x s1) H0))
+         (ap (fun x => tQuote t0 x) H1)).
+Qed.
+
+Lemma congr_tBoxRec {s0 : term} {s1 : term} {s2 : term} {s3 : term}
+  {s4 : ctxLF} {s5 : term} {t0 : term} {t1 : term} {t2 : term} {t3 : term}
+  {t4 : ctxLF} {t5 : term} (H0 : s0 = t0) (H1 : s1 = t1) (H2 : s2 = t2)
+  (H3 : s3 = t3) (H4 : s4 = t4) (H5 : s5 = t5) :
+  tBoxRec s0 s1 s2 s3 s4 s5 = tBoxRec t0 t1 t2 t3 t4 t5.
+Proof.
+exact (eq_trans
+         (eq_trans
+            (eq_trans
+               (eq_trans
+                  (eq_trans
+                     (eq_trans eq_refl
+                        (ap (fun x => tBoxRec x s1 s2 s3 s4 s5) H0))
+                     (ap (fun x => tBoxRec t0 x s2 s3 s4 s5) H1))
+                  (ap (fun x => tBoxRec t0 t1 x s3 s4 s5) H2))
+               (ap (fun x => tBoxRec t0 t1 t2 x s4 s5) H3))
+            (ap (fun x => tBoxRec t0 t1 t2 t3 x s5) H4))
+         (ap (fun x => tBoxRec t0 t1 t2 t3 t4 x) H5)).
+Qed.
+
+Lemma congr_lfLam {s0 : typeLF} {s1 : termLF} {t0 : typeLF} {t1 : termLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfLam s0 s1 = lfLam t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfLam x s1) H0))
+         (ap (fun x => lfLam t0 x) H1)).
+Qed.
+
+Lemma congr_lfApp {s0 : termLF} {s1 : termLF} {t0 : termLF} {t1 : termLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfApp s0 s1 = lfApp t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfApp x s1) H0))
+         (ap (fun x => lfApp t0 x) H1)).
+Qed.
+
+Lemma congr_lfSplice {s0 : term} {s1 : subLF} {t0 : term} {t1 : subLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfSplice s0 s1 = lfSplice t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfSplice x s1) H0))
+         (ap (fun x => lfSplice t0 x) H1)).
+Qed.
+
+Lemma congr_lfSubEmpty : lfSubEmpty = lfSubEmpty.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_lfWk {s0 : ctxLF} {t0 : ctxLF} (H0 : s0 = t0) : lfWk s0 = lfWk t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => lfWk x) H0)).
+Qed.
+
+Lemma congr_lfSubCons {s0 : subLF} {s1 : termLF} {t0 : subLF} {t1 : termLF}
+  (H0 : s0 = t0) (H1 : s1 = t1) : lfSubCons s0 s1 = lfSubCons t0 t1.
+Proof.
+exact (eq_trans (eq_trans eq_refl (ap (fun x => lfSubCons x s1) H0))
+         (ap (fun x => lfSubCons t0 x) H1)).
+Qed.
+
 Lemma upRen_term_term (xi : nat -> nat) : nat -> nat.
 Proof.
 exact (up_ren xi).
@@ -197,6 +312,26 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
       tIdElim (ren_term xi_term s0) (ren_term xi_term s1)
         (ren_term (upRen_term_term (upRen_term_term xi_term)) s2)
         (ren_term xi_term s3) (ren_term xi_term s4) (ren_term xi_term s5)
+  | tCtx => tCtx
+  | tBox s0 s1 => tBox s0 s1
+  | tQuote s0 s1 => tQuote s0 (ren_termLF xi_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      tBoxRec (ren_term (upRen_term_term (upRen_term_term xi_term)) s0)
+        (ren_term xi_term s1) (ren_term xi_term s2) (ren_term xi_term s3) s4
+        (ren_term xi_term s5)
+  end
+with ren_termLF (xi_term : nat -> nat) (s : termLF) {struct s} : termLF :=
+  match s with
+  | lfLam s0 s1 => lfLam s0 (ren_termLF xi_term s1)
+  | lfApp s0 s1 => lfApp (ren_termLF xi_term s0) (ren_termLF xi_term s1)
+  | lfSplice s0 s1 => lfSplice (ren_term xi_term s0) (ren_subLF xi_term s1)
+  end
+with ren_subLF (xi_term : nat -> nat) (s : subLF) {struct s} : subLF :=
+  match s with
+  | lfSubEmpty => lfSubEmpty
+  | lfWk s0 => lfWk s0
+  | lfSubCons s0 s1 =>
+      lfSubCons (ren_subLF xi_term s0) (ren_termLF xi_term s1)
   end.
 
 Lemma up_term_term (sigma : nat -> term) : nat -> term.
@@ -246,6 +381,30 @@ term :=
         (subst_term (up_term_term (up_term_term sigma_term)) s2)
         (subst_term sigma_term s3) (subst_term sigma_term s4)
         (subst_term sigma_term s5)
+  | tCtx => tCtx
+  | tBox s0 s1 => tBox s0 s1
+  | tQuote s0 s1 => tQuote s0 (subst_termLF sigma_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      tBoxRec (subst_term (up_term_term (up_term_term sigma_term)) s0)
+        (subst_term sigma_term s1) (subst_term sigma_term s2)
+        (subst_term sigma_term s3) s4 (subst_term sigma_term s5)
+  end
+with subst_termLF (sigma_term : nat -> term) (s : termLF) {struct s} : 
+termLF :=
+  match s with
+  | lfLam s0 s1 => lfLam s0 (subst_termLF sigma_term s1)
+  | lfApp s0 s1 =>
+      lfApp (subst_termLF sigma_term s0) (subst_termLF sigma_term s1)
+  | lfSplice s0 s1 =>
+      lfSplice (subst_term sigma_term s0) (subst_subLF sigma_term s1)
+  end
+with subst_subLF (sigma_term : nat -> term) (s : subLF) {struct s} : 
+subLF :=
+  match s with
+  | lfSubEmpty => lfSubEmpty
+  | lfWk s0 => lfWk s0
+  | lfSubCons s0 s1 =>
+      lfSubCons (subst_subLF sigma_term s0) (subst_termLF sigma_term s1)
   end.
 
 Lemma upId_term_term (sigma : nat -> term) (Eq : forall x, sigma x = tRel x)
@@ -312,6 +471,41 @@ subst_term sigma_term s = s :=
         (idSubst_term sigma_term Eq_term s3)
         (idSubst_term sigma_term Eq_term s4)
         (idSubst_term sigma_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0) (idSubst_termLF sigma_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (idSubst_term (up_term_term (up_term_term sigma_term))
+           (upId_term_term _ (upId_term_term _ Eq_term)) s0)
+        (idSubst_term sigma_term Eq_term s1)
+        (idSubst_term sigma_term Eq_term s2)
+        (idSubst_term sigma_term Eq_term s3) (eq_refl s4)
+        (idSubst_term sigma_term Eq_term s5)
+  end
+with idSubst_termLF (sigma_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tRel x) (s : termLF) {struct s} :
+subst_termLF sigma_term s = s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0) (idSubst_termLF sigma_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp (idSubst_termLF sigma_term Eq_term s0)
+        (idSubst_termLF sigma_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice (idSubst_term sigma_term Eq_term s0)
+        (idSubst_subLF sigma_term Eq_term s1)
+  end
+with idSubst_subLF (sigma_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tRel x) (s : subLF) {struct s} :
+subst_subLF sigma_term s = s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons (idSubst_subLF sigma_term Eq_term s0)
+        (idSubst_termLF sigma_term Eq_term s1)
   end.
 
 Lemma upExtRen_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -385,6 +579,42 @@ ren_term xi_term s = ren_term zeta_term s :=
         (extRen_term xi_term zeta_term Eq_term s3)
         (extRen_term xi_term zeta_term Eq_term s4)
         (extRen_term xi_term zeta_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0) (extRen_termLF xi_term zeta_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (extRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upExtRen_term_term _ _ (upExtRen_term_term _ _ Eq_term)) s0)
+        (extRen_term xi_term zeta_term Eq_term s1)
+        (extRen_term xi_term zeta_term Eq_term s2)
+        (extRen_term xi_term zeta_term Eq_term s3) (eq_refl s4)
+        (extRen_term xi_term zeta_term Eq_term s5)
+  end
+with extRen_termLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(Eq_term : forall x, xi_term x = zeta_term x) (s : termLF) {struct s} :
+ren_termLF xi_term s = ren_termLF zeta_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0) (extRen_termLF xi_term zeta_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp (extRen_termLF xi_term zeta_term Eq_term s0)
+        (extRen_termLF xi_term zeta_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice (extRen_term xi_term zeta_term Eq_term s0)
+        (extRen_subLF xi_term zeta_term Eq_term s1)
+  end
+with extRen_subLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(Eq_term : forall x, xi_term x = zeta_term x) (s : subLF) {struct s} :
+ren_subLF xi_term s = ren_subLF zeta_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons (extRen_subLF xi_term zeta_term Eq_term s0)
+        (extRen_termLF xi_term zeta_term Eq_term s1)
   end.
 
 Lemma upExt_term_term (sigma : nat -> term) (tau : nat -> term)
@@ -459,6 +689,42 @@ subst_term sigma_term s = subst_term tau_term s :=
         (ext_term sigma_term tau_term Eq_term s3)
         (ext_term sigma_term tau_term Eq_term s4)
         (ext_term sigma_term tau_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0) (ext_termLF sigma_term tau_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (ext_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (upExt_term_term _ _ (upExt_term_term _ _ Eq_term)) s0)
+        (ext_term sigma_term tau_term Eq_term s1)
+        (ext_term sigma_term tau_term Eq_term s2)
+        (ext_term sigma_term tau_term Eq_term s3) (eq_refl s4)
+        (ext_term sigma_term tau_term Eq_term s5)
+  end
+with ext_termLF (sigma_term : nat -> term) (tau_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tau_term x) (s : termLF) {struct s} :
+subst_termLF sigma_term s = subst_termLF tau_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0) (ext_termLF sigma_term tau_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp (ext_termLF sigma_term tau_term Eq_term s0)
+        (ext_termLF sigma_term tau_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice (ext_term sigma_term tau_term Eq_term s0)
+        (ext_subLF sigma_term tau_term Eq_term s1)
+  end
+with ext_subLF (sigma_term : nat -> term) (tau_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tau_term x) (s : subLF) {struct s} :
+subst_subLF sigma_term s = subst_subLF tau_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons (ext_subLF sigma_term tau_term Eq_term s0)
+        (ext_termLF sigma_term tau_term Eq_term s1)
   end.
 
 Lemma up_ren_ren_term_term (xi : nat -> nat) (zeta : nat -> nat)
@@ -542,6 +808,50 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s3)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s4)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0)
+        (compRenRen_termLF xi_term zeta_term rho_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (compRenRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upRen_term_term (upRen_term_term rho_term))
+           (up_ren_ren _ _ _ (up_ren_ren _ _ _ Eq_term)) s0)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s1)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s2)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s3) (eq_refl s4)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s5)
+  end
+with compRenRen_termLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(rho_term : nat -> nat)
+(Eq_term : forall x, funcomp zeta_term xi_term x = rho_term x) (s : termLF)
+{struct s} :
+ren_termLF zeta_term (ren_termLF xi_term s) = ren_termLF rho_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0)
+        (compRenRen_termLF xi_term zeta_term rho_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp (compRenRen_termLF xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_termLF xi_term zeta_term rho_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_subLF xi_term zeta_term rho_term Eq_term s1)
+  end
+with compRenRen_subLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(rho_term : nat -> nat)
+(Eq_term : forall x, funcomp zeta_term xi_term x = rho_term x) (s : subLF)
+{struct s} : ren_subLF zeta_term (ren_subLF xi_term s) = ren_subLF rho_term s
+:=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons
+        (compRenRen_subLF xi_term zeta_term rho_term Eq_term s0)
+        (compRenRen_termLF xi_term zeta_term rho_term Eq_term s1)
   end.
 
 Lemma up_ren_subst_term_term (xi : nat -> nat) (tau : nat -> term)
@@ -629,6 +939,54 @@ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
         (compRenSubst_term xi_term tau_term theta_term Eq_term s3)
         (compRenSubst_term xi_term tau_term theta_term Eq_term s4)
         (compRenSubst_term xi_term tau_term theta_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0)
+        (compRenSubst_termLF xi_term tau_term theta_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (compRenSubst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_ren_subst_term_term _ _ _
+              (up_ren_subst_term_term _ _ _ Eq_term)) s0)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s1)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s2)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s3)
+        (eq_refl s4)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s5)
+  end
+with compRenSubst_termLF (xi_term : nat -> nat) (tau_term : nat -> term)
+(theta_term : nat -> term)
+(Eq_term : forall x, funcomp tau_term xi_term x = theta_term x) (s : termLF)
+{struct s} :
+subst_termLF tau_term (ren_termLF xi_term s) = subst_termLF theta_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0)
+        (compRenSubst_termLF xi_term tau_term theta_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp
+        (compRenSubst_termLF xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_termLF xi_term tau_term theta_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_subLF xi_term tau_term theta_term Eq_term s1)
+  end
+with compRenSubst_subLF (xi_term : nat -> nat) (tau_term : nat -> term)
+(theta_term : nat -> term)
+(Eq_term : forall x, funcomp tau_term xi_term x = theta_term x) (s : subLF)
+{struct s} :
+subst_subLF tau_term (ren_subLF xi_term s) = subst_subLF theta_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons
+        (compRenSubst_subLF xi_term tau_term theta_term Eq_term s0)
+        (compRenSubst_termLF xi_term tau_term theta_term Eq_term s1)
   end.
 
 Lemma up_subst_ren_term_term (sigma : nat -> term) (zeta_term : nat -> nat)
@@ -738,6 +1096,55 @@ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s3)
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s4)
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0)
+        (compSubstRen_termLF sigma_term zeta_term theta_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (compSubstRen_term (up_term_term (up_term_term sigma_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_ren_term_term _ _ _
+              (up_subst_ren_term_term _ _ _ Eq_term)) s0)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s2)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s3)
+        (eq_refl s4)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s5)
+  end
+with compSubstRen_termLF (sigma_term : nat -> term) (zeta_term : nat -> nat)
+(theta_term : nat -> term)
+(Eq_term : forall x, funcomp (ren_term zeta_term) sigma_term x = theta_term x)
+(s : termLF) {struct s} :
+ren_termLF zeta_term (subst_termLF sigma_term s) = subst_termLF theta_term s
+:=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0)
+        (compSubstRen_termLF sigma_term zeta_term theta_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp
+        (compSubstRen_termLF sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_termLF sigma_term zeta_term theta_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_subLF sigma_term zeta_term theta_term Eq_term s1)
+  end
+with compSubstRen_subLF (sigma_term : nat -> term) (zeta_term : nat -> nat)
+(theta_term : nat -> term)
+(Eq_term : forall x, funcomp (ren_term zeta_term) sigma_term x = theta_term x)
+(s : subLF) {struct s} :
+ren_subLF zeta_term (subst_subLF sigma_term s) = subst_subLF theta_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons
+        (compSubstRen_subLF sigma_term zeta_term theta_term Eq_term s0)
+        (compSubstRen_termLF sigma_term zeta_term theta_term Eq_term s1)
   end.
 
 Lemma up_subst_subst_term_term (sigma : nat -> term) (tau_term : nat -> term)
@@ -849,6 +1256,57 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s3)
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s4)
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0)
+        (compSubstSubst_termLF sigma_term tau_term theta_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (compSubstSubst_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_subst_term_term _ _ _
+              (up_subst_subst_term_term _ _ _ Eq_term)) s0)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s1)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s2)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s3)
+        (eq_refl s4)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s5)
+  end
+with compSubstSubst_termLF (sigma_term : nat -> term)
+(tau_term : nat -> term) (theta_term : nat -> term)
+(Eq_term : forall x,
+           funcomp (subst_term tau_term) sigma_term x = theta_term x)
+(s : termLF) {struct s} :
+subst_termLF tau_term (subst_termLF sigma_term s) = subst_termLF theta_term s
+:=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0)
+        (compSubstSubst_termLF sigma_term tau_term theta_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp
+        (compSubstSubst_termLF sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_termLF sigma_term tau_term theta_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_subLF sigma_term tau_term theta_term Eq_term s1)
+  end
+with compSubstSubst_subLF (sigma_term : nat -> term) (tau_term : nat -> term)
+(theta_term : nat -> term)
+(Eq_term : forall x,
+           funcomp (subst_term tau_term) sigma_term x = theta_term x)
+(s : subLF) {struct s} :
+subst_subLF tau_term (subst_subLF sigma_term s) = subst_subLF theta_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons
+        (compSubstSubst_subLF sigma_term tau_term theta_term Eq_term s0)
+        (compSubstSubst_termLF sigma_term tau_term theta_term Eq_term s1)
   end.
 
 Lemma renRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat) (s : term)
@@ -867,6 +1325,39 @@ Proof.
 exact (fun s => compRenRen_term xi_term zeta_term _ (fun n => eq_refl) s).
 Qed.
 
+Lemma renRen_termLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+  (s : termLF) :
+  ren_termLF zeta_term (ren_termLF xi_term s) =
+  ren_termLF (funcomp zeta_term xi_term) s.
+Proof.
+exact (compRenRen_termLF xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renRen'_termLF_pointwise (xi_term : nat -> nat)
+  (zeta_term : nat -> nat) :
+  pointwise_relation _ eq
+    (funcomp (ren_termLF zeta_term) (ren_termLF xi_term))
+    (ren_termLF (funcomp zeta_term xi_term)).
+Proof.
+exact (fun s => compRenRen_termLF xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renRen_subLF (xi_term : nat -> nat) (zeta_term : nat -> nat)
+  (s : subLF) :
+  ren_subLF zeta_term (ren_subLF xi_term s) =
+  ren_subLF (funcomp zeta_term xi_term) s.
+Proof.
+exact (compRenRen_subLF xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renRen'_subLF_pointwise (xi_term : nat -> nat) (zeta_term : nat -> nat)
+  :
+  pointwise_relation _ eq (funcomp (ren_subLF zeta_term) (ren_subLF xi_term))
+    (ren_subLF (funcomp zeta_term xi_term)).
+Proof.
+exact (fun s => compRenRen_subLF xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma renSubst_term (xi_term : nat -> nat) (tau_term : nat -> term)
   (s : term) :
   subst_term tau_term (ren_term xi_term s) =
@@ -881,6 +1372,40 @@ Lemma renSubst_term_pointwise (xi_term : nat -> nat) (tau_term : nat -> term)
     (subst_term (funcomp tau_term xi_term)).
 Proof.
 exact (fun s => compRenSubst_term xi_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_termLF (xi_term : nat -> nat) (tau_term : nat -> term)
+  (s : termLF) :
+  subst_termLF tau_term (ren_termLF xi_term s) =
+  subst_termLF (funcomp tau_term xi_term) s.
+Proof.
+exact (compRenSubst_termLF xi_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_termLF_pointwise (xi_term : nat -> nat)
+  (tau_term : nat -> term) :
+  pointwise_relation _ eq
+    (funcomp (subst_termLF tau_term) (ren_termLF xi_term))
+    (subst_termLF (funcomp tau_term xi_term)).
+Proof.
+exact (fun s => compRenSubst_termLF xi_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_subLF (xi_term : nat -> nat) (tau_term : nat -> term)
+  (s : subLF) :
+  subst_subLF tau_term (ren_subLF xi_term s) =
+  subst_subLF (funcomp tau_term xi_term) s.
+Proof.
+exact (compRenSubst_subLF xi_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_subLF_pointwise (xi_term : nat -> nat)
+  (tau_term : nat -> term) :
+  pointwise_relation _ eq
+    (funcomp (subst_subLF tau_term) (ren_subLF xi_term))
+    (subst_subLF (funcomp tau_term xi_term)).
+Proof.
+exact (fun s => compRenSubst_subLF xi_term tau_term _ (fun n => eq_refl) s).
 Qed.
 
 Lemma substRen_term (sigma_term : nat -> term) (zeta_term : nat -> nat)
@@ -900,6 +1425,42 @@ Proof.
 exact (fun s => compSubstRen_term sigma_term zeta_term _ (fun n => eq_refl) s).
 Qed.
 
+Lemma substRen_termLF (sigma_term : nat -> term) (zeta_term : nat -> nat)
+  (s : termLF) :
+  ren_termLF zeta_term (subst_termLF sigma_term s) =
+  subst_termLF (funcomp (ren_term zeta_term) sigma_term) s.
+Proof.
+exact (compSubstRen_termLF sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substRen_termLF_pointwise (sigma_term : nat -> term)
+  (zeta_term : nat -> nat) :
+  pointwise_relation _ eq
+    (funcomp (ren_termLF zeta_term) (subst_termLF sigma_term))
+    (subst_termLF (funcomp (ren_term zeta_term) sigma_term)).
+Proof.
+exact (fun s =>
+       compSubstRen_termLF sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substRen_subLF (sigma_term : nat -> term) (zeta_term : nat -> nat)
+  (s : subLF) :
+  ren_subLF zeta_term (subst_subLF sigma_term s) =
+  subst_subLF (funcomp (ren_term zeta_term) sigma_term) s.
+Proof.
+exact (compSubstRen_subLF sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substRen_subLF_pointwise (sigma_term : nat -> term)
+  (zeta_term : nat -> nat) :
+  pointwise_relation _ eq
+    (funcomp (ren_subLF zeta_term) (subst_subLF sigma_term))
+    (subst_subLF (funcomp (ren_term zeta_term) sigma_term)).
+Proof.
+exact (fun s =>
+       compSubstRen_subLF sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma substSubst_term (sigma_term : nat -> term) (tau_term : nat -> term)
   (s : term) :
   subst_term tau_term (subst_term sigma_term s) =
@@ -916,6 +1477,42 @@ Lemma substSubst_term_pointwise (sigma_term : nat -> term)
 Proof.
 exact (fun s =>
        compSubstSubst_term sigma_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_termLF (sigma_term : nat -> term) (tau_term : nat -> term)
+  (s : termLF) :
+  subst_termLF tau_term (subst_termLF sigma_term s) =
+  subst_termLF (funcomp (subst_term tau_term) sigma_term) s.
+Proof.
+exact (compSubstSubst_termLF sigma_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_termLF_pointwise (sigma_term : nat -> term)
+  (tau_term : nat -> term) :
+  pointwise_relation _ eq
+    (funcomp (subst_termLF tau_term) (subst_termLF sigma_term))
+    (subst_termLF (funcomp (subst_term tau_term) sigma_term)).
+Proof.
+exact (fun s =>
+       compSubstSubst_termLF sigma_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_subLF (sigma_term : nat -> term) (tau_term : nat -> term)
+  (s : subLF) :
+  subst_subLF tau_term (subst_subLF sigma_term s) =
+  subst_subLF (funcomp (subst_term tau_term) sigma_term) s.
+Proof.
+exact (compSubstSubst_subLF sigma_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_subLF_pointwise (sigma_term : nat -> term)
+  (tau_term : nat -> term) :
+  pointwise_relation _ eq
+    (funcomp (subst_subLF tau_term) (subst_subLF sigma_term))
+    (subst_subLF (funcomp (subst_term tau_term) sigma_term)).
+Proof.
+exact (fun s =>
+       compSubstSubst_subLF sigma_term tau_term _ (fun n => eq_refl) s).
 Qed.
 
 Lemma rinstInst_up_term_term (xi : nat -> nat) (sigma : nat -> term)
@@ -990,6 +1587,44 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
            s2) (rinst_inst_term xi_term sigma_term Eq_term s3)
         (rinst_inst_term xi_term sigma_term Eq_term s4)
         (rinst_inst_term xi_term sigma_term Eq_term s5)
+  | tCtx => congr_tCtx
+  | tBox s0 s1 => congr_tBox (eq_refl s0) (eq_refl s1)
+  | tQuote s0 s1 =>
+      congr_tQuote (eq_refl s0)
+        (rinst_inst_termLF xi_term sigma_term Eq_term s1)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      congr_tBoxRec
+        (rinst_inst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term sigma_term))
+           (rinstInst_up_term_term _ _ (rinstInst_up_term_term _ _ Eq_term))
+           s0) (rinst_inst_term xi_term sigma_term Eq_term s1)
+        (rinst_inst_term xi_term sigma_term Eq_term s2)
+        (rinst_inst_term xi_term sigma_term Eq_term s3) (eq_refl s4)
+        (rinst_inst_term xi_term sigma_term Eq_term s5)
+  end
+with rinst_inst_termLF (xi_term : nat -> nat) (sigma_term : nat -> term)
+(Eq_term : forall x, funcomp (tRel) xi_term x = sigma_term x) (s : termLF)
+{struct s} : ren_termLF xi_term s = subst_termLF sigma_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      congr_lfLam (eq_refl s0)
+        (rinst_inst_termLF xi_term sigma_term Eq_term s1)
+  | lfApp s0 s1 =>
+      congr_lfApp (rinst_inst_termLF xi_term sigma_term Eq_term s0)
+        (rinst_inst_termLF xi_term sigma_term Eq_term s1)
+  | lfSplice s0 s1 =>
+      congr_lfSplice (rinst_inst_term xi_term sigma_term Eq_term s0)
+        (rinst_inst_subLF xi_term sigma_term Eq_term s1)
+  end
+with rinst_inst_subLF (xi_term : nat -> nat) (sigma_term : nat -> term)
+(Eq_term : forall x, funcomp (tRel) xi_term x = sigma_term x) (s : subLF)
+{struct s} : ren_subLF xi_term s = subst_subLF sigma_term s :=
+  match s with
+  | lfSubEmpty => congr_lfSubEmpty
+  | lfWk s0 => congr_lfWk (eq_refl s0)
+  | lfSubCons s0 s1 =>
+      congr_lfSubCons (rinst_inst_subLF xi_term sigma_term Eq_term s0)
+        (rinst_inst_termLF xi_term sigma_term Eq_term s1)
   end.
 
 Lemma rinstInst'_term (xi_term : nat -> nat) (s : term) :
@@ -1005,6 +1640,32 @@ Proof.
 exact (fun s => rinst_inst_term xi_term _ (fun n => eq_refl) s).
 Qed.
 
+Lemma rinstInst'_termLF (xi_term : nat -> nat) (s : termLF) :
+  ren_termLF xi_term s = subst_termLF (funcomp (tRel) xi_term) s.
+Proof.
+exact (rinst_inst_termLF xi_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma rinstInst'_termLF_pointwise (xi_term : nat -> nat) :
+  pointwise_relation _ eq (ren_termLF xi_term)
+    (subst_termLF (funcomp (tRel) xi_term)).
+Proof.
+exact (fun s => rinst_inst_termLF xi_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma rinstInst'_subLF (xi_term : nat -> nat) (s : subLF) :
+  ren_subLF xi_term s = subst_subLF (funcomp (tRel) xi_term) s.
+Proof.
+exact (rinst_inst_subLF xi_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma rinstInst'_subLF_pointwise (xi_term : nat -> nat) :
+  pointwise_relation _ eq (ren_subLF xi_term)
+    (subst_subLF (funcomp (tRel) xi_term)).
+Proof.
+exact (fun s => rinst_inst_subLF xi_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma instId'_term (s : term) : subst_term (tRel) s = s.
 Proof.
 exact (idSubst_term (tRel) (fun n => eq_refl) s).
@@ -1013,6 +1674,28 @@ Qed.
 Lemma instId'_term_pointwise : pointwise_relation _ eq (subst_term (tRel)) id.
 Proof.
 exact (fun s => idSubst_term (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_termLF (s : termLF) : subst_termLF (tRel) s = s.
+Proof.
+exact (idSubst_termLF (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_termLF_pointwise :
+  pointwise_relation _ eq (subst_termLF (tRel)) id.
+Proof.
+exact (fun s => idSubst_termLF (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_subLF (s : subLF) : subst_subLF (tRel) s = s.
+Proof.
+exact (idSubst_subLF (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_subLF_pointwise :
+  pointwise_relation _ eq (subst_subLF (tRel)) id.
+Proof.
+exact (fun s => idSubst_subLF (tRel) (fun n => eq_refl) s).
 Qed.
 
 Lemma rinstId'_term (s : term) : ren_term id s = s.
@@ -1024,6 +1707,28 @@ Lemma rinstId'_term_pointwise : pointwise_relation _ eq (@ren_term id) id.
 Proof.
 exact (fun s =>
        eq_ind_r (fun t => t = s) (instId'_term s) (rinstInst'_term id s)).
+Qed.
+
+Lemma rinstId'_termLF (s : termLF) : ren_termLF id s = s.
+Proof.
+exact (eq_ind_r (fun t => t = s) (instId'_termLF s) (rinstInst'_termLF id s)).
+Qed.
+
+Lemma rinstId'_termLF_pointwise : pointwise_relation _ eq (@ren_termLF id) id.
+Proof.
+exact (fun s =>
+       eq_ind_r (fun t => t = s) (instId'_termLF s) (rinstInst'_termLF id s)).
+Qed.
+
+Lemma rinstId'_subLF (s : subLF) : ren_subLF id s = s.
+Proof.
+exact (eq_ind_r (fun t => t = s) (instId'_subLF s) (rinstInst'_subLF id s)).
+Qed.
+
+Lemma rinstId'_subLF_pointwise : pointwise_relation _ eq (@ren_subLF id) id.
+Proof.
+exact (fun s =>
+       eq_ind_r (fun t => t = s) (instId'_subLF s) (rinstInst'_subLF id s)).
 Qed.
 
 Lemma varL'_term (sigma_term : nat -> term) (x : nat) :
@@ -1051,16 +1756,54 @@ Proof.
 exact (fun x => eq_refl).
 Qed.
 
+Class Up_subLF X Y :=
+    up_subLF : X -> Y.
+
+Class Up_termLF X Y :=
+    up_termLF : X -> Y.
+
 Class Up_term X Y :=
     up_term : X -> Y.
 
-#[global] Instance Subst_term : (Subst1 _ _ _) := @subst_term.
+#[global]
+Instance Subst_subLF : (Subst1 _ _ _) := @subst_subLF.
 
-#[global] Instance Up_term_term : (Up_term _ _) := @up_term_term.
+#[global]
+Instance Subst_termLF : (Subst1 _ _ _) := @subst_termLF.
 
-#[global] Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+#[global]
+Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 
-#[global] Instance VarInstance_term : (Var _ _) := @tRel.
+#[global]
+Instance Up_term_term : (Up_term _ _) := @up_term_term.
+
+#[global]
+Instance Ren_subLF : (Ren1 _ _ _) := @ren_subLF.
+
+#[global]
+Instance Ren_termLF : (Ren1 _ _ _) := @ren_termLF.
+
+#[global]
+Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+
+#[global]
+Instance VarInstance_term : (Var _ _) := @tRel.
+
+Notation "[ sigma_term ]" := (subst_subLF sigma_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s [ sigma_term ]" := (subst_subLF sigma_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
+
+Notation "↑__subLF" := up_subLF (only printing) : subst_scope.
+
+Notation "[ sigma_term ]" := (subst_termLF sigma_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s [ sigma_term ]" := (subst_termLF sigma_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
+
+Notation "↑__termLF" := up_termLF (only printing) : subst_scope.
 
 Notation "[ sigma_term ]" := (subst_term sigma_term)
   ( at level 1, left associativity, only printing) : fscope.
@@ -1071,6 +1814,18 @@ Notation "s [ sigma_term ]" := (subst_term sigma_term s)
 Notation "↑__term" := up_term (only printing) : subst_scope.
 
 Notation "↑__term" := up_term_term (only printing) : subst_scope.
+
+Notation "⟨ xi_term ⟩" := (ren_subLF xi_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s ⟨ xi_term ⟩" := (ren_subLF xi_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
+
+Notation "⟨ xi_term ⟩" := (ren_termLF xi_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s ⟨ xi_term ⟩" := (ren_termLF xi_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
 
 Notation "⟨ xi_term ⟩" := (ren_term xi_term)
   ( at level 1, left associativity, only printing) : fscope.
@@ -1086,7 +1841,44 @@ Notation "x '__term'" := (@ids _ _ VarInstance_term x)
 Notation "x '__term'" := (tRel x) ( at level 5, format "x __term") :
   subst_scope.
 
-#[global] Instance subst_term_morphism :
+#[global]
+Instance subst_subLF_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@subst_subLF)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => subst_subLF f_term s = subst_subLF g_term t')
+         (ext_subLF f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+#[global]
+Instance subst_subLF_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@subst_subLF)).
+Proof.
+exact (fun f_term g_term Eq_term s => ext_subLF f_term g_term Eq_term s).
+Qed.
+
+#[global]
+Instance subst_termLF_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@subst_termLF)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => subst_termLF f_term s = subst_termLF g_term t')
+         (ext_termLF f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+#[global]
+Instance subst_termLF_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@subst_termLF)).
+Proof.
+exact (fun f_term g_term Eq_term s => ext_termLF f_term g_term Eq_term s).
+Qed.
+
+#[global]
+Instance subst_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@subst_term)).
 Proof.
@@ -1102,7 +1894,44 @@ Proof.
 exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
 Qed.
 
-#[global] Instance ren_term_morphism :
+#[global]
+Instance ren_subLF_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@ren_subLF)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => ren_subLF f_term s = ren_subLF g_term t')
+         (extRen_subLF f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+#[global]
+Instance ren_subLF_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@ren_subLF)).
+Proof.
+exact (fun f_term g_term Eq_term s => extRen_subLF f_term g_term Eq_term s).
+Qed.
+
+#[global]
+Instance ren_termLF_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@ren_termLF)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => ren_termLF f_term s = ren_termLF g_term t')
+         (extRen_termLF f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+#[global]
+Instance ren_termLF_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@ren_termLF)).
+Proof.
+exact (fun f_term g_term Eq_term s => extRen_termLF f_term g_term Eq_term s).
+Qed.
+
+#[global]
+Instance ren_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@ren_term)).
 Proof.
@@ -1120,51 +1949,92 @@ Qed.
 
 Ltac auto_unfold := repeat
                      unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
+                      Ren_termLF, Ren1, ren1, Ren_subLF, Ren1, ren1,
                       Up_term_term, Up_term, up_term, Subst_term, Subst1,
-                      subst1.
+                      subst1, Subst_termLF, Subst1, subst1, Subst_subLF,
+                      Subst1, subst1.
 
 Tactic Notation "auto_unfold" "in" "*" := repeat
                                            unfold VarInstance_term, Var, ids,
-                                            Ren_term, Ren1, ren1,
-                                            Up_term_term, Up_term, up_term,
-                                            Subst_term, Subst1, subst1 
-                                            in *.
+                                            Ren_term, Ren1, ren1, Ren_termLF,
+                                            Ren1, ren1, Ren_subLF, Ren1,
+                                            ren1, Up_term_term, Up_term,
+                                            up_term, Subst_term, Subst1,
+                                            subst1, Subst_termLF, Subst1,
+                                            subst1, Subst_subLF, Subst1,
+                                            subst1 in *.
 
 Ltac asimpl' := repeat (first
-                 [ progress setoid_rewrite substSubst_term_pointwise
+                 [ progress setoid_rewrite substSubst_subLF_pointwise
+                 | progress setoid_rewrite substSubst_subLF
+                 | progress setoid_rewrite substSubst_termLF_pointwise
+                 | progress setoid_rewrite substSubst_termLF
+                 | progress setoid_rewrite substSubst_term_pointwise
                  | progress setoid_rewrite substSubst_term
+                 | progress setoid_rewrite substRen_subLF_pointwise
+                 | progress setoid_rewrite substRen_subLF
+                 | progress setoid_rewrite substRen_termLF_pointwise
+                 | progress setoid_rewrite substRen_termLF
                  | progress setoid_rewrite substRen_term_pointwise
                  | progress setoid_rewrite substRen_term
+                 | progress setoid_rewrite renSubst_subLF_pointwise
+                 | progress setoid_rewrite renSubst_subLF
+                 | progress setoid_rewrite renSubst_termLF_pointwise
+                 | progress setoid_rewrite renSubst_termLF
                  | progress setoid_rewrite renSubst_term_pointwise
                  | progress setoid_rewrite renSubst_term
+                 | progress setoid_rewrite renRen'_subLF_pointwise
+                 | progress setoid_rewrite renRen_subLF
+                 | progress setoid_rewrite renRen'_termLF_pointwise
+                 | progress setoid_rewrite renRen_termLF
                  | progress setoid_rewrite renRen'_term_pointwise
                  | progress setoid_rewrite renRen_term
                  | progress setoid_rewrite varLRen'_term_pointwise
                  | progress setoid_rewrite varLRen'_term
                  | progress setoid_rewrite varL'_term_pointwise
                  | progress setoid_rewrite varL'_term
+                 | progress setoid_rewrite rinstId'_subLF_pointwise
+                 | progress setoid_rewrite rinstId'_subLF
+                 | progress setoid_rewrite rinstId'_termLF_pointwise
+                 | progress setoid_rewrite rinstId'_termLF
                  | progress setoid_rewrite rinstId'_term_pointwise
                  | progress setoid_rewrite rinstId'_term
+                 | progress setoid_rewrite instId'_subLF_pointwise
+                 | progress setoid_rewrite instId'_subLF
+                 | progress setoid_rewrite instId'_termLF_pointwise
+                 | progress setoid_rewrite instId'_termLF
                  | progress setoid_rewrite instId'_term_pointwise
                  | progress setoid_rewrite instId'_term
                  | progress unfold up_term_term, upRen_term_term, up_ren
-                 | progress cbn[subst_term ren_term]
+                 | progress
+                    cbn[subst_subLF subst_termLF subst_term ren_subLF
+                       ren_termLF ren_term]
                  | progress fsimpl ]).
 
 Ltac asimpl := check_no_evars;
                 repeat
                  unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1
+                  Ren_termLF, Ren1, ren1, Ren_subLF, Ren1, ren1,
+                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
+                  Subst_termLF, Subst1, subst1, Subst_subLF, Subst1, subst1
                   in *; asimpl'; minimize.
 
 Tactic Notation "asimpl" "in" hyp(J) := revert J; asimpl; intros J.
 
 Tactic Notation "auto_case" := auto_case ltac:(asimpl; cbn; eauto).
 
-Ltac substify := auto_unfold; try setoid_rewrite rinstInst'_term_pointwise;
+Ltac substify := auto_unfold; try setoid_rewrite rinstInst'_subLF_pointwise;
+                  try setoid_rewrite rinstInst'_subLF;
+                  try setoid_rewrite rinstInst'_termLF_pointwise;
+                  try setoid_rewrite rinstInst'_termLF;
+                  try setoid_rewrite rinstInst'_term_pointwise;
                   try setoid_rewrite rinstInst'_term.
 
 Ltac renamify := auto_unfold;
+                  try setoid_rewrite_left rinstInst'_subLF_pointwise;
+                  try setoid_rewrite_left rinstInst'_subLF;
+                  try setoid_rewrite_left rinstInst'_termLF_pointwise;
+                  try setoid_rewrite_left rinstInst'_termLF;
                   try setoid_rewrite_left rinstInst'_term_pointwise;
                   try setoid_rewrite_left rinstInst'_term.
 
@@ -1225,6 +2095,30 @@ Fixpoint allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
               (and (allfv_term p_term s3)
                  (and (allfv_term p_term s4)
                     (and (allfv_term p_term s5) True)))))
+  | tCtx => True
+  | tBox s0 s1 => and True (and True True)
+  | tQuote s0 s1 => and True (and (allfv_termLF p_term s1) True)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      and (allfv_term (upAllfv_term_term (upAllfv_term_term p_term)) s0)
+        (and (allfv_term p_term s1)
+           (and (allfv_term p_term s2)
+              (and (allfv_term p_term s3)
+                 (and True (and (allfv_term p_term s5) True)))))
+  end
+with allfv_termLF (p_term : nat -> Prop) (s : termLF) {struct s} : Prop :=
+  match s with
+  | lfLam s0 s1 => and True (and (allfv_termLF p_term s1) True)
+  | lfApp s0 s1 =>
+      and (allfv_termLF p_term s0) (and (allfv_termLF p_term s1) True)
+  | lfSplice s0 s1 =>
+      and (allfv_term p_term s0) (and (allfv_subLF p_term s1) True)
+  end
+with allfv_subLF (p_term : nat -> Prop) (s : subLF) {struct s} : Prop :=
+  match s with
+  | lfSubEmpty => True
+  | lfWk s0 => and True True
+  | lfSubCons s0 s1 =>
+      and (allfv_subLF p_term s0) (and (allfv_termLF p_term s1) True)
   end.
 
 Lemma upAllfvTriv_term_term {p : nat -> Prop} (H : forall x, p x) :
@@ -1300,6 +2194,37 @@ Fixpoint allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
               (conj (allfvTriv_term p_term H_term s3)
                  (conj (allfvTriv_term p_term H_term s4)
                     (conj (allfvTriv_term p_term H_term s5) I)))))
+  | tCtx => I
+  | tBox s0 s1 => conj I (conj I I)
+  | tQuote s0 s1 => conj I (conj (allfvTriv_termLF p_term H_term s1) I)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      conj
+        (allfvTriv_term (upAllfv_term_term (upAllfv_term_term p_term))
+           (upAllfvTriv_term_term (upAllfvTriv_term_term H_term)) s0)
+        (conj (allfvTriv_term p_term H_term s1)
+           (conj (allfvTriv_term p_term H_term s2)
+              (conj (allfvTriv_term p_term H_term s3)
+                 (conj I (conj (allfvTriv_term p_term H_term s5) I)))))
+  end
+with allfvTriv_termLF (p_term : nat -> Prop) (H_term : forall x, p_term x)
+(s : termLF) {struct s} : allfv_termLF p_term s :=
+  match s with
+  | lfLam s0 s1 => conj I (conj (allfvTriv_termLF p_term H_term s1) I)
+  | lfApp s0 s1 =>
+      conj (allfvTriv_termLF p_term H_term s0)
+        (conj (allfvTriv_termLF p_term H_term s1) I)
+  | lfSplice s0 s1 =>
+      conj (allfvTriv_term p_term H_term s0)
+        (conj (allfvTriv_subLF p_term H_term s1) I)
+  end
+with allfvTriv_subLF (p_term : nat -> Prop) (H_term : forall x, p_term x)
+(s : subLF) {struct s} : allfv_subLF p_term s :=
+  match s with
+  | lfSubEmpty => I
+  | lfWk s0 => conj I I
+  | lfSubCons s0 s1 =>
+      conj (allfvTriv_subLF p_term H_term s0)
+        (conj (allfvTriv_termLF p_term H_term s1) I)
   end.
 
 Lemma upAllfvImpl_term_term {p : nat -> Prop} {q : nat -> Prop}
@@ -1609,6 +2534,143 @@ allfv_term p_term s -> allfv_term q_term s :=
                                   end
                               end
                           end) I)))))
+  | tCtx => fun HP => I
+  | tBox s0 s1 => fun HP => conj I (conj I I)
+  | tQuote s0 s1 =>
+      fun HP =>
+      conj I
+        (conj
+           (allfvImpl_termLF p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end) I)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      fun HP =>
+      conj
+        (allfvImpl_term (upAllfv_term_term (upAllfv_term_term p_term))
+           (upAllfv_term_term (upAllfv_term_term q_term))
+           (upAllfvImpl_term_term (upAllfvImpl_term_term H_term)) s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_term p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end)
+           (conj
+              (allfvImpl_term p_term q_term H_term s2
+                 match HP with
+                 | conj _ HP =>
+                     match HP with
+                     | conj _ HP => match HP with
+                                    | conj HP _ => HP
+                                    end
+                     end
+                 end)
+              (conj
+                 (allfvImpl_term p_term q_term H_term s3
+                    match HP with
+                    | conj _ HP =>
+                        match HP with
+                        | conj _ HP =>
+                            match HP with
+                            | conj _ HP =>
+                                match HP with
+                                | conj HP _ => HP
+                                end
+                            end
+                        end
+                    end)
+                 (conj I
+                    (conj
+                       (allfvImpl_term p_term q_term H_term s5
+                          match HP with
+                          | conj _ HP =>
+                              match HP with
+                              | conj _ HP =>
+                                  match HP with
+                                  | conj _ HP =>
+                                      match HP with
+                                      | conj _ HP =>
+                                          match HP with
+                                          | conj _ HP =>
+                                              match HP with
+                                              | conj HP _ => HP
+                                              end
+                                          end
+                                      end
+                                  end
+                              end
+                          end) I)))))
+  end
+with allfvImpl_termLF (p_term : nat -> Prop) (q_term : nat -> Prop)
+(H_term : forall x, p_term x -> q_term x) (s : termLF) {struct s} :
+allfv_termLF p_term s -> allfv_termLF q_term s :=
+  match s with
+  | lfLam s0 s1 =>
+      fun HP =>
+      conj I
+        (conj
+           (allfvImpl_termLF p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end) I)
+  | lfApp s0 s1 =>
+      fun HP =>
+      conj
+        (allfvImpl_termLF p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_termLF p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end) I)
+  | lfSplice s0 s1 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_subLF p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end) I)
+  end
+with allfvImpl_subLF (p_term : nat -> Prop) (q_term : nat -> Prop)
+(H_term : forall x, p_term x -> q_term x) (s : subLF) {struct s} :
+allfv_subLF p_term s -> allfv_subLF q_term s :=
+  match s with
+  | lfSubEmpty => fun HP => I
+  | lfWk s0 => fun HP => conj I I
+  | lfSubCons s0 s1 =>
+      fun HP =>
+      conj
+        (allfvImpl_subLF p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end)
+        (conj
+           (allfvImpl_termLF p_term q_term H_term s1
+              match HP with
+              | conj _ HP => match HP with
+                             | conj HP _ => HP
+                             end
+              end) I)
   end.
 
 Lemma upAllfvRenL_term_term (p : nat -> Prop) (xi : nat -> nat) :
@@ -1923,6 +2985,141 @@ allfv_term (funcomp p_term xi_term) s :=
                                   end
                               end
                           end) I)))))
+  | tCtx => fun H => I
+  | tBox s0 s1 => fun H => conj I (conj I I)
+  | tQuote s0 s1 =>
+      fun H =>
+      conj I
+        (conj
+           (allfvRenL_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      fun H =>
+      conj
+        (allfvImpl_term _ _ (upAllfvRenL_term_term2 p_term xi_term) s0
+           (allfvRenL_term (upAllfv_term_term (upAllfv_term_term p_term))
+              (upRen_term_term (upRen_term_term xi_term)) s0
+              match H with
+              | conj H _ => H
+              end))
+        (conj
+           (allfvRenL_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenL_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end)
+              (conj
+                 (allfvRenL_term p_term xi_term s3
+                    match H with
+                    | conj _ H =>
+                        match H with
+                        | conj _ H =>
+                            match H with
+                            | conj _ H => match H with
+                                          | conj H _ => H
+                                          end
+                            end
+                        end
+                    end)
+                 (conj I
+                    (conj
+                       (allfvRenL_term p_term xi_term s5
+                          match H with
+                          | conj _ H =>
+                              match H with
+                              | conj _ H =>
+                                  match H with
+                                  | conj _ H =>
+                                      match H with
+                                      | conj _ H =>
+                                          match H with
+                                          | conj _ H =>
+                                              match H with
+                                              | conj H _ => H
+                                              end
+                                          end
+                                      end
+                                  end
+                              end
+                          end) I)))))
+  end
+with allfvRenL_termLF (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : termLF) {struct s} :
+allfv_termLF p_term (ren_termLF xi_term s) ->
+allfv_termLF (funcomp p_term xi_term) s :=
+  match s with
+  | lfLam s0 s1 =>
+      fun H =>
+      conj I
+        (conj
+           (allfvRenL_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | lfApp s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenL_termLF p_term xi_term s0 match H with
+                                            | conj H _ => H
+                                            end)
+        (conj
+           (allfvRenL_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | lfSplice s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenL_subLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  end
+with allfvRenL_subLF (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : subLF) {struct s} :
+allfv_subLF p_term (ren_subLF xi_term s) ->
+allfv_subLF (funcomp p_term xi_term) s :=
+  match s with
+  | lfSubEmpty => fun H => I
+  | lfWk s0 => fun H => conj I I
+  | lfSubCons s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenL_subLF p_term xi_term s0 match H with
+                                           | conj H _ => H
+                                           end)
+        (conj
+           (allfvRenL_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
   end.
 
 Lemma upAllfvRenR_term_term (p : nat -> Prop) (xi : nat -> nat) :
@@ -2243,6 +3440,141 @@ allfv_term p_term (ren_term xi_term s)
                                   end
                               end
                           end) I)))))
+  | tCtx => fun H => I
+  | tBox s0 s1 => fun H => conj I (conj I I)
+  | tQuote s0 s1 =>
+      fun H =>
+      conj I
+        (conj
+           (allfvRenR_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | tBoxRec s0 s1 s2 s3 s4 s5 =>
+      fun H =>
+      conj
+        (allfvRenR_term (upAllfv_term_term (upAllfv_term_term p_term))
+           (upRen_term_term (upRen_term_term xi_term)) s0
+           (allfvImpl_term _ _ (upAllfvRenR_term_term2 p_term xi_term) s0
+              match H with
+              | conj H _ => H
+              end))
+        (conj
+           (allfvRenR_term p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end)
+           (conj
+              (allfvRenR_term p_term xi_term s2
+                 match H with
+                 | conj _ H =>
+                     match H with
+                     | conj _ H => match H with
+                                   | conj H _ => H
+                                   end
+                     end
+                 end)
+              (conj
+                 (allfvRenR_term p_term xi_term s3
+                    match H with
+                    | conj _ H =>
+                        match H with
+                        | conj _ H =>
+                            match H with
+                            | conj _ H => match H with
+                                          | conj H _ => H
+                                          end
+                            end
+                        end
+                    end)
+                 (conj I
+                    (conj
+                       (allfvRenR_term p_term xi_term s5
+                          match H with
+                          | conj _ H =>
+                              match H with
+                              | conj _ H =>
+                                  match H with
+                                  | conj _ H =>
+                                      match H with
+                                      | conj _ H =>
+                                          match H with
+                                          | conj _ H =>
+                                              match H with
+                                              | conj H _ => H
+                                              end
+                                          end
+                                      end
+                                  end
+                              end
+                          end) I)))))
+  end
+with allfvRenR_termLF (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : termLF) {struct s} :
+allfv_termLF (funcomp p_term xi_term) s ->
+allfv_termLF p_term (ren_termLF xi_term s) :=
+  match s with
+  | lfLam s0 s1 =>
+      fun H =>
+      conj I
+        (conj
+           (allfvRenR_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | lfApp s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenR_termLF p_term xi_term s0 match H with
+                                            | conj H _ => H
+                                            end)
+        (conj
+           (allfvRenR_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  | lfSplice s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end)
+        (conj
+           (allfvRenR_subLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
+  end
+with allfvRenR_subLF (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : subLF) {struct s} :
+allfv_subLF (funcomp p_term xi_term) s ->
+allfv_subLF p_term (ren_subLF xi_term s) :=
+  match s with
+  | lfSubEmpty => fun H => I
+  | lfWk s0 => fun H => conj I I
+  | lfSubCons s0 s1 =>
+      fun H =>
+      conj
+        (allfvRenR_subLF p_term xi_term s0 match H with
+                                           | conj H _ => H
+                                           end)
+        (conj
+           (allfvRenR_termLF p_term xi_term s1
+              match H with
+              | conj _ H => match H with
+                            | conj H _ => H
+                            end
+              end) I)
   end.
 
 End Allfv.
@@ -2251,7 +3583,15 @@ Module Extra.
 
 Import Core.
 
+#[export]Hint Opaque subst_subLF: rewrite.
+
+#[export]Hint Opaque subst_termLF: rewrite.
+
 #[export]Hint Opaque subst_term: rewrite.
+
+#[export]Hint Opaque ren_subLF: rewrite.
+
+#[export]Hint Opaque ren_termLF: rewrite.
 
 #[export]Hint Opaque ren_term: rewrite.
 

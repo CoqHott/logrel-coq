@@ -178,6 +178,8 @@ Module UnscopedNotations.
   Notation "↑" := (shift) : subst_scope.
 
   #[ global ]
+  Open Scope fscope.
+  #[ global ]
   Open Scope subst_scope.
 End UnscopedNotations.
 

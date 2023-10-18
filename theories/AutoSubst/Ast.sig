@@ -1,6 +1,25 @@
 sort : Type
 term(tRel) : Type
 
+typeLF : Type
+termLF : Type
+
+ctxLF : Type
+subLF : Type
+
+lfArr : typeLF -> typeLF -> typeLF
+
+lfLam : typeLF -> termLF -> termLF
+lfApp : termLF -> termLF -> termLF
+lfSplice : term -> subLF -> termLF
+
+lfCtxEmpty : ctxLF
+lfCtxCons : ctxLF -> typeLF -> ctxLF
+
+lfSubEmpty : subLF
+lfWk : ctxLF -> subLF
+lfSubCons : subLF -> termLF -> subLF
+
 tSort : sort -> term
 
 tProd : term -> (bind term in term) -> term
@@ -23,3 +42,8 @@ tSnd : term -> term
 tId : term -> term -> term -> term
 tRefl : term -> term -> term
 tIdElim : term -> term -> (bind term , term in term) -> term -> term -> term -> term
+
+tCtx : term
+tBox : ctxLF -> typeLF -> term
+tQuote : ctxLF -> termLF -> term
+tBoxRec : (bind term, term in term) -> term -> term -> term -> ctxLF -> term -> term
