@@ -12,12 +12,7 @@ Import Notations.
 Import DeclarativeTypingData.
 Import DeclarativeTypingProperties.
 
-Fixpoint erase_dir (ctx: DirectedContext.context) : Context.context :=
-  match ctx with
-  | nil => nil
-  | cons {| DirectedContext.ty := T |} l => cons T (erase_dir l)
-  end.
-
+Definition erase_dir (ctx: DirectedContext.context) : Context.context := List.map DirectedContext.ty ctx.
 
 Lemma in_ctx_erased {Θ n decl} :
   DirectedContext.in_ctx Θ n decl ->
@@ -25,6 +20,7 @@ Lemma in_ctx_erased {Θ n decl} :
 Proof.
   induction 1; now constructor.
 Qed.
+
 
 Lemma typing_erased :
   (forall Θ, [ |-( ) Θ ] -> [ |- erase_dir Θ ])
