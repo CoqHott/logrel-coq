@@ -691,7 +691,10 @@ Section BundledConv.
       pose proof hp as []%boundary%sig_ty_inv.
       edestruct ihsnd as []; tea.
       1: now econstructor.
-      2: split; [eauto|now econstructor].
+      2:{ split; [eauto|].
+          eapply TermTrans; [|now constructor].
+          eapply TermTrans; [eapply TermSym; now constructor|].
+          constructor; tea; now apply TypeRefl. }
       eapply wfTermConv; [now econstructor|].
       eapply typing_subst1; [now symmetry|].
       now eapply TypeRefl.

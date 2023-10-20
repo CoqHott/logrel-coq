@@ -227,11 +227,16 @@ Section TypingWk.
     - intros * ????? ih ** ; do 2 rewrite <- wk_sig.
       constructor; eauto.
       eapply ih; constructor; tea; constructor; eauto.
-    - intros * ??? ihB **. rewrite <- wk_sig.
+    - intros * ? ihA₀ ? ihA ? ihA' ? ihB ? ihB' ? iha ? ihb Δ ρ **.
+      rewrite <- wk_sig, <- !wk_pair.
+      assert [|-[de] Δ,, A⟨ρ⟩] by now constructor.
       constructor; eauto.
-      1: eapply ihB; constructor; eauto.
-      1,2: rewrite wk_sig; eauto.
-      rewrite wk_fst, <- subst_ren_wk_up; eauto.
+      * now apply ihB.
+      * now apply ihB'.
+      * rewrite <- subst_ren_wk_up; now apply ihb.
+    - intros * ? ihp Δ ρ **.
+      rewrite <- wk_sig, <- wk_pair.
+      constructor; rewrite wk_sig; eauto.
     - intros * ? ih **. econstructor; now eapply ih.
     - intros * ??? ihB ** ; rewrite <- wk_fst; rewrite <- wk_pair; constructor; eauto.
       1: eapply ihB; constructor; eauto.
@@ -531,7 +536,10 @@ Module DeclarativeTypingProperties.
   - now do 2 econstructor.
   - now do 2 econstructor.
   - now econstructor.
-  - intros. econstructor; tea.
+  - intros.
+    eapply TermTrans; [|now constructor].
+    eapply TermTrans; [eapply TermSym; now constructor|].
+    constructor; tea; now apply TypeRefl.
   - now do 2 econstructor.
   - now econstructor.
   - now econstructor.

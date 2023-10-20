@@ -977,8 +977,6 @@ Section PairRed.
     + irrelevance0. 1: now rewrite <- subst_fst, <- singleSubstComm'. tea.
   Qed. 
 
-
-  
 End PairRed.
 
 

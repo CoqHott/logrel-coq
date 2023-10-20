@@ -217,14 +217,18 @@ Section Definitions.
           [ Γ |- A ≅ A' : U ] ->
           [ Γ ,, A |- B ≅ B' : U ] ->
           [ Γ |- tSig A B ≅ tSig A' B' : U ]
-      | TermPairEta {Γ} {A B p q} :
+      | TermPairCong {Γ A A' A'' B B' B'' a a' b b'} :
           [Γ |- A] ->
-          [Γ ,, A |- B] ->
+          [Γ |- A ≅ A'] ->
+          [Γ |- A ≅ A''] ->
+          [Γ,, A |- B ≅ B'] ->
+          [Γ,, A |- B ≅ B''] ->
+          [Γ |- a ≅ a' : A] ->
+          [Γ |- b ≅ b' : B[a..]] ->
+          [Γ |- tPair A' B' a b ≅ tPair A'' B'' a' b' : tSig A B]
+      | TermPairEta {Γ} {A B p} :
           [Γ |- p : tSig A B] ->
-          [Γ |- q : tSig A B] ->
-          [Γ |- tFst p ≅ tFst q : A] ->
-          [Γ |- tSnd p ≅ tSnd q : B[(tFst p)..]] ->
-          [Γ |- p ≅ q : tSig A B]
+          [Γ |- tPair A B (tFst p) (tSnd p) ≅ p : tSig A B]
       | TermFstCong {Γ A B p p'} :
         [Γ |- p ≅ p' : tSig A B] ->
         [Γ |- tFst p ≅ tFst p' : A]
