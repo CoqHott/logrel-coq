@@ -22,11 +22,12 @@ theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
 
 theories/DirectedDirections.v
-theories/DirectedErasure.v
+# theories/DirectedErasure.v
 theories/DirectedContext.v
-theories/DirectedDeclarativeTyping.v
-theories/DirectedSemantics.v
-theories/DirectedPartialTranslation.v
+theories/DirectedDirectioning.v
+# theories/DirectedDeclarativeTyping.v
+# theories/DirectedSemantics.v
+# theories/DirectedPartialTranslation.v
 
 
 theories/LogicalRelation.v
