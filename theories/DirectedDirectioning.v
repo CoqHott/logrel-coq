@@ -91,11 +91,22 @@ Definition dir_ren (ρ : nat -> nat) (δ γ : list direction) :=
   ∑ d', (List.nth_error δ (ρ n) = Some d') × dir_leq d' d.
 
 
-Lemma dir_ren_up_discr {γ δ ρ} : dir_ren ρ δ γ -> dir_ren (up_ren ρ) (Discr :: δ) (Discr :: γ).
+Lemma dir_ren_up {γ δ d ρ} : dir_ren ρ δ γ -> dir_ren (up_ren ρ) (d :: δ) (d :: γ).
 Proof.
-  intros hρ [|n] d ; cbn.
-  - intros [= <-]; exists Discr; now split.
-  - intros [d' [-> ]]%hρ; exists d'; now split.
+  intros hρ [|n] d' ; cbn.
+  - intros [= <-]; exists d; now split.
+  - intros [d'' [-> ]]%hρ; exists d''; now split.
+Qed.
+
+Lemma dir_ren1 {δ d} : dir_ren ↑ (d :: δ) δ.
+Proof.
+  intros [|n] d' ; cbn.
+  - destruct δ; intro h; inversion h; subst.
+    eexists; split; tea.
+    reflexivity.
+  - destruct δ; intro h; inversion h; subst.
+    eexists; split; tea.
+    reflexivity.
 Qed.
 
 Lemma dir_infer_check_ren γ
@@ -119,7 +130,7 @@ Proof.
     tea.
   - intros * dirA ihA dirB ihB ? * hρ.
     destruct (ihA _ _ hρ) as [d1 [dirA' leq1]].
-    destruct (ihB _ _ (dir_ren_up_discr hρ)) as [d2 [dirB' leq2]].
+    destruct (ihB _ _ (dir_ren_up hρ)) as [d2 [dirB' leq2]].
     assert (dir_op d1 ⪯ d'').
     by (etransitivity; try apply dir_op_mon; tea; now eapply MaxDirProp.upper_bound1).
     assert (d2 ⪯ d'').
@@ -129,7 +140,7 @@ Proof.
     1: now econstructor.
     eapply MaxDirProp.max_least; tea.
   - intros * dirt iht ? * hρ.
-    destruct (iht _ _ (dir_ren_up_discr hρ)) as [d1 [dirt' leq1]].
+    destruct (iht _ _ (dir_ren_up hρ)) as [d1 [dirt' leq1]].
     eexists; split; tea.
     now econstructor.
   - intros * dirf ihf dira iha ? * hρ.
@@ -199,17 +210,22 @@ Admitted.
 
 Inductive dir_ctx : context -> list direction -> list direction -> Type :=
 | dirNil : dir_ctx nil nil nil
-| dirCons {Γ δ δty A d dA} : DirCheck δ dA A -> dir_ctx (cons A Γ) (cons d δ) (cons dA δty).
+| dirCons {Γ δ δty A d dA} : DirCheck δ dA A -> dir_ctx Γ δ δty -> dir_ctx (cons A Γ) (cons d δ) (cons dA δty).
 
-Lemma dir_ctx_nth_ty {Γ δ δT n T dT} :
+Lemma dir_ctx_nth_ty {Γ δ δT} :
   dir_ctx Γ δ δT ->
-  in_ctx Γ n T ->
+  forall n T dT, in_ctx Γ n T ->
   List.nth_error δT n = Some dT ->
   [δ |- T ◃ dT].
 Proof.
-  intros dΓ inΓ.
-  induction inΓ.
-  - inversion dΓ; subst.
-    cbn.
-    admit.
-Admitted.
+  induction 1.
+  - intros []; inversion 2.
+  - intros [|n].
+    + intros T dT H eq; inversion H; inversion eq; subst.
+      eapply dir_infer_check_ren; tea.
+      apply dir_ren1.
+    + intros T dT H eq; inversion H; inversion eq; subst.
+      eapply dir_infer_check_ren.
+      * eapply IHX; tea.
+      * eapply dir_ren1.
+Qed.
