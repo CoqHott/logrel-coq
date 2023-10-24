@@ -139,11 +139,11 @@ Proof.
     now apply iha.
 Qed.
 
-Definition dir_subst {Γ Δ} (ρ : Γ ≤ Δ) (δ γ : list direction) :=
+Definition dir_wk {Γ Δ} (ρ : Γ ≤ Δ) (δ γ : list direction) :=
   forall n d, List.nth_error γ n = Some d ->
   ∑ d', (List.nth_error δ (ρ n) = Some d') × dir_leq d' d.
 
-Lemma dir_wk_up_discr {Γ Δ A γ δ} (ρ : Γ ≤ Δ) : dir_subst ρ δ γ -> dir_subst (wk_up A ρ) (Discr :: δ) (Discr :: γ).
+Lemma dir_wk_up_discr {Γ Δ A γ δ} (ρ : Γ ≤ Δ) : dir_wk ρ δ γ -> dir_wk (wk_up A ρ) (Discr :: δ) (Discr :: γ).
 Proof.
   intros hρ [|n] d ; cbn.
   - intros [= <-]; exists Discr; now split.
@@ -151,9 +151,9 @@ Proof.
 Qed.
 
 
-Lemma dir_infer_check_subst γ
-  (Pinfer:= fun γ d t _ => forall Γ Δ δ (ρ : Γ ≤ Δ) , dir_subst ρ δ γ -> ∑ d', [δ |- t⟨ρ⟩ ▹ d'] * dir_leq d' d)
-  (Pcheck := fun γ d t _ => forall Γ Δ δ (ρ : Γ ≤ Δ) , dir_subst ρ δ γ -> [δ |- t⟨ρ⟩ ◃ d])
+Lemma dir_infer_check_wk γ
+  (Pinfer:= fun γ d t _ => forall Γ Δ δ (ρ : Γ ≤ Δ) , dir_wk ρ δ γ -> ∑ d', [δ |- t⟨ρ⟩ ▹ d'] * dir_leq d' d)
+  (Pcheck := fun γ d t _ => forall Γ Δ δ (ρ : Γ ≤ Δ) , dir_wk ρ δ γ -> [δ |- t⟨ρ⟩ ◃ d])
 :
   (forall d t (der : [γ |- t ▹ d]), Pinfer γ d t der)
   * (forall d t (der : [γ |- t ◃ d]), Pcheck γ d t der).
