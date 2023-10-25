@@ -23,13 +23,13 @@ Context `{ta : tag}
 
 Record WfDirectedCtx (Θ: context) :=
   { wf_ctx: [ |- List.map ty Θ ]
-  ; wf_ctx_dir: dir_ctx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
+  ; wf_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
   }.
 Notation "[ |-( ) Θ ]" := (WfDirectedCtx Θ).
 
 Record WfType (Θ: context) (d: direction) (A: term) :=
   { wft: [ List.map ty Θ |- A ]
-  ; wft_ctx_dir: dir_ctx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
+  ; wft_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
   ; wft_dir: [ List.map dir Θ |- A ◃ d ]
   }.
 Notation "[ Θ |-( d ) A ]" := (WfType Θ d A).
@@ -56,7 +56,7 @@ Qed.
 
 Record Typing (Θ: context) (dt: direction) (T: term) (dT: direction) (t: term) :=
   { wt: [ List.map ty Θ |- t : T ]
-  ; wt_ctx_dir: dir_ctx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
+  ; wt_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
   ; wt_dir: [ List.map dir Θ |- t ◃ dt ]
   ; wt_ty_dir: [ List.map dir Θ |- T ◃ dT ]
   }.
@@ -142,7 +142,7 @@ Proof.
   split; tea.
   - now eapply ty_app.
   - now apply dirApp'.
-  - apply dir_subst_Discr; tea.
+  - eapply dir_subst1; tea.
     inversion wdProd; subst.
     inversion X; subst.
     econstructor; tea.
