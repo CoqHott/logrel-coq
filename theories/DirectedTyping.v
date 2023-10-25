@@ -284,8 +284,10 @@ Module Examples.
 
     Definition ctx := εᵈ ,, Fun \ U @ Discr ,, Cofun \ tProd (tRel 0) U @ Cofun.
     
-    Definition sup_ctx (tW : term -> term -> term) :=
-      ctx ,, Discr \ tRel 1 @ Fun ,, Discr \ tProd (tApp (tRel 1) (tRel 0)) (tW (tRel 3) (tRel 2)) @ Cofun.
+    Definition sup_ctx 
+      (* tW should bind one variable in its second argument *)
+      (tW : term -> term -> term) :=
+      ctx ,, Discr \ tRel 1 @ Fun ,, Discr \ tProd (tApp (tRel 1) (tRel 0)) (tW (tRel 3) (tApp (tRel 3) (tRel 0))) @ Fun.
     
     Section WTyping.
     Context `{GenericConsequences}.
@@ -297,6 +299,36 @@ Module Examples.
       - apply wfTypeProd'.
         + eapply wfTypeVar; tea; [econstructor| reflexivity].
         + intros; now eapply wfTypeU.
+    Qed.
+
+    Lemma supWfCtx (tW : term -> term -> term) 
+      (ih : forall Θ A B, 
+        [Θ |-(Fun) A] ->
+        [Θ ,, Discr \ A @ Fun |-(Cofun) B ] ->
+        [Θ |-(Fun) tW A B]) :
+      [|-() sup_ctx tW ].
+    Proof.
+      eapply wfCtxCons'; [eapply wfCtxCons'|]; try apply ctxWfCtx; intros.
+      1: eapply wfTypeVar; tea; [do 2 econstructor|reflexivity].
+      eapply wfTypeProd'; intros.
+      + eapply (wfTypeUniv (dU:=Cofun)).
+        change U with (U[(tRel 0)..]).
+        eapply (wfTermApp (A:=(tRel 2))).
+        1,2: eapply wfTermVar; tea; try reflexivity.
+        2: econstructor.
+        change (?d \ tProd _ _ @ ?dT) with (shift_n (d \ tProd (tRel 0) U @ dT) 2).
+        do 2 econstructor.
+      + set (ctx' := _,, _ ,, _).
+        assert [ctx' |-(Fun) tRel 3].
+        1:{ eapply wfTypeVar; tea; try reflexivity; repeat econstructor. }
+        assert [|-() ctx' ,, Discr \ tRel 3 @ Fun] by now eapply wfCtxCons.
+        apply ih; tea.
+        eapply (wfTypeUniv (dU:=Cofun)).
+        change U with (U[(tRel 0)..]); eapply (wfTermApp (A:=(tRel 4))).
+        1,2: eapply wfTermVar; tea; try reflexivity.
+        2: econstructor.
+        change (?d \ tProd _ _ @ ?dT) with (shift_n (d \ tProd (tRel 1) U @ dT) 3).
+        repeat econstructor.
     Qed.
 
     End WTyping.
