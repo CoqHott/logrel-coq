@@ -182,14 +182,13 @@ Lemma wfTermApp {Θ d} {dT f a A B} :
   [ Θ |-( Discr ) a : A @( dir_op dT ) ] ->
   [ Θ |-( d ) tApp f a : B[a..] @( dT ) ].
 Proof.
-  intros [? ? ? wdProd] [].
+  intros [? ? ? [d' [infProd leq]]] [].
   split; tea.
   - now eapply ty_app.
   - now apply dirApp'.
   - eapply dir_subst1; tea.
-    inversion wdProd; subst.
-    inversion X; subst.
-    econstructor; tea.
+    inversion infProd ; subst.
+    repeat econstructor; tea.
     etransitivity; tea.
     now eapply MaxDirProp.upper_bound2.
 Qed.
