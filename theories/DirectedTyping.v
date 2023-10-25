@@ -15,24 +15,58 @@ Reserved Notation "[ Γ |-( dt ) t ≅ t' : A @( dA ) ]" (at level 0, Γ, dt, t,
 (* Reserved Notation "[ Γ |-( dt ) t ⤳* u ∈ A @( dA ) ]" (at level 0, Γ, dt, t, u, A, dA at level 50). *)
 
 
-Context `{ta : tag}
-  `{!WfContext ta} `{!WfType ta} `{!Typing ta}
-  `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
-  `{!RedType ta} `{!RedTerm ta}
-  `{!GenericTypingProperties ta _ _ _ _ _ _ _ _ _ _}.
+(* I think these should be provable after the fundamental lemma for any
+  typing judgement sound with respect to the declarative typing *)
+Class GenericConsequences `{GenericTypingProperties} := {
+  wft_ty : forall {Γ A t}, [Γ |- t : A] -> [Γ |- A]
+}.
 
-Record WfDirectedCtx (Θ: context) :=
+Notation "d \ A @ dA " := {| ty := A ; ty_dir := dA ; dir := d |} (at level 15).
+
+Record WfDirectedCtx `{WfContext} (Θ: context) :=
   { wf_ctx: [ |- List.map ty Θ ]
   ; wf_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
   }.
 Notation "[ |-( ) Θ ]" := (WfDirectedCtx Θ).
 
-Record WfType (Θ: context) (d: direction) (A: term) :=
+Record WfType `{WfType} (Θ: context) (d: direction) (A: term) :=
   { wft: [ List.map ty Θ |- A ]
   ; wft_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
   ; wft_dir: [ List.map dir Θ |- A ◃ d ]
   }.
 Notation "[ Θ |-( d ) A ]" := (WfType Θ d A).
+
+Record Typing `{Typing} (Θ: context) (dt: direction) (T: term) (dT: direction) (t: term) :=
+  { wt: [ List.map ty Θ |- t : T ]
+  ; wt_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
+  ; wt_dir: [ List.map dir Θ |- t ◃ dt ]
+  ; wt_ty_dir: [ List.map dir Θ |- T ◃ dT ]
+  }.
+Notation "[ Γ |-( dt ) t : T @( dT ) ]" := (Typing Γ dt T dT t).
+
+
+Section DirectedTypingLemmas.
+
+Context  `{GenericConsequences}.
+  (* `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+  `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+  `{!RedType ta} `{!RedTerm ta}
+  `{!GenericTypingProperties ta _ _ _ _ _ _ _ _ _ _}. *)
+
+Lemma wfCtxEmpty : [|-() ε ].
+Proof.
+  constructor; cbn; [| constructor]; gen_typing.
+Qed.
+
+Lemma wfCtxCons {Θ d A dA} : [|-() Θ] -> [Θ |-(dA) A] -> [|-() Θ ,, d \ A @ dA].
+Proof.
+  intros [] []; split; [now eapply wfc_cons| now econstructor].
+Qed.
+
+Lemma wfCtxWfType {Θ d A} : [ Θ |-( d ) A ] ->  [ |-( ) Θ ].
+Proof.
+  intros []; econstructor; tea; now eapply wfc_wft.
+Qed.
 
 (* TODO: note that I prove rules using naming convention from DeclarativeTyping *)
 Lemma wfTypeU {Θ d} : [ |-( ) Θ ] -> [ Θ |-( d ) U ].
@@ -43,9 +77,11 @@ Proof.
   - now apply dirU'.
 Qed.
 
+
 Lemma wfTypeProd {Γ d} {A B} :
   [ Γ |-( dir_op d ) A ] ->
-  [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B ] ->
+  [Γ ,, Discr \ A @ dir_op d |-( d ) B ] ->
+  (* [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B ] -> *)
   [ Γ |-( d ) tProd A B ].
 Proof.
   intros [] [].
@@ -54,16 +90,13 @@ Proof.
   - now apply dirProd'.
 Qed.
 
-Record Typing (Θ: context) (dt: direction) (T: term) (dT: direction) (t: term) :=
-  { wt: [ List.map ty Θ |- t : T ]
-  ; wt_ctx_dir: DirCtx (List.map ty Θ) (List.map dir Θ) (List.map ty_dir Θ)
-  ; wt_dir: [ List.map dir Θ |- t ◃ dt ]
-  ; wt_ty_dir: [ List.map dir Θ |- T ◃ dT ]
-  }.
-Notation "[ Γ |-( dt ) t : T @( dT ) ]" := (Typing Γ dt T dT t).
+Lemma wfTemWfType {Θ T dT t dt} : [Θ |-(dt) t : T @(dT) ] -> [Θ |-(dT) T].
+Proof.
+  intros []; econstructor; tea. now eapply wft_ty.
+Qed.
 
-Lemma wfTypeUniv {Θ d} {A} :
-  [ Θ |-( d ) A : U @( Discr ) ] ->
+Lemma wfTypeUniv {Θ d dU} {A} :
+  [ Θ |-( d ) A : U @( dU ) ] ->
   [ Θ |-( d ) A ].
 Proof.
   intros [].
@@ -71,48 +104,55 @@ Proof.
   now apply wft_term.
 Qed.
 
+Corollary wfTypeUnivDiscr {Θ d} {A} :
+  [ Θ |-( d ) A : U @( Discr ) ] ->
+  [ Θ |-( d ) A ].
+Proof.
+  apply wfTypeUniv.
+Qed.
 
-Lemma in_ctx_erased {Θ n decl} :
+
+Lemma in_ctx_erased {Θ n} decl :
   in_ctx Θ n decl -> Context.in_ctx (list_map ty Θ) n (ty decl).
 Proof.
   induction 1; now constructor.
 Qed.
 
-Lemma in_ctx_nth_dir {Θ n decl} :
+Lemma in_ctx_nth_dir {Θ n} decl :
   in_ctx Θ n decl -> List.nth_error (list_map dir Θ) n = Some (dir decl).
 Proof.
   induction 1; tea.
   reflexivity.
 Qed.
 
-Lemma in_ctx_nth_ty_dir {Θ n decl} :
+Lemma in_ctx_nth_ty_dir {Θ n} decl :
   in_ctx Θ n decl -> List.nth_error (list_map ty_dir Θ) n = Some (ty_dir decl).
 Proof.
   induction 1; tea.
   reflexivity.
 Qed.
 
-Lemma wfVar {Θ d'} {n d T dT} :
+Lemma wfTermVar {Θ d'} {n d T dT} :
   [ |-( ) Θ ] ->
-  in_ctx Θ n {| ty := T; ty_dir := dT; dir := d |} ->
+  in_ctx Θ n (d \ T @ dT) ->
   dir_leq d d' ->
   [ Θ |-( d' ) tRel n : T @( dT ) ].
 Proof.
   intros [] inΘ leq.
   split; tea.
   - apply ty_var; tea.
-    now apply (in_ctx_erased (decl := {| ty := T; ty_dir := dT; dir := d |})).
+    now apply (in_ctx_erased (d \ T @ dT)).
   - eapply dirVar'; tea.
-    now apply (in_ctx_nth_dir (decl := {| ty := T; ty_dir := dT; dir := d |})).
+    now apply (in_ctx_nth_dir (d \ T @ dT)).
   - eapply dir_ctx_nth_ty; tea.
-    + now apply (in_ctx_erased (decl := {| ty := T; ty_dir := dT; dir := d |})).
-    + now apply (in_ctx_nth_ty_dir (decl := {| ty := T; ty_dir := dT; dir := d |})).
+    + now apply (in_ctx_erased (d \ T @ dT)).
+    + now apply (in_ctx_nth_ty_dir (d \ T @ dT)).
 Qed.
 
-Lemma wfTermProd {Θ d} {A B} :
-  [ Θ |-( dir_op d ) A : U @( Discr ) ] ->
-  [ Θ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B : U @( Discr ) ] ->
-  [ Θ |-( d ) tProd A B : U @( Discr ) ].
+Lemma wfTermProd {Θ d dU} {A B} :
+  [ Θ |-( dir_op d ) A : U @( dU ) ] ->
+  [ Θ ,, Discr \ A @ dir_op d |-( d ) B : U @( dU ) ] ->
+  [ Θ |-( d ) tProd A B : U @( dU ) ].
 Proof.
   intros [] [].
   split; tea.
@@ -120,10 +160,16 @@ Proof.
   - now apply dirProd'.
 Qed.
 
+Corollary wfTermProdDiscr {Θ d} {A B} :
+  [ Θ |-( dir_op d ) A : U @( Discr ) ] ->
+  [ Θ ,, Discr \ A @ dir_op d |-( d ) B : U @( Discr ) ] ->
+  [ Θ |-( d ) tProd A B : U @( Discr ) ].
+Proof. apply wfTermProd. Qed. 
+
 
 Lemma wfTermLam {Θ d} {dT A B t} :
   [ Θ |-( dir_op dT ) A ] ->
-  [ Θ ,, {| ty := A ; ty_dir := dir_op dT ; dir := Discr |} |-( d ) t : B @( dT ) ] ->
+  [ Θ ,, Discr \ A @ dir_op dT  |-( d ) t : B @( dT ) ] ->
   [ Θ |-( d ) tLambda A t : tProd A B @( dT ) ].
 Proof.
   intros [] [].
@@ -149,3 +195,110 @@ Proof.
     etransitivity; tea.
     now eapply MaxDirProp.upper_bound2.
 Qed.
+
+
+(** More derived typing lemmas *)
+
+Lemma wfCtxCons' {Θ d A dA} : [|-() Θ] -> ([|-() Θ] -> [Θ |-(dA) A]) -> [|-() Θ ,, d \ A @ dA].
+Proof.
+  intros hΘ hA; exact (wfCtxCons hΘ (hA hΘ)).
+Qed.
+
+Fixpoint shift_n t n := match n with 0 => t | S m => (shift_n t m)⟨↑⟩ end.
+
+Lemma wfTypeVar {Θ n d d' dU} :
+  [ |-( ) Θ ] ->
+  in_ctx Θ n (d \ shift_n U n @ dU) ->
+  dir_leq d d' ->
+  [ Θ |-( d' ) tRel n ].
+Proof.
+  assert (h : forall k, shift_n U k = U).
+  by (intros k; induction k as [| ? ih]; cbn; rewrite ?ih; reflexivity).
+  rewrite h.
+  intros.
+  eapply wfTypeUniv.
+  now eapply wfTermVar.
+Qed.
+
+
+  
+End DirectedTypingLemmas.
+
+Module Examples.
+
+  Module List.
+  
+  (* Context of parameters for list *)
+  Definition ctx := ε ,, Fun \ U @ Discr.
+  (* Context of arguments for nil; 
+    the parameters of list should form a prefix *)
+  Definition nil_ctx := ctx.
+  (* Not sure how we will represent inductive occurences
+    of the inductive being defined so I abstract that 
+    as an arbitrary function tList taking |ctx| arguments of type term
+    and producing a term for now *)
+  Definition cons_ctx (tList : term -> term) := ctx,, Discr \ tRel 0 @ Fun,, Discr \ tList (tRel 1) @ Fun.
+
+  Section ListTyping.
+  Context `{GenericConsequences}.
+
+  Lemma ctxWfCtx : [|-() ctx ].
+  Proof.
+    eapply wfCtxCons'; [apply wfCtxEmpty |intros; now apply wfTypeU].
+  Qed.
+
+  Lemma nil_ctxWfCtx : [|-() nil_ctx ].
+  Proof.
+    apply ctxWfCtx.
+  Qed.
+
+  Lemma cons_ctxWfCtx 
+    (tList : term -> term)
+    (ih : forall Θ A, [Θ |-(Fun) A] -> [Θ |-(Fun) tList A]) :
+    [|-() cons_ctx tList ].
+  Proof.
+    apply wfCtxCons'; [apply wfCtxCons'|]; intros.
+    - apply ctxWfCtx.
+    - eapply wfTypeVar; tea; [econstructor| reflexivity].
+    - eapply ih.
+      eapply wfTypeVar; tea.
+      2: reflexivity.
+      do 2 econstructor.
+  Qed.
+
+  End ListTyping.
+  End List.
+
+
+  Module W.
+
+    Definition ctx := ε ,, Fun \ U @ Discr ,, Cofun \ tProd (tRel 0) U @ Cofun.
+    
+    Definition sup_ctx (tW : term -> term -> term) :=
+      ctx ,, Discr \ tRel 1 @ Fun ,, Discr \ tProd (tApp (tRel 1) (tRel 0)) (tW (tRel 3) (tRel 2)) @ Cofun.
+    
+    Section WTyping.
+    Context `{GenericConsequences}.
+
+    Lemma ctxWfCtx : [|-() ctx ].
+    Proof.
+      eapply wfCtxCons'; [eapply wfCtxCons'|]; try apply wfCtxEmpty; intros.
+      - now apply wfTypeU.
+      - assert (hdom : [ε,, Fun \ U @ Discr |-( Fun) tRel 0]).
+        1:{
+            eapply wfTypeVar; tea.
+            econstructor.
+             reflexivity.
+
+        }
+        apply wfTypeProd; cbn; tea.
+        eapply wfTypeU.
+        eapply wfCtxCons; tea.
+    Qed.
+
+    End WTyping.
+  End W.  
+  
+End Examples.
+
+
