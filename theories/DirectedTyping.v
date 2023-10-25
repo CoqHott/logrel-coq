@@ -3,7 +3,7 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations DirectedDirections DirectedContext DirectedDirectioning GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context DirectedDirections DirectedContext DirectedDirectioning GenericTyping.
 
 Set Primitive Projections.
 
@@ -17,11 +17,10 @@ Reserved Notation "[ Γ |-( dt ) t ≅ t' : A @( dA ) ]" (at level 0, Γ, dt, t,
 
 (* I think these should be provable after the fundamental lemma for any
   typing judgement sound with respect to the declarative typing *)
-Class GenericConsequences `{GenericTypingProperties} := {
+Class GenericConsequences `{GP : GenericTypingProperties} := {
   wft_ty : forall {Γ A t}, [Γ |- t : A] -> [Γ |- A]
 }.
 
-Notation "d \ A @ dA " := {| ty := A ; ty_dir := dA ; dir := d |} (at level 15).
 
 Record WfDirectedCtx `{WfContext} (Θ: context) :=
   { wf_ctx: [ |- List.map ty Θ ]
@@ -47,13 +46,13 @@ Notation "[ Γ |-( dt ) t : T @( dT ) ]" := (Typing Γ dt T dT t).
 
 Section DirectedTypingLemmas.
 
-Context  `{GenericConsequences}.
+Context  `{GP:GenericTypingProperties}.
   (* `{!WfContext ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
   `{!RedType ta} `{!RedTerm ta}
   `{!GenericTypingProperties ta _ _ _ _ _ _ _ _ _ _}. *)
 
-Lemma wfCtxEmpty : [|-() ε ].
+Lemma wfCtxEmpty : [|-() εᵈ ].
 Proof.
   constructor; cbn; [| constructor]; gen_typing.
 Qed.
@@ -81,7 +80,6 @@ Qed.
 Lemma wfTypeProd {Γ d} {A B} :
   [ Γ |-( dir_op d ) A ] ->
   [Γ ,, Discr \ A @ dir_op d |-( d ) B ] ->
-  (* [Γ ,, {| ty := A ; ty_dir := dir_op d ; dir := Discr |} |-( d ) B ] -> *)
   [ Γ |-( d ) tProd A B ].
 Proof.
   intros [] [].
@@ -90,7 +88,7 @@ Proof.
   - now apply dirProd'.
 Qed.
 
-Lemma wfTemWfType {Θ T dT t dt} : [Θ |-(dt) t : T @(dT) ] -> [Θ |-(dT) T].
+Lemma wfTemWfType `{!GenericConsequences (GP:=GP)} {Θ T dT t dt} : [Θ |-(dt) t : T @(dT) ] -> [Θ |-(dT) T].
 Proof.
   intros []; econstructor; tea. now eapply wft_ty.
 Qed.
@@ -113,7 +111,7 @@ Qed.
 
 
 Lemma in_ctx_erased {Θ n} decl :
-  in_ctx Θ n decl -> Context.in_ctx (list_map ty Θ) n (ty decl).
+  in_ctx Θ n decl -> in_ctx (tys Θ) n (ty decl).
 Proof.
   induction 1; now constructor.
 Qed.
@@ -204,22 +202,35 @@ Proof.
   intros hΘ hA; exact (wfCtxCons hΘ (hA hΘ)).
 Qed.
 
-Fixpoint shift_n t n := match n with 0 => t | S m => (shift_n t m)⟨↑⟩ end.
+Lemma wfTypeProd' {Γ d} {A B} :
+  [ Γ |-( dir_op d ) A ] ->
+  ( [|-() Γ ,, Discr \ A @ dir_op d] -> 
+    [ Γ |-( dir_op d ) A ] ->
+    [Γ ,, Discr \ A @ dir_op d |-( d ) B ]) ->
+  [ Γ |-( d ) tProd A B ].
+Proof.
+  intros hA hB.
+  apply wfTypeProd; tea.
+  apply hB; tea.
+  apply wfCtxCons; tea.
+  now eapply wfCtxWfType.
+Qed.
+
+Fixpoint shift_n {A} `{Ren1 (nat -> nat) A A} (t : A) n := match n with 0 => t | S m => (shift_n t m)⟨↑⟩ end.
 
 Lemma wfTypeVar {Θ n d d' dU} :
   [ |-( ) Θ ] ->
-  in_ctx Θ n (d \ shift_n U n @ dU) ->
+  in_ctx Θ n (shift_n (d \ U @ dU) n) ->
   dir_leq d d' ->
   [ Θ |-( d' ) tRel n ].
 Proof.
-  assert (h : forall k, shift_n U k = U).
+  assert (h : forall k, shift_n (d \ U @ dU) k = (d \ U @ dU)).
   by (intros k; induction k as [| ? ih]; cbn; rewrite ?ih; reflexivity).
   rewrite h.
   intros.
   eapply wfTypeUniv.
   now eapply wfTermVar.
 Qed.
-
 
   
 End DirectedTypingLemmas.
@@ -229,7 +240,7 @@ Module Examples.
   Module List.
   
   (* Context of parameters for list *)
-  Definition ctx := ε ,, Fun \ U @ Discr.
+  Definition ctx := εᵈ ,, Fun \ U @ Discr.
   (* Context of arguments for nil; 
     the parameters of list should form a prefix *)
   Definition nil_ctx := ctx.
@@ -272,7 +283,7 @@ Module Examples.
 
   Module W.
 
-    Definition ctx := ε ,, Fun \ U @ Discr ,, Cofun \ tProd (tRel 0) U @ Cofun.
+    Definition ctx := εᵈ ,, Fun \ U @ Discr ,, Cofun \ tProd (tRel 0) U @ Cofun.
     
     Definition sup_ctx (tW : term -> term -> term) :=
       ctx ,, Discr \ tRel 1 @ Fun ,, Discr \ tProd (tApp (tRel 1) (tRel 0)) (tW (tRel 3) (tRel 2)) @ Cofun.
@@ -284,16 +295,9 @@ Module Examples.
     Proof.
       eapply wfCtxCons'; [eapply wfCtxCons'|]; try apply wfCtxEmpty; intros.
       - now apply wfTypeU.
-      - assert (hdom : [ε,, Fun \ U @ Discr |-( Fun) tRel 0]).
-        1:{
-            eapply wfTypeVar; tea.
-            econstructor.
-             reflexivity.
-
-        }
-        apply wfTypeProd; cbn; tea.
-        eapply wfTypeU.
-        eapply wfCtxCons; tea.
+      - apply wfTypeProd'.
+        + eapply wfTypeVar; tea; [econstructor| reflexivity].
+        + intros; now eapply wfTypeU.
     Qed.
 
     End WTyping.

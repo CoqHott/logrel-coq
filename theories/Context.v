@@ -12,13 +12,13 @@ Set Primitive Projections.
 Definition context := list term.
 
 Notation "'ε'" := (@nil term).
-Notation " Γ ,, d " := (@cons term d Γ) (at level 20, d at next level).
-Notation " Γ ,,, Δ " := (@app term Δ Γ) (at level 25, Δ at next level, left associativity).
+Notation " Γ ,, d " := (@cons _ d Γ) (at level 20, d at next level).
+Notation " Γ ,,, Δ " := (@app _ Δ Γ) (at level 25, Δ at next level, left associativity).
 
 (** States that a definition, correctly weakened, is in a context. *)
-Inductive in_ctx : context -> nat -> term -> Type :=
-  | in_here (Γ : context) d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
-  | in_there (Γ : context) d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (ren_term shift d).
+Inductive in_ctx {A} `{Ren1 (nat -> nat) A A} : list A -> nat -> A -> Type :=
+  | in_here Γ d : in_ctx (Γ,,d) 0 (d⟨↑⟩)
+  | in_there Γ d d' n : in_ctx Γ n d -> in_ctx (Γ,,d') (S n) (d⟨↑⟩).
 
 Lemma in_ctx_inj Γ n decl decl' :
   in_ctx Γ n decl -> in_ctx Γ n decl' -> decl = decl'.

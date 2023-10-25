@@ -5,7 +5,7 @@ From LogRel Require Import Utils BasicAst DirectedDirections.
 
 Set Primitive Projections.
 
-(** ** Context declaration *)
+(** ** Directed context declaration *)
 (** Context: list of declarations *)
 (** Terms use de Bruijn indices to refer to context entries.*)
 
@@ -15,28 +15,17 @@ Record context_decl :=
     dir: direction ;
   }.
 
+Notation "d \ A @ dA " := {| ty := A ; ty_dir := dA ; dir := d |} (at level 15).
+
 Definition context := list context_decl.
 
-Notation "'ε'" := (@nil context_decl).
-Notation " Γ ,, d " := (@cons context_decl d Γ) (at level 20, d at next level).
-Notation " Γ ,,, Δ " := (@app context_decl Δ Γ) (at level 25, Δ at next level, left associativity).
+Definition tys := List.map ty.
+Definition dirs := List.map dir.
+Definition ty_dirs := List.map ty_dir.
 
-(** States that a definition, correctly weakened, is in a context. *)
-Inductive in_ctx : context -> nat -> context_decl -> Type :=
-  | in_here (Γ : context) T dT d :
-    in_ctx (Γ,, {| ty := T; ty_dir := dT; dir := d |}) 0
-           {| ty := T⟨↑⟩; ty_dir := dT; dir := d |}
-  | in_there (Γ : context) T dT d T' dT' d' n :
-    in_ctx Γ n {| ty := T; ty_dir := dT; dir := d |} ->
-    in_ctx (Γ,,{| ty := T'; ty_dir := dT'; dir := d' |}) (S n) {| ty := ren_term shift T; ty_dir := dT; dir := d |}.
+(* For in_ctx *)
+#[global]
+Instance: Ren1 (nat -> nat) context_decl context_decl := 
+  fun ρ Θ => dir Θ \ (ty Θ)⟨ρ⟩ @ ty_dir Θ.
 
-Lemma in_ctx_inj Γ n decl decl' :
-  in_ctx Γ n decl -> in_ctx Γ n decl' -> decl = decl'.
-Proof.
-  induction 1 in decl' |- * ; inversion 1 ; subst.
-  1: reflexivity.
-  have eq: {| ty := T; ty_dir := dT; dir := d |}
-           = {| ty := T0; ty_dir := dT0; dir := d0 |} by now trivial.
-  inversion eq.
-  f_equal.
-Qed.
+Notation "'εᵈ'" := (@nil context_decl).
