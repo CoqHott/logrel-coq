@@ -322,4 +322,3 @@ Proof.
       * eapply IHX; tea.
       * eapply dir_ren1.
 Qed.
-

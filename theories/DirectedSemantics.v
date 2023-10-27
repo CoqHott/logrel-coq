@@ -3,23 +3,12 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping. (* DeclarativeSubst*)
-From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning DirectedTyping. 
-(* DirectedErasure DirectedDeclarativeTyping . *)
+From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping.
+From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning DirectedTyping.
 
 
 Reserved Notation "[ Δ |- w : t -( d )- u : A ]" (at level 0, Δ, d, t, u, A, w at level 50).
 Reserved Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" (at level 0, Δ, Θ, σ, τ, ϕ at level 50).
-
-(* Import DeclarativeTypingData.
-Import DeclarativeTypingProperties.
-Import Notations. *)
-
-(* Definition witType (d: direction) :=
-  match d with
-  | Fun | Cofun => term
-  | Discr => unit
-  end. *)
 
 Definition err_term : term := tApp U U.
 
@@ -60,7 +49,7 @@ Section MorphismDefinition.
   Definition dispatch_dir γ σ τ φ A dA wdA t u :=
     match dA with
     (* Discrete case, A[σ] ≅ A[τ], no transport needed *)
-    | Discr => (t, u, A[σ]) 
+    | Discr => (t, u, A[σ])
     (* Fun case, A @ φ : A[σ] → A[τ] *)
     | Fun => (tApp (type_act γ dA A wdA φ) t, u, A[τ])
     (* Cofun case, A @ φ : A[τ] → A[σ] *)
@@ -70,18 +59,103 @@ Section MorphismDefinition.
   Inductive SubstRel (Δ: Context.context) :
     (nat -> term) -> (nat -> term) -> DirectedContext.context -> list term -> Type :=
   | substRelSEmpty : forall σ τ, [ Δ |- nil : σ -( )- τ : nil ]
-  | substRelSCons {Θ σ τ φ A dA t u w d} (wdA : [dirs Θ |- A ◃ dA]) 
+  | substRelSCons {Θ σ τ φ A dA t u w d} (wdA : [dirs Θ |- A ◃ dA])
     (tuA := dispatch_dir (dirs Θ) σ τ φ A dA wdA t u) (t':= fst tuA) (u' := fst (snd tuA)) (A' := snd (snd tuA)):
     [ Δ |- φ : σ -( )- τ : Θ] ->
     [ Δ |- w : t' -( d )- u' : A' ] ->
     [ Δ |- (w :: φ) : (t .: σ) -( )- (u .: τ) : (Θ ,,  d \ A @ dA)]
   where "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (SubstRel Δ σ τ Θ ϕ).
 
-  
 End MorphismDefinition.
-  
 
 
+(* TODO: section action definition *)
+
+Inductive dir_leq' : direction -> direction -> Type :=
+| refl {d} : dir_leq' d d
+| leqDiscrFun : dir_leq' Discr Fun
+| leqDiscrCofun : dir_leq' Discr Cofun
+.
+
+Lemma dir_leq_dir_leq' {d d'} : dir_leq d d' -> dir_leq' d d'.
+Proof.
+  destruct d, d'; cbn; try constructor; easy.
+Qed.
+
+Definition action_infer_term
+  (δ: list direction)
+  (dt: direction) (t: term) :
+  [δ |- t ▹ dt] ->
+  forall (dA: direction) (σ τ: nat -> term), list term -> term.
+Proof.
+  induction 1 eqn: eq; intros dT σ τ l.
+  - exact err_term.
+  - exact (List.nth n l err_term).
+  - remember d'' as dt. destruct d''.
+    + pose (tA := IHd1 _ eq_refl Discr σ τ l).
+      pose (tB := IHd2 _ eq_refl Discr
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
+                    (scons (tRel 0) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[σ] (tLambda A[τ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + pose (tA := IHd1 _ eq_refl Discr σ τ l).
+      pose (tB := IHd2 _ eq_refl Discr
+                    (scons (tRel 0) σ)
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[τ] (tLambda A[σ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + exact err_term.
+  - (* note direction of A is (dir_op dT) *)
+    admit. (* need to transport along tA! *)
+    (* pose (tt := IHd _ eq_refl dT *)
+    (*                 (scons (tRel 0) σ) (* should be ok not to transport because a[σ] and a[τ]should be convertible *) *)
+    (*                 (scons (tRel 0) τ) *)
+    (*                 (cons err_term l)). *)
+    (* remember (dir_op dT) as d''. destruct d''. *)
+    (* + exact (tLambda A[σ] tt). *)
+    (* + exact (tLambda A[τ] tt). *)
+    (* + exact (tLambda A[σ] tt). *)
+  - (* TODO: I think the direction of A is (dir_op dT) *)
+    pose (tf := IHd1 _ eq_refl dT σ τ l).
+    exact (match dir_op dT with
+           | Fun | Discr => tApp tf a[σ]
+           | Cofun => tApp tf a[τ]
+           end).
+Defined.
+
+Definition action_infer_type
+  (δ: list direction)
+  (dA: direction) (A: term)  :
+  [δ |- A ▹ dA] -> forall (σ τ: nat -> term), list term -> term.
+Proof.
+  induction 1 eqn: eq; intros σ τ l.
+  - exact (tLambda U (tRel 0)).
+  - refine (action_infer_term δ d (tRel n) _ Discr σ τ l); tea.
+  - remember d'' as dA. destruct d''.
+    + pose (tA := IHd1 _ eq_refl σ τ l).
+      pose (tB := IHd2 _ eq_refl
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
+                    (scons (tRel 0) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[σ] (tLambda A[τ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + pose (tA := IHd1 _ eq_refl σ τ l).
+      pose (tB := IHd2 _ eq_refl
+                    (scons (tRel 0) σ)
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[τ] (tLambda A[σ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + exact err_term.
+  - exact err_term.
+  - refine (action_infer_term δ d1 (tApp f a) _ Discr σ τ l); tea.
+Defined.
 
 (* Definition TermRel_actionType {Δ d t u A} (rel: [ Δ |- t -( d )- u : A ]) : *)
 (*   match d with Fun | Cofun => term | Discr => unit end. *)
@@ -189,5 +263,3 @@ where "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (SubstRel Δ σ τ Θ ϕ). *)
 (*   [ Δ |- σ -( Θ )- τ ] -> [ Δ |-s τ : erase_dir Θ ]. *)
 (* Proof. *)
 (* Admitted. *)
-
-
