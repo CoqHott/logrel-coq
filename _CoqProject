@@ -24,10 +24,7 @@ theories/DeclarativeInstance.v
 theories/DirectedDirections.v
 theories/DirectedContext.v
 theories/DirectedDirectioning.v
-theories/DirectedTyping.v
-# theories/DirectedDeclarativeTyping.v
-# theories/DirectedSemantics.v
-# theories/DirectedPartialTranslation.v
+theories/DirectedSemantics.v
 
 
 theories/LogicalRelation.v

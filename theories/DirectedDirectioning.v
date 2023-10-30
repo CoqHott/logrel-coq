@@ -23,7 +23,8 @@ Inductive DirInfer (δ : list direction) : direction -> term -> Type :=
   [ cons Discr δ |- B ▹ d' ] ->
   max_dir (dir_op d) d' d'' ->
   [ δ |- tProd A B ▹ d'' ]
-| dirLam {d A t} :
+| dirLam {d A dA t} :
+  [ δ |- A ▹ dA ] ->
   [ cons Discr δ |- t ▹ d ] ->
   [ δ |- tLambda A t ▹ d ]
 | dirApp {d f a} :
@@ -31,6 +32,49 @@ Inductive DirInfer (δ : list direction) : direction -> term -> Type :=
   [ δ |- a ▹ Discr ] ->
   [ δ |- tApp f a ▹ d ]
 where "[ δ |- t ▹ d ]" := (DirInfer δ d t).
+
+Definition compute_DirInfer (δ: list direction) (t: term) : option (∑(d: direction), [ δ |- t ▹ d ]).
+Proof.
+  remember t as t' eqn: e. revert δ t e. induction t'; intros.
+  - remember (List.nth n (List.map Some δ) None) as o.
+    destruct o. 2: exact None.
+    apply Some. exists d.
+    econstructor.
+    etransitivity. 2: symmetry; tea.
+    clear.
+    revert δ. induction n.
+    + now destruct δ.
+    + destruct δ. 1: reflexivity.
+      cbn.
+      apply IHn.
+  - apply Some. eexists. destruct s. constructor.
+  - destruct (IHt'1 δ _ eq_refl) as [[dA HA]|]. 2: exact None.
+    destruct (IHt'2 (cons Discr δ) _ eq_refl) as [[dB HB]|]. 2: exact None.
+    remember (max_dir_opt (dir_op dA) dB) as o.
+    destruct o. 2: exact None.
+    apply Some. exists d. econstructor; tea.
+    now symmetry.
+  - destruct (IHt'1 δ _ eq_refl) as [[dA HA]|]. 2: exact None.
+    destruct (IHt'2 (cons Discr δ) _ eq_refl) as [[dt Ht]|]. 2: exact None.
+    apply Some. exists dt. econstructor; tea.
+  - destruct (IHt'1 δ _ eq_refl) as [[df Hf]|]. 2: exact None.
+    destruct (IHt'2 δ _ eq_refl) as [[da Ha]|]. 2: exact None.
+    remember da as d'. destruct d'. 1-2: exact None.
+    apply Some. exists df. econstructor; tea.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+  - exact None.
+Defined.
 
 Definition DirCheck (δ : list direction) (d: direction) (t: term) : Type :=
   ∑ d', [δ |- t ▹ d'] × dir_leq d' d.
@@ -61,14 +105,14 @@ Proof.
   eapply MaxDirProp.max_least; tea.
 Defined.
 
-Definition dirLam' {δ d A t} :
-  [ cons Discr δ |- t ◃ d ] ->
-  [ δ |- tLambda A t ◃ d ].
-Proof.
-  intros [dt []].
-  repeat econstructor.
-  all: tea.
-Defined.
+(* Definition dirLam' {δ d A t} : *)
+(*   [ cons Discr δ |- t ◃ d ] -> *)
+(*   [ δ |- tLambda A t ◃ d ]. *)
+(* Proof. *)
+(*   intros [dt []]. *)
+(*   repeat econstructor. *)
+(*   all: tea. *)
+(* Defined. *)
 
 Definition dirApp' {δ d f a} :
   [ δ |- f ◃ d ] ->
@@ -103,47 +147,47 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma dir_infer_ren {γ d t} :
-  [γ |- t ▹ d] -> forall ρ δ, dir_ren ρ δ γ -> ∑ d', [δ |- t⟨ρ⟩ ▹ d'] × dir_leq d' d.
-Proof.
-  induction 1.
-  - econstructor; split; econstructor.
-  - intros * hρ.
-    destruct (hρ _ _ e) as [? []].
-    econstructor; split.
-    1: now econstructor.
-    tea.
-  - intros * hρ.
-    destruct (IHDirInfer1 _ _ hρ) as [d1 [dirA' leq1]].
-    destruct (IHDirInfer2 _ _ (dir_ren_up hρ)) as [d2 [dirB' leq2]].
-    assert (dir_op d1 ⪯ d'').
-    by (etransitivity; try apply dir_op_mon; tea; now eapply MaxDirProp.upper_bound1).
-    assert (d2 ⪯ d'').
-    by (etransitivity; tea; now eapply MaxDirProp.upper_bound2).
-    unshelve epose proof (MaxDirProp.max_exists (dir_op d1) d2 d'' _ _) as [d3]; tea.
-    exists d3; split.
-    1: now econstructor.
-    eapply MaxDirProp.max_least; tea.
-  - intros * hρ.
-    destruct (IHDirInfer _ _ (dir_ren_up hρ)) as [d1 [dirt' leq1]].
-    eexists; split; tea.
-    now econstructor.
-  - intros * hρ.
-    destruct (IHDirInfer1 _ _ hρ) as [d1 [dirf' leq1]].
-    destruct (IHDirInfer2 _ _ hρ) as [d2 [dira' leq2]].
-    eexists; split; tea.
-    constructor; tea.
-    now destruct d2; inversion leq2.
-Qed.
+(* Lemma dir_infer_ren {γ d t} : *)
+(*   [γ |- t ▹ d] -> forall ρ δ, dir_ren ρ δ γ -> ∑ d', [δ |- t⟨ρ⟩ ▹ d'] × dir_leq d' d. *)
+(* Proof. *)
+(*   induction 1. *)
+(*   - econstructor; split; econstructor. *)
+(*   - intros * hρ. *)
+(*     destruct (hρ _ _ e) as [? []]. *)
+(*     econstructor; split. *)
+(*     1: now econstructor. *)
+(*     tea. *)
+(*   - intros * hρ. *)
+(*     destruct (IHDirInfer1 _ _ hρ) as [d1 [dirA' leq1]]. *)
+(*     destruct (IHDirInfer2 _ _ (dir_ren_up hρ)) as [d2 [dirB' leq2]]. *)
+(*     assert (dir_op d1 ⪯ d''). *)
+(*     by (etransitivity; try apply dir_op_mon; tea; now eapply MaxDirProp.upper_bound1). *)
+(*     assert (d2 ⪯ d''). *)
+(*     by (etransitivity; tea; now eapply MaxDirProp.upper_bound2). *)
+(*     unshelve epose proof (MaxDirProp.max_exists (dir_op d1) d2 d'' _ _) as [d3]; tea. *)
+(*     exists d3; split. *)
+(*     1: now econstructor. *)
+(*     eapply MaxDirProp.max_least; tea. *)
+(*   - intros * hρ. *)
+(*     destruct (IHDirInfer _ _ (dir_ren_up hρ)) as [d1 [dirt' leq1]]. *)
+(*     eexists; split; tea. *)
+(*     now econstructor. *)
+(*   - intros * hρ. *)
+(*     destruct (IHDirInfer1 _ _ hρ) as [d1 [dirf' leq1]]. *)
+(*     destruct (IHDirInfer2 _ _ hρ) as [d2 [dira' leq2]]. *)
+(*     eexists; split; tea. *)
+(*     constructor; tea. *)
+(*     now destruct d2; inversion leq2. *)
+(* Qed. *)
 
-Lemma dir_check_ren {γ d t} :
-  [γ |- t ◃ d] -> forall ρ δ, dir_ren ρ δ γ -> [δ |- t⟨ρ⟩ ◃ d].
-Proof.
-  intros [d' [dirt leq]] * dren.
-  epose (inf := dir_infer_ren dirt _ _ dren).
-  repeat econstructor. 1: apply inf.π2.
-  etransitivity; tea. apply inf.π2.
-Qed.
+(* Lemma dir_check_ren {γ d t} : *)
+(*   [γ |- t ◃ d] -> forall ρ δ, dir_ren ρ δ γ -> [δ |- t⟨ρ⟩ ◃ d]. *)
+(* Proof. *)
+(*   intros [d' [dirt leq]] * dren. *)
+(*   epose (inf := dir_infer_ren dirt _ _ dren). *)
+(*   repeat econstructor. 1: apply inf.π2. *)
+(*   etransitivity; tea. apply inf.π2. *)
+(* Qed. *)
 
 Definition dir_wk {Γ Δ} (ρ : Γ ≤ Δ) (δ γ : list direction) :=
   forall n d, List.nth_error γ n = Some d ->
@@ -217,12 +261,13 @@ Lemma dir_subst_up {δ γ d σ} :
   [ δ |-s σ ◃ γ ] ->
   [ cons d δ |-s σ⟨↑⟩ ◃ γ ].
 Proof.
-  intros H n d' eq.
-  change [(d :: δ) |- (σ n)⟨↑⟩ ◃ d'].
-  eapply dir_check_ren.
-  1: now apply H.
-  exact dir_ren1.
-Qed.
+Admitted.
+(*   intros H n d' eq. *)
+(*   change [(d :: δ) |- (σ n)⟨↑⟩ ◃ d']. *)
+(*   eapply dir_check_ren. *)
+(*   1: now apply H. *)
+(*   exact dir_ren1. *)
+(* Qed. *)
 
 Lemma dir_subst_up_term_term {δ γ d σ} :
   [ δ |-s σ ◃ γ ] -> [ (d :: δ) |-s up_term_term σ ◃ (d :: γ) ].
@@ -251,34 +296,35 @@ Qed.
 Lemma dir_infer_subst {γ d t} :
   [γ |- t ▹ d] -> forall δ σ, [ δ |-s σ ◃ γ ] -> ∑ d', [δ |- t[σ] ▹ d'] × dir_leq d' d.
 Proof.
-  induction 1.
-  - econstructor; split; constructor.
-  - intros.
-    unshelve epose (Y := dir_subst_var _ _). 6,7: tea. (* inversion Y; subst. *)
-    repeat econstructor.
-    all: apply Y.π2.
-  - intros * hσ.
-    destruct (IHDirInfer1 _ _ hσ) as [d1 [dirA' leq1]].
-    destruct (IHDirInfer2 _ _ (dir_subst_up_term_term hσ)) as [d2 [dirB' leq2]].
-    assert (dir_op d1 ⪯ d'').
-    by (etransitivity; try apply dir_op_mon; tea; now eapply MaxDirProp.upper_bound1).
-    assert (d2 ⪯ d'').
-    by (etransitivity; tea; now eapply MaxDirProp.upper_bound2).
-    unshelve epose proof (MaxDirProp.max_exists (dir_op d1) d2 d'' _ _) as [d3]; tea.
-    exists d3; split.
-    1: now econstructor.
-    eapply MaxDirProp.max_least; tea.
-  - intros * hσ.
-    destruct (IHDirInfer _ _ (dir_subst_up_term_term hσ)) as [d1 [dirt' leq1]].
-    eexists; split; tea.
-    now econstructor.
-  - intros * hσ.
-    destruct (IHDirInfer1 _ _ hσ) as [d1 [dirf' leq1]].
-    destruct (IHDirInfer2 _ _ hσ) as [d2 [dira' leq2]].
-    eexists; split; tea.
-    constructor; tea.
-    now destruct d2; inversion leq2.
-Qed.
+Admitted.
+(*   induction 1. *)
+(*   - econstructor; split; constructor. *)
+(*   - intros. *)
+(*     unshelve epose (Y := dir_subst_var _ _). 6,7: tea. (* inversion Y; subst. *) *)
+(*     repeat econstructor. *)
+(*     all: apply Y.π2. *)
+(*   - intros * hσ. *)
+(*     destruct (IHDirInfer1 _ _ hσ) as [d1 [dirA' leq1]]. *)
+(*     destruct (IHDirInfer2 _ _ (dir_subst_up_term_term hσ)) as [d2 [dirB' leq2]]. *)
+(*     assert (dir_op d1 ⪯ d''). *)
+(*     by (etransitivity; try apply dir_op_mon; tea; now eapply MaxDirProp.upper_bound1). *)
+(*     assert (d2 ⪯ d''). *)
+(*     by (etransitivity; tea; now eapply MaxDirProp.upper_bound2). *)
+(*     unshelve epose proof (MaxDirProp.max_exists (dir_op d1) d2 d'' _ _) as [d3]; tea. *)
+(*     exists d3; split. *)
+(*     1: now econstructor. *)
+(*     eapply MaxDirProp.max_least; tea. *)
+(*   - intros * hσ. *)
+(*     destruct (IHDirInfer _ _ (dir_subst_up_term_term hσ)) as [d1 [dirt' leq1]]. *)
+(*     eexists; split; tea. *)
+(*     now econstructor. *)
+(*   - intros * hσ. *)
+(*     destruct (IHDirInfer1 _ _ hσ) as [d1 [dirf' leq1]]. *)
+(*     destruct (IHDirInfer2 _ _ hσ) as [d2 [dira' leq2]]. *)
+(*     eexists; split; tea. *)
+(*     constructor; tea. *)
+(*     now destruct d2; inversion leq2. *)
+(* Qed. *)
 
 Lemma dir_check_subst {γ d t} :
   [γ |- t ◃ d] -> forall δ σ, [ δ |-s σ ◃ γ ] -> [δ |- t[σ] ◃ d].
@@ -311,14 +357,15 @@ Lemma dir_ctx_nth_ty {Γ δ δT} :
   List.nth_error δT n = Some dT ->
   [δ |- T ◃ dT].
 Proof.
-  induction 1.
-  - intros []; inversion 2.
-  - intros [|n].
-    + intros T dT H eq; inversion H; inversion eq; subst.
-      eapply dir_check_ren; tea.
-      apply dir_ren1.
-    + intros T dT H eq; inversion H; inversion eq; subst.
-      eapply dir_check_ren.
-      * eapply IHX; tea.
-      * eapply dir_ren1.
-Qed.
+Admitted.
+(*   induction 1. *)
+(*   - intros []; inversion 2. *)
+(*   - intros [|n]. *)
+(*     + intros T dT H eq; inversion H; inversion eq; subst. *)
+(*       eapply dir_check_ren; tea. *)
+(*       apply dir_ren1. *)
+(*     + intros T dT H eq; inversion H; inversion eq; subst. *)
+(*       eapply dir_check_ren. *)
+(*       * eapply IHX; tea. *)
+(*       * eapply dir_ren1. *)
+(* Qed. *)
