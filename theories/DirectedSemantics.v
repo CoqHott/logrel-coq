@@ -38,7 +38,7 @@ Section MorphismDefinition.
 
   where "[ Δ |- w : t -( d )- u : A ]" := (TermRel Δ t u d A w).
 
-  Context (type_act : forall (γ : list direction) (dA : direction) (A : term) (wdA : [γ |- A ◃ dA]) (φ : list term), term).
+  Context (type_act : forall (γ : list direction) (dA : direction) (A : term) (wdA : [γ |- A ◃ dA]) (σ τ : nat -> term) (φ : list term), term).
 
   (* Given a context of directions γ coming from Θ,
     substitutions, Δ |- σ, τ : |Θ|,
@@ -51,9 +51,9 @@ Section MorphismDefinition.
     (* Discrete case, A[σ] ≅ A[τ], no transport needed *)
     | Discr => (t, u, A[σ])
     (* Fun case, A @ φ : A[σ] → A[τ] *)
-    | Fun => (tApp (type_act γ dA A wdA φ) t, u, A[τ])
+    | Fun => (tApp (type_act γ dA A wdA σ τ φ) t, u, A[τ])
     (* Cofun case, A @ φ : A[τ] → A[σ] *)
-    | Cofun => (t, tApp (type_act γ dA A wdA φ) u, A[σ])
+    | Cofun => (t, tApp (type_act γ dA A wdA σ τ φ) u, A[σ])
     end.
 
   Inductive SubstRel (Δ: Context.context) :
