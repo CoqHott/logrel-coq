@@ -15,6 +15,21 @@ Definition err_term : term := tApp U U.
 Section MorphismDefinition.
   Context `{GenericTypingProperties}.
 
+  Fixpoint termRelArr Δ t u A : term :=
+    match A with
+    | U => arr t u
+    | tProd A B => tProd A (termRelArr (Δ ,, A) (eta_expand t) (eta_expand u) B)
+    | _ => err_term
+    end.
+  
+  Definition termRel Δ t u d (A : term) : Type :=
+    match d with
+    | Fun => ∑ f, [ Δ |- f : termRelArr Δ t u A ]
+    | Cofun => ∑ f, [ Δ |- f : termRelArr Δ u t A ] 
+    | Discr => [Δ |- t ≅ u]
+    end.
+  
+
   Inductive TermRel (Δ: Context.context) (t u: term) : forall (d: direction), term -> term -> Type :=
   | termRelFun { f } :
     [ Δ |- f : arr t u ] ->
