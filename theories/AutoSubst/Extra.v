@@ -84,6 +84,9 @@ Proof.
   unfold funcomp; now rewrite  rinstInst'_term.
 Qed.
 
+Lemma shift_subst_eq t a : t⟨↑⟩[a..] = t.
+Proof. now asimpl. Qed.
+
 Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
 Proof. now asimpl. Qed.
 

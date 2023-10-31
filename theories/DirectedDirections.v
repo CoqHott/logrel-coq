@@ -48,6 +48,12 @@ Section MaxDirProp.
     all: intros _ _; eexists; unfold max_dir; cbn; reflexivity.
   Qed.
 
+  Lemma max_left d1 d2 : d1 ⪯ d2 -> max_dir d1 d2 d2.
+  Proof.  destruct d1, d2; cbn; easy. Qed.
+
+  Lemma max_right d1 d2 : d2 ⪯ d1 -> max_dir d1 d2 d1.
+  Proof. destruct d1, d2; cbn; try easy; reflexivity. Qed.
+
   Context (d1 d2 d3 : direction) (e : max_dir_opt d1 d2 = Some d3).
 
   Lemma upper_bound1 : d1 ⪯ d3.
