@@ -3,14 +3,74 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping.
-From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning (* DirectedTyping *).
-
+From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning DirectedDeclarativeTyping.
+From LogRel Require Import Utils BasicAst.
 
 Reserved Notation "[ Δ |- w : t -( d )- u : A ]" (at level 0, Δ, d, t, u, A, w at level 50).
 Reserved Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" (at level 0, Δ, Θ, σ, τ, ϕ at level 50).
 
 Definition err_term : term := tApp U U.
+
+Definition action
+  (δ: list direction)
+  (dt: direction) (t: term) :
+  [δ |- t ▹ dt] ->
+  forall (σ τ: nat -> term), list term -> term.
+Proof.
+  induction 1 eqn: eq; intros σ τ l.
+  - exact (tLambda U (tRel 0)).
+  - exact (List.nth n l err_term).
+  - remember d'' as dt. destruct d''.
+    + pose (tA := IHd1 _ eq_refl σ τ l).
+      pose (tB := IHd2 _ eq_refl
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
+                    (scons (tRel 0) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[σ] (tLambda A[τ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + pose (tA := IHd1 _ eq_refl σ τ l).
+      pose (tB := IHd2 _ eq_refl
+                    (scons (tRel 0) σ)
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
+                    (cons err_term l)).
+      exact (tLambda (tProd A B)[τ] (tLambda A[σ] (
+                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
+            ))).
+    + exact err_term.
+  - pose (tA := IHd1 _ eq_refl σ τ l).
+    remember dA as d''. destruct d''.
+    + pose (tt := IHd2 _ eq_refl
+                    (scons (tRel 0) σ)
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
+                    (cons err_term l)).
+      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
+    + pose (tt := IHd2 _ eq_refl
+                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
+                    (scons (tRel 0) τ)
+                    (cons err_term l)).
+      exact (tLambda A[σ] (tLambda A[τ] tt)⟨↑⟩).
+    + pose (tt := IHd2 _ eq_refl
+                    (scons (tRel 0) σ)
+                    (scons (tRel 0) τ)
+                    (cons err_term l)).
+      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
+  - (* TODO: I think the direction of A is (dir_op dT) *)
+    pose (tf := IHd1 _ eq_refl σ τ l).
+    exact (tApp (tApp tf a[σ]) a[τ]).
+Defined.
+
+Definition compute_action (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) : term :=
+  match compute_DirInfer δ t with
+  | None => err_term
+  | Some (d; der) => action δ d t der σ τ ϕ
+  end.
+
+
+
+
+From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
+
 
 Section MorphismDefinition.
   Context `{GenericTypingProperties}.
@@ -82,57 +142,6 @@ Section MorphismDefinition.
   where "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (SubstRel Δ σ τ Θ ϕ).
 
 End MorphismDefinition.
-
-
-Definition action
-  (δ: list direction)
-  (dt: direction) (t: term) :
-  [δ |- t ▹ dt] ->
-  forall (σ τ: nat -> term), list term -> term.
-Proof.
-  induction 1 eqn: eq; intros σ τ l.
-  - exact (tLambda U (tRel 0)).
-  - exact (List.nth n l err_term).
-  - remember d'' as dt. destruct d''.
-    + pose (tA := IHd1 _ eq_refl σ τ l).
-      pose (tB := IHd2 _ eq_refl
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
-                    (scons (tRel 0) τ)
-                    (cons err_term l)).
-      exact (tLambda (tProd A B)[σ] (tLambda A[τ] (
-                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
-            ))).
-    + pose (tA := IHd1 _ eq_refl σ τ l).
-      pose (tB := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
-                    (cons err_term l)).
-      exact (tLambda (tProd A B)[τ] (tLambda A[σ] (
-                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
-            ))).
-    + exact err_term.
-  - pose (tA := IHd1 _ eq_refl σ τ l).
-    remember dA as d''. destruct d''.
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
-                    (cons err_term l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
-                    (scons (tRel 0) τ)
-                    (cons err_term l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt)⟨↑⟩).
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tRel 0) τ)
-                    (cons err_term l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
-  - (* TODO: I think the direction of A is (dir_op dT) *)
-    pose (tf := IHd1 _ eq_refl σ τ l).
-    exact (tApp (tApp tf a[σ]) a[τ]).
-Defined.
-
 
 (* (* TODO: reorganize files! *) *)
 (* Section DirectedAction. *)
