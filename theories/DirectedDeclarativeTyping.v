@@ -507,6 +507,39 @@ Module Examples.
   Qed.
 
   End ListTyping.
+
+
+  Module Morphism.
+    From LogRel Require Import DirectedSemantics.
+    From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
+
+    Lemma morphism_fwd_characterization `{GenericTypingProperties} Δ (A B : term) l :
+      substRel Δ (A..) (B..) ctx l -> 
+      ∑ f , l = cons f nil × [Δ |- f : arr A B].
+    Proof.
+      destruct l.
+      cbn; try easy.
+      unfold substRel; cbn; destruct l; try easy.
+    Qed.
+
+    (* Future goal: to be able to add a generic typing rule as follows in MLTTmap++
+    (F, Θ) ∈ Σ ->
+    [|- Δ] ->
+    [Δ |- σ : |Θ| ] ->
+    [Δ |- τ : |Θ| ] ->
+    forall (φ : list term), substRel Δ σ τ Θ φ ->
+    [Δ |- map[Θ] φ : F σ -> F τ]
+
+    *)
+
+    Lemma morphism_bwd_characterization `{GenericTypingProperties} Δ (A B : term) l :
+      (∑ f , l = cons f nil × [Δ |- f : arr A B]) ->
+      substRel Δ (A..) (B..) ctx l.
+    Proof.
+      intros [? [-> ?]]; cbn; now split.
+    Qed.
+  End Morphism.
+
   End List.
 
 
@@ -576,6 +609,43 @@ Module Examples.
     Qed.
 
     End WTyping.
+
+
+  Module Morphism.
+    From LogRel Require Import DirectedSemantics.
+    From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
+
+    Lemma morphism_fwd_characterization `{GenericTypingProperties} Δ (A1 B1 A2 B2 : term) l :
+      substRel Δ (B1 .: A1..) (B2.: A2..) ctx l -> 
+      ∑ f g , 
+        [× l = cons f (cons g nil),
+          [Δ |- g : arr A1 A2] &
+          [Δ |- f : tProd A1 (arr (tApp B2⟨↑⟩ (tApp g⟨↑⟩ (tRel 0))) (tApp B1⟨↑⟩ (tRel 0)))]].
+    Proof.
+      destruct l as [| f l]; [cbn; easy|].
+      destruct l as [| g l]; [cbn; easy|].
+      destruct l ; [| cbn; easy].
+      unfold substRel; cbn.
+      intros [[? gwty] fwty].
+      exists f, g; split; [reflexivity|..].
+      1: tea.
+      (* TODO : Normalization *)
+      admit.
+    Admitted.
+
+    Lemma morphism_bwd_characterization `{GenericTypingProperties} Δ (A1 A2 B1 B2 : term) l :
+      (∑ f g , 
+        [× l = cons f (cons g nil),
+          [Δ |- g : arr A1 A2] &
+          [Δ |- f : tProd A1 (arr (tApp B2⟨↑⟩ (tApp g⟨↑⟩ (tRel 0))) (tApp B1⟨↑⟩ (tRel 0)))]]) ->
+      substRel Δ (B1 .: A1..) (B2.: A2..) ctx l.
+    Proof.
+      intros [f [g [-> ?]]]; cbn; split; [split; easy|].
+      (* TODO : Normalization *)
+      admit.
+    Admitted.
+  End Morphism.
+
   End W.  
 
 
@@ -689,5 +759,8 @@ Module Examples.
   End Composition.
   
 End Examples.
+
+
+
 
 
