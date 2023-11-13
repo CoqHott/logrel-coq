@@ -25,7 +25,7 @@ theories/DirectedDirections.v
 theories/DirectedContext.v
 theories/DirectedDirectioning.v
 theories/DirectedSemantics.v
-
+theories/DirectedDeclarativeTyping.v
 
 theories/LogicalRelation.v
 theories/LogicalRelation/Induction.v

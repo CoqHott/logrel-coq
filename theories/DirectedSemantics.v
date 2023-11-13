@@ -3,8 +3,8 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning DirectedDeclarativeTyping.
 From LogRel Require Import Utils BasicAst.
+From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning.
 
 Reserved Notation "[ Δ |- w : t -( d )- u : A ]" (at level 0, Δ, d, t, u, A, w at level 50).
 Reserved Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" (at level 0, Δ, Θ, σ, τ, ϕ at level 50).
@@ -112,6 +112,8 @@ Section MorphismDefinition.
     [ Δ |- tLambda A w : t -( Cofun )- u : tProd A B ]
 
   where "[ Δ |- w : t -( d )- u : A ]" := (TermRel Δ t u d A w).
+
+  Close Scope typing_scope.
 
   Context (type_act : forall (γ : list direction) (dA : direction) (A : term) (wdA : [γ |- A ◃ dA]) (σ τ : nat -> term) (φ : list term), term).
 

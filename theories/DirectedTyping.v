@@ -284,6 +284,9 @@ Module Examples.
 
     Definition ctx := εᵈ ,, Fun \ U @ Discr ,, Cofun \ tProd (tRel 0) U @ Cofun.
     
+    [ Θ |-(Fun) A ]
+    [ Θ ,, Discr \ A @ Fun |-(Cofun) B ]
+    
     Definition sup_ctx 
       (* tW should bind one variable in its second argument *)
       (tW : term -> term -> term) :=
