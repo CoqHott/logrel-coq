@@ -31,7 +31,7 @@ Class Typing (ta : tag) := {
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
 Class Checking (ta : tag) := check : context -> term -> term -> Set.
-Class ConvType (ta : tag) := conv_type : context -> term -> term -> sort -> Set.
+Class ConvType (ta : tag) := conv_type : context -> sort -> term -> term -> Set.
 Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
 Class ConvTerm (ta : tag) := {
     conv_term : context -> term -> term -> term -> Set;
@@ -81,9 +81,9 @@ Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
 Notation "[ Γ |- t ▹h A ]" := (infer_red Γ A t) (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ▹h A ]" := (infer_red (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
 (** Types A and B are convertible in Γ at sort s *)
-Notation "[ Γ |- A ≅ B @ s ]" := (conv_type Γ A B s)
+Notation "[ Γ |- A ≅ B @ s ]" := (conv_type Γ s A B)
   (at level 0, Γ, A, B, s at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ≅ B @ s ]" := (conv_type (ta := ta) Γ A B s)
+Notation "[ Γ |-[ ta  ] A ≅ B @ s ]" := (conv_type (ta := ta) Γ s A B)
   (at level 0, ta, Γ, A, B, s at level 50) : typing_scope.
 (** Types in whnf A and B are convertible in Γ *)
 Notation "[ Γ |- A '≅h' B ]" := (conv_type_red Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
@@ -111,7 +111,7 @@ Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu_conv (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** ** Reductions *)
-Class RedType (ta : tag) := red_ty : context -> term -> term -> sort -> Set.
+Class RedType (ta : tag) := red_ty : context -> sort -> term -> term -> Set.
 Class OneStepRedTerm (ta : tag) := osred_tm : context -> term -> term -> term -> Set.
 Class RedTerm (ta : tag) := red_tm : context -> term -> term -> term -> Set.
 
@@ -130,8 +130,8 @@ Reserved Notation "[ Γ |- t ⤳* u ∈ A ]" (at level 0, Γ, t, u, A at level 5
 Notation "[ Γ |- t ⤳ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⤳ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
 (** Type A multi-step weak-head reduces to type B in Γ *)
-Notation "[ Γ |- A ⤳* B @ s ]" := (red_ty Γ A B s) (at level 0, Γ, A, B, s at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ⤳* B @ s ]" := (red_ty (ta := ta) Γ A B s)
+Notation "[ Γ |- A ⤳* B @ s ]" := (red_ty Γ s A B) (at level 0, Γ, A, B, s at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A ⤳* B @ s ]" := (red_ty (ta := ta) Γ s A B)
 (at level 0, ta, Γ, A, B, s at level 50) : typing_scope.
 (** Term t multi-step weak-head reduces to term t' at type A in Γ *)
 Notation "[ Γ |- t ⤳* t' : A ]" := (red_tm Γ A t t')

@@ -114,6 +114,12 @@ Section RedDefinitions.
     well_typed_type : term ;
     well_typed_typed : [Γ |- t : well_typed_type]
   }.
+  
+  Record well_sorted Γ t :=
+  {
+    well_sorted_sort : sort ;
+    well_sorted_type : [Γ |- t @ well_sorted_sort]
+  }.
 
   Record well_formed Γ t :=
   {
@@ -169,9 +175,9 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 
 #[export] Hint Resolve
   Build_TypeRedWhnf Build_TermRedWhnf (* Build_TypeConvWf *)
-  Build_TermConvWf (* Build_TypeRedWf *) Build_TermRedWf
+  Build_TermConvWf Build_TypeRedWf Build_TermRedWf
   well_sempty well_scons conv_sempty conv_scons
-  (* tyr_wf_r *) (* tyr_wf_red *) tmr_wf_r tmr_wf_red
+  tyr_wf_r tyr_wf_red tmr_wf_r tmr_wf_red
   : gen_typing.
 
 (* #[export] Hint Extern 1 =>
@@ -327,7 +333,7 @@ Section GenericTyping.
   Class ConvTypeProperties :=
   {
     convty_term {Γ A B s} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B @ s] ;
-    convty_equiv {Γ s} :> PER (fun t t' => conv_type Γ t t' s) ;
+    convty_equiv {Γ s} :> PER (conv_type Γ s) ;
     convty_wk {Γ Δ A B s} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ≅ B @ s] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩ @ s] ;
     convty_exp {Γ A A' B B' s} :
@@ -478,7 +484,7 @@ Section GenericTyping.
       [ Γ |- A @ s] ->
       [Γ |- A ⤳* A @ s] ;
     redty_trans {Γ s} :>
-      Transitive (fun A B => red_ty Γ A B s) ;
+      Transitive (red_ty Γ s) ;
   }.
 
   Class RedTermProperties :=
@@ -811,7 +817,7 @@ Section GenericConsequences.
   #[global]
   Instance redtywf_trans {Γ s} : Transitive (fun A B => TypeRedWf Γ A B s). (* fun A B => [Γ |- A :⤳*: B] *)
   Proof.
-    intros ??? [] []; unshelve econstructor; try etransitivity; tea.
+    intros ??? [] []; unshelve econstructor; tea; now etransitivity.
   Qed.
 
   (** Almost all of the RedTermProperties can be derived 
@@ -826,9 +832,9 @@ Section GenericConsequences.
     [Γ |- t :⤳*: u : A] -> [t ⤳* u].
   Proof. intros []; now eapply redtm_red. Qed.
 
-  Definition redtmwf_conv {Γ} {t u A B} :
+  Definition redtmwf_conv {Γ} {t u A B s} :
       [Γ |- t :⤳*: u : A] ->
-      [Γ |- A ≅ B ] ->
+      [Γ |- A ≅ B @ s] ->
       [Γ |- t :⤳*: u : B].
   Proof.
     intros [wfl red] ?.
@@ -870,7 +876,7 @@ Section GenericConsequences.
   Qed.
 
   Lemma redtmwf_natElimZero {Γ P hz hs} :
-    [Γ ,, tNat |- P ] ->
+    [Γ ,, tNat |- P @ set] ->
     [Γ |- hz : P[tZero..]] ->
     [Γ |- hs : elimSuccHypTy P] ->
     [Γ |- tNatElim P hz hs tZero :⤳*: hz : P[tZero..]].
