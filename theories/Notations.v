@@ -22,14 +22,21 @@ Open Scope typing_scope.
 
 (** ** Typing *)
 Class WfContext (ta : tag) := wf_context : context -> Set.
-Class WfType (ta : tag) := wf_type : context -> term -> Set.
-Class Typing (ta : tag) := typing : context -> term -> term -> Set.
+Class WfSort (ta : tag) := wf_sort : context -> sort -> Set.
+Class WfType (ta : tag) := wf_type : context -> term -> sort -> Set.
+Class Typing (ta : tag) := {
+    typing : context -> term -> term -> Set;
+    typing_sort : forall Γ t A, typing Γ t A -> sort
+}.
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
 Class Checking (ta : tag) := check : context -> term -> term -> Set.
-Class ConvType (ta : tag) := conv_type : context -> term -> term -> Set.
+Class ConvType (ta : tag) := conv_type : context -> term -> term -> sort -> Set.
 Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
-Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
+Class ConvTerm (ta : tag) := {
+    conv_term : context -> term -> term -> term -> Set;
+    conv_term_sort : forall Γ t t' A, conv_term Γ t t' A -> sort
+}.
 Class ConvTermRed (ta : tag) := conv_term_red : context -> term -> term -> term -> Set.
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
 Class ConvNeuRed (ta : tag) := conv_neu_red : context -> term -> term -> term -> Set.
@@ -43,11 +50,16 @@ Notation "[ |-[ ta  ] Γ ]" := (wf_context (ta := ta) Γ)
 (** The contexts Γ and Δ are convertible *)
 Reserved Notation "[ |- Γ ≅ Δ ]" (at level 0, Γ, Δ at level 50).
 Reserved Notation "[ |-[ ta  ] Γ ≅ Δ ]" (at level 0, ta, Γ, Δ at level 50).
-(** The type A is well-formed in Γ *)
-Notation "[ Γ |- A ]" := (wf_type Γ A)
-  (at level 0, Γ, A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ]" := (wf_type (ta := ta) Γ A)
-  (at level 0, ta, Γ, A at level 50) : typing_scope.
+(** The sort s is well-formed in Γ *)
+Notation "[ Γ |- s ]" := (wf_sort Γ s)
+  (at level 0, Γ, s at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] s ]" := (wf_sort (ta := ta) Γ s)
+  (at level 0, ta, Γ, s at level 50) : typing_scope.
+(** The type A is well-formed in Γ at sort s *)
+Notation "[ Γ |- A @ s ]" := (wf_type Γ A s)
+  (at level 0, Γ, A, s at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A @ s ]" := (wf_type (ta := ta) Γ A s)
+  (at level 0, ta, Γ, s at level 50) : typing_scope.
 
 (** The term t has type A in Γ *)
 Notation "[ Γ |- t : A ]" := (typing Γ A t)
@@ -68,11 +80,11 @@ Notation "[ Γ |-[ ta  ] t ▹ A ]" :=
 (** The term t infers the reduced A in Γ *)
 Notation "[ Γ |- t ▹h A ]" := (infer_red Γ A t) (at level 0, Γ, t, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ▹h A ]" := (infer_red (ta := ta) Γ A t) (at level 0, ta, Γ, t, A at level 50) : typing_scope.
-(** Types A and B are convertible in Γ *)
-Notation "[ Γ |- A ≅ B ]" := (conv_type Γ A B)
-  (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ≅ B ]" := (conv_type (ta := ta) Γ A B)
-  (at level 0, ta, Γ, A, B at level 50) : typing_scope.
+(** Types A and B are convertible in Γ at sort s *)
+Notation "[ Γ |- A ≅ B @ s ]" := (conv_type Γ A B s)
+  (at level 0, Γ, A, B, s at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A ≅ B @ s ]" := (conv_type (ta := ta) Γ A B s)
+  (at level 0, ta, Γ, A, B, s at level 50) : typing_scope.
 (** Types in whnf A and B are convertible in Γ *)
 Notation "[ Γ |- A '≅h' B ]" := (conv_type_red Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A '≅h' B ]" := (conv_type_red (ta := ta) Γ A B) (at level 0, ta, Γ, A, B at level 50) : typing_scope.
