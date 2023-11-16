@@ -59,7 +59,7 @@ Notation "[ Γ |-[ ta  ] s ]" := (wf_sort (ta := ta) Γ s)
 Notation "[ Γ |- A @ s ]" := (wf_type Γ A s)
   (at level 0, Γ, A, s at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] A @ s ]" := (wf_type (ta := ta) Γ A s)
-  (at level 0, ta, Γ, s at level 50) : typing_scope.
+  (at level 0, ta, Γ, A, s at level 50) : typing_scope.
 
 (** The term t has type A in Γ *)
 Notation "[ Γ |- t : A ]" := (typing Γ A t)

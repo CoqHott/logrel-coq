@@ -894,15 +894,25 @@ Section GenericConsequences.
   |}.
 
   #[nonuniform]Coercion well_typed_well_formed : well_typed >-> well_formed.
+  
+  Definition well_sorted_well_formed Γ t : well_sorted Γ t -> well_formed Γ t :=
+  fun w =>
+  {|
+    well_formed_class := istype (well_sorted_sort Γ t w) ;
+    well_formed_typed := well_sorted_type Γ t w
+  |}.
 
-  Definition well_formed_well_typed Γ t (w : well_formed Γ t) : (well_typed Γ t + [Γ |- t]) :=
+  #[nonuniform]Coercion well_sorted_well_formed : well_sorted >-> well_formed.
+
+
+  Definition well_formed_well_typed Γ t (w : well_formed Γ t) : (well_typed Γ t + well_sorted Γ t) :=
   (match (well_formed_class _ _ w) as c return
       (match c with
-      | istype => [Γ |-[ ta ] t]
+      | istype s => [Γ |-[ ta ] t @ s]
       | isterm A => [Γ |-[ ta ] t : A]
-      end -> well_typed Γ t + [Γ |-[ ta ] t])
+      end -> well_typed Γ t + well_sorted Γ t)
   with
-  | istype => inr
+  | istype s => fun w' => inr {| well_sorted_sort := s ; well_sorted_type := w' |}
   | isterm A => fun w' => inl {| well_typed_type := A ; well_typed_typed := w' |}
     end) (well_formed_typed _ _ w).
 
