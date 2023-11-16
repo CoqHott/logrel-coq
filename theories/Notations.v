@@ -9,7 +9,7 @@ ideally wisely in cases where there is only one instance at hand. The tagged one
 and can be used in input when disambiguation is desired. *)
 
 Variant tag := mkTag.
-Inductive class := istype | isterm : term -> class.
+Inductive class := istype : sort -> class | isterm : term -> class.
 
 Declare Scope typing_scope.
 Delimit Scope typing_scope with ty.
@@ -111,7 +111,7 @@ Notation "[ Γ |-[ ta  ] n ~ n' : A ]" := (conv_neu_conv (ta := ta) Γ A n n')
   (at level 0, ta, Γ, n, n', A at level 50) : typing_scope.
 
 (** ** Reductions *)
-Class RedType (ta : tag) := red_ty : context -> term -> term -> Set.
+Class RedType (ta : tag) := red_ty : context -> term -> term -> sort -> Set.
 Class OneStepRedTerm (ta : tag) := osred_tm : context -> term -> term -> term -> Set.
 Class RedTerm (ta : tag) := red_tm : context -> term -> term -> term -> Set.
 
@@ -130,9 +130,9 @@ Reserved Notation "[ Γ |- t ⤳* u ∈ A ]" (at level 0, Γ, t, u, A at level 5
 Notation "[ Γ |- t ⤳ u : A ]" := (osred_tm Γ A t u) (at level 0, Γ, t, u, A at level 50, only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t ⤳ u : A ]" := (osred_tm (ta:=ta) Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
 (** Type A multi-step weak-head reduces to type B in Γ *)
-Notation "[ Γ |- A ⤳* B ]" := (red_ty Γ A B) (at level 0, Γ, A, B at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ⤳* B ]" := (red_ty (ta := ta) Γ A B)
-(at level 0, ta, Γ, A, B at level 50) : typing_scope.
+Notation "[ Γ |- A ⤳* B @ s ]" := (red_ty Γ A B s) (at level 0, Γ, A, B, s at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A ⤳* B @ s ]" := (red_ty (ta := ta) Γ A B s)
+(at level 0, ta, Γ, A, B, s at level 50) : typing_scope.
 (** Term t multi-step weak-head reduces to term t' at type A in Γ *)
 Notation "[ Γ |- t ⤳* t' : A ]" := (red_tm Γ A t t')
 (at level 0, Γ, t, t', A at level 50, only parsing) : typing_scope.
@@ -162,8 +162,8 @@ Reserved Notation "[ Γ |-[ ta  ] A :≅: B ]" (at level 0, ta, Γ, A, B at leve
 Reserved Notation "[ Γ |- t :≅: u : A ]" (at level 0, Γ, t, u, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t :≅: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).
 (** Set A and B are well-formed and A weak-head reduces to B in Γ *)
-Reserved Notation "[ Γ |- A :⤳*: B ]" (at level 0, Γ, A, B at level 50).
-Reserved Notation "[ Γ |-[ ta  ] A :⤳*: B ]" (at level 0, ta, Γ, A, B at level 50).
+Reserved Notation "[ Γ |- A :⤳*: B @ s ]" (at level 0, Γ, A, B, s at level 50).
+Reserved Notation "[ Γ |-[ ta  ] A :⤳*: B @ s ]" (at level 0, ta, Γ, A, B, s at level 50).
 (** Terms t and u have type A in Γ and t weak-head reduces to u *)
 Reserved Notation "[ Γ |- t :⤳*: u : A ]" (at level 0, Γ, t, u, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t :⤳*: u : A ]" (at level 0, ta, Γ, t, u, A at level 50).

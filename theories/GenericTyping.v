@@ -13,12 +13,13 @@ and more properties. *)
 (**
 More precisely, an instance consists of giving notions of 
 - context well-formation [|- Γ]
-- type well-formation [Γ |- A]
+- sort well-formation [Γ |- s]
+- type well-formation [Γ |- A @ s]
 - term well-formation [Γ |- t : A]
-- convertibility of types [Γ |- A ≅ B]
+- convertibility of types [Γ |- A ≅ B @ s]
 - convertibility of terms [Γ |- t ≅ u : A]
 - neutral convertibility of terms [Γ |- m ~ n : A]
-- (multi-step, weak-head) reduction of types [Γ |- A ⤳* B]
+- (multi-step, weak-head) reduction of types [Γ |- A ⤳* B @ s]
 - (multi-step, weak-head) reduction of terms [Γ |- t ⤳* u : A]
 *)
 
@@ -35,9 +36,9 @@ Section RedDefinitions.
 
   (** *** Bundling of a predicate with side-conditions *)
 
-  Record TypeRedWhnf (Γ : context) (A B : term) : Type :=
+  Record TypeRedWhnf (Γ : context) (A B : term) (s : sort) : Type :=
     {
-      tyred_whnf_red :> [ Γ |- A ⤳* B ] ;
+      tyred_whnf_red :> [ Γ |- A ⤳* B @ s ] ;
       tyred_whnf_whnf :> whnf B
     }.
 
@@ -47,12 +48,12 @@ Section RedDefinitions.
       tmred_whnf_whnf :> whnf u
     }.
 
-  Record TypeConvWf (Γ : context) (A B : term) : Type :=
-    { 
-      tyc_wf_l : [Γ |- A] ;
-      tyc_wf_r : [Γ |- B] ;
-      tyc_wf_conv :> [Γ |- A ≅ B]
-    }.
+  (* Record TypeConvWf (Γ : context) (A B : term) (s : sort) : Type := *)
+  (*   { *)
+  (*     tyc_wf_l : [Γ |- A] ; *)
+  (*     tyc_wf_r : [Γ |- B] ; *)
+  (*     tyc_wf_conv :> [Γ |- A ≅ B] *)
+  (*   }. *)
 
   Record TermConvWf (Γ : context) (A t u : term) : Type :=
     {
@@ -61,9 +62,9 @@ Section RedDefinitions.
       tmc_wf_conv :> [Γ |- t ≅ u : A]
     }.
 
-  Record TypeRedWf (Γ : context) (A B : term) : Type := {
-    tyr_wf_r : [Γ |- B];
-    tyr_wf_red :> [Γ |- A ⤳* B]
+  Record TypeRedWf (Γ : context) (A B : term) (s : sort) : Type := {
+    tyr_wf_r : [Γ |- B @ s];
+    tyr_wf_red :> [Γ |- A ⤳* B @ s]
   }.
 
   Record TermRedWf (Γ : context) (A t u : term) : Type := {
@@ -89,7 +90,7 @@ Section RedDefinitions.
 
   Inductive ConvCtx : context -> context -> Type :=
   | conv_cempty : [ |- ε ≅ ε]
-  | conv_ccons Γ A Δ B : [ |- Γ ≅ Δ ] -> [Γ |- A ≅ B] -> [ |- Γ,, A ≅ Δ,, B]
+  | conv_ccons Γ A Δ B s : [ |- Γ ≅ Δ ] -> [Γ |- A ≅ B @ s] -> [ |- Γ,, A ≅ Δ,, B]
   where "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ).
 
 
@@ -119,28 +120,28 @@ Section RedDefinitions.
     well_formed_class : class ;
     well_formed_typed :
     match well_formed_class with
-    | istype => [Γ |- t]
+    | istype s => [Γ |- t @ s ]
     | isterm A => [Γ |- t : A]
     end
   }.
 
   Inductive isWfFun (Γ : context) (A B : term) : term -> Set :=
     LamWfFun : forall A' t : term,
-      [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ,, A |- t : B] -> [Γ,, A' |- t : B] -> isWfFun Γ A B (tLambda A' t)
+      [Γ |- A' @ set] -> [Γ |- A ≅ A' @ set] -> [Γ,, A |- t : B] -> [Γ,, A' |- t : B] -> isWfFun Γ A B (tLambda A' t)
   | NeWfFun : forall f : term, [Γ |- f ~ f : tProd A B] -> isWfFun Γ A B f.
 
   Inductive isWfPair (Γ : context) (A B : term) : term -> Set :=
     PairWfPair : forall A' B' a b : term,
-      [Γ |- A'] -> [Γ |- A ≅ A'] ->
-      [Γ,, A' |- B] ->
-      [Γ,, A' |- B'] ->
-      [Γ,, A |- B'] ->
-      [Γ,, A |- B ≅ B'] ->
-      [Γ,, A' |- B ≅ B'] ->
+      [Γ |- A' @ set] -> [Γ |- A ≅ A' @ set] ->
+      [Γ,, A' |- B @ set] ->
+      [Γ,, A' |- B' @ set] ->
+      [Γ,, A |- B' @ set] ->
+      [Γ,, A |- B ≅ B' @ set] ->
+      [Γ,, A' |- B ≅ B' @ set] ->
       [Γ |- a : A] ->
-      [Γ |- B[a..]] ->
-      [Γ |- B'[a..]] ->
-      [Γ |- B[a..] ≅ B'[a..]] ->
+      [Γ |- B[a..] @ set] ->
+      [Γ |- B'[a..] @ set] ->
+      [Γ |- B[a..] ≅ B'[a..] @ set] ->
       [Γ |- b : B[a..]] ->
       isWfPair Γ A B (tPair A' B' a b)
   | NeWfPair : forall n : term, [Γ |- n ~ n : tSig A B] -> isWfPair Γ A B n.
@@ -151,12 +152,12 @@ Notation "[ Γ |- A ↘ B ]" := (TypeRedWhnf Γ A B) (only parsing) : typing_sco
 Notation "[ Γ |-[ ta  ] A ↘ B ]" := (TypeRedWhnf (ta := ta) Γ A B) : typing_scope.
 Notation "[ Γ |- t ↘ u : A ]" := (TermRedWhnf Γ A t u) (only parsing ): typing_scope.
 Notation "[ Γ |-[ ta  ] t ↘ u : A ]" := (TermRedWhnf (ta := ta) Γ A t u) : typing_scope.
-Notation "[ Γ |- A :≅: B ]" := (TypeConvWf Γ A B) (only parsing) : typing_scope.  
-Notation "[ Γ |-[ ta  ] A :≅: B ]" := (TypeConvWf (ta := ta) Γ A B) : typing_scope.
-Notation "[ Γ |- t :≅: u : A ]" := (TermConvWf Γ A t u) (only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t :≅: u : A ]" := (TermConvWf (ta := ta) Γ A t u) : typing_scope.
-Notation "[ Γ |- A :⤳*: B ]" := (TypeRedWf Γ A B) (only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A :⤳*: B ]" := (TypeRedWf (ta := ta) Γ A B) : typing_scope.
+(* Notation "[ Γ |- A :≅: B ]" := (TypeConvWf Γ A B) (only parsing) : typing_scope.   *)
+(* Notation "[ Γ |-[ ta  ] A :≅: B ]" := (TypeConvWf (ta := ta) Γ A B) : typing_scope. *)
+(* Notation "[ Γ |- t :≅: u : A ]" := (TermConvWf Γ A t u) (only parsing) : typing_scope. *)
+(* Notation "[ Γ |-[ ta  ] t :≅: u : A ]" := (TermConvWf (ta := ta) Γ A t u) : typing_scope. *)
+Notation "[ Γ |- A :⤳*: B @ s ]" := (TypeRedWf Γ A B s) (only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A :⤳*: B @ s ]" := (TypeRedWf (ta := ta) Γ A B s) : typing_scope.
 Notation "[ Γ |- t :⤳*: u : A ]" := (TermRedWf Γ A t u) (only parsing) : typing_scope.
 Notation "[ Γ |-[ ta  ] t :⤳*: u : A ]" := (TermRedWf (ta := ta) Γ A t u) : typing_scope.
 Notation "[ Γ '|-s' σ : A ]" := (WellSubst Γ A σ) (only parsing) : typing_scope.
@@ -167,10 +168,10 @@ Notation "[ |- Γ ≅ Δ ]" := (ConvCtx Γ Δ) (only parsing) : typing_scope.
 Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 
 #[export] Hint Resolve
-  Build_TypeRedWhnf Build_TermRedWhnf Build_TypeConvWf
-  Build_TermConvWf Build_TypeRedWf Build_TermRedWf
+  Build_TypeRedWhnf Build_TermRedWhnf (* Build_TypeConvWf *)
+  Build_TermConvWf (* Build_TypeRedWf *) Build_TermRedWf
   well_sempty well_scons conv_sempty conv_scons
-  tyr_wf_r tyr_wf_red tmr_wf_r tmr_wf_red
+  (* tyr_wf_r *) (* tyr_wf_red *) tmr_wf_r tmr_wf_red
   : gen_typing.
 
 (* #[export] Hint Extern 1 =>
@@ -190,44 +191,58 @@ Notation "[ |-[ ta  ] Γ ≅ Δ ]" := (ConvCtx (ta := ta) Γ Δ) : typing_scope.
 Section GenericTyping.
 
   Context `{ta : tag}
-    `{!WfContext ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
+    `{!WfContext ta} `{!WfSort ta} `{!WfType ta} `{!Typing ta} `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
     `{!RedType ta} `{!RedTerm ta}.
 
   Class WfContextProperties :=
   {
     wfc_nil : [|- ε ] ;
-    wfc_cons {Γ} {A} : [|- Γ] -> [Γ |- A] -> [|- Γ,,A];
-    wfc_wft {Γ A} : [Γ |- A] -> [|- Γ];
+    wfc_cons {Γ A s} : [|- Γ] -> [Γ |- A @ s] -> [|- Γ,,A];
+    wfc_wfs {Γ s} : [Γ |- s] -> [|- Γ];
+    wfc_wft {Γ A s} : [Γ |- A @ s] -> [|- Γ];
     wfc_ty {Γ A t} : [Γ |- t : A] -> [|- Γ];
-    wfc_convty {Γ A B} : [Γ |- A ≅ B] -> [|- Γ];
+    wfc_convty {Γ A B} : [Γ |- A ≅ B @ set] -> [|- Γ];
     wfc_convtm {Γ A t u} : [Γ |- t ≅ u : A] -> [|- Γ];
-    wfc_redty {Γ A B} : [Γ |- A ⤳* B] -> [|- Γ];
+    wfc_redty {Γ A B s} : [Γ |- A ⤳* B @ s] -> [|- Γ];
     wfc_redtm {Γ A t u} : [Γ |- t ⤳* u : A] -> [|- Γ];
+  }.
+
+  Class WfSortProperties := {
+    wfs_wk {Γ Δ s} (ρ : Δ ≤ Γ) : [|- Δ] -> [Γ |- s] -> [Δ |- s⟨ρ⟩];
+    wfs_set {Γ} : [|- Γ] -> [Γ |- set];
+    wfs_formula {Γ} : [|- Γ] -> [Γ |- formula];
+    wfs_irr {Γ f} : [Γ |- f @ formula] -> [Γ |- irr f]
   }.
 
   Class WfTypeProperties :=
   {
-    wft_wk {Γ Δ A} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A] -> [Δ |- A⟨ρ⟩] ;
+    wft_wk {Γ Δ A s} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A @ s] -> [Δ |- A⟨ρ⟩ @ s] ;
     wft_U {Γ} : 
       [ |- Γ ] ->
-      [ Γ |- U ] ;
+      [ Γ |- U @ set] ;
+    wft_F {Γ} : 
+      [ |- Γ ] ->
+      [ Γ |- F @ set] ;
     wft_prod {Γ} {A B} : 
-      [ Γ |- A ] -> 
-      [Γ ,, A |- B ] -> 
-      [ Γ |- tProd A B ] ;
+      [ Γ |- A @ set ] -> 
+      [Γ ,, A |- B @ set] -> 
+      [ Γ |- tProd A B @ set ] ;
     wft_sig {Γ} {A B} : 
-      [ Γ |- A ] -> 
-      [Γ ,, A |- B ] -> 
-      [ Γ |- tSig A B ] ;
+      [ Γ |- A @ set] -> 
+      [Γ ,, A |- B @ set] -> 
+      [ Γ |- tSig A B @ set] ;
     wft_Id {Γ} {A x y} :
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
       [Γ |- y : A] ->
-      [Γ |- tId A x y] ;
+      [Γ |- tId A x y @ set] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] -> 
-      [ Γ |- A ] ;
+      [ Γ |- A @ set] ;
+    wft_formula {Γ f} :
+      [ Γ |- f : F] ->
+      [ Γ |- f @ formula]
   }.
 
   Class TypingProperties :=
@@ -243,7 +258,7 @@ Section GenericTyping.
         [Γ ,, A |- B : U ] ->
         [ Γ |- tProd A B : U ] ;
     ty_lam {Γ}  {A B t} :
-        [ Γ |- A ] ->
+        [ Γ |- A @ set] ->
         [ Γ ,, A |- t : B ] -> 
         [ Γ |- tLambda A t : tProd A B] ;
     ty_app {Γ}  {f a A B} :
@@ -260,7 +275,7 @@ Section GenericTyping.
         [Γ |- n : tNat] ->
         [Γ |- tSucc n : tNat] ;
     ty_natElim {Γ P hz hs n} :
-      [Γ ,, tNat |- P ] ->
+      [Γ ,, tNat |- P @ set ] ->
       [Γ |- hz : P[tZero..]] ->
       [Γ |- hs : elimSuccHypTy P] ->
       [Γ |- n : tNat] ->
@@ -269,7 +284,7 @@ Section GenericTyping.
         [|-Γ] ->
         [Γ |- tEmpty : U] ;
     ty_emptyElim {Γ P e} :
-      [Γ ,,  tEmpty |- P ] ->
+      [Γ ,,  tEmpty |- P @ set] ->
       [Γ |- e : tEmpty] ->
       [Γ |- tEmptyElim P e : P[e..]] ;
     ty_sig {Γ} {A B} :
@@ -277,8 +292,8 @@ Section GenericTyping.
         [Γ ,, A |- B : U ] ->
         [ Γ |- tSig A B : U ] ;
     ty_pair {Γ} {A B a b} :
-        [ Γ |- A ] -> 
-        [Γ ,, A |- B ] ->
+        [ Γ |- A @ set] -> 
+        [Γ ,, A |- B @ set] ->
         [Γ |- a : A] ->
         [Γ |- b : B[a..]] ->
         [Γ |- tPair A B a b : tSig A B] ;
@@ -294,58 +309,60 @@ Section GenericTyping.
       [Γ |- y : A] ->
       [Γ |- tId A x y : U] ;
     ty_refl {Γ A x} :
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
       [Γ |- tRefl A x : tId A x x] ;
     ty_IdElim {Γ A x P hr y e} :
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P @ set] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
       [Γ |- e : tId A x y] ->
       [Γ |- tIdElim A x P hr y e : P[e .: y..]];
-    ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⤳* A'] -> [Γ |- t : A] ;
-    ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
+    ty_exp {Γ t A A' s} : [Γ |- t : A'] -> [Γ |- A ⤳* A' @ s] -> [Γ |- t : A] ;
+    ty_conv {Γ t A A' s} : [Γ |- t : A'] -> [Γ |- A' ≅ A @ s] -> [Γ |- t : A] ;
   }.
 
   Class ConvTypeProperties :=
   {
-    convty_term {Γ A B} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B] ;
-    convty_equiv {Γ} :> PER (conv_type Γ) ;
-    convty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A ≅ B] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩] ;
-    convty_exp {Γ A A' B B'} :
-      [Γ |- A ⤳* A'] -> [Γ |- B ⤳* B'] ->
-      [Γ |- A' ≅ B'] -> [Γ |- A ≅ B] ;
+    convty_term {Γ A B s} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B @ s] ;
+    convty_equiv {Γ s} :> PER (fun t t' => conv_type Γ t t' s) ;
+    convty_wk {Γ Δ A B s} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A ≅ B @ s] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩ @ s] ;
+    convty_exp {Γ A A' B B' s} :
+      [Γ |- A ⤳* A' @ s] -> [Γ |- B ⤳* B' @ s] ->
+      [Γ |- A' ≅ B' @ s] -> [Γ |- A ≅ B @ s] ;
     convty_uni {Γ} :
-      [|- Γ] -> [Γ |- U ≅ U] ;
+      [|- Γ] -> [Γ |- U ≅ U @ set] ;
+    convty_formula {Γ} :
+      [|- Γ] -> [Γ |- F ≅ F @ set] ;
     convty_prod {Γ A A' B B'} :
-      [Γ |- A] ->
-      [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
-      [Γ |- tProd A B ≅ tProd A' B'] ;
+      [Γ |- A @ set] ->
+      [Γ |- A ≅ A' @ set] -> [Γ,, A |- B ≅ B' @ set] ->
+      [Γ |- tProd A B ≅ tProd A' B' @ set] ;
     convty_sig {Γ A A' B B'} :
-      [Γ |- A] ->
-      [Γ |- A ≅ A'] -> [Γ,, A |- B ≅ B'] ->
-      [Γ |- tSig A B ≅ tSig A' B'] ;
+      [Γ |- A @ set] ->
+      [Γ |- A ≅ A' @ set] -> [Γ,, A |- B ≅ B' @ set] ->
+      [Γ |- tSig A B ≅ tSig A' B' @ set] ;
     convty_Id {Γ A A' x x' y y'} :
       (* [Γ |- A] -> ?  *)
-      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ A' @ set] ->
       [Γ |- x ≅ x' : A] ->
       [Γ |- y ≅ y' : A] ->
-      [Γ |- tId A x y ≅ tId A' x' y' ] ;
+      [Γ |- tId A x y ≅ tId A' x' y' @ set] ;
   }.
 
   Class ConvTermProperties :=
   {
     convtm_equiv {Γ A} :> PER (conv_term Γ A) ;
-    convtm_conv {Γ t u A A'} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ≅ u : A'] ;
+    convtm_conv {Γ t u A A' s} : [Γ |- t ≅ u : A] -> [Γ |- A ≅ A' @ s] -> [Γ |- t ≅ u : A'] ;
     convtm_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ≅ u : A] -> [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩] ;
-    convtm_exp {Γ A t t' u u'} :
+    convtm_exp {Γ A t t' u u' s} :
       [Γ |- t ⤳* t' : A] -> [Γ |- u ⤳* u' : A] ->
-      [Γ |- A] -> [Γ |- t' : A] -> [Γ |- u' : A] ->
-      [Γ |- A ≅ A] -> [Γ |- t' ≅ u' : A] -> [Γ |- t ≅ u : A] ;
+      [Γ |- A @ s] -> [Γ |- t' : A] -> [Γ |- u' : A] ->
+      [Γ |- A ≅ A @ s] -> [Γ |- t' ≅ u' : A] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ A A' B B'} :
@@ -356,9 +373,9 @@ Section GenericTyping.
       [Γ |- A : U] ->
       [Γ |- A ≅ A' : U] -> [Γ,, A |- B ≅ B' : U] ->
       [Γ |- tSig A B ≅ tSig A' B' : U] ;
-    convtm_eta {Γ f g A B} :
-      [ Γ |- A ] ->
-      [ Γ,, A |- B ] ->
+    convtm_eta {Γ f g A B s} :
+      [ Γ |- A @ s] ->
+      [ Γ,, A |- B @ s] ->
       [ Γ |- f : tProd A B ] ->
       isWfFun Γ A B f ->
       [ Γ |- g : tProd A B ] ->
@@ -373,8 +390,8 @@ Section GenericTyping.
         [Γ |- n ≅ n' : tNat] ->
         [Γ |- tSucc n ≅ tSucc n' : tNat] ;
     convtm_eta_sig {Γ p p' A B} :
-      [Γ |- A] ->
-      [Γ ,, A |- B] ->
+      [Γ |- A @ set] ->
+      [Γ ,, A |- B @ set] ->
       [Γ |- p : tSig A B] ->
       isWfPair Γ A B p ->
       [Γ |- p' : tSig A B] ->
@@ -391,15 +408,26 @@ Section GenericTyping.
       [Γ |- y ≅ y' : A] ->
       [Γ |- tId A x y ≅ tId A' x' y' : U ] ;
     convtm_refl {Γ A A' x x'} :
-      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ A' @ set] ->
       [Γ |- x ≅ x' : A] ->
       [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x] ;
+    convtm_formula_irr {Γ f t t'} :
+      [Γ |- f @ formula] ->
+      [Γ |- t : f] ->
+      [Γ |- t' : f] ->
+      [Γ |- t ≅ t' : f];
+    convtm_irr_irr {Γ f A t t' p} :
+      [Γ |- A @ irr f] ->
+      [Γ |- t : A] ->
+      [Γ |- t' : A] ->
+      [Γ |- p : f] ->
+      [Γ |- t ≅ t' : A]
   }.
 
   Class ConvNeuProperties :=
   {
     convneu_equiv {Γ A} :> PER (conv_neu_conv Γ A) ;
-    convneu_conv {Γ t u A A'} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A'] -> [Γ |- t ~ u : A'] ;
+    convneu_conv {Γ t u A A' s} : [Γ |- t ~ u : A] -> [Γ |- A ≅ A' @ s] -> [Γ |- t ~ u : A'] ;
     convneu_wk {Γ Δ t u A} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- t ~ u : A] -> [Δ |- t⟨ρ⟩ ~ u⟨ρ⟩ : A⟨ρ⟩] ;
     convneu_whne {Γ A t u} : [Γ |- t ~ u : A] -> whne t;
@@ -410,13 +438,13 @@ Section GenericTyping.
       [ Γ |- t ≅ u : A ] ->
       [ Γ |- tApp f t ~ tApp g u : B[t..] ] ;
     convneu_natElim {Γ P P' hz hz' hs hs' n n'} :
-        [Γ ,, tNat |- P ≅ P'] ->
+        [Γ ,, tNat |- P ≅ P' @ set] ->
         [Γ |- hz ≅ hz' : P[tZero..]] ->
         [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
         [Γ |- n ~ n' : tNat] ->
         [Γ |- tNatElim P hz hs n ~ tNatElim P' hz' hs' n' : P[n..]] ;
     convneu_emptyElim {Γ P P' e e'} :
-        [Γ ,, tEmpty |- P ≅ P'] ->
+        [Γ ,, tEmpty |- P ≅ P' @ set] ->
         [Γ |- e ~ e' : tEmpty] ->
         [Γ |- tEmptyElim P e ~ tEmptyElim P' e' : P[e..]] ;
     convneu_fst {Γ A B p p'} :
@@ -427,11 +455,11 @@ Section GenericTyping.
       [Γ |- tSnd p ~ tSnd p' : B[(tFst p)..]] ;
     convneu_IdElim {Γ A A' x x' P P' hr hr' y y' e e'} :
       (* Parameters well formed: required by declarative instance *)
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
-      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ A' @ set] ->
       [Γ |- x ≅ x' : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P'] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P ≅ P' @ set] ->
       [Γ |- hr ≅ hr' : P[tRefl A x .: x..]] ->
       [Γ |- y ≅ y' : A] ->
       [Γ |- e ~ e' : tId A x y] ->
@@ -440,17 +468,17 @@ Section GenericTyping.
 
   Class RedTypeProperties :=
   {
-    redty_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A ⤳* B] -> [Δ |- A⟨ρ⟩ ⤳* B⟨ρ⟩] ;
-    redty_sound {Γ A B} : [Γ |- A ⤳* B] -> [A ⤳* B] ;
-    redty_ty_src {Γ A B} : [Γ |- A ⤳* B] -> [Γ |- A] ;
+    redty_wk {Γ Δ A B s} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A ⤳* B @ s] -> [Δ |- A⟨ρ⟩ ⤳* B⟨ρ⟩ @ s] ;
+    redty_sound {Γ A B s} : [Γ |- A ⤳* B @ s] -> [A ⤳* B] ;
+    redty_ty_src {Γ A B s} : [Γ |- A ⤳* B @ s] -> [Γ |- A @ s] ;
     redty_term {Γ A B} :
-      [ Γ |- A ⤳* B : U] -> [Γ |- A ⤳* B ] ;
-    redty_refl {Γ A} :
-      [ Γ |- A] ->
-      [Γ |- A ⤳* A] ;
-    redty_trans {Γ} :>
-      Transitive (red_ty Γ) ;
+      [ Γ |- A ⤳* B : U] -> [Γ |- A ⤳* B @ set] ;
+    redty_refl {Γ A s} :
+      [ Γ |- A @ s] ->
+      [Γ |- A ⤳* A @ s] ;
+    redty_trans {Γ s} :>
+      Transitive (fun A B => red_ty Γ A B s) ;
   }.
 
   Class RedTermProperties :=
@@ -460,17 +488,17 @@ Section GenericTyping.
     redtm_sound {Γ A t u} : [Γ |- t ⤳* u : A] -> [t ⤳* u] ;
     redtm_ty_src {Γ A t u} : [Γ |- t ⤳* u : A] -> [Γ |- t : A] ;
     redtm_beta {Γ A B t u} :
-      [ Γ |- A ] ->
+      [ Γ |- A @ set] ->
       [ Γ ,, A |- t : B ] ->
       [ Γ |- u : A ] ->
       [ Γ |- tApp (tLambda A t) u ⤳* t[u..] : B[u..] ] ;
     redtm_natElimZero {Γ P hz hs} :
-        [Γ ,, tNat |- P ] ->
+        [Γ ,, tNat |- P @ set] ->
         [Γ |- hz : P[tZero..]] ->
         [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- tNatElim P hz hs tZero ⤳* hz : P[tZero..]] ;
     redtm_natElimSucc {Γ P hz hs n} :
-        [Γ ,, tNat |- P ] ->
+        [Γ ,, tNat |- P @ set] ->
         [Γ |- hz : P[tZero..]] ->
         [Γ |- hs : elimSuccHypTy P] ->
         [Γ |- n : tNat] ->
@@ -480,18 +508,18 @@ Section GenericTyping.
       [ Γ |- t : A ] ->
       [ Γ |- tApp f t ⤳* tApp f' t : B[t..] ];
     redtm_natelim {Γ P hz hs n n'} :
-      [ Γ,, tNat |- P ] ->
-      [ Γ |- hz : P[tZero..] ] ->
+      [ Γ,, tNat |- P @ set] ->
+      [ Γ |- hz : P[tZero..]] ->
       [ Γ |- hs : elimSuccHypTy P ] ->
       [ Γ |- n ⤳* n' : tNat ] ->
       [ Γ |- tNatElim P hz hs n ⤳* tNatElim P hz hs n' : P[n..] ];
     redtm_emptyelim {Γ P n n'} :
-      [ Γ,, tEmpty |- P ] ->
+      [ Γ,, tEmpty |- P @ set] ->
       [ Γ |- n ⤳* n' : tEmpty ] ->
       [ Γ |- tEmptyElim P n ⤳* tEmptyElim P n' : P[n..] ];
     redtm_fst_beta {Γ A B a b} :
-      [Γ |- A] ->
-      [Γ ,, A |- B] ->
+      [Γ |- A @ set] ->
+      [Γ ,, A |- B @ set] ->
       [Γ |- a : A] ->
       [Γ |- b : B[a..]] ->
       [Γ |- tFst (tPair A B a b) ⤳* a : A] ;
@@ -499,8 +527,8 @@ Section GenericTyping.
       [Γ |- p ⤳* p' : tSig A B] ->
       [Γ |- tFst p ⤳* tFst p' : A] ;
     redtm_snd_beta {Γ A B a b} :
-      [Γ |- A] ->
-      [Γ ,, A |- B] ->
+      [Γ |- A @ set] ->
+      [Γ ,, A |- B @ set] ->
       [Γ |- a : A] ->
       [Γ |- b : B[a..]] ->
       [Γ |- tSnd (tPair A B a b) ⤳* b : B[(tFst (tPair A B a b))..]] ;
@@ -508,28 +536,28 @@ Section GenericTyping.
       [Γ |- p ⤳* p' : tSig A B] ->
       [Γ |- tSnd p ⤳* tSnd p' : B[(tFst p)..]] ;
     redtm_idElimRefl {Γ A x P hr y A' z} :
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P @ set] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
-      [Γ |- A'] ->
+      [Γ |- A' @ set] ->
       [Γ |- z : A] ->
-      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ A' @ set] ->
       [Γ |- x ≅ y : A] ->
       [Γ |- x ≅ z : A] ->
       [Γ |- tIdElim A x P hr y (tRefl A' z) ⤳* hr : P[tRefl A' z .: y..]];
     redtm_idElim {Γ A x P hr y e e'} :
-      [Γ |- A] ->
+      [Γ |- A @ set] ->
       [Γ |- x : A] ->
-      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P] ->
+      [Γ ,, A ,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P @ set] ->
       [Γ |- hr : P[tRefl A x .: x..]] ->
       [Γ |- y : A] ->
       [Γ |- e ⤳* e' : tId A x y] ->
       [Γ |- tIdElim A x P hr y e ⤳* tIdElim A x P hr y e' : P[e .: y..]];
-    redtm_conv {Γ t u A A'} : 
+    redtm_conv {Γ t u A A' s} : 
       [Γ |- t ⤳* u : A] ->
-      [Γ |- A ≅ A'] ->
+      [Γ |- A ≅ A' @ s] ->
       [Γ |- t ⤳* u : A'] ;
     redtm_refl {Γ A t } :
       [ Γ |- t : A] ->
@@ -545,13 +573,14 @@ properties all together. Most of the logical relation is constructed over an
 abstract instance of this class. *)
 
 Class GenericTypingProperties `(ta : tag)
-  `(WfContext ta) `(WfType ta) `(Typing ta)
+  `(WfContext ta) `(WfSort ta) `(WfType ta) `(Typing ta)
   `(ConvType ta) `(ConvTerm ta) `(ConvNeuConv ta)
   `(RedType ta) `(RedTerm ta)
   `(RedType ta) `(RedTerm ta)
 :=
 {
   wfc_prop :> WfContextProperties ;
+  wfs_prop :> WfSortProperties ;
   wfty_prop :> WfTypeProperties ;
   typ_prop :> TypingProperties ;
   convty_prop :> ConvTypeProperties ;
@@ -595,21 +624,21 @@ Ltac renToWk0 judg :=
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_wk1_ren_on
 
   (** Type conversion judgement, weakening *)
-  | [?X ,, ?Y |- ?T⟨↑⟩ ≅ _ ] =>
+  | [?X ,, ?Y |- ?T⟨↑⟩ ≅ _ @ _] =>
     replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply (wk1_ren_on X Y T)
-  | [?X ,, ?Y |- _ ≅ ?T⟨↑⟩ ] =>
+  | [?X ,, ?Y |- _ ≅ ?T⟨↑⟩ @ _] =>
     replace T⟨↑⟩ with T⟨@wk1 X Y⟩ by apply (wk1_ren_on X Y T)
   (** Type conversion judgement, lifting of weakening *)
-  | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ ≅ _ ] =>
+  | [?X ,, ?Y ,, ?Z⟨↑⟩ |- _ ≅ _ @ _] =>
     replace Z⟨↑⟩ with Z⟨@wk1 X Y⟩ by apply wk1_ren_on
-  | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ≅ _ ] =>
+  | [?X ,, ?Y ,, ?Z⟨_⟩ |- ?T⟨upRen_term_term ↑⟩ ≅ _ @ _] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ ≅ ?T⟨upRen_term_term ↑⟩ ] =>
+  | [?X ,, ?Y ,, ?Z⟨_⟩ |- _ ≅ ?T⟨upRen_term_term ↑⟩ @ _] =>
     replace T⟨upRen_term_term ↑⟩ with T⟨wk_up Z (@wk1 X Y)⟩ by apply wk_up_wk1_ren_on
   (* Type conversion judgement, lifting *)
-  | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ≅ _ ] =>
+  | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- ?T⟨upRen_term_term _⟩ ≅ _ @ _] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_wk1_ren_on
-  | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- _ ≅ ?T⟨upRen_term_term _⟩ ] =>
+  | [?X ,, ?Y⟨wk_to_ren ?r⟩  |- _ ≅ ?T⟨upRen_term_term _⟩ @ _] =>
     replace T⟨upRen_term_term r⟩ with T⟨wk_up Y r⟩ by apply wk_up_wk1_ren_on
 
   (** Term judgement, weakening *)
@@ -670,10 +699,10 @@ Ltac renToWk :=
 
 Section GenericConsequences.
   Context `{ta : tag}
-  `{!WfContext ta} `{!WfType ta} `{!Typing ta}
+  `{!WfContext ta} `{!WfSort ta} `{!WfType ta} `{!Typing ta}
   `{!ConvType ta} `{!ConvTerm ta} `{!ConvNeuConv ta}
   `{!RedType ta} `{!RedTerm ta}
-  `{!WfContextProperties} `{!WfTypeProperties}
+  `{!WfContextProperties} `{!WfSortProperties} `{!WfTypeProperties}
   `{!TypingProperties} `{!ConvTypeProperties}
   `{!ConvTermProperties} `{!ConvNeuProperties}
   `{!RedTypeProperties} `{!RedTermProperties}.
@@ -727,7 +756,7 @@ Section GenericConsequences.
 
   (** *** Properties of well-typed reduction *)
 
-  Lemma tyr_wf_l {Γ A B} : [Γ |- A :⤳*: B] -> [Γ |- A].
+  Lemma tyr_wf_l {Γ A B s} : [Γ |- A :⤳*: B @ s] -> [Γ |- A @ s].
   Proof.
     intros []; now eapply redty_ty_src.
   Qed.
@@ -742,8 +771,8 @@ Section GenericConsequences.
   #[local] Hint Resolve redtm_beta redtm_natElimZero redtm_natElimSucc | 2 : gen_typing.
   #[local] Hint Resolve  redtm_conv | 6 : gen_typing.
 
-  Lemma redty_red {Γ A B} :
-      [Γ |- A ⤳* B] -> [ A ⤳* B ].
+  Lemma redty_red {Γ A B s} :
+      [Γ |- A ⤳* B @ s] -> [ A ⤳* B ].
   Proof.
     intros ?%redty_sound. 
     assumption.
@@ -759,28 +788,28 @@ Section GenericConsequences.
 
   #[local] Hint Resolve redty_red  redtm_red | 2 : gen_typing.
 
-  Lemma redtywf_wk {Γ Δ A B} (ρ : Δ ≤ Γ) :
-      [|- Δ ] -> [Γ |- A :⤳*: B] -> [Δ |- A⟨ρ⟩ :⤳*: B⟨ρ⟩].
+  Lemma redtywf_wk {Γ Δ A B s} (ρ : Δ ≤ Γ) :
+      [|- Δ ] -> [Γ |- A :⤳*: B @ s] -> [Δ |- A⟨ρ⟩ :⤳*: B⟨ρ⟩ @ s].
   Proof.
     intros ? []; constructor; gen_typing.
   Qed.
 
-  Lemma redtywf_red {Γ A B} : [Γ |- A :⤳*: B] -> [A ⤳* B].
+  Lemma redtywf_red {Γ A B s} : [Γ |- A :⤳*: B @ s] -> [A ⤳* B].
   Proof.
     intros []; now eapply redty_red.
   Qed.
   
   Lemma redtywf_term {Γ A B} :
-      [ Γ |- A :⤳*: B : U] -> [Γ |- A :⤳*: B ].
+      [ Γ |- A :⤳*: B : U] -> [Γ |- A :⤳*: B @ set].
   Proof.
     intros []; constructor; gen_typing.
   Qed.
 
-  Lemma redtywf_refl {Γ A} : [Γ |- A] -> [Γ |- A :⤳*: A].
+  Lemma redtywf_refl {Γ A s} : [Γ |- A @ s] -> [Γ |- A :⤳*: A @ s].
   Proof.  constructor; gen_typing.  Qed.
 
   #[global]
-  Instance redtywf_trans {Γ} : Transitive (TypeRedWf Γ). (* fun A B => [Γ |- A :⤳*: B] *)
+  Instance redtywf_trans {Γ s} : Transitive (fun A B => TypeRedWf Γ A B s). (* fun A B => [Γ |- A :⤳*: B] *)
   Proof.
     intros ??? [] []; unshelve econstructor; try etransitivity; tea.
   Qed.
@@ -1274,27 +1303,6 @@ Section GenericConsequences.
     eapply whred_det; tea.
     all: now eapply redty_sound.
   Qed.
-
-  (* Unused, consider removing*)
-  Lemma whredtm_det Γ t u u' A A' :
-    [Γ |- t ↘ u : A] -> [Γ |- t ↘ u' : A'] ->
-    u = u'.
-  Proof.
-    intros [] [].
-    eapply whred_det; tea.
-    all: now eapply redtm_sound.
-  Qed.
-
-  (* Unused, consider removing*)
-  Lemma whredty_det Γ A B B' :
-    [Γ |- A ↘ B] -> [Γ |- A ↘ B'] ->
-    B = B'.
-  Proof.
-    intros [] [].
-    eapply whred_det; tea.
-    all: now eapply redty_sound.
-  Qed.
-
 
   Lemma isWfFun_isFun : forall Γ A B t, isWfFun Γ A B t -> isFun t.
   Proof.

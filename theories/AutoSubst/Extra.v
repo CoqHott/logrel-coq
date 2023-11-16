@@ -32,6 +32,7 @@ Notation "↑" := (shift) : asubst_scope.
 #[global] Open Scope asubst_scope.
 
 Notation U := (tSort set).
+Notation F := (tSort formula).
 Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
 
 #[global] Instance Ren1_subst {Y Z : Type} `{Ren1 (nat -> nat) Y Z} :
@@ -89,3 +90,5 @@ Proof. now asimpl. Qed.
 
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
+
+Definition sort_of_product (s s' : sort) := set.

@@ -1275,13 +1275,13 @@ Class Up_sort X Y :=
 
 Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 
-Instance Subst_sort : (Subst1 _ _ _) := @subst_sort.
+Instance Subst_sort : (Subst1 _ _ _) | 2 := @subst_sort.
 
 Instance Up_term_term : (Up_term _ _) := @up_term_term.
 
 Instance Ren_term : (Ren1 _ _ _) := @ren_term.
 
-Instance Ren_sort : (Ren1 _ _ _) := @ren_sort.
+Instance Ren_sort : (Ren1 _ _ _) | 2 := @ren_sort.
 
 Instance VarInstance_term : (Var _ _) := @tRel.
 
