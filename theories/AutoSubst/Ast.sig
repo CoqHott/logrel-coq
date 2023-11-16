@@ -1,6 +1,10 @@
 sort : Type
 term(tRel) : Type
 
+set : sort
+formula : sort
+irr : term -> sort
+
 tSort : sort -> term
 
 tProd : term -> (bind term in term) -> term
