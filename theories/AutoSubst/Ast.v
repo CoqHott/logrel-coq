@@ -5,7 +5,11 @@ From Coq Require Import Setoid Morphisms Relation_Definitions.
 
 Module Core.
 
-Inductive term : Type :=
+Inductive sort : Type :=
+  | set : sort
+  | formula : sort
+  | irr : term -> sort
+with term : Type :=
   | tRel : nat -> term
   | tSort : sort -> term
   | tProd : term -> term -> term
@@ -24,6 +28,21 @@ Inductive term : Type :=
   | tId : term -> term -> term -> term
   | tRefl : term -> term -> term
   | tIdElim : term -> term -> term -> term -> term -> term -> term.
+
+Lemma congr_set : set = set.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_formula : formula = formula.
+Proof.
+exact (eq_refl).
+Qed.
+
+Lemma congr_irr {s0 : term} {t0 : term} (H0 : s0 = t0) : irr s0 = irr t0.
+Proof.
+exact (eq_trans eq_refl (ap (fun x => irr x) H0)).
+Qed.
 
 Lemma congr_tSort {s0 : sort} {t0 : sort} (H0 : s0 = t0) :
   tSort s0 = tSort t0.
@@ -164,10 +183,16 @@ Proof.
 exact (up_ren xi).
 Defined.
 
-Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
+Fixpoint ren_sort (xi_term : nat -> nat) (s : sort) {struct s} : sort :=
+  match s with
+  | set => set
+  | formula => formula
+  | irr s0 => irr (ren_term xi_term s0)
+  end
+with ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
   match s with
   | tRel s0 => tRel (xi_term s0)
-  | tSort s0 => tSort s0
+  | tSort s0 => tSort (ren_sort xi_term s0)
   | tProd s0 s1 =>
       tProd (ren_term xi_term s0) (ren_term (upRen_term_term xi_term) s1)
   | tLambda s0 s1 =>
@@ -204,11 +229,17 @@ Proof.
 exact (scons (tRel var_zero) (funcomp (ren_term shift) sigma)).
 Defined.
 
-Fixpoint subst_term (sigma_term : nat -> term) (s : term) {struct s} : 
-term :=
+Fixpoint subst_sort (sigma_term : nat -> term) (s : sort) {struct s} : 
+sort :=
+  match s with
+  | set => set
+  | formula => formula
+  | irr s0 => irr (subst_term sigma_term s0)
+  end
+with subst_term (sigma_term : nat -> term) (s : term) {struct s} : term :=
   match s with
   | tRel s0 => sigma_term s0
-  | tSort s0 => tSort s0
+  | tSort s0 => tSort (subst_sort sigma_term s0)
   | tProd s0 s1 =>
       tProd (subst_term sigma_term s0)
         (subst_term (up_term_term sigma_term) s1)
@@ -258,12 +289,20 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint idSubst_term (sigma_term : nat -> term)
+Fixpoint idSubst_sort (sigma_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tRel x) (s : sort) {struct s} :
+subst_sort sigma_term s = s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 => congr_irr (idSubst_term sigma_term Eq_term s0)
+  end
+with idSubst_term (sigma_term : nat -> term)
 (Eq_term : forall x, sigma_term x = tRel x) (s : term) {struct s} :
 subst_term sigma_term s = s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 => congr_tSort (idSubst_sort sigma_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (idSubst_term sigma_term Eq_term s0)
         (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s1)
@@ -324,12 +363,20 @@ exact (fun n => match n with
                 end).
 Qed.
 
-Fixpoint extRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
+Fixpoint extRen_sort (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(Eq_term : forall x, xi_term x = zeta_term x) (s : sort) {struct s} :
+ren_sort xi_term s = ren_sort zeta_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 => congr_irr (extRen_term xi_term zeta_term Eq_term s0)
+  end
+with extRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
 (Eq_term : forall x, xi_term x = zeta_term x) (s : term) {struct s} :
 ren_term xi_term s = ren_term zeta_term s :=
   match s with
   | tRel s0 => ap (tRel) (Eq_term s0)
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 => congr_tSort (extRen_sort xi_term zeta_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (extRen_term xi_term zeta_term Eq_term s0)
         (extRen_term (upRen_term_term xi_term) (upRen_term_term zeta_term)
@@ -398,12 +445,20 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint ext_term (sigma_term : nat -> term) (tau_term : nat -> term)
+Fixpoint ext_sort (sigma_term : nat -> term) (tau_term : nat -> term)
+(Eq_term : forall x, sigma_term x = tau_term x) (s : sort) {struct s} :
+subst_sort sigma_term s = subst_sort tau_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 => congr_irr (ext_term sigma_term tau_term Eq_term s0)
+  end
+with ext_term (sigma_term : nat -> term) (tau_term : nat -> term)
 (Eq_term : forall x, sigma_term x = tau_term x) (s : term) {struct s} :
 subst_term sigma_term s = subst_term tau_term s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 => congr_tSort (ext_sort sigma_term tau_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (ext_term sigma_term tau_term Eq_term s0)
         (ext_term (up_term_term sigma_term) (up_term_term tau_term)
@@ -470,13 +525,24 @@ Proof.
 exact (up_ren_ren xi zeta rho Eq).
 Qed.
 
-Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
+Fixpoint compRenRen_sort (xi_term : nat -> nat) (zeta_term : nat -> nat)
+(rho_term : nat -> nat)
+(Eq_term : forall x, funcomp zeta_term xi_term x = rho_term x) (s : sort)
+{struct s} : ren_sort zeta_term (ren_sort xi_term s) = ren_sort rho_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 =>
+      congr_irr (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
+  end
+with compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
 (rho_term : nat -> nat)
 (Eq_term : forall x, funcomp zeta_term xi_term x = rho_term x) (s : term)
 {struct s} : ren_term zeta_term (ren_term xi_term s) = ren_term rho_term s :=
   match s with
   | tRel s0 => ap (tRel) (Eq_term s0)
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 =>
+      congr_tSort (compRenRen_sort xi_term zeta_term rho_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (compRenRen_term xi_term zeta_term rho_term Eq_term s0)
         (compRenRen_term (upRen_term_term xi_term)
@@ -556,14 +622,26 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint compRenSubst_term (xi_term : nat -> nat) (tau_term : nat -> term)
+Fixpoint compRenSubst_sort (xi_term : nat -> nat) (tau_term : nat -> term)
+(theta_term : nat -> term)
+(Eq_term : forall x, funcomp tau_term xi_term x = theta_term x) (s : sort)
+{struct s} :
+subst_sort tau_term (ren_sort xi_term s) = subst_sort theta_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 =>
+      congr_irr (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
+  end
+with compRenSubst_term (xi_term : nat -> nat) (tau_term : nat -> term)
 (theta_term : nat -> term)
 (Eq_term : forall x, funcomp tau_term xi_term x = theta_term x) (s : term)
 {struct s} :
 subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 =>
+      congr_tSort (compRenSubst_sort xi_term tau_term theta_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (compRenSubst_term xi_term tau_term theta_term Eq_term s0)
         (compRenSubst_term (upRen_term_term xi_term) (up_term_term tau_term)
@@ -653,14 +731,28 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint compSubstRen_term (sigma_term : nat -> term)
+Fixpoint compSubstRen_sort (sigma_term : nat -> term)
 (zeta_term : nat -> nat) (theta_term : nat -> term)
+(Eq_term : forall x, funcomp (ren_term zeta_term) sigma_term x = theta_term x)
+(s : sort) {struct s} :
+ren_sort zeta_term (subst_sort sigma_term s) = subst_sort theta_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 =>
+      congr_irr
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
+  end
+with compSubstRen_term (sigma_term : nat -> term) (zeta_term : nat -> nat)
+(theta_term : nat -> term)
 (Eq_term : forall x, funcomp (ren_term zeta_term) sigma_term x = theta_term x)
 (s : term) {struct s} :
 ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 =>
+      congr_tSort
+        (compSubstRen_sort sigma_term zeta_term theta_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s0)
@@ -763,15 +855,30 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint compSubstSubst_term (sigma_term : nat -> term)
+Fixpoint compSubstSubst_sort (sigma_term : nat -> term)
 (tau_term : nat -> term) (theta_term : nat -> term)
+(Eq_term : forall x,
+           funcomp (subst_term tau_term) sigma_term x = theta_term x)
+(s : sort) {struct s} :
+subst_sort tau_term (subst_sort sigma_term s) = subst_sort theta_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 =>
+      congr_irr
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
+  end
+with compSubstSubst_term (sigma_term : nat -> term) (tau_term : nat -> term)
+(theta_term : nat -> term)
 (Eq_term : forall x,
            funcomp (subst_term tau_term) sigma_term x = theta_term x)
 (s : term) {struct s} :
 subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 =>
+      congr_tSort
+        (compSubstSubst_sort sigma_term tau_term theta_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s0)
@@ -851,6 +958,22 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s5)
   end.
 
+Lemma renRen_sort (xi_term : nat -> nat) (zeta_term : nat -> nat) (s : sort)
+  :
+  ren_sort zeta_term (ren_sort xi_term s) =
+  ren_sort (funcomp zeta_term xi_term) s.
+Proof.
+exact (compRenRen_sort xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renRen'_sort_pointwise (xi_term : nat -> nat) (zeta_term : nat -> nat)
+  :
+  pointwise_relation _ eq (funcomp (ren_sort zeta_term) (ren_sort xi_term))
+    (ren_sort (funcomp zeta_term xi_term)).
+Proof.
+exact (fun s => compRenRen_sort xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma renRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat) (s : term)
   :
   ren_term zeta_term (ren_term xi_term s) =
@@ -865,6 +988,22 @@ Lemma renRen'_term_pointwise (xi_term : nat -> nat) (zeta_term : nat -> nat)
     (ren_term (funcomp zeta_term xi_term)).
 Proof.
 exact (fun s => compRenRen_term xi_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_sort (xi_term : nat -> nat) (tau_term : nat -> term)
+  (s : sort) :
+  subst_sort tau_term (ren_sort xi_term s) =
+  subst_sort (funcomp tau_term xi_term) s.
+Proof.
+exact (compRenSubst_sort xi_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma renSubst_sort_pointwise (xi_term : nat -> nat) (tau_term : nat -> term)
+  :
+  pointwise_relation _ eq (funcomp (subst_sort tau_term) (ren_sort xi_term))
+    (subst_sort (funcomp tau_term xi_term)).
+Proof.
+exact (fun s => compRenSubst_sort xi_term tau_term _ (fun n => eq_refl) s).
 Qed.
 
 Lemma renSubst_term (xi_term : nat -> nat) (tau_term : nat -> term)
@@ -883,6 +1022,23 @@ Proof.
 exact (fun s => compRenSubst_term xi_term tau_term _ (fun n => eq_refl) s).
 Qed.
 
+Lemma substRen_sort (sigma_term : nat -> term) (zeta_term : nat -> nat)
+  (s : sort) :
+  ren_sort zeta_term (subst_sort sigma_term s) =
+  subst_sort (funcomp (ren_term zeta_term) sigma_term) s.
+Proof.
+exact (compSubstRen_sort sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substRen_sort_pointwise (sigma_term : nat -> term)
+  (zeta_term : nat -> nat) :
+  pointwise_relation _ eq
+    (funcomp (ren_sort zeta_term) (subst_sort sigma_term))
+    (subst_sort (funcomp (ren_term zeta_term) sigma_term)).
+Proof.
+exact (fun s => compSubstRen_sort sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma substRen_term (sigma_term : nat -> term) (zeta_term : nat -> nat)
   (s : term) :
   ren_term zeta_term (subst_term sigma_term s) =
@@ -898,6 +1054,24 @@ Lemma substRen_term_pointwise (sigma_term : nat -> term)
     (subst_term (funcomp (ren_term zeta_term) sigma_term)).
 Proof.
 exact (fun s => compSubstRen_term sigma_term zeta_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_sort (sigma_term : nat -> term) (tau_term : nat -> term)
+  (s : sort) :
+  subst_sort tau_term (subst_sort sigma_term s) =
+  subst_sort (funcomp (subst_term tau_term) sigma_term) s.
+Proof.
+exact (compSubstSubst_sort sigma_term tau_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma substSubst_sort_pointwise (sigma_term : nat -> term)
+  (tau_term : nat -> term) :
+  pointwise_relation _ eq
+    (funcomp (subst_sort tau_term) (subst_sort sigma_term))
+    (subst_sort (funcomp (subst_term tau_term) sigma_term)).
+Proof.
+exact (fun s =>
+       compSubstSubst_sort sigma_term tau_term _ (fun n => eq_refl) s).
 Qed.
 
 Lemma substSubst_term (sigma_term : nat -> term) (tau_term : nat -> term)
@@ -929,12 +1103,20 @@ exact (fun n =>
        end).
 Qed.
 
-Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
+Fixpoint rinst_inst_sort (xi_term : nat -> nat) (sigma_term : nat -> term)
+(Eq_term : forall x, funcomp (tRel) xi_term x = sigma_term x) (s : sort)
+{struct s} : ren_sort xi_term s = subst_sort sigma_term s :=
+  match s with
+  | set => congr_set
+  | formula => congr_formula
+  | irr s0 => congr_irr (rinst_inst_term xi_term sigma_term Eq_term s0)
+  end
+with rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
 (Eq_term : forall x, funcomp (tRel) xi_term x = sigma_term x) (s : term)
 {struct s} : ren_term xi_term s = subst_term sigma_term s :=
   match s with
   | tRel s0 => Eq_term s0
-  | tSort s0 => congr_tSort (eq_refl s0)
+  | tSort s0 => congr_tSort (rinst_inst_sort xi_term sigma_term Eq_term s0)
   | tProd s0 s1 =>
       congr_tProd (rinst_inst_term xi_term sigma_term Eq_term s0)
         (rinst_inst_term (upRen_term_term xi_term) (up_term_term sigma_term)
@@ -992,6 +1174,19 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
         (rinst_inst_term xi_term sigma_term Eq_term s5)
   end.
 
+Lemma rinstInst'_sort (xi_term : nat -> nat) (s : sort) :
+  ren_sort xi_term s = subst_sort (funcomp (tRel) xi_term) s.
+Proof.
+exact (rinst_inst_sort xi_term _ (fun n => eq_refl) s).
+Qed.
+
+Lemma rinstInst'_sort_pointwise (xi_term : nat -> nat) :
+  pointwise_relation _ eq (ren_sort xi_term)
+    (subst_sort (funcomp (tRel) xi_term)).
+Proof.
+exact (fun s => rinst_inst_sort xi_term _ (fun n => eq_refl) s).
+Qed.
+
 Lemma rinstInst'_term (xi_term : nat -> nat) (s : term) :
   ren_term xi_term s = subst_term (funcomp (tRel) xi_term) s.
 Proof.
@@ -1005,6 +1200,16 @@ Proof.
 exact (fun s => rinst_inst_term xi_term _ (fun n => eq_refl) s).
 Qed.
 
+Lemma instId'_sort (s : sort) : subst_sort (tRel) s = s.
+Proof.
+exact (idSubst_sort (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma instId'_sort_pointwise : pointwise_relation _ eq (subst_sort (tRel)) id.
+Proof.
+exact (fun s => idSubst_sort (tRel) (fun n => eq_refl) s).
+Qed.
+
 Lemma instId'_term (s : term) : subst_term (tRel) s = s.
 Proof.
 exact (idSubst_term (tRel) (fun n => eq_refl) s).
@@ -1013,6 +1218,17 @@ Qed.
 Lemma instId'_term_pointwise : pointwise_relation _ eq (subst_term (tRel)) id.
 Proof.
 exact (fun s => idSubst_term (tRel) (fun n => eq_refl) s).
+Qed.
+
+Lemma rinstId'_sort (s : sort) : ren_sort id s = s.
+Proof.
+exact (eq_ind_r (fun t => t = s) (instId'_sort s) (rinstInst'_sort id s)).
+Qed.
+
+Lemma rinstId'_sort_pointwise : pointwise_relation _ eq (@ren_sort id) id.
+Proof.
+exact (fun s =>
+       eq_ind_r (fun t => t = s) (instId'_sort s) (rinstInst'_sort id s)).
 Qed.
 
 Lemma rinstId'_term (s : term) : ren_term id s = s.
@@ -1054,13 +1270,20 @@ Qed.
 Class Up_term X Y :=
     up_term : X -> Y.
 
-#[global] Instance Subst_term : (Subst1 _ _ _) := @subst_term.
+Class Up_sort X Y :=
+    up_sort : X -> Y.
 
-#[global] Instance Up_term_term : (Up_term _ _) := @up_term_term.
+Instance Subst_term : (Subst1 _ _ _) := @subst_term.
 
-#[global] Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+Instance Subst_sort : (Subst1 _ _ _) := @subst_sort.
 
-#[global] Instance VarInstance_term : (Var _ _) := @tRel.
+Instance Up_term_term : (Up_term _ _) := @up_term_term.
+
+Instance Ren_term : (Ren1 _ _ _) := @ren_term.
+
+Instance Ren_sort : (Ren1 _ _ _) := @ren_sort.
+
+Instance VarInstance_term : (Var _ _) := @tRel.
 
 Notation "[ sigma_term ]" := (subst_term sigma_term)
   ( at level 1, left associativity, only printing) : fscope.
@@ -1070,12 +1293,26 @@ Notation "s [ sigma_term ]" := (subst_term sigma_term s)
 
 Notation "↑__term" := up_term (only printing) : subst_scope.
 
+Notation "[ sigma_term ]" := (subst_sort sigma_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s [ sigma_term ]" := (subst_sort sigma_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
+
+Notation "↑__sort" := up_sort (only printing) : subst_scope.
+
 Notation "↑__term" := up_term_term (only printing) : subst_scope.
 
 Notation "⟨ xi_term ⟩" := (ren_term xi_term)
   ( at level 1, left associativity, only printing) : fscope.
 
 Notation "s ⟨ xi_term ⟩" := (ren_term xi_term s)
+  ( at level 7, left associativity, only printing) : subst_scope.
+
+Notation "⟨ xi_term ⟩" := (ren_sort xi_term)
+  ( at level 1, left associativity, only printing) : fscope.
+
+Notation "s ⟨ xi_term ⟩" := (ren_sort xi_term s)
   ( at level 7, left associativity, only printing) : subst_scope.
 
 Notation "'var'" := tRel ( at level 1, only printing) : subst_scope.
@@ -1095,14 +1332,30 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (ext_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-#[global] Instance subst_term_morphism2 :
+Instance subst_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@subst_term)).
 Proof.
 exact (fun f_term g_term Eq_term s => ext_term f_term g_term Eq_term s).
 Qed.
 
-#[global] Instance ren_term_morphism :
+Instance subst_sort_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@subst_sort)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => subst_sort f_term s = subst_sort g_term t')
+         (ext_sort f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+Instance subst_sort_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@subst_sort)).
+Proof.
+exact (fun f_term g_term Eq_term s => ext_sort f_term g_term Eq_term s).
+Qed.
+
+Instance ren_term_morphism :
  (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
     (@ren_term)).
 Proof.
@@ -1111,50 +1364,80 @@ exact (fun f_term g_term Eq_term s t Eq_st =>
          (extRen_term f_term g_term Eq_term s) t Eq_st).
 Qed.
 
-#[global] Instance ren_term_morphism2 :
+Instance ren_term_morphism2 :
  (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
     (@ren_term)).
 Proof.
 exact (fun f_term g_term Eq_term s => extRen_term f_term g_term Eq_term s).
 Qed.
 
+Instance ren_sort_morphism :
+ (Proper (respectful (pointwise_relation _ eq) (respectful eq eq))
+    (@ren_sort)).
+Proof.
+exact (fun f_term g_term Eq_term s t Eq_st =>
+       eq_ind s (fun t' => ren_sort f_term s = ren_sort g_term t')
+         (extRen_sort f_term g_term Eq_term s) t Eq_st).
+Qed.
+
+Instance ren_sort_morphism2 :
+ (Proper (respectful (pointwise_relation _ eq) (pointwise_relation _ eq))
+    (@ren_sort)).
+Proof.
+exact (fun f_term g_term Eq_term s => extRen_sort f_term g_term Eq_term s).
+Qed.
+
 Ltac auto_unfold := repeat
-                     unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                      Up_term_term, Up_term, up_term, Subst_term, Subst1,
-                      subst1.
+                     unfold VarInstance_term, Var, ids, Ren_sort, Ren1, ren1,
+                      Ren_term, Ren1, ren1, Up_term_term, Up_term, up_term,
+                      Subst_sort, Subst1, subst1, Subst_term, Subst1, subst1.
 
 Tactic Notation "auto_unfold" "in" "*" := repeat
                                            unfold VarInstance_term, Var, ids,
-                                            Ren_term, Ren1, ren1,
-                                            Up_term_term, Up_term, up_term,
-                                            Subst_term, Subst1, subst1 
-                                            in *.
+                                            Ren_sort, Ren1, ren1, Ren_term,
+                                            Ren1, ren1, Up_term_term,
+                                            Up_term, up_term, Subst_sort,
+                                            Subst1, subst1, Subst_term,
+                                            Subst1, subst1 in *.
 
 Ltac asimpl' := repeat (first
                  [ progress setoid_rewrite substSubst_term_pointwise
                  | progress setoid_rewrite substSubst_term
+                 | progress setoid_rewrite substSubst_sort_pointwise
+                 | progress setoid_rewrite substSubst_sort
                  | progress setoid_rewrite substRen_term_pointwise
                  | progress setoid_rewrite substRen_term
+                 | progress setoid_rewrite substRen_sort_pointwise
+                 | progress setoid_rewrite substRen_sort
                  | progress setoid_rewrite renSubst_term_pointwise
                  | progress setoid_rewrite renSubst_term
+                 | progress setoid_rewrite renSubst_sort_pointwise
+                 | progress setoid_rewrite renSubst_sort
                  | progress setoid_rewrite renRen'_term_pointwise
                  | progress setoid_rewrite renRen_term
+                 | progress setoid_rewrite renRen'_sort_pointwise
+                 | progress setoid_rewrite renRen_sort
                  | progress setoid_rewrite varLRen'_term_pointwise
                  | progress setoid_rewrite varLRen'_term
                  | progress setoid_rewrite varL'_term_pointwise
                  | progress setoid_rewrite varL'_term
                  | progress setoid_rewrite rinstId'_term_pointwise
                  | progress setoid_rewrite rinstId'_term
+                 | progress setoid_rewrite rinstId'_sort_pointwise
+                 | progress setoid_rewrite rinstId'_sort
                  | progress setoid_rewrite instId'_term_pointwise
                  | progress setoid_rewrite instId'_term
+                 | progress setoid_rewrite instId'_sort_pointwise
+                 | progress setoid_rewrite instId'_sort
                  | progress unfold up_term_term, upRen_term_term, up_ren
-                 | progress cbn[subst_term ren_term]
+                 | progress cbn[subst_term subst_sort ren_term ren_sort]
                  | progress fsimpl ]).
 
 Ltac asimpl := check_no_evars;
                 repeat
-                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1
+                 unfold VarInstance_term, Var, ids, Ren_sort, Ren1, ren1,
+                  Ren_term, Ren1, ren1, Up_term_term, Up_term, up_term,
+                  Subst_sort, Subst1, subst1, Subst_term, Subst1, subst1 
                   in *; asimpl'; minimize.
 
 Tactic Notation "asimpl" "in" hyp(J) := revert J; asimpl; intros J.
@@ -1162,11 +1445,15 @@ Tactic Notation "asimpl" "in" hyp(J) := revert J; asimpl; intros J.
 Tactic Notation "auto_case" := auto_case ltac:(asimpl; cbn; eauto).
 
 Ltac substify := auto_unfold; try setoid_rewrite rinstInst'_term_pointwise;
-                  try setoid_rewrite rinstInst'_term.
+                  try setoid_rewrite rinstInst'_term;
+                  try setoid_rewrite rinstInst'_sort_pointwise;
+                  try setoid_rewrite rinstInst'_sort.
 
 Ltac renamify := auto_unfold;
                   try setoid_rewrite_left rinstInst'_term_pointwise;
-                  try setoid_rewrite_left rinstInst'_term.
+                  try setoid_rewrite_left rinstInst'_term;
+                  try setoid_rewrite_left rinstInst'_sort_pointwise;
+                  try setoid_rewrite_left rinstInst'_sort.
 
 End Core.
 
@@ -1180,10 +1467,16 @@ Proof.
 exact (up_allfv p).
 Defined.
 
-Fixpoint allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
+Fixpoint allfv_sort (p_term : nat -> Prop) (s : sort) {struct s} : Prop :=
+  match s with
+  | set => True
+  | formula => True
+  | irr s0 => and (allfv_term p_term s0) True
+  end
+with allfv_term (p_term : nat -> Prop) (s : term) {struct s} : Prop :=
   match s with
   | tRel s0 => p_term s0
-  | tSort s0 => and True True
+  | tSort s0 => and (allfv_sort p_term s0) True
   | tProd s0 s1 =>
       and (allfv_term p_term s0)
         (and (allfv_term (upAllfv_term_term p_term) s1) True)
@@ -1236,11 +1529,18 @@ exact (fun x => match x with
                 end).
 Qed.
 
-Fixpoint allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
+Fixpoint allfvTriv_sort (p_term : nat -> Prop) (H_term : forall x, p_term x)
+(s : sort) {struct s} : allfv_sort p_term s :=
+  match s with
+  | set => I
+  | formula => I
+  | irr s0 => conj (allfvTriv_term p_term H_term s0) I
+  end
+with allfvTriv_term (p_term : nat -> Prop) (H_term : forall x, p_term x)
 (s : term) {struct s} : allfv_term p_term s :=
   match s with
   | tRel s0 => H_term s0
-  | tSort s0 => conj I I
+  | tSort s0 => conj (allfvTriv_sort p_term H_term s0) I
   | tProd s0 s1 =>
       conj (allfvTriv_term p_term H_term s0)
         (conj
@@ -1312,12 +1612,32 @@ exact (fun x => match x with
                 end).
 Qed.
 
-Fixpoint allfvImpl_term (p_term : nat -> Prop) (q_term : nat -> Prop)
+Fixpoint allfvImpl_sort (p_term : nat -> Prop) (q_term : nat -> Prop)
+(H_term : forall x, p_term x -> q_term x) (s : sort) {struct s} :
+allfv_sort p_term s -> allfv_sort q_term s :=
+  match s with
+  | set => fun HP => I
+  | formula => fun HP => I
+  | irr s0 =>
+      fun HP =>
+      conj
+        (allfvImpl_term p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end) I
+  end
+with allfvImpl_term (p_term : nat -> Prop) (q_term : nat -> Prop)
 (H_term : forall x, p_term x -> q_term x) (s : term) {struct s} :
 allfv_term p_term s -> allfv_term q_term s :=
   match s with
   | tRel s0 => fun HP => H_term s0 HP
-  | tSort s0 => fun HP => conj I I
+  | tSort s0 =>
+      fun HP =>
+      conj
+        (allfvImpl_sort p_term q_term H_term s0
+           match HP with
+           | conj HP _ => HP
+           end) I
   | tProd s0 s1 =>
       fun HP =>
       conj
@@ -1630,17 +1950,34 @@ Proof.
    intros x.
    refine (match x with S n' => fun H => upAllfvRenL_term_term p xi _ H | 0 => fun i => i end).
 Qed.
-
-
-Fixpoint allfvRenL_term (p_term : nat -> Prop) (xi_term : nat -> nat)
-(s : term) {struct s} :
+Fixpoint allfvRenL_sort (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : sort) {struct s} :
+allfv_sort p_term (ren_sort xi_term s) ->
+allfv_sort (funcomp p_term xi_term) s :=
+  match s with
+  | set => fun H => I
+  | formula => fun H => I
+  | irr s0 =>
+      fun H =>
+      conj
+        (allfvRenL_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  end
+with allfvRenL_term (p_term : nat -> Prop) (xi_term : nat -> nat) (s : term)
+{struct s} :
 allfv_term p_term (ren_term xi_term s) ->
 allfv_term (funcomp p_term xi_term) s :=
   match s as s return 
       allfv_term p_term (ren_term xi_term s) ->
       allfv_term (funcomp p_term xi_term) s  with
   | tRel s0 => fun H => H
-  | tSort s0 => fun H => conj I I
+  | tSort s0 =>
+      fun H =>
+      conj
+        (allfvRenL_sort p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
   | tProd s0 s1 =>
       fun H =>
       conj
@@ -1946,10 +2283,22 @@ exact (fun x => match x with
                 | O => fun i => i
                 end).
 Qed.
-
-
-Fixpoint allfvRenR_term (p_term : nat -> Prop) (xi_term : nat -> nat)
-(s : term) {struct s} :
+Fixpoint allfvRenR_sort (p_term : nat -> Prop) (xi_term : nat -> nat)
+(s : sort) {struct s} :
+allfv_sort (funcomp p_term xi_term) s ->
+allfv_sort p_term (ren_sort xi_term s) :=
+  match s with
+  | set => fun H => I
+  | formula => fun H => I
+  | irr s0 =>
+      fun H =>
+      conj
+        (allfvRenR_term p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
+  end
+with allfvRenR_term (p_term : nat -> Prop) (xi_term : nat -> nat) (s : term)
+{struct s} :
 allfv_term (funcomp p_term xi_term) s ->
 allfv_term p_term (ren_term xi_term s) :=
   match s 
@@ -1958,7 +2307,12 @@ allfv_term (funcomp p_term xi_term) s ->
 allfv_term p_term (ren_term xi_term s)
   with
   | tRel s0 => fun H => H
-  | tSort s0 => fun H => conj I I
+  | tSort s0 =>
+      fun H =>
+      conj
+        (allfvRenR_sort p_term xi_term s0 match H with
+                                          | conj H _ => H
+                                          end) I
   | tProd s0 s1 =>
       fun H =>
       conj
@@ -2253,7 +2607,11 @@ Import Core.
 
 #[export]Hint Opaque subst_term: rewrite.
 
+#[export]Hint Opaque subst_sort: rewrite.
+
 #[export]Hint Opaque ren_term: rewrite.
+
+#[export]Hint Opaque ren_sort: rewrite.
 
 End Extra.
 
