@@ -918,17 +918,17 @@ Section GenericConsequences.
 
   (** *** Derived typing, reduction and conversion judgements *)
 
-  Lemma ty_var0 {Γ A} : 
-    [Γ |- A] ->
+  Lemma ty_var0 {Γ A s} :
+    [Γ |- A @ s] ->
     [Γ ,, A |- tRel 0 : A⟨↑⟩].
   Proof. 
     intros; refine (ty_var _ (in_here _ _)); gen_typing.
   Qed.
 
   Lemma wft_simple_arr {Γ A B} :
-    [Γ |- A] ->
-    [Γ |- B] ->
-    [Γ |- arr A B].
+    [Γ |- A @ set] ->
+    [Γ |- B @ set] ->
+    [Γ |- arr A B @ set].
   Proof.
     intros. eapply wft_prod; renToWk; tea.
     eapply wft_wk; gen_typing.
