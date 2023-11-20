@@ -150,7 +150,8 @@ Section TypingWk.
       now eapply IH.
     - intros * _ IH ? ρ ?.
       now econstructor ; eapply IH.
-    - give_up.
+    - intros * _ IH **.
+      constructor; now eapply IH.
     - intros * _ IHA _ IHB ? ρ ?.
       eapply TypeTrans.
       + now eapply IHA.
@@ -235,7 +236,7 @@ Section TypingWk.
       eapply ih; econstructor; tea; econstructor; now eapply H0.
     - intros * ? ihA₀ ? ihA ? ihA' ? ihB ? ihB' ? iha ? ihb Δ ρ **.
       rewrite <- wk_sig, <- !wk_pair.
-      assert [|-[de] Δ,, A⟨ρ⟩] by now constructor.
+      assert [|-[de] Δ,, A⟨ρ⟩] by now econstructor.
       constructor; eauto.
       * now apply ihB.
       * now apply ihB'.
@@ -245,7 +246,7 @@ Section TypingWk.
       constructor; rewrite wk_sig; eauto.
     - intros * ? ih **. econstructor; now eapply ih.
     - intros * ??? ihB ** ; rewrite <- wk_fst; rewrite <- wk_pair; constructor; eauto.
-      1: eapply ihB; constructor; eauto.
+      1: eapply ihB; econstructor; eauto.
       rewrite <- subst_ren_wk_up; eauto.
     - intros * ? ih **.
       unshelve erewrite subst_ren_wk_up; tea; cbn.
@@ -254,29 +255,29 @@ Section TypingWk.
       rewrite <- wk_snd; rewrite <- wk_pair.
       unshelve erewrite subst_ren_wk_up.
       2:constructor; eauto.
-      1: eapply ihB; constructor; eauto.
+      1: eapply ihB; econstructor; eauto.
       rewrite <- subst_ren_wk_up; eauto.
     - intros * _ IHA _ IHx _ IHy **.
-      rewrite <- 2! wk_Id; constructor; eauto.
+      rewrite <- 2! wk_Id; econstructor; eauto; now apply IHA.
     - intros * _ IHA _ IHx **.
       rewrite <- 2!wk_refl, <- wk_Id; constructor; eauto.
     - intros * _ IHA0 _ IHx0 _ IHA _ IHx _ IHP _ IHhr _ IHy _ IHe **.
       rewrite <- 2!wk_idElim; erewrite subst_ren_wk_up2.
-      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      assert [|- Δ ,, A⟨ρ⟩] by (econstructor; tea; eauto).
       constructor; eauto.
       + rewrite 2!(wk_up_wk1 ρ).
-        eapply IHP; constructor; tea.
-        rewrite <- wk_Id; constructor.
+        eapply IHP; econstructor; tea.
+        rewrite <- wk_Id; econstructor.
         * rewrite <- wk_up_wk1, wk_step_wk1; eauto.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; eauto.
         * rewrite <- wk_up_wk1, wk1_ren_on; cbn; constructor; tea; constructor.
       + rewrite wk_refl, <- subst_ren_wk_up2; eauto.
     - intros * _ IHA _ IHx _ IHP _ IHhr _ IHy _ IHA' _ IHz _ IHAA' _ IHxy _ IHxz **.
       rewrite <- wk_idElim; erewrite subst_ren_wk_up2.
-      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      assert [|- Δ ,, A⟨ρ⟩] by (econstructor; tea; eauto).
       constructor; eauto.
       + rewrite 2!(wk_up_wk1 ρ).
-        eapply IHP; constructor; tea.
+        eapply IHP; econstructor; tea.
         rewrite <- wk_Id; constructor.
         * rewrite <- wk_up_wk1, wk_step_wk1; eauto.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; eauto.
