@@ -269,20 +269,32 @@ Ltac bsimpl' :=
   repeat (first
     [ progress setoid_rewrite substSubst_term_pointwise
     | progress setoid_rewrite substSubst_term
+    | progress setoid_rewrite substSubst_sort_pointwise
+    | progress setoid_rewrite substSubst_sort
     | progress setoid_rewrite substRen_term_pointwise
     | progress setoid_rewrite substRen_term
+    | progress setoid_rewrite substRen_sort_pointwise
+    | progress setoid_rewrite substRen_sort
     | progress setoid_rewrite renSubst_term_pointwise
     | progress setoid_rewrite renSubst_term
+    | progress setoid_rewrite renSubst_sort_pointwise
+    | progress setoid_rewrite renSubst_sort
     | progress setoid_rewrite renRen'_term_pointwise
     | progress setoid_rewrite renRen_term
+    | progress setoid_rewrite renRen'_sort_pointwise
+    | progress setoid_rewrite renRen_sort
     | progress setoid_rewrite varLRen'_term_pointwise
     | progress setoid_rewrite varLRen'_term
     | progress setoid_rewrite varL'_term_pointwise
     | progress setoid_rewrite varL'_term
     | progress setoid_rewrite rinstId'_term_pointwise
     | progress setoid_rewrite rinstId'_term
+    | progress setoid_rewrite rinstId'_sort_pointwise
+    | progress setoid_rewrite rinstId'_sort
     | progress setoid_rewrite instId'_term_pointwise
     | progress setoid_rewrite instId'_term
+    | progress setoid_rewrite instId'_sort_pointwise
+    | progress setoid_rewrite instId'_sort
     | progress setoid_rewrite wk_to_ren_id
     | progress setoid_rewrite wk_compose_compose
     | progress setoid_rewrite id_ren
@@ -290,13 +302,14 @@ Ltac bsimpl' :=
     | progress unfold
         up_term_term, upRen_term_term, up_ren, wk_well_wk_compose,
         wk_id, wk_step, wk_up, wk_empty (**, _wk_up, _wk_step *)
-    | progress cbn[subst_term ren_term wk wk_to_ren]
+    | progress cbn[subst_term subst_sort ren_term ren_sort wk wk_to_ren]
     | progress fsimpl ]).
+
 
 Ltac bsimpl := check_no_evars;
                 repeat
-                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
+                 unfold VarInstance_term, Var, ids, Ren_term, Ren_sort, Ren1, ren1,
+                  Up_term_term, Up_term, up_term, Subst_term, Subst_sort, Subst1, subst1,
                   Ren1_subst, Ren1_wk, Ren1_well_wk
                   in *; bsimpl'; minimize.
 
@@ -400,3 +413,66 @@ Proof. now bsimpl. Qed.
 
 Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
 Proof. intros; now rewrite 2!wk1_ren_on. Qed.
+
+
+
+Module Sort.
+
+#[local]
+Existing Instance Subst_sort | 0.
+
+#[local]
+Existing Instance Ren_sort | 0.
+
+Lemma subst_ren_wk_up {Γ Δ P A n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_wk_up2 {Γ Δ P A B a b} (ρ : Γ ≤ Δ): 
+  P[a .: b..]⟨ρ⟩ = P⟨wk_up A (wk_up B ρ)⟩[a⟨ρ⟩ .: b⟨ρ⟩..].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_subst_mixed {Γ Δ P n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P[n⟨ρ⟩ .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_subst_mixed2 {Γ Δ P a b} (ρ : Γ ≤ Δ): P[a .: b..]⟨ρ⟩ = P[a⟨ρ⟩ .: (b⟨ρ⟩ .: ρ >> tRel)].
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_ren_subst {Γ Δ Ξ P A n}  (ρ : Γ ≤ Δ) (ρ' : Δ ≤ Ξ) : 
+  P[n .: ρ ∘w ρ' >> tRel] = P⟨wk_up A ρ'⟩[n .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma shift_subst_scons {B a Γ Δ} (ρ : Δ ≤ Γ) : B⟨↑⟩[a .: ρ >> tRel] = B⟨ρ⟩.
+Proof. bsimpl; now rewrite rinstInst'_sort. Qed.
+
+Lemma shift_upRen ρ t : t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ρ⟩.
+Proof. now asimpl. Qed.
+
+Lemma wk_comp_ren_on {Γ Δ Ξ} (H : sort) (ρ1 : Γ ≤ Δ) (ρ2 : Δ ≤ Ξ) :
+  H⟨ρ2⟩⟨ρ1⟩ = H⟨ρ1 ∘w ρ2⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_id_ren_on Γ (H : sort) : H⟨@wk_id Γ⟩ = H.
+Proof. now bsimpl. Qed.
+
+Lemma wk1_ren_on Γ F (H : sort) : H⟨@wk1 Γ F⟩ = H⟨↑⟩.
+Proof. now bsimpl. Qed.
+  
+Lemma wk_up_ren_on Γ Δ (ρ : Γ ≤ Δ) F (H : sort) : H⟨wk_up F ρ⟩ = H⟨upRen_term_term ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_wk1_ren_on Γ F G (H : sort) : H⟨wk_up F (@wk1 Γ G)⟩ = H⟨upRen_term_term ↑⟩.
+Proof. now bsimpl. Qed.
+
+
+Lemma wk_step_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟩ = t⟨wk_step A ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟨ρ⟩⟩ = t⟨@wk1 Γ A⟩⟨wk_up A ρ⟩.
+Proof. now bsimpl. Qed.
+
+
+Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
+Proof. intros; now rewrite 2!wk1_ren_on. Qed.
+
+End Sort.
+
