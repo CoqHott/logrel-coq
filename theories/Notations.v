@@ -24,19 +24,13 @@ Open Scope typing_scope.
 Class WfContext (ta : tag) := wf_context : context -> Set.
 Class WfSort (ta : tag) := wf_sort : context -> sort -> Set.
 Class WfType (ta : tag) := wf_type : context -> term -> sort -> Set.
-Class Typing (ta : tag) := {
-    typing : context -> term -> term -> Set;
-    typing_sort : forall Γ t A, typing Γ t A -> sort
-}.
+Class Typing (ta : tag) := typing : context -> term -> term -> Set.
 Class Inferring (ta : tag) := inferring : context -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : context -> term -> term -> Set.
 Class Checking (ta : tag) := check : context -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : context -> sort -> term -> term -> Set.
 Class ConvTypeRed (ta : tag) := conv_type_red : context -> term -> term -> Set.
-Class ConvTerm (ta : tag) := {
-    conv_term : context -> term -> term -> term -> Set;
-    conv_term_sort : forall Γ t t' A, conv_term Γ t t' A -> sort
-}.
+Class ConvTerm (ta : tag) := conv_term : context -> term -> term -> term -> Set.
 Class ConvTermRed (ta : tag) := conv_term_red : context -> term -> term -> term -> Set.
 Class ConvNeu (ta : tag) := conv_neu : context -> term -> term -> term -> Set.
 Class ConvNeuRed (ta : tag) := conv_neu_red : context -> term -> term -> term -> Set.
