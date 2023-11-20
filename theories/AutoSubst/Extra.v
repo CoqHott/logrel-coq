@@ -75,6 +75,9 @@ Proof. now asimpl. Qed.
 Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
 Proof. now asimpl. Qed.
 
+Lemma shift_subst_one_eq {t a} : t⟨↑⟩[a..] = t.
+Proof. now asimpl. Qed.
+
 Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
 Proof.  now asimpl. Qed.
 
