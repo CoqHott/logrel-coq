@@ -13,11 +13,11 @@ Proof. now asimpl. Qed.
 Section TypingWk.
   
   Let PCon (Γ : context) := True.
-  Let PTy (Γ : context) (A : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩].
+  Let PTy (Γ : context) (A : term) (s : sort) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] -> [Δ |- A⟨ρ⟩ @ s ].
   Let PTm (Γ : context) (A t : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t⟨ρ⟩ : A⟨ρ⟩].
-  Let PTyEq (Γ : context) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
-    [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩].
+  Let PTyEq (Γ : context) (s : sort) (A B : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
+    [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩ @ s ].
   Let PTmEq (Γ : context) (A t u : term) := forall Δ (ρ : Δ ≤ Γ), [|- Δ ] ->
     [Δ |- t⟨ρ⟩ ≅ u⟨ρ⟩ : A⟨ρ⟩].
 
@@ -35,17 +35,20 @@ Section TypingWk.
       econstructor ; fold ren_term.
       1: now eapply IHA.
       eapply IHB with (ρ := wk_up _ ρ).
-      now constructor.
+      now econstructor.
     - intros; now constructor.
     - intros; now constructor.
     - intros ?????? ih ** ; rewrite <- wk_sig.
       constructor; eauto.
-      eapply ih; constructor; eauto.
+      eapply ih; econstructor; eauto.
     - intros * _ IHA _ IHx _ IHy **; rewrite <- wk_Id.
       constructor; eauto.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
+    - intros * H IH ? ρ ?.
+      econstructor.
+      now eapply IH.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
@@ -94,12 +97,12 @@ Section TypingWk.
     - intros ???? ih1 ? ih2 ** ; rewrite <- wk_sig; cbn.
       constructor.
       1: now eapply ih1.
-      eapply ih2 ; constructor; eauto.
-      now constructor.
+      eapply ih2 ; econstructor; eauto.
+      constructor; now apply ih1.
     - intros ?????? ihA ? ihB ? iha ? ihb **.
       rewrite <- wk_sig; rewrite <- wk_pair.
       constructor; eauto.
-      1: eapply ihB; constructor; eauto.
+      1: eapply ihB; econstructor; eauto.
       rewrite <- subst_ren_wk_up. 
       now eapply ihb.
     - intros; cbn; econstructor; eauto.
@@ -107,16 +110,16 @@ Section TypingWk.
       unshelve erewrite subst_ren_wk_up; tea.
       econstructor; now eapply ih.
     - intros * _ IHA _ IHx _ IHy **; rewrite <- wk_Id.
-      constructor; eauto.
+      constructor; eauto; now eapply IHA.
     - intros * _ IHA _ IHx **; rewrite <- wk_Id, <- wk_refl.
       constructor; eauto.
     - intros * _ IHA _ IHx _ IHP _ IHhr _ IHy _ IHe **.
       rewrite <- wk_idElim.
       erewrite subst_ren_wk_up2.
-      assert [|- Δ ,, A⟨ρ⟩] by (constructor; tea; eauto).
+      assert [|- Δ ,, A⟨ρ⟩] by (econstructor; tea; eauto).
       constructor; eauto.
       + rewrite 2!(wk_up_wk1 ρ).
-        eapply IHP; constructor; tea.
+        eapply IHP; econstructor; tea.
         rewrite <- wk_Id; constructor.
         * rewrite <- wk_up_wk1, wk_step_wk1; eauto.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; eauto.
@@ -136,7 +139,7 @@ Section TypingWk.
         now eapply IHA.
     - intros ?????????? ih **.
       do 2 rewrite <- wk_sig; constructor; eauto.
-      eapply ih; constructor; eauto.
+      eapply ih; econstructor; eauto.
     - intros * _ IHA _ IHx _ IHy **.
       rewrite <- 2!wk_Id; constructor; eauto.
     - intros * _ IHA ? ρ ?.
@@ -147,6 +150,7 @@ Section TypingWk.
       now eapply IH.
     - intros * _ IH ? ρ ?.
       now econstructor ; eapply IH.
+    - give_up.
     - intros * _ IHA _ IHB ? ρ ?.
       eapply TypeTrans.
       + now eapply IHA.
@@ -183,7 +187,7 @@ Section TypingWk.
     - intros * _ IHA _ IHA' _ IHA'' _ IHe ? ρ ?.
       cbn; econstructor; try easy.
       apply (IHe _ (wk_up _ ρ)).
-      now constructor.
+      now econstructor.
     - intros * _ IHf ? ρ ?.
       cbn.
       rewrite <- shift_upRen.
@@ -192,7 +196,7 @@ Section TypingWk.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **; cbn.
       erewrite subst_ren_wk_up.
       eapply TermNatElimCong.
-      * eapply ihP; constructor; tea; now constructor.
+      * eapply ihP; econstructor; tea; now constructor.
       * eapply convtm_meta_conv.
         1: now eapply ihhz.
         2: reflexivity.
@@ -203,7 +207,7 @@ Section TypingWk.
     - intros * ? ihP ? ihhz ? ihhs **.
       erewrite subst_ren_wk_up.
       eapply TermNatElimZero; fold ren_term.
-      * eapply ihP; constructor; tea; now constructor.
+      * eapply ihP; econstructor; tea; now constructor.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
         now erewrite subst_ren_wk_up.
@@ -212,7 +216,7 @@ Section TypingWk.
     - intros * ? ihP ? ihhz ? ihhs ? ihn **.
       erewrite subst_ren_wk_up.
       eapply TermNatElimSucc; fold ren_term.
-      * eapply ihP; constructor; tea; now constructor.
+      * eapply ihP; econstructor; tea; now constructor.
       * eapply typing_meta_conv.
         1: now eapply ihhz.
         now erewrite subst_ren_wk_up.
@@ -222,11 +226,13 @@ Section TypingWk.
     - intros * ? ihP ? ihe **; cbn.
       erewrite subst_ren_wk_up.
       eapply TermEmptyElimCong.
-      * eapply ihP; constructor; tea; now constructor.
+      * eapply ihP; econstructor; tea; now constructor.
       * now eapply ihe.
     - intros * ????? ih ** ; do 2 rewrite <- wk_sig.
       constructor; eauto.
-      eapply ih; constructor; tea; constructor; eauto.
+      now eapply H0.
+      now eapply H2.
+      eapply ih; econstructor; tea; econstructor; now eapply H0.
     - intros * ? ihA₀ ? ihA ? ihA' ? ihB ? ihB' ? iha ? ihb Δ ρ **.
       rewrite <- wk_sig, <- !wk_pair.
       assert [|-[de] Δ,, A⟨ρ⟩] by now constructor.
