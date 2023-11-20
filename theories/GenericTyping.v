@@ -417,17 +417,6 @@ Section GenericTyping.
       [Γ |- A ≅ A' @ set] ->
       [Γ |- x ≅ x' : A] ->
       [Γ |- tRefl A x ≅ tRefl A' x' : tId A x x] ;
-    convtm_formula_irr {Γ f t t'} :
-      [Γ |- f @ formula] ->
-      [Γ |- t : f] ->
-      [Γ |- t' : f] ->
-      [Γ |- t ≅ t' : f];
-    convtm_irr_irr {Γ f A t t' p} :
-      [Γ |- A @ irr f] ->
-      [Γ |- t : A] ->
-      [Γ |- t' : A] ->
-      [Γ |- p : f] ->
-      [Γ |- t ≅ t' : A]
   }.
 
   Class ConvNeuProperties :=
@@ -470,6 +459,17 @@ Section GenericTyping.
       [Γ |- y ≅ y' : A] ->
       [Γ |- e ~ e' : tId A x y] ->
       [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' : P[e .: y..]];
+    convneu_formula_irr {Γ f t t'} :
+      [Γ |- f @ formula] ->
+      [Γ |- t : f] ->
+      [Γ |- t' : f] ->
+      [Γ |- t ≅ t' : f];
+    convneu_irr_irr {Γ f A t t' p} :
+      [Γ |- A @ irr f] ->
+      [Γ |- t : A] ->
+      [Γ |- t' : A] ->
+      [Γ |- p : f] ->
+      [Γ |- t ≅ t' : A]
   }.
 
   Class RedTypeProperties :=
@@ -607,10 +607,10 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_Id ty_refl ty_IdElim| 2 : gen_typing.
 #[export] Hint Resolve convty_wk convty_uni convty_formula convty_prod convty_sig convty_Id | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_Id convtm_refl | 2 : gen_typing.
-#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim | 2 : gen_typing.
+#[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim convneu_formula_irr convneu_irr_irr | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
-#[export] Hint Resolve wft_term wft_formula convty_term convtm_convneu convtm_formula_irr convtm_irr_irr | 4 : gen_typing.
+#[export] Hint Resolve wft_term wft_formula convty_term convtm_convneu | 4 : gen_typing.
 (* Priority 6 *)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
 
