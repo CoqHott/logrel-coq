@@ -25,13 +25,20 @@ Section DirectedValid.
 
   Let Ptm Θ dt A dA t := forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]),
     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
-    (let '(t,u,A) := 
+    (let '(u,v,A) :=
       dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
-    in termRel Δ t u dt A).
+    in termRelPred Δ u v dt A (compute_action (dirs Θ) t σ τ ϕ)).
 
-  Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] -> unit.
+  Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] ->
+    forall (σ τ: nat -> term) ϕ,
+      [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+      match d with
+      | Fun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ ≅ compute_action (dirs Θ) B σ τ ϕ : arr A[σ] A[τ] ]
+      | Cofun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ ≅ compute_action (dirs Θ) B σ τ ϕ : arr A[τ] A[σ] ]
+      | Discr => unit
+      end.
 
-  Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> unit.
+  Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> unit. (* TODO *)
 
   Definition DirectedAction :
     DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
@@ -42,6 +49,8 @@ Section DirectedValid.
     - (* wfTypeU *)
       intros Θ d wfΘ _ wfU σ τ l rel.
       cbn.
+      (* TODO: for reflexivity, look at generic consequences or something, there is a type class for this *)
+      (* WAIT in this case its not needed, you have it for every constructors *)
       destruct d.
       1-3: admit.
     - (* wfTypeProd *)
@@ -69,8 +78,9 @@ Section DirectedValid.
 (*       (* + inversion X. eapply convUniv. *) *)
 (*       (*   exact H. *) *)
     - (* wfVar *)
+      intros Θ d' n d A dA wfΘ IHΘ inctx dleq wtRel σ τ ϕ rel.
+      (* maybe will need something on the context in the induction *)
       admit.
-(*       intros Θ d' n d A dA wfΘ _ inctx dleq wtRel σ τ l rel. *)
 (*       admit. *)
     - (* wfTermProd *)
       admit.

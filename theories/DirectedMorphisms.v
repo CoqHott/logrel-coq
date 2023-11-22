@@ -79,19 +79,18 @@ Section MorphismDefinition.
     | tProd A B => tProd A (termRelArr (Δ ,, A) (eta_expand t) (eta_expand u) B)
     | _ => err_term
     end.
-  
-  Definition termRel Δ t u d (A : term) : Type :=
-    match d with
-    | Fun => ∑ f, [ Δ |- f : termRelArr Δ t u A ]
-    | Cofun => ∑ f, [ Δ |- f : termRelArr Δ u t A ] 
-    | Discr => [Δ |- t ≅ u : A]
-    end.
 
+  (* Definition termRel Δ t u d (A : term) : Type := *)
+  (*   match d with *)
+  (*   | Fun => ∑ f, [ Δ |- f : termRelArr Δ t u A ] *)
+  (*   | Cofun => ∑ f, [ Δ |- f : termRelArr Δ u t A ]  *)
+  (*   | Discr => [Δ |- t ≅ u : A] *)
+  (*   end. *)
 
   Definition termRelPred Δ t u d (A : term) (f : term) : Type :=
     match d with
     | Fun => [ Δ |- f : termRelArr Δ t u A ]
-    | Cofun => [ Δ |- f : termRelArr Δ u t A ] 
+    | Cofun => [ Δ |- f : termRelArr Δ u t A ]
     | Discr => [Δ |- t ≅ u : A]
     end.
 
@@ -107,17 +106,17 @@ Section MorphismDefinition.
 
   Definition tail (σ : nat -> term) := fun n => σ (S n).
 
-  Fixpoint substRel 
-    (Δ: Context.context) 
+  Fixpoint substRel
+    (Δ: Context.context)
     (σ τ : nat -> term)
-    (Θ : DirectedContext.context) 
+    (Θ : DirectedContext.context)
     (φ : list term) : Type :=
   match Θ, φ with
   | nil, nil => unit
   | (cons Adecl Θ), (cons w φ) =>
     substRel Δ (tail σ) (tail τ) Θ φ ×
-    let '(t',u',A') := 
-      dispatchDir (dirs Θ) (tail σ) (tail τ) φ Adecl.(ty) Adecl.(ty_dir) (σ 0) (τ 0) 
+    let '(t',u',A') :=
+      dispatchDir (dirs Θ) (tail σ) (tail τ) φ Adecl.(ty) Adecl.(ty_dir) (σ 0) (τ 0)
     in termRelPred Δ t' u' Adecl.(dir) A' w
   | _, _ => False
   end.
@@ -125,4 +124,4 @@ Section MorphismDefinition.
 
 End MorphismDefinition.
 
-  Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (substRel Δ σ τ Θ ϕ). 
+  Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (substRel Δ σ τ Θ ϕ).
