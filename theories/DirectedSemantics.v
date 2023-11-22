@@ -3,230 +3,61 @@ From Coq Require Import ssreflect.
 From Equations Require Import Equations.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst.
-From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning.
+From LogRel Require Import DirectedDirections DirectedContext DirectedDirectioning DirectedMorphisms DirectedDeclarativeTyping.
+From LogRel Require Import Utils BasicAst Notations GenericTyping.
 
-Reserved Notation "[ Δ |- w : t -( d )- u : A ]" (at level 0, Δ, d, t, u, A, w at level 50).
-Reserved Notation "[ Δ |- ϕ : σ -( )- τ : Θ ]" (at level 0, Δ, Θ, σ, τ, ϕ at level 50).
+(* TODO: reorganize files! *)
+Section DirectedValid.
 
-Definition err_term : term := tApp U U.
-
-Definition action
-  (δ: list direction)
-  (dt: direction) (t: term) :
-  [δ |- t ▹ dt] ->
-  forall (σ τ: nat -> term), list term -> term.
-Proof.
-  induction 1 eqn: eq; intros σ τ l.
-  - exact (tLambda U (tRel 0)).
-  - exact (List.nth n l err_term).
-  - remember d'' as dt. destruct d''.
-    + pose (tA := IHd1 _ eq_refl σ τ l).
-      pose (tB := IHd2 _ eq_refl
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
-                    (scons (tRel 0) τ)
-                    (cons err_term l)).
-      exact (tLambda (tProd A B)[σ] (tLambda A[τ] (
-                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
-            ))).
-    + pose (tA := IHd1 _ eq_refl σ τ l).
-      pose (tB := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
-                    (cons err_term l)).
-      exact (tLambda (tProd A B)[τ] (tLambda A[σ] (
-                                         tApp tB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp tA⟨↑⟩⟨↑⟩ (tRel 0)))
-            ))).
-    + exact (tLambda (tProd A B)[σ] (tRel 0)).
-  - pose (tA := IHd1 _ eq_refl σ τ l).
-    remember dA as d''. destruct d''.
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) τ)
-                    (cons (tLambda (* TODO FixMe *) err_term (tRel 0)) l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
-                    (scons (tRel 0) τ)
-                    (cons (tLambda (* TODO FixMe *) err_term (tRel 0)) l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt)⟨↑⟩).
-    + pose (tt := IHd2 _ eq_refl
-                    (scons (tRel 0) σ)
-                    (scons (tRel 0) τ)
-                    (cons (tLambda A[σ] (* ≅ A[τ]*) (tRel 0)) l)).
-      exact (tLambda A[σ] (tLambda A[τ] tt⟨↑⟩)).
-  - (* TODO: I think the direction of A is (dir_op dT) *)
-    pose (tf := IHd1 _ eq_refl σ τ l).
-    exact (tApp (tApp tf a[σ]) a[τ]).
-Defined.
-
-Definition compute_action (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) : term :=
-  match compute_DirInfer δ t with
-  | None => err_term
-  | Some (d; der) => action δ d t der σ τ ϕ
-  end.
-
-
-From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
-
-
-Section MorphismDefinition.
   Context `{GenericTypingProperties}.
+  Context {Δ} (wfΔ: [ |- Δ ]).
 
-  Fixpoint termRelArr Δ t u A : term :=
-    match A with
-    | U => arr t u
-    | tProd A B => tProd A (termRelArr (Δ ,, A) (eta_expand t) (eta_expand u) B)
-    | _ => err_term
-    end.
-  
-  Definition termRel Δ t u d (A : term) : Type :=
-    match d with
-    | Fun => ∑ f, [ Δ |- f : termRelArr Δ t u A ]
-    | Cofun => ∑ f, [ Δ |- f : termRelArr Δ u t A ] 
-    | Discr => [Δ |- t ≅ u : A]
-    end.
+  Let Pctx θ := [ |-( ) θ ] -> unit.
 
-  Definition termRelPred Δ t u d (A : term) (f : term) : Type :=
-    match d with
-    | Fun => [ Δ |- f : termRelArr Δ t u A ]
-    | Cofun => [ Δ |- f : termRelArr Δ u t A ] 
-    | Discr => [Δ |- t ≅ u : A]
-    end.
+  Let Pty Θ d A := forall (wfA : [ Θ |-( d ) A ]),
+    forall (σ τ: nat -> term) ϕ,
+      [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+      match d with
+      | Fun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ : arr A[σ] A[τ] ]
+      | Cofun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ : arr A[τ] A[σ] ]
+      | Discr => [ Δ |- A[σ] ≅ A[τ] ]
+      end.
 
-  Definition dispatchDir γ σ τ φ A dA t u :=
-    match dA with
-    (* Discrete case, A[σ] ≅ A[τ], no transport needed *)
-    | Discr => (t, u, A[σ])
-    (* Fun case, A @ φ : A[σ] → A[τ] *)
-    | Fun => (tApp (compute_action γ A σ τ φ) t, u, A[τ])
-    (* Cofun case, A @ φ : A[τ] → A[σ] *)
-    | Cofun => (t, tApp (compute_action γ A σ τ φ) u, A[σ])
-    end.
+  Let Ptm Θ dt A dA t := forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]),
+    forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+    (let '(t,u,A) := 
+      dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
+    in termRel Δ t u dt A).
 
-  Definition tail (σ : nat -> term) := fun n => σ (S n).
+  Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] -> unit.
 
-  Fixpoint substRel 
-    (Δ: Context.context) 
-    (σ τ : nat -> term)
-    (Θ : DirectedContext.context) 
-    (φ : list term) : Type :=
-  match Θ, φ with
-  | nil, nil => unit
-  | (cons Adecl Θ), (cons w φ) =>
-    substRel Δ (tail σ) (tail τ) Θ φ ×
-    let '(t',u',A') := 
-      dispatchDir (dirs Θ) (tail σ) (tail τ) φ Adecl.(ty) Adecl.(ty_dir) (σ 0) (τ 0) 
-    in termRelPred Δ t' u' Adecl.(dir) A' w
-  | _, _ => False
-  end.
+  Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> unit.
 
-  Inductive TermRel (Δ: Context.context) (t u: term) : forall (d: direction), term -> term -> Type :=
-  | termRelFun { f } :
-    [ Δ |- f : arr t u ] ->
-    [ Δ |- f : t -( Fun )- u : U ]
-  | termRelCofun { f } :
-    [ Δ |- f : arr u t ] ->
-    [ Δ |- f : t -( Cofun )- u : U ]
-  | termRelDiscr { A } :
-    [ Δ |- t ≅ u : A ] ->
-    [ Δ |- err_term : t -( Discr )- u : A ]
-  | termRelPiFun { A B w }:
-    (* KM: I'm a bit skeptical that this typing premise should be needed.
-        This relation should assume that the type is well-formed and comes with all the inversion lemmas needed *)
-    [ Δ |- A ] ->
-    [ Δ ,, A |- w : tApp t⟨@wk1 Δ A⟩ (tRel 0) -( Fun )- tApp u⟨@wk1 Δ A⟩ (tRel 0) : B ] ->
-    [ Δ |- tLambda A w : t -( Fun )- u : tProd A B ]
-  | termRelPiCofun { A B w }:
-    [ Δ |- A ] ->
-    [ Δ ,, A |- w : tApp t⟨@wk1 Δ A⟩ (tRel 0) -( Cofun )- tApp u⟨@wk1 Δ A⟩ (tRel 0) : B ] ->
-    [ Δ |- tLambda A w : t -( Cofun )- u : tProd A B ]
-
-  where "[ Δ |- w : t -( d )- u : A ]" := (TermRel Δ t u d A w).
-
-  Close Scope typing_scope.
-
-  Context (type_act : forall (γ : list direction) (dA : direction) (A : term) (wdA : [γ |- A ◃ dA]) (σ τ : nat -> term) (φ : list term), term).
-
-  (* Given a context of directions γ coming from Θ,
-    substitutions, Δ |- σ, τ : |Θ|,
-    a morphism Δ |- φ : σ ⇒ τ : Θ,
-    a type |Θ| |- A, terms Δ |- t : A[σ], Δ |- u : A[τ],
-    returns the adequate triple (t',u', A') by acting
-    on t/u and substituting A according to the direction dA of A *)
-  Definition dispatch_dir γ σ τ φ A dA wdA t u :=
-    match dA with
-    (* Discrete case, A[σ] ≅ A[τ], no transport needed *)
-    | Discr => (t, u, A[σ])
-    (* Fun case, A @ φ : A[σ] → A[τ] *)
-    | Fun => (tApp (type_act γ dA A wdA σ τ φ) t, u, A[τ])
-    (* Cofun case, A @ φ : A[τ] → A[σ] *)
-    | Cofun => (t, tApp (type_act γ dA A wdA σ τ φ) u, A[σ])
-    end.
-
-  Inductive SubstRel (Δ: Context.context) :
-    (nat -> term) -> (nat -> term) -> DirectedContext.context -> list term -> Type :=
-  | substRelSEmpty : forall σ τ, [ Δ |- nil : σ -( )- τ : nil ]
-  | substRelSCons {Θ σ τ φ A dA t u w d} (wdA : [dirs Θ |- A ◃ dA])
-    (tuA := dispatch_dir (dirs Θ) σ τ φ A dA wdA t u) (t':= fst tuA) (u' := fst (snd tuA)) (A' := snd (snd tuA)):
-    [ Δ |- φ : σ -( )- τ : Θ] ->
-    [ Δ |- w : t' -( d )- u' : A' ] ->
-    [ Δ |- (w :: φ) : (t .: σ) -( )- (u .: τ) : (Θ ,,  d \ A @ dA)]
-  where "[ Δ |- ϕ : σ -( )- τ : Θ ]" := (SubstRel Δ σ τ Θ ϕ).
-
-End MorphismDefinition.
-
-(* (* TODO: reorganize files! *) *)
-(* Section DirectedAction. *)
-
-(*   Context {Δ} (wfΔ: [ |- Δ ]). *)
-
-(*   Let Pctx θ := [ |-( ) θ ] -> unit. *)
-
-(*   Let Pty Θ d A := forall (wfA : [ Θ |-( d ) A ]), *)
-(*     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] -> *)
-(*       match d with *)
-(*       | Fun => [ Δ |- wfty_action ϕ wfA : arr A[σ] A[τ] ] *)
-(*       | Cofun => [ Δ |- wfty_action ϕ wfA : arr A[τ] A[σ] ] *)
-(*       | Discr => [ Δ |- A[σ] ≅ A[τ] ] *)
-(*       end. *)
-
-(*   Let Ptm Θ dt A dA t := forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]), *)
-(*     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] -> *)
-(*       match dA with *)
-(*       | Fun => ∑ (w: witType dt), [ Δ |- w : tApp (wtterm_action ϕ wtt) t[σ] -( dt )- t[τ] : A[τ] ] *)
-(*       | Cofun => ∑ (w: witType dt), [ Δ |- w : t[σ] -( dt )- tApp (wtterm_action ϕ wtt) t[τ] : A[σ] ] *)
-(*       | Discr => ∑ (w: witType dt), [ Δ |- w : t[σ] -( dt )- t[τ] : A[σ] ] *)
-(*       end. *)
-
-(*   Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] -> unit. *)
-
-(*   Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> unit. *)
-
-(*   Definition DirectedAction : *)
-(*     DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm. *)
-(*   Proof. *)
-(*     eapply DirectedDeclarativeTyping.WfDeclInduction. *)
-(*     all: revert Pctx Pty Ptm Pconvty Pconvtm; simpl. *)
-(*     all: try (intros; exact tt). *)
-(*     - (* wfTypeU *) *)
-(*       intros Θ d wfΘ _ wfU σ τ l rel. *)
-(*       have wfU' : [ Δ |- U ] by constructor. *)
-(*       destruct d. *)
-(*       1-3: repeat (constructor; tea). *)
-(*     - (* wfTypeProd *) *)
-(*       intros Θ d A B wfA IHA wfB IHB wfProd σ τ l rel. *)
-(*       destruct d. *)
-(*       + admit. *)
-(*       + admit. *)
-(*       + cbn in *. *)
-(*         constructor. *)
+  Definition DirectedAction :
+    DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
+  Proof.
+    eapply DirectedDeclarativeTyping.WfDeclInduction.
+    all: revert Pctx Pty Ptm Pconvty Pconvtm; simpl.
+    all: try (intros; exact tt).
+    - (* wfTypeU *)
+      intros Θ d wfΘ _ wfU σ τ l rel.
+      cbn.
+      destruct d.
+      1-3: admit.
+    - (* wfTypeProd *)
+      intros Θ A dA B dB d wfA IHA wfB IHB maxd wfProd σ τ ϕ rel.
+      destruct d.
+      + admit.
+      + admit.
+      + admit.
+        (* constructor. *)
 (*         * eapply typing_subst; tea. *)
 (*           now eapply typing_erased. *)
 (*           admit. *)
 (*         * now trivial. *)
 (*         * admit. *)
-(*     - (* wfTypeUniv *) *)
+    - (* wfTypeUniv *)
+      admit.
 (*       intros Θ d A wtA IHA wfA σ τ l rel. *)
 (*       pose (X := IHA wtA _ _ l rel). *)
 (*       admit. *)
@@ -237,16 +68,19 @@ End MorphismDefinition.
 (*       (*   eexists. eassumption. *) *)
 (*       (* + inversion X. eapply convUniv. *) *)
 (*       (*   exact H. *) *)
-(*     - (* wfVar *) *)
+    - (* wfVar *)
+      admit.
 (*       intros Θ d' n d A dA wfΘ _ inctx dleq wtRel σ τ l rel. *)
 (*       admit. *)
-(*     - (* wfTermProd *) *)
+    - (* wfTermProd *)
+      admit.
 (*       intros Θ d A B wfA IHA wfB IHB wfProd σ τ rel. *)
 (*       destruct d. *)
 (*       + admit. *)
 (*       + admit. *)
 (*       + admit. *)
-(*     - (* wfTermLam *) *)
+    - (* wfTermLam *)
+      admit.
 (*       intros Θ dt dT A B t wfA IHA wfB IHB wtLam σ τ rel. *)
 (*       destruct dT; simpl in *. *)
 (*       + admit. *)
@@ -262,14 +96,15 @@ End MorphismDefinition.
 (*         * admit. *)
 (*         * constructor. *)
 (*           admit. *)
-(*     - (* wfTermApp *) *)
+    - (* wfTermApp *)
+      admit.
 (*       intros Θ d dA f a A B wtf IHf wta IHa wtApp σ τ rel. *)
 (*       destruct dA. *)
 (*       + cbn in *. admit. *)
 (*       + admit. *)
 (*       + cbn in *. admit. *)
-(*     - (* wfTermConv *) *)
-(*       admit. *)
-(*   Abort. *)
+    - (* wfTermConv *)
+      admit.
+  Abort.
 
-(* End DirectedAction. *)
+End DirectedValid.

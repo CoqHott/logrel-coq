@@ -510,7 +510,7 @@ Module Examples.
 
 
   Module Morphism.
-    From LogRel Require Import DirectedSemantics.
+    From LogRel Require Import DirectedMorphisms.
     From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
 
     Lemma morphism_fwd_characterization `{GenericTypingProperties} Δ (A B : term) l :
@@ -612,7 +612,7 @@ Module Examples.
 
 
   Module Morphism.
-    From LogRel Require Import DirectedSemantics.
+    From LogRel Require Import DirectedMorphisms.
     From LogRel Require Import Notations Context DeclarativeTyping DeclarativeInstance Weakening GenericTyping DeclarativeInstance.
 
     Lemma morphism_fwd_characterization `{GenericTypingProperties} Δ (A1 B1 A2 B2 : term) l :
