@@ -28,11 +28,26 @@ Section Definitions.
           [ |- Γ ] -> 
           [ Γ |- A @ s ] -> 
           [ |-  Γ ,, A]
+  (** **** Sort well-formation *)
+  with WfSortDecl : context -> sort -> Type :=
+      | wfSortSet {Γ} :
+          [ |- Γ ] ->
+          [ Γ |- set ]
+      | wfSortFormula {Γ} :
+          [ |- Γ ] ->
+          [ Γ |- formula ]
+      | wfSortIrr {Γ f} :
+          [ |- Γ ] ->
+          [ Γ |- f @ formula ] ->
+          [ Γ |- irr f ]
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> term -> sort -> Type :=
       | wfTypeU {Γ} : 
           [ |- Γ ] -> 
-          [ Γ |- U @ set ] 
+          [ Γ |- U @ set ]
+      | wfTypeF {Γ} :
+          [ |- Γ ] ->
+          [ Γ |- F @ set ]
       | wfTypeProd {Γ} {A B} : 
           [ Γ |- A @ set ] -> 
           [Γ ,, A |- B @ set ] -> 
@@ -291,9 +306,9 @@ Section Definitions.
       | TermRefl {Γ} {t A} :
           [ Γ |- t : A ] -> 
           [ Γ |- t ≅ t : A ]
-      | TermConv {Γ} {t t' A B} :
+      | TermConv {Γ} {t t' A B s} :
           [ Γ |- t ≅ t': A ] ->
-          [ Γ |- A ≅ B @ set ] ->
+          [ Γ |- A ≅ B @ s ] ->
           [ Γ |- t ≅ t': B ]
       | TermSym {Γ} {t t' A} :
           [ Γ |- t ≅ t' : A ] ->
@@ -302,8 +317,20 @@ Section Definitions.
           [ Γ |- t ≅ t' : A ] ->
           [ Γ |- t' ≅ t'' : A ] ->
           [ Γ |- t ≅ t'' : A ]
+            | TermIrrFormula {Γ f t t'} :
+        [ Γ |- f @ formula ] ->
+        [ Γ |- t : f ] ->
+        [ Γ |- t' : f ] ->
+        [ Γ |- t ≅ t' : f ]
+      | TermIrrIrr {Γ f t A a b} :
+        [ Γ |- A @ irr f ] ->
+        [ Γ |- a : A ] ->
+        [ Γ |- b : A ] ->
+        [ Γ |- t : f ] ->
+        [ Γ |- a ≅ b : A ]
       
   where "[   |- Γ ]" := (WfContextDecl Γ)
+  and   "[ Γ |- s ]" := (WfSortDecl Γ s)
   and   "[ Γ |- T @ s ]" := (WfTypeDecl Γ T s)
   and   "[ Γ |- t : T ]" := (TypingDecl Γ T t)
   and   "[ Γ |- A ≅ B @ s ]" := (ConvTypeDecl Γ s A B)
@@ -346,6 +373,7 @@ Module DeclarativeTypingData.
   Qed.
 
   #[export] Instance WfContext_Decl : WfContext de := WfContextDecl.
+  #[export] Instance WfSort_Decl : WfSort de := WfSortDecl.
   #[export] Instance WfType_Decl : WfType de := WfTypeDecl.
   #[export] Instance Typing_Decl : Inferring de := TypingDecl.
   #[export] Instance Inferring_Decl : Typing de := TypingDecl.
@@ -383,6 +411,7 @@ Section InductionPrinciples.
 
 Scheme 
     Minimality for WfContextDecl Sort Type with
+    Minimality for WfSortDecl   Sort Type with
     Minimality for WfTypeDecl   Sort Type with
     Minimality for TypingDecl    Sort Type with
     Minimality for ConvTypeDecl  Sort Type with
@@ -390,6 +419,7 @@ Scheme
 
 Combined Scheme _WfDeclInduction from
     WfContextDecl_rect_nodep,
+    WfSortDecl_rect_nodep,
     WfTypeDecl_rect_nodep,
     TypingDecl_rect_nodep,
     ConvTypeDecl_rect_nodep,
@@ -410,9 +440,9 @@ Let WfDeclInductionType :=
 
 Lemma WfDeclInduction : WfDeclInductionType.
 Proof.
-  intros PCon PTy PTm PTyEq PTmEq **.
-  pose proof (_WfDeclInduction PCon PTy PTm PTyEq PTmEq) as H.
-  destruct H as [?[?[? []]]].
+  intros PCon PSort PTy PTm PTyEq PTmEq **.
+  pose proof (_WfDeclInduction PCon PSort PTy PTm PTyEq PTmEq) as H.
+  destruct H as [?[?[?[? []]]]].
   all: try (assumption ; fail).
   repeat (split;[assumption|]); assumption.
 Qed.
@@ -425,7 +455,7 @@ Definition WfDeclInductionConcl :=
 
 End InductionPrinciples.
 
-Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
+Arguments WfDeclInductionConcl PCon PSort PTy PTm PTyEq PTmEq : rename.
 
 (** Typed reduction implies untyped reduction *)
 Section TypeErasure.
