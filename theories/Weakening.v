@@ -451,6 +451,9 @@ Lemma wk_comp_ren_on {Γ Δ Ξ} (H : sort) (ρ1 : Γ ≤ Δ) (ρ2 : Δ ≤ Ξ) :
   H⟨ρ2⟩⟨ρ1⟩ = H⟨ρ1 ∘w ρ2⟩.
 Proof. now bsimpl. Qed.
 
+Lemma wk_on_set {Γ Δ} (ρ : Γ ≤ Δ) : set⟨ρ⟩ = set.
+Proof.  reflexivity. Qed.
+
 Lemma wk_id_ren_on Γ (H : sort) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
 
