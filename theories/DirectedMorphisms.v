@@ -21,6 +21,8 @@ Proof.
   - exact (tLambda U (tRel 0)).
   - exact (List.nth n l err_term).
   - remember d'' as dt. destruct d''.
+    (* there might be an error here, the telescope should be modified according to the direction of the domain?? *)
+    (* maybe it still work, but its just doing subdirectioning *)
     + pose (tA := IHd1 _ eq_refl σ τ l).
       pose (tB := IHd2 _ eq_refl
                     (scons (tApp tA⟨↑⟩ (tRel 0)) σ)
@@ -60,11 +62,100 @@ Proof.
     exact (tApp (tApp tf a[σ]) a[τ]).
 Defined.
 
+Fixpoint compute_dir_and_action
+  (δ: list direction) (t: term)
+  (σ τ: nat -> term) (ϕ: list term) : (direction × term) :=
+  match t with
+  | tSort set => (Discr, idterm U)
+  | tRel n => (List.nth n δ Discr, List.nth n ϕ err_term)
+  | tProd A B =>
+      let '(dA, aA) := compute_dir_and_action δ A σ τ ϕ in
+      match dA with
+      | Discr =>
+          let '(dB, aB) := compute_dir_and_action
+                             (cons Discr δ)
+                             B
+                             (scons (tRel 0) σ)
+                             (scons (tRel 0) τ)
+                             (cons err_term ϕ) in
+          match dB with
+          | Discr => (Discr, tLambda (tProd A B)[σ] (tRel 0))
+          | Fun => (Fun,
+                    (tLambda (tProd A B)[σ] (tLambda A[τ] (
+                                                 tApp aB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp aA⟨↑⟩⟨↑⟩ (tRel 0)))))))
+          | Cofun => (Cofun,
+                      (tLambda (tProd A B)[τ] (tLambda A[σ] (
+                                                   tApp aB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp aA⟨↑⟩⟨↑⟩ (tRel 0)))))))
+          end
+      | Fun =>
+          let '(dB, aB) := compute_dir_and_action
+                             (cons Discr δ)
+                             B
+                             (scons (tRel 0) σ)
+                             (scons (tApp aA⟨↑⟩ (tRel 0)) τ)
+                             (cons err_term ϕ) in
+          match dB with
+          | Fun => (Discr, err_term)
+          | Discr | Cofun =>
+                      (Cofun, (tLambda (tProd A B)[τ] (tLambda A[σ] (
+                                                           tApp aB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp aA⟨↑⟩⟨↑⟩ (tRel 0)))))))
+          end
+      | Cofun =>
+          let '(dB, aB) := compute_dir_and_action
+                             (cons Discr δ)
+                             B
+                             (scons (tApp aA⟨↑⟩ (tRel 0)) σ)
+                             (scons (tRel 0) τ)
+                             (cons err_term ϕ) in
+          match dB with
+          | Cofun => (Discr, err_term)
+          | Discr | Fun => (Fun,
+                    (tLambda (tProd A B)[σ] (tLambda A[τ] (
+                                                 tApp aB⟨up_ren ↑⟩ (tApp (tRel 1) (tApp aA⟨↑⟩⟨↑⟩ (tRel 0)))))))
+          end
+      end
+  | tLambda A t =>
+      let '(dA, aA) := compute_dir_and_action δ A σ τ ϕ in
+      match dA with
+      | Discr =>
+          let '(dt, at_) := compute_dir_and_action
+                             (cons Discr δ)
+                             t
+                             (scons (tRel 0) σ)
+                             (scons (tRel 0) τ)
+                             (cons err_term ϕ) in
+          (dt, (tLambda A[σ] (tLambda A[τ] at_⟨↑⟩)))
+      | Fun =>
+          let '(dt, at_) := compute_dir_and_action
+                             (cons Discr δ)
+                             t
+                             (scons (tRel 0) σ)
+                             (scons (tApp aA⟨↑⟩ (tRel 0)) τ)
+                             (cons err_term ϕ) in
+          (dt, (tLambda A[σ] (tLambda A[τ] at_⟨↑⟩)))
+      | Cofun =>
+          let '(dt, at_) := compute_dir_and_action
+                             (cons Discr δ)
+                             t
+                             (scons (tApp aA⟨↑⟩ (tRel 0)) σ)
+                             (scons (tRel 0) τ)
+                             (cons err_term ϕ) in
+          (dt, (tLambda A[σ] (tLambda A[τ] at_)⟨↑⟩))
+      end
+  | tApp f a => let '(df, af) := compute_dir_and_action δ f σ τ ϕ in
+               (df, (tApp (tApp af a[σ]) a[τ]))
+  | _ => (Discr, err_term)
+  end.
+
 Definition compute_action (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) : term :=
-  match compute_DirInfer δ t with
+  snd (compute_dir_and_action δ t σ τ ϕ).
+
+Lemma compute_action_spec (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) :
+  compute_action δ t σ τ ϕ = match compute_DirInfer δ t with
   | None => err_term
   | Some (d; der) => action δ d t der σ τ ϕ
   end.
+Abort.
 
 
 From LogRel Require Import Notations Context Weakening GenericTyping.

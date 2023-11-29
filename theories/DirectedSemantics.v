@@ -12,9 +12,9 @@ Section DirectedValid.
   Context `{GenericTypingProperties}.
   Context {Δ} (wfΔ: [ |- Δ ]).
 
-  Let Pctx θ := [ |-( ) θ ] -> unit.
+  Let Pctx (θ: context) := (* [ |-( ) θ ] -> *) unit (* TODO *).
 
-  Let Pty Θ d A := forall (wfA : [ Θ |-( d ) A ]),
+  Let Pty Θ d A := (* forall (wfA : [ Θ |-( d ) A ]), *)
     forall (σ τ: nat -> term) ϕ,
       [ Δ |- ϕ : σ -( )- τ : Θ ] ->
       match d with
@@ -23,13 +23,13 @@ Section DirectedValid.
       | Discr => [ Δ |- A[σ] ≅ A[τ] ]
       end.
 
-  Let Ptm Θ dt A dA t := forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]),
+  Let Ptm Θ dt A dA t := (* forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]), *)
     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
-    (let '(u,v,A) :=
+    (let '(v,w,A) :=
       dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
-    in termRelPred Δ u v dt A (compute_action (dirs Θ) t σ τ ϕ)).
+    in termRelPred Δ v w dt A (compute_action (dirs Θ) t σ τ ϕ)).
 
-  Let Pconvty Θ d A B := [ Θ |-( d ) A ≅ B ] ->
+  Let Pconvty Θ d A B := (* [ Θ |-( d ) A ≅ B ] -> *)
     forall (σ τ: nat -> term) ϕ,
       [ Δ |- ϕ : σ -( )- τ : Θ ] ->
       match d with
@@ -38,23 +38,39 @@ Section DirectedValid.
       | Discr => unit
       end.
 
-  Let Pconvtm Θ dt A dA t u := [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> unit. (* TODO *)
+  Let Pconvtm Θ dt A dA t u := (* [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> *)
+    forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+    (let '(v,w,A) :=
+      dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
+      (* need only one dispatch? the other should be convertible? *)
+      (* will need a lemma saying if compute_action is well typed,
+         then dispatch dir gives convertible components *)
+    in
+    match dt with
+    | Fun => [ Δ |- (compute_action (dirs Θ) t σ τ ϕ) ≅ (compute_action (dirs Θ) u σ τ ϕ) : termRelArr Δ v w A ]
+    | Cofun => [ Δ |- (compute_action (dirs Θ) t σ τ ϕ) ≅ (compute_action (dirs Θ) u σ τ ϕ) : termRelArr Δ w v A ]
+    | Discr => unit
+    end).
+
 
   Definition DirectedAction :
     DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
   Proof.
     eapply DirectedDeclarativeTyping.WfDeclInduction.
     all: revert Pctx Pty Ptm Pconvty Pconvtm; simpl.
-    all: try (intros; exact tt).
+    - exact tt. (* TODO: what do i need exactly for contexts? *)
+    - intros; exact tt.
+    - intros; exact tt.
+    - intros; exact tt.
     - (* wfTypeU *)
-      intros Θ d wfΘ _ wfU σ τ l rel.
+      intros Θ d wfΘ _ σ τ l rel.
       cbn.
       (* TODO: for reflexivity, look at generic consequences or something, there is a type class for this *)
       (* WAIT in this case its not needed, you have it for every constructors *)
       destruct d.
       1-3: admit.
     - (* wfTypeProd *)
-      intros Θ A dA B dB d wfA IHA wfB IHB maxd wfProd σ τ ϕ rel.
+      intros Θ A dA B dB d wfA IHA wfB IHB maxd σ τ ϕ rel.
       destruct d.
       + admit.
       + admit.
@@ -78,7 +94,7 @@ Section DirectedValid.
 (*       (* + inversion X. eapply convUniv. *) *)
 (*       (*   exact H. *) *)
     - (* wfVar *)
-      intros Θ d' n d A dA wfΘ IHΘ inctx dleq wtRel σ τ ϕ rel.
+      intros Θ d' n d A dA wfΘ IHΘ inctx dleq σ τ ϕ rel.
       (* maybe will need something on the context in the induction *)
       admit.
 (*       admit. *)
