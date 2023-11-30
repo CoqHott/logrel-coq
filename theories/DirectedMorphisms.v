@@ -124,7 +124,7 @@ Fixpoint compute_dir_and_action
                              (scons (tRel 0) σ)
                              (scons (tRel 0) τ)
                              (cons err_term ϕ) in
-          (dt, (tLambda A[σ] (tLambda A[τ] at_⟨↑⟩)))
+          (dt, (tLambda A[σ] (tLambda A[τ]⟨↑⟩ at_⟨↑⟩)))
       | Fun =>
           let '(dt, at_) := compute_dir_and_action
                              (cons Discr δ)
@@ -132,7 +132,7 @@ Fixpoint compute_dir_and_action
                              (scons (tRel 0) σ)
                              (scons (tApp aA⟨↑⟩ (tRel 0)) τ)
                              (cons err_term ϕ) in
-          (dt, (tLambda A[σ] (tLambda A[τ] at_⟨↑⟩)))
+          (dt, (tLambda A[σ] (tLambda A[τ]⟨↑⟩ at_⟨↑⟩)))
       | Cofun =>
           let '(dt, at_) := compute_dir_and_action
                              (cons Discr δ)
@@ -147,12 +147,17 @@ Fixpoint compute_dir_and_action
   | _ => (Discr, err_term)
   end.
 
+(* TODO: state this lemma in a different way with direction on compute_DirInfer *)
 Lemma compute_action_spec (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) :
   snd (compute_dir_and_action δ t σ τ ϕ) = match compute_DirInfer δ t with
   | None => err_term
   | Some (d; der) => action δ d t der σ τ ϕ
   end.
 Abort.
+
+(* TODO: cleanup *)
+Definition compute_action (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) : term :=
+  snd (compute_dir_and_action δ t σ τ ϕ).
 
 
 From LogRel Require Import Notations Context Weakening GenericTyping.
