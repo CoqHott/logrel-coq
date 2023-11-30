@@ -147,11 +147,8 @@ Fixpoint compute_dir_and_action
   | _ => (Discr, err_term)
   end.
 
-Definition compute_action (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) : term :=
-  snd (compute_dir_and_action δ t σ τ ϕ).
-
 Lemma compute_action_spec (δ: list direction) (t: term) (σ τ: nat -> term) (ϕ: list term) :
-  compute_action δ t σ τ ϕ = match compute_DirInfer δ t with
+  snd (compute_dir_and_action δ t σ τ ϕ) = match compute_DirInfer δ t with
   | None => err_term
   | Some (d; der) => action δ d t der σ τ ϕ
   end.

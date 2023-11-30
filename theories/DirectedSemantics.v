@@ -17,28 +17,35 @@ Section DirectedValid.
   Let Pty Θ d A := (* forall (wfA : [ Θ |-( d ) A ]), *)
     forall (σ τ: nat -> term) ϕ,
       [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+      let '(d', act) := compute_dir_and_action (dirs Θ) A σ τ ϕ in
+      dir_leq d' d ×
       match d with
-      | Fun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ : arr A[σ] A[τ] ]
-      | Cofun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ : arr A[τ] A[σ] ]
+      | Fun => [ Δ |- act : arr A[σ] A[τ] ]
+      | Cofun => [ Δ |- act : arr A[τ] A[σ] ]
       | Discr => [ Δ |- A[σ] ≅ A[τ] ]
       end.
 
   Let Ptm Θ dt A dA t := (* forall (wtt: [ Θ |-( dt ) t : A @( dA ) ]), *)
     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
     (let '(v,w,A) :=
-      dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
-    in termRelPred Δ v w dt A (compute_action (dirs Θ) t σ τ ϕ)).
+      dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ] in
+     let '(d', act) := (compute_dir_and_action (dirs Θ) t σ τ ϕ) in
+    dir_leq d' dt × termRelPred Δ v w dt A act).
 
   Let Pconvty Θ d A B := (* [ Θ |-( d ) A ≅ B ] -> *)
     forall (σ τ: nat -> term) ϕ,
       [ Δ |- ϕ : σ -( )- τ : Θ ] ->
+      let '(dA, actA) := compute_dir_and_action (dirs Θ) A σ τ ϕ in
+      let '(dB, actB) := compute_dir_and_action (dirs Θ) B σ τ ϕ in
+      dir_leq dA d ×
+      dir_leq dB d ×
       match d with
-      | Fun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ ≅ compute_action (dirs Θ) B σ τ ϕ : arr A[σ] A[τ] ]
-      | Cofun => [ Δ |- compute_action (dirs Θ) A σ τ ϕ ≅ compute_action (dirs Θ) B σ τ ϕ : arr A[τ] A[σ] ]
+      | Fun => [ Δ |- actA ≅ actB : arr A[σ] A[τ] ]
+      | Cofun => [ Δ |- actA ≅ actB : arr A[τ] A[σ] ]
       | Discr => unit
       end.
 
-  Let Pconvtm Θ dt A dA t u := (* [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> *)
+  Let Pconvtm Θ d A dA t u := (* [ Θ |-( dt ) t ≅ u : A @( dA ) ] -> *)
     forall (σ τ: nat -> term) ϕ, [ Δ |- ϕ : σ -( )- τ : Θ ] ->
     (let '(v,w,A) :=
       dispatchDir (dirs Θ) σ τ ϕ A dA t[σ] t[τ]
@@ -46,9 +53,13 @@ Section DirectedValid.
       (* will need a lemma saying if compute_action is well typed,
          then dispatch dir gives convertible components *)
     in
-    match dt with
-    | Fun => [ Δ |- (compute_action (dirs Θ) t σ τ ϕ) ≅ (compute_action (dirs Θ) u σ τ ϕ) : termRelArr Δ v w A ]
-    | Cofun => [ Δ |- (compute_action (dirs Θ) t σ τ ϕ) ≅ (compute_action (dirs Θ) u σ τ ϕ) : termRelArr Δ w v A ]
+      let '(dt, actt) := compute_dir_and_action (dirs Θ) t σ τ ϕ in
+      let '(du, actu) := compute_dir_and_action (dirs Θ) u σ τ ϕ in
+      dir_leq dt d ×
+      dir_leq du d ×
+    match d with
+    | Fun => [ Δ |- actt ≅ actu : termRelArr Δ v w A ]
+    | Cofun => [ Δ |- actt ≅ actu : termRelArr Δ w v A ]
     | Discr => unit
     end).
 
@@ -64,15 +75,33 @@ Section DirectedValid.
     - intros; exact tt.
     - (* wfTypeU *)
       intros Θ d wfΘ _ σ τ l rel.
-      cbn.
+      split. 1: easy.
       (* TODO: for reflexivity, look at generic consequences or something, there is a type class for this *)
       (* WAIT in this case its not needed, you have it for every constructors *)
       destruct d.
       1-3: admit.
     - (* wfTypeProd *)
       intros Θ A dA B dB d wfA IHA wfB IHB maxd σ τ ϕ rel.
-      destruct d.
-      + admit.
+      have IHA_ := IHA σ τ ϕ _.
+      remember (compute_dir_and_action (dirs Θ) A σ τ ϕ) as dir_act_A.
+      destruct dir_act_A as [[] actA]; cycle 2.
+      + have IHB_ := IHB (tRel 0 .: σ) (tRel 0 .: τ) (cons err_term ϕ) _.
+        remember (compute_dir_and_action _ B _ _ _) as dir_act_B.
+        destruct dir_act_B as [[] actB]; cycle 2.
+        { split. 1: now constructor.
+          cbv in maxd.
+          destruct dA, dB; inversion maxd; cbn in *.
+          - admit.
+          - admit.
+          - admit.
+          - admit.
+          - admit.
+          - admit.
+          - unfold up_term_term.
+            admit.
+        }
+        { admit. }
+        { admit. }
       + admit.
       + admit.
         (* constructor. *)
