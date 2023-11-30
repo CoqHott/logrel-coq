@@ -82,11 +82,18 @@ Section DirectedValid.
       1-3: admit.
     - (* wfTypeProd *)
       intros Θ A dA B dB d wfA IHA wfB IHB maxd σ τ ϕ rel.
-      cbn -[subst_term].
-      have IHA_ := IHA σ τ ϕ _.
+      cbn -[subst_term] in *.
+      have IHA_ := IHA σ τ ϕ rel.
       remember (compute_dir_and_action (dirs Θ) A σ τ ϕ) as dir_act_A.
       destruct dir_act_A as [[] actA]; cycle 2.
-      + have IHB_ := IHB (tRel 0 .: σ) (tRel 0 .: τ) (cons err_term ϕ) _.
+      + 
+        unshelve epose (IHB_ := IHB (tRel 0 .: σ) (tRel 0 .: τ) (cons err_term ϕ) _).
+        1:{
+          cbn; split. 
+          1:tea.
+          unfold dispatchDir; destruct dA.
+          all: admit.
+        }
         remember (compute_dir_and_action _ B _ _ _) as dir_act_B.
         destruct dir_act_B as [[] actB]; cycle 2.
         { split. 1: now constructor.
@@ -112,6 +119,7 @@ Section DirectedValid.
 (*         * now trivial. *)
 (*         * admit. *)
     - (* wfTypeUniv *)
+      cbn; intros.
       admit.
 (*       intros Θ d A wtA IHA wfA σ τ l rel. *)
 (*       pose (X := IHA wtA _ _ l rel). *)
