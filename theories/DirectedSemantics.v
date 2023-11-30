@@ -68,20 +68,21 @@ Section DirectedValid.
     DirectedDeclarativeTyping.WfDeclInductionConcl Pctx Pty Ptm Pconvty Pconvtm.
   Proof.
     eapply DirectedDeclarativeTyping.WfDeclInduction.
-    all: revert Pctx Pty Ptm Pconvty Pconvtm; simpl.
+    all: subst Pctx Pty Ptm Pconvty Pconvtm.
     - exact tt. (* TODO: what do i need exactly for contexts? *)
     - intros; exact tt.
     - intros; exact tt.
     - intros; exact tt.
     - (* wfTypeU *)
       intros Θ d wfΘ _ σ τ l rel.
-      split. 1: easy.
+      split. 1: now constructor.
       (* TODO: for reflexivity, look at generic consequences or something, there is a type class for this *)
       (* WAIT in this case its not needed, you have it for every constructors *)
       destruct d.
       1-3: admit.
     - (* wfTypeProd *)
       intros Θ A dA B dB d wfA IHA wfB IHB maxd σ τ ϕ rel.
+      cbn -[subst_term].
       have IHA_ := IHA σ τ ϕ _.
       remember (compute_dir_and_action (dirs Θ) A σ τ ϕ) as dir_act_A.
       destruct dir_act_A as [[] actA]; cycle 2.
