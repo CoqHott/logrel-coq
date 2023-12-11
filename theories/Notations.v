@@ -173,9 +173,9 @@ Reserved Notation "ρ ∘w ρ'" (at level 50).
 (** The universe is reducible in Γ, according to the kit K *)
 Reserved Notation "[ K | Γ ||-U ]" (at level 0, K, Γ at level 50).
 (** The type A is reducible as a Π type in Γ according to the kit K *)
-Reserved Notation "[ K | Γ ||-Π A ]" (at level 0, K, Γ, A at level 50).
+Reserved Notation "[ K | Γ ||-Π A @ s ]" (at level 0, K, Γ, A, s at level 50).
 (** The type A is reducible in Γ, according to the kit K *)
-Reserved Notation "[ K | Γ ||- A ]"  (at level 0, K, Γ, A at level 50).
+Reserved Notation "[ K | Γ ||- A @ s ]"  (at level 0, K, Γ, A, s at level 50).
 (** The types A and B are reducibly convertible in Γ, given the proof R than A is reducible, according to the kit K*)
 Reserved Notation "[ K | Γ ||- A ≅ B | R ]" (at level 0, K, Γ, A, B, R at level 50).
 (** The term t is reducible at type A in Γ, given the proof R than A is reducible, according to the kit K *)
@@ -194,7 +194,7 @@ Reserved Notation "[ P | Γ ||- t ≅ u : A ]" (at level 0, P, Γ, t, u, A at le
 Reserved Notation "l << l'" (at level 70, l' at next level).
 
 (** A is reducible as a neutral in Γ *)
-Reserved Notation "[ Γ ||-ne A ]" (at level 0, Γ, A at level 50).
+Reserved Notation "[ Γ ||-ne A @ s ]" (at level 0, Γ, A, s at level 50).
 (** Set B is reducibly convertible to type A in Γ, given the proof neA that A is reducible as neutral *)
 Reserved Notation "[ Γ ||-ne A ≅ B | neA ]" (at level 0, Γ, A, B, neA at level 50).
 (** Term t is reducible at type A in Γ, given the proof neA that A is reducible as neutral *)
@@ -226,7 +226,7 @@ Reserved Notation "[ Γ ||-< l >U]" (at level 0, Γ, l at level 50).
 (** The type A is reducible as a Π type in Γ at level l *)
 Reserved Notation "[ Γ ||-< l >Π  A ]" (at level 0, Γ, l, A at level 50).
 (** The type A is reducible in Γ at level l *)
-Reserved Notation "[ Γ ||-< l >  A ]" (at level 0, Γ, l, A at level 50).
+Reserved Notation "[ Γ ||-< l >  A @ s ]" (at level 0, Γ, l, A, s at level 50).
 (** The types A and B are reducibly convertible in Γ at level l, given the proof R that A is reducible *)
 Reserved Notation "[ Γ ||-< l >  A ≅ B | R ]" (at level 0, Γ, l, A, B, R at level 50).
 (** The term t is reducible at type A and level l in Γ, given the proof R that A is reducible *)
