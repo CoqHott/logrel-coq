@@ -29,9 +29,9 @@ Section Inductions.
 same. Both need to be proven simultaneously, because of contravariance in the product case. *)
   
   Fixpoint LR_embedding@{i j k l} {l l'} (l_ : l << l')
-    {Γ A rEq rTe rTeEq} (lr : LogRel@{i j k l} l Γ A rEq rTe rTeEq) {struct lr} 
-    : (LogRel@{i j k l} l' Γ A rEq rTe rTeEq) :=
-    let embedPolyAd {Γ A B} {PA : PolyRedPack Γ A B} (PAad : PolyRedPackAdequate _ PA) :=
+    {Γ s A rEq rTe rTeEq} (lr : LogRel@{i j k l} l Γ s A rEq rTe rTeEq) {struct lr} 
+    : (LogRel@{i j k l} l' Γ s A rEq rTe rTeEq) :=
+    let embedPolyAd {Γ s_shp s_pos A B} {PA : PolyRedPack Γ s_shp s_pos A B} (PAad : PolyRedPackAdequate _ PA) :=
         {|
           PolyRedPack.shpAd (Δ : context) (ρ : Δ ≤ _) (h : [  |- Δ]) :=
             LR_embedding l_ (PAad.(PolyRedPack.shpAd) ρ h) ;
@@ -70,37 +70,37 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
   Theorem LR_rect@{i j k o}
     (l : TypeLevel)
     (rec : forall l', l' << l -> RedRel@{i j})
-    (P : forall {c t rEq rTe rTeEq},
-      LR@{i j k} rec c t rEq rTe rTeEq  -> Type@{o}) :
+    (P : forall {c s t rEq rTe rTeEq},
+      LR@{i j k} rec c s t rEq rTe rTeEq  -> Type@{o}) :
 
-    (forall (Γ : context) A (h : [Γ ||-U<l> A]),
-      P (LRU rec h)) ->
+    (forall (Γ : context) (s : sort) A (h : [Γ ||-U<l> A]),
+      P (s := s) (LRU rec h)) ->
 
-    (forall (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+    (forall (Γ : context) (s : sort) (A : term) (neA : [Γ ||-ne A @ s]),
       P (LRne rec neA)) -> 
 
     (forall (Γ : context) (A : term) (ΠA : PiRedTy@{j} Γ A) (HAad : PiRedTyAdequate (LR rec) ΠA),
-      PolyHyp P Γ ΠA HAad (P (LRPi rec ΠA HAad))) ->
+      PolyHyp P Γ ΠA HAad (P (s := set) (LRPi rec ΠA HAad))) ->
 
-    (forall Γ A (NA : [Γ ||-Nat A]), P (LRNat rec NA)) ->
+    (forall Γ A (NA : [Γ ||-Nat A]), P (s := set) (LRNat rec NA)) ->
 
-    (forall Γ A (NA : [Γ ||-Empty A]), P (LREmpty rec NA)) ->
+    (forall Γ A (NA : [Γ ||-Empty A]), P (s := set) (LREmpty rec NA)) ->
 
     (forall (Γ : context) (A : term) (ΠA : SigRedTy@{j} Γ A) (HAad : SigRedTyAdequate (LR rec) ΠA),
-      PolyHyp P Γ ΠA HAad (P (LRSig rec ΠA HAad))) ->
+      PolyHyp P Γ ΠA HAad (P (s := set) (LRSig rec ΠA HAad))) ->
 
     (forall Γ A (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate (LR rec) IA), 
       P IAad.(IdRedTyPack.tyAd) ->
       (forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), P (IAad.(IdRedTyPack.tyKripkeAd) ρ wfΔ)) ->
-      P (LRId rec IA IAad)) ->
+      P (s := set) (LRId rec IA IAad)) ->
 
-    forall (Γ : context) (t : term) (rEq rTe : term -> Type@{j})
-      (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ t rEq rTe rTeEq),
+    forall (Γ : context) (s : sort) (t : term) (rEq rTe : term -> Type@{j})
+      (rTeEq  : term -> term -> Type@{j}) (lr : LR@{i j k} rec Γ s t rEq rTe rTeEq),
       P lr.
   Proof.
     cbn.
     intros HU Hne HPi HNat HEmpty HSig HId.
-    fix HRec 6.
+    fix HRec 7.
     destruct lr.
     - eapply HU.
     - eapply Hne.
