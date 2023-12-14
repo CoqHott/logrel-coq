@@ -986,8 +986,8 @@ Inductive LR@{i j k} `{ta : tag}
   `{RedType ta} `{RedTerm ta}
   {l : TypeLevel} (rec : forall l', l' << l -> RedRel@{i j})
 : RedRel@{j k} :=
-  | LRU {Γ A s} (H : [Γ ||-U<l> A]) :
-      LR rec Γ s A
+  | LRU {Γ A} (H : [Γ ||-U<l> A]) :
+      LR rec Γ set A
       (fun B   => [Γ ||-U≅ B ])
       (fun t   => [ rec | Γ ||-U t     : A | H ])
       (fun t u => [ rec | Γ ||-U t ≅ u : A | H ])
@@ -996,19 +996,19 @@ Inductive LR@{i j k} `{ta : tag}
       (fun B   =>  [ Γ ||-ne A ≅ B     | neA])
       (fun t   =>  [ Γ ||-ne t     : A | neA])
       (fun t u =>  [ Γ ||-ne t ≅ u : A | neA])
-  | LRPi {Γ : context} {A : term} {s} (ΠA : PiRedTy@{j} Γ A) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
-    LR rec Γ s A
+  | LRPi {Γ : context} {A : term} (ΠA : PiRedTy@{j} Γ A) (ΠAad : PiRedTyAdequate@{j k} (LR rec) ΠA) :
+    LR rec Γ set A
       (fun B   => [ Γ ||-Π A ≅ B     | ΠA ])
       (fun t   => [ Γ ||-Π t     : A | ΠA ])
       (fun t u => [ Γ ||-Π t ≅ u : A | ΠA ])
-  | LRNat {Γ A s} (NA : [Γ ||-Nat A]) :
-    LR rec Γ s A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
-  | LREmpty {Γ A s} (NA : [Γ ||-Empty A]) :
-    LR rec Γ s A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA)
-  | LRSig {Γ : context} {A : term} {s} (ΣA : SigRedTy@{j} Γ A) (ΣAad : SigRedTyAdequate@{j k} (LR rec) ΣA) :
-    LR rec Γ s A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA)
-  | LRId {Γ A s} (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate@{j k} (LR rec) IA) :
-    LR rec Γ s A (IdRedTyEq IA) (IdRedTm IA) (IdRedTmEq IA)
+  | LRNat {Γ A} (NA : [Γ ||-Nat A]) :
+    LR rec Γ set A (NatRedTyEq NA) (NatRedTm NA) (NatRedTmEq NA)
+  | LREmpty {Γ A} (NA : [Γ ||-Empty A]) :
+    LR rec Γ set A (EmptyRedTyEq NA) (EmptyRedTm NA) (EmptyRedTmEq NA)
+  | LRSig {Γ : context} {A : term} (ΣA : SigRedTy@{j} Γ A) (ΣAad : SigRedTyAdequate@{j k} (LR rec) ΣA) :
+    LR rec Γ set A (SigRedTyEq ΣA) (SigRedTm ΣA) (SigRedTmEq ΣA)
+  | LRId {Γ A} (IA : IdRedTyPack@{j} Γ A) (IAad : IdRedTyAdequate@{j k} (LR rec) IA) :
+    LR rec Γ set A (IdRedTyEq IA) (IdRedTm IA) (IdRedTmEq IA)
   .
   
   (** Removed, as it is provable (!), cf LR_embedding in LRInduction. *)
@@ -1071,30 +1071,30 @@ Section MoreDefs.
     ∑ rEq rTe rTeEq , LR (LogRelRec l) Γ s A rEq rTe rTeEq :=
       fun H => (LRPack.eqTy H; LRPack.redTm H; LRPack.eqTm H; H.(LRAd.adequate)).
 
-  Definition LRU_@{i j k l} {l Γ A s} (H : [Γ ||-U<l> A])
-    : [ LogRel@{i j k l} l | Γ ||- A @ s] :=
+  Definition LRU_@{i j k l} {l Γ A} (H : [Γ ||-U<l> A])
+    : [ LogRel@{i j k l} l | Γ ||- A @ set] :=
     LRbuild (LRU (LogRelRec l) H).
 
   Definition LRne_@{i j k l} l {Γ A s} (neA : [Γ ||-ne A @ s])
     : [ LogRel@{i j k l} l | Γ ||- A @ s] :=
     LRbuild (LRne (LogRelRec l) neA).
 
-  Definition LRPi_@{i j k l} l {Γ A s} (ΠA : PiRedTy@{k} Γ A)
+  Definition LRPi_@{i j k l} l {Γ A} (ΠA : PiRedTy@{k} Γ A)
     (ΠAad : PiRedTyAdequate (LR (LogRelRec@{i j k} l)) ΠA)
-    : [ LogRel@{i j k l} l | Γ ||- A @ s] :=
+    : [ LogRel@{i j k l} l | Γ ||- A @ set] :=
     LRbuild (LRPi (LogRelRec l) ΠA ΠAad).
 
-  Definition LRNat_@{i j k l} l {Γ A s} (NA : [Γ ||-Nat A]) 
-    : [LogRel@{i j k l} l | Γ ||- A @ s] :=
+  Definition LRNat_@{i j k l} l {Γ A} (NA : [Γ ||-Nat A]) 
+    : [LogRel@{i j k l} l | Γ ||- A @ set] :=
     LRbuild (LRNat (LogRelRec l) NA).
 
-  Definition LREmpty_@{i j k l} l {Γ A s} (NA : [Γ ||-Empty A]) 
-    : [LogRel@{i j k l} l | Γ ||- A @ s] :=
+  Definition LREmpty_@{i j k l} l {Γ A} (NA : [Γ ||-Empty A]) 
+    : [LogRel@{i j k l} l | Γ ||- A @ set] :=
     LRbuild (LREmpty (LogRelRec l) NA).
 
-  Definition LRId_@{i j k l} l {Γ A s} (IA : IdRedTyPack@{k} Γ A) 
+  Definition LRId_@{i j k l} l {Γ A} (IA : IdRedTyPack@{k} Γ A) 
     (IAad : IdRedTyAdequate (LR (LogRelRec@{i j k} l)) IA)
-    : [LogRel@{i j k l} l | Γ ||- A @ s] :=
+    : [LogRel@{i j k l} l | Γ ||- A @ set] :=
     LRbuild (LRId (LogRelRec l) IA IAad).
 
 End MoreDefs.
