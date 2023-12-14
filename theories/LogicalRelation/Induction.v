@@ -73,8 +73,8 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
     (P : forall {c s t rEq rTe rTeEq},
       LR@{i j k} rec c s t rEq rTe rTeEq  -> Type@{o}) :
 
-    (forall (Γ : context) (s : sort) A (h : [Γ ||-U<l> A]),
-      P (s := s) (LRU rec h)) ->
+    (forall (Γ : context) A (h : [Γ ||-U<l> A]),
+      P (LRU rec h)) ->
 
     (forall (Γ : context) (s : sort) (A : term) (neA : [Γ ||-ne A @ s]),
       P (LRne rec neA)) -> 
@@ -123,13 +123,13 @@ same. Both need to be proven simultaneously, because of contravariance in the pr
 
   (** Induction principle specialized to LogRel as the reducibility relation on lower levels *)
   Theorem LR_rect_LogRelRec@{i j k l o}
-    (P : forall {l Γ t rEq rTe rTeEq},
-    LogRel@{i j k l} l Γ t rEq rTe rTeEq -> Type@{o}) :
+    (P : forall {l Γ s t rEq rTe rTeEq},
+    LogRel@{i j k l} l Γ s t rEq rTe rTeEq -> Type@{o}) :
 
     (forall l (Γ : context) A (h : [Γ ||-U<l> A]),
       P (LRU (LogRelRec l) h)) ->
 
-    (forall (l : TypeLevel) (Γ : context) (A : term) (neA : [Γ ||-ne A]),
+    (forall (l : TypeLevel) (Γ : context) (s : sort) (A : term) (neA : [Γ ||-ne A @ s]),
       P (LRne (LogRelRec l) neA)) ->
 
     (forall (l : TypeLevel) (Γ : context) (A : term) (ΠA : ParamRedTy@{i j k l} tProd Γ l A),
