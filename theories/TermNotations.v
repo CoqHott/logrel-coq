@@ -32,10 +32,16 @@ Notation "'x₉'" := (tRel 9) (in custom mltt at level 0).
 Notation "'□'" := U (in custom mltt at level 0).
 
 (* Π fragment *)
-Notation "'Π' A , B" := (tProd A B) (in custom mltt at level 2, right associativity).
+(* Notation "'Π' A , B" := (tProd A B) (in custom mltt at level 2, right associativity). *)
+Notation "'Π' x .. y , p" := (tProd x ( .. (tProd y p) ..))
+  (in custom mltt at level 2, x, y at level 0, right associativity,
+   format "'[' 'Π'  '/  ' x  ..  y ,  '/  ' p ']'").
 Notation "A '→' B" := (tProd A B⟨↑⟩) (in custom mltt at level 2, right associativity).
 Notation "f x" := (tApp f x) (in custom mltt at level 1, left associativity).
-Notation "'λ' A , t" := (tLambda A t) (in custom mltt at level 2, right associativity).
+(* Notation "'λ' A , t" := (tLambda A t) (in custom mltt at level 2, right associativity). *)
+Notation "'λ' x .. y , p" := (tLambda x ( .. (tLambda y p) ..))
+  (in custom mltt at level 2,  x, y at level 0, right associativity,
+   format "'[' 'λ'  '/  ' x  ..  y ,  '/  ' p ']'").
 
 (* Nat fragment *)
 Notation "'ℕ'" := tNat (in custom mltt at level 0).
@@ -54,7 +60,10 @@ Notation "4" := ⟪tm 0.+4⟫ (in custom mltt at level 0).
 Notation "5" := ⟪tm 0.+5⟫ (in custom mltt at level 0).
 
 (* Σ fragment *)
-Notation "'∑' A , B" := (tSig A B) (in custom mltt at level 2, right associativity).
+Notation "'∑' x .. y , p" := (tSig x ( .. (tSig y p) ..))
+  (in custom mltt at level 2,  x, y at level 0, right associativity,
+   format "'[' '∑'  '/  ' x  ..  y ,  '/  ' p ']'").
+(* Notation "'∑' A , B" := (tSig A B) (in custom mltt at level 2, right associativity). *)
 Notation "A '×' B" := (tSig A B⟨↑⟩) (in custom mltt at level 2).
 Notation "( x : A ; y : B )" := (tPair A B x y) (in custom mltt at level 0, x, A, y, B at level 2).
 Notation "x '.1'" := (tFst x) (in custom mltt at level 1).

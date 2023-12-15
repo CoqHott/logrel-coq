@@ -68,7 +68,7 @@ Qed.
 
 Check ((fun x => nat_rec (fun _ => nat) 0 (fun _ ih => S (S ih)) x) : nat -> nat).
 
-Goal ⟪ε |- λ ℕ, indℕ ℕ 0 (λ ℕ, λ ℕ, x₀.+2) 2 : ℕ → ℕ⟫.
+Goal ⟪ε |- λ ℕ, indℕ ℕ 0 (λ ℕ ℕ, x₀.+2) 2 : ℕ → ℕ⟫.
 Proof.
   infer_auto.
 Qed.
@@ -76,7 +76,7 @@ Qed.
 Check (eq_refl : (nat_rect (fun _ => Type) nat (fun _ ih => nat -> ih) 3) = (nat -> nat -> nat -> nat)).
 
 Goal ⟪ ε |- rfl □ (ℕ → ℕ → ℕ → ℕ) :
-  (ℕ → ℕ → ℕ → ℕ) =⟨ □ ⟩ indℕ □ ℕ (λ ℕ, λ □, ℕ → x₀) 3⟫.
+  (ℕ → ℕ → ℕ → ℕ) =⟨ □ ⟩ indℕ □ ℕ (λ ℕ □, ℕ → x₀) 3⟫.
 Proof.
   check_auto.
 Qed.
