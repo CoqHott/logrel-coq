@@ -1,13 +1,14 @@
 (** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
+From PartialFun Require Import Monad PartialFun Examples. (* Examples should not be imported as id: split the file*)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
-From PartialFun Require Import Monad PartialFun.
 
 Import MonadNotations.
 Set Universe Polymorphism.
-Import IndexedDefinitions.
+Set Polymorphic Inductive Cumulativity.
+Set Printing Universes.
 
 (* #[local] Remove Hints MonadOrec : typeclass_instances.
 #[local] Hint Resolve MonadOrec | 3 : typeclass_instances.
@@ -21,22 +22,33 @@ Inductive errors : Type :=
   | conv_error : errors
   | type_error : errors.
 
-#[local]Instance ty_errors : Errors := errors.
-#[local]Existing Instance MonadId | 10.
+
+
+(* These should be (optionally) provided by PartialFun*)
+#[local]Existing Instance OrecEffectExn.
+#[local]Existing Instance MonadExn | 1.
+
+#[local] Instance MonadRaiseExn {E} : MonadRaise E (exn E) :=
+  { raise := @exception E }.
+
+(* #[local]Existing Instance MonadRaiseExnT | 1. *)
+(* #[local]Existing Instance MonadId | 10. *)
+(* #[local]Instance ty_errors : Errors := errors.
+ *)
 
 (* #[local] Instance MonadOrecError A B : Monad (fun X => orec A B (result X)) :=
-  MonadTransResult.(mon_trans_mon) _ _. *)
+  MonadTransResult.(mon_trans_mon) _ _.
 Definition MonadError : Monad result :=
   MonadTransResult.(mon_trans_mon) id _.
 
-#[local]Existing Instance MonadError | 1.
+#[local]Existing Instance MonadError | 1. *)
 
-Equations ctx_access (Γ : context) (n : nat) : result term :=
-  ctx_access ε _ := raise (H := MonadId) (A := term) (variable_not_in_context n ε) ; (** The context does not contain the variable! *)
-  ctx_access (_,,d) 0 := ret (Monad := MonadError) (d⟨↑⟩) ;
+Equations ctx_access (Γ : context) (n : nat) : exn errors term :=
+  ctx_access ε _ := raise (A := term) (variable_not_in_context n ε) ; (** The context does not contain the variable! *)
+  ctx_access (_,,d) 0 := ret (d⟨↑⟩) ;
   ctx_access (Γ,,_) (S n') := d ← (ctx_access Γ n') ;; ret d⟨↑⟩.
 
-Definition eq_sort (s s' : sort) : result unit := success (M := id).
+Definition eq_sort (s s' : sort) : exn errors unit := success tt.
 
 Variant ty_entry : term -> Type :=
   | eSort s : ty_entry (tSort s)
@@ -61,7 +73,7 @@ Variant dest_entry : Type :=
 Definition zip1 (t : term) (e : dest_entry) : term :=
   match e with
     | eEmptyElim P => (tEmptyElim P t)
-    | eNatElim P hs hz => (tNatElim P hs hz t) 
+    | eNatElim P hs hz => (tNatElim P hs hz t)
     | eApp u => (tApp t u)
     | eFst => tFst t
     | eSnd => tSnd t
@@ -157,16 +169,31 @@ Fixpoint zip t (π : stack) :=
   | cons s π => zip (zip1 t s) π
   end.
 
-Definition empty_store : forall (x: False), match x return Set with end :=
-  fun x => match x as x return match x return Set with end with end.
 
-#[global]
-Instance empty_pfun : forall (x:False), PFun@{Set Set Set} (empty_store x) | 5 :=
-  fun x => match x as x return PFun (empty_store x) with end.
+(* Introduce the following in PartialFun *)
 
-Arguments rec {_ _ _ _ _ _}. 
+#[program]
+Definition callableFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i)) : Callable I := {|
+  csrc i := psrc (f i) ;
+  ctgt i := ptgt (f i) ;
+  cgraph i := pgraph (f i) ;
+  cfueled i := pfueled (f i) ;
+  cdef i := pdef (f i)
+|}.
+Next Obligation. intros. eapply pgraph_fun. all: eassumption. Qed.
+Next Obligation. now eapply pfueled_graph. Qed.
+Next Obligation. now eapply pdef_graph. Qed.
 
-Equations wh_red_stack : term × stack ⇀[empty_store] term :=
+#[local]Instance EmptyStore : Callable False | 5.
+Proof.
+  exact (
+      callableFactory False
+        (False_rect _)
+        (fun bot => match bot return False_rect _ bot with end)
+        (fun bot => match bot return PFun@{Set Set Set} _ with end)).
+Qed.
+
+Equations wh_red_stack : ∇(_ : term × stack), False ⇒ term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
   wh_red_stack (?(tRel n)       ,π)                           (tm_view1_rel n) := ret (zip (tRel n) π) ;
   wh_red_stack (?(zip1 t s)     ,π)                           (tm_view1_dest t s) := rec (t,cons s π) ;
@@ -187,23 +214,44 @@ Equations wh_red_stack : term × stack ⇀[empty_store] term :=
   wh_red_stack (t               ,nil)                         (tm_view1_type _) := ret t ;
   wh_red_stack (t               ,cons s _)                    (tm_view1_type _) := undefined.
 
-Set Printing Universes.
+Inductive Sing {F} (f : F) : Set := mkSing.
+Inductive Duo {F1 F2} (f1 : F1) (f2 : F2) := mkLeft | mkRight.
 
-Definition singleton_store {F} (f : F) : forall (x : unit), unit := fun _ => tt.
+Arguments mkLeft {_ _} _ {_}.
+Arguments mkRight {_ _} {_} _.
 
-(** DO NOT PUT AS INSTANCE IN GENERAL
-    (create loops in typeclass search since it autofires itself) *)
-Definition singleton_pfun {F} (f : F) `{PFun F f} : forall (x : unit), PFun (singleton_store f x).
-Proof. destruct H; now econstructor. Defined.
+#[global]
+Instance callableSing {F} (f : F) `{PFun F f} : Callable (Sing f).
+Proof.
+  exact (callableFactory _ (fun _ => F) (fun _ => f) (fun _ => _)).
+Defined.
+
+#[global]
+Instance callableDuo {F1 F2} (f1 : F1) (f2 : F2) `{PFun F1 f1, PFun F2 f2} : Callable (Duo f1 f2).
+Proof.
+  pose (F := fun x : Duo f1 f2 => match x with mkLeft _ => F1 | mkRight _ => F2 end).
+  pose (f := fun x : Duo f1 f2 => match x as x return F x with
+                               | mkLeft _ => f1 | mkRight _ => f2 end).
+  pose proof (pfun := fun x : Duo f1 f2 => match x as x return PFun (f x) with
+                               | mkLeft _ => _ | mkRight _ => _ end).
+  exact (callableFactory _ F f pfun).
+Defined.
+
+
+(* Definition singleton_store {F} (f : F) : forall (x : unit), unit := fun _ => tt. *)
+
+(* (** DO NOT PUT AS INSTANCE IN GENERAL *)
+(*     (create loops in typeclass search since it autofires itself) *) *)
+(* Definition singleton_pfun {F} (f : F) `{PFun F f} : forall (x : unit), PFun (singleton_store f x). *)
+(* Proof. destruct H; now econstructor. Defined. *)
 
 Definition call_single {F}
-  (f : F) `{PFun F f} {A B} :=
-  call (pfun:=singleton_pfun f) tt (A:=A) (B:=B).
+  (f : F) `{PFun F f} {A B} := ext_call (mkSing f) (A:=A) (B:=B).
 
-#[local] Instance: forall x, PFun (singleton_store wh_red_stack x) := singleton_pfun wh_red_stack.
+(* #[local] Instance: forall x, PFun (singleton_store wh_red_stack x) := singleton_pfun wh_red_stack. *)
 
-Equations wh_red : term ⇀[singleton_store wh_red_stack] term :=
-  wh_red t := call_single wh_red_stack (t,nil).
+Definition wh_red : ∇(t : term), Sing wh_red_stack ⇒ term :=
+  fun t => call_single wh_red_stack (t,nil).
 
 Definition wh_red_fuel n t := fueled wh_red n t.
 
@@ -315,25 +363,28 @@ Variant conv_state : Type :=
   | ne_state (** Comparison of neutrals *)
   | ne_red_state. (** Comparison of neutrals with a reduced type *)
 
-Definition cstate_input (c : conv_state) : Type :=
+Definition cstate_input (c : conv_state) : Set :=
   match c with
   | tm_state | tm_red_state => term
   | ty_state | ty_red_state | ne_state | ne_red_state => unit
   end.
 
-Definition cstate_output (c : conv_state) : Type :=
+Definition cstate_output (c : conv_state) : Set :=
   match c with
   | ty_state | ty_red_state | tm_state | tm_red_state => unit
   | ne_state | ne_red_state => term
   end.
 
-Definition errrec {I F} φ {pfun A B} C := @irec I F φ pfun A B (result C).
 
-Definition monad_erec : forall {I F φ pfun A B}, Monad (@errrec I F φ pfun A B) :=
-  fun {I F φ pfun A B} => mon_trans_mon (irec φ A B) _.
+#[local]Existing Instance MonadRaiseExnT.
 
-Definition ecall {I F} {ϕ : forall i, F i} `{pfun : forall i, PFun (ϕ i)} {A B} (g : I) (x : psrc (ϕ g)) : @errrec I F ϕ pfun A B (ptgt (ϕ g) x) :=
-  lift (irec _ A B) _ _ (call g x).
+(* Definition errrec {I F} φ {pfun A B} C := @irec I F φ pfun A B (result C). *)
+
+(* Definition monad_erec : forall {I F φ pfun A B}, Monad (@errrec I F φ pfun A B) := *)
+(*   fun {I F φ pfun A B} => mon_trans_mon (irec φ A B) _. *)
+
+(* Definition ecall {I F} {ϕ : forall i, F i} `{pfun : forall i, PFun (ϕ i)} {A B} (g : I) (x : psrc (ϕ g)) : @errrec I F ϕ pfun A B (ptgt (ϕ g) x) := *)
+(*   lift (irec _ A B) _ _ (call g x). *)
 
 Section Conversion.
 
@@ -341,41 +392,63 @@ Section Conversion.
 Definition conv_dom (c : conv_state) :=
   ∑ (_ : context) (_ : cstate_input c) (_ : term), term.
 Definition conv_full_dom := ∑ (c : conv_state), conv_dom c.
-Definition conv_cod (c : conv_state) := result (cstate_output c).
+Definition conv_cod (c : conv_state) := exn errors (cstate_output c).
+(* Definition conv_full_cod (x : conv_full_dom) := conv_cod (x.π1). *)
 Definition conv_full_cod (x : conv_full_dom) := conv_cod (x.π1).
 
-#[local] Instance: forall x, PFun (singleton_store wh_red x) := singleton_pfun wh_red.
+(* #[local] Instance: forall x, PFun (singleton_store wh_red x) := singleton_pfun wh_red. *)
 
 #[local]
-Notation M0 := (irec (singleton_store wh_red) (conv_full_dom) (conv_full_cod)).
-#[local]
-Notation M := (errrec (singleton_store wh_red) (A:=conv_full_dom) (B:=conv_full_cod)).
+Notation M0 := (orec (Sing wh_red) (conv_full_dom) (conv_full_cod)).
+(* #[local] *)
+(* Notation M0 := (irec (singleton_store wh_red) (conv_full_dom) (conv_full_cod)). *)
+(* #[local] *)
+(* Notation M := (errrec (singleton_store wh_red) (A:=conv_full_dom) (B:=conv_full_cod)). *)
 
-#[local] Instance: Monad M0 := MonadOrec.
-#[local] Instance: Monad M := monad_erec.
+(* #[local] Instance: Monad M0 := MonadOrec. *)
+(* #[local] Instance: Monad M := monad_erec. *)
 
-Definition conv_stmt (c : conv_state) := forall x0 : conv_dom c, M (cstate_output c).
+(* Notation "∇ '[' dom ']' x , I ⇒ M ♯ B" := *)
+(*   (forall x , combined (M := M) I (∑ t, dom t) (fun y => let x := y.π2 in M%function B%type) B) *)
+(*   (x binder, at level 200). *)
+
+Definition conv_stmt (c : conv_state) :=
+  (* ∇(_ : conv_dom c), Sing wh_red ⇒ exn errors ♯ cstate_output c. *)
+  forall x0 : conv_dom c,
+    combined (M:=exn errors) (Sing wh_red) conv_full_dom conv_full_cod (cstate_output c).
+  (* (∀ x, combined (M := M) I _ (λ x, M%function B%type) B) *)
+
 
 Equations conv_ty : conv_stmt ty_state :=
   | (Γ;inp;T;V) :=
     T' ← call_single wh_red T ;;[M0]
     V' ← call_single wh_red V ;;[M0]
-    id <*> rec (ty_red_state;Γ;tt;T';V').
+    rec (ty_red_state;Γ;tt;T;V).
+
+(* Goal True. *)
+(* pose (c := conv_stmt ty_red_state). *)
+(* unfold conv_stmt in c. *)
+(* unfold combined in c. *)
+(* Unset Printing Notations. *)
+(* unfold M0 in c. *)
+(* Eval unfold  conv_stmt in conv_stmt ty_red_state. *)
+
+Definition ok {M} `{Monad M} : M unit := ret tt.
 
 Equations conv_ty_red : conv_stmt ty_red_state :=
   | (Γ;inp;T;T') with (build_nf_ty_view2 T T') :=
   {
-    | ty_sorts s s' := ret (eq_sort s s') ;
+    | ty_sorts s s' := ret (M:=M0) (eq_sort s s') ;
     | ty_prods A A' B B' :=
         rec (ty_state;Γ;tt;A;A') ;;
         rec (ty_state;(Γ,,A);tt;B;B') (* ::: (ty_red_state;Γ;inp;tProd A B;tProd A' B') ;*) ;
-    | ty_nats := success ;
-    | ty_emptys := success ;
+    | ty_nats := ok ;
+    | ty_emptys := ok ;
     | ty_sigs A A' B B' :=
         rec (ty_state;Γ;tt;A;A') ;;
         rec (ty_state;(Γ,,A);tt;B;B') (* ::: (ty_red_state;Γ;inp;tSig A B;tSig A' B') ;*) ;
       | ty_neutrals _ _ :=
-          rec (ne_state;Γ;tt;T;T') ;; success (M:=irec _ _ _) ;
+          rec (ne_state;Γ;tt;T;T') ;; ok ;
     | ty_ids A A' x x' y y' :=
       rec (ty_state;Γ;tt;A;A') ;;
       rec (tm_state;Γ;A;x;x') ;;
@@ -389,7 +462,7 @@ Equations conv_tm : conv_stmt tm_state :=
     A' ← call_single wh_red A ;;[M0]
     t' ← call_single wh_red t ;;[M0]
     u' ← call_single wh_red u ;;[M0]
-    id <*> rec (tm_red_state;Γ;A';t';u'). 
+    id <*> rec (tm_red_state;Γ;A';t';u').
 
 Equations conv_tm_red : conv_stmt tm_red_state :=
   | (Γ;A;t;u) with (build_nf_view3 A t u) :=
@@ -398,8 +471,8 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | types s (ty_prods A A' B B') :=
       rec (tm_state;Γ;tSort s;A;A') ;;
       rec (tm_state;Γ,,A;tSort s;B;B') (* ::: (tm_red_state;Γ;tSort s;tProd A B;tProd A' B') ;*) ;
-    | types _ ty_nats := success ;
-    | types _ ty_emptys := success ;
+    | types _ ty_nats := ok ;
+    | types _ ty_emptys := ok ;
     | types s (ty_sigs A A' B B') :=
         rec (tm_state;Γ;tSort s;A;A') ;;
         rec (tm_state;Γ,,A;tSort s;B;B') (* ::: (tm_red_state;Γ;tSort s;tSig A B;tSig A' B') ;*) ;
@@ -408,12 +481,12 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
         rec (tm_state;Γ;A;x;x') ;;
         rec (tm_state;Γ;A;y;y')
     | types _ (ty_neutrals _ _) :=
-        rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
+        rec (ne_state;Γ;tt;t;u) ;; ok ;
     | types s (ty_mismatch _ _) := raise (head_mismatch (Some (tSort s)) t u) ;
     | types _ (ty_anomaly _ _) := undefined ;
     | functions A B t u :=
         rec (tm_state;Γ,,A;B;eta_expand t;eta_expand u) (* ::: (tm_red_state;Γ;tProd A B;t;u) ;*) ;
-    | zeros := success ;
+    | zeros := ok ;
     | succs t' u' :=
         rec (tm_state;Γ;tNat;t';u') ;
     | pairs A B t u :=
@@ -423,7 +496,7 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
       rec (ty_state;Γ;tt;A';A'') ;;
       rec (tm_state;Γ;A';x';x'')
     | neutrals _ _ _ :=
-      rec (ne_state;Γ;tt;t;u) ;; success (M:=M0) ;
+      rec (ne_state;Γ;tt;t;u) ;; ok ;
     | mismatch _ _ _ := raise (head_mismatch (Some A) t u) ;
     | anomaly _ _ _ := undefined ;
   }.
@@ -442,8 +515,8 @@ Time Equations conv_ne : conv_stmt ne_state :=
     { | false := raise (variable_mismatch n n') ;
       | true with (ctx_access Γ n) := 
         {
-        | error e => undefined ;
-        | ok d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
+        | exception e => undefined ;
+        | success d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
         }
     } ;
     | _, _, Some (ne_view1_dest n (eApp t), ne_view1_dest n' (eApp t')) =>
@@ -497,7 +570,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
       end ;
     | w, w', _ => raise (destructor_mismatch w w')
   }.
-  
+
 
 (*Time Equations conv_ne_alt : conv_stmt ne_state :=
   | (Γ;inp;tRel n;tRel n')
@@ -555,9 +628,10 @@ Time Equations conv_ne : conv_stmt ne_state :=
 Equations conv_ne_red : conv_stmt ne_red_state :=
   | (Γ;inp;t;u) :=
     Ainf ← rec (ne_state;Γ;tt;t;u) ;;
-    ecall tt Ainf.
+    r ← call_single wh_red Ainf ;;[M0]
+    ret r.
 
-Equations conv : ∇[singleton_store wh_red] (x : conv_full_dom), conv_full_cod x :=
+Equations conv : ∇(x : conv_full_dom), Sing wh_red ⇒ exn errors ♯ cstate_output x.π1 :=
   | (ty_state; Γ ; inp ; T; V) := conv_ty (Γ; inp; T; V);
   | (ty_red_state; Γ ; inp ; T; V) := conv_ty_red (Γ; inp; T; V);
   | (tm_state; Γ ; inp ; T; V) := conv_tm (Γ; inp; T; V);
@@ -587,53 +661,57 @@ Definition tstate_output (s : typing_state) : Type :=
   | wf_ty_state | check_state => unit
   end.
 
-Definition binary_store_ty@{u} F1 F2 := fun b : bool => if b return Type@{u} then F1 else F2.
-Definition binary_store@{u} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2) :
-  forall b, binary_store_ty F1 F2 b :=
-  fun b => if b as b return binary_store_ty F1 F2 b then f1 else f2.
+(* Definition binary_store_ty@{u} F1 F2 := fun b : bool => if b return Type@{u} then F1 else F2. *)
+(* Definition binary_store@{u} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2) : *)
+(*   forall b, binary_store_ty F1 F2 b := *)
+(*   fun b => if b as b return binary_store_ty F1 F2 b then f1 else f2. *)
 
-(** DO NOT PUT AS INSTANCE IN GENERAL
-    (create loops in typeclass search since it autofires itself) *)
-Definition binary_pfun@{u a b} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2)
-  `{h1: PFun@{u a b} F1 f1} `{h2: PFun@{u a b} F2 f2} :
-  forall b, PFun@{u a b} (binary_store f1 f2 b).
-Proof.
-  intros b; destruct b; [destruct h1| destruct h2]; now econstructor.
-Defined.
+(* (** DO NOT PUT AS INSTANCE IN GENERAL *)
+(*     (create loops in typeclass search since it autofires itself) *) *)
+(* Definition binary_pfun@{u a b} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2) *)
+(*   `{h1: PFun@{u a b} F1 f1} `{h2: PFun@{u a b} F2 f2} : *)
+(*   forall b, PFun@{u a b} (binary_store f1 f2 b). *)
+(* Proof. *)
+(*   intros b; destruct b; [destruct h1| destruct h2]; now econstructor. *)
+(* Defined. *)
 
-#[local]
-Instance: forall b, PFun (binary_store wh_red conv b) := binary_pfun wh_red conv.
+(* #[local] *)
+(* Instance: forall b, PFun (binary_store wh_red conv b) := binary_pfun wh_red conv. *)
 
 
 Definition typing_dom (c : typing_state) :=
   ∑ (_ : context) (_ : tstate_input c), term.
 Definition typing_full_dom := ∑ (c : typing_state), typing_dom c.
-Definition typing_cod (c : typing_state) := result (tstate_output c).
+Definition typing_cod (c : typing_state) := exn errors (tstate_output c).
 Definition typing_full_cod (x : typing_full_dom) := typing_cod (x.π1).
 
-#[local]Definition ϕ := (binary_store wh_red conv).
-#[local]Definition wh_red_key := true.
-#[local]Definition conv_key := false.
+#[local]Definition ϕ := Duo wh_red conv.
+(* #[local]Definition call_wh_red := ext_call (mkLeft ) . *)
+(* #[local]Definition conv_key := false. *)
+(* #[local]Definition ϕ := (binary_store wh_red conv). *)
+(* #[local]Definition wh_red_key := true. *)
+(* #[local]Definition conv_key := false. *)
 
 #[local]
-Notation M0 := (irec ϕ (typing_full_dom) (typing_full_cod)).
+Notation M0 := (orec ϕ (typing_full_dom) (typing_full_cod)).
 #[local]
-Notation M := (errrec ϕ (A:=typing_full_dom) (B:=typing_full_cod)).
+Notation M := (combined (M:=exn errors) ϕ (typing_full_dom) (typing_full_cod)).
 
-#[local] Instance: Monad M0 := MonadOrec.
-#[local] Instance: Monad M := monad_erec.
+(* #[local] Instance: Monad M0 := MonadOrec. *)
+(* #[local] Instance: Monad M := monad_erec. *)
 
-Definition typing_stmt (c : typing_state) := forall x0 : typing_dom c, M (tstate_output c).
+Definition typing_stmt (c : typing_state) :=
+  forall x0 : typing_dom c, M (tstate_output c).
 
 Equations typing_wf_ty : typing_stmt wf_ty_state :=
   typing_wf_ty (Γ;_;T) with (build_ty_view1 T) :=
   {
-    | ty_view1_ty (eSort s) := success ;
+    | ty_view1_ty (eSort s) := ok ;
     | ty_view1_ty (eProd A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
         rec (wf_ty_state;Γ,,A;tt;B) ;
-    | ty_view1_ty (eNat) := success ;
-    | ty_view1_ty (eEmpty) := success ;
+    | ty_view1_ty (eNat) := ok ;
+    | ty_view1_ty (eEmpty) := ok ;
     | ty_view1_ty (eSig A B) :=
         rA ← rec (wf_ty_state;Γ;tt;A) ;;
         rec (wf_ty_state;Γ,,A;tt;B) ;
@@ -644,8 +722,8 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
     | ty_view1_small _ :=
         r ← rec (inf_red_state;Γ;tt;T) ;;[M]
         match r with
-        | tSort _ => success (M:=M0)
-        | _ => raise (M:=M0) type_error
+        | tSort _ => ok
+        | _ => raise type_error
         end
     | ty_view1_anomaly := raise type_error ;
   }.
@@ -654,8 +732,8 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
   | (Γ;_;t) with t := {
     | tRel n with (ctx_access Γ n) :=
         {
-          | error _ := raise (variable_not_in_context n Γ) ;
-          | ok d := ret (ok d)
+          | exception _ := raise (variable_not_in_context n Γ) ;
+          | success d := ret d
         } ;
     | tSort s := raise type_error ;
     | tProd A B :=
@@ -665,9 +743,9 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
             rB ← rec (inf_red_state;Γ,,A;tt;B) ;;
             match rB with
             | tSort sB => ret (tSort (sort_of_product sA sB))
-            | _ => raise (M:=M0) type_error
+            | _ => raise type_error
             end
-        | _ => raise (M:=M0) type_error
+        | _ => raise type_error
         end ;
     | tLambda A u :=
         rec (wf_ty_state;Γ;tt;A) ;;[M]
@@ -679,7 +757,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
       | tProd A B =>
           rec (check_state;Γ;A;u) ;;
           ret B[u..]
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tNat := ret U ;
     | tZero := ret tNat ;
@@ -687,7 +765,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
         ru ← rec (inf_red_state;Γ;tt;u) ;;
         match ru with
         | tNat => ret tNat
-        | _ => raise (M:=M0) type_error
+        | _ => raise type_error
         end ;
     | tNatElim P hz hs n :=
       rn ← rec (inf_red_state;Γ;tt;n) ;;
@@ -697,7 +775,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
           rec (check_state;Γ;P[tZero..];hz) ;;
           rec (check_state;Γ;elimSuccHypTy P;hs) ;;
           ret P[n..]
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tEmpty := ret U ;
     | tEmptyElim P e :=
@@ -706,7 +784,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
         | tEmpty =>
             rec (wf_ty_state;(Γ,,tEmpty);tt;P) ;;
             ret P[e..]
-        | _ => raise (M:=M0) type_error
+        | _ => raise type_error
         end ;
     | tSig A B :=
       rA ← rec (inf_red_state;Γ;tt;A) ;;
@@ -715,9 +793,9 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
           rB ← rec (inf_red_state;Γ,,A;tt;B) ;;
           match rB with
           | tSort sB => ret (tSort (sort_of_product sA sB)) (* Should that be taken as a parameter for sigma as well ? *)
-          | _ => raise (M:=M0) type_error
+          | _ => raise type_error
           end
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tPair A B a b :=
       rec (wf_ty_state;Γ;tt;A) ;;
@@ -729,13 +807,13 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
       rt ← rec (inf_red_state; Γ; tt; u) ;;
       match rt with
       | tSig A B => ret A
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tSnd u :=
       rt ← rec (inf_red_state; Γ; tt; u) ;;
       match rt with
       | tSig A B => ret (B[(tFst u)..])
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tId A x y :=
       rA ← rec (inf_red_state;Γ;tt;A) ;;
@@ -744,7 +822,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
         rec (check_state;Γ;A;x) ;;
         rec (check_state;Γ;A;y) ;;
         ret (tSort sA)
-      | _ => raise (M:=M0) type_error
+      | _ => raise type_error
       end ;
     | tRefl A x :=
       rec (wf_ty_state;Γ;tt;A) ;;
@@ -763,14 +841,15 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
   Equations typing_inf_red : typing_stmt inf_red_state :=
   | (Γ;_;t) :=
     T ← rec (inf_state;Γ;_;t) ;;
-    ecall wh_red_key T.
+    r ← ext_call (mkLeft wh_red) T ;;[M0]
+    ret r.
 
   Equations typing_check : typing_stmt check_state :=
   | (Γ;T;t) :=
-    T' ← rec (inf_state;Γ;tt;t) ;;
-    call (ϕ:=ϕ) conv_key (ty_state;Γ;tt;T';T).
+    T' ← rec (inf_state;Γ;tt;t) ;;[M]
+    ext_call (I:=ϕ) (mkRight conv) (ty_state;Γ;tt;T';T).
 
-  Equations typing : ∇[ϕ] x, typing_full_cod x :=
+  Equations typing : ∇ (x : typing_full_dom), ϕ ⇒ exn errors ♯ tstate_output x.π1 :=
   | (wf_ty_state; Γ; inp; T) := typing_wf_ty (Γ;inp;T)
   | (inf_state; Γ; inp; t) := typing_inf (Γ;inp;t)
   | (inf_red_state; Γ; inp; t) := typing_inf_red (Γ;inp;t)
@@ -780,14 +859,16 @@ End Typing.
 
 Section CtxTyping.
 
-  #[local] Instance: forall x, PFun (singleton_store typing x) := singleton_pfun typing.
+  (* #[local] Instance: forall x, PFun (singleton_store typing x) := singleton_pfun typing. *)
 
-  #[local] Instance: Monad (errrec (singleton_store typing) (A:=context) (B:=(fun _ => result unit))) := monad_erec.
+  (* #[local] Instance: Monad (errrec (singleton_store typing) (A:=context) (B:=(fun _ => result unit))) := monad_erec. *)
+  #[local]
+  Notation M := (combined (M:=exn errors) (Sing typing) context (fun _ => exn errors unit)).
 
-  Equations check_ctx : context ⇀[singleton_store typing] result unit :=
+  Equations check_ctx : ∇ (Γ : context), Sing typing ⇒ exn errors ♯ unit :=
     check_ctx ε := ret tt ;
     check_ctx (Γ,,A) :=
-      rec Γ ;;
-      call tt (wf_ty_state;Γ;tt;A).
-  
+      rec Γ ;;[M]
+      call_single typing (wf_ty_state;Γ;tt;A).
+
 End CtxTyping.
