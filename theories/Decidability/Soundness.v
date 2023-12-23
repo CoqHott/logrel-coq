@@ -5,10 +5,9 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction GenericTyping NormalForms.
 From LogRel Require Import AlgorithmicTyping.
 From LogRel.Decidability Require Import Functions.
-From PartialFun Require Import Monad PartialFun.
+From PartialFun Require Import Monad PartialFun Exception.
 
 Import AlgorithmicTypingData.
-Import IndexedDefinitions.
 
 Set Universe Polymorphism.
 
@@ -86,10 +85,7 @@ Corollary _red_sound :
   funrect wh_red (fun _ => True) (fun t t' => [t ⤳* t'] × whnf t').
 Proof.
   intros ? _.
-  funelim (wh_red _).
-  cbn.
-  intros ? H.
-  split.
+  cbn; intros ? H; split.
   - eapply funrect_graph in H.
     2: exact red_stack_sound. (* apply fails !? *)
     all: easy.
@@ -113,7 +109,7 @@ End RedImplemSound.
 Section CtxAccessCorrect.
 
   Lemma ctx_access_sound Γ n d :
-    ctx_access Γ n = (ok d) ->
+    ctx_access Γ n = success d ->
     in_ctx Γ n d.
   Proof.
     funelim (ctx_access Γ n).
@@ -129,7 +125,7 @@ Section CtxAccessCorrect.
 
   Lemma ctx_access_complete Γ n d :
     in_ctx Γ n d ->
-    ctx_access Γ n = ok d.
+    ctx_access Γ n = success d.
   Proof.
     induction 1.
     all: simp ctx_access ; cbn.
@@ -138,7 +134,7 @@ Section CtxAccessCorrect.
   Qed.
 
   Corollary ctx_access_correct Γ n d :
-    in_ctx Γ n d <~> (ctx_access Γ n = ok d).
+    in_ctx Γ n d <~> (ctx_access Γ n = success d).
   Proof.
     split.
     - eapply ctx_access_complete.
@@ -155,20 +151,19 @@ Ltac funelim_conv :=
 
 Section ConversionSound.
 
-  #[local]Existing Instance ty_errors.
 
   #[universes(polymorphic)]Definition conv_sound_type
     (x : conv_full_dom)
     (r : conv_full_cod x) : Type :=
   match x, r with
-  | _, (error _) => True
-  | (ty_state;Γ;_;T;V), (ok _) =>  [Γ |-[al] T ≅ V]
-  | (ty_red_state;Γ;_;T;V), (ok _) => [Γ |-[al] T ≅h V]
-  | (tm_state;Γ;A;t;u), (ok _) => [Γ |-[al] t ≅ u : A]
-  | (tm_red_state;Γ;A;t;u), (ok _) =>
+  | _, (exception _) => True
+  | (ty_state;Γ;_;T;V), (success _) =>  [Γ |-[al] T ≅ V]
+  | (ty_red_state;Γ;_;T;V), (success _) => [Γ |-[al] T ≅h V]
+  | (tm_state;Γ;A;t;u), (success _) => [Γ |-[al] t ≅ u : A]
+  | (tm_red_state;Γ;A;t;u), (success _) =>
       whnf A -> whnf t -> whnf u -> [Γ |-[al] t ≅h u : A]
-  | (ne_state;Γ;_;m;n), (ok T) => [Γ |-[al] m ~ n ▹ T]
-  | (ne_red_state;Γ;_;m;n), (ok T) => [Γ |-[al] m ~h n ▹ T] × whnf T
+  | (ne_state;Γ;_;m;n), (success T) => [Γ |-[al] m ~ n ▹ T]
+  | (ne_red_state;Γ;_;m;n), (success T) => [Γ |-[al] m ~h n ▹ T] × whnf T
   end.
 
   Lemma _implem_conv_sound :
@@ -180,7 +175,7 @@ Section ConversionSound.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
-      | |- forall x : result _, _ => intros [|] ; [..|easy] ; cbn
+      | |- forall x : exception _ _, _ => intros [|] ; [..|easy] ; cbn
       | |- _ -> _ => simp conv_sound_type ; intros ?
       | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
       | s : sort |- _ => destruct s
@@ -224,8 +219,6 @@ Ltac funelim_typing :=
 
 Section TypingCorrect.
 
-  #[local]Existing Instance ty_errors.
-
   Lemma ty_view1_small_can T n : build_ty_view1 T = ty_view1_small n -> ~ isCanonical T.
   Proof.
     destruct T ; cbn.
@@ -235,13 +228,13 @@ Section TypingCorrect.
 
   #[universes(polymorphic)]Definition typing_sound_type
     (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
-    (r : result (tstate_output x.π1)) : Type :=
+    (r : exn errors (tstate_output x.π1)) : Type :=
   match x, r with
-  | _, (error _) => True
-  | (wf_ty_state;Γ;_;T), (ok _) => [Γ |-[al] T]
-  | (inf_state;Γ;_;t), (ok T) => [Γ |-[al] t ▹ T]
-  | (inf_red_state;Γ;_;t), (ok T) => [Γ |-[al] t ▹h T]
-  | (check_state;Γ;T;t), (ok _) => [Γ |-[al] t ◃ T]
+  | _, (exception _) => True
+  | (wf_ty_state;Γ;_;T), (success _) => [Γ |-[al] T]
+  | (inf_state;Γ;_;t), (success T) => [Γ |-[al] t ▹ T]
+  | (inf_red_state;Γ;_;t), (success T) => [Γ |-[al] t ▹h T]
+  | (check_state;Γ;T;t), (success _) => [Γ |-[al] t ◃ T]
   end.
 
 
@@ -254,7 +247,7 @@ Section TypingCorrect.
     all: repeat (
       match goal with
       | |- True * _ => split ; [easy|..]
-      | |- forall x : result _, _ => intros [|] ; simp typing_sound_type ; try easy ; cbn
+      | |- forall x : exception _ _, _ => intros [|] ; simp typing_sound_type ; try easy ; cbn
       | |- _ -> _ => simp typing_sound_type ; intros ?
       | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; simp typing_sound_type ; try easy
       | s : sort |- _ => destruct s
@@ -295,7 +288,7 @@ Section CtxTypingSound.
   Qed.
      
   Lemma check_ctx_sound Γ :
-    graph check_ctx Γ (ok tt) ->
+    graph check_ctx Γ (success tt) ->
     [|-[al] Γ].
   Proof.
     eintros ?%funrect_graph.
