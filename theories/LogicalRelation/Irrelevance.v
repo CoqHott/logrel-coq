@@ -443,6 +443,8 @@ Definition IHStatement lA lA' :=
             [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈>
             [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ≅ u | lr2 ])).
 
+
+
 #[local]
 Lemma UnivIrrelevanceLRPack
   {Γ lA lA' A A'}
@@ -454,26 +456,33 @@ Proof.
   revert IH; destruct hU as [_ []], hU' as [_ []]; intro IH; destruct (IH zero Oi Oi) as [IHty IHeq].
   constructor.
   + intros; cbn; split; intros []; now constructor.
+
   + intros ?; destruct (IHty Γ t) as [tfwd tbwd]; split; intros [];
       unshelve econstructor.
-    6: now apply tfwd.
-    9: now apply tbwd.
+    6: apply  tfwd; assumption.
+    9: apply tbwd; assumption.
     all : tea.
   + cbn ; intros ? ?;
     destruct (IHty Γ t) as [tfwd tbwd];
     destruct (IHty Γ u) as [ufwd ubwd].
     split; intros [[] []]; cbn in *; unshelve econstructor.
-    3: now apply tfwd.
-    5: now apply tbwd.
-    6: now apply ufwd.
-    8: now apply ubwd.
+    3: apply tfwd; assumption.
+    5: apply tbwd; assumption.
+    6: apply ufwd; assumption.
+    8: apply ubwd; assumption.
     (* all: apply todo. *)
     all: cbn.
-    6: now refine (fst (IHeq _ _ _ _ _) _).
-    7: now refine (snd (IHeq _ _ _ _ _) _).
-    1-4: now econstructor.
+    6: refine (fst (IHeq _ _ _ _ _) _); eassumption.
+    7: refine (snd (IHeq _ _ _ _ _) _); eassumption.
+    (* Regression here: now/eassumption adds universe constraints that we do not want to accept but can't prevent *)
+    1-4:econstructor; cycle -1; [|tea..].
+    1: eapply tfwd; eassumption.
+    1: eapply ufwd; eassumption.
+    1: eapply tbwd; eassumption.
+    1: eapply ubwd; eassumption.
     all: cbn; tea.
 Qed.
+
 
 (** ** The main theorem *)
 

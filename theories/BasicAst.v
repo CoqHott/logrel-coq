@@ -2,7 +2,7 @@
 From Coq Require Import String Bool.
 From LogRel.AutoSubst Require Import core unscoped.
 
-Inductive sort :=
+Inductive sort : Set :=
   | set : sort.
 
 Definition sort_of_product (s s' : sort) := set.

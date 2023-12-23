@@ -231,9 +231,7 @@ Section TypingWk.
       rewrite <- wk_sig, <- !wk_pair.
       assert [|-[de] Δ,, A⟨ρ⟩] by now constructor.
       constructor; eauto.
-      * now apply ihB.
-      * now apply ihB'.
-      * rewrite <- subst_ren_wk_up; now apply ihb.
+      rewrite <- subst_ren_wk_up; now apply ihb.
     - intros * ? ihp Δ ρ **.
       rewrite <- wk_sig, <- wk_pair.
       constructor; rewrite wk_sig; eauto.
