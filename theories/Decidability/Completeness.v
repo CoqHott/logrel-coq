@@ -5,12 +5,11 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
 From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation AlgorithmicTypingProperties.
 From LogRel.Decidability Require Import Functions Soundness.
-From PartialFun Require Import Monad PartialFun.
+From PartialFun Require Import Monad PartialFun Exception.
 
 Set Universe Polymorphism.
 
 Import DeclarativeTypingProperties.
-Import IndexedDefinitions.
 
 Equations Derive NoConfusion Subterm for term.
 
@@ -234,8 +233,7 @@ Section RedImplemComplete.
     domain wh_red t.
   Proof.
     intros [|w]%well_formed_well_typed.
-    all: eapply compute_domain.
-    all: rewrite wh_red_equation_1; cbn.
+    all: eapply compute_domain; cbn.
     all: split ; [|easy].
     - eapply wh_red_stack_complete ; tea.
     - inversion w ; subst ; clear w; cycle -1.
@@ -290,17 +288,17 @@ End RedImplemComplete.
 Section ConversionComplete.
 
 Let PTyEq (Γ : context) (A B : term) :=
-  forall v, graph conv (ty_state;Γ;v;A;B) (ok tt).
+  forall v, graph conv (ty_state;Γ;v;A;B) ok.
 Let PTyRedEq (Γ : context) (A B : term) :=
-  forall v, graph conv (ty_red_state;Γ;v;A;B) (ok tt).
+  forall v, graph conv (ty_red_state;Γ;v;A;B) ok. 
 Let PNeEq (Γ : context) (A t u : term) :=
-  forall v, graph conv (ne_state;Γ;v;t;u) (ok A).
+  forall v, graph conv (ne_state;Γ;v;t;u) (success A).
 Let PNeRedEq (Γ : context) (A t u : term) :=
-  forall v, graph conv (ne_red_state;Γ;v;t;u) (ok A).
+  forall v, graph conv (ne_red_state;Γ;v;t;u) (success A).
 Let PTmEq (Γ : context) (A t u : term) := 
-  graph conv (tm_state;Γ;A;t;u) (ok tt).
+  graph conv (tm_state;Γ;A;t;u) (success tt).
 Let PTmRedEq (Γ : context) (A t u : term) :=
-  graph conv (tm_red_state;Γ;A;t;u) (ok tt).
+  graph conv (tm_red_state;Γ;A;t;u) (success tt).
 
 Definition whne_ne_view1 {N} (w : whne N) : ne_view1 N :=
   match w with
@@ -350,7 +348,7 @@ Arguments PFun_instance_1 : simpl never.
 
 
 (* The combinator rec throws in a return branch with a type 
-  necessarily convertible to the result type, but the syntactic 
+  necessarily convertible to the exception errors type, but the syntactic 
   mismatch between the 2 types prevents `rec_graph` from `apply`ing.
   This tactic fixes the type in the return branch to what's expected
   syntactically. *)
@@ -369,6 +367,8 @@ Proof.
   - intros * ?? Hconv [IH] **.
     unfold graph.
     simp conv conv_ty ; cbn.
+    (* destruct v. 
+    change ((conv_full_cod (ty_red_state; Γ; tt; A; B))) with ((conv_full_cod (ty_state; Γ; tt; A; B))). *)
     repeat (match goal with |- orec_graph _ _ _ => econstructor end) ; cbn.
     + eapply wh_red_complete_whnf_ty ; tea.
       eapply algo_conv_wh in Hconv as [].
@@ -615,10 +615,12 @@ Ltac patch_rec_ret :=
     let Ba := type of hBa in change Bx with Ba
   end).
 
-Let PTy Γ A := forall v, graph typing (wf_ty_state;Γ;v;A) (ok tt).
-Let PInf Γ A t := forall v, graph typing (inf_state;Γ;v;t) (ok A).
-Let PInfRed Γ A t := forall v, whnf A -> graph typing (inf_red_state;Γ;v;t) (ok A).
-Let PCheck Γ A t := graph typing (check_state;Γ;A;t) (ok tt).
+Let PTy Γ A := forall v, graph typing (wf_ty_state;Γ;v;A) (success tt).
+Let PInf Γ A t := forall v, graph typing (inf_state;Γ;v;t) (success A).
+Let PInfRed Γ A t := forall v, whnf A -> graph typing (inf_red_state;Γ;v;t) (success A).
+Let PCheck Γ A t := graph typing (check_state;Γ;A;t) (success tt).
+
+Arguments _bind : simpl nomatch.
 
 Theorem typing_complete : BundledTypingInductionConcl PTy PInf PInfRed PCheck.
 Proof.
@@ -627,7 +629,7 @@ Proof.
   all: intros.
   all: prod_hyp_splitter.
   all: unfold graph in *.
-  all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check ; cbn.
+  all: simp typing typing_inf typing_wf_ty typing_inf_red typing_check.
   (* Well formed types *)
   1-5:repeat match goal with | |- orec_graph typing _ _ => patch_rec_ret ; econstructor ; try eauto ; cbn end.
   - cbn in *.
@@ -678,7 +680,7 @@ Proof.
     1: exact g0.
     econstructor.
     1: exact g.
-    now constructor.
+    now constructor. 
   - now constructor.
   - econstructor.
     1: exact (g0 tt whnf_tEmpty).

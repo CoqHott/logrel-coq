@@ -1,7 +1,7 @@
 (** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
-From PartialFun Require Import Monad PartialFun Examples. (* Examples should not be imported as id: split the file*)
+From PartialFun Require Import Monad PartialFun Exception.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
 
@@ -10,9 +10,8 @@ Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Printing Universes.
 
-(* #[local] Remove Hints MonadOrec : typeclass_instances.
-#[local] Hint Resolve MonadOrec | 3 : typeclass_instances.
-#[local] Hint Resolve MonadId | 10 : typeclass_instances. *)
+Obligation Tactic := idtac.
+
 
 Inductive errors : Type :=
   | variable_not_in_context (n : nat) (Γ : context) : errors
@@ -22,26 +21,9 @@ Inductive errors : Type :=
   | conv_error : errors
   | type_error : errors.
 
-
-
-(* These should be (optionally) provided by PartialFun*)
-#[local]Existing Instance OrecEffectExn.
-#[local]Existing Instance MonadExn | 1.
-
-#[local] Instance MonadRaiseExn {E} : MonadRaise E (exn E) :=
-  { raise := @exception E }.
-
-(* #[local]Existing Instance MonadRaiseExnT | 1. *)
-(* #[local]Existing Instance MonadId | 10. *)
-(* #[local]Instance ty_errors : Errors := errors.
- *)
-
-(* #[local] Instance MonadOrecError A B : Monad (fun X => orec A B (result X)) :=
-  MonadTransResult.(mon_trans_mon) _ _.
-Definition MonadError : Monad result :=
-  MonadTransResult.(mon_trans_mon) id _.
-
-#[local]Existing Instance MonadError | 1. *)
+#[export]Existing Instance OrecEffectExn.
+#[export]Existing Instance MonadExn | 1.
+#[export]Existing Instance MonadRaiseExn.
 
 Equations ctx_access (Γ : context) (n : nat) : exn errors term :=
   ctx_access ε _ := raise (A := term) (variable_not_in_context n ε) ; (** The context does not contain the variable! *)
@@ -172,26 +154,33 @@ Fixpoint zip t (π : stack) :=
 
 (* Introduce the following in PartialFun *)
 
+Definition callTypesFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i)) : CallTypes I := {|
+  ct_src i := psrc (f i) ;
+  ct_tgt i := ptgt (f i) ;
+|}.
+
 #[program]
-Definition callableFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i)) : Callable I := {|
-  csrc i := psrc (f i) ;
-  ctgt i := ptgt (f i) ;
-  cgraph i := pgraph (f i) ;
-  cfueled i := pfueled (f i) ;
-  cdef i := pdef (f i)
+Definition callablePropsFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i)) 
+  : CallableProps (callTypesFactory I F f pfuns) := {|
+  cp_graph i := pgraph (f i) ;
+  cp_fueled i := pfueled (f i) ;
+  cp_def i := pdef (f i)
 |}.
 Next Obligation. intros. eapply pgraph_fun. all: eassumption. Qed.
-Next Obligation. now eapply pfueled_graph. Qed.
-Next Obligation. now eapply pdef_graph. Qed.
+Next Obligation. intros; now eapply pfueled_graph. Qed.
+Next Obligation. intros; now eapply pdef_graph. Qed.
 
-#[local]Instance EmptyStore : Callable False | 5.
-Proof.
-  exact (
-      callableFactory False
+#[export]Instance CallEmpty : CallTypes False | 5 :=
+  callTypesFactory False
         (False_rect _)
         (fun bot => match bot return False_rect _ bot with end)
-        (fun bot => match bot return PFun@{Set Set Set} _ with end)).
-Qed.
+        (fun bot => match bot return PFun@{Set Set Set} _ with end).
+
+#[export]Instance CallablePropsEmpty : CallableProps CallEmpty | 5 :=
+      callablePropsFactory False
+        (False_rect _)
+        (fun bot => match bot return False_rect _ bot with end)
+        (fun bot => match bot return PFun@{Set Set Set} _ with end).
 
 Equations wh_red_stack : ∇(_ : term × stack), False ⇒ term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
@@ -214,6 +203,7 @@ Equations wh_red_stack : ∇(_ : term × stack), False ⇒ term :=
   wh_red_stack (t               ,nil)                         (tm_view1_type _) := ret t ;
   wh_red_stack (t               ,cons s _)                    (tm_view1_type _) := undefined.
 
+
 Inductive Sing {F} (f : F) : Set := mkSing.
 Inductive Duo {F1 F2} (f1 : F1) (f2 : F2) := mkLeft | mkRight.
 
@@ -221,37 +211,41 @@ Arguments mkLeft {_ _} _ {_}.
 Arguments mkRight {_ _} {_} _.
 
 #[global]
-Instance callableSing {F} (f : F) `{PFun F f} : Callable (Sing f).
-Proof.
-  exact (callableFactory _ (fun _ => F) (fun _ => f) (fun _ => _)).
-Defined.
+Instance callTypesSing {F} (f : F) `{PFun F f} : CallTypes (Sing f) :=
+  callTypesFactory _ (fun _ => F) (fun _ => f) (fun _ => _).
 
 #[global]
-Instance callableDuo {F1 F2} (f1 : F1) (f2 : F2) `{PFun F1 f1, PFun F2 f2} : Callable (Duo f1 f2).
-Proof.
-  pose (F := fun x : Duo f1 f2 => match x with mkLeft _ => F1 | mkRight _ => F2 end).
-  pose (f := fun x : Duo f1 f2 => match x as x return F x with
-                               | mkLeft _ => f1 | mkRight _ => f2 end).
-  pose proof (pfun := fun x : Duo f1 f2 => match x as x return PFun (f x) with
-                               | mkLeft _ => _ | mkRight _ => _ end).
-  exact (callableFactory _ F f pfun).
-Defined.
+Instance callablePropsSing {F} (f : F) `{PFun F f} : CallableProps (callTypesSing f) :=
+  callablePropsFactory _ (fun _ => F) (fun _ => f) (fun _ => _).
 
+#[global]
+Instance callTypesDuo {F1 F2} (f1 : F1) (f2 : F2) `{PFun F1 f1, PFun F2 f2} : CallTypes (Duo f1 f2) :=
+  let F := fun x : Duo f1 f2 => match x with mkLeft _ => F1 | mkRight _ => F2 end in
+  let f := fun x : Duo f1 f2 => match x as x return F x with
+                               | mkLeft _ => f1 | mkRight _ => f2 end in
+  let pfun := fun x : Duo f1 f2 => match x as x return PFun (f x) with
+                               | mkLeft _ => _ | mkRight _ => _ end in
+  callTypesFactory _ F f pfun.
 
-(* Definition singleton_store {F} (f : F) : forall (x : unit), unit := fun _ => tt. *)
-
-(* (** DO NOT PUT AS INSTANCE IN GENERAL *)
-(*     (create loops in typeclass search since it autofires itself) *) *)
-(* Definition singleton_pfun {F} (f : F) `{PFun F f} : forall (x : unit), PFun (singleton_store f x). *)
-(* Proof. destruct H; now econstructor. Defined. *)
+#[global]
+Instance callablePropsDuo {F1 F2} (f1 : F1) (f2 : F2) `{PFun F1 f1, PFun F2 f2} : CallableProps (callTypesDuo f1 f2) :=
+  let F := fun x : Duo f1 f2 => match x with mkLeft _ => F1 | mkRight _ => F2 end in
+  let f := fun x : Duo f1 f2 => match x as x return F x with
+                               | mkLeft _ => f1 | mkRight _ => f2 end in
+  let pfun := fun x : Duo f1 f2 => match x as x return PFun (f x) with
+                               | mkLeft _ => _ | mkRight _ => _ end in
+  callablePropsFactory _ F f pfun.
 
 Definition call_single {F}
   (f : F) `{PFun F f} {A B} := ext_call (mkSing f) (A:=A) (B:=B).
 
-(* #[local] Instance: forall x, PFun (singleton_store wh_red_stack x) := singleton_pfun wh_red_stack. *)
+
+#[export] Instance: PFun wh_red_stack := pfun_gen _ _ wh_red_stack.
 
 Definition wh_red : ∇(t : term), Sing wh_red_stack ⇒ term :=
   fun t => call_single wh_red_stack (t,nil).
+
+#[export] Instance: PFun wh_red := pfun_gen _ _ wh_red.
 
 Definition wh_red_fuel n t := fueled wh_red n t.
 
@@ -375,16 +369,9 @@ Definition cstate_output (c : conv_state) : Set :=
   | ne_state | ne_red_state => term
   end.
 
+#[export]Existing Instance combined_monad.
+#[export]Existing Instance OrecEffectExnRaise.
 
-#[local]Existing Instance MonadRaiseExnT.
-
-(* Definition errrec {I F} φ {pfun A B} C := @irec I F φ pfun A B (result C). *)
-
-(* Definition monad_erec : forall {I F φ pfun A B}, Monad (@errrec I F φ pfun A B) := *)
-(*   fun {I F φ pfun A B} => mon_trans_mon (irec φ A B) _. *)
-
-(* Definition ecall {I F} {ϕ : forall i, F i} `{pfun : forall i, PFun (ϕ i)} {A B} (g : I) (x : psrc (ϕ g)) : @errrec I F ϕ pfun A B (ptgt (ϕ g) x) := *)
-(*   lift (irec _ A B) _ _ (call g x). *)
 
 Section Conversion.
 
@@ -396,34 +383,21 @@ Definition conv_cod (c : conv_state) := exn errors (cstate_output c).
 (* Definition conv_full_cod (x : conv_full_dom) := conv_cod (x.π1). *)
 Definition conv_full_cod (x : conv_full_dom) := conv_cod (x.π1).
 
-(* #[local] Instance: forall x, PFun (singleton_store wh_red x) := singleton_pfun wh_red. *)
-
 #[local]
 Notation M0 := (orec (Sing wh_red) (conv_full_dom) (conv_full_cod)).
-(* #[local] *)
-(* Notation M0 := (irec (singleton_store wh_red) (conv_full_dom) (conv_full_cod)). *)
-(* #[local] *)
-(* Notation M := (errrec (singleton_store wh_red) (A:=conv_full_dom) (B:=conv_full_cod)). *)
-
-(* #[local] Instance: Monad M0 := MonadOrec. *)
-(* #[local] Instance: Monad M := monad_erec. *)
-
-(* Notation "∇ '[' dom ']' x , I ⇒ M ♯ B" := *)
-(*   (forall x , combined (M := M) I (∑ t, dom t) (fun y => let x := y.π2 in M%function B%type) B) *)
-(*   (x binder, at level 200). *)
+#[local]
+Notation M := (combined_orec (exn errors) (Sing wh_red) conv_full_dom conv_full_cod).
 
 Definition conv_stmt (c : conv_state) :=
-  (* ∇(_ : conv_dom c), Sing wh_red ⇒ exn errors ♯ cstate_output c. *)
-  forall x0 : conv_dom c,
-    combined (M:=exn errors) (Sing wh_red) conv_full_dom conv_full_cod (cstate_output c).
-  (* (∀ x, combined (M := M) I _ (λ x, M%function B%type) B) *)
+  forall x0 : conv_dom c, M (cstate_output c).
 
 
 Equations conv_ty : conv_stmt ty_state :=
   | (Γ;inp;T;V) :=
     T' ← call_single wh_red T ;;[M0]
     V' ← call_single wh_red V ;;[M0]
-    rec (ty_red_state;Γ;tt;T;V).
+    r ← rec (ty_red_state;Γ;tt;T';V') ;;[M]
+    ret (A:= unit) r.
 
 (* Goal True. *)
 (* pose (c := conv_stmt ty_red_state). *)
@@ -457,12 +431,14 @@ Equations conv_ty_red : conv_stmt ty_red_state :=
     | ty_anomaly _ _ := undefined ;
   }.
 
+(* Set Typeclasses Debug. *)
 Equations conv_tm : conv_stmt tm_state :=
   | (Γ;A;t;u) :=
     A' ← call_single wh_red A ;;[M0]
     t' ← call_single wh_red t ;;[M0]
     u' ← call_single wh_red u ;;[M0]
-    id <*> rec (tm_red_state;Γ;A';t';u').
+    map (M:=M) (@id (cstate_output tm_state)) (rec (tm_red_state;Γ;A';t';u')).
+    (* id <*> rec (tm_red_state;Γ;A';t';u'). *)
 
 Equations conv_tm_red : conv_stmt tm_red_state :=
   | (Γ;A;t;u) with (build_nf_view3 A t u) :=
@@ -507,6 +483,7 @@ Equations to_neutral_diag (t u : term) : option (ne_view1 t × ne_view1 u) :=
     | nf_view1_ne te, nf_view1_ne ue => Some (te, ue)
     | _ , _ => None
   }.
+
 
 Time Equations conv_ne : conv_stmt ne_state :=
   | (Γ;inp; t; t') with t, t', to_neutral_diag t t' :=
@@ -627,9 +604,9 @@ Time Equations conv_ne : conv_stmt ne_state :=
 
 Equations conv_ne_red : conv_stmt ne_red_state :=
   | (Γ;inp;t;u) :=
-    Ainf ← rec (ne_state;Γ;tt;t;u) ;;
+    Ainf ← rec (ne_state;Γ;tt;t;u) ;;[M]
     r ← call_single wh_red Ainf ;;[M0]
-    ret r.
+    ret (M:=M) r.
 
 Equations conv : ∇(x : conv_full_dom), Sing wh_red ⇒ exn errors ♯ cstate_output x.π1 :=
   | (ty_state; Γ ; inp ; T; V) := conv_ty (Γ; inp; T; V);
@@ -640,6 +617,9 @@ Equations conv : ∇(x : conv_full_dom), Sing wh_red ⇒ exn errors ♯ cstate_o
   | (ne_red_state; Γ ; inp ; T; V) := conv_ne_red (Γ; inp; T; V).
 
 End Conversion.
+
+
+#[export] Instance: PFun conv := pfun_gen _ _ conv.
 
 Section Typing.
 
@@ -661,24 +641,6 @@ Definition tstate_output (s : typing_state) : Type :=
   | wf_ty_state | check_state => unit
   end.
 
-(* Definition binary_store_ty@{u} F1 F2 := fun b : bool => if b return Type@{u} then F1 else F2. *)
-(* Definition binary_store@{u} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2) : *)
-(*   forall b, binary_store_ty F1 F2 b := *)
-(*   fun b => if b as b return binary_store_ty F1 F2 b then f1 else f2. *)
-
-(* (** DO NOT PUT AS INSTANCE IN GENERAL *)
-(*     (create loops in typeclass search since it autofires itself) *) *)
-(* Definition binary_pfun@{u a b} {F1 F2: Type@{u}} (f1 : F1) (f2 : F2) *)
-(*   `{h1: PFun@{u a b} F1 f1} `{h2: PFun@{u a b} F2 f2} : *)
-(*   forall b, PFun@{u a b} (binary_store f1 f2 b). *)
-(* Proof. *)
-(*   intros b; destruct b; [destruct h1| destruct h2]; now econstructor. *)
-(* Defined. *)
-
-(* #[local] *)
-(* Instance: forall b, PFun (binary_store wh_red conv b) := binary_pfun wh_red conv. *)
-
-
 Definition typing_dom (c : typing_state) :=
   ∑ (_ : context) (_ : tstate_input c), term.
 Definition typing_full_dom := ∑ (c : typing_state), typing_dom c.
@@ -686,19 +648,11 @@ Definition typing_cod (c : typing_state) := exn errors (tstate_output c).
 Definition typing_full_cod (x : typing_full_dom) := typing_cod (x.π1).
 
 #[local]Definition ϕ := Duo wh_red conv.
-(* #[local]Definition call_wh_red := ext_call (mkLeft ) . *)
-(* #[local]Definition conv_key := false. *)
-(* #[local]Definition ϕ := (binary_store wh_red conv). *)
-(* #[local]Definition wh_red_key := true. *)
-(* #[local]Definition conv_key := false. *)
 
 #[local]
 Notation M0 := (orec ϕ (typing_full_dom) (typing_full_cod)).
 #[local]
-Notation M := (combined (M:=exn errors) ϕ (typing_full_dom) (typing_full_cod)).
-
-(* #[local] Instance: Monad M0 := MonadOrec. *)
-(* #[local] Instance: Monad M := monad_erec. *)
+Notation M := (combined_orec (exn errors) ϕ (typing_full_dom) (typing_full_cod)).
 
 Definition typing_stmt (c : typing_state) :=
   forall x0 : typing_dom c, M (tstate_output c).
@@ -840,9 +794,9 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
 
   Equations typing_inf_red : typing_stmt inf_red_state :=
   | (Γ;_;t) :=
-    T ← rec (inf_state;Γ;_;t) ;;
-    r ← ext_call (mkLeft wh_red) T ;;[M0]
-    ret r.
+    T ← rec (inf_state;Γ;_;t) ;;[M]
+    r ← ext_call (mkLeft wh_red (f2:=conv)) T ;;[M0]
+    ret (M:=M) r.
 
   Equations typing_check : typing_stmt check_state :=
   | (Γ;T;t) :=
@@ -857,18 +811,14 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
 
 End Typing.
 
+#[export] Instance: PFun typing := pfun_gen _ _ typing.
+
 Section CtxTyping.
-
-  (* #[local] Instance: forall x, PFun (singleton_store typing x) := singleton_pfun typing. *)
-
-  (* #[local] Instance: Monad (errrec (singleton_store typing) (A:=context) (B:=(fun _ => result unit))) := monad_erec. *)
-  #[local]
-  Notation M := (combined (M:=exn errors) (Sing typing) context (fun _ => exn errors unit)).
 
   Equations check_ctx : ∇ (Γ : context), Sing typing ⇒ exn errors ♯ unit :=
     check_ctx ε := ret tt ;
     check_ctx (Γ,,A) :=
-      rec Γ ;;[M]
+      rec Γ ;;[combined_orec (exn _) _ _ _]
       call_single typing (wf_ty_state;Γ;tt;A).
 
 End CtxTyping.

@@ -10,7 +10,6 @@ From PartialFun Require Import Monad PartialFun.
 Set Universe Polymorphism.
 
 Import DeclarativeTypingProperties.
-Import IndexedDefinitions.
 
 Section ConversionTerminates.
 
@@ -85,7 +84,7 @@ Proof.
     + now apply (IHA tt A'').
     + apply (IHB tt B'').
       now eapply stability1.
-    + intros x; destruct x; cbn; easy.
+    + intros []; cbn; easy.
   - intros * ??? ? ? wB' ?.
     apply compute_domain.
     simp conv conv_ty_red.
@@ -117,7 +116,7 @@ Proof.
     + now apply (IHA tt A'').
     + apply (IHB tt B'').
       now eapply stability1.
-    + intros x; destruct x; cbn; easy.
+    + intros []; easy.
   - intros * ? [ihA] ? [ihx] ? [ihy] ? [? []]%id_ty_inv [? []]%id_ty_inv * wB' htyB'.
     apply compute_domain.
     simp conv conv_ty_red.
@@ -360,7 +359,7 @@ Proof.
       eapply stability1 ; tea.
       1-2: boundary.
       now constructor.
-    + intros x; destruct x; now cbn.
+    + intros []; now cbn.
   - intros * ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
@@ -418,7 +417,7 @@ Proof.
       eapply stability1 ; tea.
       1-2: boundary.
       now constructor.
-    + intros x; destruct x; now cbn.
+    + intros []; now cbn.
   - intros * ?? ? [ihFst] ? [ihSnd] ??? u' wu' Hty.
     apply compute_domain.
     simp conv conv_tm_red build_nf_view3 build_nf_ty_view2.
@@ -712,7 +711,7 @@ Proof.
     1: apply IH; cbn; try easy; left; cbn; now do 2 econstructor.
     intros [[]|]; cbn; easy.
   - split; cycle -1.
-    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: intros [t|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
     1: destruct t; cbn; try easy.
     1: assert [Γ0 |-[de] A] by (destruct s; now econstructor).
     1: split; cycle -1.
@@ -799,7 +798,7 @@ Proof.
     all: eapply IH; cbn; tea; try easy.
     all: left; do 2 constructor.
   - split; cycle -1.
-    1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
+    1: intros [t|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
     1: destruct t; cbn; try easy.
     eapply IH; cbn; tea; try easy; right; now cbn.
 Qed.

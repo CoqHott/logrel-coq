@@ -1,21 +1,20 @@
 (** * LogRel.Decidability.Execution: example executions of the type checker, in Coq. *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils Notations BasicAst Context GenericTyping DeclarativeTyping DeclarativeInstance BundledAlgorithmicTyping AlgorithmicTypingProperties.
-From PartialFun Require Import Monad PartialFun.
+From PartialFun Require Import Monad PartialFun Exception.
 From LogRel.Decidability Require Import Functions Soundness.
 
 From LogRel Require TermNotations.
 
 Import DeclarativeTypingProperties.
-Import IndexedDefinitions.
 
-#[local] Definition infer (Γ : context) (t : term) : Fueled (result term) :=
+#[local] Definition infer (Γ : context) (t : term) : Fueled (exn errors term) :=
   (fueled typing 1000 (inf_state;Γ;tt;t)).
 
-#[local] Definition check (Γ : context) (T t : term) : Fueled (result unit) := 
+#[local] Definition check (Γ : context) (T t : term) : Fueled (exn errors unit) := 
   (fueled typing 1000 (check_state;Γ;T;t)).
 
-#[local] Definition check_ty (Γ : context) (t : term) : Fueled (result unit) := 
+#[local] Definition check_ty (Γ : context) (t : term) : Fueled (exn errors unit) := 
   (fueled typing 1000 (wf_ty_state;Γ;tt;t)).
 
 #[local] Definition conv_tm (Γ : context) (T: term) (t1 : term) (t2 : term) : Fueled _ :=
@@ -26,7 +25,7 @@ Ltac infer_auto :=
   match goal with
   | |- [ε |- ?t : ?T] =>
     assert [|- ε] by econstructor ;
-      eassert (graph typing (inf_state;ε;tt;t) (ok _))
+      eassert (graph typing (inf_state;ε;tt;t) (success _))
         as ?%implem_typing_sound%algo_typing_sound
         by (apply (fueled_graph_sound typing 1000 (inf_state;_)) ; reflexivity)
   end ; auto.
@@ -35,7 +34,7 @@ Ltac wf_ty_auto :=
   match goal with
   | |- [ε |- ?T] =>
       assert [|- ε] by econstructor ;
-      eassert (graph typing (wf_ty_state;ε;tt;T) (ok _))
+      eassert (graph typing (wf_ty_state;ε;tt;T) (success _))
         as ?%implem_typing_sound%algo_typing_sound
         by (apply (fueled_graph_sound typing 1000 (wf_ty_state;_)) ; reflexivity)
   end ; auto.
@@ -44,10 +43,10 @@ Ltac check_auto :=
   match goal with
   | |- [ε |- ?t : ?T] =>
     assert [|- ε] by econstructor ;
-    eassert (graph typing (check_state;ε;T;t) (ok _))
+    eassert (graph typing (check_state;ε;T;t) (success _))
       as ?%implem_typing_sound%algo_typing_sound
       by (apply (fueled_graph_sound typing 1000 (check_state;_)) ; reflexivity) ;
-    eassert (graph typing (wf_ty_state;ε;tt;T) (ok _))
+    eassert (graph typing (wf_ty_state;ε;tt;T) (success _))
       as ?%implem_typing_sound%algo_typing_sound
       by (apply (fueled_graph_sound typing 1000 (wf_ty_state;_)) ; reflexivity) ;
     auto
