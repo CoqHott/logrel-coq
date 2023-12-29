@@ -20,9 +20,9 @@ Infix "<~>" := iffT (at level 90).
 (** Since we work a lot with type-level propositions,
 we override the notation for negation from the
 standard library. **)
-Export Set Warnings "-notation-overridden".
+#[export] Set Warnings "-notation-overridden".
 Notation "~ x" := (notT x) : type_scope.
-Export Set Warnings "notation-overriden".
+#[export] Set Warnings "notation-overridden".
 
 (** ** Polymorphic and cumulative redefinitions from the standard library. *)
 

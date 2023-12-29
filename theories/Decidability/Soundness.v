@@ -188,7 +188,7 @@ Section ConversionSound.
     - econstructor ; tea.
       destruct H ; simp build_nf_view3 build_ty_view1 in Heq ; try solve [inversion Heq].
       all: try now econstructor.
-    - econstructor; tea; [intuition| now rewrite 2!Weakening.wk1_ren_on].
+    - econstructor; tea; [intuition (auto with *)| now rewrite 2!Weakening.wk1_ren_on].
     - eapply convne_meta_conv.
       2: reflexivity.
       + econstructor.

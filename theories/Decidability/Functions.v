@@ -10,6 +10,7 @@ Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Printing Universes.
 
+#[global]
 Obligation Tactic := idtac.
 
 

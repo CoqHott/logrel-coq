@@ -13,6 +13,7 @@ Definition inspect {A} (a : A) : {b | a = b} :=
   
 Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
 
+#[global]
 Obligation Tactic := idtac.
 
 Equations check (Γ : context) (t T : term) (hΓ : [|- Γ]) (hT : [Γ |- T]) :
