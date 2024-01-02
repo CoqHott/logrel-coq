@@ -36,3 +36,4 @@ And then to connect (username is 'coq' and password is 'coq' as well):
 ```
 ssh coq@localhost
 ```
+Note you might have to source .profile to get coq in the PATH
