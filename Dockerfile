@@ -26,7 +26,7 @@ RUN touch /home/coq/.zshrc
 RUN opam install -y coq-equations.1.3+8.16 coq-smpl.8.16
 
 # Copy files from your host to the container
-COPY ./formalization /home/coq/formalization
+COPY . /home/coq/formalization
 RUN sudo chown -R coq:coq /home/coq/formalization
 
 # Run make in the formalization directory
