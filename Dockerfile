@@ -45,7 +45,7 @@ RUN sudo mkdir /var/run/sshd
 EXPOSE 22
 
 # SSH login fix. Otherwise, user is kicked off after login
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 ## Finalize
 
