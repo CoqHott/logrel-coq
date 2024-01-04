@@ -14,7 +14,7 @@ Import IndexedDefinitions.
 Definition inspect {A} (a : A) : {b | a = b} :=
   exist _ a eq_refl.
   
-Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+Notation "x 'eq:' p" := (exist _ x p) (only parsing, at level 20).
 
 Obligation Tactic := try easy.
 
@@ -23,8 +23,8 @@ Equations check_ty (Γ : context) (T : term) (hΓ : [|- Γ]) :
 
 check_ty Γ T hΓ with (inspect (def typing (wf_ty_state;Γ;tt;T) _)) :=
   {
-    | ok _ eqn: e => inl _
-    | error _ eqn: e => inr _
+    | ok _ eq: e => inl _
+    | error _ eq: e => inr _
   }.
 Next Obligation.
   intros.
@@ -81,13 +81,16 @@ Next Obligation.
   now inversion hΓ'.
 Qed.
 
+
+
+
 Equations check (Γ : context) (T t : term) (hΓ : [|- Γ]) (hT : [Γ |- T]) :
   [Γ |- t : T] + ~[Γ |- t : T] :=
 
 check Γ T t hΓ hT with (inspect (def typing (check_state;Γ;T;t) _)) :=
   {
-    | ok _ eqn: e => inl _
-    | error _ eqn: e => inr _
+    | ok _ eq: e => inl _
+    | error _ eq: e => inr _
   }.
 Next Obligation.
   intros.
@@ -145,3 +148,25 @@ Next Obligation.
 Qed.
 
 Print Assumptions check_full.
+
+Definition check_conv (Γ : context) (T t t' : term) (hΓ : [|- Γ]) (hT : [Γ |- T]) (ht : [Γ |- t : T]) (ht' : [Γ |- t' : T]) :
+  [Γ |- t ≅ t' : T] + ~[Γ |- t ≅ t' : T].
+Proof.
+  assert (hdom : domain conv (tm_state; Γ; T; t; t')).
+  1: now eapply conv_terminates.
+  pose (x := (def conv (tm_state;Γ;T;t;t') hdom)).
+  destruct x as [|] eqn:e; [left| right]; cbn in *.
+  all: pose proof (def_graph_sound _ _ hdom) as Hgraph.
+  - unfold x in e; rewrite e in Hgraph.
+    apply implem_conv_sound in Hgraph ; cbn in Hgraph.
+    now eapply algo_conv_sound in Hgraph.
+  - intros Hty.
+    enough (graph conv (tm_state;Γ;T;t;t') (ok tt)).
+    {
+      eapply orec_graph_functional in Hgraph ; tea.
+      pose proof (eq_trans Hgraph e) as [=].
+    }
+    eapply algo_convtm_complete in Hty; inversion Hty; subst.
+    apply implem_conv_complete.
+    now constructor.
+Qed.

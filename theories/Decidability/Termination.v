@@ -563,7 +563,7 @@ Proof.
       now eexists.
   Qed.
   
-  Corollary conv_terminates Γ A A' :
+  Corollary convty_terminates Γ A A' :
     [Γ |-[de] A] ->
     [Γ |-[de] A'] ->
     forall v,
@@ -574,6 +574,20 @@ Proof.
     split.
     4: eapply algo_conv_complete.
     4: econstructor.
+    all: boundary.
+  Qed.
+
+  Corollary conv_terminates Γ A t u :
+    [Γ |-[de] A] ->
+    [Γ |-[de] t : A] ->
+    [Γ |-[de] u : A] ->
+    domain conv (tm_state;Γ;A;t;u).
+  Proof.
+    intros.
+    eapply _conv_terminates ; tea.
+    split.
+    5: eapply algo_convtm_complete.
+    5: econstructor.
     all: boundary.
   Qed.
 
@@ -831,7 +845,7 @@ Proof.
       intros ?%implem_typing_sound%algo_typing_sound ; cbn in * ; tea.
       split.
       2: easy.
-      eapply conv_terminates ; tea.
+      eapply convty_terminates ; tea.
       boundary.
   - split.
     + apply IH ; cbn ; try easy.

@@ -2855,3 +2855,10 @@ Lemma algo_conv_complete Γ A B :
 Proof.
   now intros [HΓ ? _ []%(escapeEq (ta := bni))]%Fundamental.
 Qed.
+
+Lemma algo_convtm_complete Γ t u A :
+  [Γ |-[de] t ≅ u : A] ->
+  [Γ |-[al] t ≅ u : A].
+Proof.
+   now intros [HΓ ??? []%(escapeTmEq (ta := bni))]%Fundamental.
+Qed.

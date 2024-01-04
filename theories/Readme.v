@@ -103,7 +103,7 @@ About redtm_map_comp.
 
 From LogRel Require Import DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
 
-(* Declaratve typing *)
+(* Declarative typing *)
 Print TypingDecl.
 
 (* Algorithmic conversion *)
@@ -412,7 +412,8 @@ About typing_terminates.
  
 From LogRel Require Import Decidability Normalisation Consequences.
  
-(* Decidability of typechecking *)
+(* Decidability of conversion and typechecking *)
+About check_conv.
 About check_full.
 
 (* Normalisation *)
