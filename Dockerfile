@@ -44,6 +44,9 @@ RUN sudo mkdir /var/run/sshd
 # Expose the SSH port
 EXPOSE 22
 
+# SSH login fix. Otherwise, user is kicked off after login
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
 ## Finalize
 
 # Setup password for ssh
