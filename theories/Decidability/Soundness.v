@@ -2,12 +2,14 @@
 From Coq Require Import Nat List Lia Arith ssrbool.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
+From LogRel Require Import Utils BasicAst Context Notations UntypedReduction GenericTyping NormalForms.
+From LogRel Require Import AlgorithmicTyping.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
 From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation TypeUniqueness.
 From LogRel.Decidability Require Import Functions.
 From PartialFun Require Import Monad PartialFun.
 
-Import DeclarativeTypingProperties.
+Import AlgorithmicTypingData.
 Import IndexedDefinitions.
 
 Set Universe Polymorphism.
@@ -292,8 +294,6 @@ Ltac funelim_typing :=
       funelim (typing_wf_ty _) ].
 
 Section TypingCorrect.
-
-  Import AlgorithmicTypingData.
 
   #[local]Existing Instance ty_errors.
 

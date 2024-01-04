@@ -1,7 +1,7 @@
 Browsing the sources
 ============================
 
-The table of content of the development is accessible [here](./coqdoc/toc.html).
+The full table of content of the development is accessible [here](https://coqhott.github.io/logrel-coq/coqdoc/toc.html).
 
 File description
 ==========

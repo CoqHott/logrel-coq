@@ -1,4 +1,4 @@
-#Taken from https://github.com/coq-community/reglang
+#Inspired from https://github.com/coq-community/reglang
 
 GLOBFILES = $(VFILES:.v=.glob)
 COQDOCJS_DIR ?= coqdocjs
@@ -22,4 +22,13 @@ coqdoc: $(GLOBFILES) $(VFILES) $(HEADER) $(FOOTER) $(RESOURCES) $(FRONTPAGE)
 .PHONY: coqdoc
 
 clean::
-	$(HIDE)rm -rf $(COQDOCDIR)
+	$(HIDE)rm -rf $(COQDOCDIR)/*.html
+
+$(DOCDIR)/dependency_graph.dot: $(VFILES)
+	coqdep -Q theories LogRel -R coq-partialfun/theories PartialFun $(VFILES) | perl generate_deps.pl | tred > $(DOCDIR)/dependency_graph.dot
+
+$(DOCDIR)/dependency_graph.png: $(DOCDIR)/dependency_graph.dot
+	dot -T png $(DOCDIR)/dependency_graph.dot -o $(DOCDIR)/dependency_graph.png
+
+depgraph: $(DOCDIR)/dependency_graph.png
+.PHONY: depgraph
