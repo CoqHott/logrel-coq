@@ -114,8 +114,9 @@ Print InferAlg.
 
 (* ** Logical Relation *)
 
-From LogRel Require Import LogicalRelation.
+From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Reflexivity Transitivity Weakening Reduction Neutral.
+From LogRel.Substitution.Introductions Require Import List ListElim.
 
 Section LogicalRelation.
 Context `{GenericTypingProperties}.
@@ -124,6 +125,8 @@ Context `{GenericTypingProperties}.
   first the reducibility layer attaching witnesses of reducibility to weak-head normal form
   and second the validity layer that closes reducibility under substitution.
 *)
+
+(* * Reducibility *)
 
 (* Reducible types are defined with respect to a context Γ and level l *)
 Check fun (Γ : context) l (A : term) => [Γ ||-<l> A ].
@@ -268,10 +271,114 @@ Print neuTermEq.
 Print ListRedTm.ListRedInduction.
 Print ListRedTmEq.ListRedEqInduction.
 
-(* An example of its use is given for transitivity *)
+(* This derived induction principle is used for instance in order to prove 
+  transitivity of reducible conversion at list types *)
 Locate transEqTermList.
 
+(* * Validity *)
 
+(* Validity closes reducibility by reducible substitution. 
+  Valid contexts are described inductively while valid substitutions
+  into a valid context and valid conversion of valid substitutions are
+  described resursively on these valid contexts.
+  As for reducibility, this inductive-recursive schema is encoded
+  using small induction-recursion, describing the graph of the function
+  relating a valid context with its functions giving the valid substitutions
+  and valid convertible substitutions packed into a VPack.
+*)
+Print VR.
+Print VPack.
+
+(* Notations for valid contexts, substitutions, convertible substitutions, types, terms... *)
+Check fun Γ => [||-v Γ].
+Check fun Γ (VΓ : [||-v Γ]) Δ (wfΔ : [|- Δ]) σ => 
+  [VΓ | Δ ||-v σ : Γ | wfΔ]. 
+Check fun Γ (VΓ : [||-v Γ]) Δ (wfΔ : [|- Δ]) σ σ' (Vσ : [VΓ | Δ ||-v σ : Γ | wfΔ]) => 
+  [VΓ | Δ ||-v σ ≅ σ' : Γ | wfΔ | Vσ]. 
+Check fun Γ (VΓ : [||-v Γ]) l A => [VΓ | Γ ||-v<l> A].
+Check fun Γ (VΓ : [||-v Γ]) l t A (VA : [VΓ | Γ ||-v<l> A]) => 
+  [Γ ||-v<l> t : A | VΓ | VA ].
+
+(* The fundamental lemma states that all components of a derivable declarative judgement are valid,
+  in particular, terms well-typed for the declarative presentation are valid *)
+
+About Fundamental.
+Print FundCon.
+Print FundTy.
+Print FundTm.
+Print FundTyEq.
+Print FundTmEq.
+
+
+(* The proof of the fundamental lemma proceed by an induction on
+  declarative typing derivations, using that each declarative derivation step
+  is admissible for the validity logical relation. 
+  
+  These admissibility results are show independently for each type former.
+  We focus on the case of lists and the functor laws.
+  The proofs follow the description of the logical relation: first, we show
+  that each type, term or conversion equation is reducible and then valid.
+  *)
+
+(* For canonical forms, reducibility provides the necessary basic blocks *)
+About listRed.
+About listEqRed.
+About nilRed.
+About consRed.
+About consEqRed.
+
+(* Since canonical forms are stable by substitutions, these proofs extend to validity *)
+About listValid.
+About listEqValid.
+About nilValid.
+About consValid.
+About consEqValid.
+
+
+(* For elimination forms (tMap, tListElim), the proof proceed as follow:
+  Step 1: the reducibility proof of the main argument is analyzed to reduce to
+    the case of a canonical form
+  Step 2: the elimination form either reduces on this canonical form to a reducible term or is neutral
+  Step 3: in the latter case, the neutral is already reducible
+*)
+
+(* Helper functions that computes the result of each eliminator
+  form on canonical forms *)
+Print mapProp.
+Print elimListProp.
+
+About mapRedAux.
+About elimListRed_mut.
+
+About mapEqRedAux.
+
+(* One essential ingredient to obtain the functor laws is that 
+  composition of functions (e.g. morphisms for list) 
+  is definitionally associative and unital
+*)
+About comp_assoc_app_neutral.
+About comp_id_app_neutral.
+
+About mapPropRedCompAux.
+About mapPropRedIdAux.
+
+(* Lift to validity *)
+
+About mapValid.
+About mapRedConsValid.
+
+About elimListValid.
+
+(* Validity of functor laws *)
+About mapRedCompValid.
+About mapRedIdValid.
+
+
+(* Some design choices of the reducibility relation for list 
+  are only visible at the level of these proofs. 
+  For instance, the fact that the parameter type provided to the `tNil`
+  constructor must be reducibly convertible to that of its type 
+  is used to apply nilEqRed in elimListRedEq_mut (l.385 of theories/Substitution/Introductions/ListElim.v) *)
 
 End LogicalRelation.
 
@@ -303,11 +410,17 @@ About typing_terminates.
 
 (* ** Metatheoretical properties *)
  
-From LogRel Require Import Decidability.
+From LogRel Require Import Decidability Normalisation Consequences.
  
 (* Decidability of typechecking *)
 About check_full.
 
+(* Normalisation *)
+About normalisation.
+About type_normalisation.
+
 (* Consistency *)
+About consistency.
 
 (* Canonicity *)
+About nat_canonicity.

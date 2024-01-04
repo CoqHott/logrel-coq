@@ -183,6 +183,14 @@ Section Normalisation.
       apply escapeTmEq in H as []; now split.
   Qed.
 
+  Import DeclarativeTypingData.
+
+  Corollary normalisation {Γ A t} : [Γ |-[de] t : A] -> WN t.
+  Proof. now intros ?%TermRefl%typing_nf. Qed.
+
+  Corollary type_normalisation {Γ A} : [Γ |-[de] A] -> WN A.
+  Proof. now intros ?%TypeRefl%typing_nf. Qed.
+
 End Normalisation.
 
 Import DeclarativeTypingProperties.
