@@ -4,7 +4,9 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
   LogicalRelation Fundamental Validity LogicalRelation.Induction Substitution.Escape LogicalRelation.Irrelevance
   GenericTyping DeclarativeTyping DeclarativeInstance TypeConstructorsInj Normalisation.
+From LogRel.LogicalRelation Require Weakening Escape.
 
+Module Esc := LogRel.LogicalRelation.Escape.
 
 Import DeclarativeTypingData DeclarativeTypingProperties.
 
@@ -101,4 +103,68 @@ Lemma nat_canonicity {t} : [ε |- t : tNat] ->
   ∑ n : nat, [ε |- t ≅ Nat.iter n tSucc tZero : tNat].
 Proof.
   now apply _nat_canonicity.
+Qed.
+
+Section ListNatCanonicityInduction.
+
+  Let numeral: nat -> term := fun n => Nat.iter n tSucc tZero.
+  Definition lit : list nat -> term :=
+    List.fold_right (fun n tl => tCons tNat (numeral n) tl) (tNil tNat).
+
+  #[local] Coercion numeral : nat >-> term.
+
+  Let RLN : [ε ||-List<one> tList tNat].
+  Proof.
+    econstructor.
+    - eapply redtywf_refl; do 3 constructor.
+    - do 2 constructor.
+    - repeat constructor.
+    - intros; eapply Weakening.wk; tea.
+      eapply LRNat_. eapply red_nat_empty.
+  Defined.
+
+  Lemma list_nat_red_empty_ind :
+    (forall t, [ε ||-<one> t : _ | LRList' RLN ] ->
+    ∑ l : list nat, [ε |- t ≅ lit l : tList tNat]) ×
+    (forall t, ListProp _ _ RLN t -> ∑ l : list nat, [ε |- t ≅ lit l : tList tNat]).
+  Proof.
+    apply ListRedInduction.
+    - intros * [? []] ? _ [l] ; refold.
+      exists l.
+      now etransitivity.
+    - exists nil ; cbn.
+      symmetry.
+      econstructor.
+      now eapply Esc.escapeEq.
+    - intros * ???? [l].
+      assert [ε |- P ≅ tNat] by (symmetry; now eapply Esc.escapeEq).
+      assert (hdty : [ε |- hd : tNat])  by now eapply Esc.escapeTerm.
+      apply nat_canonicity in hdty as [n ?].
+      exists (cons n l) ; cbn.
+      symmetry; econstructor.
+      1: now eapply Esc.escapeEq.
+      all: now symmetry.
+    - intros ?? [? _].
+      exfalso.
+      now eapply no_neutral_empty_ctx_mut.
+  Qed.
+
+  Lemma _list_nat_canonicity {t} : [ε |- t : tList tNat] ->
+  ∑ l : list nat, [ε |- t ≅ lit l : tList tNat].
+  Proof.
+    intros Ht.
+    assert [LRList' RLN | ε ||- t : tList tNat] as ?%list_nat_red_empty_ind.
+    {
+      apply Fundamental in Ht as [?? Vt%reducibleTm].
+      irrelevance.
+    }
+    now assumption.
+  Qed.
+
+End ListNatCanonicityInduction.
+
+Lemma list_nat_canonicity {t} : [ε |- t : tList tNat] ->
+  ∑ l : list nat, [ε |- t ≅ lit l : tList tNat].
+Proof.
+  now apply _list_nat_canonicity.
 Qed.

@@ -447,3 +447,4 @@ About consistency.
 
 (* Canonicity *)
 About nat_canonicity.
+About list_nat_canonicity.
