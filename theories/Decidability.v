@@ -170,3 +170,5 @@ Proof.
     apply implem_conv_complete.
     now constructor.
 Qed.
+
+Print Assumptions check_conv.
