@@ -26,13 +26,14 @@ make
 The docker container is setup with a ssh server in case
 the user wish to access the files remotely with their IDE.
 
-
-To launch the ssh server and map port 22 to port 22 on the host:
+To launch the ssh server and map port 22 to port 22 on the host (username is 'coq' and password is 'coq' as well):
 ```
-docker run -d -p 22:22 formalization sudo /usr/sbin/sshd -D
+docker run -p 22:22 -it formalization
+sudo /usr/sbin/sshd -D
 ```
+The ssh server should now be running.
 
-And then to connect (username is 'coq' and password is 'coq' as well):
+To connect, open another terminal and type
 ```
 ssh coq@localhost
 ```
