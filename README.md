@@ -3,7 +3,7 @@ Presentation
 
 This repo contains the formalisation work accompangy the paper *Definitional Functoriality for Dependent (Sub)Types*.
 
-The formalisation follows a similar [Agda formalization](https://github.com/mr-ohman/logrel-mltt/) (described in [*Decidability of conversion for Type Theory in Type Theory*, 2018](https://dl.acm.org/doi/10.1145/3158111)). In order to avoid some work on the syntax, this project uses the [AutoSubst](https://github.com/uds-psl/autosubst-ocaml) project to generate syntax-related boilerplate. It also includes code from Winterhalter's [partial-fun](https://github.com/TheoWinterhalter/coq-partialfun) library to handle the definition of partial functions.
+The formalization is build on top of [Martin-Löf à la Coq](https://arxiv.org/pdf/2310.06376.pdf) (to be presented at CPP 2024).
 
 Browsing the development
 ==================
@@ -51,7 +51,11 @@ Rather than building the derivation of conversion by hand, we use our certified 
 
 A version of example 1.1 using rewrite rules in Agda (as presented at the end of section 3.3) can be found in [ExampleAgda].
 
+Readme.v
+--------------
+We provide a more in-depth overview of the development as a Coq file, roughly similar to the PDF artifact description.
 
+[Readme.v]: ./theories/Readme.v
 [Ast]: ./theories/AutoSubst/Ast.v
 [DeclarativeTyping]: ./theories/DeclarativeTyping.v
 [UntypedReduction]: ./theories/UntypedReduction.v
