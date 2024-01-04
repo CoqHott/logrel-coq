@@ -1,7 +1,7 @@
 
 # Build Docker Image
 
-A docker image can be built and generated via
+A docker image is provided with the artifact. It can be built and generated again via
 ```
 docker build -t formalization .
 docker save formalization > formalization-docker.tar

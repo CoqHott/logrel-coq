@@ -1,0 +1,11 @@
+
+The authors are applying for the following badges:
+
+- Available
+The artifact is published through Zenodo. The DOI will be included in the camera-ready version of the paper. A git repository will be made publicly available as well once anonymity has been lifted.
+
+- Functional
+The artifact is complete. It can be checked and browsed with the Coq proof assistant.
+
+- Reusable
+We believe the artifact is build on solid grounds, namely Martin-Löf à la Coq (to be presented at CPP 2024). We beleive it is possible to rely on our development to extend further the formalization (e.g. to subtyping, as suggested in future work).
