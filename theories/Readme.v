@@ -74,7 +74,7 @@ Print ConvNeuProperties.
 Print ConvNeuListProperties.
 Print RedTermProperties.
 
-(* Rules specific to lists *)
+(* Typing rules specific to lists, mostly similar to declarative typing *)
 
 About wft_list.
 About ty_list.
@@ -84,10 +84,14 @@ About ty_map.
 About ty_listElim.
 
 (* Congruence rules for lists *)
+(* As for the other types, constructor have congruence
+ rules in conversion *)
 About convty_list.
 About convtm_list.
 About convtm_nil.
 About convtm_cons.
+(* but destructors only have conversion rules in neutral conversion,
+  when their main argument is neutral *)
 About convneu_listElim.
 About convneulist_map.
 
@@ -101,16 +105,26 @@ About redtm_map_comp.
 
 (* * Instances of generic typing *)
 
-From LogRel Require Import DeclarativeTyping DeclarativeInstance AlgorithmicTyping.
+From LogRel Require Import DeclarativeTyping DeclarativeInstance.
+From LogRel Require Import AlgorithmicTyping BundledAlgorithmicTyping AlgorithmicTypingProperties.
 
 (* Declarative typing *)
 Print TypingDecl.
 
+(* The generic typing instance for typing *)
+About DeclarativeTypingProperties.DeclarativeTypingProperties.
+
 (* Algorithmic conversion *)
 Print ConvTypeAlg.
 
-(* Algorithmic typing based on bidirectional typing *)
+(* Algorithmic typing, based on bidirectional typing *)
 Print InferAlg.
+
+(* Bundled typing, algorithmic typing with its pre-conditions *)
+Print CheckBun.
+
+(* The last, fully algorithmic instance of generic typing *)
+About AlgorithmicTypingProperties.AlgorithmicTypingProperties.
 
 (* ** Logical Relation *)
 
