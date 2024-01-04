@@ -404,6 +404,14 @@ Import IndexedDefinitions.
 
 From LogRel.Decidability Require Import Functions.
 
+(* The main innovation: the function which compacts a to-be neutral once the reduction machine
+has hit a variable *)
+
+About compact.
+
+(* The other functions for conversion and typing, are only extended with the new cases
+  related to lists *)
+
 About conv.
 About typing.
 
