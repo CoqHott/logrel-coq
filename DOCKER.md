@@ -7,6 +7,13 @@ docker build -t formalization .
 docker save formalization > formalization-docker.tar
 ```
 
+# Load Docker Image
+
+To load the docker image
+```
+docker load --input formalization-docker.tar
+```
+
 # Run Container
 
 For running the container:
