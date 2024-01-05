@@ -1,8 +1,10 @@
 
 # Software Requirements
 
-The project builds with Coq version `8.16.1`. It depends on the opam package `coq-smpl` and `coq-equations` (version 1.3 at least). After setting up [opam](https://opam.ocaml.org/doc/Usage.html), the proper environment is installed with
+The project builds with [Coq](https://coq.inria.fr/) version `8.16.1`. It depends on the opam package `coq-smpl` and `coq-equations` (version 1.3 at least). After installing [opam](https://opam.ocaml.org/) with your favorite package manager, the proper environment is setup and installed with
 ```
+opam init
+eval $(opam env)
 opam install coq.8.16.1 coq-equations.1.3+8.16 coq-smpl.8.16
 ```
 
