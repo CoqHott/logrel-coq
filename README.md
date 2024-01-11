@@ -8,7 +8,11 @@ The formalization is build on top of [Martin-Löf à la Coq](https://arxiv.org/p
 Browsing the development
 ==================
 
-The development, rendered using the [coqdoc](https://coq.inria.fr/refman/using/tools/coqdoc.html) utility, can be browsed offline (as html files). To start navigating the sources, the best entry point is probably the [the table of content](./docs/coqdoc/toc.html). A [short description of the file contents](./docs/index.md) is also provided to make the navigation easier.
+The development, rendered using the [coqdoc](https://coq.inria.fr/refman/using/tools/coqdoc.html) utility, can be browsed offline (as html files). To start navigating the sources, the best entry point is probably the [the table of content](./docs/coqdoc/toc.html). A [short description of the file contents](./docs/index.md) is also provided to make the navigation easier. We also recommend exploring the **files of interest** described below.
+
+In complement, the file `Readme.v` is designed as a walkthrough through the development, designed to be
+run in an interactive session. To avoid a very noisy build, it is not included in the built files,
+and consequently cannot be browsed offline.
 
 Building
 ===========
