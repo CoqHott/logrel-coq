@@ -1267,8 +1267,8 @@ Export ParamRedTy(ParamRedTy, Build_ParamRedTy, outTy).
 Module PiRedTyPack := ParamRedTy.
 Coercion ParamRedTy.polyRed : ParamRedTy >-> PolyRed.
 Coercion ParamRedTy.toPack : ParamRedTy >-> ParamRedTyPack.
-Notation "[ Γ ||-Π< l > A ]" := (ParamRedTy tProd Γ l A) (at level 0, Γ, l, A at level 50).
-Notation "[ Γ ||-Σ< l > A ]" := (ParamRedTy tSig Γ l A) (at level 0, Γ, l, A at level 50).
+Notation "[ Γ ||-Π< l > A ]" := (ParamRedTy tProd Γ set set l A) (at level 0, Γ, l, A at level 50).
+Notation "[ Γ ||-Σ< l > A ]" := (ParamRedTy tSig Γ set set l A) (at level 0, Γ, l, A at level 50).
 
 Section EvenMoreDefs.
   Context `{ta : tag}

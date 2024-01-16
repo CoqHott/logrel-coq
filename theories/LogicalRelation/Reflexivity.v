@@ -9,20 +9,22 @@ Set Printing Universes.
 Section Reflexivities.
   Context `{GenericTypingProperties}.
 
-  Definition reflLRTyEq {l Γ A} (lr : [ Γ ||-< l > A ] ) : [ Γ ||-< l > A ≅ A | lr ].
+  Definition reflLRTyEq {l Γ s A} (lr : [ Γ ||-< l > A @ s] ) : [ Γ ||-< l > A ≅ A | lr ].
   Proof.
-    pattern l, Γ, A, lr; eapply LR_rect_TyUr; intros ??? [] **.
-    all: try match goal with H : PolyRed _ _ _ _ |- _ => destruct H; econstructor; tea end.
+    pattern l, Γ, s, A, lr; eapply LR_rect_TyUr.
+    2: intros ???? [] **.
+    all: try intros ??? [] **.
+    all: try lazymatch goal with | H : PolyRed _ _ _ _ _ _ |- _ => destruct H; econstructor; tea end.
     all: try now econstructor.
     (* econstructor; tea; now eapply escapeEqTerm. *)
   Qed.
 
 
   (* Deprecated *)
-  Corollary LRTyEqRefl {l Γ A eqTy redTm eqTm}
-    (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
+  Corollary LRTyEqRefl {l Γ s A eqTy redTm eqTm}
+    (lr : LogRel l Γ s A eqTy redTm eqTm) : eqTy A.
   Proof.
-    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (R := Build_LRPack Γ s A eqTy redTm eqTm). 
     pose (Rad := Build_LRAdequate (pack:=R) lr).
     change [Rad | _ ||- _ ≅ A ]; now eapply reflLRTyEq.
   Qed.
@@ -64,13 +66,13 @@ Section Reflexivities.
   Lemma reflIdRedTmEq {Γ l A} (IA : [Γ ||-Id<l> A]) t (Rt : [Γ ||-Id<l> t : _ | IA]) : [Γ ||-Id<l> t ≅ t : _ | IA].
   Proof. destruct Rt; econstructor; tea; now eapply reflIdPropEq. Qed.
 
-  Definition reflLRTmEq@{h i j k l} {l Γ A} (lr : [ LogRel@{i j k l} l | Γ ||- A ] ) :
+  Definition reflLRTmEq@{h i j k l} {l Γ s A} (lr : [ LogRel@{i j k l} l | Γ ||- A @ s ] ) :
     forall t,
       [ Γ ||-<l> t : A | lr ] ->
       [ Γ ||-<l> t ≅ t : A | lr ].
   Proof.
-    pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr; intros l Γ A.
-    - intros h t [? ? ? ? Rt%RedTyRecFwd@{j k h i k}] ; cbn in *.
+    pattern l, Γ, s, A, lr; eapply LR_rect_TyUr; clear l Γ s A lr.
+    - intros ??? h t [? ? ? ? Rt%RedTyRecFwd@{j k h i k}] ; cbn in *.
       (* Need an additional universe level h < i *)
       Unset Printing Notations.
       pose proof (reflLRTyEq@{h i k j} Rt).
@@ -80,16 +82,16 @@ Section Reflexivities.
       1-3,5: eapply RedTyRecBwd; tea.
       1: cbn; easy.
       now eapply TyEqRecBwd.
-    - intros [] t [].
+    - intros ???? [] t [].
       econstructor ; cbn in *.
       all: eassumption.
-    - intros ??? t [].
+    - intros ?????? t [].
       unshelve econstructor ; cbn in *.
       1-2: now econstructor.
       all: cbn; now eauto.
     - intros; now apply reflNatRedTmEq.
     - intros; now apply reflEmptyRedTmEq.
-    - intros ??? t [].
+    - intros ?????? t [].
       unshelve econstructor ; cbn in *.
       1-2: now econstructor.
       all: cbn; now eauto.
@@ -97,10 +99,10 @@ Section Reflexivities.
   Qed.
   
   (* Deprecated *)
-  Corollary LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
+  Corollary LRTmEqRefl@{h i j k l} {l Γ s A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ s A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (R := Build_LRPack Γ s A eqTy redTm eqTm). 
     pose (Rad := Build_LRAdequate (pack:=R) lr).
     intros t ?; change [Rad | _ ||- t ≅ t : _ ]; now eapply reflLRTmEq.
   Qed.

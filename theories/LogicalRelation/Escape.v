@@ -9,12 +9,12 @@ Set Universe Polymorphism.
 Section Escapes.
   Context `{GenericTypingProperties}.
 
-  Lemma escape {l Γ A} :
-      [Γ ||-< l > A ] ->
-      [Γ |- A].
+  Lemma escape {l Γ s A} :
+      [Γ ||-< l > A @ s] ->
+      [Γ |- A @ s].
   Proof.
     intros lr.
-    pattern l, Γ, A, lr.
+    pattern l, Γ, s, A, lr.
     eapply LR_rect_TyUr.
     - intros * [].
       now gen_typing.
@@ -28,17 +28,21 @@ Section Escapes.
     - intros ??? [] **; gen_typing.
   Qed.
 
-  Lemma escapeEq {l Γ A B} (lr : [Γ ||-< l > A]) :
+  Lemma escapeEq {l Γ s A B} (lr : [Γ ||-< l > A @ s]) :
       [ Γ ||-< l > A ≅ B | lr ] ->
-      [Γ |- A ≅ B].
+      [Γ |- A ≅ B @ s].
   Proof.
-    pattern l, Γ, A, lr ; eapply LR_rect_TyUr.
-    + intros ??? [] []. 
-      gen_typing.
+    pattern l, Γ, s, A, lr ; eapply LR_rect_TyUr.
     + intros ??? [] [].
+      gen_typing.
+    + intros ???? [] [].
       cbn in *.
       eapply convty_exp.
-      all: gen_typing.
+      - gen_typing.
+      - gen_typing.
+      - induction has_univ.
+        * gen_typing.
+        * gen_typing.
     + intros ??? [] * ? ? [] ; cbn in *.
       gen_typing.
     + intros ??? [] []; gen_typing.
@@ -49,14 +53,14 @@ Section Escapes.
       eapply convty_exp; tea;[eapply red | eapply red'].
   Qed.
 
-  Definition escapeTerm {l Γ t A} (lr : [Γ ||-< l > A ]) :
+  Definition escapeTerm {l Γ s t A} (lr : [Γ ||-< l > A @ s]) :
     [Γ ||-< l > t : A | lr ] ->
     [Γ |- t : A].
   Proof.
-    pattern l, Γ, A, lr ; eapply LR_rect_TyUr.
+    pattern l, Γ, s, A, lr ; eapply LR_rect_TyUr.
     - intros ??? [] [] ; cbn in *.
       gen_typing.
-    - intros ??? [] [] ; cbn in *.
+    - intros ???? [] [] ; cbn in *.
       gen_typing.
     - intros ??? [] * ?? [] ; cbn in *.
       gen_typing.
@@ -68,16 +72,16 @@ Section Escapes.
       unfold_id_outTy; destruct IA; cbn in *; gen_typing.
   Qed.
 
-  Definition escapeEqTerm {l Γ t u A} (lr : [Γ ||-< l > A ]) :
+  Definition escapeEqTerm {l Γ s t u A} (lr : [Γ ||-< l > A @ s]) :
     [Γ ||-< l > t ≅ u : A | lr ] ->
     [Γ |- t ≅ u : A].
   Proof.
-    pattern l, Γ, A, lr ; eapply LR_rect_TyUr.
+    pattern l, Γ, s, A, lr ; eapply LR_rect_TyUr.
     - intros ??? [] [[] []] ; cbn in *.
       eapply (convtm_conv (A := U)).
       eapply convtm_exp ; tea.
       all: gen_typing.
-    - intros ??? [ty] [] ; cbn in *.
+    - intros ???? [ty] [] ; cbn in *.
       eapply (convtm_conv (A := ty)).
       eapply convtm_exp ; tea.
       all: gen_typing.
@@ -100,12 +104,12 @@ Section Escapes.
       eapply convtm_exp; tea; gen_typing.
   Qed.
 
-  Lemma escapeConv {l Γ A} (RA : [Γ ||-<l> A]) :
+  Lemma escapeConv {l Γ s A} (RA : [Γ ||-<l> A @ s]) :
     forall B,
     [Γ ||-<l> A ≅ B | RA] ->
-    [Γ |- B].
+    [Γ |- B @ s].
   Proof.
-    pattern l, Γ, A, RA; eapply LR_rect_TyUr; clear l Γ A RA.
+    pattern l, Γ, s, A, RA; eapply LR_rect_TyUr; clear l Γ A RA.
     - intros * []; gen_typing.
     - intros * []; gen_typing.
     - intros * ihdom ihcod ? []; gen_typing.
@@ -119,7 +123,7 @@ End Escapes.
 
 Ltac escape :=
   repeat lazymatch goal with
-  | [H : [_ ||-< _ > _] |- _] => 
+  | [H : [_ ||-< _ > _ @ _] |- _] => 
     let X := fresh "Esc" H in
     try pose proof (X := escape H) ;
     block H

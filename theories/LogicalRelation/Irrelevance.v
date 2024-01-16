@@ -28,14 +28,14 @@ Section EquivLRPack.
 
   Notation "A <≈> B" := (prod@{v v} (A -> B) (B -> A)) (at level 90).
 
-  Definition equivLRPack {Γ Γ' A A'} (P: LRPack@{i} Γ A) (P': LRPack@{i'} Γ' A'):=
+  Definition equivLRPack {Γ Γ' s s' A A'} (P: LRPack@{i} Γ s A) (P': LRPack@{i'} Γ' s' A'):=
     and3@{v v v} 
       (forall B, [P | Γ ||- A ≅ B] <≈> [P' | Γ' ||- A' ≅ B])
       (forall t, [P | Γ ||- t : A] <≈> [P' | Γ' ||- t : A'])
       (forall t u, [P | Γ ||- t ≅ u : A] <≈> [P' | Γ' ||- t ≅ u : A']).
 End EquivLRPack.
 
-Lemma symLRPack@{i i' v} {Γ Γ' A A'} {P: LRPack@{i} Γ A} {P': LRPack@{i'} Γ' A'} :
+Lemma symLRPack@{i i' v} {Γ Γ' s s' A A'} {P: LRPack@{i} Γ s A} {P': LRPack@{i'} Γ' s' A'} :
     equivLRPack@{i i' v} P P' -> equivLRPack@{i' i v} P' P.
 Proof.
   intros [eqT rTm eqTm]; constructor;split ;
@@ -44,9 +44,9 @@ Qed.
   
 
 Record equivPolyRed@{i j k l i' j' k' l' v}
-  {Γ l l' shp shp' pos pos'}
-  {PA : PolyRed@{i j k l} Γ l shp pos}
-  {PA' : PolyRed@{i' j' k' l'} Γ l' shp' pos'} :=
+  {Γ s_shp s_shp' s_pos s_pos' l l' shp shp' pos pos'}
+  {PA : PolyRed@{i j k l} Γ s_shp s_pos l shp pos}
+  {PA' : PolyRed@{i' j' k' l'} Γ s_shp' s_pos' l' shp' pos'} :=
   {
     eqvShp : forall {Δ} (ρ : Δ ≤ Γ) (wfΔ : [  |- Δ]),
           equivLRPack@{k k' v} (PolyRed.shpRed PA ρ wfΔ) (PolyRed.shpRed PA' ρ wfΔ) ;
@@ -59,12 +59,12 @@ Record equivPolyRed@{i j k l i' j' k' l' v}
   }.
 
 Arguments equivPolyRed : clear implicits.
-Arguments equivPolyRed {_ _ _ _ _ _ _} _ _.
+Arguments equivPolyRed {_ _ _ _ _ _ _ _ _ _ _} _ _.
 
 Lemma equivPolyRedSym@{i j k l i' j' k' l' v}
-  {Γ l l' shp shp' pos pos'}
-  {PA : PolyRed@{i j k l} Γ l shp pos}
-  {PA' : PolyRed@{i' j' k' l'} Γ l' shp' pos'} :
+  {Γ s_shp s_shp' s_pos s_pos' l l' shp shp' pos pos'}
+  {PA : PolyRed@{i j k l} Γ s_shp s_pos l shp pos}
+  {PA' : PolyRed@{i' j' k' l'} Γ s_shp' s_pos' l' shp' pos'} :
   equivPolyRed@{i j k l i' j' k' l' v} PA PA' ->
   equivPolyRed@{i' j' k' l' i j k l v} PA' PA.
 Proof.
@@ -82,12 +82,12 @@ avoid having to basically duplicate their proofs. *)
 Section ΠIrrelevanceLemmas.
 Universe i j k l i' j' k' l' v.
 Context {Γ lA A lA' A'} 
-  (ΠA : ParamRedTy@{i j k l} tProd Γ lA A) 
-  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
+  (ΠA : ParamRedTy@{i j k l} tProd Γ set set lA A) 
+  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ set set lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom)])
-  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy)])
+  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom) @ set])
+  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy) @ set])
   (eqv : equivPolyRed ΠA ΠA').
 
 Lemma ΠIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
@@ -135,12 +135,12 @@ End ΠIrrelevanceLemmas.
 
 Lemma ΠIrrelevanceLRPack@{i j k l i' j' k' l' v}
   {Γ lA A lA' A'} 
-  (ΠA : ParamRedTy@{i j k l} tProd Γ lA A) 
-  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ lA' A')
+  (ΠA : ParamRedTy@{i j k l} tProd Γ set set lA A) 
+  (ΠA' : ParamRedTy@{i' j' k' l'} tProd Γ set set lA' A')
   (RA := LRPi' ΠA)
   (RA' := LRPi' ΠA')
-  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom)])
-  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy) ])
+  (eqDom : [Γ |- ΠA.(ParamRedTy.dom) ≅ ΠA'.(ParamRedTy.dom) @ set])
+  (eqPi : [Γ |- ΠA.(outTy) ≅ ΠA'.(outTy) @ set])
   (eqv : equivPolyRed ΠA ΠA')
   : equivLRPack@{k k' v} RA RA'.
 Proof.
@@ -157,12 +157,12 @@ Qed.
 Section ΣIrrelevanceLemmas.
 Universe i j k l i' j' k' l' v.
 Context {Γ lA A lA' A'} 
-  (ΣA : ParamRedTy@{i j k l} tSig Γ lA A) 
-  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
+  (ΣA : ParamRedTy@{i j k l} tSig Γ set set lA A) 
+  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ set set lA' A')
   (RA := LRSig' ΣA)
   (RA' := LRSig' ΣA')
-  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom)])
-  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy)])
+  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom) @ set])
+  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy) @ set])
   (eqv : equivPolyRed ΣA ΣA').
 
 Lemma ΣIrrelevanceTyEq B : [Γ ||-<lA> A ≅ B | RA] -> [Γ ||-<lA'> A' ≅ B | RA'].
@@ -207,12 +207,12 @@ End ΣIrrelevanceLemmas.
 
 Lemma ΣIrrelevanceLRPack@{i j k l i' j' k' l' v}
   {Γ lA A lA' A'} 
-  (ΣA : ParamRedTy@{i j k l} tSig Γ lA A) 
-  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ lA' A')
+  (ΣA : ParamRedTy@{i j k l} tSig Γ set set lA A) 
+  (ΣA' : ParamRedTy@{i' j' k' l'} tSig Γ set set lA' A')
   (RA := LRSig' ΣA)
   (RA' := LRSig' ΣA')
-  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom)])
-  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy) ])
+  (eqDom : [Γ |- ΣA.(ParamRedTy.dom) ≅ ΣA'.(ParamRedTy.dom) @ set])
+  (eqSig : [Γ |- ΣA.(outTy) ≅ ΣA'.(outTy) @ set])
   (eqv : equivPolyRed ΣA ΣA')
   : equivLRPack@{k k' v} RA RA'.
 Proof.
@@ -225,12 +225,12 @@ Qed.
 
 (** *** Lemmas for conversion of reducible neutral terms at arbitrary types *)
 
-Lemma NeNfconv {Γ k A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
+Lemma NeNfconv {Γ s k A A'} : [Γ |- A' @ s] -> [Γ |- A ≅ A' @ s] -> [Γ ||-NeNf k : A] -> [Γ ||-NeNf k : A'].
 Proof.
   intros ?? []; econstructor; tea. all: gen_typing.
 Qed.
 
-Lemma NeNfEqconv {Γ k k' A A'} : [Γ |- A'] -> [Γ |- A ≅ A'] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
+Lemma NeNfEqconv {Γ s k k' A A'} : [Γ |- A' @ s] -> [Γ |- A ≅ A' @ s] -> [Γ ||-NeNf k ≅ k' : A] -> [Γ ||-NeNf k ≅ k' : A'].
 Proof.
   intros ?? []; econstructor; tea. gen_typing.
 Qed.
@@ -244,7 +244,7 @@ Section IdIrrelevance.
     (IA' : IdRedTy@{i' j' k' l'} Γ lA' A')
     (RA := LRId' IA)
     (RA' := LRId' IA')
-    (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy)])
+    (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy) @ set])
     (eqv : equivLRPack@{k k' v} IA.(IdRedTy.tyRed) IA'.(IdRedTy.tyRed))
     (* (eqty : [Γ |- IA.(IdRedTy.ty) ≅  IA'.(IdRedTy.ty)]) *)
     (lhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.lhs) ≅  IA'.(IdRedTy.lhs) : _ ])
@@ -302,7 +302,7 @@ Lemma IdIrrelevanceLRPack@{i j k l i' j' k' l' v}
   (IA' : IdRedTy@{i' j' k' l'} Γ lA' A')
   (RA := LRId' IA)
   (RA' := LRId' IA')
-  (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy)])
+  (eqId : [Γ |- IA.(IdRedTy.outTy) ≅ IA'.(IdRedTy.outTy) @ set])
   (eqv : equivLRPack@{k k' v} IA.(IdRedTy.tyRed) IA'.(IdRedTy.tyRed))
   (lhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.lhs) ≅  IA'.(IdRedTy.lhs) : _ ])
   (rhsconv : [IA.(IdRedTy.tyRed) | Γ ||- IA.(IdRedTy.rhs) ≅  IA'.(IdRedTy.rhs) : _])
@@ -310,7 +310,7 @@ Lemma IdIrrelevanceLRPack@{i j k l i' j' k' l' v}
 Proof.
   pose proof (IA.(IdRedTy.tyPER)).
   pose proof (symLRPack eqv).
-  assert (eqId' : [Γ |- IA'.(IdRedTy.outTy) ≅ IA.(IdRedTy.outTy)]) by now symmetry.
+  assert (eqId' : [Γ |- IA'.(IdRedTy.outTy) ≅ IA.(IdRedTy.outTy) @ set]) by now symmetry.
   assert [IA'.(IdRedTy.tyRed) | Γ ||- IA'.(IdRedTy.lhs) ≅  IA.(IdRedTy.lhs) : _ ] by (apply eqv; now symmetry).
   assert [IA'.(IdRedTy.tyRed) | Γ ||- IA'.(IdRedTy.rhs) ≅  IA.(IdRedTy.rhs) : _ ] by (apply eqv; now symmetry).
   constructor.
@@ -322,9 +322,9 @@ Qed.
 (** *** Irrelevance for neutral types *)
 
 Lemma NeIrrelevanceLRPack@{i j k l i' j' k' l' v}
-  {Γ A A'} lA lA'
-  (neA : [Γ ||-ne A])
-  (neA' : [Γ ||-ne A'])
+  {Γ s A A'} lA lA'
+  (neA : [Γ ||-ne A @ s])
+  (neA' : [Γ ||-ne A' @ s])
   (RA := LRne_@{i j k l} lA neA)
   (RA' := LRne_@{i' j' k' l'} lA' neA')
   (eqAA' : [Γ ||-ne A ≅ A' | neA ])
@@ -333,15 +333,15 @@ Proof.
   destruct neA as [ty], neA' as [ty'], eqAA' as [ty0']; cbn in *.
   assert (ty0' = ty'); [|subst].
   { eapply redtywf_det; tea; constructor; eapply convneu_whne; first [eassumption|symmetry; eassumption]. }
-  assert [Γ |- ty ≅ ty'] as convty by gen_typing.
+  assert [Γ |- ty ≅ ty' @ s] as convty by gen_typing.
   split.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
     all: etransitivity ; [| tea]; tea; now symmetry.
   + intros ?; split; intros []; econstructor; cbn in *; tea.
-    1,3: now eapply redtmwf_conv.
+    1,3: now eapply (redtmwf_conv (s := s)).
     all: now eapply convneu_conv; first [eassumption|symmetry; eassumption|gen_typing].
   + intros ??; split; intros []; econstructor; cbn in *.
-    1-2,4-5: now eapply redtmwf_conv.
+    1-2,4-5: now eapply (redtmwf_conv (s := s)).
     all: now eapply convneu_conv; first [eassumption|symmetry; eassumption|gen_typing].
 Qed.
 
@@ -435,10 +435,10 @@ Universe i j k l i' j' k' l'.
 Definition IHStatement lA lA' :=
   (forall l0 (ltA : l0 << lA) (ltA' : l0 << lA'),
       prod@{v v}
-        (forall Γ t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ])
-        (forall Γ t
-           (lr1 : [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ])
-           (lr2 : [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ])
+        (forall Γ s t, [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t @ s ] <≈> [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t @ s ])
+        (forall Γ s t
+           (lr1 : [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t @ s ])
+           (lr2 : [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t @ s ])
            u,
             [ LogRelRec@{i j k} lA l0 ltA | Γ ||- t ≅ u | lr1 ] <≈>
             [ LogRelRec@{i' j' k'} lA' l0 ltA' | Γ ||- t ≅ u | lr2 ])).
@@ -454,14 +454,14 @@ Proof.
   revert IH; destruct hU as [_ []], hU' as [_ []]; intro IH; destruct (IH zero Oi Oi) as [IHty IHeq].
   constructor.
   + intros; cbn; split; intros []; now constructor.
-  + intros ?; destruct (IHty Γ t) as [tfwd tbwd]; split; intros [];
+  + intros ?; destruct (IHty Γ set t) as [tfwd tbwd]; split; intros [];
       unshelve econstructor.
     6: now apply tfwd.
     9: now apply tbwd.
     all : tea.
   + cbn ; intros ? ?;
-    destruct (IHty Γ t) as [tfwd tbwd];
-    destruct (IHty Γ u) as [ufwd ubwd].
+    destruct (IHty Γ set t) as [tfwd tbwd];
+    destruct (IHty Γ set u) as [ufwd ubwd].
     split; intros [[] []]; cbn in *; unshelve econstructor.
     3: now apply tfwd.
     5: now apply tbwd.
@@ -469,8 +469,8 @@ Proof.
     8: now apply ubwd.
     (* all: apply todo. *)
     all: cbn.
-    6: now refine (fst (IHeq _ _ _ _ _) _).
-    7: now refine (snd (IHeq _ _ _ _ _) _).
+    6: now refine (fst (IHeq _ _ _ _ _ _) _).
+    7: now refine (snd (IHeq _ _ _ _ _ _) _).
     1-4: now econstructor.
     all: cbn; tea.
 Qed.
@@ -480,32 +480,32 @@ Qed.
 #[local]
 Lemma LRIrrelevantPreds {lA lA'}
   (IH : IHStatement lA lA')
-  (Γ : context) (A A' : term)
+  (Γ : context) (s : sort) (A A' : term)
   {eqTyA redTmA : term -> Type@{k}}
   {eqTyA' redTmA' : term -> Type@{k'}}
   {eqTmA : term -> term -> Type@{k}}
   {eqTmA' : term -> term -> Type@{k'}}
-  (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA)
-  (lrA' : LogRel@{i' j' k' l'} lA' Γ A' eqTyA' redTmA' eqTmA')
-  (RA := Build_LRPack Γ A eqTyA redTmA eqTmA)
-  (RA' := Build_LRPack Γ A' eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel@{i j k l} lA Γ s A eqTyA redTmA eqTmA)
+  (lrA' : LogRel@{i' j' k' l'} lA' Γ s A' eqTyA' redTmA' eqTmA')
+  (RA := Build_LRPack Γ s A eqTyA redTmA eqTmA)
+  (RA' := Build_LRPack Γ s A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
   equivLRPack@{k k' v} RA RA'.
 Proof.
   intros he.
-  set (s := ShapeViewConv lrA lrA' he).
+  set (shpv := ShapeViewConv lrA lrA' he).
   induction lrA as [? ? h1 | ? ? neA | ? A ΠA HAad IHdom IHcod | ?? NA | ?? NA|? A ΠA HAad IHdom IHcod | ?? IAP IAad IHPar]
-    in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, s |- *.
-  - destruct lrA' ; try solve [destruct s] ; clear s.
+    in RA, A', RA', eqTyA', eqTmA', redTmA', lrA', he, shpv |- *.
+  - destruct lrA' ; try solve [destruct shpv] ; clear shpv.
     now apply UnivIrrelevanceLRPack.
-  - destruct lrA'  ; try solve [destruct s] ; clear s.
+  - destruct lrA'  ; try solve [destruct shpv] ; clear shpv.
     now unshelve eapply NeIrrelevanceLRPack.
-  - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | ? A' ΠA' HAad'| | | |] ; try solve [destruct shpv] ; clear shpv.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
     assert (tProd dom0 cod0 = tProd dom1 cod1) as ePi
-    by (eapply whredty_det ; gen_typing).
+    by (eapply redtywf_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
     eapply (ΠIrrelevanceLRPack PA PA'); [| |unshelve econstructor].
     + eassumption.
@@ -516,16 +516,16 @@ Proof.
     + intros; unshelve eapply IHcod.
       2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
-  - destruct lrA' ; try solve [destruct s] ; clear s.
+  - destruct lrA' ; try solve [destruct shpv] ; clear shpv.
     now unshelve eapply NatIrrelevanceLRPack.
-  - destruct lrA' ; try solve [destruct s] ; clear s.
+  - destruct lrA' ; try solve [destruct shpv] ; clear shpv.
     now unshelve eapply EmptyIrrelevanceLRPack.
-  - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | |? A' ΠA' HAad'|] ; try solve [destruct shpv] ; clear shpv.
     pose (PA := ParamRedTy.from HAad).
     pose (PA' := ParamRedTy.from HAad').
     destruct he as [dom0 cod0 ??? [domRed codRed]], ΠA' as [dom1 cod1];
     assert (tSig dom0 cod0 = tSig dom1 cod1) as ePi
-    by (eapply whredty_det ; gen_typing).
+    by (eapply redtywf_det ; gen_typing).
     inversion ePi ; subst ; clear ePi.
     eapply (ΣIrrelevanceLRPack PA PA'); [| |unshelve econstructor].
     + eassumption.
@@ -536,14 +536,18 @@ Proof.
     + intros; unshelve eapply IHcod.
       2: eapply (LRAd.adequate (PolyRed.posRed PA' _ _ _)).
       eapply codRed.
-  - destruct lrA' as [| | | | | | ? A' IAP' IAad'] ; try solve [destruct s] ; clear s.
+  - destruct lrA' as [| | | | | | ? A' IAP' IAad'] ; try solve [destruct shpv] ; clear shpv.
     pose (IA := IdRedTy.from IAad); pose (IA' := IdRedTy.from IAad').
     assert (IA'.(IdRedTy.outTy) = he.(IdRedTyEq.outTy)) as eId.
-    1: eapply whredty_det; constructor; try constructor; [apply IA'.(IdRedTy.red)| apply he.(IdRedTyEq.red)].
-    inversion eId; destruct he, IAP'; cbn in *. subst; clear eId.
-    eapply (IdIrrelevanceLRPack IA IA'); tea.
-    eapply IHPar; tea.
-    apply IA'.(IdRedTy.tyRed).
+    + eapply redtywf_det.
+      * constructor.
+      * constructor.
+      * now eapply IA'.(IdRedTy.red).
+      * now eapply he.(IdRedTyEq.red).
+    + inversion eId; destruct he, IAP'; cbn in *. subst; clear eId.
+      eapply (IdIrrelevanceLRPack IA IA'); tea.
+      eapply IHPar; tea.
+      apply IA'.(IdRedTy.tyRed).
     (* unshelve eapply escapeEq.  2: apply IdRedTy.tyRed.  now cbn. *)
 Qed.
 
@@ -551,19 +555,19 @@ Qed.
 #[local]
 Lemma LRIrrelevantCumPolyRed {lA}
   (IH : IHStatement lA lA)
-  (Γ : context) (shp pos : term)
-  (PA : PolyRed@{i j k l} Γ lA shp pos)
-  (IHshp : forall (Δ : context) (ρ : Δ ≤ Γ), [ |-[ ta ] Δ] -> [Δ ||-< lA > shp⟨ρ⟩])
+  (Γ : context) (s_shp s_pos : sort) (shp pos : term)
+  (PA : PolyRed@{i j k l} Γ s_shp s_pos lA shp pos)
+  (IHshp : forall (Δ : context) (ρ : Δ ≤ Γ), [ |-[ ta ] Δ] -> [Δ ||-< lA > shp⟨ρ⟩ @ s_shp⟨ρ⟩])
   (IHpos : forall (Δ : context) (a : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]),
           [PolyRed.shpRed PA ρ h | _ ||- a : _] ->
-          [Δ ||-< lA > pos[a .: ρ >> tRel]]) :
-  PolyRed@{i' j' k' l'} Γ lA shp pos.
+          [Δ ||-< lA > pos[a .: ρ >> tRel] @ s_pos[a .: ρ >> tRel]]) :
+  PolyRed@{i' j' k' l'} Γ s_shp s_pos lA shp pos.
 Proof.
   unshelve econstructor.
   + exact IHshp.
   + intros Δ a ρ tΔ ra. eapply IHpos.
     pose (shpRed := PA.(PolyRed.shpRed) ρ tΔ).
-    destruct (LRIrrelevantPreds IH _ _ _
+    destruct (LRIrrelevantPreds IH _ _ _ _
              (LRAd.adequate shpRed)
              (LRAd.adequate (IHshp Δ ρ tΔ))
              (reflLRTyEq shpRed)) as [_ irrTmRed _].
@@ -575,7 +579,7 @@ Proof.
     destruct p as [_ irrTmRed irrTmEq].
     pose (ra' := snd (irrTmRed a) ra).
     pose (posRed := PA.(PolyRed.posRed) ρ tΔ ra').
-    destruct (LRIrrelevantPreds IH _ _ _
+    destruct (LRIrrelevantPreds IH _ _ _ _
                 (LRAd.adequate posRed)
                 (LRAd.adequate (IHpos Δ a ρ tΔ ra'))
                 (reflLRTyEq posRed)) as [irrTyEq _ _].
@@ -590,10 +594,10 @@ Set Printing Universes.
 #[local]
 Lemma LRIrrelevantCumTy {lA}
   (IH : IHStatement lA lA)
-  (Γ : context) (A : term)
-  : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
+  (Γ : context) (s : sort) (A : term)
+  : [ LogRel@{i j k l} lA | Γ ||- A @ s ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A @ s ].
 Proof.
-  intros lrA; revert IH; pattern lA, Γ, A, lrA; eapply LR_rect_TyUr ; clear lA Γ A lrA.
+  intros lrA; revert IH; pattern lA, Γ, s, A, lrA; eapply LR_rect_TyUr ; clear lA Γ s A lrA.
   all: intros lA Γ A.
   - intros [] ?; eapply LRU_; now econstructor.
   - intros; now eapply LRne_.
@@ -653,11 +657,11 @@ Proof.
   intros l0 ltA ltA'.
   destruct ltA. destruct ltA'. cbn in *.
   split.
-  - intros Γ t. split.
+  - intros Γ s t. split.
     + eapply (LRIrrelevantCumTy@{u i j k u i' j' k'} IrrRec0@{u i j k u i' j' k'}).
     + eapply (LRIrrelevantCumTy@{u i' j' k' u i j k} IrrRec0@{u i' j' k' u i j k}).
-  - intros Γ t lr1 lr2 u.
-    destruct (LRIrrelevantPreds@{u i j k u i' j' k'} IrrRec0@{u i j k u i' j' k'} Γ t t
+  - intros Γ s t lr1 lr2 u.
+    destruct (LRIrrelevantPreds@{u i j k u i' j' k'} IrrRec0@{u i j k u i' j' k'} Γ s t t
                 (lr1 : LRPackAdequate (LogRel@{u i j k} zero) lr1)
                 (lr2 : LRPackAdequate (LogRel@{u i' j' k'} zero) lr2)
                 (reflLRTyEq lr1)) as [tyEq _ _].
@@ -666,55 +670,55 @@ Qed.
 
 #[local]
 Theorem LRIrrelevantCum@{i j k l i' j' k' l'}
-  (Γ : context) (A A' : term) {lA lA'}
+  (Γ : context) (s : sort) (A A' : term) {lA lA'}
   {eqTyA redTmA : term -> Type@{k}}
   {eqTyA' redTmA' : term -> Type@{k'}}
   {eqTmA : term -> term -> Type@{k}}
   {eqTmA' : term -> term -> Type@{k'}}
-  (lrA : LogRel@{i j k l} lA Γ A eqTyA redTmA eqTmA)
-  (lrA' : LogRel@{i' j' k' l'} lA' Γ A' eqTyA' redTmA' eqTmA') :
+  (lrA : LogRel@{i j k l} lA Γ s A eqTyA redTmA eqTmA)
+  (lrA' : LogRel@{i' j' k' l'} lA' Γ s A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
   @and3@{v v v} (forall B, eqTyA B <≈> eqTyA' B)
     (forall t, redTmA t <≈> redTmA' t)
     (forall t u, eqTmA t u <≈> eqTmA' t u).
 Proof.
-  exact (LRIrrelevantPreds@{i j k l i' j' k' l'} IrrRec Γ A A' lrA lrA').
+  exact (LRIrrelevantPreds@{i j k l i' j' k' l'} IrrRec Γ s A A' lrA lrA').
 Qed.
 
 Theorem LRIrrelevantPack@{i j k l} 
-  (Γ : context) (A A' : term) {lA lA'} 
-  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
-  (RA' : [ LogRel@{i j k l} lA' | Γ ||- A' ])
+  (Γ : context) (s : sort) (A A' : term) {lA lA'} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A @ s ])
+  (RA' : [ LogRel@{i j k l} lA' | Γ ||- A' @ s ])
   (RAA' : [Γ ||-<lA> A ≅ A' | RA]) :
   equivLRPack@{v v v} RA RA'.
 Proof.
-  pose proof (LRIrrelevantCum@{i j k l i j k l} Γ A A' (LRAd.adequate RA) (LRAd.adequate RA') RAA') as [].
+  pose proof (LRIrrelevantCum@{i j k l i j k l} Γ s A A' (LRAd.adequate RA) (LRAd.adequate RA') RAA') as [].
   constructor; eauto.
 Defined.
 
 Theorem LRTransEq@{i j k l} 
-  (Γ : context) (A B C : term) {lA lB} 
-  (RA : [ LogRel@{i j k l} lA | Γ ||- A ])
-  (RB : [ LogRel@{i j k l} lB | Γ ||- B ])
+  (Γ : context) (s : sort) (A B C : term) {lA lB} 
+  (RA : [ LogRel@{i j k l} lA | Γ ||- A @ s])
+  (RB : [ LogRel@{i j k l} lB | Γ ||- B @ s])
   (RAB : [Γ ||-<lA> A ≅ B | RA])
   (RBC : [Γ ||-<lB> B ≅ C | RB]) :
   [Γ ||-<lA> A ≅ C | RA].
 Proof.
-  pose proof (LRIrrelevantPack Γ A B RA RB RAB) as [h _ _].
+  pose proof (LRIrrelevantPack Γ s A B RA RB RAB) as [h _ _].
   now apply h.
 Defined.
 
 
 Theorem LRCumulative@{i j k l i' j' k' l'} {lA}
-  {Γ : context} {A : term}
-  : [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A ].
+  {Γ : context} {s : sort} {A : term}
+  : [ LogRel@{i j k l} lA | Γ ||- A @ s ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A @ s ].
 Proof.
-  exact (LRIrrelevantCumTy@{i j k l i' j' k' l'} IrrRec Γ A).
+  exact (LRIrrelevantCumTy@{i j k l i' j' k' l'} IrrRec Γ s A).
 Qed.
 
 Corollary LRCumulative' @{i j k l i' j' k' l'} {lA}
-  {Γ : context} {A A' : term}
-  : A = A' -> [ LogRel@{i j k l} lA | Γ ||- A ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A' ].
+  {Γ : context} {s : sort} {A A' : term}
+  : A = A' -> [ LogRel@{i j k l} lA | Γ ||- A @ s ] -> [ LogRel@{i' j' k' l'} lA | Γ ||- A' @ s ].
 Proof.
   intros ->; apply LRCumulative.
 Qed.
@@ -722,16 +726,16 @@ End LRIrrelevant.
 
 
 #[local]
-Corollary TyEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
+Corollary TyEqIrrelevantCum Γ s A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel lA Γ s A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ s A eqTyA' redTmA' eqTmA') :
   forall B, eqTyA B -> eqTyA' B.
 Proof.
-  apply (LRIrrelevantCum _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTyEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
+Corollary LRTyEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ s A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A @ s]) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A ≅ B | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -739,31 +743,31 @@ Proof.
   now eapply TyEqIrrelevantCum.
 Qed.
 
-Corollary LRTyEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
+Corollary LRTyEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A' @ s]) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
 Qed.
 
-Corollary LRTyEqIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+Corollary LRTyEqIrrelevant'@{i j k l} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A' @ s]) :
   forall B, [Γ ||-< lA > A ≅ B | lrA] -> [Γ ||-< lA' > A' ≅ B | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTyEqIrrelevantCum.
 Qed.
 
 #[local]
-Corollary RedTmIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
+Corollary RedTmIrrelevantCum Γ s A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel lA Γ s A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ s A eqTyA' redTmA' eqTmA') :
   forall t, redTmA t -> redTmA' t.
 Proof.
-  apply (LRIrrelevantCum _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmRedIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
+Corollary LRTmRedIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ s A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A @ s]) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -771,15 +775,15 @@ Proof.
   now eapply RedTmIrrelevantCum.
 Qed.
 
-Corollary LRTmRedIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
+Corollary LRTmRedIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A' @ s]) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmRedIrrelevantCum.
 Qed.
 
-Corollary LRTmRedIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+Corollary LRTmRedIrrelevant'@{i j k l} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A' @ s]) :
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmRedIrrelevantCum.
@@ -787,16 +791,16 @@ Qed.
 
 
 #[local]
-Corollary TmEqIrrelevantCum Γ A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A eqTyA' redTmA' eqTmA') :
+Corollary TmEqIrrelevantCum Γ s A {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel lA Γ s A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ s A eqTyA' redTmA' eqTmA') :
   forall t u, eqTmA t u -> eqTmA' t u.
 Proof.
-  apply (LRIrrelevantCum _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ _ lrA lrA').
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTmEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ A
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A]) :
+Corollary LRTmEqIrrelevantCum@{i j k l i' j' k' l'} lA lA' Γ s A
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A @ s]) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -804,15 +808,15 @@ Proof.
   now eapply TmEqIrrelevantCum.
 Qed.
 
-Corollary LRTmEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A']) :
+Corollary LRTmEqIrrelevantCum'@{i j k l i' j' k' l'} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i' j' k' l'} lA' | Γ ||- A' @ s]) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmEqIrrelevantCum.
 Qed.
 
-Corollary LRTmEqIrrelevant'@{i j k l} lA lA' Γ A A' (e : A = A')
-  (lrA : [LogRel@{i j k l} lA | Γ ||- A]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A']) :
+Corollary LRTmEqIrrelevant'@{i j k l} lA lA' Γ s A A' (e : A = A')
+  (lrA : [LogRel@{i j k l} lA | Γ ||- A @ s]) (lrA' : [LogRel@{i j k l} lA' | Γ ||- A' @ s]) :
   forall t u, [Γ ||-< lA > t ≅ u : A | lrA] -> [Γ ||-< lA' > t ≅ u : A' | lrA'].
 Proof.
   revert lrA'; rewrite <- e; now apply LRTmEqIrrelevantCum.
@@ -820,17 +824,17 @@ Qed.
 
 
 
-Corollary TyEqSym Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
+Corollary TyEqSym Γ s A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel lA Γ s A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ s A' eqTyA' redTmA' eqTmA') :
   eqTyA A' -> eqTyA' A.
 Proof.
   intros.
-  apply (LRIrrelevantCum _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ _ lrA lrA').
   1: eauto.
   now eapply LRTyEqRefl.
 Qed.
 
-Corollary LRTyEqSym lA lA' Γ A A' (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A']) :
+Corollary LRTyEqSym lA lA' Γ s A A' (lrA : [Γ ||-< lA > A @ s]) (lrA' : [Γ ||-< lA'> A' @ s]) :
   [Γ ||-< lA > A ≅ A' | lrA] -> [Γ ||-< lA' > A' ≅ A | lrA'].
 Proof.
   destruct lrA, lrA'.
@@ -839,15 +843,15 @@ Proof.
 Qed.
 
 #[local]
-Corollary RedTmConv Γ A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
-  (lrA : LogRel lA Γ A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ A' eqTyA' redTmA' eqTmA') :
+Corollary RedTmConv Γ s A A' {lA eqTyA redTmA eqTmA lA' eqTyA' redTmA' eqTmA'}
+  (lrA : LogRel lA Γ s A eqTyA redTmA eqTmA) (lrA' : LogRel lA' Γ s A' eqTyA' redTmA' eqTmA') :
   eqTyA A' ->
   forall t, redTmA t -> redTmA' t.
 Proof.
-  apply (LRIrrelevantCum _ _ _ lrA lrA').
+  apply (LRIrrelevantCum _ _ _ _ lrA lrA').
 Qed.
 
-Corollary LRTmRedConv lA lA' Γ A A' (lrA : [Γ ||-< lA > A]) (lrA' : [Γ ||-< lA'> A' ]) :
+Corollary LRTmRedConv lA lA' Γ s A A' (lrA : [Γ ||-< lA > A @ s]) (lrA' : [Γ ||-< lA'> A' @ s]) :
   [Γ ||-< lA > A ≅ A' | lrA ] ->
   forall t, [Γ ||-< lA > t : A | lrA] -> [Γ ||-< lA' > t : A' | lrA'].
 Proof.
@@ -856,13 +860,13 @@ Proof.
   now eapply RedTmConv.
 Qed.
 
-Corollary PolyRedEqSym {Γ l l' shp shp' pos pos'}
-  {PA : PolyRed Γ l shp pos}
-  (PA' : PolyRed Γ l' shp' pos') :
+Corollary PolyRedEqSym {Γ s_shp s_pos s_shp' s_pos' l l' shp shp' pos pos'}
+  {PA : PolyRed Γ s_shp s_pos l shp pos}
+  (PA' : PolyRed Γ s_shp' s_pos' l' shp' pos') :
   PolyRedEq PA shp' pos' -> PolyRedEq PA' shp pos.
 Proof.
   intros []; unshelve econstructor.
-  - intros; eapply LRTyEqSym; eauto.
+  - intros; eapply LRTyEqSym. eapply shpRed.
   - intros. eapply LRTyEqSym. unshelve eapply posRed; tea.
     eapply LRTmRedConv; tea.
     now eapply LRTyEqSym.
