@@ -119,6 +119,7 @@ Module neRedTy.
     {Γ : context} {s : sort} {A : term}
   : Set := {
     ty : term;
+    has_univ : hasUniv s;
     red : [ Γ |- A :⤳*: ty @ s ];
     eq : [ Γ |- ty ~ ty : tSort s] ;
   }.
@@ -138,7 +139,7 @@ Module neRedTyEq.
   : Set := {
     ty   : term;
     red  : [ Γ |- B :⤳*: ty @ s ];
-    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : U];
+    eq  : [ Γ |- neA.(neRedTy.ty) ~ ty : tSort s];
   }.
 
   Arguments neRedTyEq {_ _ _ _}.

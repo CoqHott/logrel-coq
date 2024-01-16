@@ -227,12 +227,10 @@ Section GenericTyping.
   {
     wft_wk {Γ Δ A s} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A @ s] -> [Δ |- A⟨ρ⟩ @ s⟨ρ⟩] ;
-    wft_U {Γ} : 
+    wft_univ {Γ s} : 
       [ |- Γ ] ->
-      [ Γ |- U @ set] ;
-    wft_F {Γ} : 
-      [ |- Γ ] ->
-      [ Γ |- F @ set] ;
+      hasUniv s ->
+      [ Γ |- tSort s @ set] ;
     wft_prod {Γ} {A B} : 
       [ Γ |- A @ set ] -> 
       [Γ ,, A |- B @ set] -> 
@@ -246,12 +244,10 @@ Section GenericTyping.
       [Γ |- x : A] ->
       [Γ |- y : A] ->
       [Γ |- tId A x y @ set] ;
-    wft_term {Γ} {A} :
-      [ Γ |- A : U ] -> 
-      [ Γ |- A @ set] ;
-    wft_formula {Γ f} :
-      [ Γ |- f : F] ->
-      [ Γ |- f @ formula]
+    wft_el {Γ s} {A} :
+      hasUniv s ->
+      [ Γ |- A : tSort s ] ->
+      [ Γ |- A @ s] ;
   }.
 
   Class TypingProperties :=
@@ -335,18 +331,15 @@ Section GenericTyping.
 
   Class ConvTypeProperties :=
   {
-    convty_term {Γ A B} : [Γ |- A ≅ B : U] -> [Γ |- A ≅ B @ set] ;
-    convty_termF {Γ f f'} : [Γ |- f ≅ f' : F] -> [Γ |- f ≅ f' @ formula];
+    convty_term {Γ s A B} : hasUniv s -> [Γ |- A ≅ B : tSort s] -> [Γ |- A ≅ B @ s] ;
     convty_equiv {Γ s} :> PER (conv_type Γ s) ;
     convty_wk {Γ Δ A B s} (ρ : Δ ≤ Γ) :
       [|- Δ ] -> [Γ |- A ≅ B @ s] -> [Δ |- A⟨ρ⟩ ≅ B⟨ρ⟩ @ s⟨ρ⟩] ;
     convty_exp {Γ A A' B B' s} :
       [Γ |- A ⤳* A' @ s] -> [Γ |- B ⤳* B' @ s] ->
       [Γ |- A' ≅ B' @ s] -> [Γ |- A ≅ B @ s] ;
-    convty_uni {Γ} :
-      [|- Γ] -> [Γ |- U ≅ U @ set] ;
-    convty_formula {Γ} :
-      [|- Γ] -> [Γ |- F ≅ F @ set] ;
+    convty_uni {Γ s} :
+      [|- Γ] -> hasUniv s -> [Γ |- tSort s ≅ tSort s @ set] ;
     convty_prod {Γ A A' B B'} :
       [Γ |- A @ set] ->
       [Γ |- A ≅ A' @ set] -> [Γ,, A |- B ≅ B' @ set] ->
@@ -486,8 +479,9 @@ Section GenericTyping.
       [|- Δ ] -> [Γ |- A ⤳* B @ s] -> [Δ |- A⟨ρ⟩ ⤳* B⟨ρ⟩ @ s⟨ρ⟩] ;
     redty_sound {Γ A B s} : [Γ |- A ⤳* B @ s] -> [A ⤳* B] ;
     redty_ty_src {Γ A B s} : [Γ |- A ⤳* B @ s] -> [Γ |- A @ s] ;
-    redty_term {Γ A B} :
-      [ Γ |- A ⤳* B : U] -> [Γ |- A ⤳* B @ set] ;
+    redty_term {Γ s A B} :
+      hasUniv s ->
+      [ Γ |- A ⤳* B : tSort s] -> [Γ |- A ⤳* B @ s] ;
     redty_refl {Γ A s} :
       [ Γ |- A @ s] ->
       [Γ |- A ⤳* A @ s] ;
@@ -609,18 +603,19 @@ Class GenericTypingProperties `(ta : tag)
 #[export] Hint Resolve wfc_wft wfc_wfs wfc_ty wfc_convty wfc_convtm wfc_redty wfc_redtm : gen_typing.
 (* Priority 2 *)
 #[export] Hint Resolve wfc_nil wfc_cons | 2 : gen_typing.
-#[export] Hint Resolve wfs_wk wfs_set wfs_formula wfs_irr | 2 : gen_typing.
-#[export] Hint Resolve wft_wk wft_U wft_F wft_prod wft_sig wft_Id | 2 : gen_typing.
+#[export] Hint Resolve wfs_wk wfs_wft wfs_convty wfs_redty wfs_set wfs_formula wfs_irr | 2 : gen_typing.
+#[export] Hint Resolve wft_wk wft_univ wft_prod wft_sig wft_Id | 2 : gen_typing.
 
 #[export] Hint Resolve ty_wk ty_var ty_prod ty_lam ty_app ty_nat ty_empty ty_zero ty_succ ty_natElim ty_emptyElim ty_sig ty_pair ty_fst ty_snd ty_Id ty_refl ty_IdElim| 2 : gen_typing.
-#[export] Hint Resolve convty_wk convty_uni convty_formula convty_prod convty_sig convty_Id | 2 : gen_typing.
+#[export] Hint Resolve convty_wk convty_uni convty_prod convty_sig convty_Id | 2 : gen_typing.
 #[export] Hint Resolve convtm_wk convtm_prod convtm_eta convtm_nat convtm_empty convtm_zero convtm_succ convtm_eta_sig convtm_Id convtm_refl | 2 : gen_typing.
 #[export] Hint Resolve convneu_wk convneu_var convneu_app convneu_natElim convneu_emptyElim convneu_fst convneu_snd convneu_IdElim convneu_formula_irr convneu_irr_irr | 2 : gen_typing.
 #[export] Hint Resolve redty_ty_src redtm_ty_src | 2 : gen_typing.
 (* Priority 4 *)
-#[export] Hint Resolve wft_term wft_formula convty_term convtm_convneu | 4 : gen_typing.
+#[export] Hint Resolve wft_el convty_term convtm_convneu | 4 : gen_typing.
 (* Priority 6 *)
 #[export] Hint Resolve ty_conv ty_exp convty_exp convtm_exp convtm_conv convneu_conv redtm_conv | 6 : gen_typing.
+#[export] Hint Resolve setHasUniv formulaHasUniv | 6 : gen_typing.
 
 (** A tactic to transform applications of (untyped) renamings back to (well-typed) weakenings,
 so that we can use stability by weakening. *)
@@ -816,10 +811,11 @@ Section GenericConsequences.
     intros []; now eapply redty_red.
   Qed.
   
-  Lemma redtywf_term {Γ A B} :
-      [ Γ |- A :⤳*: B : U] -> [Γ |- A :⤳*: B @ set].
+  Lemma redtywf_term {Γ s A B} :
+      hasUniv s ->
+      [ Γ |- A :⤳*: B : tSort s] -> [Γ |- A :⤳*: B @ s].
   Proof.
-    intros []; constructor; gen_typing.
+    intros ? []; constructor; gen_typing.
   Qed.
 
   Lemma redtywf_refl {Γ A s} : [Γ |- A @ s] -> [Γ |- A :⤳*: A @ s].

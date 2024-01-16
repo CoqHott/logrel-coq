@@ -34,8 +34,7 @@ Section TypingWk.
       now econstructor.
     - now econstructor.
     - now econstructor.
-    - now econstructor.
-    - now econstructor.
+    - econstructor; tea; now eapply hasUniv_ren.
     - intros Γ A B HA IHA HB IHB Δ ρ HΔ.
       econstructor ; fold ren_term.
       1: now eapply IHA.
@@ -48,12 +47,10 @@ Section TypingWk.
       eapply ih; econstructor; eauto.
     - intros * _ IHA _ IHx _ IHy **; rewrite <- wk_Id.
       constructor; eauto.
-    - intros * _ IHA ? * ?.
+    - intros * ? _ IHA ? * ?.
       econstructor.
-      now eapply IHA.
-    - intros * H IH ? ρ ?.
-      econstructor.
-      now eapply IH.
+      + now eapply hasUniv_ren.
+      + now eapply IHA.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
@@ -66,7 +63,8 @@ Section TypingWk.
       eapply IHB with (ρ := wk_up _ ρ).
       econstructor ; tea.
       econstructor.
-      now eapply IHA.
+      2: now eapply IHA.
+      constructor.
     - intros * _ IHA _ IHt ? ρ ?.
       econstructor.
       1: now eapply IHA.
@@ -103,7 +101,9 @@ Section TypingWk.
       constructor.
       1: now eapply ih1.
       eapply ih2 ; econstructor; eauto.
-      constructor; now apply ih1.
+      constructor.
+      2: now apply ih1.
+      constructor.
     - intros ?????? ihA ? ihB ? iha ? ihb **.
       rewrite <- wk_sig; rewrite <- wk_pair.
       constructor; eauto.
@@ -150,13 +150,12 @@ Section TypingWk.
     - intros * _ IHA ? ρ ?.
       eapply TypeRefl.
       now eapply IHA.
-    - intros * _ IH ? ρ ?.
+    - intros * ? _ IH ? ρ ?.
       econstructor.
-      now eapply IH.
+      + now eapply hasUniv_ren.
+      + now eapply IH.
     - intros * _ IH ? ρ ?.
       now econstructor ; eapply IH.
-    - intros * _ IH **.
-      constructor; now eapply IH.
     - intros * _ IHA _ IHB ? ρ ?.
       eapply TypeTrans.
       + now eapply IHA.
@@ -179,7 +178,9 @@ Section TypingWk.
       + now eapply IHAA'.
       + eapply IHBB' with (ρ := wk_up _ ρ).
         pose (IHA _ ρ H).
-        econstructor; tea; now econstructor.
+        econstructor; tea; econstructor.
+        2: tea.
+        constructor.
     - intros Γ u u' f f' A B _ IHf _ IHu ? ρ ?.
       cbn.
       red in IHf.
@@ -238,7 +239,9 @@ Section TypingWk.
       constructor; eauto.
       now eapply H0.
       now eapply H2.
-      eapply ih; econstructor; tea; econstructor; now eapply H0.
+      eapply ih; econstructor; tea; econstructor.
+      2: now eapply H0.
+      constructor.
     - intros * ? ihA₀ ? ihA ? ihA' ? ihB ? ihB' ? iha ? ihb Δ ρ **.
       rewrite <- wk_sig, <- !wk_pair.
       assert [|-[de] Δ,, A⟨ρ⟩] by now econstructor.
@@ -349,7 +352,9 @@ Section Boundaries.
       [ Γ |- A @ s ] ->
       [ Γ |- s ].
   Proof.
-    induction 1; econstructor ; now eauto using boundary_sort_ctx, boundary_tm_ctx.
+    induction 1.
+    all: try lazymatch goal with | [h : hasUniv _ |- _ ] => destruct h end.
+    all: constructor; try eauto using boundary_sort_ctx, boundary_tm_ctx.
   Qed.
 
   Definition boundary_tm_conv_ctx {Γ} {t u A} :
@@ -371,7 +376,7 @@ Section Boundaries.
       [ Γ |- s ].
   Proof.
     induction 1; try now eauto using boundary_ty_sort.
-    all: econstructor; now eauto using boundary_tm_conv_ctx.
+    destruct h; econstructor; now eauto using boundary_tm_conv_ctx.
   Qed.
 
 
@@ -472,13 +477,14 @@ Proof.
   + now econstructor.
 Qed.
 
-Lemma redtydecl_term Γ A B :
-  [ Γ |- A ⤳* B : U] -> [Γ |- A ⤳* B @ set ].
+Lemma redtydecl_term Γ s A B :
+  hasUniv s ->
+  [ Γ |- A ⤳* B : tSort s] -> [Γ |- A ⤳* B @ s ].
 Proof.
-  intros []; split.
+  intros ? []; split.
   + now constructor.
   + assumption.
-  + now constructor.
+  + constructor; tea; constructor.
 Qed.
 
 #[export] Instance RedTermTrans Γ A : Transitive (red_tm Γ A).
@@ -534,7 +540,6 @@ Module DeclarativeTypingProperties.
   #[export, refine] Instance ConvTypeDeclProperties : ConvTypeProperties (ta := de) := {}.
   Proof.
   - now econstructor.
-  - now econstructor.
   - intros.
     constructor ; red ; intros.
     all: now econstructor.
@@ -545,8 +550,6 @@ Module DeclarativeTypingProperties.
     2: eassumption.
     2: eapply TypeSym.
     all: now eapply RedConvTyC.
-  - econstructor.
-    now econstructor.
   - econstructor.
     now econstructor.
   - now econstructor.

@@ -52,10 +52,20 @@ Qed.
 
 #[global] Hint Resolve neSort nePi neLambda : gen_typing.
 
+(** ** Predicates for universes *)
+Inductive hasUniv : sort -> Type :=
+  | setHasUniv : hasUniv set
+  | formulaHasUniv : hasUniv formula.
+
+Lemma hasUniv_ren : forall s ρ, hasUniv s -> hasUniv (s⟨ρ⟩).
+Proof.
+  intros ? ? []; now constructor.
+Qed.
+
 (** ** Restricted classes of normal forms *)
 
 Inductive isType : term -> Type :=
-  | UnivType {s} : isType (tSort s)
+  | UnivType {s} : hasUniv s -> isType (tSort s)
   | ProdType { A B} : isType (tProd A B)
   | NatType : isType tNat
   | EmptyType : isType tEmpty
@@ -64,7 +74,7 @@ Inductive isType : term -> Type :=
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
-  | UnivPos {s} : isPosType (tSort s)
+  | UnivPos {s} : hasUniv s -> isPosType (tSort s)
   | NatPos : isPosType tNat
   | EmptyPos : isPosType tEmpty
   | IdPos {A x y} : isPosType (tId A x y)
@@ -153,14 +163,16 @@ Section RenWhnf.
   Proof.
     induction 1 ; cbn.
     all: econstructor.
-    now eapply whne_ren.
+    - now eapply hasUniv_ren.
+    - now eapply whne_ren.
   Qed.
 
   Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
   Proof.
     destruct 1 ; cbn.
     all: econstructor.
-    now eapply whne_ren.
+    - now eapply hasUniv_ren.
+    - now eapply whne_ren.
   Qed.
 
   Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).

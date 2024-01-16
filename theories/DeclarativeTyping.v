@@ -42,12 +42,10 @@ Section Definitions.
           [ Γ |- irr f ]
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> term -> sort -> Type :=
-      | wfTypeU {Γ} : 
-          [ |- Γ ] -> 
-          [ Γ |- U @ set ]
-      | wfTypeF {Γ} :
+      | wfTypeUniv {Γ s} : 
           [ |- Γ ] ->
-          [ Γ |- F @ set ]
+          hasUniv s ->
+          [ Γ |- tSort s @ set ]
       | wfTypeProd {Γ} {A B} : 
           [ Γ |- A @ set ] -> 
           [Γ ,, A |- B @ set ] -> 
@@ -67,12 +65,10 @@ Section Definitions.
           [Γ |- x : A] ->
           [Γ |- y : A] ->
           [Γ |- tId A x y @ set ]
-      | wfTypeUniv {Γ} {A} :
-          [ Γ |- A : U ] -> 
-          [ Γ |- A @ set ]
-      | wfFormulaUniv {Γ} {f} :
-          [ Γ |- f : F ] ->
-          [ Γ |- f @ formula ]
+      | wfTypeEl {Γ s} {A} :
+          hasUniv s ->
+          [ Γ |- A : tSort s ] ->
+          [ Γ |- A @ s ]
   (** **** Typing *)
   with TypingDecl : context -> term -> term -> Type :=
       | wfVar {Γ} {n decl} :
@@ -171,12 +167,10 @@ Section Definitions.
       | TypeRefl {Γ} {A s} : 
           [ Γ |- A @ s ] ->
           [ Γ |- A ≅ A @ s ]
-      | convUniv {Γ} {A B} :
-        [ Γ |- A ≅ B : U ] -> 
-        [ Γ |- A ≅ B @ set ]
-      | convFormula {Γ} {f f'} :
-          [ Γ |- f ≅ f' : F ] ->
-          [ Γ |- f ≅ f' @ formula]
+      | convUniv {Γ s} {A B} :
+        hasUniv s ->
+        [ Γ |- A ≅ B : tSort s ] -> 
+        [ Γ |- A ≅ B @ s ]
       | TypeSym {Γ} {A B s} :
           [ Γ |- A ≅ B @ s ] ->
           [ Γ |- B ≅ A @ s ]
