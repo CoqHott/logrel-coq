@@ -3,7 +3,7 @@ From Coq Require Import CRelationClasses.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening UntypedReduction
   GenericTyping DeclarativeTyping DeclarativeInstance.
-From LogRel Require Import LogicalRelation Validity Fundamental AlgorithmicTyping.
+From LogRel Require Import LogicalRelation Validity Fundamental.
 From LogRel.LogicalRelation Require Import Escape Neutral Induction ShapeView Reflexivity.
 From LogRel.Substitution Require Import Escape Poly.
 
@@ -95,7 +95,7 @@ all: try (intros; split; apply WN_whnf; now constructor).
 + intros * [] ?; now split.
 + intros * ? []; split; now apply WN_wk.
 + intros * ? ? ? ? ? ? []; split; now eapply WN_exp.
-+ intros * []; split; now apply WN_whnf, whnf_whne.
++ intros * ? []; split; now apply WN_whnf, whnf_whne.
 + intros * ? ? ? Hf ? Hg []; split.
   - apply WN_isFun; destruct Hf as [|? []]; now constructor.
   - apply WN_isFun; destruct Hg as [|? []]; now constructor.
@@ -215,7 +215,7 @@ Proof.
     eapply WN_exp; [tea|]; now apply WN_whnf.
 Qed.
 
-Section NeutralConversion.
+(* Section NeutralConversion.
   Import AlgorithmicTypingData.
 
   Lemma var0_wk1_id {Γ A t} : t[tRel 0 .: @wk1 Γ A >> tRel] = t.
@@ -356,4 +356,4 @@ Section NeutralConversion.
     econstructor; tea; constructor.
   Qed.
 
-End NeutralConversion.
+End NeutralConversion. *)

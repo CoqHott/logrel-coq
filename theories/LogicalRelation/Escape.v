@@ -78,6 +78,11 @@ Section Escapes.
       eapply convtm_exp ; tea.
       all: gen_typing.
     - intros ??? [ty] [] ; cbn in *.
+      assert (isPosType ty).
+      {
+      constructor.
+      now eapply convneu_whne. 
+      }
       eapply (convtm_conv (A := ty)).
       eapply convtm_exp ; tea.
       all: gen_typing.

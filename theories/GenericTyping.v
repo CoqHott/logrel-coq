@@ -347,6 +347,7 @@ Section GenericTyping.
       [Γ |- A] -> [Γ |- t' : A] -> [Γ |- u' : A] ->
       [Γ |- A ≅ A] -> [Γ |- t' ≅ u' : A] -> [Γ |- t ≅ u : A] ;
     convtm_convneu {Γ n n' A} :
+      isPosType A ->
       [Γ |- n ~ n' : A] -> [Γ |- n ≅ n' : A] ;
     convtm_prod {Γ A A' B B'} :
       [Γ |- A : U] ->
@@ -968,6 +969,7 @@ Section GenericConsequences.
     [Γ |- A ≅ A'] ->
     [Γ |- A ≅ B] ->
     [Γ |- A ≅ C] ->
+    [Γ,, A |- tRel 0 ≅ tRel 0 : A⟨↑⟩] ->
     [Γ |- idterm A ≅ idterm A' : arr B C].
   Proof.
     intros.
@@ -1001,8 +1003,7 @@ Section GenericConsequences.
     - now eapply ty_var0.
     - now eapply ty_var0.
     - renToWk; tea; now eapply convty_wk.
-    - eapply convtm_convneu. eapply convneu_var.
-      now eapply ty_var0.
+    - eassumption.
   Qed.
 
   Lemma ty_comp {Γ A B C f g} :
