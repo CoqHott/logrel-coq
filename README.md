@@ -25,12 +25,10 @@ The development, rendered using `coqdoc`, can be [browsed online](https://coqhot
 Syntax (re)generation
 ============
 
-The syntax boilerplate has been generated using AutoSubst OCaml with the options `-s ucoq -v ge813 -allfv` (see the [AutoSubst OCaml documentation](https://github.com/uds-psl/autosubst-ocaml) for installation instructions for it). Currently, this package works only with older version of Coq (8.13), so we cannot add a recipe to the MakeFile for automatically
+The syntax boilerplate has been generated using AutoSubst OCaml from the root folder, with the options `-s ucoq -v ge813 -no-static -p ./theories/AutoSubst/Ast_preamble` (see the [AutoSubst OCaml documentation](https://github.com/uds-psl/autosubst-ocaml) for installation instructions). Currently, this package works only with older version of Coq (8.14), so we cannot add a recipe to the MakeFile for automatically
 re-generating the syntax.
 
-**If you wish to regenerate the syntax** by hand, install autosubst paying attention to [this issue](https://github.com/uds-psl/autosubst-ocaml/issues/1) -- in an opam installation do a `cp -R $OPAM_SWITCH_PREFIX/share/coq-autosubst-ocaml $OPAM_SWITCH_PREFIX/share/autosubst`--, modify the syntax file `AutoSubst/Ast.sig`, run autosubst on it (`autosubst -s ucoq -v ge813 -allfv Ast.sig -o Ast.v`) and patch the resulting files using the checked in patch (`git apply -R autosubst-patch.diff`). This patch does two things, which can also be done by hand if the automatic patching fails:
-- change the imports at the beginning of the files;
-- add the `#[global]` keyword to all instances.
+**If you wish to regenerate the syntax** by hand, you need to install AutoSubst from source using Coq 8.14, and use it with the previous options.
 
 Getting started with using the development
 =================
