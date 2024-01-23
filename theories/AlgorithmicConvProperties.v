@@ -1147,18 +1147,15 @@ Qed.
         * now etransitivity.
         * now etransitivity.
         * eassumption.
-    - intros Γ n n' A [? ? ? ? ? A' Hconvn HconvA].
-      assert [Γ |-[de] A] by boundary.
-      assert [Γ |-[de] n : A'] by
-        (eapply algo_conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
-      assert [Γ |-[de] n' : A'] by
-        (eapply algo_conv_sound in Hconvn as [[]%boundary] ; tea ; now gen_typing).
-      split ; tea.
-      1-2: now gen_typing.
-      eapply algo_conv_conv ; tea.
-      2: now eapply ctx_refl.
-      apply ne_conv_conv; tea.
-      boundary.
+    - intros_bn.
+      + boundary.
+      + eapply algo_conv_sound in bun_conv_ne_conv as [[]%boundary] ; tea.
+        gen_typing.
+      + eapply algo_conv_sound in bun_conv_ne_conv as [[]%boundary] ; tea.
+        gen_typing.
+      + econstructor.
+        1-3: reflexivity.
+        now econstructor.
     - intros_bn.
       + now constructor.
       + constructor ; tea.

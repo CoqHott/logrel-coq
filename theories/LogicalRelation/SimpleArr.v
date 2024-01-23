@@ -123,6 +123,21 @@ Section SimpleArrow.
   Lemma idred {Γ l A} (RA : [Γ ||-<l> A]) :
     [Γ ||-<l> idterm A : arr A A | ArrRedTy RA RA].
   Proof.
+    eassert [_ | Γ,, A ||- tRel 0 : A⟨_⟩] as hrel.
+    {
+      eapply var0.
+      1: reflexivity.
+      now escape.
+    }
+    Unshelve.
+    all: cycle -1.
+    { 
+      erewrite <- wk1_ren_on.
+      eapply wk ; tea.
+      escape.
+      gen_typing.
+    }
+    eapply reflLRTmEq in hrel.
     normRedΠ ΠAA.
     pose proof (reflLRTyEq RA).
     escape.
