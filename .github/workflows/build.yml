@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      coq_version: '8.16'
+      coq_version: '8.18'
       ocaml_version: '4.14-flambda'
       fail-fast: true
 
