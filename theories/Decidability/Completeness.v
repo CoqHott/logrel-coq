@@ -5,7 +5,7 @@ From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
 From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj AlgorithmicTyping BundledAlgorithmicTyping Normalisation AlgorithmicTypingProperties.
 From LogRel.Decidability Require Import Functions Soundness.
-From PartialFun Require Import Monad PartialFun Exception.
+From PartialFun Require Import Monad PartialFun MonadExn.
 
 Set Universe Polymorphism.
 

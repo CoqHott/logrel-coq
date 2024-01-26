@@ -1,7 +1,7 @@
 (** * LogRel.Decidability.Functions: conversion and type-checker implementation. *)
 From Coq Require Import Nat Lia.
 From Equations Require Import Equations.
-From PartialFun Require Import Monad PartialFun Exception.
+From PartialFun Require Import Monad PartialFun MonadExn.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Context.
 
