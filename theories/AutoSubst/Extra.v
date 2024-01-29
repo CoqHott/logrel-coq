@@ -12,7 +12,7 @@ From LogRel Require Import Utils BasicAst.
 Declare Scope asubst_scope.
 Delimit Scope asubst_scope with asub.
 
-Arguments funcomp {X Y Z}%type_scope (g f)%function_scope.
+Arguments funcomp {X Y Z}%_type_scope (g f)%_function_scope.
 
 Notation "f >> g" := (funcomp g f) (at level 50) : function_scope.
 
@@ -51,7 +51,7 @@ Ltac change_autosubst :=
 
 Smpl Add 50 change_autosubst : refold.
 
-Arguments ren1 {_ _ _}%type_scope {Ren1} _ !_/.
+Arguments ren1 {_ _ _}%_type_scope {Ren1} _ !_/.
 (* Ideally, we'd like Ren_term to not be there, and ren_term to be directly the Ren1 instance… *)
 Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.

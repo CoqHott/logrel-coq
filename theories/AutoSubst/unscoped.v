@@ -101,7 +101,7 @@ Class Var X Y :=
 
 (** ** Proofs for the substitution primitives. *)
 
-Arguments funcomp {X Y Z} (g)%fscope (f)%fscope.
+Arguments funcomp {X Y Z} (g)%_fscope (f)%_fscope.
 
 Module CombineNotations.
   Notation "f >> g" := (funcomp g f) (at level 50) : fscope.
