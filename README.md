@@ -13,7 +13,7 @@ In order to avoid some work on the syntax, this project uses the [AutoSubst](htt
 Building
 ===========
 
-The project builds with Coq version `8.18.0`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
+The project builds with Coq version `8.19.0`. It needs the opam package `coq-smpl`. Once these have been installed, you can simply issue `make` in the root folder.
 
 The `make depgraph` recipe can be used to generate the [dependency graph](https://coqhott.github.io/logrel-coq/dependency_graph.png).
 
