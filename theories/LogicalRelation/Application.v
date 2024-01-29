@@ -123,6 +123,7 @@ Section AppTerm.
     refine (max (max (max RFN RuN)
                (max (PiRedTyPack.domN hΠ) (PiRedTm.redN Rt))) _).
     unshelve refine (Max_Bar _ _ _).
+    About Max_Bar_Bar_lub.
     + assumption.
     + exact (max (max RFN RuN)
                (max (PiRedTyPack.domN hΠ) (PiRedTm.redN Rt))).
@@ -194,11 +195,6 @@ About AppTyN_subproof.
                 now eapply Nat.le_max_l).
            + now eapply Bar_lub_ub. 
            + now eapply Bar_lub_AllInLCon.
-           + clear Ninfl τ wl'.
-             (intros ;
-              rewrite (AllInLCon_Irrel _ _ ne0 ne') ;
-              rewrite (wfLCon_le_Irrel _ _ τ τ');
-              reflexivity).
       }
       reflexivity.
       Defined. 

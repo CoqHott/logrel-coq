@@ -32,30 +32,19 @@ Proof.
       now eapply wfLCon_le_id.
 Qed.
 
-(*Fixpoint BType (wl : wfLCon) (P : wfLCon -> Type)
-  (Pe : forall wl' wl'', wl'' ≤ε wl' -> P wl' -> P wl'')
+Fixpoint BType (wl : wfLCon) (P : wfLCon -> Type)
   (Q : forall wl', P wl' -> Type)
-  (Qe : forall wl' wl'' (f : wl'' ≤ε wl') (p : P wl') (p' : P wl''),
-      Q wl' p -> Q wl'' p')
-  (p : Dial wl P) : Type.
-Proof.
-  refine ( match p with
-  | eta _ _ x => _
-  | ϝdig _ _ pt pf => _
-           end).
-  - clear p.
-    
-    :=
+  (p : Dial wl P) : Type    :=
   match p with
   | eta _ _ x => Q wl x
-  | ϝdig _ _ pt pf => prod (BType _ P Q pt) (BType _ P Q pf)
+  | ϝdig _ _ pt pf => prod (@BType _ P Q pt) (BType _ P Q pf)
   end.
 
-Fixpoint BType_dep (wl : wfLCon) (P : wfLCon -> Type)
+(*Fixpoint BType_dep (wl : wfLCon) (P : wfLCon -> Type)
   (Q : forall wl', P wl' -> Type)
   (R : forall wl' p, Q wl' p -> Type)
   (p : Dial wl P) :
-  BType wl P Q p -> Type :=
+  BType wl P Pe Q Qe p -> Type :=
   match p with
   | eta _ _ x => fun H => R wl x H
   | ϝdig _ _ pt pf => fun H => prod (BType_dep _ P Q R pt (fst H))

@@ -269,10 +269,10 @@ Export URedTm(URedTm,Build_URedTm,URedTmEq,Build_URedTmEq).
 Notation "[ R | Γ ||-U t : A | l ]< wl >" := (URedTm R wl Γ t A l) (at level 0, R, Γ, t, A, wl, l at level 50).
 Notation "[ R | Γ ||-U t ≅ u : A | l ]< wl >" := (URedTmEq R wl Γ t u A l) (at level 0, R, Γ, t, u, A, wl, l at level 50).
 
+
 (** ** Reducibility of product types *)
 
 Module PiRedTy.
-  Print BType.
   
   Lemma ez  `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
@@ -297,6 +297,15 @@ Module PiRedTy.
     exact wl''.
     exact Δ.
     exact (cod[a .: (ρ >> tRel)]).
+
+    pose (Y := BType l _ (fun (wl' : wfLCon) (Dom : [ |-[ ta ] Δ ]< wl' > -> LRPack wl' Δ dom⟨ρ⟩) =>
+                 forall (Hd : [ |-[ ta ] Δ ]< wl' >) (a : term)
+                        (ha : [ Dom Hd |  Δ ||- a : dom⟨ρ⟩]< wl' >),
+                   Dial wl' (fun wl'' => (LRPack wl'' Δ (cod[a .: (ρ >> tRel)]))))
+                 (domRed _ ρ)).
+    cbn in Y.
+    pose (tzfd := zfe X).
+    apply zfe in X.
     pose (test:= fun R => BType_dep l _
          (fun wl' Dom => forall (a : term)
                                 (Hd : [ |-[ ta ] Δ ]< wl' >)

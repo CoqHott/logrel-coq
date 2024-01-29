@@ -1,6 +1,6 @@
 (** * LogRel.LogicalRelation: Definition of the logical relation *)
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms Weakening GenericTyping.
+From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms Weakening GenericTyping Monad.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -272,7 +272,29 @@ Notation "[ R | Γ ||-U t ≅ u : A | l ]< wl >" := (URedTmEq R wl Γ t u A l) (
 (** ** Reducibility of product types *)
 
 Module PiRedTy.
-  
+  Lemma ez  `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {l : wfLCon} {Γ : context} {A : term} : True.
+  Proof.
+    assert (dom : term) by admit.
+    assert (cod : term) by admit.
+    assert (domRed : forall Δ (ρ : Δ ≤ Γ),
+               Weak l (fun l' alpha => [ |- Δ ]< l' > -> LRPack l' Δ dom⟨ρ⟩)) by admit.
+    assert (Δ : context) by admit.
+    assert (ρ : Δ ≤ Γ) by admit.
+
+    
+    pose (zfe := fun Q => BType l _ Q (domRed _ ρ) ) ; cbn in zfe.
+    assert ( forall wl' : wfLCon,
+               ([ |-[ ta ] Δ ]< wl' > -> LRPack wl' Δ dom⟨ρ⟩) -> Type).
+    intros wl' Dom.
+    refine (forall (Hd : [ |-[ ta ] Δ ]< wl' >), _).
+    refine (forall a : term, _).
+    refine (forall ha : [ Dom Hd |  Δ ||- a : dom⟨ρ⟩]< wl' >, _).
+    refine (Dial wl' _).
+    intros wl''.
+    eapply LRPack.
+    exact wl''.
   Record PiRedTy@{i} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {l : wfLCon} {Γ : context} {A : term}
@@ -283,9 +305,8 @@ Module PiRedTy.
     domTy : [Γ |- dom]< l >;
     codTy : [Γ ,, dom |- cod]< l > ;
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< l > ;
-    domN : nat ;
-    domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l') :
-      [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩ ;
+    dom {Δ} (ρ : Δ ≤ Γ) : Weak l (fun l' τ => [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩) ;
+    }.
     codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
       (h : [ |- Δ ]< l' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :

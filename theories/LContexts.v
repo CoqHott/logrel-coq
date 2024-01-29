@@ -170,8 +170,12 @@ Notation " l ≤ε l' " := (wfLCon_le l l') (at level 40).
 
 Definition wfLCon_le_id l : l ≤ε l := fun n b ne => ne.
 
+Notation " 'idε' " := (wfLCon_le_id) (at level 40).
+
 Definition wfLCon_le_trans {l l' l''} : l ≤ε l' -> l' ≤ε l'' -> l ≤ε l'' :=
   fun f f' n b ne => f n b (f' n b ne).
+
+Notation " a •ε b " := (wfLCon_le_trans a b) (at level 40).
 
 Lemma LCon_le_in_LCon {l l' n b} {ne : not_in_LCon (pi1 l') n} :
   l ≤ε l' -> in_LCon l n b -> l ≤ε (l' ,,l (ne , b)).
@@ -527,7 +531,7 @@ Proof.
           | cons a q => _
           end) ; intros.
   - refine (P wl _ _).
-    now eapply wfLCon_le_id.
+    now eapply (idε).
     eapply Lack_nil_AllInLCon.
     now symmetry.
   - refine (max _ _).
@@ -542,9 +546,9 @@ Proof.
         now eapply Lack_n_add.
       * intros * τ allinl.
         refine (P wl' _ allinl).
-        eapply wfLCon_le_trans ; try eassumption.
-        eapply LCon_le_step.
-        now eapply wfLCon_le_id.
+        unshelve eapply (_ •ε _).
+        3: eapply LCon_le_step ; now eapply wfLCon_le_id.
+        eassumption.
     + unshelve refine (Max_Bar_aux _ n q _ _).
       * unshelve eapply wfLCons ; [exact wl | exact a | | exact false].
         eapply Lack_n_notinLCon.

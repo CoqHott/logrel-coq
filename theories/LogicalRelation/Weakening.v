@@ -17,12 +17,14 @@ Section Weakenings.
     [Δ ||-Π< l > A⟨ρ⟩]< wl >.
   Proof.
     destruct ΠA as[dom cod];  cbn in *.
-    assert (domRed' : forall Δ' wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
+    unshelve refine (let domRed' : forall Δ' wl' (ρ' : Δ' ≤ Δ) (τ : wl' ≤ε wl)
                              (Ninfl : AllInLCon domN wl'),
-               [|- Δ']< wl' > -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]< wl' >).
+               [|- Δ']< wl' > -> [Δ' ||-< l > dom⟨ρ⟩⟨ρ'⟩ ]< wl' > := _ in _).
     {
-      intros ? ? ρ' ??; replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
-      econstructor ; now unshelve eapply domRed.
+      intros ? ? ρ' ??.
+      replace (_⟨_⟩) with (dom⟨ρ' ∘w ρ⟩) by now bsimpl.
+      econstructor.
+      now unshelve eapply domRed.
     }
     set (cod' := cod⟨wk_up dom ρ⟩).
     unshelve refine
@@ -144,7 +146,8 @@ Section Weakenings.
       + exact (dom⟨ρ⟩).
       + exact (cod⟨wk_up dom ρ⟩).
       + exact domN.
-      + unfold wkΠ'. intros ; unshelve eapply (codomN Δ0 a l' (ρ0 ∘w ρ) τ Ninfl Ninfl' h).
+      + unfold wkΠ'.
+        intros ; unshelve eapply (codomN Δ0 a l' (ρ0 ∘w ρ) τ Ninfl Ninfl' h).
         subst X.
         irrelevance.
       + change (tProd _ _) with ((tProd dom cod)⟨ρ⟩);  gen_typing.
