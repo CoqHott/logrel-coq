@@ -20,7 +20,7 @@ Inductive whnf : term -> Type :=
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
-  | whne_tApp {n t} : whne n -> whne (tApp n t)
+  | whne_tApp {A B n t} : whne n -> whne (tApp A B n t)
   | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)

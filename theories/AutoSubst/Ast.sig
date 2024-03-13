@@ -5,7 +5,7 @@ tSort : sort -> term
 
 tProd : term -> (bind term in term) -> term
 tLambda : term -> (bind term in term) -> term
-tApp : term -> term -> term
+tApp : term -> (bind term in term) -> term -> term -> term
 
 tNat : term
 tZero : term

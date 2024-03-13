@@ -32,7 +32,7 @@ Notation "↑" := (shift) : asubst_scope.
 #[global] Open Scope asubst_scope.
 
 Notation U := (tSort set).
-Notation "'eta_expand' f" := (tApp f⟨↑⟩ (tRel 0)) (at level 40, only parsing).
+Notation eta_expand A B f := (tApp A⟨↑⟩ B⟨up_ren ↑⟩ f⟨↑⟩ (tRel 0)) (only parsing).
 
 #[global] Instance Ren1_subst {Y Z : Type} `{Ren1 (nat -> nat) Y Z} :
   (Ren1 (nat -> nat) (nat -> Y) (nat -> Z)) :=
@@ -57,7 +57,7 @@ Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.
 
 Notation arr A B := (tProd A B⟨↑⟩).
-Notation comp A f g := (tLambda A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
+Notation comp A B C f g := (tLambda A (tApp B⟨↑⟩ C⟨↑⟩⟨↑⟩ f⟨↑⟩ (tApp A⟨↑⟩ B⟨↑⟩⟨↑⟩ g⟨↑⟩ (tRel 0)))).
 Notation idterm A  := (tLambda A (tRel 0)).
 
 Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.

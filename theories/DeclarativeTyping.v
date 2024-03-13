@@ -70,9 +70,11 @@ Section Definitions.
           [ Γ ,, A |- t : B ] -> 
           [ Γ |- tLambda A t : tProd A B]
       | wfTermApp {Γ} {f a A B} :
+          [Γ |- A] ->
+          [Γ,, A |- B] ->
           [ Γ |- f : tProd A B ] -> 
           [ Γ |- a : A ] -> 
-          [ Γ |- tApp f a : B[a..] ]
+          [ Γ |- tApp A B f a : B[a..] ]
       | wfTermNat {Γ} :
           [|-Γ] ->
           [Γ |- tNat : U]
@@ -169,16 +171,18 @@ Section Definitions.
               [ Γ |- A ] ->
               [ Γ ,, A |- t : B ] ->
               [ Γ |- a : A ] ->
-              [ Γ |- tApp (tLambda A t) a ≅ t[a..] : B[a..] ]
+              [ Γ |- tApp A B (tLambda A t) a ≅ t[a..] : B[a..] ]
       | TermPiCong {Γ} {A B C D} :
           [ Γ |- A : U] ->
           [ Γ |- A ≅ B : U ] ->
           [ Γ ,, A |- C ≅ D : U ] ->
           [ Γ |- tProd A C ≅ tProd B D : U ]
-      | TermAppCong {Γ} {a b f g A B} :
+      | TermAppCong {Γ} {a b f g A B A' B'} :
+          [Γ |- A ≅ A'] ->
+          [Γ,, A |- B ≅ B'] ->
           [ Γ |- f ≅ g : tProd A B ] ->
           [ Γ |- a ≅ b : A ] ->
-          [ Γ |- tApp f a ≅ tApp g b : B[a..] ]
+          [ Γ |- tApp A B f a ≅ tApp A' B' g b : B[a..] ]
       | TermLambdaCong {Γ} {t u A A' A'' B} :
           [ Γ |- A ] ->
           [ Γ |- A ≅ A' ] ->
@@ -187,7 +191,7 @@ Section Definitions.
           [ Γ |- tLambda A' t ≅ tLambda A'' u : tProd A B ]
       | TermFunEta {Γ} {f A B} :
           [ Γ |- f : tProd A B ] ->
-          [ Γ |- tLambda A (eta_expand f) ≅ f : tProd A B ]
+          [ Γ |- tLambda A (eta_expand A B f) ≅ f : tProd A B ]
       | TermSuccCong {Γ} {n n'} :
           [Γ |- n ≅ n' : tNat] ->
           [Γ |- tSucc n ≅ tSucc n' : tNat]
@@ -207,7 +211,8 @@ Section Definitions.
           [Γ |- hz : P[tZero..]] ->
           [Γ |- hs : elimSuccHypTy P] ->
           [Γ |- n : tNat] ->
-          [Γ |- tNatElim P hz hs (tSucc n) ≅ tApp (tApp hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
+          [Γ |- tNatElim P hz hs (tSucc n) ≅
+          tApp P[n..] P[(tSucc n)..]⟨↑⟩ (tApp tNat ((arr P P[tSucc (tRel 0)]⇑)) hs n) (tNatElim P hz hs n) : P[(tSucc n)..]]
       | TermEmptyElimCong {Γ P P' e e'} :
           [Γ ,, tEmpty |- P ≅ P'] ->
           [Γ |- e ≅ e' : tEmpty] ->

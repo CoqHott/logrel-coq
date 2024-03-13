@@ -366,7 +366,7 @@ Proof. now cbn. Qed.
 Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
 Proof. now cbn. Qed.
 
-Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
+Lemma wk_comp {Γ Δ A B C f g} (ρ : Δ ≤ Γ) : (comp A B C f g)⟨ρ⟩ = comp A⟨ρ⟩ B⟨ρ⟩ C⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
 Proof. now bsimpl. Qed.
 
 Lemma wk_Id {A x y Γ Δ} (ρ : Δ ≤ Γ) : tId A⟨ρ⟩ x⟨ρ⟩ y⟨ρ⟩ = (tId A x y)⟨ρ⟩.

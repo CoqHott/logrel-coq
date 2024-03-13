@@ -8,18 +8,19 @@ From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakenin
 (** *** One-step reduction. *)
 
 Inductive OneRedAlg : term -> term -> Type :=
-| BRed {A a t} :
-    [ tApp (tLambda A t) a ⤳ t[a..] ]
-| appSubst {t u a} :
+| BRed {A B A' a t} :
+    [ tApp A B (tLambda A' t) a ⤳ t[a..] ]
+| appSubst {A B t u a} :
     [ t ⤳ u ] ->
-    [ tApp t a ⤳ tApp u a ]
-| natElimSubst {P hz hs n n'} :
-    [ n ⤳ n' ] ->
-    [ tNatElim P hz hs n ⤳ tNatElim P hz hs n' ]
+    [ tApp A B t a ⤳ tApp A B u a ]
 | natElimZero {P hz hs} :
     [ tNatElim P hz hs tZero ⤳ hz ]
 | natElimSucc {P hz hs n} :
-    [ tNatElim P hz hs (tSucc n) ⤳ tApp (tApp hs n) (tNatElim P hz hs n) ]
+    [ tNatElim P hz hs (tSucc n) ⤳
+      tApp P[n..] P[(tSucc n)..]⟨↑⟩ (tApp tNat ((arr P P[tSucc (tRel 0)]⇑)) hs n) (tNatElim P hz hs n) ]
+| natElimSubst {P hz hs n n'} :
+    [ n ⤳ n' ] ->
+    [ tNatElim P hz hs n ⤳ tNatElim P hz hs n' ]
 | emptyElimSubst {P e e'} :
     [e ⤳ e'] ->
     [tEmptyElim P e ⤳ tEmptyElim P e']        
@@ -86,7 +87,7 @@ Lemma whnf_nored n u :
 Proof.
   intros nf red.
   induction red in nf |- *.
-  2,3,6,7,9,12: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
+  2,5,6,7,9,12: inversion nf; subst; inv_whne; subst; apply IHred; now constructor.
   all: inversion nf; subst; inv_whne; subst; try now inv_whne.
 Qed.
 
@@ -111,15 +112,15 @@ Proof.
       now econstructor.
     + f_equal.
       eauto.
-  - inversion red'; subst.
-    2,3: exfalso; eapply whnf_nored; tea; constructor.
-    f_equal; eauto.
   - inversion red'; try reflexivity; subst.
     exfalso; eapply whnf_nored; tea; constructor.
-  - inversion red'; try reflexivity; subst.
+  - inversion red'; subst ; try reflexivity.
     exfalso; eapply whnf_nored; tea; constructor.
   - inversion red'; subst.
+    1-2: exfalso; eapply whnf_nored; tea; constructor.
     f_equal; eauto.
+  - inversion red'; subst; clear red'.
+    f_equal; now eapply IHred.
   - inversion red'; subst; clear red'.
     1: f_equal; now eapply IHred.
     exfalso; eapply whnf_nored; tea; constructor.
@@ -186,13 +187,20 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-5,6-12: cbn; asimpl; now econstructor.
+  2-3,5-12: cbn; asimpl; now econstructor.
   - cbn ; asimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
     all: subst t'.
     1: econstructor.
     now asimpl.
+  - cbn.
+    evar (t' : term).
+    replace (tApp _ _ _ _) with t'.
+    all: subst t'.
+    1: econstructor.
+    (* Another completeness problem!? *)
+    now cbn ; bsimpl ; cbn ; bsimpl.
 Qed.
 
 Lemma credalg_wk (ρ : nat -> nat) (t u : term) :
@@ -204,7 +212,7 @@ Qed.
 
 (** Derived rules *)
 
-Lemma redalg_app {t t' u} : [t ⤳* t'] -> [tApp t u ⤳* tApp t' u].
+Lemma redalg_app {A B t t' u} : [t ⤳* t'] -> [tApp A B t u ⤳* tApp A B t' u].
 Proof.
 induction 1.
 + reflexivity.
