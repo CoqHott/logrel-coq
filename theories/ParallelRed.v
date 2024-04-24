@@ -134,7 +134,7 @@ Section Definitions.
           [ Γ |- A ≅ B ]
       | TypeConvParR {Γ} {A B B'} :
           [ Γ |- B ⤳ B' ] ->
-          [ Γ |- A ≅ B] ->
+          [ Γ |- A ≅ B'] ->
           [ Γ |- A ≅ B ]
 
   with TermConvPar : context -> term -> term -> term -> Type :=
@@ -276,7 +276,7 @@ Arguments ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv : rename.
 
 Import ParallelTypingData.
 
-Section LRefl.
+Section LeftTypable.
 
   Let PCon (Γ : context) := True.
   Let PTy (Γ : context) (A A' : term) := [Γ |- A].
@@ -286,50 +286,69 @@ Section LRefl.
   Let PTyConv (Γ : context) (A B : term) := [Γ |- A].
   Let PTmConv (Γ : context) (A t u : term) := [Γ |- t : A].
 
-  Theorem par_lrefl : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+  Theorem par_lty : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
   Proof.
     subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
     apply ParInduction.
-    all: try solve [trivial].
-    all: try solve [now econstructor].
+    all: try solve [trivial | now econstructor].
     intros.
     eapply TermParApp ; refold ; tea.
     now econstructor.
   Qed.
 
-End LRefl.
-
-Section Congruences.
-
-  Lemma TermConvParVar Γ n n' decl :
-    [   |- Γ ] ->
-    in_ctx Γ n decl ->
-    n = n' ->
-    [ Γ |- tRel n ≅ tRel n' : decl ].
+  Theorem ctx_lty Γ Δ : [|-[pa] Γ ≅ Δ] -> [|-[pa] Γ].
   Proof.
-    intros ; subst.
-    now do 2 econstructor.
+    induction 1.
+    all: constructor ; tea.
+    now eapply par_lty in c.
   Qed.
 
-  Lemma TypeConvParProd Γ A A' B B' :
-    [Γ |- A ≅ A' ] ->
-    [Γ ,, A |- B ≅ B'] -> 
-    [ Γ |- tProd A B ≅ tProd A' B'].
+End LeftTypable.
+
+Section CtxTypable.
+
+  Let PCon (Γ : context) := True.
+  Let PTy (Γ : context) (A A' : term) := [|- Γ].
+  Let PTm (Γ : context) (A t t' : term) := [|- Γ].
+  Let PTyEq (Γ : context) (A B : term) := [|- Γ].
+  Let PTmEq (Γ : context) (A t u : term) := [|- Γ].
+  Let PTyConv (Γ : context) (A B : term) := [|- Γ].
+  Let PTmConv (Γ : context) (A t u : term) := [|- Γ].
+
+  Theorem par_ctx_ty : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
   Proof.
-    intros HA HB. 
-    induction HA in B, B', HB |- * ; refold.
-    - remember (Γ,,A) as Δ in HB.
-      induction HB ; refold.
-      + subst.
-        now do 2 econstructor.
-      + subst.
-        eapply TypeConvParL ; refold.
-        1: econstructor ; tea.
-        2: now eapply IHHB.
-        now eapply par_lrefl in t.
-      + now eapply IHHB.
-    - eapply TypeConvParL ; refold.
-  Abort.
+    subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+    apply ParInduction.
+    all: trivial.
+  Qed.
+
+End CtxTypable.
+
+Section ConvRefl.
+
+  Let PCon (Γ : context) := [|- Γ ≅ Γ].
+  Let PTy (Γ : context) (A A' : term) := [Γ |- A = A] × [Γ |- A ≅ A].
+  Let PTm (Γ : context) (A t t' : term) := [Γ |- t = t : A] × [Γ |- t ≅ t : A].
+  Let PTyEq (Γ : context) (A B : term) := [Γ |- A = A] × [Γ |- A ≅ A].
+  Let PTmEq (Γ : context) (A t u : term) := [Γ |- t = t : A] × [Γ |- t ≅ t : A].
+  Let PTyConv (Γ : context) (A B : term) := [Γ |- A = A] × [Γ |- A ≅ A].
+  Let PTmConv (Γ : context) (A t u : term) := [Γ |- t = t : A] × [Γ |- t ≅ t : A].
+
+  Lemma conv_refl : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+  Proof.
+    subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+    apply ParInduction.
+    all: try solve [trivial | split ; [..|econstructor] ; now econstructor].
+    - constructor.
+    - now constructor.  
+    - intros * ? [IHA IHA'] ?? ? [IHB IHB'] ? [IHt IHt'] ? [IHa IHa'].
+      split.
+      2: econstructor.
+      all: econstructor ; tea.
+      all: now econstructor.
+  Qed.
+
+End ConvRefl.
 
 Section TypingWk.
   
@@ -356,7 +375,7 @@ Section TypingWk.
       econstructor ; eauto.
       eapply IHB with (ρ := wk_up _ _).
       econstructor ; tea.
-      now eapply par_lrefl in IHA'.
+      now eapply par_lty in IHA'.
     - intros ; cbn.
       econstructor ; tea.
       now eapply in_ctx_wk.
@@ -366,17 +385,17 @@ Section TypingWk.
       eapply IHB with (ρ := wk_up _ _).
       econstructor ; tea.
       econstructor.
-      now eapply par_lrefl in IHA'.
+      now eapply par_lty in IHA'.
     - intros * ? IHAconv ? IHAred ? IHt **.
       unshelve epose proof (IHAred _ _ _) as IHA' ; tea.
       cbn ; econstructor.
       1-2: eauto.
       eapply IHt with (ρ := wk_up _ _).
       econstructor ; tea.
-      now eapply par_lrefl in IHA'.
+      now eapply par_lty in IHA'.
     - intros * ? IHAred ? IHAconv ? IHB ? IHt ? IHa **.
       assert [Δ |- A⟨ρ⟩] by now eapply IHAred.
-      assert [Δ |- A'⟨ρ⟩] by (now unshelve epose proof (IHAconv _ _ _) as ?%par_lrefl).
+      assert [Δ |- A'⟨ρ⟩] by (now unshelve epose proof (IHAconv _ _ _) as ?%par_lty).
       cbn.
       evar (B' : term) ; replace (B[_]⟨ρ⟩) with B' ; subst B'.
       evar (t'' : term) ; replace (t'[_]⟨ρ⟩) with t'' ; subst t''.
@@ -398,7 +417,7 @@ Section TypingWk.
       econstructor ; eauto.
       eapply IHB with (ρ := wk_up _ _).
       econstructor ; tea.
-      now eapply par_lrefl in IHA.
+      now eapply par_lty in IHA.
     - intros **.
       econstructor ; tea.
       now eapply in_ctx_wk.
@@ -408,20 +427,262 @@ Section TypingWk.
       eapply IHB with (ρ := wk_up _ _).
       econstructor ; tea.
       econstructor.
-      now eapply par_lrefl in IHA.
+      now eapply par_lty in IHA.
     - intros * ? IHA ?? ? IHt **.
       cbn.
       econstructor ; eauto.
       eapply IHt with (ρ := wk_up _ _).
       econstructor ; tea.
-      now eapply par_lrefl in IHA.
+      now eapply par_lty in IHA.
     - intros * ? IHA ? IHB ? IHf ? IHa **.
       cbn.
       evar (B'' : term) ; replace (B[_]⟨ρ⟩) with B'' ; subst B''.
       1: econstructor ; eauto.
       + eapply IHB with (ρ := wk_up _ _) ; econstructor ; tea.
-        now eapply par_lrefl in IHA.
+        now eapply par_lty in IHA.
       + now bsimpl.
   Qed.
 
+  Let PCon' (Γ : context) := True.
+  Let PTy' (Γ : context) (A A' : term) := forall T, [Γ |- T ] -> [Γ,,T |- A⟨↑⟩ ⤳ A'⟨↑⟩].
+  Let PTm' (Γ : context) (A t t' : term) := forall T, [Γ |- T ] ->
+    [Γ,,T |- t⟨↑⟩ ⤳ t'⟨↑⟩ : A⟨↑⟩].
+  Let PTyEq' (Γ : context) (A B : term) := forall T, [Γ |- T ] ->
+    [Γ,,T |- A⟨↑⟩ = B⟨↑⟩].
+  Let PTmEq' (Γ : context) (A t u : term) := forall T, [Γ |- T ] ->
+    [Γ,,T |- t⟨↑⟩ = u⟨↑⟩ : A⟨↑⟩].
+  Let PTyConv' (Γ : context) (A B : term) := forall T, [Γ |- T ] ->
+    [Γ,,T |- A⟨↑⟩ ≅ B⟨↑⟩].
+  Let PTmConv' (Γ : context) (A t u : term) := forall T, [Γ |- T ] ->
+    [Γ,,T |- t⟨↑⟩ ≅ u⟨↑⟩ : A⟨↑⟩].
+
+  Corollary par_wk1 : ParInductionConcl PCon' PTy' PTm' PTyEq' PTmEq' PTyConv' PTmConv'.
+  Proof.
+    subst PCon' PTy' PTm' PTyEq' PTmEq' PTyConv' PTmConv'.
+    repeat split.
+    all: intros.
+    all: repeat erewrite <- wk1_ren_on.
+    all: eapply par_wk ; tea.
+    all: solve [econstructor ; tea ; now eapply par_ctx_ty in H].
+  Qed.
+
 End TypingWk.
+
+Section CtxConv.
+
+  Lemma ctx_conv_ext Δ Γ A: [|- Δ ≅ Γ] -> [Δ |- A] -> [|- Δ,, A ≅ Γ,,A].
+  Proof.
+    intros ? HA.
+    econstructor ; tea.
+    now eapply conv_refl in HA.
+  Qed.
+
+
+  Lemma ctx_conv_tip Γ A A' : [Γ |- A ≅ A'] -> [|- Γ,, A ≅ Γ,,A'].
+  Proof.
+    intros HA.
+    econstructor ; tea.
+    eapply conv_refl.
+    now eapply par_ctx_ty in HA.
+  Qed.
+
+  Let PCon (Γ : context) := forall Δ, [|- Δ ≅ Γ] ->
+    forall decl n, in_ctx Γ n decl -> ∑ decl', in_ctx Δ n decl' × [Δ |- decl' ≅ decl].
+  Let PTy (Γ : context) (A A' : term) := forall Δ, [|- Δ ≅ Γ] -> [Δ |- A ⤳ A'].
+  Let PTm (Γ : context) (A t t' : term) := forall Δ, [|- Δ ≅ Γ] ->
+    [Δ |- t ⤳ t' : A].
+  Let PTyEq (Γ : context) (A B : term) := forall Δ, [|- Δ ≅ Γ] ->
+    [Δ |- A = B].
+  Let PTmEq (Γ : context) (A t u : term) := forall Δ, [|- Δ ≅ Γ] ->
+    [Δ |- t = u : A].
+  Let PTyConv (Γ : context) (A B : term) := forall Δ, [|- Δ ≅ Γ] ->
+    [Δ |- A ≅ B].
+  Let PTmConv (Γ : context) (A t u : term) := forall Δ, [|- Δ ≅ Γ] ->
+    [Δ |- t ≅ u : A].
+
+
+  Theorem par_ctx_conv : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+  Proof.
+    subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+    apply ParInduction.
+    all: try solve [now econstructor].
+    - intros ? Hctx ? * Hin.
+      inversion Hctx ; subst.
+      inversion Hin.
+    - intros * ? IHΓ ? IHA ? Hconv * Hin.
+      inversion Hconv ; subst.
+      inversion Hin ; subst.
+      + eexists ; split.
+        1: now constructor.
+        eapply par_wk1 ; tea.
+        now eapply par_lty in H5.
+      + refold.
+        edestruct IHΓ as [? []] ; tea.
+        eexists ; split.
+        1: now constructor.
+        refold.
+        eapply par_wk1 ; tea.
+        now eapply par_lty in H5.
+    - intros.
+      econstructor.
+      now eapply ctx_lty. 
+    - intros * HA IHA ? IHB ??.
+      econstructor.
+      1: eauto.
+      eapply IHB, ctx_conv_ext ; tea.
+      now eapply par_lty in IHA.
+    - intros * ? IHΓ ? **.
+      edestruct IHΓ as [? []]; tea.
+      econstructor ; tea ; econstructor ; tea.
+      now eapply ctx_lty.
+    - intros * HA IHA HB IHB ??. 
+      econstructor.
+      1: eauto.
+      eapply IHB, ctx_conv_ext ; tea.
+      eapply par_lty in IHA ; tea.
+      now econstructor.
+    - intros * HA'' IHA'' HA IHA Ht IHt ??.
+      econstructor.
+      1-2: eauto.
+      eapply IHt, ctx_conv_ext ; tea.
+      now eapply par_lty in IHA.
+    - intros * HA IHA HA' IHA' ? IHB ? IHt ? IHa ??.
+      econstructor.
+      + now eapply IHA.
+      + eauto.
+      + eapply IHB, ctx_conv_ext ; tea.
+        now eapply par_lty in IHA.
+      + eapply IHt, ctx_conv_ext ; tea.
+        now eapply par_lty in IHA'.
+      + eauto.
+    - intros * ? IHA ? IHA' ? IHB ? IHB' ? IHf ? IHa ??.
+      assert [Δ |- A] by now apply IHA.
+      econstructor ; eauto.
+      + now eapply IHB, ctx_conv_ext.
+      + now eapply IHB', ctx_conv_ext.
+    - intros.
+      econstructor.
+      now eapply ctx_lty.
+    - intros * ? IHA ? IHB ??.
+      econstructor ; eauto.
+      eapply IHB, ctx_conv_ext ; tea.
+      now eapply par_lty in IHA.
+    - intros * ? IHΓ ? ??.
+      edestruct IHΓ as [? []]; tea.
+      eapply TermEqParConv ; refold ; tea.
+      econstructor ; tea.
+      now eapply ctx_lty.
+    - intros * ? IHA ? IHB ??.
+      econstructor.
+      1: eauto.
+      eapply IHB, ctx_conv_ext ; tea.
+      econstructor.
+      now eapply par_lty in IHA.
+    - intros * HA'' IHA'' HA IHA Ht IHt ??.
+      econstructor.
+      1-2: eauto.
+      eapply IHt, ctx_conv_ext ; tea.
+      now eapply par_lty in IHA.
+    - intros * HA IHA ? IHB ? IHt ? IHa ??.
+      econstructor ; eauto.
+      eapply IHB, ctx_conv_ext ; tea.
+      now eapply par_lty in IHA.
+  Qed. 
+
+End CtxConv.
+
+
+(* Section RightTypable.
+
+  Let PCon (Γ : context) := True.
+  Let PTy (Γ : context) (A A' : term) := True.
+  Let PTm (Γ : context) (A t t' : term) := True.
+  Let PTyEq (Γ : context) (A B : term) := [Γ |- B].
+  Let PTmEq (Γ : context) (A t u : term) := [Γ |- u : A].
+  Let PTyConv (Γ : context) (A B : term) := [Γ |- B].
+  Let PTmConv (Γ : context) (A t u : term) := [Γ |- u : A].
+
+  Theorem par_rty : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+  Proof.
+    subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+    apply ParInduction.
+    all: try solve [trivial | now econstructor].
+    - intros * ? IHA ? IHB.
+      econstructor ; tea.
+      eapply par_ctx_conv ; tea.
+    eapply TermParApp ; refold ; tea.
+    now econstructor.
+  Qed.
+
+End RightTypable. *)
+
+Section ConvSym.
+
+  Let PCon (Γ : context) := True.
+  Let PTy (Γ : context) (A A' : term) := True.
+  Let PTm (Γ : context) (A t t' : term) := True.
+  Let PTyEq (Γ : context) (A B : term) := [Γ |- B = A].
+  Let PTmEq (Γ : context) (A t u : term) := [Γ |- u = t : A].
+  Let PTyConv (Γ : context) (A B : term) := [Γ |- B ≅ A].
+  Let PTmConv (Γ : context) (A t u : term) := [Γ |- u ≅ t : A].
+
+  Lemma conv_sym : ParInductionConcl PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+  Proof.
+    subst PCon PTy PTm PTyEq PTmEq PTyConv PTmConv.
+    apply ParInduction.
+    all: try solve [trivial | now econstructor].
+    - intros * ? IHA ? IHB.
+      econstructor ; tea.
+      eapply par_ctx_conv, ctx_conv_tip ; tea.
+      now econstructor.
+    - intros * ? IHA ? IHB.
+      econstructor ; tea.
+      eapply par_ctx_conv, ctx_conv_tip ; tea.
+      now do 2 econstructor.
+    - intros * ? IHA ? IHA' ? IHB.
+      econstructor ; tea.
+      + admit. (* annotations for λ are not related the right way (transitivity) *)
+      + eapply par_ctx_conv, ctx_conv_tip ; tea.
+    - intros * ? IHA ? IHB ? IHf ? IHa.
+      econstructor.
+      1: econstructor ; tea.
+      + now eapply par_ctx_conv, ctx_conv_tip.
+      + econstructor ; tea.
+        admit. (* product congruence for ≅ *)
+      + now econstructor.
+      + admit. (* substitution *)
+  Admitted.
+
+Section Congruences.
+
+  Lemma TermConvParVar Γ n n' decl :
+    [   |- Γ ] ->
+    in_ctx Γ n decl ->
+    n = n' ->
+    [ Γ |- tRel n ≅ tRel n' : decl ].
+  Proof.
+    intros ; subst.
+    now do 2 econstructor.
+  Qed.
+
+  Lemma TypeConvParProd Γ A A' B B' :
+    [Γ |- A ≅ A' ] ->
+    [Γ ,, A |- B ≅ B'] -> 
+    [ Γ |- tProd A B ≅ tProd A' B'].
+  Proof.
+    intros HA HB.
+    induction HA in B, B', HB |- * ; refold.
+    - remember (Γ,,A) as Δ in HB.
+      induction HB ; refold.
+      + subst.
+        now do 2 econstructor.
+      + subst.
+        eapply TypeConvParL ; refold.
+        1: econstructor ; tea.
+        2: now eapply IHHB.
+        now eapply par_lty in t.
+      + subst.
+        eapply TypeConvParR ; refold.
+        2: now eapply IHHB.
+        econstructor.
+  Abort.
