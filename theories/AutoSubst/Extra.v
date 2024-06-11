@@ -54,7 +54,7 @@ Smpl Add 50 change_autosubst : refold.
 Arguments ren1 {_ _ _}%_type_scope {Ren1} _ !_/.
 (* Ideally, we'd like Ren_term to not be there, and ren_term to be directly the Ren1 instance… *)
 Arguments Ren_term _ _ /.
-Arguments Ren1_subst {_ _ _} _ _/.
+Arguments Ren1_subst {_ _ _} _ _ _/.
 
 Notation arr A B := (tProd A B⟨↑⟩).
 Notation comp A B C f g := (tLambda A (tApp B⟨↑⟩ C⟨↑⟩⟨↑⟩ f⟨↑⟩ (tApp A⟨↑⟩ B⟨↑⟩⟨↑⟩ g⟨↑⟩ (tRel 0)))).

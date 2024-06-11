@@ -145,6 +145,9 @@ Reserved Notation "[ Γ |-[ ta  ']s' σ : Δ ]" (at level 0, ta, Γ, σ, Δ at l
 (** Substitutions σ and τ are convertible at types Δ in context Γ *)
 Reserved Notation "[ Γ '|-s' σ ≅ τ : Δ ]" (at level 0, Γ, σ, τ, Δ at level 50).
 Reserved Notation "[ Γ |-[ ta  ']s' σ ≅ τ : Δ ]" (at level 0, ta, Γ, σ, τ, Δ at level 50).
+(** Substitution σ reduces to substitution τ at types Δ in context Γ *)
+Reserved Notation "[ Γ '|-s' σ ⤳ τ : Δ ]" (at level 0, Γ, σ, τ, Δ at level 50).
+Reserved Notation "[ Γ |-[ ta  ']s' σ ⤳ τ : Δ ]" (at level 0, ta, Γ, σ, τ, Δ at level 50).
 
 (** ** Extra typing conditions *)
 (** Types A and B are well-formed and convertible in Γ *)

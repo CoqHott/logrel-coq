@@ -16,6 +16,7 @@ theories/NormalForms.v
 theories/Weakening.v
 theories/UntypedReduction.v
 theories/GenericTyping.v
+theories/ParallelRed.v
 
 theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
