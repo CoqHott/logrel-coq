@@ -9,7 +9,7 @@ From LogRel.Substitution Require Import Escape Poly.
 
 Set Printing Primitive Projection Parameters.
 
-Import DeclarativeTypingProperties.
+Import WeakDeclarativeTypingProperties.
 
 Section TypeConstructors.
 
