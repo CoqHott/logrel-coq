@@ -272,46 +272,41 @@ Notation "[ R | Γ ||-U t ≅ u : A | l ]< wl >" := (URedTmEq R wl Γ t u A l) (
 (** ** Reducibility of product types *)
 
 Module PiRedTy.
-  Lemma ez  `{ta : tag}
-    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
-    {l : wfLCon} {Γ : context} {A : term} : True.
-  Proof.
-    assert (dom : term) by admit.
-    assert (cod : term) by admit.
-    assert (domRed : forall Δ (ρ : Δ ≤ Γ),
-               Weak l (fun l' alpha => [ |- Δ ]< l' > -> LRPack l' Δ dom⟨ρ⟩)) by admit.
-    assert (Δ : context) by admit.
-    assert (ρ : Δ ≤ Γ) by admit.
 
-    
-    pose (zfe := fun Q => BType l _ Q (domRed _ ρ) ) ; cbn in zfe.
-    assert ( forall wl' : wfLCon,
-               ([ |-[ ta ] Δ ]< wl' > -> LRPack wl' Δ dom⟨ρ⟩) -> Type).
-    intros wl' Dom.
-    refine (forall (Hd : [ |-[ ta ] Δ ]< wl' >), _).
-    refine (forall a : term, _).
-    refine (forall ha : [ Dom Hd |  Δ ||- a : dom⟨ρ⟩]< wl' >, _).
-    refine (Dial wl' _).
-    intros wl''.
-    eapply LRPack.
-    exact wl''.
+
   Record PiRedTy@{i} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {l : wfLCon} {Γ : context} {A : term}
-  : Type (* @ max(Set, i+1) *) := {
+    : Type (* @ max(Set, i+1) *) := {
     dom : term ;
     cod : term ;
-    red : [Γ |- A :⇒*: tProd dom cod]< l >;
-    domTy : [Γ |- dom]< l >;
+    red : [Γ |- A :⇒*: tProd dom cod]< l > ;
+    domTy : [Γ |- dom]< l > ;
     codTy : [Γ ,, dom |- cod]< l > ;
     eq : [Γ |- tProd dom cod ≅ tProd dom cod]< l > ;
-    dom {Δ} (ρ : Δ ≤ Γ) : Weak l (fun l' τ => [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩) ;
+    domRed {Δ} (ρ : Δ ≤ Γ) : Weak l (fun l' τ => [ |- Δ ]< l' > -> LRPack@{i} l' Δ dom⟨ρ⟩) ;
+    codRed {Δ} {a} (ρ : Δ ≤ Γ) :
+      forall {wl' : wfLCon} (tau : wl' ≤ε l)
+             (allinl : AllInLCon (WN (domRed ρ)) wl')
+             (delta : [ |-[ ta ] Δ ]< wl' >),
+        [(domRed ρ).(WP) tau allinl delta | _ ||- a : _ ]< _ > ->
+        Weak wl' (fun wl'' tau' => LRPack@{i} wl'' Δ cod[a .: ρ >> tRel]) ;
+    codExt {Δ a b l'}
+      (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon (domRed ρ).(WN) l')
+      (h :  [ |- Δ ]< l' >)
+      (ha : [ ((domRed ρ).(WP) τ Ninfl h) | Δ ||- a : dom⟨ρ⟩ ]< l' >) :
+      [ ((domRed ρ).(WP) τ Ninfl h) | Δ ||- b : dom⟨ρ⟩]< l' > ->
+      [ ((domRed ρ).(WP) τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< l' > ->
+      WFunEq l' (fun wl'' tau' => LRPack@{i} wl'' Δ cod[a .: ρ >> tRel])
+        (fun wl'' tau' Hp =>
+           [ Hp | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< wl'' >)
+        (codRed ρ τ Ninfl h ha)
     }.
-    codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
+(*    codomN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
       (h : [ |- Δ ]< l' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
       nat ;
-(*    codomN_Ltrans {Δ a l' l''} 
+    codomN_Ltrans {Δ a l' l''} 
       (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (τ' : l'' ≤ε l)
       (Ninfl : AllInLCon domN l')
       (Ninfl' : AllInLCon domN l'')
@@ -319,7 +314,7 @@ Module PiRedTy.
       (h' : [ |- Δ ]< l'' >)
       (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >)
       (ha' : [ (domRed ρ τ' Ninfl' h') |  Δ ||- a : dom⟨ρ⟩]< l'' >):
-    l'' ≤ε l' -> codomN ρ τ' Ninfl' h' ha' <=  codomN ρ τ Ninfl h ha ;*)
+    l'' ≤ε l' -> codomN ρ τ' Ninfl' h' ha' <=  codomN ρ τ Ninfl h ha ;
     codRed {Δ} {a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l) (Ninfl : AllInLCon domN l')
         (h : [ |- Δ ]< l' >) (ha : [ (domRed ρ τ Ninfl h) |  Δ ||- a : dom⟨ρ⟩]< l' >) :
      forall {l''} (τ' : l'' ≤ε l') (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) l''),
@@ -333,30 +328,66 @@ Module PiRedTy.
       [ (domRed ρ τ Ninfl h) | Δ ||- a ≅ b : dom⟨ρ⟩]< l' > ->
       forall {l''} (τ' : l'' ≤ε l') (Minfl : AllInLCon (codomN ρ τ Ninfl h ha) l''),
       [ (codRed ρ τ Ninfl h ha τ' Minfl) | Δ ||- (cod[a .: (ρ >> tRel)]) ≅ (cod[b .: (ρ >> tRel)]) ]< l'' >
-  }.
+  }.*)
 
   Arguments PiRedTy {_ _ _ _ _}.
-
+Lemma fze@{i j} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
+    {l : wfLCon} {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} l Γ A} :
+  True.
+Proof.
+  assert (forall a Δ (ρ : Δ ≤ Γ),
+             Weak l (fun l' τ =>
+                       { allinl : AllInLCon (WN (ΠA.(domRed) ρ)) l' &
+                                    { hd : [ |-[ ta ] Δ ]< l' > &
+                                             [(ΠA.(domRed) ρ).(WP) τ allinl hd | _ ||- a : _ ]< _ >} }) ->
+         Weak l (fun l' τ => LRPack@{i} l' Δ ΠA.(cod)[a .: ρ >> tRel])).
+  intros *.
+  destruct ΠA ; cbn in *.
+  clear codExt0.
+  specialize (codRed0 Δ a ρ).
+  eapply Wbind.
+  admit.
+  admit.
+  intros * [allinl [hd Ha]].
+  eapply codRed0.
+  eassumption.
+  
+             (delta : [ |-[ ta ] Δ ]< wl' >),
+        [(domRed ρ).(WP) tau allinl delta | _ ||- a : _ ]< _ >
+  
   (** We separate the recursive "data", ie the fact that we have reducibility data (an LRPack)
   for the domain and codomain, and the fact that these are in the graph of the logical relation.
   This is crucial for Coq to accept the definition, because it makes the nesting simple enough
   to be accepted. We later on show an induction principle that does not have this separation to
   make reasoning easier. *)
+
+  
   Record PiRedTyAdequate@{i j} `{ta : tag}
     `{WfContext ta} `{WfType ta} `{ConvType ta} `{RedType ta}
     {l : wfLCon} {Γ : context} {A : term} {R : RedRel@{i j}} {ΠA : PiRedTy@{i} l Γ A}
   : Type@{j} := {
-      domAd {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : AllInLCon ΠA.(domN) l') (h : [ |- Δ ]< l' >) :
-      LRPackAdequate@{i j} R (ΠA.(domRed) ρ τ Ninfl h) ;
+      domAd {Δ} (ρ : Δ ≤ Γ) :
+      WFunEq l _
+        (fun l' τ Hdom => forall (h : [ |- Δ ]< l' >),
+             LRPackAdequate@{i j} R (Hdom h))
+        (ΠA.(domRed) ρ) ;
       codAd {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
-        (Ninfl : AllInLCon ΠA.(domN) l') (h : [ |- Δ ]< l' >)
-        (ha : [ (ΠA.(domRed) ρ τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >)
+        (Ninfl : AllInLCon (ΠA.(domRed) ρ).(WN) l') (h : [ |- Δ ]< l' >)
+        (ha : [ ((ΠA.(domRed) ρ).(WP) τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >) :
+      WFunEq l' _
+        (fun l'' τ Hcod => LRPackAdequate@{i j} R Hcod)
+        (ΠA.(codRed) ρ τ Ninfl h ha) ;
+    }.
+(*      domAd {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(domRed) ρ).(WN) l') (h : [ |- Δ ]< l' >) :
+      LRPackAdequate@{i j} R ((ΠA.(domRed) ρ).(WP) τ Ninfl h) ;
+  codAd {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(domRed) ρ).(WN) l') (h : [ |- Δ ]< l' >)
+        (ha : [ ((ΠA.(domRed) ρ).(WP) τ Ninfl h) | Δ ||- a : ΠA.(dom)⟨ρ⟩ ]< l' >)
         {l''} (τ' : l'' ≤ε l')
-        (Minfl : AllInLCon (ΠA.(codomN) ρ τ Ninfl h ha) l'')
-      : LRPackAdequate@{i j} R (ΠA.(codRed) ρ τ Ninfl h ha τ' Minfl);
-  }.
-
+        (Minfl : AllInLCon (ΠA.(codRed) ρ τ Ninfl h ha).(WN) l'')
+      : LRPackAdequate@{i j} R ((ΠA.(codRed) ρ τ Ninfl h ha).(WP) τ' Minfl);*)
   Arguments PiRedTyAdequate {_ _ _ _ _ _ _ _}.
 
 End PiRedTy.
@@ -370,11 +401,24 @@ Module PiRedTyEq.
     `{WfType ta} `{ConvType ta} `{RedType ta} {l : wfLCon}
     {Γ : context} {A B : term} {ΠA : PiRedTy l Γ A}
   : Type := {
-      dom : term;
-      cod : term;
-      red : [Γ |- B :⇒*: tProd dom cod]< l > ;
-      eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ]< l > ;
-      domN : nat ;
+    dom : term;
+    cod : term;
+    red : [Γ |- B :⇒*: tProd dom cod]< l > ;
+    eq  : [Γ |- tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ≅ tProd dom cod ]< l > ;
+    domRed {Δ} (ρ : Δ ≤ Γ) :
+    Weak l
+      (fun l' (τ : l' ≤ε l) =>
+         forall (Ninfl : AllInLCon (ΠA.(PiRedTy.domRed) ρ).(WN) l') (h : [ |- Δ ]< l' >),
+           [ ((ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h) | Δ ||- ΠA.(PiRedTy.dom)⟨ρ⟩ ≅ dom⟨ρ⟩ ]< l' >) ;
+    codRed {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(PiRedTy.domRed) ρ).(WN) l')
+        (Ninfl' : AllInLCon (domRed ρ).(WN) l') (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩]< l' >) :
+      Weak l' (fun l'' (τ' : l'' ≤ε l') =>
+                 forall (Minfl : AllInLCon (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WN) l''),
+                   [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WP) τ' Minfl | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ]< l'' > );
+               }.
+(*      domN : nat ;
       domRed {Δ l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
         (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
       (Ninfl' : AllInLCon domN l') (h : [ |- Δ ]< l' >) :
@@ -404,6 +448,7 @@ Module PiRedTyEq.
         (Minfl' : AllInLCon (codomN ρ τ Ninfl Ninfl' h ha) l'') :
         [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ≅ cod[a .: (ρ >> tRel)] ]< l'' >;
   }.
+*)
 
   Arguments PiRedTyEq {_ _ _ _ _}.
 
@@ -424,7 +469,44 @@ Module PiRedTm.
       isfun : isFun nf ;
       isnf  : Nf[Γ |- nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod)]< l > ;
       refl : [ Γ |- nf ≅ nf : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
-      redN : nat ;
+      app {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(PiRedTy.domRed) ρ).(WN) l')
+        (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >) :
+      Weak l' (fun l'' τ' => forall (Minfl : AllInLCon (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WN) l''),
+                   [(ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WP) τ' Minfl | Δ ||- tApp nf⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' >) ;
+      eq {Δ l' a b} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(PiRedTy.domRed) ρ).(WN) l')
+        (h : [ |- Δ ]< l' >)
+        (ha : [ (ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        (hb : [ (ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >)
+        (eq : [ (ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- a ≅ b : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >) :
+      WFunEq l' _
+        (fun l'' τ' Hcod =>
+           forall (Minfl' : AllInLCon (app ρ τ Ninfl h ha).(WN) l''),
+             [ Hcod | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]< l'' >)
+        (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha)
+    }.
+
+  Lemma ez  `{ta : tag} `{WfContext ta}
+    `{WfType ta} `{ConvType ta} `{RedType ta}
+    `{Typing ta} `{ConvTerm ta} `{RedTerm ta} `{TermNf ta}
+    {l : wfLCon} {Γ : context} {t A : term}{ΠA : PiRedTy l Γ A} : True.
+  Proof.
+    assert (HK : PiRedTm (t := t) (ΠA := ΠA)) by admit.
+    pose (vs := @eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ HK).
+    unfold WFunEq in vs.
+    assert (Δ : context) by admit.
+    assert (ρ : Δ ≤ Γ) by admit.
+    assert (a : term) by admit.
+    assert (R : RedRel) by admit.
+    pose (zger := WFunEq l _
+        (fun l' τ Hdom => forall (h : [ |- Δ ]< l' >),
+             LRPackAdequate (Γ := Δ) (l := l') R (Hdom h))
+        (PiRedTy.domRed ΠA ρ)).
+  Admitted.
+      
+      (*      redN : nat ;
       appN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
         (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
         (Ninfl' : AllInLCon redN l') (h : [ |- Δ ]< l' >) :
@@ -460,7 +542,7 @@ Module PiRedTm.
         (Minfl' : AllInLCon (appN ρ τ Ninfl Ninfl' h ha) l'') :
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||- tApp nf⟨ρ⟩ a ≅ tApp nf⟨ρ⟩ b : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)] ]< l'' >
   }.
-
+*)
   Arguments PiRedTm {_ _ _ _ _ _ _ _ _}.
 
 End PiRedTm.
@@ -478,7 +560,16 @@ Module PiRedTmEq.
       redL : [ Γ ||-Π t : A | ΠA ]< l > ;
       redR : [ Γ ||-Π u : A | ΠA ]< l > ;
       eq : [ Γ |- redL.(PiRedTm.nf) ≅ redR.(PiRedTm.nf) : tProd ΠA.(PiRedTy.dom) ΠA.(PiRedTy.cod) ]< l > ;
-      eqN : nat;
+      eqApp {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
+        (Ninfl : AllInLCon (ΠA.(PiRedTy.domRed) ρ).(WN) l')
+        (h : [ |- Δ ]< l' >)
+        (ha : [(ΠA.(PiRedTy.domRed) ρ).(WP) τ Ninfl h | Δ ||- a : ΠA.(PiRedTy.dom)⟨ρ⟩ ]< l' >) :
+      Weak l' (fun l'' τ' =>
+                 forall (Minfl : AllInLCon (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WN) l''),
+                   [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha).(WP) τ' Minfl | Δ ||-
+                      tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' > ) ;
+      }.
+(*      eqN : nat;
       eqappN {Δ a l'} (ρ : Δ ≤ Γ) (τ : l' ≤ε l)
         (Ninfl : AllInLCon ΠA.(PiRedTy.domN) l')
         (Ninfl' : AllInLCon eqN l') (h : [ |- Δ ]< l' >) :
@@ -505,6 +596,7 @@ Module PiRedTmEq.
       [ (ΠA.(PiRedTy.codRed) ρ τ Ninfl h ha τ' Minfl) | Δ ||-
           tApp redL.(PiRedTm.nf)⟨ρ⟩ a ≅ tApp redR.(PiRedTm.nf)⟨ρ⟩ a : ΠA.(PiRedTy.cod)[a .: (ρ >> tRel)]]< l'' >
   }.
+*)
 
   Arguments PiRedTmEq {_ _ _ _ _ _ _ _ _}.
 
