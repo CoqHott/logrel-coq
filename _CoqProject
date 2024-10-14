@@ -22,8 +22,11 @@ theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
 
+theories/Monad2.v
+theories/Monad.v
 theories/LogicalRelation.v
 theories/LogicalRelation/Induction.v
+theories/LogicalRelation/Monotonicity.v
 theories/LogicalRelation/Escape.v
 theories/LogicalRelation/ShapeView.v
 theories/LogicalRelation/Reflexivity.v
