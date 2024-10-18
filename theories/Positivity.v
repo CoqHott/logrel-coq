@@ -1,3 +1,4 @@
+Unset Automatic Proposition Inductives.
 Record Foo (x : Type -> Type) : Type := {}.
 
 Fail Inductive Bar : Type -> Type :=

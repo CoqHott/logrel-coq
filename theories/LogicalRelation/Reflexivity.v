@@ -22,7 +22,7 @@ Section Reflexivities.
   Corollary LRTyEqRefl {l Γ A eqTy redTm eqTm}
     (lr : LogRel l Γ A eqTy redTm eqTm) : eqTy A.
   Proof.
-    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (R := Build_LRPack Γ A eqTy redTm eqTm).
     pose (Rad := Build_LRAdequate (pack:=R) lr).
     change [Rad | _ ||- _ ≅ A ]; now eapply reflLRTyEq.
   Qed.
@@ -70,7 +70,7 @@ Section Reflexivities.
       [ Γ ||-<l> t ≅ t : A | lr ].
   Proof.
     pattern l, Γ, A, lr; eapply LR_rect_TyUr; clear l Γ A lr; intros l Γ A.
-    - intros h t [? ? ? ? Rt%RedTyRecFwd@{j k h i k}] ; cbn in *.
+    - intros h t [? ? ? ? Rt%RedTyRecFwd@{h i j k}] ; cbn in *.
       (* Need an additional universe level h < i *)
       Unset Printing Notations.
       pose proof (reflLRTyEq@{h i k j} Rt).
@@ -95,14 +95,15 @@ Section Reflexivities.
       all: cbn; now eauto.
     - intros; now eapply reflIdRedTmEq.
   Qed.
-  
+
   (* Deprecated *)
   Corollary LRTmEqRefl@{h i j k l} {l Γ A eqTy redTm eqTm} (lr : LogRel@{i j k l} l Γ A eqTy redTm eqTm) :
     forall t, redTm t -> eqTm t t.
   Proof.
-    pose (R := Build_LRPack Γ A eqTy redTm eqTm). 
+    pose (R := Build_LRPack Γ A eqTy redTm eqTm).
     pose (Rad := Build_LRAdequate (pack:=R) lr).
     intros t ?; change [Rad | _ ||- t ≅ t : _ ]; now eapply reflLRTmEq.
   Qed.
 
 End Reflexivities.
+

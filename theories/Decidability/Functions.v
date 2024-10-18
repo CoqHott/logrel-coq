@@ -138,9 +138,9 @@ Definition build_ty_view1 t : ty_view1 t :=
   | tm_view1_type e => ty_view1_ty e
   | tm_view1_rel n => ty_view1_small (ne_view1_rel n)
   | tm_view1_dest t s => ty_view1_small (ne_view1_dest t s)
-  | tm_view1_fun _ _ 
-  | tm_view1_nat _ 
-  | tm_view1_sig _ _ _ _ 
+  | tm_view1_fun _ _
+  | tm_view1_nat _
+  | tm_view1_sig _ _ _ _
   | tm_view1_id _ _ => ty_view1_anomaly
   end.
 
@@ -161,7 +161,7 @@ Definition callTypesFactory I (F : I -> Type) (f : forall i, F i) (pfuns : foral
 |}.
 
 #[program]
-Definition callablePropsFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i)) 
+Definition callablePropsFactory I (F : I -> Type) (f : forall i, F i) (pfuns : forall (i :I), PFun (f i))
   : CallableProps (callTypesFactory I F f pfuns) := {|
   cp_graph i := pgraph (f i) ;
   cp_fueled i := pfueled (f i) ;
@@ -183,7 +183,7 @@ Next Obligation. intros; now eapply pdef_graph. Qed.
         (fun bot => match bot return False_rect _ bot with end)
         (fun bot => match bot return PFun@{Set Set Set} _ with end).
 
-Equations wh_red_stack : ∇(_ : term × stack), False ⇒ term :=
+Equations wh_red_stack : ∇(_ : term × stack), [False]⇒ term :=
   wh_red_stack (t,π) with (build_tm_view1 t) :=
   wh_red_stack (?(tRel n)       ,π)                           (tm_view1_rel n) := ret (zip (tRel n) π) ;
   wh_red_stack (?(zip1 t s)     ,π)                           (tm_view1_dest t s) := rec (t,cons s π) ;
@@ -243,7 +243,7 @@ Definition call_single {F}
 
 #[export] Instance: PFun wh_red_stack := pfun_gen _ _ wh_red_stack.
 
-Definition wh_red : ∇(t : term), Sing wh_red_stack ⇒ term :=
+Definition wh_red : ∇(t : term), [Sing wh_red_stack]⇒ term :=
   fun t => call_single wh_red_stack (t,nil).
 
 #[export] Instance: PFun wh_red := pfun_gen _ _ wh_red.
@@ -327,7 +327,7 @@ Equations build_nf_view3 T t t' : nf_view3 T t t' :=
   (** Inhabitants of the empty type must be neutrals *)
   | ty_view1_ty eEmpty with (build_nf_view1 t), (build_nf_view1 t') :=
   {
-    | nf_view1_ne _, nf_view1_ne _ := 
+    | nf_view1_ne _, nf_view1_ne _ :=
       neutrals _ _ _ ;
     | _, _ := anomaly _ _ _ ;
   }
@@ -469,7 +469,7 @@ Equations conv_tm_red : conv_stmt tm_red_state :=
     | pairs A B t u :=
         rec (tm_state;Γ;A;tFst t; tFst u) ;;
         rec (tm_state;Γ; B[(tFst t)..]; tSnd t; tSnd u) (* ::: (tm_red_state;Γ;tSig A B;t;u) ;*) ;
-    | refls A x y A' x' A'' x'' := 
+    | refls A x y A' x' A'' x'' :=
       rec (ty_state;Γ;tt;A';A'') ;;
       rec (tm_state;Γ;A';x';x'')
     | neutrals _ _ _ :=
@@ -491,7 +491,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
   {
     | _, _, Some (ne_view1_rel n, ne_view1_rel n') with n =? n' :=
     { | false := raise (variable_mismatch n n') ;
-      | true with (ctx_access Γ n) := 
+      | true with (ctx_access Γ n) :=
         {
         | exception e => undefined ;
         | success d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
@@ -500,7 +500,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
     | _, _, Some (ne_view1_dest n (eApp t), ne_view1_dest n' (eApp t')) =>
       T ← rec (ne_red_state;Γ;tt;n;n') ;;
       match T with
-      | tProd A B => 
+      | tProd A B =>
         rec (tm_state;Γ;A;t;t') ;; ret B[t..]
       |  _ => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
       end ;
@@ -525,7 +525,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
     | _, _, Some (ne_view1_dest n eFst, ne_view1_dest n' eFst) =>
       T ← rec (ne_red_state;Γ;tt;n;n') ;;
       match T with
-      | tSig A B => ret A 
+      | tSig A B => ret A
       | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
       end ;
     | _, _, Some (ne_view1_dest n eSnd, ne_view1_dest n' eSnd) =>
@@ -533,7 +533,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
       match T with
       | tSig A B => ret B[(tFst n)..]
       | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
-      end ; 
+      end ;
     | _, _, Some (ne_view1_dest n (eIdElim A x P hr y), ne_view1_dest n' (eIdElim A' x' P' hr' y')) =>
       T ← rec (ne_red_state;Γ;tt;n;n') ;;
       match T with
@@ -554,7 +554,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
   | (Γ;inp;tRel n;tRel n')
     with n =? n' :=
     { | false := raise (variable_mismatch n n') ;
-      | true with (ctx_access Γ n) := 
+      | true with (ctx_access Γ n) :=
         {
         | error e => undefined ;
         | ok d => ret d (* ::: (ne_state;Γ;inp;tRel n; tRel n')*)
@@ -563,7 +563,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
   | (Γ;inp;tApp n t ; tApp n' t') :=
     T ← rec (ne_red_state;Γ;tt;n;n') ;;
     match T with
-    | tProd A B => 
+    | tProd A B =>
       rec (tm_state;Γ;A;t;t') ;; ret B[t..]
       (* (ret (B[t..])) ::: (ne_state;Γ;inp;tApp n t; tApp n' t') *)
     |  _ => undefined (** the whnf of the type of an applied neutral must be a Π type!*)
@@ -600,7 +600,7 @@ Time Equations conv_ne : conv_stmt ne_state :=
     | tSig A B => ret B[(tFst n)..]
       (* ret (B[(tFst n)..]) ::: (ne_state;Γ; inp; tSnd n; tSnd n') *)
     | _ => undefined (** the whnf of the type of a projected neutral must be a Σ type!*)
-    end ; 
+    end ;
   | (Γ;_;n;n') := raise (destructor_mismatch n n'). *)
 
 Equations conv_ne_red : conv_stmt ne_red_state :=
@@ -609,7 +609,8 @@ Equations conv_ne_red : conv_stmt ne_red_state :=
     r ← call_single wh_red Ainf ;;[M0]
     ret (M:=M) r.
 
-Equations conv : ∇(x : conv_full_dom), Sing wh_red ⇒ exn errors ♯ cstate_output x.π1 :=
+
+Equations conv : ∇(x : conv_full_dom), [Sing wh_red]⇒[exn errors] cstate_output x.π1 :=
   | (ty_state; Γ ; inp ; T; V) := conv_ty (Γ; inp; T; V);
   | (ty_red_state; Γ ; inp ; T; V) := conv_ty_red (Γ; inp; T; V);
   | (tm_state; Γ ; inp ; T; V) := conv_tm (Γ; inp; T; V);
@@ -804,7 +805,7 @@ Equations typing_wf_ty : typing_stmt wf_ty_state :=
     T' ← rec (inf_state;Γ;tt;t) ;;[M]
     ext_call (I:=ϕ) (mkRight conv) (ty_state;Γ;tt;T';T).
 
-  Equations typing : ∇ (x : typing_full_dom), ϕ ⇒ exn errors ♯ tstate_output x.π1 :=
+  Equations typing : ∇ (x : typing_full_dom), [ϕ]⇒[exn errors] tstate_output x.π1 :=
   | (wf_ty_state; Γ; inp; T) := typing_wf_ty (Γ;inp;T)
   | (inf_state; Γ; inp; t) := typing_inf (Γ;inp;t)
   | (inf_red_state; Γ; inp; t) := typing_inf_red (Γ;inp;t)
@@ -816,7 +817,7 @@ End Typing.
 
 Section CtxTyping.
 
-  Equations check_ctx : ∇ (Γ : context), Sing typing ⇒ exn errors ♯ unit :=
+  Equations check_ctx : ∇ (Γ : context), [Sing typing]⇒[exn errors] unit :=
     check_ctx ε := ret tt ;
     check_ctx (Γ,,A) :=
       rec Γ ;;[combined_orec (exn _) _ _ _]

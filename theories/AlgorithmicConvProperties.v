@@ -93,7 +93,7 @@ Section AlgoConvConv.
       now boundary.
     - now econstructor.
     - now econstructor.
-    - now econstructor. 
+    - now econstructor.
     - intros * ? ihA ? ihB ? h **.
       econstructor.
       1: now eapply ihA.
@@ -191,7 +191,7 @@ Section AlgoConvConv.
       eapply stability in hm' as [? [[-> ]]]%termGen'; tea.
       pose proof (redty_whnf red (isType_whnf _ isTy)); subst.
       assert [Γ' |-[de] A ≅ A] by (eapply stability; tea; now eapply lrefl).
-      assert [Γ' |-[de] x ≅ x : A] by (eapply stability; tea; now eapply lrefl). 
+      assert [Γ' |-[de] x ≅ x : A] by (eapply stability; tea; now eapply lrefl).
       assert [|- (Γ',, A),, tId A⟨@wk1 Γ' A⟩ x⟨@wk1 Γ' A⟩ (tRel 0) ≅ (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
       1: eapply idElimMotiveCtxConv; first [now econstructor| now symmetry| boundary].
       assert [Γ' |-[ de ] P[tRefl A x .: x..] ≅ P[tRefl A x .: x..]].
@@ -213,7 +213,8 @@ Section AlgoConvConv.
       }
       eexists ; split.
       + econstructor.
-        1-2: eauto using redty_red.
+        1: eauto.
+        1: now eapply redty_red.
         gen_typing.
       + symmetry ; etransitivity ; tea.
         now eapply RedConvTyC.
@@ -288,14 +289,14 @@ Section AlgoConvConv.
       2: gen_typing.
       econstructor ; tea.
       eapply IHf ; tea.
-      now econstructor. 
+      now econstructor.
     - intros * ? [ihA] ? [ihB] ?????? r%red_ty_compl_univ_l wh%isType_whnf.
       pose proof (redty_whnf r wh); subst.
       econstructor.
       1: eapply ihA; tea; gen_typing.
       assert [ |-[ de ] Γ',, A ≅ Γ,, A].  1:{
-        econstructor; tea; eapply stability; tea. 
-        eapply lrefl; now econstructor. 
+        econstructor; tea; eapply stability; tea.
+        eapply lrefl; now econstructor.
       }
       eapply ihB; tea.
       do 2 constructor; boundary.
@@ -303,7 +304,7 @@ Section AlgoConvConv.
       pose proof (redty_whnf r wh); subst.
       econstructor; tea.
       1: eapply ihA; tea; now symmetry.
-      eapply ihB; tea. 
+      eapply ihB; tea.
       eapply typing_subst1; tea.
       eapply TermConv; refold; [|now symmetry].
       eapply TermRefl, stability; tea.
@@ -377,7 +378,7 @@ Section TermTypeConv.
   Let PTmEq (Γ : context) (A t u : term) :=
       [A ⤳* U] ->
       [Γ |-[al] t ≅ u].
-  Let PTmRedEq (Γ : context) (A t u : term) := 
+  Let PTmRedEq (Γ : context) (A t u : term) :=
     A = U ->
     [Γ |-[al] t ≅h u].
 
@@ -401,10 +402,10 @@ Section TermTypeConv.
       congruence.
     - intros; congruence.
     - intros; congruence.
-    - intros. 
+    - intros.
       now econstructor.
   Qed.
-  
+
 End TermTypeConv.
 
 (** ** Symmetry *)
@@ -657,7 +658,7 @@ Section Symmetry.
     - intros * ? IH **.
       econstructor.
       now eapply IH.
-    - now econstructor.  
+    - now econstructor.
     - intros * ? ? ? IH ? Hf  **.
       econstructor.
       1-2: assumption.
@@ -725,7 +726,7 @@ Section Symmetry.
       edestruct IH as [[? []] []] ; tea.
       now econstructor.
   Qed.
-  
+
 End Symmetry.
 
 (** ** Transitivity *)
@@ -770,7 +771,7 @@ Section Transitivity.
       {
         eapply whred_det ; tea.
         - eapply algo_conv_wh in H7 as [] ; gen_typing.
-        - eapply algo_conv_wh in Hconv as [] ; gen_typing. 
+        - eapply algo_conv_wh in Hconv as [] ; gen_typing.
       }
       econstructor ; tea.
       eapply IH ; tea.
@@ -983,7 +984,7 @@ Section Transitivity.
         eapply red_whnf.
         2: gen_typing.
         now eapply red_ty_compl_univ_r, redty_red in Hconvty.
-      }  
+      }
       inversion Hconv ; subst ; clear Hconv ; refold.
       2: now inversion H1.
       now econstructor.
@@ -1070,7 +1071,7 @@ Module AlgorithmicConvProperties.
     - red ; intros_bn.
       eapply algo_conv_sym.
       + now econstructor.
-      + now eapply ctx_refl. 
+      + now eapply ctx_refl.
     - red ; intros * Hconv [? ? ? Hconv'].
       econstructor ; tea.
       1: now apply Hconv.
@@ -1106,7 +1107,7 @@ Module AlgorithmicConvProperties.
         * symmetry.
           now eapply algo_conv_sound in bun_conv_ty0.
       + now do 2 econstructor.
-    - intros * convA. 
+    - intros * convA.
       pose proof convA as ?%bn_conv_sound.
       revert convA; intros_bn.
       + now econstructor.
@@ -1122,7 +1123,7 @@ Qed.
     - red ; intros_bn.
       eapply algo_conv_sym.
       + now econstructor.
-      + now eapply ctx_refl.  
+      + now eapply ctx_refl.
     - red. intros * Hconv [? ? ? Hconv'].
       split ; tea.
       1: apply Hconv.
@@ -1539,7 +1540,7 @@ Module IntermediateTypingProperties.
       + inversion bun_conv_tm ; subst ; clear bun_conv_tm ; refold.
         econstructor.
         4: eassumption.
-        all: now etransitivity. 
+        all: now etransitivity.
     - gen_typing.
     - intros * ? [] [].
       split ; tea.
@@ -1667,7 +1668,7 @@ Module IntermediateTypingProperties.
       + now eapply typing_wk.
       + now eapply credalg_wk.
     - intros * []; assumption.
-    - now intros * []. 
+    - now intros * [].
     - intros; constructor.
       + boundary.
       + econstructor ; tea.
@@ -1710,7 +1711,7 @@ Module IntermediateTypingProperties.
     - intros; econstructor; tea.
       1: boundary.
       1: gen_typing.
-      econstructor. 
+      econstructor.
       2: reflexivity.
       constructor.
     - intros * [].
@@ -1718,12 +1719,12 @@ Module IntermediateTypingProperties.
       1: gen_typing.
       clear -buni_red_tm; induction buni_red_tm.
       1: reflexivity.
-      econstructor; eauto. 
+      econstructor; eauto.
       now constructor.
     - intros; econstructor; tea.
       1: boundary.
       1: gen_typing.
-      econstructor. 
+      econstructor.
       2: reflexivity.
       constructor.
     - intros * [].
@@ -1731,7 +1732,7 @@ Module IntermediateTypingProperties.
       1: gen_typing.
       clear -buni_red_tm; induction buni_red_tm.
       1: reflexivity.
-      econstructor; eauto. 
+      econstructor; eauto.
       now constructor.
     - intros * ??????? convA convxy convxz.
       pose proof convA as ?%bn_conv_sound.
@@ -1745,7 +1746,7 @@ Module IntermediateTypingProperties.
       1: econstructor; tea; now econstructor.
       symmetry; econstructor; tea.
       etransitivity; tea; now symmetry.
-    - intros * ????? []. 
+    - intros * ????? [].
       econstructor; tea.
       2: now eapply redalg_idElim.
       now econstructor.

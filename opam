@@ -1,4 +1,4 @@
-opam-version: "2.0"              
+opam-version: "2.0"
 version: "8.19.dev"
 maintainer: "Meven.Bertrand@univ-nantes.fr"
 dev-repo: "git+https://github.com/CoqHott/logrel-coq.git"
@@ -10,7 +10,7 @@ authors: ["Meven Lennon-Bertrand <Meven.Bertrand@univ-nantes.fr>"
 ]
 license: "MIT"
 depends: [
-  "coq" { >= "8.19" & < "8.20~" }
+  "coq" { >= "8.20" & < "8.21~" }
   "coq-smpl"
   "coq-equations" { >= "1.3" }
 ]
