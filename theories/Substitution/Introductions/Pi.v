@@ -1,14 +1,14 @@
 From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms UntypedValues Weakening
-  DeclarativeTyping GenericTyping LogicalRelation Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
+  GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance.
 From LogRel.Substitution Require Import Irrelevance Properties.
-From LogRel.Substitution.Introductions Require Import Universe.
+From LogRel.Substitution.Introductions Require Import Universe Poly.
 
-(* Set Universe Polymorphism. *)
+Set Universe Polymorphism.
 
-Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ @wk1 Δ F[σ] ⟩].
+(* Lemma eq_subst_1 F G Δ σ : G[up_term_term σ] = G[tRel 0 .: σ⟨ @wk1 Δ F[σ] ⟩].
 Proof.
   now bsimpl.
 Qed.
@@ -16,7 +16,49 @@ Qed.
 Lemma eq_subst_2 G a ρ σ : G[up_term_term σ][a .: ρ >> tRel] = G[a .: σ⟨ρ⟩].
 Proof.
   bsimpl ; now substify.
-Qed.
+Qed. *)
+
+Section PolyRedPi.
+  Context `{GenericTypingProperties}.
+
+  Lemma LRPiPoly0 {Γ l A B} (PAB : PolyRed Γ l A B) : [Γ ||-Π<l> tProd A B].
+  Proof.
+    econstructor; tea; pose proof (polyRedId PAB) as []; escape.
+    + eapply redtywf_refl; gen_typing.
+    + unshelve eapply escapeEq; tea; eapply reflLRTyEq.
+    + eapply convty_prod; tea; unshelve eapply escapeEq; tea; eapply reflLRTyEq.
+  Defined.
+
+  Definition LRPiPoly {Γ l A B} (PAB : PolyRed Γ l A B) : [Γ ||-<l> tProd A B] := LRPi' (LRPiPoly0 PAB).
+
+  Lemma LRPiPolyEq0 {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') :
+    [Γ |- A'] -> [Γ ,, A' |- B'] ->
+    [Γ ||-Π tProd A B ≅ tProd A' B' | LRPiPoly0 PAB].
+  Proof.
+    econstructor; cbn; tea.
+    + eapply redtywf_refl; gen_typing.
+    + pose proof (polyRedEqId PAB Peq) as []; now escape.
+    + pose proof (polyRedEqId PAB Peq) as []; escape.
+      eapply convty_prod; tea.
+      eapply escape; now apply (polyRedId PAB).
+  Qed.
+
+  Lemma LRPiPolyEq {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') :
+    [Γ |- A'] -> [Γ ,, A' |- B'] ->
+    [Γ ||-<l> tProd A B ≅ tProd A' B' | LRPiPoly PAB].
+  Proof.
+    now eapply LRPiPolyEq0.
+  Qed.
+
+  Lemma LRPiPolyEq' {Γ l A A' B B'} (PAB : PolyRed Γ l A B) (Peq : PolyRedEq PAB A' B') (RAB : [Γ ||-<l> tProd A B]):
+    [Γ |- A'] -> [Γ ,, A' |- B'] ->
+    [Γ ||-<l> tProd A B ≅ tProd A' B' | RAB].
+  Proof.
+    intros; irrelevanceRefl; now eapply LRPiPolyEq.
+  Qed.
+  
+End PolyRedPi.
+
 
 Section PiTyValidity.
 
@@ -25,162 +67,18 @@ Section PiTyValidity.
     (vF : [Γ ||-v< l > F | vΓ ])
     (vG : [Γ ,, F ||-v< l > G | validSnoc vΓ vF]).
 
-  Lemma domainRed {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ||-< l > F[σ] ].
-  Proof.
-    exact (validTy vF tΔ vσ).
-  Defined.
-
-  Lemma domainTy {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ |-[ ta ] F[σ] ].
-  Proof.
-    eapply escape.
-    now eapply domainRed.
-  Defined.
-
-  Lemma domainTyRefl {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ |-[ ta ] F[σ] ≅ F[σ] ].
-  Proof.
-    refine (escapeEq (domainRed tΔ vσ) _).
-    now eapply LRTyEqRefl_.
-  Qed.
-
-  Lemma domainTyEq {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
-    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
-    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
-    : [Δ,, F[σ] |-[ ta ] F[σ⟨@wk1 Δ F[σ]⟩] ≅ F[σ'⟨@wk1 Δ F[σ]⟩]].
-  Proof.
-    eapply escapeEq.
-    eapply (validTyExt vF).
-    refine (wk1SubstS _ _ (domainTy tΔ vσ) vσ').
-    refine (wk1SubstSEq _ _ (domainTy tΔ vσ) vσ vσσ').
-  Qed.
-
-
-  Lemma codomainRed {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] ||-< l > G[ up_term_term σ ] ].
-  Proof.
-    rewrite (eq_subst_1 F G Δ σ).
-    refine (validTy vG _ (liftSubstS vΓ tΔ vF vσ)).
-  Qed.
-
-  Lemma codomainTy {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] |-[ ta ] G[ up_term_term σ ] ].
-  Proof.
-    eapply escape.
-    now eapply codomainRed.
-  Qed.
-
-  Lemma codomainTyRefl {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ]].
-  Proof.
-    refine (escapeEq (codomainRed tΔ vσ) _).
-    now eapply LRTyEqRefl_.
-  Qed.
-
-  Lemma codomainSubstRed {Δ Δ' σ a} (tΔ : [ |-[ ta ] Δ]) (tΔ' : [ |-[ ta ] Δ'])
-    (ρ : Δ' ≤ Δ) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (ra : [ Δ' ||-< l > a : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
-    : [Δ' ||-< l > G[up_term_term σ][a .: ρ >> tRel]].
-  Proof.
-    rewrite eq_subst_2.
-    unshelve eapply (validTy vG) ; tea.
-    unshelve eapply consSubstS.
-    eapply wkSubstS ; tea. irrelevance.
-  Qed.
-
-  Lemma codomainSubstRedEq1 {Δ Δ' σ a b} (tΔ : [ |-[ ta ] Δ]) (tΔ' : [ |-[ ta ] Δ'])
-    (ρ : Δ' ≤ Δ) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (ra : [ Δ' ||-< l > a : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
-    (rb : [ Δ' ||-< l > b : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
-    (rab : [ Δ' ||-< l > a ≅ b : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
-    : [Δ' ||-< l > G[up_term_term σ][a .: ρ >> tRel]
-                     ≅ G[up_term_term σ][b .: ρ >> tRel] | codomainSubstRed tΔ tΔ' ρ vσ ra].
-  Proof.
-    eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]).
-    - symmetry. eapply eq_subst_2.
-    - rewrite eq_subst_2.
-      unshelve eapply (validTyExt vG tΔ' _ _ _).
-      + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
-      + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
-      + unshelve econstructor.
-        * eapply reflSubst.
-        * irrelevance.
-  Qed.
-
-  Lemma codomainSubstRedEq2 {Δ Δ' σ σ' a} (tΔ : [ |-[ ta ] Δ]) (tΔ' : [ |-[ ta ] Δ']) (ρ : Δ' ≤ Δ)
-    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
-    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
-    (ra : [ Δ' ||-< l > a : F[σ]⟨ρ⟩ | wk ρ tΔ' (domainRed tΔ vσ)])
-    : [Δ' ||-< l > G[up_term_term σ][a .: ρ >> tRel]
-                     ≅ G[up_term_term σ'][a .: ρ >> tRel] | codomainSubstRed tΔ tΔ' ρ vσ ra].
-    Proof.
-      eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]).
-      - symmetry. apply eq_subst_2.
-      - rewrite eq_subst_2. unshelve eapply (validTyExt vG tΔ' _ _ _).
-        + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _). irrelevance.
-        + refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ') vF _).
-          refine (LRTmRedConv _ _ _ _ _ _ _ _ _ ra).
-          replace (F[σ'⟨ρ⟩]) with (F[σ']⟨ρ⟩) by (now asimpl).
-          refine (wkEq ρ tΔ' _ (validTyExt vF tΔ vσ vσ' vσσ')).
-        + unshelve econstructor.
-          * cbn. now eapply wkSubstSEq.
-          * cbn. eapply LRTmEqIrrelevant'.
-            2:refine (LREqTermRefl_ _ ra). now asimpl.
-  Qed.
-
-  Lemma prodTyEq {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
-    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
-    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
-    : [Δ |-[ ta ] tProd F[σ] G[up_term_term σ] ≅ tProd F[σ'] G[up_term_term σ']].
-  Proof.
-    refine (convty_prod (domainTy tΔ vσ) _ _).
-    - eapply escapeEq. eapply (validTyExt vF tΔ vσ vσ' vσσ').
-    - rewrite (eq_subst_1 F G Δ σ). rewrite (eq_subst_1 F G Δ σ').
-      assert ([Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
-      { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
-        refine (ty_var (wfc_cons tΔ (domainTy _ vσ)) (in_here _ _)). }
-      eapply escapeEq. unshelve refine (validTyExt vG _ _ _ _).
-      + eapply wfc_cons. easy. refine (domainTy tΔ vσ).
-      + refine (liftSubstS vΓ tΔ vF vσ).
-      + unshelve econstructor.
-        * refine (wk1SubstS vΓ tΔ (domainTy tΔ vσ) vσ').
-        * set (ρ' := @wk1 Δ F[σ']).
-          assert ([Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨ρ'⟩)]]).
-          { eapply ty_conv; [eassumption|].
-            eapply (domainTyEq tΔ vσ vσ' vσσ'). }
-          cbn; eapply neuTerm; [|assumption|now apply convneu_var].
-          replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (unfold ρ'; now bsimpl).
-          eapply tm_ne_conv; [apply tm_ne_rel; now eapply escape, vF| |].
-          -- replace F[σ']⟨↑⟩ with F[σ']⟨@wk1 Δ F[σ]⟩ by (now bsimpl).
-             apply wft_wk; [|now eapply escape, vF].
-             now eapply wfc_ty.
-          -- do 2 erewrite <- wk1_ren_on.
-            apply convty_wk; [now eapply wfc_ty|].
-            eapply escapeEq, vF; tea.
-      + unshelve econstructor.
-        * refine (wk1SubstSEq vΓ tΔ (domainTy tΔ vσ) vσ vσσ').
-        * assert (ne : Ne[ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
-          { replace (F[_ >> _]) with (F[σ]⟨↑⟩) by (now bsimpl).
-            apply tm_ne_rel; now eapply escape, vF. }
-          cbn; eapply neuTermEq; try apply convneu_var; tea.
-  Qed.
-
   Lemma PiRed {Δ σ} (tΔ : [ |-[ ta ] Δ])
     (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ||-< l > (tProd F G)[σ] ].
   Proof.
-    cbn. eapply LRPi'. econstructor.
-    - apply redtywf_refl.
-      exact (wft_prod (domainTy tΔ vσ) (codomainTy tΔ vσ)).
-    - exact (domainTy tΔ vσ).
-    - exact (codomainTy tΔ vσ).
-    - exact (convty_prod (domainTy tΔ vσ) (domainTyRefl tΔ vσ) (codomainTyRefl tΔ vσ)).
-    - intros Δ' a b ρ tΔ'.
-      refine (codomainSubstRedEq1 tΔ tΔ' ρ vσ).
+    eapply LRPi'.
+    pose (p := substPolyRed vΓ vF vG _ vσ).
+    escape; cbn; econstructor; tea;
+    destruct (polyRedId p);
+    destruct (polyRedEqId p (substPolyRedEq vΓ vF vG _ vσ vσ (reflSubst _ _ vσ))); escape.
+    - apply redtywf_refl; gen_typing.
+    - gen_typing.
+    - gen_typing.
   Defined.
 
   Lemma PiEqRed1 {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
@@ -189,15 +87,13 @@ Section PiTyValidity.
     (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ])
     : [ Δ ||-< l > (tProd F G)[σ] ≅ (tProd F G)[σ'] | PiRed tΔ vσ ].
   Proof.
-    cbn. econstructor.
-    - apply redtywf_refl.
-      exact (wft_prod (domainTy tΔ vσ') (codomainTy tΔ vσ')).
-    - cbn. eapply (prodTyEq tΔ vσ vσ' vσσ').
-    - cbn. intros Δ' ρ tΔ'.
-      eapply wkEq.
-      refine (validTyExt vF tΔ vσ vσ' vσσ').
-    - cbn. intros Δ' a ρ tΔ' ra.
-      refine (codomainSubstRedEq2 _ _ _ vσ vσ' vσσ' ra).
+    pose (p := substPolyRed vΓ vF vG _ vσ).
+    pose (p' := substPolyRed vΓ vF vG _ vσ').
+    pose (peq := substPolyRedEq vΓ vF vG _ vσ vσ' vσσ').
+    destruct (polyRedId p); destruct (polyRedId p'); destruct (polyRedEqId p peq).
+    escape; econstructor; cbn; tea.
+    - apply redtywf_refl; gen_typing.
+    - gen_typing.
   Defined.
 
   Lemma PiValid : [Γ ||-v< l > tProd F G | vΓ].
@@ -209,6 +105,102 @@ Section PiTyValidity.
 
 End PiTyValidity.
 
+Section PiTyDomValidity.
+
+  Context `{GenericTypingProperties}.
+  Context {l Γ F G} (vΓ : [||-v Γ])
+    (vΠFG : [Γ ||-v< l > tProd F G | vΓ ]).
+
+  Lemma PiValidDom : [Γ ||-v< l > F | vΓ].
+  Proof.
+  unshelve econstructor.
+  - intros Δ σ vΔ vσ; instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    destruct RvΠFG as [dom ? red ? ? ? [? ? Hdom]].
+    assert (Hrw : F[σ] = dom); [|subst dom].
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    rewrite <- (wk_id_ren_on Δ F[σ]).
+    now eapply Hdom.
+  - cbn; refold.
+    intros Δ σ σ' vΔ vσ vσ' vσσ'.
+    match goal with |- [ LRAd.pack ?P | _ ||- _ ≅ _] => set (vF := P); clearbody vF end.
+    instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    assert (vΠ := validTyExt vΠFG _ vσ vσ' vσσ').
+    eapply LRTyEqIrrelevant' with (lrA' := LRPi' RvΠFG) in vΠ; [|reflexivity].
+    destruct RvΠFG as [dom ? red ? ? ? []].
+    destruct vΠ as [dom' ? red' ? ? [Heq _]]; simpl in *.
+    specialize (Heq Δ wk_id vΔ).
+    assert (Hrw : F[σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (Hrw' : F[σ'] = dom').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    rewrite wk_id_ren_on, <- Hrw' in Heq.
+    eapply Transitivity.transEq; [|eapply Heq].
+    rewrite <- (wk_id_ren_on Δ dom) in Hrw; rewrite <- Hrw.
+    eapply LRTyEqIrrelevant' with (lrA := vF); [reflexivity|].
+    eapply reflLRTyEq.
+  Qed.
+
+  Lemma PiValidCod : [Γ,, F ||-v< l > G | validSnoc vΓ PiValidDom].
+  Proof.
+  unshelve econstructor.
+  - intros Δ σ vΔ [vσ v0].
+    instValid vσ; cbn in *.
+    apply Induction.invLRΠ in RvΠFG.
+    destruct RvΠFG as [dom cod red ? ? ? [? ? Hdom Hcod _]].
+    specialize (Hcod Δ (σ 0) wk_id vΔ).
+    assert (HF : F[↑ >> σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG0 : G[up_term_term (↑ >> σ)] = cod).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG : G[σ] = cod[σ 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0; bsimpl; apply ext_term; intros []; reflexivity. }
+    rewrite HG; apply Hcod.
+    irrelevance0; [|eapply v0].
+    now rewrite wk_id_ren_on.
+  - cbn; refold.
+    intros Δ σ σ' vΔ [vσ v0] [vσ' v0'] [vσσ' v00'].
+    match goal with |- [ LRAd.pack ?P | _ ||- _ ≅ _] => set (vG := P); clearbody vG end.
+    instValid vσ.
+    cbn in RvΠFG; apply Induction.invLRΠ in RvΠFG.
+    assert (vΠ := validTyExt vΠFG _ vσ vσ' vσσ').
+    eapply LRTyEqIrrelevant' with (lrA' := LRPi' RvΠFG) in vΠ; [|reflexivity].
+    destruct RvΠFG as [dom cod red ? ? ? [? ? ? ? Hcod]].
+    destruct vΠ as [dom' cod' red' ? ? [Hdom' Hcod']]; simpl in *.
+    specialize (Hcod' Δ (σ' 0) wk_id vΔ).
+    assert (HF : F[↑ >> σ] = dom).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HF' : F[↑ >> σ'] = dom').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    assert (HG0 : G[up_term_term (↑ >> σ)] = cod).
+    { eapply redtywf_whnf in red as [=]; [tea|constructor]. }
+    assert (HG : G[σ] = cod[σ 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0; bsimpl; apply ext_term; intros []; reflexivity. }
+    assert (HG0' : G[up_term_term (↑ >> σ')] = cod').
+    { eapply redtywf_whnf in red' as [=]; [tea|constructor]. }
+    assert (HG' : G[σ'] = cod'[σ' 0 .: @wk_id Δ >> tRel]).
+    { rewrite <- HG0'; bsimpl; apply ext_term; intros []; reflexivity. }
+    rewrite HG'.
+    assert (Hσ0 : [shpRed Δ wk_id vΔ | _ ||- σ 0 : _]).
+    { irrelevance0; [|eapply v0].
+      now rewrite wk_id_ren_on. }
+    assert (Hσ0' : [shpRed Δ wk_id vΔ | _ ||- σ' 0 : _]).
+    { eapply LRTmRedConv; [|eapply v0'].
+      eapply LRTyEqSym; rewrite HF'.
+      rewrite <- (wk_id_ren_on Δ dom').
+      apply (Hdom' _ _ vΔ). }
+    eassert (Hcod0 := Hcod Δ (σ 0) (σ' 0) wk_id vΔ Hσ0 Hσ0').
+    eapply Transitivity.transEq; [|now unshelve eapply Hcod'].
+    eapply Transitivity.transEq; [|unshelve eapply Hcod0].
+    + unshelve (irrelevance0; [|eapply reflLRTyEq]); try now symmetry.
+      shelve.
+      now eauto.
+    + irrelevance0; [|eapply v00'].
+      now rewrite wk_id_ren_on.
+  Qed.
+
+End PiTyDomValidity.
 
 Section PiTyCongruence.
 
@@ -225,22 +217,13 @@ Section PiTyCongruence.
   Lemma PiEqRed2 {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
     : [ Δ ||-< l > (tProd F G)[σ] ≅ (tProd F' G')[σ] | validTy (PiValid vΓ vF vG) tΔ vσ ].
   Proof.
-    econstructor.
-    - apply redtywf_refl.
-      exact (wft_prod (domainTy vΓ vF' tΔ vσ) (codomainTy vΓ vF' vG' tΔ vσ)).
-    - cbn. fold subst_term.
-      refine (convty_prod (domainTy vΓ vF tΔ vσ) _ _).
-      + eapply escapeEq. eapply (validTyEq vFF' tΔ vσ).
-      + eapply escapeEq. unshelve eapply (validTyEq vGG').
-        2: unshelve eapply liftSubstS' ; tea.
-    - intros Δ' ρ tΔ'. cbn. fold subst_term.
-      eapply wkEq. eapply (validTyEq vFF').
-    - intros Δ' a ρ tΔ' ra. cbn. fold subst_term.
-      eapply LRTyEqIrrelevant' with (A := G[a .: σ⟨ρ⟩]) ; tea.
-      + symmetry. eapply eq_subst_2.
-      + rewrite eq_subst_2. unshelve eapply (validTyEq vGG') ; tea.
-        refine (consSubstS vΓ tΔ' (wkSubstS vΓ tΔ tΔ' ρ vσ) vF _).
-        irrelevance.
+    pose (p := substPolyRed vΓ vF vG _ vσ).
+    pose (p' := substPolyRed vΓ vF' vG' _ vσ).
+    pose (peq := substEqPolyRedEq vΓ vF vG _ vσ vF' vG' vFF' vGG').
+    destruct (polyRedId p); destruct (polyRedId p'); destruct (polyRedEqId p peq).
+    escape; econstructor; cbn; tea.
+    - apply redtywf_refl; gen_typing.
+    - gen_typing.
   Qed.
 
   Lemma PiCong : [ Γ ||-v< l > tProd F G ≅ tProd F' G' | vΓ | PiValid vΓ vF vG ].
@@ -254,135 +237,59 @@ End PiTyCongruence.
 Section PiTmValidity.
 
   Context `{GenericTypingProperties}.
-  Context {Γ F G} (vΓ : [||-v Γ])
-    (vF : [ Γ ||-v< one > F | vΓ ])
-    (vU : [ Γ ,, F ||-v< one > U | validSnoc vΓ vF ])
-    (vFU : [ Γ ||-v< one > F : U | vΓ | UValid vΓ ])
-    (vGU : [ Γ ,, F ||-v< one > G : U | validSnoc vΓ vF | vU ]).
-
-  Lemma domainRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ||-< one > F[σ] : U | validTy (UValid vΓ) tΔ vσ ].
-  Proof.
-    exact (validTm vFU tΔ vσ).
-  Defined.
-
-  Lemma domainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ |-[ ta ] F[σ] : U ].
-  Proof.
-    eapply escapeTerm.
-    now eapply domainRedU.
-    Unshelve. all: tea.
-  Defined.
-
-  Lemma domainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ |-[ ta ] F[σ] ≅ F[σ] : U ].
-  Proof.
-    refine (escapeEqTerm (validTy (UValid vΓ) tΔ vσ) _).
-    eapply LREqTermRefl_. now eapply domainRedU.
-  Qed.
-
-  Lemma codomainRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] ||-< one > G[ up_term_term σ ] : U | validTy vU _ (liftSubstS' vF vσ) ].
-  Proof.
-    refine (validTm vGU _ (liftSubstS' vF vσ)).
-  Qed.
-
-  Lemma codomainTmU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] |-[ ta ] G[ up_term_term σ ] : U ].
-  Proof.
-    eapply escapeTerm.
-    now eapply codomainRedU.
-    Unshelve. all: tea.
-  Qed.
-
-  Lemma codomainTmReflU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ,, F[σ] |-[ ta ] G[ up_term_term σ ] ≅ G[ up_term_term σ ] : U].
-  Proof.
-    refine (escapeEqTerm (validTy vU _ (liftSubstS' vF vσ)) _).
-    eapply LREqTermRefl_. now eapply codomainRedU.
-  Qed.
+  Context {Γ F G} (VΓ : [||-v Γ])
+    (VF : [ Γ ||-v< one > F | VΓ ])
+    (VU : [ Γ ,, F ||-v< one > U | validSnoc VΓ VF ])
+    (VFU : [ Γ ||-v< one > F : U | VΓ | UValid VΓ ])
+    (VGU : [ Γ ,, F ||-v< one > G : U | validSnoc VΓ VF | VU ]) .
+    (* (VF := univValid (l':=zero) _ _ vFU)
+    (VG := univValid (l':=zero) _ _ vGU). *)
 
   Lemma prodTyEqU {Δ σ σ'} (tΔ : [ |-[ ta ] Δ])
-    (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    (vσ' : [vΓ | Δ ||-v σ' : _ | tΔ])
-    (vσσ' : [vΓ | Δ ||-v σ ≅ σ' : _ | tΔ | vσ ])
+    (Vσ : [VΓ | Δ ||-v σ : _ | tΔ])
+    (Vσ' : [VΓ | Δ ||-v σ' : _ | tΔ])
+    (Vσσ' : [VΓ | Δ ||-v σ ≅ σ' : _ | tΔ | Vσ ])
     : [Δ |-[ ta ] tProd F[σ] G[up_term_term σ] ≅ tProd F[σ'] G[up_term_term σ'] : U].
   Proof.
-    assert ([Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
-    { replace (F[_ >> _]) with (F[σ]⟨S⟩) by (now bsimpl).
-      refine (ty_var (wfc_cons tΔ (domainTy vΓ vF _ vσ)) (in_here _ _)). }
-    assert ([Δ,, F[σ] |-[ ta ] F[↑ >> (tRel 0 .: σ⟨@wk1 Δ F[σ]⟩)]]).
-    { replace (F[_ >> _]) with (F[σ]⟨@wk1 Δ F[σ]⟩) by (now bsimpl).
-      apply wft_wk; [now eapply wfc_ty|].
-      now eapply escape, vF. }
-    assert ([ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ F[σ']⟩)]]).
-    { eapply ty_conv; [tea|].
-      eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ'). }
-    assert (Ne[ Δ,, F[σ] |-[ ta ] tRel 0 : F[↑ >> (tRel 0 .: σ'⟨@wk1 Δ F[σ']⟩)]]).
-    { eapply tm_ne_conv; [eapply tm_ne_rel| |].
-      - pose proof vF as [vF0 _].
-        unshelve (eapply escape; eapply vF0, vσ).
-      - replace (F[_ >> _]) with (F[σ']⟨@wk1 Δ F[σ]⟩) by (now bsimpl).
-        apply wft_wk; [now eapply wfc_ty|].
-        now eapply escape, vF.
-      - replace (F[_ >> _]) with (F[σ']⟨↑⟩) by (now bsimpl).
-      do 2 erewrite <- wk1_ren_on.
-      apply convty_wk; [eapply wfc_ty; tea|].
-      eapply escapeEq, vF; tea. }
-    refine (convtm_prod (domainTmU tΔ vσ) _ _).
-    - eapply escapeEqTerm. eapply (validTmExt vFU tΔ vσ vσ' vσσ').
-    - rewrite (eq_subst_1 F G Δ σ). rewrite (eq_subst_1 F G Δ σ').
-      eapply escapeEqTerm. unshelve refine (validTmExt vGU _ _ _ _).
-      + eapply wfc_cons. easy. refine (domainTy vΓ vF tΔ vσ).
-      + refine (liftSubstS vΓ tΔ vF vσ).
-      + unshelve econstructor.
-        * refine (wk1SubstS vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ').
-        * cbn. eapply neuTerm; try apply convneu_var; tea.
-      + unshelve econstructor.
-        * refine (wk1SubstSEq vΓ tΔ (domainTy vΓ vF tΔ vσ) vσ vσσ').
-        * cbn. eapply neuTermEq; try eapply convneu_var; tea.
-          all: eapply tm_ne_conv; [|eassumption|symmetry; eapply (domainTyEq vΓ vF tΔ vσ vσ' vσσ')].
-          all: assumption.
+    pose proof (Vuσ := liftSubstS' VF Vσ).
+    pose proof (Vureaσ' := liftSubstSrealign' VF Vσσ' Vσ').
+    pose proof (Vuσσ' := liftSubstSEq' VF Vσσ').
+    instAllValid Vσ Vσ' Vσσ'; instAllValid Vuσ Vureaσ' Vuσσ'; escape.
+    eapply convtm_prod; tea.
   Qed.
 
-  Lemma PiRedU {Δ σ}
-    (tΔ : [ |-[ ta ] Δ]) (vσ : [vΓ | Δ ||-v σ : _ | tΔ])
-    : [ Δ ||-< one > (tProd F G)[σ] : U | validTy (UValid vΓ) tΔ vσ ].
+  Lemma PiRedU {Δ σ} (tΔ : [ |-[ ta ] Δ]) (Vσ : [VΓ | Δ ||-v σ : _ | tΔ])
+    : [ Δ ||-< one > (tProd F G)[σ] : U | validTy (UValid VΓ) tΔ Vσ ].
   Proof.
-    econstructor.
-    - apply redtmwf_refl ; cbn.
-      refine (ty_prod (domainTmU tΔ vσ) (codomainTmU tΔ vσ)).
-    - cbn; constructor.
-    - cbn; apply tm_nf_prod.
-      + assert (HF := validTm vFU tΔ vσ); now apply reifyTerm in HF.
-      + assert (vρ := liftSubstS vΓ tΔ vF vσ).
-        assert (HG := validTm vGU _ vρ).
-        apply reifyTerm in HG.
-        erewrite eq_subst_1; apply HG.
-    - cbn. eapply (convtm_prod (domainTmU tΔ vσ) (domainTmReflU tΔ vσ) (codomainTmReflU tΔ vσ)).
-    - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ vσ)).
-      refine (univValid _ _ vFU).
-      eapply (irrelevanceValidity (validSnoc vΓ vF) _).
-      refine (univValid _ _ vGU).
+    pose proof (Vσσ := reflSubst _ _ Vσ).
+    pose proof (Vuσ := liftSubstS' VF Vσ).
+    pose proof (Vuσσ := liftSubstSEq' VF Vσσ).
+    instAllValid Vσ Vσ Vσσ; instAllValid Vuσ Vuσ Vuσσ; escape.
+    econstructor; cbn.
+    - apply redtmwf_refl; cbn in *; now eapply ty_prod.
+    - constructor.
+    - now eapply convtm_prod.
+    - cbn. unshelve refine (LRCumulative (PiRed _ _ _ tΔ Vσ));
+      unshelve eapply univValid; tea; try irrValid.
   Defined.
 
-  Lemma PiValidU : [ Γ ||-v< one > tProd F G : U | vΓ | UValid vΓ ].
+  Lemma PiValidU : [ Γ ||-v< one > tProd F G : U | VΓ | UValid VΓ ].
   Proof.
     econstructor.
-    - intros Δ σ tΔ vσ.
-      exact (PiRedU tΔ vσ).
-    - intros Δ σ σ' tΔ vσ vσ' vσσ'.
-      pose proof (univValid (l' := zero) _ _ vFU) as VF0.
-      pose proof (irrelevanceValidity (validSnoc vΓ vF)
-                    (validSnoc (l := zero) vΓ VF0)
-                    (univValid (l' := zero) _ _ vGU)) as VG0.
+    - intros Δ σ tΔ Vσ.
+      exact (PiRedU tΔ Vσ).
+    - intros Δ σ σ' tΔ Vσ Vσ' Vσσ'.
+      pose proof (univValid (l' := zero) _ _ VFU) as VF0.
+      pose proof (irrelevanceTy (validSnoc VΓ VF)
+                    (validSnoc (l := zero) VΓ VF0)
+                    (univValid (l' := zero) _ _ VGU)) as VG0.
       unshelve econstructor ; cbn.
-      + exact (PiRedU tΔ vσ).
-      + exact (PiRedU tΔ vσ').
-      + exact (LRCumulative (PiRed vΓ VF0 VG0 tΔ vσ)).
-      + exact (prodTyEqU tΔ vσ vσ' vσσ').
-      + exact (LRCumulative (PiRed vΓ VF0 VG0 tΔ vσ')).
-      + pose proof (PiEqRed1 vΓ VF0 VG0 tΔ vσ vσ' vσσ').
+      + exact (PiRedU tΔ Vσ).
+      + exact (PiRedU tΔ Vσ').
+      + exact (LRCumulative (PiRed VΓ VF0 VG0 tΔ Vσ)).
+      + exact (prodTyEqU tΔ Vσ Vσ' Vσσ').
+      + exact (LRCumulative (PiRed VΓ VF0 VG0 tΔ Vσ')).
+      + pose proof (PiEqRed1 VΓ VF0 VG0 tΔ Vσ Vσ' Vσσ').
         irrelevanceCum.
   Qed.
 
@@ -408,69 +315,31 @@ Section PiTmCongruence.
   Lemma PiCongTm : [ Γ ||-v< one > tProd F G ≅ tProd F' G' : U | vΓ | UValid vΓ ].
   Proof.
     econstructor.
-    intros Δ σ tΔ vσ.
+    intros Δ σ tΔ Vσ.
     pose proof (univValid (l' := zero) _ _ vFU) as vF0.
-    pose proof (irrelevanceValidity (validSnoc vΓ vF)
+    pose proof (univValid (l' := zero) _ _ vF'U) as vF'0.
+    pose proof (Vσσ := reflSubst _ _ Vσ).
+    pose proof (Vuσ := liftSubstS' vF Vσ).
+    pose proof (Vuσσ := liftSubstSEq' vF Vσσ).
+    instAllValid Vσ Vσ Vσσ; instAllValid Vuσ Vuσ Vuσσ; escape.
+    pose proof (irrelevanceTy (validSnoc vΓ vF)
                   (validSnoc (l := zero) vΓ vF0)
                   (univValid (l' := zero) _ _ vGU)) as vG0.
-    pose proof (univValid (l' := zero) _ _ vF'U) as vF'0.
-    pose proof (irrelevanceValidity (validSnoc vΓ vF')
+    pose proof (irrelevanceTy (validSnoc vΓ vF')
                   (validSnoc (l := zero) vΓ vF'0)
                   (univValid (l' := zero) _ _ vG'U)) as vG'0.
     unshelve econstructor ; cbn.
-    - exact (PiRedU vΓ vF vU vFU vGU tΔ vσ).
-    - exact (PiRedU vΓ vF' vU' vF'U vG'U tΔ vσ).
-    - exact (LRCumulative (PiRed vΓ vF0 vG0 tΔ vσ)).
-    - cbn. refine (convtm_prod (domainTmU vΓ vFU tΔ vσ) _ _).
-      + eapply escapeEqTerm. eapply (validTmEq vFF' tΔ vσ).
-      + eapply escapeEqTerm. unshelve eapply (validTmEq vGG').
-        2: unshelve eapply liftSubstS' ; tea.
-    - exact (LRCumulative (PiRed vΓ vF'0 vG'0 tΔ vσ)).
-    - enough ([ Δ ||-< zero > (tProd F G)[σ] ≅ (tProd F' G')[σ] | PiRed vΓ vF0 vG0 tΔ vσ]) by irrelevanceCum.
-      refine (PiEqRed2 vΓ vF0 vG0 vF'0 vG'0 _ _ tΔ vσ).
+    - exact (PiRedU vΓ vF vU vFU vGU tΔ Vσ).
+    - exact (PiRedU vΓ vF' vU' vF'U vG'U tΔ Vσ).
+    - exact (LRCumulative (PiRed vΓ vF0 vG0 tΔ Vσ)).
+    - now eapply convtm_prod.
+    - exact (LRCumulative (PiRed vΓ vF'0 vG'0 tΔ Vσ)).
+    - enough ([ Δ ||-< zero > (tProd F G)[σ] ≅ (tProd F' G')[σ] | PiRed vΓ vF0 vG0 tΔ Vσ]) by irrelevanceCum.
+      refine (PiEqRed2 vΓ vF0 vG0 vF'0 vG'0 _ _ tΔ Vσ).
       + exact (univEqValid vΓ (UValid vΓ) vF0 vFF').
       + pose proof (univEqValid (validSnoc vΓ vF) vU (univValid (l' := zero) _ _ vGU) vGG') as vGG'0.
-        refine (irrelevanceEq _ _ _ _ vGG'0).
+        refine (irrelevanceTyEq _ _ _ _ vGG'0).
   Qed.
 
 End PiTmCongruence.
 
-
-Section FuncTyValidity.
-
-  Context `{GenericTypingProperties}.
-
-  Lemma FunValid {Γ F G l}
-      (vΓ : [||-v Γ])
-      (vF : [ Γ ||-v< l > F | vΓ ])
-      (vG : [ Γ ||-v< l > G | vΓ ])
-    : [ Γ ||-v< l > tProd F (G⟨@wk1 Γ F⟩) | vΓ ].
-  Proof.
-    unshelve eapply PiValid ; tea.
-    eapply wk1ValidTy. eassumption.
-  Defined.
-
-End FuncTyValidity.
-
-
-Section FuncTyCongruence.
-
-  Context `{GenericTypingProperties}.
-
-  Lemma FunCong {Γ F G F' G' l}
-      (vΓ : [||-v Γ])
-      (vF : [ Γ ||-v< l > F | vΓ ])
-      (vG : [ Γ ||-v< l > G | vΓ ])
-      (vF' : [ Γ ||-v< l > F' | vΓ ])
-      (vG' : [ Γ ||-v< l > G' | vΓ ])
-      (vFF' : [ Γ ||-v< l > F ≅ F' | vΓ | vF ])
-      (vGG' : [ Γ ||-v< l > G ≅ G' | vΓ | vG ])
-    : [ Γ ||-v< l > tProd F (G⟨@wk1 Γ F⟩) ≅ tProd F' (G'⟨@wk1 Γ F'⟩) | vΓ | FunValid vΓ vF vG ].
-  Proof.
-    unshelve eapply PiCong ; tea.
-    - eapply wk1ValidTy. eassumption.
-    - replace (G'⟨@wk1 Γ F'⟩) with (G'⟨@wk1 Γ F⟩) by (now bsimpl).
-      eapply wk1ValidTyEq. eassumption.
-  Qed.
-
-End FuncTyCongruence.

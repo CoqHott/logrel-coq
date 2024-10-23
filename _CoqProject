@@ -22,11 +22,9 @@ theories/GenericTyping.v
 theories/DeclarativeTyping.v
 theories/DeclarativeInstance.v
 
-theories/Monad2.v
 theories/Monad.v
 theories/LogicalRelation.v
 theories/LogicalRelation/Induction.v
-theories/LogicalRelation/Monotonicity.v
 theories/LogicalRelation/Escape.v
 theories/LogicalRelation/ShapeView.v
 theories/LogicalRelation/Reflexivity.v
@@ -39,6 +37,7 @@ theories/LogicalRelation/Reduction.v
 theories/LogicalRelation/NormalRed.v
 theories/LogicalRelation/Application.v
 theories/LogicalRelation/SimpleArr.v
+theories/LogicalRelation/Id.v
 
 theories/Validity.v
 theories/Substitution/Irrelevance.v
@@ -50,25 +49,34 @@ theories/Substitution/Reduction.v
 theories/Substitution/SingleSubst.v
 theories/Substitution/Introductions/Application.v
 theories/Substitution/Introductions/Universe.v
+theories/Substitution/Introductions/Poly.v
 theories/Substitution/Introductions/Pi.v
 theories/Substitution/Introductions/Lambda.v
 theories/Substitution/Introductions/SimpleArr.v
 theories/Substitution/Introductions/Var.v
 theories/Substitution/Introductions/Nat.v
 theories/Substitution/Introductions/Empty.v
+theories/Substitution/Introductions/Sigma.v
+theories/Substitution/Introductions/Id.v
 theories/Fundamental.v
 
 theories/AlgorithmicTyping.v
 theories/DeclarativeSubst.v
 theories/TypeConstructorsInj.v
 theories/Normalisation.v
+theories/Consequences.v
+
 theories/BundledAlgorithmicTyping.v
 theories/AlgorithmicConvProperties.v
 theories/AlgorithmicTypingProperties.v
 theories/TypeUniqueness.v
 
 theories/Decidability/Functions.v
+theories/Decidability/Soundness.v
+theories/Decidability/Completeness.v
+theories/Decidability/Termination.v
+theories/Decidability.v
 
-theories/Decidability/Functions.v
-
+theories/TermNotations.v
+theories/Decidability/Execution.v
 theories/Positivity.v

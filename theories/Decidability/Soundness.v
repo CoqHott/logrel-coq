@@ -1,18 +1,19 @@
 (** * LogRel.Decidability.Soundness: the implementations imply the inductive predicates. *)
-From Coq Require Import Nat Lia.
+From Coq Require Import Nat Lia Arith.
 From Equations Require Import Equations.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context Notations UntypedReduction DeclarativeTyping DeclarativeInstance GenericTyping NormalForms.
-From LogRel Require Import Validity LogicalRelation Fundamental DeclarativeSubst TypeConstructorsInj BundledAlgorithmicTyping Normalisation.
+From LogRel Require Import Utils BasicAst Context Notations UntypedReduction GenericTyping NormalForms.
+From LogRel Require Import AlgorithmicTyping.
 From LogRel.Decidability Require Import Functions.
-From PartialFun Require Import Monad PartialFun.
+From PartialFun Require Import Monad PartialFun MonadExn.
 
+Import AlgorithmicTypingData.
 
-Import DeclarativeTypingProperties.
+Set Universe Polymorphism.
 
 Section RedImplemSound.
 
-Lemma zip_ored t t' π : [t ⇒ t'] -> [zip t π ⇒ zip t' π].
+Lemma zip_ored t t' π : [t ⤳ t'] -> [zip t π ⤳ zip t' π].
 Proof.
   intros Hred.
   induction π as [|[]] in t, t', Hred |- * ; cbn in *.
@@ -20,7 +21,7 @@ Proof.
   all: apply IHπ ; now econstructor.
 Qed.
 
-Lemma zip_red t t' π : [t ⇒* t'] -> [zip t π ⇒* zip t' π].
+Lemma zip_red t t' π : [t ⤳* t'] -> [zip t π ⤳* zip t' π].
 Proof.
   induction 1.
   1: reflexivity.
@@ -29,7 +30,7 @@ Proof.
 Qed.
 
 Lemma red_stack_sound :
-  funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => [zip t π ⇒* t']).
+  funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => [zip t π ⤳* t']).
 Proof.
   intros ? _.
   funelim (wh_red_stack _).
@@ -80,14 +81,11 @@ Proof.
   - now eapply whnf_tm_view1_nat.
 Qed.
 
-Corollary red_sound :
-  funrect wh_red (fun _ => True) (fun t t' => [t ⇒* t'] × whnf t').
+Corollary _red_sound :
+  funrect wh_red (fun _ => True) (fun t t' => [t ⤳* t'] × whnf t').
 Proof.
   intros ? _.
-  funelim (wh_red _).
-  cbn.
-  intros ? H.
-  split.
+  cbn; intros ? H; split.
   - eapply funrect_graph in H.
     2: exact red_stack_sound. (* apply fails !? *)
     all: easy.
@@ -96,242 +94,206 @@ Proof.
     all: easy.
 Qed.
 
+#[universes(polymorphic)]Corollary red_sound t t' :
+  graph wh_red t t' ->
+  [t ⤳* t'] × whnf t'.
+Proof.
+  intros H.
+  eapply (funrect_graph wh_red _ _ _ _ _red_sound). (* weird universe inconsistency? *)
+  1: easy.
+  eassumption.
+Qed.
+
 End RedImplemSound.
-
-Equations Derive NoConfusion Subterm for term.
-
-Section RedImplemComplete.
-
-  #[local]Definition R_aux := lexprod term term cored term_subterm.
-
-  #[local]Definition R (t u : term × stack) :=
-    R_aux (Datatypes.pair (zip (fst t) (snd t)) (fst t)) (Datatypes.pair (zip (fst u) (snd u)) (fst u)).
-
-  #[local]Lemma R_acc t π :
-    Acc cored (zip t π) ->
-    Acc R (t, π).
-  Proof.
-  intros h.
-  eapply acc_A_B_lexprod with (leA := cored) (leB := term_subterm) (y := t) in h.
-  - remember (Datatypes.pair (zip t π) t) as z eqn:e.
-    induction h as [z h ih] in t, π, e |- *. subst.
-    constructor. intros [v ρ] hr.
-    unfold R, R_aux in hr ; cbn in *.
-    eapply ih. 2: reflexivity.
-    assumption.
-  - eapply well_founded_term_subterm.
-  - eapply well_founded_term_subterm.
-  Qed.
-
-  #[local] Lemma well_typed_acc Γ t π :
-    well_typed Γ (zip t π) ->
-    Acc R (t,π).
-  Proof.
-    intros.
-    now eapply R_acc, typing_SN.
-  Qed.
-
-  Lemma well_typed_zip Γ t π :
-    well_typed Γ (zip t π) ->
-    ∑ T, [Γ |- t : T] × (forall u, [Γ |- t ≅ u : T] -> well_typed Γ (zip u π)).
-  Proof.
-    intros H.
-    induction π as [|[]] in t, H |- * ; cbn.
-    - destruct H as [T Hty].
-      exists T ; split.
-      1: eassumption.
-      intros *.
-      eexists.
-      boundary.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermEmptyElimCong ; tea ; refold.
-      2: eassumption.
-      now econstructor.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&[]&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: eapply TermNatElimCong ; tea ; refold.
-      + now econstructor.
-      + now econstructor.
-      + now eapply TermRefl.
-      + eassumption.
-    - cbn in H.
-      eapply IHπ in H as (T&(?&(?&?&[])&?)%termGen'&Hsubst) ; subst.
-      eexists ; split ; tea.
-      intros u' Htyu.
-      eapply Hsubst.
-      econstructor.
-      1: econstructor ; tea.
-      2: eassumption.
-      now econstructor.
-  Qed.
-
-  Lemma isType_ty Γ T t :
-    [Γ |- t : T] ->
-    isType t ->
-    ~ whne t ->
-    [Γ |- U ≅ T].
-  Proof.
-    intros Hty HisT Hne.
-    all: inversion HisT ; subst ; clear HisT ; cycle -1.
-    1: now exfalso.
-    all: clear Hne.
-    all: eapply termGen' in Hty as (?&[]&?); subst.
-    all: eassumption.
-  Qed.
-
-  Lemma zip1_notType Γ T t π :
-    isType t ->
-    ~ whne t ->
-    [Γ |- zip1 t π : T] ->
-    False.
-  Proof.
-    intros Ht Ht' Hty.
-    destruct π ; cbn in * ;
-      eapply termGen' in Hty as (?&[]&?) ; subst ; prod_hyp_splitter ;
-      match goal with H : [_ |-[de] t : _] |- _ => (unshelve eapply isType_ty, ty_conv_inj in H) end ; tea.
-    all: try solve [now econstructor].
-    all: now easy.
-  Qed.
-
-  Lemma wh_red_stack_complete Γ t π :
-    well_typed Γ (zip t π) ->
-    domain wh_red_stack (t,π).
-  Proof.
-    intros Hty.
-    pose proof (Hacc := well_typed_acc _ _ _ Hty).
-    change (zip t π) with (zip (fst (t,π)) (snd (t,π))) in *.
-    set (z := (t, π)) in *. clearbody z.
-    induction Hacc as [z H IH] in Hty |- *.
-    apply compute_domain. funelim (wh_red_stack z).
-    all: simpl.
-    all: try easy.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [? _]] ; cbn in *.
-      eapply zip1_notType ; tea.
-      all: now eapply isType_tm_view1.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[_ _ (?&[?[->]]&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[_ _ _ _ (?&[?[->]]&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-    - split ; [|easy].
-      eapply IH.
-      + red. red. cbn.
-        left.
-        constructor.
-        eapply zip_ored.
-        now econstructor.
-      + cbn in *.
-        eapply well_typed_zip in Hty as (?&[??Hu]).
-        eapply Hu, RedConvTeC, subject_reduction ; tea.
-        now do 2 econstructor.
-    - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-      eapply termGen' in Hty as (?&[? ? (?&->&Hconv)%termGen']&?).
-      unshelve eapply ty_conv_inj in Hconv.
-      1-2: now econstructor.
-      easy.
-  - split ; [|easy].
-    eapply IH.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&(?&?&[_ (?&->&Hconv)%termGen'])&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&[_ _ (?&[->]&Hconv)%termGen']&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    + red. red. cbn.
-      left.
-      constructor.
-      eapply zip_ored.
-      now econstructor.
-    + cbn in *.
-      eapply well_typed_zip in Hty as (?&[??Hu]).
-      eapply Hu, RedConvTeC, subject_reduction ; tea.
-      now do 2 econstructor.
-  - cbn in * ; eapply well_typed_zip in Hty as [? [Hty _]] ; cbn in *.
-    eapply termGen' in Hty as (?&(?&?&[_ (?&[->]&Hconv)%termGen'])&?).
-    unshelve eapply ty_conv_inj in Hconv.
-    1-2: now econstructor.
-    easy.
-  - cbn in *.
-    split ; [|easy].
-    eapply IH ; cbn in *.
-    2: eassumption.
-    red. red. cbn.
-    right.
-    econstructor.
-    destruct s ; cbn ; now constructor.
-  Qed.
-
-  Corollary wh_red_complete Γ t :
-    well_typed Γ t ->
-    domain wh_red t.
-  Proof.
-    intros.
-    eapply compute_domain.
-    Fail rewrite wh_red_equation_1.
-    (* weird, should work? probably the reason why simp also fails? *)
-    rewrite (wh_red_equation_1 t).
-    cbn.
-    split ; [|easy].
-    Fail eapply wh_red_stack_complete.
-    (* again, why the failure? *)
-    now eapply (wh_red_stack_complete Γ t nil).
-  Qed.
-  
-End RedImplemComplete.
 
 Section CtxAccessCorrect.
 
-  Lemma ctx_access_sound :
-    funrect ctx_access (fun _ => True) (fun '(Γ,n) d => in_ctx Γ n d).
+  Lemma ctx_access_sound Γ n d :
+    ctx_access Γ n = success d ->
+    in_ctx Γ n d.
   Proof.
-    intros ? _.
-    funelim (ctx_access _) ; cbn.
-    - easy.
-    - now econstructor.
-    - split ; try easy.
-      intros.
-      now econstructor.
+    funelim (ctx_access Γ n).
+    all: simp ctx_access ; cbn.
+    - inversion 1.
+    - inversion 1.
+      now constructor.
+    - destruct (ctx_access Γ n') ; cbn.
+      all: inversion 1 ; subst.
+      constructor.
+      now apply H.
   Qed.
 
   Lemma ctx_access_complete Γ n d :
     in_ctx Γ n d ->
-    domain ctx_access (Γ,n).
+    ctx_access Γ n = success d.
   Proof.
     induction 1.
-    all: apply compute_domain ; simp ctx_access ; cbn.
-    1: easy.
-    split ; tea.
-    easy.
+    all: simp ctx_access ; cbn.
+    - reflexivity.
+    - now rewrite IHin_ctx. 
+  Qed.
+
+  Corollary ctx_access_correct Γ n d :
+    in_ctx Γ n d <~> (ctx_access Γ n = success d).
+  Proof.
+    split.
+    - eapply ctx_access_complete.
+    - eapply ctx_access_sound.
   Qed.
 
 End CtxAccessCorrect.
+
+Ltac funelim_conv :=
+  funelim (conv _); 
+    [ funelim (conv_ty _) | funelim (conv_ty_red _) | 
+      funelim (conv_tm _) | funelim (conv_tm_red _) | 
+      funelim (conv_ne _) | funelim (conv_ne_red _) ].
+
+Section ConversionSound.
+
+
+  #[universes(polymorphic)]Definition conv_sound_type
+    (x : conv_full_dom)
+    (r : conv_full_cod x) : Type :=
+  match x, r with
+  | _, (exception _) => True
+  | (ty_state;Γ;_;T;V), (success _) =>  [Γ |-[al] T ≅ V]
+  | (ty_red_state;Γ;_;T;V), (success _) => [Γ |-[al] T ≅h V]
+  | (tm_state;Γ;A;t;u), (success _) => [Γ |-[al] t ≅ u : A]
+  | (tm_red_state;Γ;A;t;u), (success _) =>
+      whnf A -> whnf t -> whnf u -> [Γ |-[al] t ≅h u : A]
+  | (ne_state;Γ;_;m;n), (success T) => [Γ |-[al] m ~ n ▹ T]
+  | (ne_red_state;Γ;_;m;n), (success T) => [Γ |-[al] m ~h n ▹ T] × whnf T
+  end.
+
+  Lemma _implem_conv_sound :
+    funrect conv (fun _ => True) conv_sound_type.
+  Proof.
+    intros x _.
+    funelim_conv ; cbn.
+    all: intros ; simp conv_sound_type ; try easy ; cbn.
+    all: repeat (
+      match goal with
+      | |- True * _ => split ; [easy|..]
+      | |- forall x : exception _ _, _ => intros [|] ; [..|easy] ; cbn
+      | |- _ -> _ => simp conv_sound_type ; intros ?
+      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; try easy
+      | s : sort |- _ => destruct s
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+      | H : (_;_;_;_) = (_;_;_;_) |- _ => injection H; clear H; intros; subst 
+      end).
+    all: try solve [now econstructor].
+    - econstructor ; tea.
+      now econstructor.
+    - econstructor ; tea.
+      destruct H ; simp build_nf_view3 build_ty_view1 in Heq ; try solve [inversion Heq].
+      all: try now econstructor.
+    - econstructor; tea; [intuition (auto with *)| now rewrite 2!Weakening.wk1_ren_on].
+    - eapply convne_meta_conv.
+      2: reflexivity.
+      + econstructor.
+        now eapply ctx_access_correct.
+      + f_equal.
+        symmetry.
+        now eapply Nat.eqb_eq.
+    - split; tea. now econstructor.
+  Qed.
+
+  Corollary implem_conv_sound x r :
+    graph conv x r ->
+    conv_sound_type x r.
+  Proof.
+    eapply funrect_graph.
+    1: now apply _implem_conv_sound.
+    easy.
+  Qed.
+
+End ConversionSound.
+
+Ltac funelim_typing :=
+  funelim (typing _); 
+    [ funelim (typing_inf _) | 
+      funelim (typing_check _) |
+      funelim (typing_inf_red _) | 
+      funelim (typing_wf_ty _) ].
+
+Section TypingCorrect.
+
+  Lemma ty_view1_small_can T n : build_ty_view1 T = ty_view1_small n -> ~ isCanonical T.
+  Proof.
+    destruct T ; cbn.
+    all: inversion 1.
+    all: inversion 1.
+  Qed.
+
+  #[universes(polymorphic)]Definition typing_sound_type
+    (x : ∑ (c : typing_state) (_ : context) (_ : tstate_input c), term)
+    (r : exn errors (tstate_output x.π1)) : Type :=
+  match x, r with
+  | _, (exception _) => True
+  | (wf_ty_state;Γ;_;T), (success _) => [Γ |-[al] T]
+  | (inf_state;Γ;_;t), (success T) => [Γ |-[al] t ▹ T]
+  | (inf_red_state;Γ;_;t), (success T) => [Γ |-[al] t ▹h T]
+  | (check_state;Γ;T;t), (success _) => [Γ |-[al] t ◃ T]
+  end.
+
+
+  Lemma _implem_typing_sound :
+    funrect typing (fun _ => True) typing_sound_type.
+  Proof.
+    intros x _.
+    funelim_typing ; cbn.
+    all: intros ; simp typing_sound_type ; try easy ; cbn.
+    all: repeat (
+      match goal with
+      | |- True * _ => split ; [easy|..]
+      | |- forall x : exception _ _, _ => intros [|] ; simp typing_sound_type ; try easy ; cbn
+      | |- _ -> _ => simp typing_sound_type ; intros ?
+      | |- context [match ?t with | _ => _ end] => destruct t ; cbn ; simp typing_sound_type ; try easy
+      | s : sort |- _ => destruct s
+      | H : graph wh_red _ _ |- _ => eapply red_sound in H as []
+      | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
+      | H : ctx_access _ _ = _ |- _ => eapply ctx_access_correct in H
+      | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
+      | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst 
+      end).
+    all: try now econstructor.
+    econstructor; tea; now rewrite 2!Weakening.wk1_ren_on.
+  Qed.
+
+  Lemma implem_typing_sound x r:
+    graph typing x r ->
+    typing_sound_type x r.
+  Proof.
+    eapply funrect_graph.
+    1: now apply _implem_typing_sound.
+    easy.
+  Qed.
+
+End TypingCorrect.
+
+Section CtxTypingSound.
+
+  Lemma _check_ctx_sound :
+    funrect check_ctx (fun _ => True) (fun Γ r => if r then [|- Γ] else True).
+  Proof.
+    intros ? _.
+    funelim (check_ctx _) ; cbn.
+    - now constructor.
+    - split ; [easy|].
+      intros [|] ; cbn ; try easy.
+      intros ? [] ?%implem_typing_sound ; cbn in *.
+      2: easy.
+      now econstructor.
+  Qed.
+     
+  Lemma check_ctx_sound Γ :
+    graph check_ctx Γ (success tt) ->
+    [|-[al] Γ].
+  Proof.
+    eintros ?%funrect_graph.
+    2: eapply _check_ctx_sound.
+    all: easy.
+  Qed.
+
+End CtxTypingSound.

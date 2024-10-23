@@ -1,29 +1,9 @@
 (** * LogRel.NormalForms: definition of normal and neutral forms, and properties. *)
+From Coq Require Import ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Context LContexts.
+From LogRel Require Import Utils BasicAst LContexts Context.
 
 (** ** Weak-head normal forms and neutrals. *)
-
-Inductive whne : term -> Type :=
-  | whne_tRel {v} : whne (tRel v)
-  | whne_tApp {n t} : whne n -> whne (tApp n t)
-  | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
-  | whne_tBoolElim {P hz hs n} : whne n -> whne (tBoolElim P hz hs n)
-  | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
-  | whne_containsne {n t} : whne t -> whne (tAlpha (nSucc n t)).
-
-Inductive alphawhne (l : wfLCon) (n : nat) : term -> Type :=
-  | alphawhne_base :
-    not_in_LCon (pi1 l) n ->
-    alphawhne l n (tAlpha (nat_to_term n))
-  | alphawhne_tApp {t u} : alphawhne l n t -> alphawhne l n (tApp t u)
-  | alphawhne_tNatElim {P hz hs t} : alphawhne l n t -> alphawhne l n (tNatElim P hz hs t)
-  | alphawhne_tBoolElim {P hz hs t} :
-    alphawhne l n t ->
-    alphawhne l n (tBoolElim P hz hs t)
-  | alphawhne_tEmptyElim {P e} : alphawhne l n e -> alphawhne l n (tEmptyElim P e)
-  | alphawhne_alpha {t} : alphawhne l n t -> alphawhne l n (tAlpha t).
-                                           
 
 Inductive whnf : term -> Type :=
   | whnf_tSort {s} : whnf (tSort s)
@@ -32,21 +12,32 @@ Inductive whnf : term -> Type :=
   | whnf_tNat : whnf tNat
   | whnf_tZero : whnf tZero
   | whnf_tSucc {n} : whnf (tSucc n)
+  | whnf_tEmpty : whnf tEmpty
   | whnf_tBool : whnf tBool
   | whnf_tTrue : whnf tTrue
   | whnf_tFalse : whnf tFalse
-  | whnf_tEmpty : whnf tEmpty
-  | whnf_whne {n} : whne n -> whnf n.
-(*  | whnf_tAlpha {n} : alphawhne l n -> whnf l n.*)
-  
+  | whnf_tSig {A B} : whnf (tSig A B)
+  | whnf_tPair {A B a b} : whnf (tPair A B a b)
+  | whnf_tId {A x y} : whnf (tId A x y)
+  | whnf_tRefl {A x} : whnf (tRefl A x)
+  | whnf_whne {n} : whne n -> whnf n
+with whne : term -> Type :=
+  | whne_tRel {v} : whne (tRel v)
+  | whne_tApp {n t} : whne n -> whne (tApp n t)
+  | whne_tNatElim {P hz hs n} : whne n -> whne (tNatElim P hz hs n)
+  | whne_tBoolElim {P hz hs n} : whne n -> whne (tBoolElim P hz hs n)
+  | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
+  | whne_tFst {p} : whne p -> whne (tFst p)
+  | whne_tSnd {p} : whne p -> whne (tSnd p)
+  | whne_tIdElim {A x P hr y e} : whne e -> whne (tIdElim A x P hr y e)
+  | whne_containsne {n t} : whne t -> whne (tAlpha (nSucc n t)).
+
 #[global] Hint Constructors whne whnf : gen_typing.
 
 Ltac inv_whne :=
   repeat lazymatch goal with
     | H : whne _ |- _ =>
-        try solve [inversion H] ; block H
-    | H : alphawhne _ _ _ |- _ =>
-        try solve [inversion H] ; block H
+    try solve [inversion H] ; block H
   end; unblock.
 
 Lemma neSort s : whne (tSort s) -> False.
@@ -63,6 +54,7 @@ Lemma neLambda A t : whne (tLambda A t) -> False.
 Proof.
   inversion 1.
 Qed.
+
 
 Lemma containsnewhnf {n} t : whne t -> whnf (nSucc n t).
 Proof.
@@ -106,71 +98,145 @@ Inductive isType : term -> Type :=
   | UnivType {s} : isType (tSort s)
   | ProdType { A B} : isType (tProd A B)
   | NatType : isType tNat
-  | BoolType : isType tBool
   | EmptyType : isType tEmpty
+  | BoolType : isType tBool
+  | SigType {A B} : isType (tSig A B)
+  | IdType {A x y} : isType (tId A x y)
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
   | UnivPos {s} : isPosType (tSort s)
   | NatPos : isPosType tNat
-  | BoolPos : isPosType tBool
   | EmptyPos : isPosType tEmpty
+  | BoolPos : isPosType tBool
+  | IdPos {A x y} : isPosType (tId A x y)
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
   | LamFun {A t} : isFun (tLambda A t)
   | NeFun  {f} : whne f -> isFun f.
 
-Definition isPosType_isType t (i : isPosType t) : isType t :=
-  match i with
-    | UnivPos => UnivType
-    | NatPos => NatType
-    | BoolPos => BoolType
-    | EmptyPos => EmptyType
-    | NePos ne => NeType ne
-  end.
+Inductive isNat : term -> Type :=
+  | ZeroNat : isNat tZero
+  | SuccNat {t} : isNat (tSucc t)
+  | NeNat {n} : whne n -> isNat n.
+
+Inductive isPair : term -> Type :=
+  | PairPair {A B a b} : isPair (tPair A B a b)
+  | NePair {p} : whne p -> isPair p.
+
+Definition isPosType_isType t (i : isPosType t) : isType t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isPosType_isType : isPosType >-> isType.
 
-Definition isType_whnf t (i : isType t) : whnf t :=
-  match i with
-    | UnivType => whnf_tSort
-    | ProdType => whnf_tProd
-    | NatType => whnf_tNat
-    | BoolType => whnf_tBool
-    | EmptyType => whnf_tEmpty
-    | NeType ne => whnf_whne ne
-  end.
+Definition isType_whnf t (i : isType t) : whnf t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isType_whnf : isType >-> whnf.
 
-Definition isFun_whnf t (i : isFun t) : whnf t :=
-  match i with
-    | LamFun => whnf_tLambda
-    | NeFun ne => whnf_whne ne
-  end.
+Definition isFun_whnf t (i : isFun t) : whnf t.
+Proof. destruct i; now constructor. Defined.
 
 Coercion isFun_whnf : isFun >-> whnf.
 
-#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf : gen_typing.
+Definition isPair_whnf t (i : isPair t) : whnf t.
+Proof. destruct i; now constructor. Defined.
 
+Coercion isPair_whnf : isPair >-> whnf.
 
-(*Lemma whne_Ltrans {l l' t} (f : l' ≤ε l) :
-  whne t -> whne l' t.
-Proof.
-  intro H ; induction H ; try now econstructor.
-Qed.*)
+Definition isNat_whnf t (i : isNat t) : whnf t :=
+  match i with
+  | ZeroNat => whnf_tZero
+  | SuccNat => whnf_tSucc
+  | NeNat n => whnf_whne n
+  end.
 
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf isPair_whnf : gen_typing.
+#[global] Hint Constructors isPosType isType isFun isNat : gen_typing.
 
-Lemma alphawhne_Ltrans {l l' n t} (f : l' ≤ε l) :
-  alphawhne l n t -> not_in_LCon l' n -> alphawhne l' n t.
-Proof.
-  intros H notinl' ; induction H ; try now econstructor.
-Qed.
+(** ** Canonical forms *)
 
-Lemma alphawhne_notinLCon {l n t} :
-  alphawhne l n t -> not_in_LCon l n.
-Proof.
-  intro Hyp.
-  induction Hyp ; easy.
-Qed.
+Inductive isCanonical : term -> Type :=
+  | can_tSort {s} : isCanonical (tSort s)
+  | can_tProd {A B} : isCanonical (tProd A B)
+  | can_tLambda {A t} : isCanonical (tLambda A t)
+  | can_tNat : isCanonical tNat
+  | can_tZero : isCanonical tZero
+  | can_tSucc {n} : isCanonical (tSucc n)
+  | can_tEmpty : isCanonical tEmpty
+  | can_tBool : isCanonical tBool
+  | can_tTrue : isCanonical tTrue
+  | can_tFalse : isCanonical tFalse
+  | can_tSig {A B} : isCanonical (tSig A B)
+  | can_tPair {A B a b}: isCanonical (tPair A B a b)
+  | can_tId {A x y}: isCanonical (tId A x y)
+  | can_tRefl {A x}: isCanonical (tRefl A x).
+
+#[global] Hint Constructors isCanonical : gen_typing.
+
+(** ** Normal and neutral forms are stable by renaming *)
+
+Section RenWhnf.
+
+  Variable (ρ : nat -> nat).
+
+  Lemma nSucc_ren n t : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
+  Proof.
+    induction n ; cbn ; auto.
+    now rewrite IHn.
+  Qed.
+  
+  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: try now econstructor.
+    rewrite nSucc_ren.
+    now econstructor.
+  Qed.
+
+  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isType_ren A : isType A -> isType (A⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isPosType_ren A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    destruct 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isPair_ren f : isPair f -> isPair (f⟨ρ⟩).
+  Proof.
+    induction 1 ; cbn.
+    all: econstructor.
+    now eapply whne_ren.
+  Qed.
+
+  Lemma isCanonical_ren t : isCanonical t <~> isCanonical (t⟨ρ⟩).
+  Proof.
+    split.
+    all: destruct t ; cbn ; inversion 1.
+    all: now econstructor.
+  Qed.
+
+End RenWhnf.
+
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isCanonical_ren : gen_typing.

@@ -2,14 +2,13 @@
 From LogRel Require Import Utils BasicAst Context LContexts.
 From LogRel.AutoSubst Require Import Ast.
 
-(** We have four families of definitions: the declarative ones (tagged de), the algorithmic ones (tagged al), and the bundled ones, which package an algorithmic typing derivation with its preconditions (tagged bn).
-The bundled intermediate (bni) family uses algorithmic conversion but declarative typing (somewhat similar to the original formalization), while bn uses algorithmic typing and conversion.
+(** We have several families of definitions. We discriminate them by using an opaque tag as a phantom type.
 
 All notations come in two versions: the tagged and the untagged one. The untagged one can be used in input only,
 ideally wisely in cases where there is only one instance at hand. The tagged one is used systematically in printing,
 and can be used in input when disambiguation is desired. *)
 
-Variant tag := | de | al | bn | bni.
+Variant tag := mkTag.
 Inductive class := istype | isterm : term -> class.
 
 Declare Scope typing_scope.
@@ -28,10 +27,6 @@ Class Typing (ta : tag) := typing : wfLCon -> context -> term -> term -> Set.
 Class Inferring (ta : tag) := inferring : wfLCon -> context  -> term -> term -> Set.
 Class InferringRed (ta : tag) := infer_red : wfLCon -> context  -> term -> term -> Set.
 Class Checking (ta : tag) := check : wfLCon -> context  -> term -> term -> Set.
-Class TypeNe (ta : tag) := type_ne : wfLCon -> context  -> term -> Set.
-Class TypeNf (ta : tag) := type_nf : wfLCon -> context  -> term -> Set.
-Class TermNe (ta : tag) := term_ne : wfLCon -> context  -> term -> term -> Set.
-Class TermNf (ta : tag) := term_nf : wfLCon -> context  -> term -> term -> Set.
 Class ConvType (ta : tag) := conv_type : wfLCon -> context  -> term -> term -> Set.
 Class ConvTypeRed (ta : tag) :=
   conv_type_red : wfLCon -> context  -> term -> term -> Set.
@@ -44,6 +39,7 @@ Class ConvNeuRed (ta : tag) :=
   conv_neu_red : wfLCon -> context  -> term -> term -> term -> Set.
 Class ConvNeuConv (ta : tag) :=
   conv_neu_conv : wfLCon -> context  -> term -> term -> term -> Set.
+
 
 (** The context Γ is well-formed *)
 Notation "[ |- Γ ]< l >" := (wf_context l Γ)
@@ -65,22 +61,6 @@ Notation "[ Γ |- t : A ]< l >" := (typing l Γ A t)
 Notation "[ Γ |-[ ta  ] t : A ]< l >" :=
   (typing (ta := ta) l Γ A t) (at level 0, ta, Γ, l, t, A at level 50) : typing_scope.
 
-Notation "Nf[ Γ |- A ]< l >" := (type_nf l Γ A)
-  (at level 0, Γ, l, A at level 50, only parsing) : typing_scope.
-Notation "Nf[ Γ |-[ ta  ] A ]< l >" := (type_nf (ta := ta) l Γ A)
-  (at level 0, Γ, l, A at level 50) : typing_scope.
-Notation "Ne[ Γ |- A ]< l >" := (type_ne l Γ A)
-  (at level 0, Γ, l, A at level 50, only parsing) : typing_scope.
-Notation "Ne[ Γ |-[ ta  ] A ]< l >" := (type_ne (ta := ta) l Γ A)
-  (at level 0, Γ, l, A at level 50) : typing_scope.
-Notation "Nf[ Γ |- t : A ]< l >" := (term_nf l Γ A t)
-  (at level 0, Γ, l, t, A at level 50, only parsing) : typing_scope.
-Notation "Nf[ Γ |-[ ta  ] t : A ]< l >" := (term_nf (ta := ta) l Γ A t)
-  (at level 0, Γ, l, t, A at level 50) : typing_scope.
-Notation "Ne[ Γ |- t : A ]< l >" := (term_ne l Γ A t)
-  (at level 0, Γ, l, t, A at level 50, only parsing) : typing_scope.
-Notation "Ne[ Γ |-[ ta  ] t : A ]< l >" := (term_ne (ta := ta) l Γ A t)
-  (at level 0, Γ, l, t, A at level 50) : typing_scope.
 (** The term t checks against type A in Γ *)
 Notation "[ Γ |- t ◃ A ]< l >" := (check l Γ A t)
   (at level 0, Γ, l, t, A at level 50, only parsing) : typing_scope.
@@ -131,27 +111,27 @@ Class OneStepRedTerm (ta : tag) :=
 Class RedTerm (ta : tag) := red_tm : wfLCon -> context -> term -> term -> term -> Set.
 
 (** Term t untyped one-step weak-head reduces to term t' *)
-Reserved Notation "[ t ⇒ t' ]< l >" (at level 0, l, t, t' at level 50).
+Reserved Notation "[ t ⤳ t' ]< l >" (at level 0, l, t, t' at level 50).
 (** Term t untyped multi-step weak-head reduces to term t' *)
-Reserved Notation "[ t ⇒* t' ]< l >" (at level 0, l, t, t' at level 50).
+Reserved Notation "[ t ⤳* t' ]< l >" (at level 0, l, t, t' at level 50).
 
 (** Type A one-step weak-head reduces to type B in Γ *)
-Reserved Notation "[ Γ |- A ⇒ B ]< l >" (at level 0, Γ, l, A, B at level 50).
+Reserved Notation "[ Γ |- A ⤳ B ]< l >" (at level 0, Γ, l, A, B at level 50).
 (** Term or type t one-step weak-head reduces to term or type type u as class A in Γ *)
-Reserved Notation "[ Γ |- t ⇒ u ∈ A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
+Reserved Notation "[ Γ |- t ⤳ u ∈ A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
 (** Term or type t multi-step weak-head reduces to term or type type u as class A in Γ *)
-Reserved Notation "[ Γ |- t ⇒* u ∈ A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
+Reserved Notation "[ Γ |- t ⤳* u ∈ A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
 (** Term t one-step weak-head reduces to term u at type A in Γ *)
-Notation "[ Γ |- t ⇒ u : A ]< l >" := (osred_tm l Γ A t u) (at level 0, Γ, l, t, u, A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t ⇒ u : A ]< l >" := (osred_tm (ta:=ta) l Γ A t u) (at level 0, ta,Γ, t, u, A at level 50) : typing_scope.
+Notation "[ Γ |- t ⤳ u : A ]< l >" := (osred_tm Γ l A t u) (at level 0, Γ, l, t, u, A at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] t ⤳ u : A ]< l >" := (osred_tm (ta:=ta) Γ l A t u) (at level 0, ta,Γ, l, t, u, A at level 50) : typing_scope.
 (** Type A multi-step weak-head reduces to type B in Γ *)
-Notation "[ Γ |- A ⇒* B ]< l >" := (red_ty l Γ A B) (at level 0, Γ, l, A, B at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] A ⇒* B ]< l >" := (red_ty (ta := ta) l Γ A B)
+Notation "[ Γ |- A ⤳* B ]< l >" := (red_ty l Γ A B) (at level 0, Γ, l, A, B at level 50, only parsing) : typing_scope.
+Notation "[ Γ |-[ ta  ] A ⤳* B ]< l >" := (red_ty (ta := ta) l Γ A B)
 (at level 0, ta, Γ, l, A, B at level 50) : typing_scope.
 (** Term t multi-step weak-head reduces to term t' at type A in Γ *)
-Notation "[ Γ |- t ⇒* t' : A ]< l >" := (red_tm l Γ A t t')
+Notation "[ Γ |- t ⤳* t' : A ]< l >" := (red_tm l Γ A t t')
 (at level 0, Γ, l, t, t', A at level 50, only parsing) : typing_scope.
-Notation "[ Γ |-[ ta  ] t ⇒* t' : A ]< l >" := (red_tm (ta := ta) l Γ A t t')
+Notation "[ Γ |-[ ta  ] t ⤳* t' : A ]< l >" := (red_tm (ta := ta) l Γ A t t')
 (at level 0, ta, Γ, l, t, t', A at level 50) : typing_scope.
 (** Set A weak-head normalizes to B in Γ, ie it multi-step reduces to the weak-head normal form B*)
 Reserved Notation "[ Γ |- A ↘ B ]< l >" (at level 0, Γ, l, A, B at level 50).
@@ -177,11 +157,11 @@ Reserved Notation "[ Γ |-[ ta  ] A :≅: B ]< l >" (at level 0, ta, Γ, l, A, B
 Reserved Notation "[ Γ |- t :≅: u : A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
 Reserved Notation "[ Γ |-[ ta  ] t :≅: u : A ]< l >" (at level 0, ta, Γ, l, t, u, A at level 50).
 (** Set A and B are well-formed and A weak-head reduces to B in Γ *)
-Reserved Notation "[ Γ |- A :⇒*: B ]< l >" (at level 0, Γ, l, A, B at level 50).
-Reserved Notation "[ Γ |-[ ta  ] A :⇒*: B ]< l >" (at level 0, ta, Γ, l, A, B at level 50).
+Reserved Notation "[ Γ |- A :⤳*: B ]< l >" (at level 0, Γ, l, A, B at level 50).
+Reserved Notation "[ Γ |-[ ta  ] A :⤳*: B ]< l >" (at level 0, ta, Γ, l, A, B at level 50).
 (** Terms t and u have type A in Γ and t weak-head reduces to u *)
-Reserved Notation "[ Γ |- t :⇒*: u : A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
-Reserved Notation "[ Γ |-[ ta  ] t :⇒*: u : A ]< l >" (at level 0, ta, Γ, l, t, u, A at level 50).
+Reserved Notation "[ Γ |- t :⤳*: u : A ]< l >" (at level 0, Γ, l, t, u, A at level 50).
+Reserved Notation "[ Γ |-[ ta  ] t :⤳*: u : A ]< l >" (at level 0, ta, Γ, l, t, u, A at level 50).
 
 (** ** Weakenings *)
 (** Well-formed weakening *)
@@ -224,7 +204,7 @@ Reserved Notation "[ Γ ||-ne t : A | neA ]< l >" (at level 0, Γ, l, t, A, neA 
 Reserved Notation "[ Γ ||-ne t ≅ u : A | neA ]< l >" (at level 0, Γ, l, t, u, A at level 50).
 
 (** The type U is reducible in Γ at level k *)
-Reserved Notation "[ Γ ||-U k ]< l >" (at level 0, Γ, l, k at level 50).
+Reserved Notation "[ Γ ||-U k ]< l >" (at level 0, Γ, k, l at level 50).
 (** The type B is reducibly convertible to U *)
 Reserved Notation "[ Γ ||-U≅ B ]< l >" (at level 0, Γ, l, B at level 50).
 (** The term t is reducible at the universe U, given the proof R that the universe is reducible and the kits rec at lower levels *)
@@ -243,31 +223,31 @@ Reserved Notation "[ Γ ||-Π t : A | ΠA ]< l >" (at level 0, Γ, l, t, A, ΠA 
 Reserved Notation "[ Γ ||-Π t ≅ u : A | ΠA ]< l >" (at level 0, Γ, l, t, u, A, ΠA at level 50).
 
 (** The universe is reducible in Γ at level l *)
-Reserved Notation "[ Γ ||-< k >U]< l >" (at level 0, Γ, l, k at level 50).
+Reserved Notation "[ Γ ||-< l >U]< p >" (at level 0, Γ, l, p at level 50).
 (** The type A is reducible as a Π type in Γ at level l *)
-Reserved Notation "[ Γ ||-< k >Π  A ]< l >" (at level 0, Γ, l, k, A at level 50).
+Reserved Notation "[ Γ ||-< l >Π  A ]< p >" (at level 0, Γ, l, p, A at level 50).
 (** The type A is reducible in Γ at level l *)
-Reserved Notation "[ Γ ||-< k >  A ]< l >" (at level 0, Γ, l, k, A at level 50).
+Reserved Notation "[ Γ ||-< l >  A ]< p >" (at level 0, Γ, l, p, A at level 50).
 (** The types A and B are reducibly convertible in Γ at level l, given the proof R that A is reducible *)
-Reserved Notation "[ Γ ||-< k >  A ≅ B | R ]< l >" (at level 0, Γ, l, k, A, B, R at level 50).
+Reserved Notation "[ Γ ||-< l >  A ≅ B | R ]< p >" (at level 0, Γ, l, p, A, B, R at level 50).
 (** The term t is reducible at type A and level l in Γ, given the proof R that A is reducible *)
-Reserved Notation "[ Γ ||-< k >  t : A | R ]< l >" (at level 0, Γ, l, k, t, A, R at level 50).
+Reserved Notation "[ Γ ||-< l >  t : A | R ]< p >" (at level 0, Γ, l, p, t, A, R at level 50).
 (** The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is reducible *)
-Reserved Notation "[ Γ ||-< k > t ≅ u : A | R ]< l >" (at level 0, Γ, l, k, t, u, A, R at level 50).
+Reserved Notation "[ Γ ||-< l > t ≅ u : A | R ]< p >" (at level 0, Γ, l, p, t, u, A, R at level 50).
 
-
-(** The universe is reducible in Γ at level l *)
+(** The universe is weakly reducible in Γ at level l *)
 Reserved Notation "W[ Γ ||-< k >U]< l >" (at level 0, Γ, l, k at level 50).
-(** The type A is reducible as a Π type in Γ at level l *)
+(** The type A is weakly reducible as a Π type in Γ at level l *)
 Reserved Notation "W[ Γ ||-< k >Π  A ]< l >" (at level 0, Γ, l, k, A at level 50).
-(** The type A is reducible in Γ at level l *)
+(** The type A is weakly reducible in Γ at level l *)
 Reserved Notation "W[ Γ ||-< k >  A ]< l >" (at level 0, Γ, l, k, A at level 50).
-(** The types A and B are reducibly convertible in Γ at level l, given the proof R that A is reducible *)
+(** The types A and B are reducibly convertible in Γ at level l, given the proof R that A is weakly reducible *)
 Reserved Notation "W[ Γ ||-< k >  A ≅ B | R ]< l >" (at level 0, Γ, l, k, A, B, R at level 50).
-(** The term t is reducible at type A and level l in Γ, given the proof R that A is reducible *)
+(** The term t is weakly reducible at type A and level l in Γ, given the proof R that A is weakly reducible *)
 Reserved Notation "W[ Γ ||-< k >  t : A | R ]< l >" (at level 0, Γ, l, k, t, A, R at level 50).
-(** The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is reducible *)
+(** The terms t and u are reducibly convertible at type A and level l in Γ, given the proof R that A is weakly reducible *)
 Reserved Notation "W[ Γ ||-< k > t ≅ u : A | R ]< l >" (at level 0, Γ, l, k, t, u, A, R at level 50).
+
 
 (** The type A is reducible in Γ at level 0*)
 Reserved Notation "[ Γ ||-<0>  A ]< l >" (at level 0, Γ, l, A at level 50).
@@ -278,20 +258,24 @@ Reserved Notation "[ Γ ||-<0>  t : A | R ]< l >" (at level 0, Γ, l, t, A, R at
 (** The terms t and u are reducibly convertible at type A and level 0 in Γ, given the proof R that A is reducible *)
 Reserved Notation "[ Γ ||-<0> t ≅ u : A | R ]< l >" (at level 0, Γ, l, t, u, A, R at level 50).
 
+(** Reducibility notations for identity types *)
+Reserved Notation "[ Γ ||-Id< l > A ]< p >" (at level 0, Γ, p, l,  A at level 50).
+Reserved Notation "[ Γ ||-Id< l > A ≅ B | RA ]< p >" (at level 0, Γ, p, l, A, B, RA at level 50).
+Reserved Notation "[ Γ ||-Id< l > t : A | RA ]< p >" (at level 0, Γ, p, l, t, A, RA at level 50).
+Reserved Notation "[ Γ ||-Id< l > t ≅ u : A | RA ]< p >" (at level 0, Γ, p, l, t, u, A, RA at level 50).
+
 
 
 
 (** ** Validity notations *)
-Reserved Notation "[||-v Γ ]< l >" (at level 0, Γ, l at level 50).
-Reserved Notation "[ Δ ||-v σ : Γ | VΓ | wfΔ ]< l >" (at level 0, Δ, σ, Γ, l, VΓ, wfΔ at level 50).
-Reserved Notation "[ Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | vσ ]< l >" (at level 0, Δ, σ, σ', Γ, l, VΓ, wfΔ, vσ at level 50).
-Reserved Notation "[ Γ ||-v< k > A | VΓ ]< l >" (at level 0, Γ, l, k , A, VΓ at level 50).
-Reserved Notation "[ P | Δ ||-v σ : Γ | wfΔ ]< l >" (at level 0, P, Δ, σ, Γ, l, wfΔ at level 50).
-Reserved Notation "[ P | Δ ||-v σ ≅ σ' : Γ | wfΔ | vσ ]< l >"  (at level 0, P, Δ, σ, σ', Γ, l, wfΔ, vσ at level 50).
-Reserved Notation "[ R | ||-v Γ ]< l >"  (at level 0, R, Γ, l at level 50).
-Reserved Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]< l >"  (at level 0, R, Δ, σ, Γ, l, RΓ, wfΔ at level 50).
-Reserved Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]< l >" (at level 0, R, Δ, σ, σ', Γ, l, RΓ, wfΔ, vσ at level 50).
-Reserved Notation "[ P | Γ ||-v< k > A ]< l >"  (at level 0, P, Γ, l, l, k, A at level 50).
+Reserved Notation "[||-v Γ ]" (at level 0, Γ at level 50).
+Reserved Notation "[ Δ ||-v σ : Γ | VΓ | wfΔ ]" (at level 0, Δ, σ, Γ, VΓ, wfΔ at level 50).
+Reserved Notation "[ Δ ||-v σ ≅ σ' : Γ | VΓ | wfΔ | vσ ]" (at level 0, Δ, σ, σ', Γ, VΓ, wfΔ, vσ at level 50).
+Reserved Notation "[ Γ ||-v< l > A | VΓ ]" (at level 0, Γ, l , A, VΓ at level 50).
+Reserved Notation "[ P | Δ ||-v σ : Γ | wfΔ ]" (at level 0, P, Δ, σ, Γ, wfΔ at level 50).
+Reserved Notation "[ P | Δ ||-v σ ≅ σ' : Γ | wfΔ | vσ ]"  (at level 0, P, Δ, σ, σ', Γ, wfΔ, vσ at level 50).
+Reserved Notation "[ R | ||-v Γ ]"  (at level 0, R, Γ at level 50).
+Reserved Notation "[ R | Δ ||-v σ : Γ | RΓ | wfΔ ]"  (at level 0, R, Δ, σ, Γ, RΓ, wfΔ at level 50).
+Reserved Notation "[ R | Δ ||-v σ ≅ σ' : Γ | RΓ | wfΔ | vσ ]" (at level 0, R, Δ, σ, σ', Γ, RΓ, wfΔ, vσ at level 50).
+Reserved Notation "[ P | Γ ||-v< l > A ]"  (at level 0, P, Γ, l, A at level 50).
 
-(** LCon Notations *)
-Notation " ne £ b ::l l" := (wfLCons l ne b) (at level 40).

@@ -1,5 +1,5 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation DeclarativeTyping DeclarativeInstance Validity.
+From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Induction Irrelevance Escape Reflexivity Weakening Neutral Transitivity Reduction Application Universe SimpleArr.
 From LogRel.Substitution Require Import Irrelevance Properties Conversion SingleSubst Reflexivity.
 From LogRel.Substitution.Introductions Require Import Universe Pi SimpleArr Var.
@@ -42,7 +42,6 @@ Proof.
   econstructor.
   + eapply redtmwf_refl; gen_typing.
   + constructor.
-  + now apply tm_nf_nat.
   + gen_typing.
   + now eapply (natRed (l:= zero)).
 Defined.
@@ -83,7 +82,7 @@ Lemma succRed {Γ l n} {NN : [Γ ||-Nat tNat]} :
 Proof.
   intros Rn; exists (tSucc n).
   + eapply redtmwf_refl; eapply ty_succ; now escape.
-  + eapply convtm_succ; eapply escapeEqTerm; now eapply LREqTermRefl_.
+  + eapply convtm_succ; eapply escapeEqTerm; now eapply reflLRTmEq.
   + now constructor.
 Defined.
 
@@ -106,7 +105,7 @@ Proof.
   intros RSn; inversion RSn; subst. 
   unshelve epose proof (redtmwf_whnf red _). 1: constructor.
   subst. inversion prop; subst; tea.
-  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; apply tm_ne_whne in ne; inv_whne end.
+  match goal with H : [ _ ||-NeNf _ : _] |- _ => destruct H; apply convneu_whne in refl; inv_whne end.
 Qed.
 
 Lemma succValid {Γ l n} (VΓ : [||-v Γ]) 
@@ -127,58 +126,6 @@ Proof.
   constructor; intros; cbn; instValid Vσ; now unshelve eapply succRedEq.
 Qed.
 
-Lemma red_natElimSubst {Γ l P hz hs n n'} :
-  [|- Γ] ->
-  [Γ ,, tNat |- P] ->
-  [Γ |- hz : P[tZero..]] ->
-  [Γ |- hs : elimSuccHypTy P] ->
-  [Γ |- n :⇒*: n' : tNat ] ->
-  forall (RN : [Γ ||-<l> tNat]),
-  [Γ ||-<l> n' : tNat | RN] ->
-  (forall t t',
-    [Γ ||-<l> t : tNat | RN] ->
-    [Γ ||-<l> t' : tNat | RN] ->
-    [Γ ||-<l> t ≅ t' : tNat | RN] ->
-    [Γ |- P[t..] ≅ P[t'..]]) -> 
-  [Γ |- tNatElim P hz hs n :⇒*: tNatElim P hz hs n' : P[n..]].
-Proof.
-  intros hΓ hp hhz hhs red rN rn' congP.
-  generalize (tmr_wf_red _ _ _ _ red).
-  escape.
-  assert ([rN | Γ ||- n : tNat]).
-  { now eapply redwfSubstTerm. }
-  assert ([ Γ |- P[n..] ≅ P[n'..]]).
-  { apply congP; [assumption|assumption|].
-    now eapply redwfSubstTerm. }
-  intros.
-  econstructor.
-  - eapply ty_conv; [|now symmetry].
-    escape; apply ty_natElim; tea.
-  - apply redtm_natelim; tea.
-    + now eapply redtm_ty_src.
-    + intros u Hu.
-      assert ([Γ |-[ ta ] u :⇒*: n' : tNat]).
-      { now constructor. }
-      apply congP; [eassumption| |].
-      * eapply redwfSubstTerm; [exact rn'|assumption].
-      * now eapply LRTmEqSym, redwfSubstTerm.
-Qed.
-
-Lemma arr_subst_eq {A B σ} : (arr A B)[σ] = arr A[σ] B[σ].
-Proof. now bsimpl. Qed.
-
-Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
-Proof. now bsimpl. Qed.
-
-Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
-Proof.  now bsimpl. Qed.
-
-Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
-Proof.
-  bsimpl. eapply ext_term; intros [|n]; cbn.
-  1: reflexivity.
-  unfold funcomp; now rewrite  rinstInst'_term.
-Qed.
 
 Lemma elimSuccHypTy_subst {P} σ :
   elimSuccHypTy P[up_term_term σ] = (elimSuccHypTy P)[σ].
@@ -233,14 +180,14 @@ Section NatElimRed.
         econstructor; tea.
         eapply redtmwf_refl; gen_typing.
       }
-      eapply redwfSubstTerm.
+      eapply redSubstTerm.
       + eapply LRTmRedConv. 
         2: unshelve eapply ih; tea.
         eapply RPext. 
         2: eapply LRTmEqSym.
         1,2: eapply redwfSubstTerm; tea.
-      + eapply red_natElimSubst; tea.
-        intros; eapply escapeEq; now eapply RPext.
+      + eapply redtm_natelim; tea.
+        cbn; gen_typing.
     - intros. 
       eapply redSubstTerm.
       2: eapply redtm_natElimZero; tea.
@@ -257,18 +204,15 @@ Section NatElimRed.
     - intros ? [] ?.
       apply reflect.
       + apply completeness.
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + now eapply ty_natElim.
       + now eapply ty_natElim.
       + eapply convneu_natElim; tea.
-        { eapply escapeEq, LRTyEqRefl_. }
-        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
-        { eapply escapeEqTerm; now eapply LREqTermRefl_. }
+        { eapply escapeEq, reflLRTyEq. }
+        { eapply escapeEqTerm; now eapply reflLRTmEq. }
+        { eapply escapeEqTerm; now eapply reflLRTmEq. }
     Unshelve.
-    * tea.
     * eapply ArrRedTy; now eapply RPpt.
-    * rewrite arr_subst_eq. eapply ArrRedTy.
+    * rewrite subst_arr. eapply ArrRedTy.
       2: rewrite liftSubst_singleSubst_eq; cbn.
       all: now eapply RPpt.
     * exact l.
@@ -312,8 +256,8 @@ Section NatElimRedEq.
       [Γ ||-<l> P[n..] ≅ P[n'..] | RPpt _ Rn].
   Proof.
     intros. eapply transEq; [| eapply LRTyEqSym ]; eapply RPQext; cycle 1; tea.
-    now eapply LREqTermRefl_.
-    Unshelve. 3,4: eauto. tea.
+    now eapply reflLRTmEq.
+    Unshelve. 2,3: eauto.
   Qed.
 
   Lemma natElimRedAuxLeft : @natRedElimStmt _ _ P hs hz NN RPpt.
@@ -326,8 +270,8 @@ Section NatElimRedEq.
   Proof.
     eapply natElimRedAux; tea.
     + intros. eapply transEq; [eapply LRTyEqSym |]; eapply RPQext; cycle 1; tea.
-      now eapply LREqTermRefl_.
-    Unshelve. 2: eauto. all:tea.
+      now eapply reflLRTmEq.
+    Unshelve. all:tea.
   Qed.
 
   Lemma natElimRedEqAux :
@@ -348,9 +292,9 @@ Section NatElimRedEq.
       * eapply LRTmEqRedConv.
         + eapply RPext; tea. 
           eapply LRTmEqSym; eapply redwfSubstTerm; cycle 1; tea.
-        + unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RL) redL); tea.
+        + unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RL) redL); tea.
           1: dependent inversion RL; subst; cbn; now eapply NatProp_whnf.
-          unshelve erewrite (redtmwf_det _ _ _ _ _ _ _ _ (NatRedTm.red RR) redR); tea.
+          unshelve erewrite (redtmwf_det _ _ (NatRedTm.red RR) redR); tea.
           1: dependent inversion RR; subst; cbn; now eapply NatProp_whnf.
           now eapply ih.
         Unshelve. tea.
@@ -374,7 +318,7 @@ Section NatElimRedEq.
           eapply LRTyEqSym; now eapply RPQext.
         Unshelve. 2,4,5: tea.
         1: eapply ArrRedTy; now eapply RPpt.
-        rewrite arr_subst_eq. eapply ArrRedTy.
+        rewrite subst_arr. eapply ArrRedTy.
         2: rewrite liftSubst_singleSubst_eq; cbn.
         all: now eapply RPpt.
     - intros ?? neueq ??. escape. inversion neueq.
@@ -386,9 +330,6 @@ Section NatElimRedEq.
         gen_typing.
       }
       eapply neuTermEq.
-      + eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
-      + eapply tm_ne_conv; [|now eapply escape|symmetry; eassumption].
-        eapply tm_ne_natelim; now first [eassumption|eapply reifyType|eapply reifyTerm].
       + eapply ty_natElim; tea.
       + eapply ty_conv. 
         1: eapply ty_natElim; tea.
@@ -591,9 +532,6 @@ Proof.
     1,2: unshelve econstructor; [now bsimpl| now cbn].
     unshelve econstructor; [|now cbn].
     bsimpl. eapply reflSubst.
-    Unshelve. 1: tea.
-    eapply validTy; tea.
-    unshelve econstructor; [| now cbn]; now bsimpl.
 Qed.
 
 Lemma elimSuccHypTyCongValid {Γ l P P'}
@@ -606,7 +544,7 @@ Lemma elimSuccHypTyCongValid {Γ l P P'}
     [Γ ||-v<l> elimSuccHypTy P ≅ elimSuccHypTy P' | VΓ | elimSuccHypTyValid VΓ VP].
   Proof.
     unfold elimSuccHypTy.
-    eapply irrelevanceEq.
+    eapply irrelevanceTyEq.
     assert [Γ,, tNat ||-v< l > P'[tSucc (tRel 0)]⇑ | validSnoc VΓ VN]. 1:{
       eapply substLiftS; tea.
       eapply irrelevanceTm.
@@ -623,8 +561,9 @@ Lemma elimSuccHypTyCongValid {Γ l P P'}
     Unshelve. all: tea.
     unshelve eapply irrelevanceTm; tea.
     2: eapply succValid.
-    unshelve eapply irrelevanceTm'.
-    5: unshelve eapply var0Valid; tea.
+    unshelve eapply irrelevanceTm'; cycle -1.
+    1: unshelve eapply var0Valid.
+    1,2 : tea.
     now bsimpl.
   Qed.
 

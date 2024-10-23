@@ -124,7 +124,6 @@ Proof.
         eapply noteq.
         exact (eq_nat_refl _).
 Defined.
-Print decidInLCon.
 (*  induction l.
   - right.
     now econstructor.
@@ -227,7 +226,7 @@ Lemma AllInLCon_S (n : nat) b l :
 Proof.
   intros allinl ninl m minfSn.
   case (Compare_dec.le_lt_eq_dec m n).
-  - now eapply Arith_prebase.lt_n_Sm_le.
+  - now eapply PeanoNat.lt_n_Sm_le.
   - intro minfn ; clear minfSn.
     now eapply allinl.
   - intro eq.
@@ -246,7 +245,7 @@ Fixpoint Lack_n (l : wfLCon) (n : nat) : list nat :=
             | inr b => cons k (Lack_n l k)
            end
   end.
-Print List.In.
+
 Fixpoint In {A : Type} (a : A) (l : list A) {struct l} : Type :=
   match l with
   | nil => False
@@ -312,7 +311,7 @@ Proof.
     now inversion H.
   - intros ; simpl.
     destruct (Compare_dec.le_lt_eq_dec _ _  H).
-    + eapply Arith_prebase.lt_S_n_stt in l0.
+    + eapply Arith_base.lt_S_n_stt in l0.
       destruct (decidInLCon l n).
       * now eapply IHn.
       * right.
@@ -325,7 +324,6 @@ Proof.
 Qed.
       
   
-Print List.incl.
 Lemma Lack_n_Lcon_le (n : nat) (l l' : wfLCon) :
   l' ≤ε l -> Incl (Lack_n l' n) (Lack_n l n).
 Proof.
@@ -350,14 +348,13 @@ Proof.
     inversion ink.
   - cbn.
     destruct (decidInLCon l n).
-    + eapply IHn.
-      now eapply Le.le_Sn_le_stt.
+    + now eapply IHn, Nat.lt_le_incl, (proj1 (Nat.le_succ_l n m)).
     + intros k ink.
       destruct ink.
       * subst.
         eapply notinLCon_Lack_n ; try assumption.
       * eapply IHn ; try assumption.
-        now eapply Le.le_Sn_le_stt.
+        now eapply Nat.lt_le_incl, (proj1 (Nat.le_succ_l n m)).
 Qed.
 
 
@@ -432,7 +429,7 @@ Proof.
       * intros hyp.
         eapply IHn.
         assumption.
-        now eapply Arith_prebase.lt_S_n_stt.
+        now eapply Arith_base.lt_S_n_stt.
       * intro eqSnm.
         injection eqSnm ; intros eqnm.
         now rewrite eqnm.

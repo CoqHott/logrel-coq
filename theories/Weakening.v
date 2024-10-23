@@ -1,7 +1,7 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
-From Coq Require Import Lia.
+From Coq Require Import Lia ssrbool.
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
-From LogRel Require Import Utils BasicAst Notations Context LContexts NormalForms.
+From LogRel Require Import Utils BasicAst Notations LContexts Context NormalForms.
 
 (** ** Raw weakenings *)
 
@@ -115,21 +115,6 @@ Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
 
 #[global] Hint Resolve well_wk : core.
 
-Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
-
-Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
-  {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
-
-Definition wk_up {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,  A⟨wk_to_ren ρ⟩) ≤ (Δ ,, A) :=
-  {| wk := _wk_up ρ ; well_wk := well_up A ρ ρ |}.
-
-Definition wk_id {Γ} : Γ ≤ Γ :=
-  {| wk := _wk_id Γ ; well_wk := well_wk_id Γ |}.
-
-Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
-  {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
-Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
-
 (** ** Instances: how to rename by a weakening. *)
 
 #[global] Instance Ren1_wk {Y Z : Type} `(ren : Ren1 (nat -> nat) Y Z) :
@@ -155,6 +140,22 @@ Ltac change_well_wk :=
 
 Smpl Add 10 change_well_wk : refold.
 
+(** Constructors of well-typed weakenings *)
+
+Definition wk_empty : (ε ≤ ε) := {| wk := _wk_empty ; well_wk := well_empty |}.
+
+Definition wk_step {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,A) ≤ Δ :=
+  {| wk := _wk_step ρ ; well_wk := well_step A ρ ρ |}.
+
+Definition wk_up {Γ Δ} A (ρ : Γ ≤ Δ) : (Γ,,  A⟨ρ⟩) ≤ (Δ ,, A) :=
+  {| wk := _wk_up ρ ; well_wk := well_up A ρ ρ |}.
+
+Definition wk_id {Γ} : Γ ≤ Γ :=
+  {| wk := _wk_id Γ ; well_wk := well_wk_id Γ |}.
+
+Definition wk_well_wk_compose {Γ Γ' Γ'' : context} (ρ : Γ ≤ Γ') (ρ' : Γ' ≤ Γ'') : Γ ≤ Γ'' :=
+  {| wk := wk_compose ρ.(wk) ρ'.(wk) ; well_wk := well_wk_compose ρ.(well_wk) ρ'.(well_wk) |}.
+Notation "ρ ∘w ρ'" := (wk_well_wk_compose ρ ρ').
 
 (** ** The ubiquitous operation of adding one variable at the end of a context *)
 
@@ -219,85 +220,20 @@ Proof.
       now econstructor.
 Qed.
 
-(** ** Normal and neutral forms are stable by weakening *)
+Section RenWlWhnf.
 
-Section RenWhnf.
+  Context {Γ Δ} (ρ : Δ ≤ Γ).
 
-  Variable (ρ : nat -> nat).
 
-  Lemma nSucc_ren n t : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
-  Proof.
-    induction n ; cbn.
-    - reflexivity.
-    - now rewrite IHn.
-  Qed.
-      
-  Lemma whne_ren t : whne t -> whne (t⟨ρ⟩).
-  Proof.
-    - induction 1 ; cbn.
-      6: rewrite (nSucc_ren n t).
-      all: now econstructor.
-  Qed.
-    
-  
   Lemma nat_to_term_ren n : (nat_to_term n)⟨ρ⟩ = nat_to_term n.
   Proof.
-    induction n.
-    - reflexivity.
-    - cbn ; f_equal.
-      exact IHn.
+    unfold nat_to_term ; now eapply nSucc_ren.
   Qed.
 
   Lemma bool_to_term_ren b : (bool_to_term b)⟨ρ⟩ = bool_to_term b.
   Proof.
     now induction b. 
   Qed.
-
-  Lemma alphawhne_ren {l n} t :
-    alphawhne l n t -> alphawhne l n (t⟨ρ⟩).
-  Proof.
-    induction 1; cbn in *.
-    1: rewrite (nat_to_term_ren n).
-    all: now econstructor.
-  Qed.
-    
-  Lemma whnf_ren t : whnf t -> whnf (t⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-(*    12:{ apply whnf_tAlpha.
-         now eapply alphawhne_ren. }*)
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-  
-  Lemma isType_ren A :
-    isType A -> isType (A⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-
-  Lemma isPosType_ren A :
-    isPosType A -> isPosType (A⟨ρ⟩).
-  Proof.
-    destruct 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-  
-  Lemma isFun_ren f : isFun f -> isFun (f⟨ρ⟩).
-  Proof.
-    induction 1 ; cbn.
-    all: econstructor.
-    now eapply whne_ren.
-  Qed.
-
-End RenWhnf.
-
-Section RenWlWhnf.
-
-  Context {Γ Δ} (ρ : Δ ≤ Γ).
 
   Lemma whne_ren_wl t : whne t -> whne (t⟨ρ⟩).
   Proof.
@@ -309,10 +245,14 @@ Section RenWlWhnf.
     apply whnf_ren.
   Qed.
   
-  Lemma isType_ren_wl A :
-    isType A -> isType (A⟨ρ⟩).
+  Lemma isType_ren_wl A : isType A -> isType (A⟨ρ⟩).
   Proof.
     apply isType_ren.
+  Qed.
+  
+  Lemma isPosType_ren_wl A : isPosType A -> isPosType (A⟨ρ⟩).
+  Proof.
+    apply isPosType_ren.
   Qed.
   
   Lemma isFun_ren_wl f : isFun f -> isFun (f⟨ρ⟩).
@@ -320,10 +260,19 @@ Section RenWlWhnf.
     apply isFun_ren.
   Qed.
 
+  Lemma isPair_ren_wl f : isPair f -> isPair (f⟨ρ⟩).
+  Proof.
+    apply isPair_ren. 
+  Qed.
+
+  Lemma isCanonical_ren_wl t : isCanonical t <~> isCanonical (t⟨ρ⟩).
+  Proof.
+    apply isCanonical_ren.
+  Qed.
+
 End RenWlWhnf.
 
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren : gen_typing.
-#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isFun_ren_wl : gen_typing.
+#[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isPosType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
 
 (** ** Adaptation of AutoSubst's asimpl to well typed weakenings *)
 
@@ -364,6 +313,34 @@ Ltac bsimpl := check_no_evars;
 
 (** Lemmas for easier rewriting *)
 
+Lemma subst_ren_wk_up {Γ Δ P A n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P⟨wk_up A ρ⟩[n⟨ρ⟩..].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_wk_up2 {Γ Δ P A B a b} (ρ : Γ ≤ Δ): 
+  P[a .: b..]⟨ρ⟩ = P⟨wk_up A (wk_up B ρ)⟩[a⟨ρ⟩ .: b⟨ρ⟩..].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_subst_mixed {Γ Δ P n} (ρ : Γ ≤ Δ): P[n..]⟨ρ⟩ = P[n⟨ρ⟩ .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma subst_ren_subst_mixed2 {Γ Δ P a b} (ρ : Γ ≤ Δ): P[a .: b..]⟨ρ⟩ = P[a⟨ρ⟩ .: (b⟨ρ⟩ .: ρ >> tRel)].
+Proof. now bsimpl. Qed.
+
+
+Lemma wk_up_ren_subst {Γ Δ Ξ P A n}  (ρ : Γ ≤ Δ) (ρ' : Δ ≤ Ξ) : 
+  P[n .: ρ ∘w ρ' >> tRel] = P⟨wk_up A ρ'⟩[n .: ρ >> tRel].
+Proof. now bsimpl. Qed.
+
+Lemma shift_subst_scons {B a Γ Δ} (ρ : Δ ≤ Γ) : B⟨↑⟩[a .: ρ >> tRel] = B⟨ρ⟩.
+Proof. bsimpl; now rewrite rinstInst'_term. Qed.
+
+Lemma shift_upRen ρ t : t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨upRen_term_term ρ⟩.
+Proof. now asimpl. Qed.
+
+Lemma wk_comp_ren_on {Γ Δ Ξ} (H : term) (ρ1 : Γ ≤ Δ) (ρ2 : Δ ≤ Ξ) :
+  H⟨ρ2⟩⟨ρ1⟩ = H⟨ρ1 ∘w ρ2⟩.
+Proof. now bsimpl. Qed.
+
 Lemma wk_id_ren_on Γ (H : term) : H⟨@wk_id Γ⟩ = H.
 Proof. now bsimpl. Qed.
 
@@ -385,23 +362,52 @@ Proof.
   unfold elimSuccHypTy; cbn; f_equal; now bsimpl.
 Qed.
 
-Lemma wk_nSucc {Γ Δ} n t (ρ : Δ ≤ Γ) : (nSucc n t)⟨ρ⟩ = nSucc n (t⟨ρ⟩).
-Proof.
-  induction n ; cbn.
-  - reflexivity.
-  - revert IHn. bsimpl ; intros.
-    now rewrite IHn.
-Qed.
+Lemma wk_prod {A B Γ Δ} (ρ : Δ ≤ Γ) : tProd A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tProd A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
 
-Lemma wk_nat_to_term {Γ Δ} n (ρ : Δ ≤ Γ) : (nat_to_term n)⟨ρ⟩ = nat_to_term n.
-Proof.
-  induction n.
-  - reflexivity.
-  - cbn ; f_equal.
-    exact IHn.
-Qed.
+Lemma wk_sig {A B Γ Δ} (ρ : Δ ≤ Γ) : tSig A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tSig A B)⟨ρ⟩.
+Proof. now bsimpl. Qed.
 
-Lemma wk_bool_to_term {Γ Δ} b (ρ : Δ ≤ Γ) : (bool_to_term b)⟨ρ⟩ = bool_to_term b.
-Proof.
-  now induction b. 
-Qed.
+Lemma wk_pair {A B a b Γ Δ} (ρ : Δ ≤ Γ) : tPair A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ b⟨ρ⟩ = (tPair A B a b)⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_fst {p Γ Δ} (ρ : Δ ≤ Γ) : tFst p⟨ρ⟩ = (tFst p)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_snd {p Γ Δ} (ρ : Δ ≤ Γ) : tSnd p⟨ρ⟩ = (tSnd p)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_comp {Γ Δ A f g} (ρ : Δ ≤ Γ) : (comp A f g)⟨ρ⟩ = comp A⟨ρ⟩ f⟨ρ⟩ g⟨ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_Id {A x y Γ Δ} (ρ : Δ ≤ Γ) : tId A⟨ρ⟩ x⟨ρ⟩ y⟨ρ⟩ = (tId A x y)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_refl {A x Γ Δ} (ρ : Δ ≤ Γ) : tRefl A⟨ρ⟩ x⟨ρ⟩ = (tRefl A x)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+
+Lemma wk_step_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟩ = t⟨wk_step A ρ⟩.
+Proof. now bsimpl. Qed.
+
+Lemma wk_up_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟨ρ⟩⟩ = t⟨@wk1 Γ A⟩⟨wk_up A ρ⟩.
+Proof. now bsimpl. Qed.
+
+
+Lemma wk_idElim {A x P hr y e Δ Γ} (ρ : Δ ≤ Γ) :
+  tIdElim A⟨ρ⟩ x⟨ρ⟩ P⟨wk_up (tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) (wk_up A ρ)⟩ hr⟨ρ⟩ y⟨ρ⟩ e⟨ρ⟩ = (tIdElim A x P hr y e)⟨ρ⟩.
+Proof.  now cbn. Qed.
+
+Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ =1 ρ.
+Proof. now bsimpl. Qed.
+
+Lemma wk_comp_runit {Γ Δ} (ρ : Δ ≤ Γ) : ρ ∘w wk_id =1 ρ.
+Proof. now bsimpl. Qed.
+
+Lemma wk_comp_assoc {Γ Δ Ξ ζ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) (ρ'' : ζ ≤ Ξ) :
+  (ρ'' ∘w ρ') ∘w ρ =1 ρ'' ∘w (ρ' ∘w ρ).
+Proof. now bsimpl. Qed.
+
+
+Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
+Proof. intros; now rewrite 2!wk1_ren_on. Qed.

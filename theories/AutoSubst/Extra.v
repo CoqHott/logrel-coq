@@ -2,6 +2,7 @@
 
 (** This is the only file in the AutoSubst submodule that is not automatically generated. *)
 From smpl Require Import Smpl.
+From Coq Require Import ssrbool List.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 From LogRel Require Import Utils BasicAst.
 
@@ -11,7 +12,7 @@ From LogRel Require Import Utils BasicAst.
 Declare Scope asubst_scope.
 Delimit Scope asubst_scope with asub.
 
-Arguments funcomp {X Y Z}%type_scope (g f)%function_scope.
+Arguments funcomp {X Y Z}%_type_scope (g f)%_function_scope.
 
 Notation "f >> g" := (funcomp g f) (at level 50) : function_scope.
 
@@ -50,7 +51,7 @@ Ltac change_autosubst :=
 
 Smpl Add 50 change_autosubst : refold.
 
-Arguments ren1 {_ _ _}%type_scope {Ren1} _ !_/.
+Arguments ren1 {_ _ _}%_type_scope {Ren1} _ !_/.
 (* Ideally, we'd like Ren_term to not be there, and ren_term to be directly the Ren1 instance… *)
 Arguments Ren_term _ _ /.
 Arguments Ren1_subst {_ _ _} _ _/.
@@ -64,6 +65,27 @@ Proof.
   now asimpl.
 Qed.
 
+Lemma subst_arr A B σ : (arr A B)[σ] = arr A[σ] B[σ].
+Proof. now asimpl. Qed.
+
+Lemma subst_prod X Y σ : (tProd X Y)[σ] = tProd X[σ] Y[up_term_term σ].
+Proof. now asimpl. Qed.
+
+Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
+Proof. now asimpl. Qed.
+
+Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
+Proof.  now asimpl. Qed.
+
+Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
+Proof.
+  asimpl. eapply ext_term; intros [|n]; cbn.
+  1: reflexivity.
+  unfold funcomp; now rewrite  rinstInst'_term.
+Qed.
+
+Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
+Proof. now asimpl. Qed.
+
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
-

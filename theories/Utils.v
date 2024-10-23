@@ -4,7 +4,6 @@ From Coq Require Import ssrbool.
 From smpl Require Import Smpl.
 From LogRel.AutoSubst Require Import core unscoped Ast.
 
-
 Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Primitive Projections.
@@ -21,9 +20,9 @@ Infix "<~>" := iffT (at level 90).
 (** Since we work a lot with type-level propositions,
 we override the notation for negation from the
 standard library. **)
-Export Set Warnings "-notation-overridden".
+#[export] Set Warnings "-notation-overridden".
 Notation "~ x" := (notT x) : type_scope.
-Export Set Warnings "notation-overriden".
+#[export] Set Warnings "notation-overridden".
 
 (** ** Polymorphic and cumulative redefinitions from the standard library. *)
 
@@ -146,6 +145,7 @@ Ltac prod_splitter :=
   | |- and3 _ _ _ => split
   | |- and4 _ _ _ _ => split
   | |- and5 _ _ _ _ _ => split
+  | |- _ /\ _ => split
   end.
 
 Ltac prod_hyp_splitter :=
@@ -218,29 +218,30 @@ Definition Shelved (A:Type) := A.
 
 (** Opaque econstructor:
   similar to unshelve econstructor but makes the unshelved goal opaque in subsquent goals.
-  Provided by Gaetan Gilbert.
+  Provided by Gaetan Gilbert, modified K.M for recursive dependencies
 *)
+Ltac gen_shelved_evar_rec :=
+  repeat match goal with
+      |- context [ ?x ] =>
+        is_evar x;
+        let t := type of x in
+        match t with
+          Shelved ?t' =>
+            (* cast to t' so that we get a name based on the real type in intro
+                instead of "s" based on "Shelved" *)
+            generalize (x:t');
+            try gen_shelved_evar_rec ;
+            intro
+        end
+  end.
+
 Ltac opector :=
   unshelve (econstructor;match goal with |- ?g => change (NotShelved g) end);
-  match goal with |- NotShelved ?g => idtac | |- ?g => change (Shelved g) end;
+  match goal with |- NotShelved ?g => idtac | |- ?g => change (Shelved g) end; revgoals;
   match goal with
-    |- NotShelved ?g =>
-      change g;
-      repeat match goal with
-          |- context [ ?x ] =>
-            is_evar x;
-            let t := type of x in
-            match t with
-              Shelved ?t' =>
-                (* cast to t' so that we get a name based on the real type in intro
-                    instead of "s" based on "Shelved" *)
-                generalize (x:t');
-                intro
-            end
-        end
-  | _ => idtac
-  end;
-  match goal with |- Shelved ?g => change g | _ => idtac end.
+    |- NotShelved ?g => change g; gen_shelved_evar_rec
+    | |- Shelved ?g => change g; gen_shelved_evar_rec
+  end; revgoals.
 
 (** To block and unblock hypotheses from the context 
   (see the tactic escape in LogicalRelations/Escape.v for example)*)

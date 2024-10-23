@@ -1,6 +1,6 @@
 From LogRel.AutoSubst Require Import core unscoped Ast Extra.
 From LogRel Require Import Utils BasicAst Notations Context NormalForms Weakening
-  DeclarativeTyping GenericTyping LogicalRelation Validity.
+  GenericTyping LogicalRelation Validity.
 From LogRel.LogicalRelation Require Import Escape Reflexivity Neutral Weakening Irrelevance Application Reduction Transitivity NormalRed.
 From LogRel.Substitution Require Import Irrelevance Properties SingleSubst.
 From LogRel.Substitution.Introductions Require Import Pi.
@@ -79,15 +79,21 @@ Proof.
   assert [Δ |- (tLambda F t)[σ] : (tProd F G)[σ]] by (escape; cbn; gen_typing).
   exists (tLambda F t)[σ]; intros; cbn in *.
   + now eapply redtmwf_refl.
-  + constructor.
-  + apply tm_nf_lam.
-    - now apply reifyType in RVF.
-    - now apply reifyTerm in RVt.
-  + eapply convtm_eta; tea. 
-    1,2: now constructor.
+  + constructor; cbn; intros.
+    - apply reflLRTyEq.
+    - rewrite Poly.eq_subst_2.
+      irrelevance0; [symmetry; apply Poly.eq_subst_2|].
+      unshelve apply Vt; tea.
+      eapply consSubstS.
+      irrelevance0; [|tea].
+      now bsimpl.
+      Unshelve.
+      now unshelve eapply wkSubstS.
+  + eapply convtm_eta; tea.
+    1,2: constructor; tea; eapply escapeEq, reflLRTyEq.
     assert (eqσ : forall Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
     by (intro; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
-    assert [Δ,, F[σ] |-[ ta ] tApp (tLambda F[σ] t[up_term_term σ])⟨S⟩ (tRel 0) ⇒*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
+    assert [Δ,, F[σ] |-[ ta ] tApp (tLambda F[σ] t[up_term_term σ])⟨S⟩ (tRel 0) ⤳*  t[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0)..] : G[up_term_term σ]].
     {
       rewrite (eqσ G). eapply redtm_beta.
       * renToWk; eapply wft_wk; tea; gen_typing.
@@ -96,8 +102,10 @@ Proof.
       * fold ren_term; refine (ty_var _ (in_here _ _)); gen_typing.
     }
     eapply convtm_exp; tea.
-    1: now eapply redty_refl.
-    rewrite <- (eqσ t); eapply escapeEqTerm; now eapply LREqTermRefl_.
+    - rewrite <- eqσ; tea.
+    - rewrite <- eqσ; tea.
+    - unshelve eapply escapeEq, reflLRTyEq; [|tea].
+    - rewrite <- (eqσ t); eapply escapeEqTerm; now eapply reflLRTmEq.
   + eapply lamBetaRed; tea. 
   + pose proof (Vσa := consWkSubstS VF ρ h Vσ ha).
     pose proof (Vσb := consWkSubstS VF ρ h Vσ hb).
@@ -143,14 +151,21 @@ Proof.
     eapply LRTyEqSym. eapply (validTyExt VΠFG); tea.
     Unshelve. 2: now eapply validTy.
   - refold; cbn; escape.
-    eapply convtm_eta; tea. 
-    2,4: now constructor.
+    eapply convtm_eta; refold; tea.
+    2,4: constructor; first [assumption|now eapply lrefl|idtac].
     + gen_typing.
-    + eapply ty_conv; [gen_typing| now symmetry].
+    + eapply ty_conv; [tea|now symmetry].
+    + eapply ty_conv; [tea|].
+      assert (Vσ'σ := symmetrySubstEq _ _ _ _ _ Vσ' Vσσ').
+      assert (Vupσ'σ := liftSubstSEq' VF Vσ'σ).
+      unshelve eassert (VG' := validTyExt VG _ _ _ Vupσ'σ).
+      { eapply liftSubstSrealign'; tea. }
+      eapply escapeEq, VG'.
+    + eapply ty_conv; [now eapply ty_lam|].
+      symmetry; now eapply convty_prod.
     + assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ]⟨upRen_term_term S⟩[(tRel 0) ..])
       by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
-      eapply convtm_exp. 
-      * now eapply redty_refl.
+      eapply convtm_exp.
       * rewrite (eqσ σ G). eapply redtm_beta.
         -- renToWk; eapply wft_wk; tea; gen_typing.
         -- renToWk; eapply ty_wk; tea.
@@ -164,6 +179,11 @@ Proof.
         -- fold ren_term. eapply ty_conv.
            refine (ty_var _ (in_here _ _)). 1: gen_typing.
            cbn; renToWk; eapply convty_wk; tea; gen_typing.
+      * tea.
+      * fold ren_term; rewrite <- eqσ; tea.
+      * fold ren_term; rewrite <- eqσ.
+        eapply ty_conv; [tea|symmetry; tea].
+      * now eapply lrefl.
       * fold ren_term. 
         set (x := ren_term _ _); change x with (t[up_term_term σ]⟨upRen_term_term S⟩); clear x.
         set (x := ren_term _ _); change x with (t[up_term_term σ']⟨upRen_term_term S⟩); clear x.
@@ -180,7 +200,7 @@ Proof.
     assert (Vσσa : [_ ||-v _ ≅ (a .: σ'⟨ρ⟩) : _ | _ | _ | Vσa]).
     {
       unshelve eapply consSubstSEq'.
-      2: eapply LREqTermRefl_; irrelevance0; [|exact ha]; now bsimpl.
+      2: eapply reflLRTmEq; irrelevance0; [|exact ha]; now bsimpl.
       eapply irrelevanceSubstEq; now eapply wkSubstSEq.
       Unshelve. all: tea.
     }
@@ -212,8 +232,7 @@ Proof.
   assert (eqσ : forall σ Z, Z[up_term_term σ] = Z[up_term_term σ][(tRel 0) .: @wk1 Δ F[σ] >> tRel])
   by (intros; bsimpl; cbn; now rewrite rinstInst'_term_pointwise).
   eapply convtm_exp. 
-  1: now eapply redty_refl.
-  3: rewrite eqσ; eapply escapeEqTerm; eapply LREqTermRefl_; irrelevance.
+  7: rewrite eqσ; eapply escapeEqTerm; eapply reflLRTmEq; irrelevance.
   * eapply redtm_meta_conv. 3: reflexivity.
     1: eapply redtm_app.
     2: eapply (ty_var wfΔF (in_here _ _)).
@@ -227,8 +246,66 @@ Proof.
   * rewrite <- (wk1_ren_on Δ F[σ]); unshelve eapply redtmwf_refl.
     rewrite eqσ; eapply escapeTerm ; irrelevance.
     Unshelve. 2,4: rewrite <- eqσ; tea.
+  * tea.
+  * rewrite eqσ; eapply escapeTerm ; irrelevance.
+    Unshelve. 2: rewrite <- eqσ; tea.
+  * rewrite eqσ; eapply escapeTerm ; irrelevance.
+    Unshelve. 2: rewrite <- eqσ; tea.
+  * unshelve eapply escapeEq, reflLRTyEq; [|tea].
 Qed.
 
+Lemma isLRFun_isWfFun : forall {σ Δ f} (wfΔ : [|- Δ]) (vσ : [Δ ||-v σ : Γ | VΓ | wfΔ]) (RΠFG : [Δ ||-< l > (tProd F G)[σ]])
+  (p : [Δ ||-Π f[σ] : tProd F[σ] G[up_term_term σ] | normRedΠ0 (Induction.invLRΠ RΠFG)]),
+  isWfFun Δ F[σ] G[up_term_term σ] (PiRedTm.nf p).
+Proof.
+intros.
+instValid vσ.
+destruct RΠFG; simpl in *.
+destruct p as [nf ? isfun]; simpl in *.
+destruct isfun as [A t vA vt|]; simpl in *; constructor; tea.
++ rewrite <- (@wk_id_ren_on Δ).
+  unshelve eapply escapeConv, vA; tea.
++ rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+  now unshelve eapply escapeEq, vA.
++ assert (Hrw : forall t, t[tRel 0 .: @wk1 Δ A >> tRel] = t).
+  { intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert [Δ |- F[σ]] by now eapply escape.
+  assert (wfΔF : [|- Δ,, F[σ]]) by now apply wfc_cons.
+  unshelve eassert (vt0 := vt _ (tRel 0) (@wk1 Δ F[σ]) _ _); tea.
+  { eapply var0; [now bsimpl|tea]. }
+  eapply escapeTerm in vt0.
+  now rewrite !Hrw in vt0.
++ assert (Hrw : forall t, t[tRel 0 .: @wk1 Δ A >> tRel] = t).
+  { intros; bsimpl; apply idSubst_term; intros []; reflexivity. }
+  assert [Δ |- A].
+  { rewrite <- (@wk_id_ren_on Δ).
+    unshelve eapply escapeConv, vA; tea. }
+  assert (wfΔA : [|- Δ,, A]) by now apply wfc_cons.
+  assert [Δ |-[ ta ] A ≅ F[σ]].
+  { rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+    symmetry; now unshelve eapply escapeEq, vA. }
+  assert [Δ,, A ||-< l > G[up_term_term σ]].
+  { eapply validTy with (wfΔ := wfΔA); tea.
+    unshelve econstructor; [shelve|]; cbn.
+    apply var0conv; [|tea].
+    replace F[↑ >> up_term_term σ] with F[σ]⟨@wk1 Δ A⟩ by now bsimpl.
+    rewrite <- (wk1_ren_on Δ A); eapply convty_wk; tea.
+    Unshelve.
+    eapply irrelevanceSubstExt with (σ := σ⟨@wk1 Δ A⟩).
+    { now bsimpl. }
+    now eapply wkSubstS.
+  }
+  rewrite <- (Hrw t); eapply escapeTerm.
+  irrelevance0; [apply Hrw|unshelve apply vt].
+  - apply wfc_cons; tea.
+  - apply var0conv; tea.
+    rewrite <- (wk1_ren_on Δ A A).
+    apply convty_wk; [now apply wfc_cons|].
+    rewrite <- (wk_id_ren_on Δ F[σ]), <- (wk_id_ren_on Δ A).
+    symmetry; now unshelve eapply escapeEq, vA.
+  Unshelve.
+  all: tea.
+Qed.
 
 Lemma ηeqEqTerm {σ Δ f g} (ρ := @wk1 Γ F)
   (Vfg : [Γ ,, F ||-v<l> tApp f⟨ρ⟩ (tRel 0) ≅ tApp g⟨ρ⟩ (tRel 0) : G | VΓF | VG ])
@@ -245,29 +322,33 @@ Proof.
   - change [Δ ||-<l> g[σ] : (tProd F G)[σ] | RΠ ]; irrelevance.
   - cbn; pose (VσUp :=  liftSubstS' VF Vσ).
     instValid Vσ; instValid VσUp; escape.
-    destruct (PiRedTm.red p); destruct (PiRedTm.red p0); cbn in *.
     eapply convtm_eta; tea.
-    1,2: eapply PiRedTm.isfun.
-    etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
-  - cbn; intros.
-    set (ν := (a .: σ⟨ρ0⟩)).
-    pose (Vν := consWkSubstS VF ρ0 h Vσ ha).
+    + destruct (PiRedTm.red p0); cbn in *; tea.
+    + now eapply isLRFun_isWfFun.
+    + destruct (PiRedTm.red p); cbn in *; tea.
+    + now eapply isLRFun_isWfFun.
+    + etransitivity ; [symmetry| etransitivity]; tea; eapply ηeqEqTermConvNf.
+  - match goal with H : [_ ||-Π f[σ] : _ | _] |- _ => rename H into Rfσ end.
+    match goal with H : [_ ||-Π g[σ] : _ | _] |- _ => rename H into Rgσ end.
+    cbn; intros ?? ρ' h ha.
+    set (ν := (a .: σ⟨ρ'⟩)).
+    pose (Vν := consWkSubstS VF ρ' h Vσ ha).
     instValid Vσ; instValid Vν; escape.
     assert (wfΔF : [|- Δ,, F[σ]]) by gen_typing.
     cbn in *.
-    assert (eq : forall t, t⟨ρ⟩[a .: σ⟨ρ0⟩] = t[σ]⟨ρ0⟩) by (intros; unfold ρ; now bsimpl).
+    assert (eq : forall t, t⟨ρ⟩[a .: σ⟨ρ'⟩] = t[σ]⟨ρ'⟩) by (intros; unfold ρ; now bsimpl).
     do 2 rewrite eq in RVfg.
     eapply transEqTerm; [|eapply transEqTerm].
     2: irrelevance; symmetry; apply consWkEq'.
     + eapply LRTmEqSym; eapply redwfSubstTerm.
-      1: unshelve epose proof (r := PiRedTm.app p ρ0 h ha); irrelevance.
+      1: unshelve epose proof (r := PiRedTm.app Rfσ ρ' h ha); irrelevance.
       eapply redtmwf_appwk; tea.
-      1: exact (PiRedTm.red p).
+      1: exact (PiRedTm.red Rfσ).
       now bsimpl.
     + eapply redwfSubstTerm.
-      1: unshelve epose proof (r := PiRedTm.app p0 ρ0 h ha); irrelevance.
+      1: unshelve epose proof (r := PiRedTm.app Rgσ ρ' h ha); irrelevance.
       eapply redtmwf_appwk; tea.
-      1: exact (PiRedTm.red p0).
+      1: exact (PiRedTm.red Rgσ).
       now bsimpl.
 Qed.
 
