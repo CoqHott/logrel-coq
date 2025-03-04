@@ -719,22 +719,23 @@ Qed.
   Qed.
 
   Corollary implem_uconv_sound_neg Γ T V e :
-    graph tconv (Γ,T,V) (exception e) ->
+    graph uconv (Γ,T,V) (exception e) ->
     [Γ |-[de] T] -> [Γ |-[de] V] ->
     ~ [Γ |-[de] T ≅ V].
   Proof.
     intros Hgraph **.
-    eapply (funrect_graph _
+    eapply (funrec_graph _
       (fun '(Γ',T',V') => [Γ' |-[de] T'] × [Γ' |-[de] V'])
       (fun '(Γ',T',V') r => match r with | success _ => True | exception _ => ~ [Γ' |-[de] T' ≅ V'] end)) in Hgraph ; try easy.
     
     intros (?&?&?) [].
-    funelim (tconv _) ; cbn.
+    funelim (uconv _) ; cbn.
     inversion_clear eqargs.
     intros [] ; cbn ; [easy|].
-    eintros ?%funrect_graph.
-    2: now apply _implem_conv_neg_sound.
-    all: now cbn in *.
+    unshelve eintros ?%funrect_graph.
+    5: now apply _implem_uconv_neg_sound.
+    - cbn. eexists _, istype ; cbn ; easy.
+    - now cbn in *. 
   Qed.
 
 End ConvSoundNeg.
