@@ -62,55 +62,6 @@ Notation arr A B := (tProd A B⟨↑⟩).
 Notation comp A f g := (tLambda A (tApp f⟨↑⟩ (tApp g⟨↑⟩ (tRel 0)))).
 Notation idterm A  := (tLambda A (tRel 0)).
 
-Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
-Proof.
-  now asimpl.
-Qed.
-
-Lemma subst_arr A B σ : (arr A B)[σ] = arr A[σ] B[σ].
-Proof. now asimpl. Qed.
-
-Lemma subst_prod X Y σ : (tProd X Y)[σ] = tProd X[σ] Y[up_term_term σ].
-Proof. now asimpl. Qed.
-
-Lemma subst_sig X Y σ : (tSig X Y)[σ] = tSig X[σ] Y[up_term_term σ].
-Proof. now asimpl. Qed.
-
-Lemma shift_up_eq {t σ} : t⟨↑⟩[up_term_term σ] = t[σ]⟨↑⟩.
-Proof. now asimpl. Qed.
-
-Lemma shift_one_eq t a : t⟨↑⟩[a..] = t.
-Proof. now asimpl. Qed.
-
-Lemma up_single_subst {t σ u} : t[up_term_term σ][u..] = t[u .:  σ].
-Proof.  now asimpl. Qed.
-
-Lemma eta_up_single_subst A σ : A[up_term_term (↑ >> σ)][(σ var_zero)..] = A[σ].
-Proof. now rewrite up_single_subst, (scons_eta' σ). Qed.
-
-Lemma subst_rel t : t[tRel] = t.
-Proof. now asimpl. Qed.
-
-Lemma singleSubstComm G t σ : G[t..][σ] = G[t[σ] .: σ].
-Proof. now asimpl. Qed.
-
-Lemma singleSubstComm' G t σ : G[t..][σ] = G[up_term_term σ][t[σ]..].
-Proof. now asimpl. Qed.
-
-
-Lemma up_liftSubst_eq {σ t u} : t[up_term_term σ][u]⇑ = t[u .: ↑ >> up_term_term σ].
-Proof.
-  asimpl. eapply ext_term; intros [|n]; cbn.
-  1: reflexivity.
-  unfold funcomp; now rewrite  rinstInst'_term.
-Qed.
-
-Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
-Proof. now asimpl. Qed.
-
-Definition elimSuccHypTy P :=
-  tProd tNat (arr P P[tSucc (tRel 0)]⇑).
-
 
 Equations Derive NoConfusion EqDec for sort.
 Equations Derive NoConfusion Subterm EqDec for term.
