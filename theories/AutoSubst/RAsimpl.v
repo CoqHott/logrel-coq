@@ -218,6 +218,7 @@ Ltac quote_ren r :=
 **)
 
 Create HintDb asimpl_unfold.
+Create HintDb asimpl_post_unfold.
 
 (* Common *)
 #[export] Hint Unfold
@@ -288,7 +289,8 @@ Ltac rasimpl'_outermost :=
 Ltac rasimpl :=
   aunfold ;
   repeat rasimpl' ;
-  repeat rasimpl'_outermost.
+  repeat rasimpl'_outermost;
+  autounfold with asimpl_post_unfold.
 
 (* Taken from core.minimize *)
 Ltac minimize_in h :=

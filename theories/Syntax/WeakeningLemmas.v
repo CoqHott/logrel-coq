@@ -1,6 +1,6 @@
 (** * LogRel.Weakening: definition of well-formed weakenings, and some properties. *)
 From Coq Require Import Lia ssrbool RelationClasses.
-From LogRel Require Import Utils AutoSubst.Extra RAsimpl AutoSubst.AstRasimpl.
+From LogRel Require Import Utils AutoSubst.Extra AutoSubst.RAsimpl AutoSubst.AstRasimpl.
 From LogRel.Syntax Require Import BasicAst Notations Context NormalForms WeakeningDef.
 
 Section RenWlWhnf.
@@ -46,44 +46,6 @@ Section RenWlWhnf.
 End RenWlWhnf.
 
 #[global] Hint Resolve whne_ren_wl whnf_ren_wl isType_ren_wl isPosType_ren_wl isFun_ren_wl isCanonical_ren_wl : gen_typing.
-
-(* ** Adaptation of AutoSubst's rasimpl to well typed weakenings *)
-
-(*
-Ltac bsimpl' :=
-  repeat (first
-    [ progress setoid_rewrite substSubst_term_pointwise
-    | progress setoid_rewrite substSubst_term
-    | progress setoid_rewrite substRen_term_pointwise
-    | progress setoid_rewrite substRen_term
-    | progress setoid_rewrite renSubst_term_pointwise
-    | progress setoid_rewrite renSubst_term
-    | progress setoid_rewrite renRen'_term_pointwise
-    | progress setoid_rewrite renRen_term
-    | progress setoid_rewrite varLRen'_term_pointwise
-    | progress setoid_rewrite varLRen'_term
-    | progress setoid_rewrite varL'_term_pointwise
-    | progress setoid_rewrite varL'_term
-    | progress setoid_rewrite rinstId'_term_pointwise
-    | progress setoid_rewrite rinstId'_term
-    | progress setoid_rewrite instId'_term_pointwise
-    | progress setoid_rewrite instId'_term
-    | progress setoid_rewrite wk_to_ren_id
-    | progress setoid_rewrite wk_compose_compose
-    | progress setoid_rewrite id_ren
-    | progress setoid_rewrite wk1_ren
-    | progress unfold
-        up_term_term, upRen_term_term, up_ren, wk_well_wk_compose,
-        wk_id, wk_step, wk_up, wk_empty (**, _wk_up, _wk_step *)
-    | progress cbn[subst_term ren_term wk wk_to_ren]
-    | progress fsimpl ]).
-
-Ltac bsimpl := check_no_evars;
-                repeat
-                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
-                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1,
-                  Ren1_subst, Ren1_wk, Ren1_well_wk
-                  in *; bsimpl'; minimize. *)
 
 
 (** ** Weakenings play well with context access *)
@@ -137,10 +99,8 @@ Qed.
 
 (** Subst lemmas *)
 
-Lemma arr_ren1 {A B} : forall ρ, (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
-Proof.
-  now rasimpl.
-Qed.
+Lemma arr_ren1 {A B} (ρ : nat -> nat) : (arr A B)⟨ρ⟩ = arr A⟨ρ⟩ B⟨ρ⟩.
+Proof. now rasimpl. Qed.
 
 Lemma subst_arr A B σ : (arr A B)[σ] = arr A[σ] B[σ].
 Proof. now rasimpl. Qed.
@@ -178,9 +138,6 @@ Proof. now rasimpl. Qed.
 
 Lemma liftSubst_scons_eq {t u v: term} σ : t[u]⇑[v .: σ] = t[u[v .: σ] .: σ].
 Proof. now rasimpl. Qed.
-
-Definition elimSuccHypTy P :=
-  tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
 
 
@@ -309,7 +266,7 @@ Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
 Proof. now rasimpl. Qed.
 
 Lemma var0_wk1_id {Γ A t} : t[tRel 0 .: @wk1 Γ A >> tRel] = t.
-Proof. rasimpl. rewrite scons_eta'. now rasimpl. Qed.
+Proof. rasimpl;  rewrite scons_eta'. now rasimpl. Qed.
 
 Lemma eq_subst_scons {Γ} a B : B[a..] = B[a⟨@wk_id Γ⟩ .: @wk_id Γ >> tRel].
 Proof. now rasimpl. Qed.

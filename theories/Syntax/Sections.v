@@ -70,13 +70,10 @@ Notation "ρ ⁻¹" := (section_wk ρ) (at level 80).
 
 Arguments Ren1_sec {_ _ _} _ _/.
 
+Hint Unfold  Ren1_sec : asimpl_unfold.
+
 Lemma wk_section {Γ Δ} (ρ : Γ ≤ Δ) (t : term) :
   t⟨ρ⟩⟨ρ⁻¹⟩ = t.
 Proof.
-  rasimpl.
-  etransitivity.
-  2: apply rinstId'_term.
-  eapply extRen_term.
-  cbn.
-  apply (ρ⁻¹).
+  rasimpl; rewrite sec_ok; now rasimpl.
 Qed.

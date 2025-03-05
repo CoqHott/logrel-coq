@@ -125,17 +125,25 @@ Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
 
 (** ** Instance: how to rename by a well-formed weakening. *)
 
-#[global] Instance Ren1_well_wk {Y Z : Type} `{Ren1 (nat -> nat) Y Z} {Γ Δ : context} :
-  (Ren1 (Γ ≤ Δ) Y Z) := fun ρ t => t⟨wk_to_ren ρ.(wk)⟩.
+(* #[global] Instance Ren1_well_wk {Y Z : Type} `{Ren1 (nat -> nat) Y Z} {Γ Δ : context} :
+  (Ren1 (Γ ≤ Δ) Y Z) := fun ρ t => t⟨wk_to_ren ρ.(wk)⟩. *)
 
-Arguments Ren1_well_wk {_ _ _ _ _} _ _/.
+#[global] Instance Ren1_well_wk {Γ Δ : context} : (Ren1 (Γ ≤ Δ) term term) | 2 :=
+  fun ρ t => t⟨wk_to_ren ρ.(wk)⟩.
 
+#[global] Instance Ren1_well_wk_subst {Γ Δ : context} : (Ren1 (Γ ≤ Δ) (nat -> term) (nat -> term)) | 5 :=
+  fun ρ σ i => (σ i)⟨ρ⟩.
+
+Arguments Ren1_well_wk {_ _} _ _/.
+Arguments Ren1_well_wk_subst {_ _} _ _/.
+
+Hint Unfold Ren1_well_wk_subst : asimpl_unfold.
 
 Ltac fold_wk_ren :=
   change (@ren1 _ _ _ Ren_term (wk_to_ren (@wk _ _ ?ρ)))
-    with (@ren1 _ _ _ (@Ren1_well_wk _ _ _ _ _) ρ);
+    with (@ren1 _ _ _ (@Ren1_well_wk _ _) ρ);
   change (@ren1 _ _ _ (@Ren1_wk _ _ _) (@wk _ _ ?ρ))
-    with (@ren1 _ _ _ (@Ren1_well_wk _ _ _ _ _) ρ).
+    with (@ren1 _ _ _ (@Ren1_well_wk _ _) ρ).
 
 Smpl Add 20 fold_wk_ren : refold.
 

@@ -73,14 +73,14 @@ Proof.
     2: now eapply type_isType.
     split ; [now eexists|..].
     now intros [] ; cbn.
-    
+
   - intros * ???? * wB' [Hconcl]%dup.
     apply compute_domain.
     simp _conv conv_ty_red.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
     2: now unshelve erewrite (whne_ty_view1 _) ; cbn.
-    
+
     eapply typePiCongAlg_prem0 in Hconcl as [Hpre0 []]%dup.
     split ; [eauto | intros [] ; cbn ; [|easy]].
 
@@ -100,7 +100,7 @@ Proof.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
     now unshelve erewrite (whne_ty_view1 _) ; cbn.
-  
+
   - intros * wB' ?.
     apply compute_domain.
     simp _conv conv_ty_red.
@@ -114,7 +114,7 @@ Proof.
     destruct wB'.
     all: simp build_nf_ty_view2 ; cbn ; try easy.
     2: now unshelve erewrite (whne_ty_view1 _) ; cbn.
-    
+
     eapply typeSigCongAlg_prem0 in Hconcl as [Hpre0 []]%dup.
     split ; [eauto | intros [] ; cbn ; [|easy]].
 
@@ -137,7 +137,7 @@ Proof.
 
     intros Hpost1%implem_conv_graph%algo_conv_sound ; eauto.
     eapply typeIdCongAlg_prem2 in Hpost1 ; eauto.
-    
+
   - intros * ?? ?? * wB' [Hconcl]%dup.
     apply compute_domain.
     simp _conv conv_ty_red build_nf_ty_view2.
@@ -230,7 +230,7 @@ Proof.
     1: now eapply algo_conv_wh in Hn as [].
     eapply algo_conv_det in Hn ; tea ; subst.
     now cbn.
-    
+
   - intros * Hn ? * wu' [Hconcl]%dup.
     apply compute_domain.
     simp _conv conv_ne build_ne_view2 ; cbn.
@@ -397,7 +397,7 @@ Proof.
     destruct wu' ; cbn ; eauto.
     now unshelve erewrite (whne_nf_view1 _) ; cbn.
 
-  - intros * Hm IH Hpos ? wu' [Hconcl []]%dup. 
+  - intros * Hm IH Hpos ? wu' [Hconcl []]%dup.
     apply compute_domain.
     simp _conv conv_tm_red build_nf_view3.
     eapply algo_conv_wh in Hm as [].
@@ -445,7 +445,7 @@ Proof.
       eapply IH ; tea.
       split ; now eexists.
   Qed.
-  
+
   Corollary tconv_terminates Γ A A' :
     [Γ |-[de] A] ->
     [Γ |-[de] A'] ->
@@ -506,7 +506,7 @@ Section TypingTerminates.
     R_aux
       (Datatypes.pair (x.π2.π2.π2) x.π1)
       (Datatypes.pair (y.π2.π2.π2) y.π1).
-  
+
   #[local]Lemma R_acc : well_founded R.
   Proof.
     intros x.
@@ -521,7 +521,7 @@ Section TypingTerminates.
     assumption.
   - eapply well_founded_term_subterm.
   - apply well_founded_lt_state.
-  - apply well_founded_lt_state. 
+  - apply well_founded_lt_state.
   Qed.
 
 Definition wf_input (s : typing_state) Γ : tstate_input s -> Type :=
@@ -545,7 +545,7 @@ Proof.
   clear s Γ v t.
   induction Hacc as [x H IH] in HΓ, Hv |- * ; cbn in *.
   apply compute_domain. funelim_typing ; cbn in *; try easy.
-  all: match goal with 
+  all: match goal with
       | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst
   end.
 
@@ -594,7 +594,7 @@ Proof.
     intros [[]|] ; cbn ; try easy.
     intros Hn%implem_typing_sound%algo_typing_sound ; tea.
     set (Γ' := _ ,, tNat).
-    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]). 
+    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]).
     split.
     1:{
       apply IH ; cbn ; try easy.
@@ -619,7 +619,7 @@ Proof.
     intros [[]|] ; cbn ; try easy.
     intros Hn%implem_typing_sound%algo_typing_sound ; tea.
     set (Γ' := _ ,, tEmpty).
-    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]). 
+    assert ([|-[de] Γ']) by (now econstructor ; [|econstructor]).
     split.
     1:{
       apply IH ; cbn ; try easy.
@@ -676,15 +676,15 @@ Proof.
     1: intros [|]; cbn; [|easy]; intros hA%implem_typing_sound%algo_typing_sound; tea.
     1: split; cycle -1.
     1: intros [|]; cbn; [|easy]; intros hx%implem_typing_sound%algo_typing_sound; tea.
-    1: rewrite <- !(Weakening.wk1_ren_on Γ0 A).
-    1: assert [ |-[ de ] (Γ0,, A),, tId A⟨@Weakening.wk1 Γ0 A⟩ x⟨@Weakening.wk1 Γ0 A⟩ (tRel 0)]
+    1: rewrite <- !(WeakeningLemmas.wk1_ren_on Γ0 A).
+    1: assert [ |-[ de ] (Γ0,, A),, tId A⟨@WeakeningDef.wk1 Γ0 A⟩ x⟨@WeakeningDef.wk1 Γ0 A⟩ (tRel 0)]
       by now eapply idElimMotiveCtx.
     1: split; cycle -1.
     1: intros [|]; cbn; [|easy]; intros hP%implem_typing_sound%algo_typing_sound; tea.
     1: assert [Γ0 |-[ de ] P[tRefl A x .: x..]].
-    1:{ 
+    1:{
       eapply typing_subst2; tea; cbn.
-      rewrite 2!Weakening.wk1_ren_on, 2!shift_one_eq.
+      rewrite 2!WeakeningLemmas.wk1_ren_on, 2!shift_one_eq.
       now econstructor.
     }
     1: split; cycle -1.

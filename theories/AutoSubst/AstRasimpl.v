@@ -224,18 +224,6 @@ Fixpoint apply_subst (s : quoted_subst) (n : quoted_nat) : quoted_term :=
   | qsubst_wk r, n => qatom (tRel (unquote_nat (apply_ren (quoted_wk_to_quoted_ren (unpack_quoted_wk r)) n)))
   end.
 
-Definition eval_ren_term r t :=
-  match t with
-  | qsubst s t => qsubst (qsubst_comp (qsubst_ren r) s) t
-  | qren r' t => qren (qren_comp r r') t
-  | qwk r' t => qren (qren_comp r (quoted_wk_to_quoted_ren (unpack_quoted_wk r'))) t
-  | qatom _ =>
-    match test_qren_id r with
-    | is_qren_id => t
-    | not_qren_id r => qren r t
-    end
-  end.
-
 Definition eval_subst_compr s r :=
   match eval_subst_compr_c s r with
   | esr_id_l r => qsubst_ren r
@@ -257,6 +245,18 @@ Definition eval_subst_rcomp r s :=
   | ers_cons_r r t s => qsubst_cons (qren r t) (qsubst_rcomp r s)
   | ers_ren_r r s => qsubst_ren (qren_comp r s)
   | ers_other r s => qsubst_rcomp r s
+  end.
+
+Definition eval_ren_term r t :=
+  match t with
+  | qsubst s t => qsubst (eval_subst_rcomp r s) t
+  | qren r' t => qren (eval_ren (qren_comp r r')) t
+  | qwk r' t => qren (eval_ren (qren_comp r (quoted_wk_to_quoted_ren (unpack_quoted_wk r')))) t
+  | qatom _ =>
+    match test_qren_id r with
+    | is_qren_id => t
+    | not_qren_id r => qren r t
+    end
   end.
 
 Fixpoint eval_subst (s : quoted_subst) : quoted_subst :=
@@ -412,21 +412,6 @@ Proof.
     end; intros [=].
 Qed.
 
-Lemma eval_ren_term_sound {r t} :
-  unquote_term t = unquote_term (eval_term t) ->
-  ren_term (unquote_ren r) (unquote_term t) = unquote_term (eval_ren_term (eval_ren r) (eval_term t)).
-Proof.
-  intros eval_term_sound.
-  rewrite eval_ren_sound, eval_term_sound.
-  unfold eval_ren_term; cbn.
-  remember (eval_term _) as et eqn:e in *; destruct et; cbn.
-  + remember (eval_ren _) as rr eqn:er; destruct test_qren_id.
-    * cbn; now asimpl.
-    * subst. now cbn.
-  + now rewrite renRen_term.
-  + destruct (eval_term_no_qwk _ _ (symmetry e)).
-  + now rewrite rinstInst'_term, substSubst_term.
-Qed.
 
 Lemma eval_subst_compr_sound r es :
   unquote_ren r >> unquote_subst es =1 unquote_subst (eval_subst_compr es (eval_ren r)).
@@ -481,6 +466,24 @@ Proof.
     intro. rewrite eval_ren_sound. reflexivity.
 Qed.
 
+Lemma eval_ren_term_sound {r t} :
+  unquote_term t = unquote_term (eval_term t) ->
+  ren_term (unquote_ren r) (unquote_term t) = unquote_term (eval_ren_term (eval_ren r) (eval_term t)).
+Proof.
+  intros eval_term_sound.
+  rewrite eval_ren_sound, eval_term_sound.
+  unfold eval_ren_term.
+  remember (eval_term _) as et eqn:e in *; destruct et.
+  + cbn; remember (eval_ren _) as rr eqn:er; destruct test_qren_id.
+    * cbn; now asimpl.
+    * subst. now cbn.
+  + cbn -[eval_ren].
+    rewrite <-(eval_ren_sound (qren_comp _ _)).
+    cbn; now rewrite renRen_term.
+  + destruct (eval_term_no_qwk _ _ (symmetry e)).
+  + cbn -[eval_subst_rcomp].
+    now rewrite <- eval_subst_rcomp_sound, substRen_term, <-eval_ren_sound.
+Qed.
 
 Fixpoint eval_subst_sound s :
     pointwise_relation _ eq (unquote_subst s) (unquote_subst (eval_subst s))
@@ -667,6 +670,22 @@ with quote_term t :=
   | _ => constr:(qatom t)
   end.
 
+
+(** Results markings *)
+
+Definition subst_term' := subst_term.
+Definition ren_term' := ren_term.
+
+Ltac mark_result t :=
+  lazymatch t with
+  | subst_term ?σ ?t => constr:(subst_term' σ t)
+  | ren_term ?ρ ?t => constr:(ren_term' ρ t)
+  | _ => t
+  end.
+
+Hint Unfold subst_term' : asimpl_post_unfold.
+Hint Unfold ren_term' : asimpl_post_unfold.
+
 (** Unfoldings **)
 
 #[export] Hint Unfold
@@ -689,7 +708,7 @@ Declare Reduction asimpl_cbn_term :=
     unquote_subst eval_subst eval_subst_compr_c eval_subst_comp_c
     eval_subst_rcomp_c apply_subst quoted_wk_to_quoted_ren
     unquote_nat dfst dsnd unpack_quoted_wk unquote_wk pack_quoted_wk
-    ren_term subst_term scons
+    ren_term subst_term ren_term' subst_term' scons
     eval_subst_compr eval_subst_rcomp
   ].
 
@@ -700,7 +719,11 @@ Declare Reduction asimpl_unfold_term :=
   let q := quote_term t in
   let s := eval asimpl_cbn_term in (unquote_term (eval_term q)) in
   let s := eval asimpl_unfold_term in s in
-  exact (MkSimplTm t s (eval_term_sound q))
+  first [
+    constr_eq_strict t s ;
+    let s := mark_result s in
+    exact (MkSimplTm t s eq_refl) |
+    exact (MkSimplTm t s (eval_term_sound q)) ]
   : typeclass_instances.
 
 Class SubstSimplification (r s : nat -> term) := MkSimplSubst {
@@ -712,6 +735,7 @@ Arguments autosubst_simpl_csubst r {s _}.
 Hint Mode SubstSimplification + - : typeclass_instances.
 
 #[export] Hint Extern 10 (SubstSimplification ?r _) =>
+  let r := eval unfold subst_term', ren_term' in r in
   let q := quote_subst r in
   let s := eval asimpl_cbn_term in (unquote_subst (eval_subst q)) in
   let s := eval asimpl_unfold_term in s in
@@ -719,13 +743,11 @@ Hint Mode SubstSimplification + - : typeclass_instances.
   : typeclass_instances.
 
 
-
-Lemma autosubst_simpl_term_wk :
-  forall Γ Δ r t s,
-    TermSimplification (@Ren1_well_wk _ _ ren_term Γ Δ r t) s ->
-    @Ren1_well_wk _ _ ren_term Γ Δ r t = s.
+Lemma autosubst_simpl_term_wk Γ Δ r t s :
+    TermSimplification (@Ren1_well_wk  Γ Δ r t) s ->
+    @Ren1_well_wk Γ Δ r t = s.
 Proof.
-  intros Γ Δ r t s H.
+  intros H.
   apply autosubst_simpl_term, _.
 Qed.
 
@@ -788,8 +810,12 @@ Ltac debug_term_simplification_hint :=
     let q0 := fresh "q" in pose (q0 := q) ;
     let s := eval asimpl_cbn_term in (unquote_term (eval_term q)) in
     let s := eval asimpl_unfold_term in s in
-    let s0 := fresh "s" in pose (s0 := s) ;
-    let result0 := fresh "res" in
-    try pose (result0 := MkSimplTm t s (eval_term_sound q))
+    first [
+      constr_eq_strict t s ;
+      let s := mark_result s in
+      let result0 := fresh "res" in
+      try pose (result0 := MkSimplTm t s eq_refl) |
+      let result0 := fresh "res" in
+      try pose (result0 := MkSimplTm t s (eval_term_sound q)) ]
   end.
 

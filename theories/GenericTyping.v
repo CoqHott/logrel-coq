@@ -1041,7 +1041,7 @@ Section GenericConsequences.
     eapply ty_simple_app; renToWk.
     - unshelve eapply (wft_wk _ _ tyB) ; tea.
     - now eapply wft_wk.
-    - replace (arr _ _) with (arr B C)⟨r⟩ by (unfold r; now bsimpl).
+    - replace (arr _ _) with (arr B C)⟨r⟩ by (unfold r ; now bsimpl).
       now eapply ty_wk.
     - eapply ty_simple_app; renToWk.
       + unshelve eapply (wft_wk _ _ tyA) ; tea.
