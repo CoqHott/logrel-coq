@@ -467,7 +467,7 @@ Section TypingWk.
       eapply convne_meta_conv ; [econstructor|..] ; refold.
       + eauto.
       + eauto.
-      + now asimpl.
+      + now rasimpl.
       + reflexivity.
     - intros * ? IHn ? IHP ? IHz ? IHs *.
       cbn.
@@ -526,7 +526,7 @@ Section TypingWk.
       1-2: gen_typing.
       specialize IH with(ρ := wk_up _ ρ).
       cbn in *.
-      assert (eq: forall t, t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨up_ren ρ⟩) by now asimpl.
+      assert (eq: forall t, t⟨ρ⟩⟨↑⟩ = t⟨↑⟩⟨up_ren ρ⟩) by now rasimpl.
       do 2 rewrite eq.
       apply IH.
     - intros * ??? IHB *. 
@@ -597,7 +597,7 @@ Section TypingWk.
       cbn in *.
       eapply typing_meta_conv.
       + now econstructor.
-      + now asimpl.
+      + now rasimpl.
     - now econstructor.
     - now econstructor.
     - now econstructor.

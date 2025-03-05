@@ -930,7 +930,7 @@ Section GenericConsequences.
     [Γ |- a : A] ->
     [Γ |- tApp f a : B].
   Proof.
-    intros. replace B with B⟨shift⟩[a..] by now asimpl.
+    intros. replace B with B⟨shift⟩[a..] by now rasimpl.
     eapply ty_app; tea.
   Qed.
 
@@ -940,7 +940,7 @@ Section GenericConsequences.
       [ Γ |- tApp f t ~ tApp g u : B ].
   Proof.
     intros.
-    replace B with B⟨↑⟩[t..] by now asimpl.
+    replace B with B⟨↑⟩[t..] by now rasimpl.
     now eapply convneu_app.
   Qed.
 
@@ -982,7 +982,7 @@ Section GenericConsequences.
     1: eapply redtm_beta; tea.
     + now eapply ty_var0.
     + cbn; now bsimpl.
-    + now asimpl.
+    + now rasimpl.
   Qed.
 
   Lemma convtm_id {Γ A A' B C} :
@@ -1075,7 +1075,7 @@ Section GenericConsequences.
       1,2: rewrite <- arr_ren1; renToWk; eapply ty_wk; tea; gen_typing.
       now eapply ty_var0.
     + cbn; now bsimpl.
-    + now asimpl.
+    + now rasimpl.
   Qed.
 
   Lemma convtm_comp_app {Γ A B C f f' g g'} :
@@ -1172,7 +1172,7 @@ Section GenericConsequences.
     eapply ty_app; tea.
     2: refine (ty_var _ (in_here _ _)); gen_typing.
     1: eapply typing_meta_conv; [renToWk; eapply ty_wk; tea;gen_typing|now rewrite wk1_ren_on].
-    fold ren_term. bsimpl; rewrite scons_eta'; now asimpl.
+    fold ren_term. bsimpl; rewrite scons_eta'; now rasimpl.
   Qed.
 
   Lemma lambda_cong {Γ A A' B B' t t'} :

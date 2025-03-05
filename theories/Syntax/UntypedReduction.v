@@ -192,13 +192,13 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-12: cbn; asimpl; now econstructor.
-  - cbn ; asimpl.
+  2-12: cbn; rasimpl; now econstructor.
+  - cbn ; rasimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
     all: subst t'.
     1: econstructor.
-    now asimpl.
+    now rasimpl.
 Qed.
 
 Lemma oredalg_str (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :
@@ -294,9 +294,9 @@ Proof.
   replace t with t' at 2 ; subst t'.
   1: econstructor.
   substify.
-  asimpl.
+  rasimpl.
   rewrite scons_eta'.
-  now asimpl.
+  now rasimpl.
 Qed.
 
 Lemma eta_expand_beta_inv {A t t'} :

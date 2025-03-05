@@ -50,10 +50,10 @@ Context `{GenericTypingProperties}.
 
 
   Lemma subst_scons2 (P e y : term) (σ : nat -> term) : P[e .: y..][σ] = P [e[σ] .: (y[σ] .: σ)].
-  Proof. now asimpl. Qed.
+  Proof. now rasimpl. Qed.
 
   Lemma subst_upup_scons2 (P e y : term) (σ : nat -> term) : P[up_term_term (up_term_term σ)][e .: y..] = P [e .: (y .: σ)].
-  Proof. now asimpl. Qed.
+  Proof. now rasimpl. Qed.
 
 
   Lemma idElimMotiveCtxIdValid {Γ Γ' l A A' x x'}

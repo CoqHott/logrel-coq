@@ -31,13 +31,13 @@ Section MoreSubst.
     induction 1 as [|σ Γ A].
     1: now econstructor.
     econstructor.
-    - asimpl ; cbn in * ; asimpl.
+    - rasimpl ; cbn in * ; rasimpl.
       eassumption.
-    - asimpl ; cbn in * ; asimpl.
+    - rasimpl ; cbn in * ; rasimpl.
       unfold funcomp.
       eapply typing_meta_conv.
       1: eapply typing_wk ; eassumption.
-      asimpl.
+      rasimpl.
       reflexivity.
   Qed.
 
@@ -63,7 +63,7 @@ Section MoreSubst.
     all: econstructor.
     - eapply well_subst_ext.
       2: now eapply well_subst_up.
-      now asimpl.
+      now rasimpl.
     - eapply typing_meta_conv.
       1: now do 2 econstructor.
       cbn ; now renamify.
@@ -94,7 +94,7 @@ Section MoreSubst.
     all: assert ([Γ |-s tRel : Γ]) as Hsubst by now eapply id_subst.
     3-4: apply subst_refl in Hsubst.
     all: first [eapply ty_subst| eapply tm_subst | eapply ty_conv_subst | eapply tm_conv_subst] ; tea.
-    all: econstructor ; cbn ; refold ; now asimpl.
+    all: econstructor ; cbn ; refold ; now rasimpl.
   Qed.
 
   Theorem typing_substmap1 Γ T :
@@ -128,13 +128,13 @@ Section MoreSubst.
     assert (h : forall (a : term) σ, ↑ >> (a .: σ) =1 σ) by reflexivity.
     assert (h' : forall a σ t, t[↑ >> (a .: σ)] = t[σ]) by (intros; now setoid_rewrite h).
     split; intros; econstructor.
-    - asimpl; econstructor.
-      2: cbn; rewrite h'; now asimpl.
-      asimpl; eapply id_subst; gen_typing.
+    - rasimpl; econstructor.
+      2: cbn; rewrite h'; now rasimpl.
+      rasimpl; eapply id_subst; gen_typing.
     - cbn; now rewrite h'.
-    - asimpl; econstructor.
-      2: cbn; rewrite h'; now asimpl.
-      asimpl; eapply subst_refl; eapply id_subst; gen_typing.
+    - rasimpl; econstructor.
+      2: cbn; rewrite h'; now rasimpl.
+      rasimpl; eapply subst_refl; eapply id_subst; gen_typing.
     - cbn; now rewrite h'.
   Qed.
 
