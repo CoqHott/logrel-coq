@@ -49,8 +49,7 @@ Section MoreSubst.
     intros HA Hσ.
     eapply subst_wk with (ρ := wk_step A wk_id) in Hσ.
     - eapply well_subst_ext ; [|eassumption].
-      bsimpl.
-      now reflexivity.
+      intros ?; now rasimpl.
     - econstructor.
       all: gen_typing.
   Qed.
@@ -63,7 +62,7 @@ Section MoreSubst.
     all: econstructor.
     - eapply well_subst_ext.
       2: now eapply well_subst_up.
-      now rasimpl.
+      reflexivity.
     - eapply typing_meta_conv.
       1: now do 2 econstructor.
       cbn ; now renamify.
@@ -99,16 +98,16 @@ Section MoreSubst.
 
   Theorem typing_substmap1 Γ T :
   (forall (t : term), [Γ ,, T |- t : T⟨↑⟩] ->
-    forall (A : term), [Γ,, T |- A] -> 
+    forall (A : term), [Γ,, T |- A] ->
       [Γ,, T |- A[t]⇑]) ×
   (forall (t : term), [Γ ,, T |- t : T⟨↑⟩] ->
-    forall (A u : term), [Γ,, T |- u : A] -> 
+    forall (A u : term), [Γ,, T |- u : A] ->
       [Γ,, T |- u[t]⇑ : A[t]⇑]) ×
   (forall (t t' : term), [Γ ,, T |- t ≅ t' : T⟨↑⟩] ->
     forall (A B : term), [Γ,, T |- A ≅ B] ->
       [Γ,, T |- A[t]⇑ ≅ B[t']⇑]) ×
   (forall (t t' : term), [Γ ,, T |- t ≅ t' : T⟨↑⟩] ->
-    forall (A u v : term), [Γ,, T |- u ≅ v : A] -> 
+    forall (A u v : term), [Γ,, T |- u ≅ v : A] ->
       [Γ,, T |- u[t]⇑ ≅ v[t']⇑ : A[t]⇑]).
   Proof.
     repeat match goal with |- _ × _ => split end.
@@ -121,18 +120,18 @@ Section MoreSubst.
     all: econstructor ; cbn ; refold; bsimpl; try rewrite <- rinstInst'_term; tea.
   Qed.
 
-  Lemma scons2_well_subst {Γ A B} : 
+  Lemma scons2_well_subst {Γ A B} :
     (forall a b, [Γ |- a : A] -> [Γ |- b : B[a..]] -> [Γ |-s (b .: a ..) : (Γ ,, A),, B])
     × (forall a a' b b', [Γ |- a ≅ a' : A] -> [Γ |- b ≅ b' : B[a..]] -> [Γ |-s (b .: a..) ≅ (b' .: a'..) : (Γ ,, A),, B]).
   Proof.
     assert (h : forall (a : term) σ, ↑ >> (a .: σ) =1 σ) by reflexivity.
     assert (h' : forall a σ t, t[↑ >> (a .: σ)] = t[σ]) by (intros; now setoid_rewrite h).
     split; intros; econstructor.
-    - rasimpl; econstructor.
+    - asimpl; econstructor.
       2: cbn; rewrite h'; now rasimpl.
       rasimpl; eapply id_subst; gen_typing.
     - cbn; now rewrite h'.
-    - rasimpl; econstructor.
+    - asimpl; econstructor.
       2: cbn; rewrite h'; now rasimpl.
       rasimpl; eapply subst_refl; eapply id_subst; gen_typing.
     - cbn; now rewrite h'.
@@ -279,7 +278,7 @@ Section ElimSuccHyp.
       2: eapply well_subst_up.
       3: eapply id_subst ; tea.
       2: now econstructor.
-      now bsimpl.
+      reflexivity.
     - cbn.
       econstructor.
       eapply typing_meta_conv.
@@ -310,7 +309,7 @@ End ElimSuccHyp.
 (** *** Typing lemmas *)
 (** Weak versions necessary to prove the boundary lemmas. Stronger versions follow. *)
 
-Lemma idElimMotiveCtx {Γ A x} : 
+Lemma idElimMotiveCtx {Γ A x} :
 [Γ |- A] ->
 [Γ |- x : A] ->
 [|- (Γ,, A),, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)].
@@ -402,7 +401,7 @@ Section Boundary.
     - intros * ? _ ? [] ? []; split.
       1: gen_typing.
       constructor; tea.
-      eapply _stability1. 
+      eapply _stability1.
       3: now symmetry.
       all: tea.
     - intros; prod_hyp_splitter; split; econstructor; tea; now eapply wfTermConv.
@@ -462,13 +461,13 @@ Section Boundary.
       + gen_typing.
       + eapply ty_conv.
         assert [Γ |-[de] tNat ≅ tNat] by now constructor.
-        1: eapply ty_natElim; tea; eapply ty_conv; tea. 
+        1: eapply ty_natElim; tea; eapply ty_conv; tea.
         * eapply typing_subst1; tea; do 2 constructor; boundary.
         * eapply elimSuccHypTy_conv ; tea.
           now boundary.
         * symmetry; now eapply typing_subst1.
     - intros **; split; tea.
-      eapply ty_natElim; tea; constructor; boundary.   
+      eapply ty_natElim; tea; constructor; boundary.
     - intros **.
       assert [Γ |- tSucc n : tNat] by now constructor.
       assert [Γ |- P[(tSucc n)..]] by now eapply typing_subst1.
@@ -477,14 +476,14 @@ Section Boundary.
       1,5: now eapply ty_natElim.
       2: tea.
       1: now eapply typing_subst1.
-      replace (arr _ _) with (arr P P[tSucc (tRel 0)]⇑)[n..] by now bsimpl.
+      replace (arr _ _) with (arr P P[tSucc (tRel 0)]⇑)[n..] by now (bsimpl; cbn; bsimpl).
       eapply ty_app; tea.
     - intros * ? [] ? []; split.
       + now eapply typing_subst1.
       + gen_typing.
       + eapply ty_conv.
         assert [Γ |-[de] tEmpty ≅ tEmpty] by now constructor.
-        1: eapply ty_emptyElim; tea; eapply ty_conv; tea. 
+        1: eapply ty_emptyElim; tea; eapply ty_conv; tea.
         * symmetry; now eapply typing_subst1.
     - intros * ??? [] ? []; split; tea.
       1: gen_typing.

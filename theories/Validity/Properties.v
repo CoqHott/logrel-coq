@@ -70,9 +70,8 @@ Lemma consWkSubstEq {Γ Γ' Δ Ξ A A' B σ σ' a b l} {VΓ : [||-v Γ ≅ Γ']}
 Proof.
   unshelve eapply consSubst.
   1: now eapply wkSubst.
-  eapply irrLREq; tea; now rasimpl.
+  eapply irrLREq; tea; rasimpl; cbn; now rasimpl.
 Qed.
-
 
 Lemma liftSubst {Γ Γ' σ σ' Δ lF F F'}
   (VΓ : [||-v Γ ≅ Γ']) (wfΔ : [|- Δ])

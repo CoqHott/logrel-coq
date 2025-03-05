@@ -338,7 +338,7 @@ Proof.
   + cbn -[wk1] in x |- *.
     rewrite subst_rel0 in x.
     replace f⟨↑⟩⟨upRen_term_term (wk1 F)⟩ with f⟨ρ⟩⟨↑⟩.
-    2: clear; unfold ρ; now bsimpl.
+    2: unfold ρ; unshelve erewrite <-wk_up_ren_on; tea; now bsimpl.
     apply x.
   + rewrite wk_up_wk1_ren_on; bsimpl; apply upren_subst_rel0.
 Qed.

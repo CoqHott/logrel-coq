@@ -63,8 +63,8 @@ Section NeuConvProperties.
       all: try solve [now eapply typing_wk].
       + rewrite 2!(wk_up_wk1 ρ).
         eapply typing_wk ; eauto.
-        change (up_ren ρ) with (wk_up A ρ :> nat -> nat).
-        econstructor ; tea ; econstructor.
+        unshelve erewrite <- 2!wk_up_ren_on; try exact A.
+        econstructor ; tea ; econstructor; refold.
         * rewrite <- wk_up_wk1, wk_step_wk1; eapply typing_wk ; boundary.
         * rewrite <- 2!wk_up_wk1, 2!wk_step_wk1; now eapply typing_wk ; boundary.
         * rewrite <- wk_up_wk1, wk1_ren_on; cbn; constructor; tea; constructor.

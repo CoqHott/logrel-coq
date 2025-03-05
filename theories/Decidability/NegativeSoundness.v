@@ -65,7 +65,7 @@ Proof.
     all: solve [intros [=]].
 
   - destruct (build_nf_view1 t), (build_nf_view1 u) ; cbn.
-    all: try solve [intros [=]]. 
+    all: try solve [intros [=]].
     all: destruct n ; cbn ; try solve [intros [=]].
     all: (intros _ ; right ; do 5 eexists).
     all: split ; [reflexivity|..].
@@ -73,7 +73,7 @@ Proof.
     all: try solve [constructor].
     5-8: econstructor ; eapply not_can_whne ; tea ; solve [now apply zip_can | intros c ; inversion c].
     all: now cbn.
-    
+
   - unshelve erewrite whne_ty_view1 ; tea ; cbn.
     destruct (build_nf_view1 t) ; cbn ; try solve [intros [=]].
     destruct (build_nf_view1 u) ; cbn ; solve [intros [=]].
@@ -144,7 +144,7 @@ Section ConvSoundNeg.
   Proof.
     intros x pre.
     funelim (_conv x) ; cbn in pre |- *.
-    
+
     6: simp conv_ne_red ; cbn.
     5: simp conv_ne ; destruct (build_ne_view2 _ _) eqn:e ; cbn ; try easy.
     4: simp conv_tm_red ; destruct (build_nf_view3 _ _ _) as [??? [] | | | | | | | | ]  eqn:e ;
@@ -153,7 +153,7 @@ Section ConvSoundNeg.
     2: simp conv_ty_red ; cbn ; destruct (build_nf_ty_view2 _ _) eqn:e ; cbn.
     1: simp conv_ty ; cbn.
     all: try easy.
-    
+
     - intros T' []%red_sound V' []%red_sound.
       eapply typeConvRed_prem2 in pre as [[] Hpost2]%dup ; tea.
       split ; [split|..] ; tea.
@@ -163,7 +163,7 @@ Section ConvSoundNeg.
       eapply Hnty.
       etransitivity.
       2: etransitivity ; tea.
-      1: symmetry. 
+      1: symmetry.
       all: eapply RedConvTyC, subject_reduction_type ; eauto.
       all: boundary.
 
@@ -187,7 +187,7 @@ Section ConvSoundNeg.
       split ; [easy|..].
       intros [|] ? Hty' ; [easy|..].
       now intros []%sig_ty_inj.
-    
+
     - destruct pre as [_ _ [pre [[]]%typeIdCongAlg_prem0%dup]%dup].
       split ; [easy|..].
       intros [|] Hty ? ; cbn.
@@ -247,7 +247,7 @@ Section ConvSoundNeg.
       intros []%prod_tm_inj.
       eapply Hty', stability1 ; tea.
       now econstructor.
-      
+
     - destruct s.
       destruct pre as [??? [pre [[]]%termSigCongAlg_prem0%dup]%dup].
       split ; [easy|..].
@@ -279,7 +279,7 @@ Section ConvSoundNeg.
       eapply whnf_view3_ty_neutral_can in e as [?%not_can_whne ?%not_can_whne] ; tea.
       split ; [now split|..].
       intros [|] ? Hty ; cbn ; [easy|..].
-      
+
       destruct s.
       unshelve eintros ?%conv_neu_conv_p ; eauto.
       gen_typing.
@@ -305,7 +305,7 @@ Section ConvSoundNeg.
       1: eapply convtm_meta_conv.
       1: eapply convtm_wk ; tea.
       + boundary.
-      + cbn ; reflexivity.
+      + now erewrite wk_prod.
       + reflexivity.
       + eapply convtm_meta_conv.
         1: do 2 econstructor.
@@ -315,7 +315,7 @@ Section ConvSoundNeg.
       + bsimpl ; refold.
         rewrite scons_eta'.
         now bsimpl.
-    
+
     - destruct pre as [??? [pre [[]]%termSuccCongAlg_prem0%dup]%dup] ; tea.
       split ; [easy|..].
       intros [|] ? Hty ; cbn in * ; [easy|..].
@@ -323,7 +323,7 @@ Section ConvSoundNeg.
       1-2: now constructor.
       cbn in *.
       eauto.
-        
+
     - destruct pre as [??? [pre [[]]%termPairConvAlg_prem2%dup]%dup] ; tea.
       split ; [easy|..].
       intros [|] ; cbn in *.
@@ -339,7 +339,7 @@ Section ConvSoundNeg.
       + intros ? Hnty Hty.
         eapply Hnty.
         now econstructor.
-    
+
     - destruct pre as [??? [pre [[]]%termNeuConvAlg_prem0%dup]%dup] ; tea.
       eapply whnf_view3_neutrals_can in e as [Wa Wn Wn'] ; tea.
       split.
@@ -350,7 +350,7 @@ Section ConvSoundNeg.
       eapply Hnty.
       exists A.
       now eapply conv_neu_conv_p.
-    
+
     - destruct pre as [w ?? []].
       eapply type_isType in w.
       2: boundary.
@@ -366,10 +366,10 @@ Section ConvSoundNeg.
         erewrite ctx_access_complete ; cbn.
         1: econstructor.
         all: eassumption.
-        
+
       + intros [? (?&[[= ->]])%neuConvGen].
         eauto.
-      
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuAppCongAlg_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
@@ -395,7 +395,7 @@ Section ConvSoundNeg.
         apply Hneg.
         eexists ; split ; eauto.
         now constructor.
-  
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuNatElimCong_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
@@ -417,7 +417,7 @@ Section ConvSoundNeg.
       split ; [easy|..].
       intros [|] ; cbn.
       2: shelve.
-      
+
       intros [Hpost2]%implem_conv_graph%algo_conv_sound%dup ; tea.
       eapply neuNatElimCong_prem3, dup in Hpost2 as [Hpost2 []] ; eauto.
       split ; [easy|..].
@@ -427,7 +427,7 @@ Section ConvSoundNeg.
       all: intros ? Hneg [? (?&?&?&?&[[= <- <- <-]])%neuConvGen] ; subst.
       all: apply Hneg ; eauto.
       eexists ; split ; gen_typing.
-    
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuEmptyElimCong_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
@@ -447,12 +447,12 @@ Section ConvSoundNeg.
       all: intros ? Hneg [? (?&?&[[=]])%neuConvGen] ; subst.
       all: apply Hneg ; eauto.
       eexists ; split ; gen_typing.
-    
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuFstCongAlg_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
       intros [|] ; cbn.
-      
+
       + intros [Hpost]%implem_conv_graph ; tea.
         eapply algo_conv_sound in Hpost as [Hconv Hfu ?] ; tea.
         eapply dup in pre as [pre [[? (?&(?&?&->&Hp)&?)%termGen'] _]].
@@ -463,12 +463,12 @@ Section ConvSoundNeg.
       + intros ? Hneg [? (?&?&?&[[= <-]])%neuConvGen].
         eapply Hneg.
         eexists ; split ; gen_typing.
-    
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuSndCongAlg_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
       intros [|] ; cbn.
-      
+
       + intros [Hpost]%implem_conv_graph ; tea.
         eapply algo_conv_sound in Hpost as [Hconv Hfu ?] ; tea.
         eapply dup in pre as [pre [[? (?&(?&?&->&Hp)&?)%termGen'] _]].
@@ -479,7 +479,7 @@ Section ConvSoundNeg.
       + intros ? Hneg [? (?&?&?&[[= <-]])%neuConvGen].
         eapply Hneg.
         eexists ; split ; gen_typing.
-    
+
     - destruct pre as [[wn wn'] [pre [[] ]%neuIdElimCong_prem0%dup]%dup] ; eauto.
       inversion wn ; inversion wn' ; subst.
       split ; [easy|..].
@@ -508,14 +508,14 @@ Section ConvSoundNeg.
       all: intros ? Hneg [? (?&?&?&?&?&?&[[= <- <- <-]])%neuConvGen] ; subst.
       all: apply Hneg ; eauto.
       + eexists ; split ; gen_typing.
-      + now erewrite <- !wk1_ren_on. 
+      + now erewrite <- !wk1_ren_on.
 
     - intros [? ?%neuConvGen].
       destruct t ; cbn in * ; try solve [easy].
       all: prod_hyp_splitter ; subst.
       all: simp build_ne_view2 in e ; cbn in *.
       all: congruence.
-    
+
     - split ; [easy|..].
       intros [|] ? Hty ; cbn ; [easy|..].
       intros [? []].

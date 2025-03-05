@@ -139,9 +139,9 @@ Section RedImplemComplete.
       [now econstructor| now eapply not_whne_can ; tea ; eapply isType_whnf | now cbn in *].
   Qed.
 
-  Ltac termInvContradiction Hty := 
+  Ltac termInvContradiction Hty :=
     eapply termGen' in Hty; cbn in Hty; prod_hyp_splitter; subst;
-    now match goal with 
+    now match goal with
     | [H : [_ |-[de] _ : _] |- _] =>
       eapply termGen' in H; cbn in H; prod_hyp_splitter; subst;
       now match goal with
@@ -206,7 +206,7 @@ Section RedImplemComplete.
     eapply IH.
     + do 2 red; cbn.
       left; constructor; eapply zip_ored; constructor.
-    + cbn. 
+    + cbn.
       eapply well_typed_zip in Hty as (?&[??Hu]).
       eapply Hu, RedConvTeC, subject_reduction ; tea.
       now do 2 econstructor.
@@ -214,7 +214,7 @@ Section RedImplemComplete.
     eapply IH.
     + do 2 red; cbn.
       left; constructor; eapply zip_ored; constructor.
-    + cbn. 
+    + cbn.
       eapply well_typed_zip in Hty as (?&[??Hu]).
       eapply Hu, RedConvTeC, subject_reduction ; tea.
       now do 2 econstructor.
@@ -270,7 +270,7 @@ Section RedImplemComplete.
     eapply whred_det ; tea.
     all: now eapply red_sound, def_graph_sound.
   Qed.
-  
+
   Corollary wh_red_complete_whnf_ty Γ A A' :
   [Γ |-[de] A] ->
   [A ⤳* A'] ->
@@ -281,7 +281,7 @@ Section RedImplemComplete.
     eapply subject_reduction_type in Hred ; tea.
     now eapply wh_red_complete_whnf_class.
   Qed.
-  
+
   Corollary wh_red_complete_whnf_tm Γ A t t' :
   [Γ |-[de] t : A] ->
   [t ⤳* t'] ->
@@ -344,15 +344,15 @@ Proof.
     all: inversion e.
 Qed.
 
-(* The combinator rec throws in a return branch with a type 
-  necessarily convertible to the exception errors type, but the syntactic 
+(* The combinator rec throws in a return branch with a type
+  necessarily convertible to the exception errors type, but the syntactic
   mismatch between the 2 types prevents `rec_graph` from `apply`ing.
   This tactic fixes the type in the return branch to what's expected
   syntactically. *)
   Ltac patch_rec_ret :=
     try (unfold rec;
-    match goal with 
-    | |- orec_graph _ (_rec _ (fun _ : ?Bx => _)) ?hBa => 
+    match goal with
+    | |- orec_graph _ (_rec _ (fun _ : ?Bx => _)) ?hBa =>
       let Ba := type of hBa in change Bx with Ba
     end).
 
@@ -363,12 +363,12 @@ Context `{!TypingSubst (ta := de)} `{!TypeReductionComplete (ta := de)} `{!TypeC
 Let PTyEq (Γ : context) (A B : term) :=
   forall v, graph _conv (ty_state;Γ;v;A;B) ok.
 Let PTyRedEq (Γ : context) (A B : term) :=
-  forall v, graph _conv (ty_red_state;Γ;v;A;B) ok. 
+  forall v, graph _conv (ty_red_state;Γ;v;A;B) ok.
 Let PNeEq (Γ : context) (A t u : term) :=
   forall v, graph _conv (ne_state;Γ;v;t;u) (success A).
 Let PNeRedEq (Γ : context) (A t u : term) :=
   forall v, graph _conv (ne_red_state;Γ;v;t;u) (success A).
-Let PTmEq (Γ : context) (A t u : term) := 
+Let PTmEq (Γ : context) (A t u : term) :=
   graph _conv (tm_state;Γ;A;t;u) ok.
 Let PTmRedEq (Γ : context) (A t u : term) :=
   graph _conv (tm_red_state;Γ;A;t;u) ok.
@@ -491,7 +491,7 @@ Proof.
     econstructor.
     1: exact (ihe tt).
     econstructor.
-    1: do 2 erewrite <- Weakening.wk1_ren_on; exact (ihP tt).
+    1: do 2 erewrite <- WeakeningLemmas.wk1_ren_on; exact (ihP tt).
     econstructor.
     1: exact ihhr.
     cbn; patch_rec_ret; econstructor.
@@ -700,7 +700,7 @@ Proof.
     1: exact g0.
     econstructor.
     1: exact g.
-    now constructor. 
+    now constructor.
   - now constructor.
   - econstructor.
     1: exact (g0 tt whnf_tEmpty).
@@ -744,7 +744,7 @@ Proof.
     econstructor.
     1: exact g3.
     econstructor.
-    1: erewrite <- 2!(Weakening.wk1_ren_on) ; exact (g2 tt).
+    1: erewrite <- 2!(WeakeningLemmas.wk1_ren_on) ; exact (g2 tt).
     econstructor.
     1: exact g1.
     econstructor.

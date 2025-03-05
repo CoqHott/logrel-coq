@@ -73,7 +73,7 @@ funrect wh_red_stack (fun _ => True) (fun '(t,π) t' => whnf t').
 Proof.
   intros ? _.
   funelim (wh_red_stack _).
-  all: cbn ; try solve [constructor ; eauto]. 
+  all: cbn ; try solve [constructor ; eauto].
   - now eapply isType_whnf, isType_tm_view1.
   - econstructor. eapply stack_ne.
     now econstructor.
@@ -129,7 +129,7 @@ Section CtxAccessCorrect.
     induction 1.
     all: simp ctx_access ; cbn.
     - reflexivity.
-    - now rewrite IHin_ctx. 
+    - now rewrite IHin_ctx.
   Qed.
 
   Corollary ctx_access_correct Γ n d :
@@ -143,9 +143,9 @@ Section CtxAccessCorrect.
 End CtxAccessCorrect.
 
 Ltac funelim_conv :=
-  funelim (_conv _); 
-    [ funelim (conv_ty _) | funelim (conv_ty_red _) | 
-      funelim (conv_tm _) | funelim (conv_tm_red _) | 
+  funelim (_conv _);
+    [ funelim (conv_ty _) | funelim (conv_ty_red _) |
+      funelim (conv_tm _) | funelim (conv_tm_red _) |
       funelim (conv_ne _) | funelim (conv_ne_red _) ].
 
 Lemma ty_view1_small_can T n : build_ty_view1 T = ty_view1_small n -> ~ isCanonical T.
@@ -244,7 +244,7 @@ Section ConversionSound.
     all: repeat match goal with | H : whne (_ _) |- _ => inversion_clear H end.
     all: try solve [now econstructor].
     - econstructor ; eauto. econstructor.
-    - econstructor; tea; [intuition (auto with *)| now rewrite 2!Weakening.wk1_ren_on].
+    - econstructor; tea; [intuition (auto with *)| now rewrite 2!WeakeningLemmas.wk1_ren_on].
     - eapply convne_meta_conv.
       2: reflexivity.
       + econstructor.
@@ -289,10 +289,10 @@ Section ConversionSound.
 End ConversionSound.
 
 Ltac funelim_typing :=
-  funelim (typing _ _); 
-    [ funelim (typing_inf _ _) | 
+  funelim (typing _ _);
+    [ funelim (typing_inf _ _) |
       funelim (typing_check _ _) |
-      funelim (typing_inf_red _ _) | 
+      funelim (typing_inf_red _ _) |
       funelim (typing_wf_ty _ _) ].
 
 Section TypingSound.
@@ -331,10 +331,10 @@ Section TypingSound.
       | H : graph conv _ _ |- _ => eapply implem_conv_sound in H ; simp conv_sound_type in H
       | H : ctx_access _ _ = _ |- _ => eapply ctx_access_correct in H
       | H : (build_ty_view1 _ = ty_view1_small _) |- _ => eapply ty_view1_small_can in H
-      | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst 
+      | H : (_;_;_) = (_;_;_) |- _ => injection H; clear H; intros; subst
       end).
     all: try now econstructor.
-    econstructor; tea; now rewrite 2!Weakening.wk1_ren_on.
+    econstructor; tea; now rewrite 2!WeakeningLemmas.wk1_ren_on.
     econstructor ; tea.
     apply conv_sound.
     now match goal with | H : unit |- _ => destruct H end.
@@ -361,7 +361,7 @@ Section TypingSound.
       2: easy.
       now econstructor.
   Qed.
-     
+
   Lemma check_ctx_sound Γ :
     graph (check_ctx conv) Γ ok ->
     [|-[al] Γ].

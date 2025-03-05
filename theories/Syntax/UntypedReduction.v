@@ -22,7 +22,7 @@ Inductive OneRedAlg : term -> term -> Type :=
     [ tNatElim P hz hs (tSucc n) ⤳ tApp (tApp hs n) (tNatElim P hz hs n) ]
 | emptyElimSubst {P e e'} :
     [e ⤳ e'] ->
-    [tEmptyElim P e ⤳ tEmptyElim P e']        
+    [tEmptyElim P e ⤳ tEmptyElim P e']
 | fstSubst {p p'} :
     [ p ⤳ p'] ->
     [ tFst p ⤳ tFst p']
