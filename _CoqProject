@@ -10,11 +10,15 @@ theories/AutoSubst/core.v
 theories/AutoSubst/unscoped.v
 theories/AutoSubst/Ast.v
 theories/AutoSubst/Extra.v
+theories/AutoSubst/RAsimpl.v
+theories/AutoSubst/AstRasimpl.v
 
 theories/Syntax/Context.v
 theories/Syntax/Notations.v
 theories/Syntax/TermNotations.v
 theories/Syntax/NormalForms.v
+theories/Syntax/WeakeningDef.v
+theories/Syntax/WeakeningLemmas.v
 theories/Syntax/Weakening.v
 theories/Syntax/UntypedReduction.v
 theories/Syntax/Sections.v
