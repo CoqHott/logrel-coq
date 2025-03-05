@@ -73,7 +73,7 @@ Arguments Ren1_sec {_ _ _} _ _/.
 Lemma wk_section {Γ Δ} (ρ : Γ ≤ Δ) (t : term) :
   t⟨ρ⟩⟨ρ⁻¹⟩ = t.
 Proof.
-  asimpl.
+  rasimpl.
   etransitivity.
   2: apply rinstId'_term.
   eapply extRen_term.

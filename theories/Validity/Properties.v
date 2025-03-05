@@ -49,7 +49,7 @@ Proof.
     + eapply ih ; eassumption.
     + eapply irrLREq.
       2: now unshelve now eapply wkLR.
-      now asimpl.
+      now rasimpl.
 Qed.
 
 Lemma wk1Subst {Γ Γ' σ σ' Δ F} (VΓ : [||-v Γ ≅ Γ'])
@@ -70,7 +70,7 @@ Lemma consWkSubstEq {Γ Γ' Δ Ξ A A' B σ σ' a b l} {VΓ : [||-v Γ ≅ Γ']}
 Proof.
   unshelve eapply consSubst.
   1: now eapply wkSubst.
-  eapply irrLREq; tea; now asimpl.
+  eapply irrLREq; tea; now rasimpl.
 Qed.
 
 
@@ -167,7 +167,7 @@ Proof.
     }
     exists wfΓA; exists Vs.
     eapply var0; tea.
-    rewrite <-(subst_rel A⟨↑⟩); now asimpl.
+    rewrite <-(subst_rel A⟨↑⟩); now rasimpl.
 Qed.
 
 

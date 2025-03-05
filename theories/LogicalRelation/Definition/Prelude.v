@@ -46,7 +46,6 @@ End LRPack.
 
 Export LRPack(LRPack,Build_LRPack).
 
-(* Notation "[ P | Γ ||- A ≅ B ]" := (@LRPack.eqTy Γ A P B). *)
 Notation "[ P | Γ ||- t : A ]" := (@LRPack.eqTm Γ A A P t t).
 Notation "[ P | Γ ||- t ≅ u : A ]" := (@LRPack.eqTm Γ A _ P t u).
 Notation "[ P | Γ ||- t ≅ u : A ≅ B ]" := (@LRPack.eqTm Γ A B P t u).

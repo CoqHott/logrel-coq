@@ -415,11 +415,11 @@ Section AlgoStr.
 
       + crush.
         all: eapply H ; [now eapply up_inj | reflexivity|..].
-        all: now asimpl.
+        all: now rasimpl.
 
       + crush.
         all: eapply H ; [now eapply up_inj |idtac|reflexivity].
-        all: now asimpl.
+        all: now rasimpl.
 
       + crush.
       

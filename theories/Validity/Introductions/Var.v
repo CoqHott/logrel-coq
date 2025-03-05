@@ -22,7 +22,7 @@ Section Var.
   Proof.
     pose proof (invValidity VΓ) as (?&?&?&?&?&?&h) ; subst; cbn in h; subst.
     constructor; intros; cbn; eapply irrLREqCum;[| exact (eqHead Vσσ')].
-    now asimpl.
+    now rasimpl.
   Qed.
 
   Lemma in_ctx_valid {Γ A n} (hin : in_ctx Γ n A)

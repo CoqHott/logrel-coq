@@ -7,7 +7,7 @@ Import DeclarativeTypingData.
 (** ** Stability by weakening *)
 
 Lemma shift_up_ren {Γ Δ t} (ρ : Δ ≤ Γ) : t⟨ρ⟩⟨↑⟩ = t⟨↑ >> up_ren ρ⟩.
-Proof. now asimpl. Qed.
+Proof. now rasimpl. Qed.
 
 Section TypingWk.
 
@@ -70,7 +70,7 @@ Section TypingWk.
       1: econstructor.
       1: now eapply IHf.
       1: now eapply IHu.
-      now asimpl.
+      now rasimpl.
     - intros; now constructor.
     - intros; now constructor.
     - intros; cbn; econstructor; eauto.
@@ -157,8 +157,8 @@ Section TypingWk.
         econstructor ; tea.
         now eapply IHA.
       + now eapply IHu.
-      + now asimpl.
-      + now asimpl.
+      + now rasimpl.
+      + now rasimpl.
     - intros Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
@@ -175,8 +175,8 @@ Section TypingWk.
       1: econstructor.
       + now eapply IHf.
       + now eapply IHu.
-      + now asimpl.
-      + now asimpl.
+      + now rasimpl.
+      + now rasimpl.
     - intros * _ IHA _ IHA' _ IHA'' _ IHe ? ρ ?.
       cbn; econstructor; try easy.
       apply (IHe _ (wk_up _ ρ)).

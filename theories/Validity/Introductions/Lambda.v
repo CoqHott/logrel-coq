@@ -106,10 +106,10 @@ Proof.
 Qed.
 
 Lemma eq_upren t σ ρ : t[up_term_term σ]⟨upRen_term_term ρ⟩ = t[up_term_term σ⟨ρ⟩].
-Proof. asimpl; unfold Ren1_subst; asimpl; substify; now asimpl. Qed.
+Proof. rasimpl; unfold Ren1_subst; rasimpl; substify; now rasimpl. Qed.
 
 Lemma eq_substren {Γ Δ} t σ (ρ : Γ ≤ Δ) : t[σ]⟨ρ⟩ = t[σ⟨ρ⟩].
-Proof. now asimpl. Qed.
+Proof. now rasimpl. Qed.
 
 Context {Γ Γ' F F' G G' l}
   {VΓ : [||-v Γ ≅ Γ']}
