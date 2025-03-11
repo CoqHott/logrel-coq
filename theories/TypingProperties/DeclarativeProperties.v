@@ -610,7 +610,7 @@ Module WeakDeclarativeTypingProperties.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
   - intros * ? []; split.
     + repeat (constructor; tea).
-    + now eapply redalg_natEmpty.
+    + now eapply redalg_emptyElim.
     + constructor; first [eassumption|now apply TermRefl|now apply TypeRefl].
   - intros; split; refold.
     + econstructor; now constructor.

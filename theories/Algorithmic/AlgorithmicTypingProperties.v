@@ -285,7 +285,7 @@ Module AlgorithmicTypingProperties.
         2: now econstructor.
         econstructor ; tea.
         now eapply ty_conv_compl.
-      + now apply redalg_natEmpty.
+      + now apply redalg_emptyElim.
     - intros_bn.
       2: econstructor; [|reflexivity]; now constructor.
       econstructor.

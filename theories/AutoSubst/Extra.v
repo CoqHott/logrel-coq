@@ -65,7 +65,5 @@ Notation idterm A  := (tLambda A (tRel 0)).
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
-
-
 Equations Derive NoConfusion EqDec for sort.
 Equations Derive NoConfusion Subterm EqDec for term.

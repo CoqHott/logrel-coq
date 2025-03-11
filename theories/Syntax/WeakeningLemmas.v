@@ -229,6 +229,77 @@ Proof. now cbn. Qed.
 Lemma wk_refl {A x Γ Δ} (ρ : Δ ≤ Γ) : tRefl A⟨ρ⟩ x⟨ρ⟩ = (tRefl A x)⟨ρ⟩.
 Proof. now cbn. Qed.
 
+Lemma wk_w {A B Γ Δ} (ρ : Δ ≤ Γ) : tW A⟨ρ⟩ B⟨wk_up A ρ⟩ = (tW A B)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_sup {A B a k Γ Δ} (ρ : Δ ≤ Γ) : tSup A⟨ρ⟩ B⟨wk_up A ρ⟩ a⟨ρ⟩ k⟨ρ⟩ = (tSup A B a k)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+Lemma wk_elimW {A B P hsup w Γ Δ} (ρ : Δ ≤ Γ)
+  : tWElim A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A⟨ρ⟩ B⟨wk_up A ρ⟩) ρ⟩ hsup⟨ρ⟩ w⟨ρ⟩ = (tWElim A B P hsup w)⟨ρ⟩.
+Proof. now cbn. Qed.
+
+(* Definition elimSupHypTy0 A B P :=
+  (* assuming  Γ ⊢ A,  Γ, a: A ⊢ B and Γ,w : W A B ⊢ P *)
+  (* we get Γ, a: A ⊢ B → W A B *)
+  let tyk := arr B ((tW A B)⟨↑⟩) in
+  let ρ := ↑ >> ↑ >> ↑ in
+  let sup := tSup A⟨ρ⟩ B⟨upRen_term_term ρ⟩ (tRel 1) (tRel 0) in
+  tProd B
+   tProd A (tProd tyk (arr (tProd B P)⟨↑ >> ↑⟩ P[sup .: ρ >> tRel])).
+
+Lemma wk_elimSupHypTy {A B P Γ Δ} (ρ : Δ ≤ Γ) :
+  (elimSupHypTy0 A B P)⟨ρ⟩ = elimSupHypTy0 A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩.
+Proof.
+  rewrite 2!wk_up_ren_on.
+  unfold elimSupHypTy0.
+  cbn; f_equal; f_equal; f_equal; [f_equal|f_equal|].
+  3: asimpl.
+  all: try reflexivity.
+  - unfold funcomp; cbn. admit.
+  - f_equal; cbn; f_equal.
+  2: admit.
+  f_equal.
+  rewrite scons_eta'.
+  cbn; asimpl.
+  cbn. *)
+
+Definition elimSupHypTy Γ A B P :=
+  (* assuming  Γ ⊢ A,  Γ, a: A ⊢ B and Γ,w : W A B ⊢ P *)
+  (* we get Γ, a: A ⊢ B → W A B *)
+  let tyk := arr B (tW A B)⟨@wk1 Γ A⟩ in
+  let ρ : Γ,,A,,tyk ≤ Γ := wk_step tyk (@wk1 Γ A) in
+  (* Γ,, a: A,, k : B → W A B ⊢ forall (b : B a), P[(k b)/w]*)
+  let ihty :=
+    let argty := B⟨wk_up A ρ⟩[(tRel 1)..] in
+    let rec := tApp (tRel 1) (tRel 0) in
+    tProd argty P⟨wk_up (tW A B) (wk_step argty ρ)⟩[rec..]
+  in
+  let ρ' := wk_step ihty ρ in
+  (* Γ,, a : A,, k :  B → W A B, ih : forall (b : B a), P[(k b)/w]  ⊢ sup A B a k : W A B *)
+  let sup := tSup A⟨ρ'⟩ B⟨wk_up A ρ'⟩ (tRel 2) (tRel 1) in
+  tProd A (tProd tyk (arr ihty P[sup .: ρ' >> tRel])).
+
+Lemma wk_elimSupHypTy {A B P Γ Δ} (ρ : Δ ≤ Γ) :
+  (elimSupHypTy Γ A B P)⟨ρ⟩ = elimSupHypTy Δ A⟨ρ⟩ B⟨wk_up A ρ⟩ P⟨wk_up (tW A B) ρ⟩.
+Proof.
+ unfold elimSupHypTy.
+ rewrite <-wk_prod; f_equal.
+ rewrite <-wk_prod; f_equal.
+ 1: now bsimpl.
+ rewrite <-wk_arr; f_equal.
+ 1: rewrite <-wk_prod; f_equal; now bsimpl.
+bsimpl.
+
+ f_equal; f_equal.
+ rewrite !wk1_ren_on, !wk_step_ren_on, !wk1_ren.
+ rewrite wk1_ren.
+ cbn.
+ rewrite wk_step_ren.
+ cbn -[wk_up wk1 wk_step].
+ bsimpl. cbn; asimpl; f_equal.
+ f_equal.
+
 
 Lemma wk_step_wk1 {A t Γ Δ} (ρ : Δ ≤ Γ) :  t⟨ρ⟩⟨@wk1 Δ A⟩ = t⟨wk_step A ρ⟩.
 Proof. now rasimpl. Qed.

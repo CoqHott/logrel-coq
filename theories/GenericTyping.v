@@ -225,6 +225,10 @@ Section GenericTyping.
       [Γ |- x : A] ->
       [Γ |- y : A] ->
       [Γ |- tId A x y] ;
+    wft_W {Γ} {A B} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- tW A B] ;
     wft_term {Γ} {A} :
       [ Γ |- A : U ] ->
       [ Γ |- A ] ;
@@ -305,6 +309,20 @@ Section GenericTyping.
       [Γ |- y : A] ->
       [Γ |- e : tId A x y] ->
       [Γ |- tIdElim A x P hr y e : P[e .: y..]];
+    ty_W {Γ A B} :
+      [Γ |- A : U] ->
+      [Γ ,, A |- B : U] ->
+      [Γ |- tW A B : U] ;
+    ty_sup {Γ A B a k} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ |- a : A] ->
+      [Γ |- k : arr B[a..] (tW A B)];
+    ty_WElim {Γ A B P hsup w} :
+      [Γ |- A] ->
+      [Γ ,, A |- B] ->
+      [Γ ,, tW A B |- P] ->
+      [Γ |- hsup : tProd A (tProd (arr B (tW A B)⟨@wk1 Γ A⟩) P[(tSup A⟨↑⟩⟨↑⟩ B⟨wk_up .. (tRel 1) (tRel 0))]]
     ty_exp {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A ⤳* A'] -> [Γ |- t : A] ;
     ty_conv {Γ t A A'} : [Γ |- t : A'] -> [Γ |- A' ≅ A] -> [Γ |- t : A] ;
   }.

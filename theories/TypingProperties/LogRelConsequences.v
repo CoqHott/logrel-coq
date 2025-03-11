@@ -527,7 +527,7 @@ Section Normalisation.
   + now constructor.
   + intros; now apply redalg_app.
   + intros; now apply redalg_natElim.
-  + intros; now apply redalg_natEmpty.
+  + intros; now apply redalg_emptyElim.
   + intros; now apply redalg_fst.
   + intros; now apply redalg_snd.
   + intros; now eapply redalg_idElim.

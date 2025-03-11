@@ -18,6 +18,8 @@ Inductive whnf : term -> Type :=
   | whnf_tPair {A B a b} : whnf (tPair A B a b)
   | whnf_tId {A x y} : whnf (tId A x y)
   | whnf_tRefl {A x} : whnf (tRefl A x)
+  | whnf_tW {A B} : whnf (tW A B)
+  | whnf_tSup {A B a k} : whnf (tSup A B a k)
   | whnf_whne {n} : whne n -> whnf n
 with whne : term -> Type :=
   | whne_tRel {v} : whne (tRel v)
@@ -26,7 +28,8 @@ with whne : term -> Type :=
   | whne_tEmptyElim {P e} : whne e -> whne (tEmptyElim P e)
   | whne_tFst {p} : whne p -> whne (tFst p)
   | whne_tSnd {p} : whne p -> whne (tSnd p)
-  | whne_tIdElim {A x P hr y e} : whne e -> whne (tIdElim A x P hr y e).
+  | whne_tIdElim {A x P hr y e} : whne e -> whne (tIdElim A x P hr y e)
+  | whne_tWElim {A B P hsup w} : whne w -> whne (tWElim A B P hsup w).
 
 #[global] Hint Constructors whne whnf : gen_typing.
 
@@ -62,6 +65,7 @@ Inductive isType : term -> Type :=
   | EmptyType : isType tEmpty
   | SigType {A B} : isType (tSig A B)
   | IdType {A x y} : isType (tId A x y)
+  | WType {A B} : isType (tW A B)
   | NeType {A}  : whne A -> isType A.
 
 Inductive isPosType : term -> Type :=
@@ -69,6 +73,7 @@ Inductive isPosType : term -> Type :=
   | NatPos : isPosType tNat
   | EmptyPos : isPosType tEmpty
   | IdPos {A x y} : isPosType (tId A x y)
+  | WPos {A B} : isPosType (tW A B)
   | NePos {A}  : whne A -> isPosType A.
 
 Inductive isFun : term -> Type :=
@@ -87,6 +92,10 @@ Inductive isPair : term -> Type :=
 Inductive isId : term -> Type :=
   | ReflId {A a} : isId (tRefl A a)
   | NeId {n} : whne n -> isId n.
+
+Inductive isW : term -> Type :=
+  | SupW {A B a k} : isW (tSup A B a k)
+  | NeW {n} : whne n -> isW n.
 
 Definition isPosType_isType t (i : isPosType t) : isType t.
 Proof. destruct i; now constructor. Defined.
@@ -121,8 +130,12 @@ Definition isId_whnf t (i : isId t) : whnf t :=
   | NeId n => whnf_whne n
   end.
 
-#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf isPair_whnf isId_whnf : gen_typing.
-#[global] Hint Constructors isPosType isType isFun isNat isId : gen_typing.
+Definition isW_whnf t (i : isW t) : whnf t.
+Proof. destruct i; now constructor. Defined.
+
+
+#[global] Hint Resolve isPosType_isType isType_whnf isFun_whnf isNat_whnf isPair_whnf isId_whnf isW_whnf : gen_typing.
+#[global] Hint Constructors isPosType isType isFun isNat isId isW : gen_typing.
 
 Equations Derive Signature for isNat.
 
@@ -165,6 +178,23 @@ Proof.
   now eexists.
 Qed.
 
+Equations Derive Signature for isW.
+
+Lemma isW_sup A B a k (n : isW (tSup A B a k)) : n = SupW.
+Proof.
+  depelim n.
+  1: reflexivity.
+  inversion w ; cbn ; easy.
+Qed.
+
+Lemma isW_ne t (n : isW t) : whne t -> ∑ w, n = NeW w.
+Proof.
+  intros w.
+  dependent inversion n ; subst.
+  1: inversion w.
+  now eexists.
+Qed.
+
 (** * Unicity of witnesses *)
 
 Derive Signature for whne.
@@ -194,6 +224,11 @@ Proof.
   f_equal; eapply whne_uniq.
 Qed.
 
+Lemma isW_uniq {t} (p q : isW t) : p = q.
+Proof.
+  destruct p; depind q; try easy; try now inversion w.
+  f_equal; eapply whne_uniq.
+Qed.
 
 (** ** Canonical forms *)
 
@@ -208,7 +243,9 @@ Inductive isCanonical : term -> Type :=
   | can_tSig {A B} : isCanonical (tSig A B)
   | can_tPair {A B a b}: isCanonical (tPair A B a b)
   | can_tId {A x y}: isCanonical (tId A x y)
-  | can_tRefl {A x}: isCanonical (tRefl A x).
+  | can_tRefl {A x}: isCanonical (tRefl A x)
+  | can_tW {A B}: isCanonical (tW A B)
+  | can_tSup {A B a k}: isCanonical (tSup A B a k).
 
 #[global] Hint Constructors isCanonical : gen_typing.
 
@@ -339,6 +376,19 @@ Section RenWhnf.
       now eapply whne_ren.
   Qed.
 
+  Lemma isW_ren p : isW (p⟨ρ⟩) <~> isW p.
+  Proof.
+    split.
+    - remember p⟨ρ⟩ as p'.
+      intros Hid.
+      induction Hid in p, Heqp' |- * ; cbn.
+      all: push_renaming ; econstructor ; eauto.
+      all: now eapply whne_ren ; cbn.
+    - induction 1 ; cbn.
+      all: econstructor.
+      now eapply whne_ren.
+  Qed.
+
   Lemma isCanonical_ren t : isCanonical (t⟨ρ⟩) <~> isCanonical t.
   Proof.
     split.
@@ -348,4 +398,4 @@ Section RenWhnf.
 
 End RenWhnf.
 
-#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isId_ren isCanonical_ren : gen_typing.
+#[global] Hint Resolve whne_ren whnf_ren isType_ren isPosType_ren isFun_ren isId_ren isW_ren isCanonical_ren : gen_typing.
