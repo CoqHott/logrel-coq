@@ -11,14 +11,15 @@ Section Escapes.
   Lemma escapeTy {l Γ A B} (lr : [Γ ||-< l > A ≅ B]) :
       [Γ |- A] × [Γ |- B] × [Γ |- A ≅ B].
   Proof.
-    indLR lr.
+    caseLR lr.
     - intros []; prod_splitter; [ | | eapply convty_exp]; gen_typing.
     - intros []; prod_splitter; [ | | eapply convty_exp]; gen_typing.
-    - intros [???? [] []] _ _; prod_splitter;[ | | eapply convty_exp]; gtyping.
+    - intros [???? [] []] ; prod_splitter;[ | | eapply convty_exp]; gtyping.
     - intros []; prod_splitter; [| |eapply convty_exp]; gtyping.
     - intros []; prod_splitter; [| |eapply convty_exp]; gtyping.
-    - intros [???? [] []] _ _; prod_splitter; [| |eapply convty_exp]; gtyping.
-    - intros [] _ ; prod_splitter; [| |eapply convty_exp]; gtyping.
+    - intros [???? [] []]; prod_splitter; [| |eapply convty_exp]; gtyping.
+    - intros [] ; prod_splitter; [| |eapply convty_exp]; gtyping.
+    - intros [???? [] []]; prod_splitter; [| | eapply convty_exp]; gtyping.
   Qed.
 
   Lemma escape {l Γ A B} :
@@ -80,6 +81,12 @@ Section Escapes.
       1-3: gtyping.
       2: now eapply urefl.
       tea.
+    - intros WA ? []; rewrite wk_id_ren_on in *; cbn in *; prod_splitter.
+      1,2: (eapply ty_conv; [gtyping|now symmetry]).
+      destruct WA as [???? []]; cbn in *; eapply convtm_wfexp.
+      1-3: gtyping.
+      2: now eapply urefl.
+      tea.
   Qed.
 
 
@@ -99,7 +106,6 @@ Section Escapes.
   Proof. apply escapeTy. Qed.
 
 End Escapes.
-
 
 Ltac escape :=
   repeat lazymatch goal with

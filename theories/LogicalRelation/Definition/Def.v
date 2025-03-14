@@ -1,7 +1,7 @@
 (** * LogRel.LogicalRelation.Definition.Def : Definition of the logical relation *)
 From Coq Require Import CRelationClasses.
 From LogRel Require Import Utils Syntax.All GenericTyping.
-From LogRel.LogicalRelation.Definition Require Import Prelude Ne Universe Poly Pi Sig Nat Empty Id.
+From LogRel.LogicalRelation.Definition Require Import Prelude Ne Universe Poly Pi Sig Nat Empty Id W.
 
 
 Set Primitive Projections.
@@ -35,6 +35,8 @@ Inductive LR@{i j k} `{ta : tag}
     LR rec Γ A B (SigRedTmEq ΣA)
   | LRId {Γ A B} (IA : IdRedTyPack@{j} Γ A B) (IAad : IdRedTyAdequate@{j k} (LR rec) IA) :
     LR rec Γ A B (IdRedTmEq IA)
+  | LRW {Γ A B} (WA : WRedTyPack@{j} Γ A B) (WAad : WRedTyAdequate@{j k} (LR rec) WA) :
+    LR rec Γ A B (WRedTmEq WA (@wk_id Γ))
   .
 
 Set Elimination Schemes.
@@ -110,6 +112,11 @@ Section MoreDefs.
     (IAad : IdRedTyAdequate (LR (LogRelRec@{i j k} l)) IA)
     : [LogRel@{i j k l} l | Γ ||- A ≅ B] :=
     LRbuild (LRId (LogRelRec l) IA IAad).
+
+  Definition LRW_@{i j k l} l {Γ A B} (WA : WRedTyPack@{k} Γ A B)
+    (WAad : WRedTyAdequate (LR (LogRelRec@{i j k} l)) WA)
+    : [ LogRel@{i j k l} l | Γ ||- A  ≅ B] :=
+    LRbuild (LRW (LogRelRec l) WA WAad).
 
 End MoreDefs.
 

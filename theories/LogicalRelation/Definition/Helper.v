@@ -1,7 +1,7 @@
 (** * LogRel.LogicalRelation.Definition.Helper: Auxilliary definitions and rebundling of structures from the logical relation *)
 From Coq Require Import CRelationClasses.
 From LogRel Require Import Utils Syntax.All GenericTyping.
-From LogRel.LogicalRelation.Definition Require Import Prelude Ne Universe Poly Pi Sig Nat Empty Id Def.
+From LogRel.LogicalRelation.Definition Require Import Prelude Ne Universe Poly Pi Sig Nat Empty Id W Def.
 
 Set Primitive Projections.
 Set Universe Polymorphism.
@@ -170,6 +170,7 @@ Section EvenMoreDefs.
 
   Definition PiRedTy@{i j k l} Γ l A B := ParamRedTy@{i j k l} tProd Γ l A B.
   Definition SigRedTy@{i j k l} Γ l A B := ParamRedTy@{i j k l} tSig Γ l A B.
+  Definition WRedTy@{i j k l} Γ l A B := ParamRedTy@{i j k l} tW Γ l A B.
 
   Definition LRPi'@{i j k l} {l Γ A B} (ΠA : PiRedTy@{i j k l} Γ l A B)
     : [ LogRel@{i j k l} l | Γ ||- A ≅ B ] :=
@@ -179,12 +180,18 @@ Section EvenMoreDefs.
     : [ LogRel@{i j k l} l | Γ ||- A ≅ B] :=
     LRbuild (LRSig (LogRelRec l) _ (ParamRedTy.toAd ΠA)).
 
+  Definition LRW'@{i j k l} {l Γ A B} (WA : WRedTy@{i j k l} Γ l A B)
+    : [ LogRel@{i j k l} l | Γ ||- A ≅ B ] :=
+    LRbuild (LRW (LogRelRec l) _ (ParamRedTy.toAd WA)).
+
 End EvenMoreDefs.
 
 Notation "[ Γ ||-Π< l > A ≅ B ]" := (PiRedTy Γ l A B) (at level 0, Γ, l, A, B at level 50).
 Notation "[ Γ ||-Σ< l > A ≅ B ]" := (SigRedTy Γ l A B) (at level 0, Γ, l, A, B at level 50).
+Notation "[ Γ ||-W< l > A ≅ B ]" := (WRedTy Γ l A B) (at level 0, Γ, l, A, B at level 50).
 Notation "[ Γ ||-Π t ≅ u : A | ΠA ]" := (PiRedTmEq (Γ:=Γ) (A:=A) t u (ParamRedTy.toPack ΠA)).
 Notation "[ Γ ||-Σ t ≅ u : A | ΣA ]" := (SigRedTmEq (Γ:=Γ) (A:=A) t u (ParamRedTy.toPack ΣA)).
+Notation "[ Γ ||-W t ≅ u : A | ΣA ]" := (WRedTmEq (Γ:=Γ) (A:=A) (ParamRedTy.toPack ΣA) (wk_id Γ) t u).
 
 Module PiRedTy.
   Include ParamRedTyPack.
@@ -242,6 +249,33 @@ Instance SigRedTmWhRedRel `{GenericTypingProperties} {Γ l A B} (ΠA : [Γ ||-Σ
      whredtmR := fun t u Rtu => SigRedTmEq.whredR Rtu ; |}.
 Next Obligation. now destruct h. Qed.
 
+Module WRedTy.
+  Include ParamRedTyPack.
+
+  Section WRedTy.
+  Context `{GenericTypingProperties}.
+  Definition whredL  {l Γ A B} : WRedTy Γ l A B -> [Γ |- A ↘ ] :=
+    ParamRedTyPack.whredL0 (T:=tW) ltac:(intros; constructor).
+  Definition whredR  {l Γ A B} : WRedTy Γ l A B -> [Γ |- B ↘ ] :=
+    ParamRedTyPack.whredR0 (T:=tW) ltac:(intros; constructor).
+  End WRedTy.
+End WRedTy.
+
+#[program]
+Instance WRedTyWhRed `{GenericTypingProperties} {Γ l} : WhRedTyRel Γ (WRedTy Γ l) :=
+  {| whredtyL := fun A B RAB => WRedTy.whredL RAB ;
+     whredtyR := fun A B RAB => WRedTy.whredR RAB ; |}.
+Next Obligation. now destruct h. Qed.
+
+#[local]
+Obligation Tactic := idtac.
+
+#[program]
+Instance WRedTmWhRedRel `{GenericTypingProperties} {Γ l A B} (WA : [Γ ||-W<l> A ≅ B])
+  : WhRedTmRel Γ (outTyL WA) (WRedTmEq WA (@wk_id Γ)) :=
+  {| whredtmL := fun t u Rtu => nfst (WRedTmEq.whredtm_both_id Rtu) ;
+     whredtmR := fun t u Rtu => nsnd (WRedTmEq.whredtm_both_id Rtu) ; |}.
+Next Obligation. intros. destruct h; cbn; now rewrite wk_id_ren_on in *. Qed.
 
 Module IdRedTy.
 Section IdRedTy.
