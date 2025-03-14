@@ -45,6 +45,7 @@ theories/LogicalRelation/Definition/Sig.v
 theories/LogicalRelation/Definition/Nat.v
 theories/LogicalRelation/Definition/Empty.v
 theories/LogicalRelation/Definition/Id.v
+theories/LogicalRelation/Definition/W.v
 theories/LogicalRelation/Definition/Def.v
 theories/LogicalRelation/Definition/Helper.v
 
