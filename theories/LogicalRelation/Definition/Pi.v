@@ -21,15 +21,15 @@ Module PiRedTyPack := ParamRedTyPack.
 
 Inductive isLRFun `{ta : tag} `{WfContext ta}
   `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
-  {Γ : context} {A B : term} (ΠA : PiRedTyPack Γ A B) : term -> Type :=
+  {Γ : context} {dom dom' cod cod' : term} (PA : PolyRedPack Γ dom dom' cod cod') : term -> Type :=
 | LamLRFun : forall A' t : term,
     [Γ |- A'] ->
-    [Γ |-  ΠA.(PiRedTyPack.domL) ≅ A'] ->
+    [Γ |-  dom ≅ A'] ->
     (forall {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ])
-      (ha : [ ΠA.(PolyRedPack.shpRed) ρ h | Δ ||- a ≅ b : ΠA.(PiRedTyPack.domL)⟨ρ⟩ ]),
-      [ΠA.(PolyRedPack.posRed) ρ h ha | Δ ||- t[a .: (ρ >> tRel)] ≅ t[b .: (ρ >> tRel)] : ΠA.(PiRedTyPack.codL)[a .: (ρ >> tRel)]]) ->
-  isLRFun ΠA (tLambda A' t)
-| NeLRFun : forall f : term, [Γ |- f ~ f : PiRedTyPack.outTy ΠA] -> isLRFun ΠA f.
+      (ha : [ PA.(PolyRedPack.shpRed) ρ h | Δ ||- a ≅ b : _ ]),
+      [PA.(PolyRedPack.posRed) ρ h ha | Δ ||- t[a .: (ρ >> tRel)] ≅ t[b .: (ρ >> tRel)] : _]) ->
+  isLRFun PA (tLambda A' t)
+| NeLRFun : forall f : term, [Γ |- f ~ f : tProd dom cod] -> isLRFun PA f.
 
 Module PiRedTmEq.
 
@@ -46,20 +46,20 @@ Module PiRedTmEq.
   Record PiRedTm `{ta : tag} `{WfContext ta}
     `{WfType ta} `{ConvType ta} `{RedType ta}
     `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
-    {Γ : context} {A B} {ΠA : PiRedTyPack Γ A B} {t : term}
+    {Γ : context} {domA codA domB codB} {PA : PolyRedPack Γ domA domB codA codB} {t : term}
   : Type := {
     nf : term;
-    red : [ Γ |- t :⤳*: nf : outTy ΠA ];
-    isfun : isLRFun ΠA nf;
+    red : [ Γ |- t :⤳*: nf :  tProd domA codA ];
+    isfun : isLRFun PA nf;
   }.
 
-  Arguments PiRedTm {_ _ _ _ _ _ _ _ _ _ _ _}.
+  Arguments PiRedTm {_ _ _ _ _ _ _ _ _ _ _ _ _ _}.
 
   Definition whred `{GenericTypingProperties}
     {Γ : context} {A B} {ΠA : PiRedTyPack Γ A B} {t : term} :
     PiRedTm ΠA t -> [Γ |- t ↘  outTy ΠA].
   Proof.
-    intros [?? isfun]; econstructor; tea; destruct isfun.
+    intros [nf red isfun]; exists nf; tea; destruct isfun.
     1: gtyping.
     constructor; now eapply convneu_whne.
   Defined.

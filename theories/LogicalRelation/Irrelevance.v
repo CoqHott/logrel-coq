@@ -24,7 +24,7 @@ Section Irrelevance.
   Definition cumImpl l := forall Γ A B, [LogRel@{i j k l} l | Γ ||- A ≅ B] -> [LogRel@{i' j' k' l'} l | Γ ||- A ≅ B].
   Definition cum l := forall Γ A B, [LogRel@{i j k l} l | Γ ||- A ≅ B] <≈> [LogRel@{i' j' k' l'} l | Γ ||- A ≅ B].
 
-  Definition irr {Γ l1 l2 A B1 B2} (RA1 : [Γ ||-<l1> A ≅ B1]) (RA2 : [Γ ||-<l2> A ≅ B2]) :=
+  Definition irr {Γ l1 l2 A1 A2 B1 B2} (RA1 : [Γ ||-<l1> A1 ≅ B1]) (RA2 : [Γ ||-<l2> A2 ≅ B2]) :=
     forall t u, [LogRel@{i j k l} l1 | Γ ||- t ≅ u : _ | RA1] <≈> [LogRel@{i' j' k' l'} l2 | Γ ||- t ≅ u : _ | RA2].
 
   End Defs.
@@ -47,7 +47,7 @@ Section Irrelevance.
 
   Universe i j k l i' j' k' l'.
 
-  Let irr {Γ l1 l2 A B1 B2} (RA1 : [Γ ||-<l1> A ≅ B1]) (RA2 : [Γ ||-<l2> A ≅ B2]) :=
+  Let irr {Γ l1 l2 A1 A2 B1 B2} (RA1 : [Γ ||-<l1> A1 ≅ B1]) (RA2 : [Γ ||-<l2> A2 ≅ B2]) :=
     Eval unfold irr in irr@{i j k l i' j' k' l'} RA1 RA2.
 
   Lemma irrU@{h h'} {l1 l2}
@@ -60,18 +60,18 @@ Section Irrelevance.
 
   Section IrrΠ.
   Context {l1 l2 Γ A B1 B2} (ΠA: [Γ ||-Π< l1 > A ≅ B1]) (ΠA': [Γ ||-Π< l2 > A ≅ B2])
-    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]) B2 (R2 : [Δ ||-< l2 > (ParamRedTy.domL ΠA)⟨ρ⟩ ≅ B2]),
-      irr (PolyRed.shpRed ΠA ρ h) R2)
+    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]), irr (PolyRed.shpRed ΠA ρ h) (PolyRed.shpRed ΠA' ρ h))
     (ihcod: forall Δ a b (ρ : Δ ≤ Γ) (h : [|- Δ]) (ha : [PolyRed.shpRed ΠA ρ h | Δ ||- a ≅ b : _ ]) B2
-      (R2 : [Δ ||-< l2 > (ParamRedTy.codL ΠA)[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed ΠA ρ h ha) R2)
+      (R2 : [Δ ||-< l2 > (ParamRedTy.codL ΠA')[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed ΠA ρ h ha) R2)
     (eqdom: ParamRedTy.domL ΠA' = ParamRedTy.domL ΠA)
     (eqcod: ParamRedTy.codL ΠA' = ParamRedTy.codL ΠA).
 
   Lemma irrIsLRFun : forall t, isLRFun ΠA' t <≈> isLRFun ΠA t.
   Proof.
-    destruct ΠA, ΠA'; cbn in *; subst.
     intros ? ; split ; intros [|]; constructor; tea; cbn in *.
-    1,2: unshelve (intros; eapply ihcod;  apply e); tea; now eapply ihdom.
+    1,3: now rewrite <-?eqdom, <-?eqcod.
+    2,4: now rewrite ?eqdom, ?eqcod.
+    1,2: intros; unshelve eapply ihcod, e; tea; now eapply ihdom.
   Qed.
 
   Lemma irrPiRedTm0 {t} : PiRedTm ΠA' t <≈> PiRedTm ΠA t.
@@ -86,32 +86,30 @@ Section Irrelevance.
     intros ?? ; split ; intros [rL rR].
     - exists (snd irrPiRedTm0 rL) (snd irrPiRedTm0 rR); cbn.
       1: now rewrite eqdom, eqcod.
-      intros; destruct ΠA, ΠA'; cbn in *; subst.
-      (unshelve eapply ihcod, eqApp); tea; now eapply ihdom.
+      intros; unshelve eapply ihcod, eqApp; tea; now eapply ihdom.
     - exists (fst irrPiRedTm0 rL) (fst irrPiRedTm0 rR); cbn.
       1: now rewrite <-eqdom, <-eqcod.
-      intros; destruct ΠA, ΠA'; cbn in *; subst.
-      (unshelve eapply ihcod, eqApp); tea; now eapply ihdom.
+      intros; unshelve eapply ihcod, eqApp; tea; now eapply ihdom.
   Qed.
 
   End IrrΠ.
 
   Section IrrΣ.
   Context {l1 l2 Γ A B1 B2} (ΣA: [Γ ||-Σ< l1 > A ≅ B1]) (ΣA': [Γ ||-Σ< l2 > A ≅ B2])
-    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]) B2 (R2 : [Δ ||-< l2 > (ParamRedTy.domL ΣA)⟨ρ⟩ ≅ B2]), irr (PolyRed.shpRed ΣA ρ h) R2)
+    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]), irr (PolyRed.shpRed ΣA ρ h) (PolyRed.shpRed ΣA' ρ h))
     (ihcod: forall Δ a b (ρ : Δ ≤ Γ) (h : [|- Δ]) (ha : [PolyRed.shpRed ΣA ρ h | Δ ||- a ≅ b : _]) B2
-      (R2 : [Δ ||-< l2 > (ParamRedTy.codL ΣA)[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed ΣA ρ h ha) R2)
+      (R2 : [Δ ||-< l2 > (ParamRedTy.codL ΣA')[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed ΣA ρ h ha) R2)
     (eqdom: ParamRedTy.domL ΣA' = ParamRedTy.domL ΣA)
     (eqcod: ParamRedTy.codL ΣA' = ParamRedTy.codL ΣA).
 
   Lemma irrIsLRPair : forall t, isLRPair ΣA' t <≈> isLRPair ΣA t.
   Proof.
-    destruct ΣA, ΣA'; cbn in *; subst.
     intros ? ; split ; intros [|].
     2,4: constructor; tea; cbn in *.
-    1,2: unshelve eapply PairLRPair; tea; cbn in *.
-    1,2: now unshelve (intros; now eapply ihdom).
-    all: now unshelve (intros; eapply ihcod; eauto).
+    1,4: unshelve eapply PairLRPair; tea; cbn in *.
+    all: try first [now rewrite <-?eqdom, <-?eqcod| now rewrite ?eqdom, ?eqcod].
+    1,2: intros; now eapply ihdom.
+    1,2: intros; now unshelve (eapply ihcod; eauto).
   Qed.
 
   Lemma irrRedSigTm0 : forall t, SigRedTm ΣA' t <≈> SigRedTm ΣA t.
@@ -124,7 +122,7 @@ Section Irrelevance.
   Proof.
     intros ??; split; intros []; unshelve econstructor.
     1,2,4,5: now eapply irrRedSigTm0.
-    all: cbn in *; destruct ΣA, ΣA'; cbn in *; subst; tea.
+    all: cbn; try first [now rewrite <-?eqdom, <-?eqcod| now rewrite ?eqdom, ?eqcod].
     1,2: now unshelve (intros; eapply ihdom; eauto).
     1,2: now unshelve (intros; eapply ihcod; eauto).
   Qed.
@@ -133,7 +131,7 @@ Section Irrelevance.
 
   Section IrrId.
   Context {l1 l2 Γ A B1 B2} (IA: [Γ ||-Id< l1 > A ≅ B1]) (IA': [Γ ||-Id< l2 > A ≅ B2])
-    (ih: forall B2 (R2 : [Γ ||-< l2 > IdRedTy.tyL IA ≅ B2]), irr (IdRedTy.tyRed IA) R2)
+    (ih: irr (IdRedTy.tyRed IA) (IdRedTy.tyRed IA'))
     (eqty: IdRedTy.tyL IA' = IdRedTy.tyL IA)
     (eqlhs: IdRedTy.lhsL IA' = IdRedTy.lhsL IA)
     (eqrhs: IdRedTy.rhsL IA' = IdRedTy.rhsL IA).
@@ -145,12 +143,12 @@ Section Irrelevance.
       3-5: rewrite eqty, eqlhs, eqrhs; cbn; tea.
       destruct prop; constructor; tea; cbn in *.
       all:rewrite ?eqty, ?eqlhs, ?eqrhs; cbn; tea.
-      all: destruct IA, IA'; cbn in *; subst; now eapply ih.
+      all: now eapply ih.
     + intros [?? rL rR eq prop]; unshelve econstructor; cbn in *.
       3-5: now rewrite eqty, eqlhs, eqrhs in rL, rR, eq.
       destruct prop; constructor; tea; cbn in *.
       all:rewrite <-?eqty, <-?eqlhs, <-?eqrhs; cbn; tea.
-      all: destruct IA, IA'; cbn in *; subst; now eapply ih.
+      all: now eapply ih.
   Qed.
 
   End IrrId.
@@ -159,22 +157,26 @@ Section Irrelevance.
   Lemma irrLR_rec@{h h'}
     {l1 l2}
     (ih : forall l, l << l1 -> l << l2 -> cum@{h i j k h' i' j' k'} l)
-    {Γ A B1 B2} (R1 : [Γ ||-<l1> A ≅ B1]) (R2 : [Γ ||-<l2> A ≅ B2]) : irr R1 R2.
+    {Γ A1 A2 B1 B2} (R1 : [Γ ||-<l1> A1 ≅ B1]) (R2 : [Γ ||-<l2> A2 ≅ B2]) (eqA : A1 = A2) : irr R1 R2.
   Proof.
-    pose (i := invLREqL_whred R1 R2).
-    revert B2 R2 i ih; indLR R1.
-    - intros h B2 R2 [h'] ih; subst; now eapply irrU.
-    - intros neA ?? [neB [? eq]] _; subst; intros ??; split; cbn.
+    pose (i := invLREqL_eq_whred R1 R2 eqA).
+    revert A2 eqA B2 R2 i ih; indLR R1.
+    - intros h ? <- B2 R2 [h'] ih; subst; now eapply irrU.
+    - intros neA ? <- ?? [neB [? eq]] _; subst; intros ??; split; cbn.
       + intros []; econstructor; now rewrite eq.
       + intros [??]; econstructor; now rewrite eq in *.
-    - intros ΠA ihdom ihcod ?? [ΠA' [? eqdom eqcod]] ?; subst; cbn in *.
-      now eapply irrΠ.
-    - intros NA ?? [NA' ?] ?; subst; intros ??; split; now cbn.
-    - intros EA ?? [EA' ?] ?; subst; intros ??; split; now cbn.
-    - intros ΣA ihdom ihcod ?? [ΣA' [? eqdom eqcod]] ?; subst; cbn in *.
-      now eapply irrΣ.
-    - intros IA ih ?? [IA' [? eqty eqlhs eqrhs]] ?; subst.
-      now eapply irrId.
+    - intros ΠA ihdom ihcod ? <- ?? [ΠA' [? eqdom eqcod]] ?; subst; cbn in *.
+      eapply irrΠ; tea.
+      + intros; eapply ihdom; tea; now rewrite eqdom.
+      + intros; eapply ihcod; tea. now rewrite eqcod.
+    - intros NA ? <- ?? [NA' ?] ?; subst; intros ??; split; now cbn.
+    - intros EA ? <- ?? [EA' ?] ?; subst; intros ??; split; now cbn.
+    - intros ΣA ihdom ihcod ? <- ?? [ΣA' [? eqdom eqcod]] ?; subst; cbn in *.
+      eapply irrΣ; tea.
+      + intros; eapply ihdom; tea; now rewrite eqdom.
+      + intros; eapply ihcod; tea. now rewrite eqcod.
+    - intros IA ih ? <- ?? [IA' [? eqty eqlhs eqrhs]] ?; subst.
+      eapply irrId; eauto.
   Qed.
 
 
@@ -220,9 +222,10 @@ Proof.
     1: now eapply IHPar.
     1,2: now apply  (irrLR_rec (fun l lt _ => ih l lt) tyRed).
     constructor.
-    + intros ?? ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed).
+    + intros ?? ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed _ eq_refl).
       apply (irrLR_rec (fun l lt _ => ih l lt) tyRed); now symmetry.
-    + intros ??? ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed) ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed).
+    + intros ??? ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed _ eq_refl)
+      ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed _ eq_refl).
       apply (irrLR_rec (fun l lt _ => ih l lt) tyRed); now etransitivity.
 Qed.
 
@@ -241,7 +244,7 @@ Theorem irrLR@{i j k l i' j' k' l' v} `{GenericTypingProperties} {l1 l2}
   {Γ A B1 B2} (R1 : [Γ ||-<l1> A ≅ B1]) (R2 : [Γ ||-<l2> A ≅ B2]) :
     irr@{v i j k l i' j' k' l'} R1 R2.
 Proof.
-  split; eapply irrLR_rec; intros l [] ?; exact cumLR0.
+  split; eapply irrLR_rec; try reflexivity; intros l [] ?; exact cumLR0.
 Qed.
 
 Theorem cumLR@{i j k l i' j' k' l'} `{GenericTypingProperties} {lA}

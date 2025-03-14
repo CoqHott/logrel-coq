@@ -21,26 +21,24 @@ Qed.
 Section LambdaValid.
 Context `{GenericTypingProperties}.
 
-  Lemma irrPiRedTm {l l1 l2 Γ A1 A2 B1 B2} {t} (ΠA1: [Γ ||-Π< l1 > A1 ≅ B1]) (ΠA2: [Γ ||-Π< l2 > A2 ≅ B2]) :
-    [Γ ||-<l> A1 ≅ A2] -> PiRedTm ΠA1 t -> PiRedTm ΠA2 t.
+  Lemma irrPiRedTm {l l1 l2 Γ domA1 domA2 domB1 domB2 codA1 codA2 codB1 codB2}
+  {t} (PA1: PolyRed Γ l1 domA1 domB1 codA1 codB1) (PA2: PolyRed Γ l2 domA2 domB2 codA2 codB2) :
+    PolyRed Γ l domA1 domA2 codA1 codA2 -> PiRedTm PA1 t -> PiRedTm PA2 t.
   Proof.
-    intros RA Rt; exists Rt.(PiRedTmEq.nf); destruct Rt;
-    pose proof (invLREqL_whred (LRPi' ΠA1) RA) as (R&[? e1 e2]); subst; cbn in e1,e2;
-    pose proof (whredty_det (whredtyR R) (whredtyL ΠA2)) as [= e3 e4].
-    all: assert [Γ |- PiRedTy.outTy ΠA1 ≅ PiRedTy.outTy ΠA2 ]
-    by (cbn; rewrite <-e1,<-e2,<-e3,<-e4; apply R.(ParamRedTy.eq)).
-    all: assert [Γ |- PiRedTy.domL ΠA1 ≅ PiRedTy.domL ΠA2 ]
-    by (cbn; rewrite <-e1,<-e3; apply R.(ParamRedTy.eqdom)).
-    1: now eapply redtmwf_conv.
-    destruct isfun as [???? app|]; constructor; tea.
-    3: now eapply convneu_conv.
-    1: etransitivity ; tea; cbn; now symmetry.
-    intros; eapply irrLRCum; [|eapply app].
-    rewrite <-e2,<-e4; eapply R.(PolyRed.posRed), lrefl, irrLRCum; tea.
-    rewrite <-e3; symmetry; now eapply R.(PolyRed.shpRed).
-    Unshelve.
-    2: now eapply irrLRCum; tea; symmetry; rewrite <-e1,<-e3; eapply R.(PolyRed.shpRed).
-    all: tea.
+    intros PA Rt; exists Rt.(PiRedTmEq.nf);
+      destruct Rt as [?? isfun]; cbn;
+      assert (wfΓ : [|-Γ]) by gtyping;
+      pose proof (instKripke wfΓ (PA.(PolyRed.shpRed)));
+      pose proof (instKripkeFam wfΓ (PA.(PolyRed.posRed))).
+    + eapply redtmwf_conv; tea; escape; gtyping.
+    + destruct isfun; econstructor; tea; cycle -1.
+      1: eapply convneu_conv; tea; escape; gtyping.
+      1: etransitivity; tea; escape; now symmetry.
+      intros. eapply irrLRCum.
+      2: unshelve eapply e; tea; eapply irrLRCum; tea.
+      1: eapply PA.(PolyRed.posRed), irrLRCum; try now eapply lrefl.
+      all: symmetry; now eapply PA.(PolyRed.shpRed).
+      Unshelve. tea.
   Defined.
 
 Lemma consWkEq' {Δ Ξ} σ (ρ : Δ ≤ Ξ) a Z : Z[up_term_term σ][a .: ρ >> tRel] = Z[a .: σ⟨ρ⟩].
@@ -84,7 +82,7 @@ Lemma lamPiRedTm'
   : PiRedTm R (tLambda F' t')[σ'].
 Proof.
   eapply irrPiRedTm; [|eapply lamPiRedTm]; refold.
-  + symmetry; rewrite <-2!subst_prod; now eapply validTyExt.
+  + cbn; unshelve eapply symPoly; [exact R| (intros; apply symLR)..].
   + now eapply symValidTm.
   + now eapply symSubst.
   Unshelve. 1-3: irrValid.

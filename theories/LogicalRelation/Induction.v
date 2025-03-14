@@ -302,6 +302,9 @@ Section Inversions.
   Lemma invLREqL_whred {Γ l l' A A' B} (RAA' : [Γ ||-<l'> A ≅ A']) (lr : [Γ ||-<l> A ≅ B]) : invLRTyEqL lr (whredtyL RAA').(tyred_whnf_isType).
   Proof. apply invLREqL; gtyping. Qed.
 
+  Lemma invLREqL_eq_whred {Γ l l' A1 A2 B1 B2} (R1 : [Γ ||-<l'> A1 ≅ B1]) (lr : [Γ ||-<l> A2 ≅ B2]) : A1 = A2 -> invLRTyEqL lr (whredtyL R1).(tyred_whnf_isType).
+  Proof. intros; subst; apply invLREqL; gtyping. Qed.
+
   Lemma invLREqL_whred' {Γ l l' A B C} (RAB : [Γ ||-<l> A ≅ B]) (lr : [Γ ||-<l'> B ≅ C]) : invLRTyEqL lr (whredtyR RAB).(tyred_whnf_isType).
   Proof. apply invLREqL; gtyping. Qed.
 

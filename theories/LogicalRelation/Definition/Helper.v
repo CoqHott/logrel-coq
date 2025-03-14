@@ -205,7 +205,7 @@ Instance PiRedTyWhRed `{GenericTypingProperties} {Γ l} : WhRedTyRel Γ (PiRedTy
 Next Obligation. now destruct h. Qed.
 
 Instance PiRedTmWhRed `{GenericTypingProperties} {Γ l A B} (ΠA : [Γ ||-Π<l> A ≅ B])
-  : WhRedTm Γ (outTyL ΠA) (PiRedTm ΠA) := fun t Rt => PiRedTmEq.whred Rt.
+  : WhRedTm Γ (outTyL ΠA) (PiRedTm ΠA) := fun t Rt => PiRedTmEq.whred (ΠA:=ΠA) Rt.
 
 #[program]
 Instance PiRedTmWhRedRel `{GenericTypingProperties} {Γ l A B} (ΠA : [Γ ||-Π<l> A ≅ B])
