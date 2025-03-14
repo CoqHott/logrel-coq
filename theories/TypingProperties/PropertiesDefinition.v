@@ -69,6 +69,7 @@ Section Properties.
       | NeType _, NeType _ => [Γ |- T ≅ T' : U]
       | @SigType A B, @SigType A' B' => [Γ |- A ≅ A'] × [Γ,, A |- B ≅ B']
       | @IdType A x y, @IdType A' x' y' => [× [Γ |- A ≅ A'], [Γ |- x ≅ x' : A] & [Γ |- y ≅ y' : A]]
+      | @WType A B, @WType A' B' => [Γ |- A ≅ A'] × [Γ,, A |- B ≅ B']
       | _, _ => False
     end.
 
@@ -144,6 +145,24 @@ Section Properties.
     subst; f_equal; apply isId_uniq.
   Qed.
 
+  Definition w_hd_view (Γ : context) (A B : term) {t t' : term} (nft : isW t) (nft' : isW t') : Type :=
+    match nft, nft' with
+    | @SupW A B a k, @SupW A' B' a' k' =>
+      [× [Γ |- A ≅ A'], [Γ,, A |- B ≅ B'], [Γ |- a ≅ a' : A] & [Γ |- k ≅ k' : arr (B[a..]) (tW A B)]]
+    | NeW _, NeW _ => [Γ |- t ≅ t' : tW A B]
+    | _, _ => False
+    end.
+
+  Lemma w_hd_view_irr {Γ A B t0 t0' t1 t1'}
+    (nft0 : isW t0) (nft0' : isW t0') (nft1 : isW t1) (nft1' : isW t1') :
+    t0 = t1 -> t0' = t1' -> w_hd_view Γ A B nft0 nft0' -> w_hd_view Γ A B nft1 nft1'.
+  Proof.
+    intros ??.
+    enough (h : w_hd_view Γ A B nft0 nft0' = w_hd_view Γ A B nft1 nft1')
+    by now rewrite h.
+    subst; f_equal; apply isW_uniq.
+  Qed.
+
 
   Class TermConstructorsInj :=
   {
@@ -166,6 +185,11 @@ Section Properties.
       (nft : isId t) (nft' : isId t') :
       [Γ |- t ≅ t' : tId A x y] ->
       id_hd_view Γ A x y nft nft' ;
+
+    w_conv_inj (Γ : context) (A B t t' : term)
+      (nft : isW t) (nft' : isW t') :
+      [Γ |- t ≅ t' : tW A B] ->
+      w_hd_view Γ A B nft nft' ;
 
     (* neu_conv_inj (Γ : context) (A t t' : term) :
       whne A -> whne t -> whne t' ->

@@ -271,7 +271,6 @@ Hint Mode RenSimplification + - : typeclass_instances.
 **)
 
 Create HintDb asimpl.
-(* Probably not useful (It may not create a rewrite hint)*)
 Create HintDb asimpl_outermost.
 
 (* #[export] Hint Rewrite -> autosubst_simpl_cterm : asimpl. *)

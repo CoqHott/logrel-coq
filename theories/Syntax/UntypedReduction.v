@@ -39,7 +39,7 @@ Inductive OneRedAlg : term -> term -> Type :=
   [ e ⤳ e' ] ->
   [ tIdElim A x P hr y e ⤳ tIdElim A x P hr y e' ]
 | wElimSup {A B P hsup A' B' a k} :
-  [ tWElim A B P hsup (tSup A' B' a k) ⤳ tApp (tApp hsup a) k]
+  [ tWElim A B P hsup (tSup A' B' a k) ⤳ elimWSupRed0 A B P hsup a k ]
 | wElimSubst {A B P hsup w w'} :
   [ w ⤳ w' ] ->
   [ tWElim A B P hsup w ⤳ tWElim A B P hsup w' ]
@@ -202,13 +202,16 @@ Lemma oredalg_wk (ρ : nat -> nat) (t u : term) :
 Proof.
   intros Hred.
   induction Hred in ρ |- *.
-  2-14: cbn; rasimpl; now econstructor.
+  2-12,14: cbn; rasimpl; now econstructor.
   - cbn ; rasimpl.
     evar (t' : term).
     replace (subst_term _ t) with t'.
     all: subst t'.
     1: econstructor.
     now rasimpl.
+  - pose proof (o:= @wElimSup A⟨ρ⟩ B⟨upRen_term_term ρ⟩ P⟨upRen_term_term ρ⟩ hsup⟨ρ⟩ A'⟨ρ⟩ B'⟨upRen_term_term ρ⟩ a⟨ρ⟩ k⟨ρ⟩).
+    rasimpl in o.
+    cbn. rasimpl. exact o.
 Qed.
 
 Lemma oredalg_str (Γ Δ : context) (ρ : Δ ≤ Γ) (t u : term) :

@@ -52,6 +52,7 @@ Section Consistency.
     - intros [? [[? [? []]]]]%termGen'; eauto.
     - intros [? [[? [? []]]]]%termGen'; eauto.
     - intros [? [[?]]]%termGen'; eauto.
+    - intros [? [[?]]]%termGen'; eauto.
   Qed.
 
   Lemma wty_norm {Γ t A} : [Γ |- t : A] ->

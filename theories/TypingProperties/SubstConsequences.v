@@ -305,6 +305,155 @@ Section ElimSuccHyp.
 
 End ElimSuccHyp.
 
+Module ElimSupHypTyLemmas.
+Import ElimSupHypTyDefs.
+Section elimSupHypTy.
+  Context `{!TypingSubst (ta := de)} {Γ A B P}
+    (wtA : [Γ |- A])
+    (wtB : [Γ,, A |- B])
+    (wtP : [Γ,, tW A B |- P]).
+
+  Let wf_ctx0 : [|- ctx0 Γ A B P]. (* Γ*)
+  Proof. boundary. Qed.
+  Let wf_argty0 := wtA.
+  Let wf_ctx1 : [|- ctx1 Γ A B P]. (* Γ ,, A*)
+  Proof. now econstructor. Qed.
+  Let wf_argty1 : [Γ ,, A |- argty1 Γ A B P ].
+  Proof.
+    eapply wft_simple_arr; tea.
+    eapply typing_wk; tea; now econstructor.
+  Qed.
+  Let wf_ctx2 : [|- ctx2 Γ A B P].
+  Proof. now econstructor. Qed.
+  Let wf_argty2_argty : [ctx2 Γ A B P |- B⟨wk_up A (wk2 Γ A B P)⟩[(tRel 1)..]].
+  Proof.
+    eapply typing_subst1.
+    2: eapply typing_wk; tea; econstructor; tea; now eapply typing_wk.
+    eapply typing_meta_conv; [econstructor; tea; do 2 econstructor|].
+    autounfold with elimSupHypTy; now rasimpl.
+  Qed.
+  Definition wf_argty2 : [ctx2 Γ A B P |- argty2 Γ A B P].
+  Proof.
+    econstructor; tea.
+    set (Δ := _,,_); assert [|- Δ] by now econstructor.
+    eapply typing_subst1; cycle 1.
+    + eapply typing_wk; tea; econstructor; tea.
+      eapply typing_wk; tea; now econstructor.
+    + eapply ty_simple_app; cycle 2.
+      1,2: eapply typing_meta_conv.
+      1: econstructor; tea; do 2 econstructor.
+      2: econstructor; tea; econstructor.
+      4: eapply typing_wk; tea; now econstructor.
+      2: now erewrite <-wk1_ren_on.
+      2: now eapply typing_wk.
+      autounfold with elimSupHypTy; rasimpl; f_equal.
+      substify; eapply ext_term; now intros [].
+  Qed.
+  Let wf_argty2_local := wf_argty2.
+
+  Let wf_concl : [ctx2 Γ A B P |- concl Γ A B P].
+  Proof.
+    eapply typing_subst1.
+    2: eapply typing_wk; tea; econstructor; tea; eapply typing_wk; tea; now econstructor.
+    econstructor.
+    1,2: eapply typing_wk; tea; econstructor; tea; now eapply typing_wk.
+    1,2: eapply typing_meta_conv.
+    1,3: repeat (econstructor; tea).
+    1,2: autounfold with elimSupHypTy; rasimpl; f_equal.
+    substify; eapply ext_term; now intros [].
+  Qed.
+
+  Lemma wft_elimSupHypTy : [Γ |- elimSupHypTy Γ A B P].
+  Proof.
+    econstructor; tea; econstructor; tea.
+    now eapply wft_simple_arr.
+  Qed.
+
+  Context {A' B' P'}
+    (convA : [Γ |- A ≅ A'])
+    (convB : [Γ,, A |- B ≅ B'])
+    (convP : [Γ,, tW A B |- P ≅ P']).
+
+  Let conv_ctx0 : [|- ctx0 Γ A B P ≅ ctx0 Γ A' B' P'].
+  Proof. now eapply ctx_refl. Qed.
+  Let conv_argty0 := convA.
+  Let conv_ctx1 : [|- ctx1 Γ A B P ≅ ctx1 Γ A' B' P']. (* Γ ,, A*)
+  Proof. now econstructor. Qed.
+  Let conv_argty1 : [Γ ,, A |- argty1 Γ A B P ≅ argty1 Γ A' B' P'].
+  Proof.
+    eapply convty_simple_arr; tea.
+    erewrite (wk1_irr (A:=A')) .
+    eapply typing_wk; tea; now econstructor.
+  Qed.
+  Let conv_ctx2 : [|- ctx2 Γ A B P ≅ ctx2 Γ A' B' P'].
+  Proof. now econstructor. Qed.
+  Let conv_argty2 : [ctx2 Γ A B P |- argty2 Γ A B P ≅ argty2 Γ A' B' P'].
+  Proof.
+    assert [ctx2 Γ A B P |- B⟨wk_up A (wk2 Γ A B P)⟩[(tRel 1)..] ≅ B'⟨wk_up A' (wk2 Γ A' B' P')⟩[(tRel 1)..]].
+    {
+      replace B'⟨wk_up A' (wk2 Γ A' B' P')⟩ with B'⟨wk_up A (wk2 Γ A B P)⟩.
+      2: autounfold with elimSupHypTy; now rasimpl.
+      eapply typing_subst1.
+      2: eapply typing_wk; tea; econstructor; tea; now eapply typing_wk.
+      econstructor.
+      eapply typing_meta_conv; [econstructor; tea; do 2 econstructor|].
+      autounfold with elimSupHypTy; now rasimpl.
+    }
+    econstructor; tea.
+    set (Δ := _,,_); assert [|- Δ] by now econstructor.
+    eapply typing_subst1; cycle 1.
+    + set (ρ := wk_up (tW _ _) _); set (ρ' := wk_up (tW _ _) _).
+      replace P'⟨ρ'⟩ with P'⟨ρ⟩.
+      2: subst ρ ρ'; autounfold with elimSupHypTy; now rasimpl.
+      eapply typing_wk; tea; econstructor; tea.
+      eapply typing_wk; tea; now econstructor.
+    + econstructor.
+      (* could be factored out with above *)
+      eapply ty_simple_app; cycle 2.
+      1,2: eapply typing_meta_conv.
+      1: econstructor; tea; do 2 econstructor.
+      2: econstructor; tea; econstructor.
+      4: eapply typing_wk; tea; now econstructor.
+      2: now erewrite <-wk1_ren_on.
+      2: now eapply typing_wk.
+      autounfold with elimSupHypTy; rasimpl; f_equal.
+      substify; eapply ext_term; now intros [].
+  Qed.
+
+  Let conv_concl : [ctx2 Γ A B P |- concl Γ A B P ≅ concl Γ A' B' P'].
+  Proof.
+    eapply typing_subst1; cycle 1.
+    + set (ρ := wk_up (tW _ _) _); set (ρ' := wk_up (tW _ _) _).
+      replace P'⟨ρ'⟩ with P'⟨ρ⟩.
+      2: subst ρ ρ'; autounfold with elimSupHypTy; now rasimpl.
+      eapply typing_wk; tea; econstructor; tea; eapply typing_wk; tea; now econstructor.
+    + assert [ctx2 Γ A B P |- A⟨wk2 Γ A B P⟩] by now eapply typing_wk.
+      econstructor; tea.
+      3,4: econstructor; eapply typing_meta_conv.
+      3,5: repeat (econstructor; tea).
+      3,4: autounfold with elimSupHypTy; rasimpl; f_equal.
+      3: substify; eapply ext_term; now intros [].
+      * replace A'⟨wk2 Γ A' B' P'⟩ with A'⟨wk2 Γ A B P⟩.
+        2: autounfold with elimSupHypTy; now rasimpl.
+        now eapply typing_wk.
+      * set (ρ := wk_up _ _); set (ρ' := wk_up _ _).
+        replace B'⟨ρ'⟩ with B'⟨ρ⟩.
+        2: subst ρ ρ'; autounfold with elimSupHypTy; now rasimpl.
+        eapply typing_wk ; tea; econstructor; tea; now eapply typing_wk.
+  Qed.
+
+  Lemma convty_elimSupHypTy : [Γ |- elimSupHypTy Γ A B P ≅ elimSupHypTy Γ A' B' P'].
+  Proof.
+    econstructor; tea; econstructor; tea.
+    now eapply convty_simple_arr.
+  Qed.
+End elimSupHypTy.
+End ElimSupHypTyLemmas.
+
+Export ElimSupHypTyLemmas(wft_elimSupHypTy, convty_elimSupHypTy).
+
+
+
 
 (** *** Typing lemmas *)
 (** Weak versions necessary to prove the boundary lemmas. Stronger versions follow. *)
@@ -392,6 +541,8 @@ Section Boundary.
     - intros; eapply typing_subst2; tea.
       1: gen_typing.
       cbn; now rewrite 2!wk1_ren_on, 2!shift_one_eq.
+    - intros; now constructor.
+    - intros; now eapply typing_subst1.
     - intros * ? _ ? [] ? [].
       split.
       all: constructor ; tea.
@@ -405,6 +556,8 @@ Section Boundary.
       3: now symmetry.
       all: tea.
     - intros; prod_hyp_splitter; split; econstructor; tea; now eapply wfTermConv.
+    - intros; prod_hyp_splitter; split; econstructor; tea.
+      eapply _stability1; cycle 3; tea; now symmetry.
     - intros * ? [].
       split.
       all: now econstructor.
@@ -577,6 +730,80 @@ Section Boundary.
         2: now econstructor.
         cbn; rewrite 2!wk1_ren_on, 2!shift_one_eq.
         now econstructor.
+    - intros; prod_hyp_splitter; split; tea; econstructor; tea.
+      eapply _stability1; cycle 3; tea.
+      1: now econstructor.
+      now symmetry; econstructor.
+    - intros; prod_hyp_splitter; split; econstructor; tea.
+      2: now symmetry; econstructor.
+      econstructor; tea.
+      + eapply _stability1; cycle 3; tea; now symmetry.
+      + now econstructor.
+      + econstructor; tea.
+        eapply convty_simple_arr.
+        * now eapply typing_subst1.
+        * now eapply typing_subst1.
+        * now econstructor.
+    - intros; prod_hyp_splitter; split.
+      1: now eapply typing_subst1.
+      1: now econstructor.
+      econstructor; [|symmetry; now eapply typing_subst1].
+      assert [Γ,, A' |- B'].
+      1: eapply _stability1; cycle 3 ; tea; now symmetry.
+      assert [Γ |- tW A B ≅ tW A' B'] by now econstructor.
+      econstructor; tea.
+      + eapply _stability1; cycle 3 ; tea; [now econstructor| now symmetry].
+      + econstructor; tea; now eapply convty_elimSupHypTy.
+      + now econstructor.
+    - intros ; prod_hyp_splitter.
+      assert [Γ |- tW A' B' ≅ tW A B] by now symmetry; econstructor.
+      assert [Γ |- tSup A' B' a k : tW A B] by now do 2 econstructor.
+      split; [now eapply typing_subst1| now econstructor|].
+      assert [Γ |- a : A] by now econstructor.
+      assert [Γ |- B[a..]] by now eapply typing_subst1.
+      assert [|- Γ,,B[a..]] by (econstructor; tea; boundary).
+      assert [Γ |- arr B[a..] (tW A B) ≅ arr B'[a..] (tW A' B')].
+      {
+        eapply convty_simple_arr; tea; [| now econstructor].
+        eapply typing_subst1; tea; now econstructor.
+      }
+      assert [Γ |- k : arr B[a..] (tW A B)] by (econstructor; tea; now symmetry).
+      assert [Γ |- tSup A B a k : tW A B] by  now econstructor.
+      assert [Γ |- tSup A B a k ≅ tSup A' B' a k : tW A B] by (econstructor; tea; now econstructor).
+      econstructor.
+      2: eapply typing_subst1; tea; now econstructor.
+      unfold elimWSupRed.
+      eapply (ty_simple_app (A:=(ElimSupHypTyDefs.argty2 Γ A B P)[k .: a..])) ; cycle 1.
+      + now eapply typing_subst1.
+      + eapply typing_meta_conv.
+        1: econstructor; [eapply typing_meta_conv|].
+        1: now econstructor.
+        2: eassumption.
+        1: autounfold with elimSupHypTy; rasimpl;do 3 f_equal; substify; eapply ext_term; now intros [].
+        autounfold with elimSupHypTy; rasimpl; repeat f_equal.
+        substify; eapply ext_term; now intros [].
+      + autounfold with elimSupHypTy.
+        assert [Γ,,B[a..] |- A⟨@wk1 Γ (B[a..])⟩] by now eapply typing_wk.
+        assert [Γ,, B[a..] |- (tW A B)⟨@wk1 Γ B[a..]⟩] by (eapply typing_wk; tea ; now econstructor).
+        eapply typing_meta_conv.
+        1: econstructor; tea; econstructor; tea.
+        * eapply typing_wk; tea; now econstructor.
+        * eapply typing_wk; tea; now econstructor.
+        * rewrite <-wk_elimSupHypTy; now eapply typing_wk.
+        * rewrite wk_w; unshelve eapply ty_simple_app.
+          1: exact (B[a..]⟨@wk1 Γ B[a..]⟩).
+          1: now eapply typing_wk.
+          1: tea.
+          1: rewrite wk_arr; now eapply typing_wk.
+          eapply typing_meta_conv.
+          1:  econstructor; tea; econstructor.
+          now rasimpl.
+        * now rasimpl.
+      + eapply typing_subst2; cycle 3.
+        1: now eapply ElimSupHypTyLemmas.wf_argty2.
+        1: boundary.
+        1: tea.
+        autounfold with elimSupHypTy; now rewrite subst_arr, wk1_ren_on, shift_one_eq.
     - intros * ? [] ? [].
       split ; gen_typing.
     - intros * ? [].

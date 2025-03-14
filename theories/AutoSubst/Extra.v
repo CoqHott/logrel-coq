@@ -65,5 +65,21 @@ Notation idterm A  := (tLambda A (tRel 0)).
 Definition elimSuccHypTy P :=
   tProd tNat (arr P P[tSucc (tRel 0)]⇑).
 
+Notation elimWSupRed0 A B P hsup a k :=
+  (tApp (tApp (tApp hsup a) k) (tLambda B[a..] (tWElim A⟨↑⟩ B⟨upRen_term_term ↑⟩ P⟨upRen_term_term ↑⟩ hsup⟨↑⟩ (tApp k⟨↑⟩ (tRel 0))))).
+
+Definition elimSupHypTy0 A B P :=
+  let tyk := arr B (tW A B)⟨↑⟩ in
+  let ρ := ↑ >> ↑ in
+  let ihty :=
+    let argty := B⟨upRen_term_term ρ⟩[(tRel 1)..] in
+    let rec := tApp (tRel 1) (tRel 0) in
+    tProd argty P⟨upRen_term_term (ρ >> ↑)⟩[rec..]
+  in
+  let sup := tSup A⟨ρ⟩ B⟨upRen_term_term ρ⟩ (tRel 1) (tRel 0) in
+  tProd A (tProd tyk (arr ihty P⟨upRen_term_term ρ⟩[sup..])).
+
+
+
 Equations Derive NoConfusion EqDec for sort.
 Equations Derive NoConfusion Subterm EqDec for term.

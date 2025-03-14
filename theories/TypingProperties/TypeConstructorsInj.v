@@ -160,7 +160,7 @@ Section TypeConstructors.
   Proof.
     intros [? [T' [? nfT]]%red_ty_complete_l]%dup.
     2: now gen_typing.
-    assert [Γ |- tProd A B ≅ T'] as Hconv by 
+    assert [Γ |- tProd A B ≅ T'] as Hconv by
       (etransitivity ; [eassumption|now eapply RedConvTyC]).
     unshelve eapply ty_conv_inj in Hconv.
     1-2: now gen_typing.
@@ -186,7 +186,7 @@ Section TypeConstructors.
   Proof.
     intros [? [T' [? nfT]]%red_ty_complete_r]%dup.
     2: now gen_typing.
-    assert [Γ |- T' ≅ tProd A B] as Hconv by 
+    assert [Γ |- T' ≅ tProd A B] as Hconv by
       (etransitivity ; [now eapply TypeSym, RedConvTyC|eassumption]).
     unshelve eapply ty_conv_inj in Hconv.
     1-2: now gen_typing.
@@ -222,7 +222,7 @@ Section TypeConstructors.
   Proof.
     intros [? [T' [? nfT]]%red_ty_complete_l]%dup.
     2: now gen_typing.
-    assert [Γ |- tSig A B ≅ T'] as Hconv by 
+    assert [Γ |- tSig A B ≅ T'] as Hconv by
       (etransitivity ; [eassumption|now eapply RedConvTyC]).
     unshelve eapply ty_conv_inj in Hconv.
     1-2: now gen_typing.
@@ -248,7 +248,7 @@ Section TypeConstructors.
   Proof.
     intros [? [T' [? nfT]]%red_ty_complete_r]%dup.
     2: now gen_typing.
-    assert [Γ |- T' ≅ tSig A B] as Hconv by 
+    assert [Γ |- T' ≅ tSig A B] as Hconv by
       (etransitivity ; [now eapply TypeSym, RedConvTyC|eassumption]).
     unshelve eapply ty_conv_inj in Hconv.
     1-2: now gen_typing.
@@ -284,7 +284,7 @@ Section TypeConstructors.
   Proof.
     intros [? [T' [? nfT]]%red_ty_complete_l]%dup.
     2: now gen_typing.
-    assert [Γ |- tId A x y ≅ T'] as Hconv by 
+    assert [Γ |- tId A x y ≅ T'] as Hconv by
       (etransitivity ; [eassumption|now eapply RedConvTyC]).
     unshelve eapply ty_conv_inj in Hconv.
     1-2: now gen_typing.
@@ -303,7 +303,7 @@ Section TypeConstructors.
     eapply conv_id_l in Hconv as (?&?&?&[->]) ; eauto.
     do 3 eexists ; now split.
   Qed.
-  
+
   Corollary red_compl_id_r Γ A x y T :
     [Γ |- T ≅ tId A x y] ->
     ∑ A' x' y', [× [Γ |- T ⤳* tId A' x' y'], [Γ |- A' ≅ A], [Γ |- x' ≅ x : A] & [Γ |- y' ≅ y : A]].
@@ -312,6 +312,68 @@ Section TypeConstructors.
     symmetry in hconv.
     eapply red_compl_id_l in hconv as (?&?&?&[]).
     do 3 eexists ; now split.
+  Qed.
+
+  Corollary w_ty_inj Γ A B  A' B' :
+    [Γ |- tW A B ≅ tW A' B'] ->
+    [Γ |- A ≅ A'] × [Γ,, A |- B ≅ B'].
+  Proof.
+    intros Hty.
+    unshelve eapply ty_conv_inj in Hty.
+    1-2: constructor.
+    now eassumption.
+  Qed.
+
+  Corollary conv_w_l Γ A B T :
+    isType T ->
+    [Γ |- tW A B ≅ T] ->
+    ∑ A' B', [× T = tW A' B', [Γ |- A ≅ A'] & [Γ,, A |- B ≅ B']].
+  Proof.
+    unshelve eintros nfT [? Hconv%ty_conv_inj]%dup.
+    1-2: now gen_typing.
+    destruct nfT, Hconv.
+    eauto.
+  Qed.
+
+  Corollary red_compl_w_l Γ A B T :
+    [Γ |- tW A B ≅ T] ->
+    ∑ A' B', [× [Γ |- T ⤳* tW A' B'], [Γ |- A ≅ A'] & [Γ,, A |- B ≅ B']].
+  Proof.
+    intros [? [T' [? nfT]]%red_ty_complete_l]%dup.
+    2: now gen_typing.
+    assert [Γ |- tW A B ≅ T'] as Hconv by
+      (etransitivity ; [eassumption|now eapply RedConvTyC]).
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now gen_typing.
+    destruct nfT, Hconv.
+    do 2 eexists ; split.
+    all: eassumption.
+  Qed.
+
+  Corollary conv_w_r Γ A B T :
+    isType T ->
+    [Γ |- T ≅ tW A B] ->
+    ∑ A' B', [× T = tW A' B', [Γ |- A' ≅ A] & [Γ,, A' |- B' ≅ B]].
+  Proof.
+    unshelve eintros nfT [? Hconv%ty_conv_inj]%dup.
+    1-2: now gen_typing.
+    destruct nfT, Hconv.
+    eauto.
+  Qed.
+
+  Corollary red_compl_w_r Γ A B T :
+    [Γ |- T ≅ tW A B] ->
+    ∑ A' B', [× [Γ |- T ⤳* tW A' B'], [Γ |- A' ≅ A] & [Γ,, A' |- B' ≅ B]].
+  Proof.
+    intros [? [T' [? nfT]]%red_ty_complete_r]%dup.
+    2: now gen_typing.
+    assert [Γ |- T' ≅ tW A B] as Hconv by
+      (etransitivity ; [now eapply TypeSym, RedConvTyC|eassumption]).
+    unshelve eapply ty_conv_inj in Hconv.
+    1-2: now gen_typing.
+    destruct nfT, Hconv.
+    do 2 eexists ; split.
+    all: eassumption.
   Qed.
 
 End TypeConstructors.
@@ -384,11 +446,19 @@ Section SubjectReduction.
       pose proof h' as []%id_ty_inj.
       econstructor; tea.
       econstructor; tea.
-      + now econstructor. 
+      + now econstructor.
       + now econstructor.
       + eapply TermConv; refold; [etransitivity; tea|]; now symmetry.
       + eapply TermConv; refold; now symmetry.
     - apply termGen' in Hty as [? [[-> ????? h]]].
+      econstructor; tea; econstructor; tea.
+      all: now first [eapply TypeRefl |eapply TermRefl| eauto].
+    - apply termGen' in Hty as [? [[-> ???? h]]].
+      pose proof (termGen' _ _ _ h) as [? [[-> ] [? [? [[=]]]]%conv_w_r]]; subst.
+      2: gtyping.
+      rewrite <- (elimWSupRed_ctx Γ).
+      econstructor;[econstructor|]; tea; [|eapply stability1]; now symmetry.
+    - apply termGen' in Hty as [? [[-> ???? h]]].
       econstructor; tea; econstructor; tea.
       all: now first [eapply TypeRefl |eapply TermRefl| eauto].
   Qed.
@@ -494,7 +564,7 @@ Section WhClassification.
     all: try now econstructor.
     all: try now cbn in Hconv.
   Qed.
-  
+
   Lemma type_isType Γ A :
     [Γ |-[de] A] ->
     whnf A ->
@@ -598,6 +668,26 @@ Section WhClassification.
       match goal with
         H : [_ |-[de] _ ≅ tId _ _ _] |- _ => unshelve eapply ty_conv_inj in H as Hconv
       end; try econstructor.
+    all: now cbn in Hconv.
+  Qed.
+
+  Lemma w_isW Γ A B t:
+    [Γ |-[de] t : tW A B] ->
+    whnf t ->
+    isW t.
+  Proof.
+    intros Hty Hwh.
+    destruct Hwh.
+    all: try now econstructor.
+    all: eapply termGen' in Hty ; cbn in *.
+    all: exfalso.
+    all: prod_hyp_splitter ; try easy.
+    all: subst.
+    all:
+      match goal with
+        H : [_ |-[de] _ ≅ tW _ _] |- _ => unshelve eapply ty_conv_inj in H as Hconv
+      end.
+    all: try now econstructor.
     all: now cbn in Hconv.
   Qed.
 

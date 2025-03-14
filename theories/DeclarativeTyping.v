@@ -23,36 +23,40 @@ Section Definitions.
   (** **** Context well-formation *)
   Inductive WfContextDecl : context -> Type :=
       | connil : [ |- ε ]
-      | concons {Γ A} : 
-          [ |- Γ ] -> 
-          [ Γ |- A ] -> 
+      | concons {Γ A} :
+          [ |- Γ ] ->
+          [ Γ |- A ] ->
           [ |-  Γ ,, A]
   (** **** Type well-formation *)
   with WfTypeDecl  : context -> term -> Type :=
-      | wfTypeU {Γ} : 
-          [ |- Γ ] -> 
-          [ Γ |- U ] 
-      | wfTypeProd {Γ} {A B} : 
-          [ Γ |- A ] -> 
-          [Γ ,, A |- B ] -> 
+      | wfTypeU {Γ} :
+          [ |- Γ ] ->
+          [ Γ |- U ]
+      | wfTypeProd {Γ} {A B} :
+          [ Γ |- A ] ->
+          [Γ ,, A |- B ] ->
           [ Γ |- tProd A B ]
-      | wfTypeNat {Γ} : 
+      | wfTypeNat {Γ} :
           [|- Γ] ->
           [Γ |- tNat]
-      | wfTypeEmpty {Γ} : 
+      | wfTypeEmpty {Γ} :
           [|- Γ] ->
           [Γ |- tEmpty]
-      | wfTypeSig {Γ} {A B} : 
-          [ Γ |- A ] -> 
-          [Γ ,, A |- B ] -> 
+      | wfTypeSig {Γ} {A B} :
+          [ Γ |- A ] ->
+          [Γ ,, A |- B ] ->
           [ Γ |- tSig A B ]
       | wftTypeId {Γ} {A x y} :
           [Γ |- A] ->
           [Γ |- x : A] ->
           [Γ |- y : A] ->
           [Γ |- tId A x y]
+      | wfTypeW {Γ A B} :
+          [Γ |- A] ->
+          [Γ ,, A |- B] ->
+          [Γ |- tW A B]
       | wfTypeUniv {Γ} {A} :
-          [ Γ |- A : U ] -> 
+          [ Γ |- A : U ] ->
           [ Γ |- A ]
   (** **** Typing *)
   with TypingDecl : context -> term -> term -> Type :=
@@ -61,16 +65,16 @@ Section Definitions.
           in_ctx Γ n decl ->
           [ Γ |- tRel n : decl ]
       | wfTermProd {Γ} {A B} :
-          [ Γ |- A : U] -> 
+          [ Γ |- A : U] ->
           [Γ ,, A |- B : U ] ->
           [ Γ |- tProd A B : U ]
       | wfTermLam {Γ} {A B t} :
-          [ Γ |- A ] ->        
-          [ Γ ,, A |- t : B ] -> 
+          [ Γ |- A ] ->
+          [ Γ ,, A |- t : B ] ->
           [ Γ |- tLambda A t : tProd A B]
       | wfTermApp {Γ} {f a A B} :
-          [ Γ |- f : tProd A B ] -> 
-          [ Γ |- a : A ] -> 
+          [ Γ |- f : tProd A B ] ->
+          [ Γ |- a : A ] ->
           [ Γ |- tApp f a : B[a..] ]
       | wfTermNat {Γ} :
           [|-Γ] ->
@@ -95,13 +99,13 @@ Section Definitions.
         [Γ |- e : tEmpty] ->
         [Γ |- tEmptyElim P e : P[e..]]
       | wfTermSig {Γ} {A B} :
-        [ Γ |- A : U] -> 
+        [ Γ |- A : U] ->
         [Γ ,, A |- B : U ] ->
         [ Γ |- tSig A B : U ]
       | wfTermPair {Γ} {A B a b} :
         [Γ |- A] ->
         [Γ,, A |- B] ->
-        [Γ |- a : A] -> 
+        [Γ |- a : A] ->
         [Γ |- b : B[a..]] ->
         [Γ |- tPair A B a b : tSig A B]
       | wfTermFst {Γ A B p} :
@@ -127,12 +131,29 @@ Section Definitions.
           [Γ |- y : A] ->
           [Γ |- e : tId A x y] ->
           [Γ |- tIdElim A x P hr y e : P[e .: y..]]
+      | wfTermW {Γ A B} :
+          [Γ |- A : U] ->
+          [Γ,, A |- B : U] ->
+          [Γ |- tW A B : U]
+      | wfTermSup {Γ A B a k} :
+          [Γ |- A] ->
+          [Γ,, A |- B] ->
+          [Γ |- a : A] ->
+          [Γ |- k : arr B[a..] (tW A B)] ->
+          [Γ |- tSup A B a k : tW A B ]
+      | wfTermWElim {Γ A B P hsup w} :
+          [Γ |- A] ->
+          [Γ,, A |- B] ->
+          [Γ,, tW A B |- P] ->
+          [Γ |- hsup : elimSupHypTy Γ A B P] ->
+          [Γ |- w : tW A B] ->
+          [Γ |- tWElim A B P hsup w : P[w..]]
       | wfTermConv {Γ} {t A B} :
-          [ Γ |- t : A ] -> 
-          [ Γ |- A ≅ B ] -> 
+          [ Γ |- t : A ] ->
+          [ Γ |- A ≅ B ] ->
           [ Γ |- t : B ]
   (** **** Conversion of types *)
-  with ConvTypeDecl : context -> term -> term  -> Type :=  
+  with ConvTypeDecl : context -> term -> term  -> Type :=
       | TypePiCong {Γ} {A B C D} :
           [ Γ |- A] ->
           [ Γ |- A ≅ B] ->
@@ -149,11 +170,16 @@ Section Definitions.
           [Γ |- x ≅ x' : A] ->
           [Γ |- y ≅ y' : A] ->
           [Γ |- tId A x y ≅ tId A' x' y' ]
-      | TypeRefl {Γ} {A} : 
+      | TypeWCong {Γ A A' B B'} :
+          [Γ |- A] ->
+          [Γ |- A ≅ A'] ->
+          [Γ ,, A |- B ≅ B'] ->
+          [Γ |- tW A B ≅ tW A' B']
+      | TypeRefl {Γ} {A} :
           [ Γ |- A ] ->
           [ Γ |- A ≅ A]
       | convUniv {Γ} {A B} :
-        [ Γ |- A ≅ B : U ] -> 
+        [ Γ |- A ≅ B : U ] ->
         [ Γ |- A ≅ B ]
       | TypeSym {Γ} {A B} :
           [ Γ |- A ≅ B ] ->
@@ -195,7 +221,7 @@ Section Definitions.
           [Γ |- hz ≅ hz' : P[tZero..]] ->
           [Γ |- hs ≅ hs' : elimSuccHypTy P] ->
           [Γ |- n ≅ n' : tNat] ->
-          [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]        
+          [Γ |- tNatElim P hz hs n ≅ tNatElim P' hz' hs' n' : P[n..]]
       | TermNatElimZero {Γ P hz hs} :
           [Γ ,, tNat |- P ] ->
           [Γ |- hz : P[tZero..]] ->
@@ -281,8 +307,41 @@ Section Definitions.
         [Γ |- x ≅ y : A] ->
         [Γ |- x ≅ z : A] ->
         [Γ |- tIdElim A x P hr y (tRefl A' z) ≅ hr : P[tRefl A' z .: y..]]
+      | TermWCong {Γ A A' B B'} :
+          [Γ |- A] ->
+          [Γ |- A ≅ A' : U] ->
+          [Γ,, A |- B ≅ B' : U] ->
+          [Γ |- tW A B ≅ tW A' B' : U]
+      | TermSupCong {Γ A A' B B' a a' k k'} :
+          [Γ |- A ] ->
+          [Γ |- A ≅ A'] ->
+          [Γ,, A |- B ≅ B'] ->
+          [Γ |- a ≅ a' : A] ->
+          [Γ |- k ≅ k' : arr B[a..] (tW A B)] ->
+          [Γ |- tSup A B a k ≅ tSup A' B' a' k' : tW A B ]
+      | TermWElimCong {Γ A A' B B' P P' hsup hsup' w w'} :
+          [Γ |- A] ->
+          [Γ,, A |- B] ->
+          [Γ |- A ≅ A'] ->
+          [Γ,, A |- B ≅ B'] ->
+          [Γ,, tW A B |- P ≅ P'] ->
+          [Γ |- hsup ≅ hsup' : elimSupHypTy Γ A B P] ->
+          [Γ |- w ≅ w' : tW A B] ->
+          [Γ |- tWElim A B P hsup w ≅ tWElim A' B' P' hsup' w' : P[w..]]
+      | TermWElimSup {Γ A B P hsup A' B' a k} :
+          [Γ |- A] ->
+          [Γ,, A |- B] ->
+          [Γ,, tW A B |- P] ->
+          [Γ |- hsup : elimSupHypTy Γ A B P] ->
+          [Γ |- A'] ->
+          [Γ |- A ≅ A'] ->
+          [Γ,, A' |- B'] ->
+          [Γ,, A |- B ≅ B'] ->
+          [Γ |- a : A'] ->
+          [Γ |- k : arr B'[a..] (tW A' B')] ->
+          [Γ |- tWElim A B P hsup (tSup A' B' a k) ≅ elimWSupRed Γ A B P hsup a k : P[(tSup A' B' a k)..] ]
       | TermRefl {Γ} {t A} :
-          [ Γ |- t : A ] -> 
+          [ Γ |- t : A ] ->
           [ Γ |- t ≅ t : A ]
       | TermConv {Γ} {t t' A B} :
           [ Γ |- t ≅ t': A ] ->
@@ -295,7 +354,7 @@ Section Definitions.
           [ Γ |- t ≅ t' : A ] ->
           [ Γ |- t' ≅ t'' : A ] ->
           [ Γ |- t ≅ t'' : A ]
-      
+
   where "[   |- Γ ]" := (WfContextDecl Γ)
   and   "[ Γ |- T ]" := (WfTypeDecl Γ T)
   and   "[ Γ |- t : T ]" := (TypingDecl Γ T t)
@@ -371,6 +430,14 @@ Section Definitions.
       [Γ |- e ~ e' : tId A x y] ->
       [Γ |- tIdElim A x P hr y e ~ tIdElim A' x' P' hr' y' e' : P[e .: y..]]
 
+  | neuConvW {A A' B B' P P' hsup hsup' w w'} :
+      [Γ |- A ≅ A'] ->
+      [Γ,, A |- B ≅ B'] ->
+      [Γ,, tW A B |- P ≅ P'] ->
+      [Γ |- hsup ≅ hsup' : elimSupHypTy Γ A B P] ->
+      [Γ |- w ~ w' : tW A B] ->
+      [Γ |- tWElim A B P hsup w ~ tWElim A' B' P' hsup' w' : P[w..]]
+
   | neuConvConv {A B n n'} :
       [Γ |- n ~ n' : A] ->
       [Γ |- A ≅ B] ->
@@ -439,7 +506,7 @@ proof, to alleviate the user from the need to write it down every time: they
 only need write the predicates to be proven. *)
 Section InductionPrinciples.
 
-Scheme 
+Scheme
     Minimality for WfContextDecl Sort Type with
     Minimality for WfTypeDecl   Sort Type with
     Minimality for TypingDecl    Sort Type with
@@ -487,7 +554,7 @@ Arguments WfDeclInductionConcl PCon PTy PTm PTyEq PTmEq : rename.
 
 (** ** Generation *)
 
-(** The generation lemma (the name comes from the PTS literature), gives a 
+(** The generation lemma (the name comes from the PTS literature), gives a
 stronger inversion principle on typing derivations, that give direct access
 to the last non-conversion rule, and bundle together all conversions.
 
@@ -519,8 +586,12 @@ Definition termGenData (Γ : context) (t T : term) : Type :=
     | tSnd p => ∑ A B, T = B[(tFst p)..] × [Γ |- p : tSig A B]
     | tId A x y => [× T = U, [Γ |- A : U], [Γ |- x : A] & [Γ |- y : A]]
     | tRefl A x => [× T = tId A x x, [Γ |- A] & [Γ |- x : A]]
-    | tIdElim A x P hr y e => 
+    | tIdElim A x P hr y e =>
       [× T = P[e .: y..], [Γ |- A], [Γ |- x : A], [Γ,, A,, tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0) |- P], [Γ |- hr : P[tRefl A x .: x..]], [Γ |- y : A] & [Γ |- e : tId A x y]]
+    | tW A B => [× T = U, [Γ |- A : U] & [Γ ,, A |- B : U]]
+    | tSup A B a k => [× T = tW A B, [Γ |- A], [Γ,, A |- B], [Γ |- a : A] & [Γ |- k : arr B[a..] (tW A B)]]
+    | tWElim A B P hsup w =>
+      [× T = P[w..], [Γ |- A], [Γ,, A |- B], [Γ,,(tW A B) |- P], [Γ |- hsup : elimSupHypTy Γ A B P] & [Γ |- w : tW A B]]
   end.
 
 (* Use `termGen` from later on instead after this file. *)
@@ -568,11 +639,22 @@ Proof.
     split ; try easy ; now econstructor.
 Qed.
 
+Lemma w_ty_inv Γ A B :
+  [Γ |- tW A B] ->
+  [Γ |- A] × [Γ,, A |- B].
+Proof.
+  intros Hty.
+  inversion Hty ; subst ; refold.
+  - easy.
+  - eapply _termGen in H as (?&[]&_) ; subst.
+    split ; try easy ; now econstructor.
+Qed.
+
 Lemma neutral_ty_inv Γ A :
   [Γ |- A] -> whne A -> [Γ |- A : U].
 Proof.
   intros Hty Hne.
   inversion Hty ; subst ; refold.
-  1-6: inversion Hne.
+  1-7: inversion Hne.
   easy.
 Qed.
