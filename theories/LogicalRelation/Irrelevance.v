@@ -153,6 +153,61 @@ Section Irrelevance.
 
   End IrrId.
 
+  (*
+  Section IrrW.
+  Context {l1 l2 Γ A B1 B2} (WA: [Γ ||-W< l1 > A ≅ B1]) (WA': [Γ ||-W< l2 > A ≅ B2])
+    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]) B2 (R2 : [Δ ||-< l2 > (ParamRedTy.domL WA)⟨ρ⟩ ≅ B2]), irr (PolyRed.shpRed WA ρ h) R2)
+    (ihcod: forall Δ a b (ρ : Δ ≤ Γ) (h : [|- Δ]) (ha : [PolyRed.shpRed WA ρ h | Δ ||- a ≅ b : _]) B2
+      (R2 : [Δ ||-< l2 > (ParamRedTy.codL WA)[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed WA ρ h ha) R2)
+    (eqdom: ParamRedTy.domL WA' = ParamRedTy.domL WA)
+    (eqcod: ParamRedTy.codL WA' = ParamRedTy.codL WA).
+
+  Let eqOutTy {Δ} (ρ : Δ ≤ Γ) : (WRedTyPack.outTy WA)⟨ρ⟩ = (WRedTyPack.outTy WA')⟨ρ⟩.
+  Proof.  unfold WRedTyPack.outTy; do 2 f_equal; now symmetry. Qed.
+
+  Lemma irrWRedTmFwd : forall Δ (ρ : Δ ≤ Γ),
+    (forall t u (Rtu : WRedTmEq WA ρ t u), WRedTmEq WA' ρ t u) ×
+    (forall t u (Rtu : WPropEq WA ρ t u), WPropEq WA' ρ t u).
+  Proof.
+    eapply WRedEqInduction.
+    - intros; econstructor; now rewrite <-?eqOutTy.
+    - intros * ?????? ih ; unshelve eapply WRedTmEq.supReq.
+      2-5: cbn; rewrite ?eqdom, ?eqcod; tea.
+      + now unshelve (intros; destruct WA as [???????? PA] , WA' as [???????? PA']; cbn in *; subst; eapply ihdom; eauto).
+      + intros; unshelve eapply ih; tea.
+        destruct WA as [???????? PA] , WA' as [???????? PA']. cbn in *; subst. eapply ihdom; eauto).
+
+        pose proof (Ra' := Ra Ξ ρ' wfΞ).
+        eapply ihdom in Ra'.
+        epose (ihdom _ (ρ' ∘w ρ) wfΞ _ _). (PolyRed.shpRed PA' (ρ' ∘w ρ) wfΞ)).
+         eapply ihdom. .
+      intros * Rb.
+    constructor.
+    destruct ΣA, ΣA'; cbn in *; subst.
+    intros ? ; split ; intros [|].
+    2,4: constructor; tea; cbn in *.
+    1,2: unshelve eapply PairLRPair; tea; cbn in *.
+    1,2: now unshelve (intros; now eapply ihdom).
+    all: now unshelve (intros; eapply ihcod; eauto).
+  Qed.
+
+  Lemma irrRedSigTm0 : forall t, SigRedTm ΣA' t <≈> SigRedTm ΣA t.
+  Proof.
+    intros; split; intros [? red ?%irrIsLRPair]; econstructor; tea.
+    all: revert red; cbn; now rewrite eqdom, eqcod.
+  Defined.
+
+  Lemma irrW : irr (LRW' WA) (LRW' WA').
+  Proof.
+    intros ??; split. intros []; unshelve econstructor.
+    1,2,4,5: now eapply irrRedSigTm0.
+    all: cbn in *; destruct ΣA, ΣA'; cbn in *; subst; tea.
+    1,2: now unshelve (intros; eapply ihdom; eauto).
+    1,2: now unshelve (intros; eapply ihcod; eauto).
+  Qed.
+
+  End IrrΣ.
+*)
 
   Lemma irrLR_rec@{h h'}
     {l1 l2}
