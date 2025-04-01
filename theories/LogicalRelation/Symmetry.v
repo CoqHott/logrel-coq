@@ -219,6 +219,116 @@ Section Symmetry.
 
   End SymId.
 
+  Section SymW.
+    Context {Γ l A A'} (WA : [Γ ||-W<l> A ≅ A'])
+      (ihdom: forall (Δ : context) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ]), sym (PolyRed.shpRed WA ρ h))
+      (ihcod: forall (Δ : context) (a b : term) (ρ : Δ ≤ Γ) (h : [ |-[ ta ] Δ])
+        (ha : [PolyRed.shpRed WA ρ h | Δ ||- a ≅ b : _]), sym (PolyRed.posRed WA ρ h ha)).
+
+    Let symW := symParamRedTy WA ihdom ihcod.
+
+    Let eqOutTy [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]): [Δ |- (WRedTy.outTy WA)⟨ρ⟩ ≅ (WRedTy.outTy symW)⟨ρ⟩].
+    Proof.
+      eapply convty_wk; tea; eapply ParamRedTy.eq.
+    Qed.
+
+
+    Definition symWRedTmFwd :
+      (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WRedTmEq WA ρ t u), WRedTmEq symW ρ u t) ×
+      (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WPropEq WA ρ t u), WPropEq symW ρ u t).
+    Proof.
+      apply WRedEqInduction.
+      - intros. assert (wfΔ : [|-Δ]) by gtyping.
+        econstructor; tea; try first [now eapply redtmwf_conv| eapply convtm_conv].
+        1: now symmetry. eauto.
+      - intros ; econstructor; eapply NeNf.conv_; [|now eapply symNeNf].
+        eapply eqOutTy; destruct Rne; gtyping.
+      - intros. assert (wfΔ : [|-Δ]) by gtyping.
+        unshelve econstructor.
+        2,3: etransitivity; tea; eapply convty_wk; tea; now eapply ParamRedTy.eqdom.
+        + intros ; eapply ihdom; eauto.
+        + intros.
+          assert (Raid : [PolyRed.shpRed WA ρ wfΔ | _ ||- a ≅ a' : _]).
+          1: pose (Raid := (Ra Δ wk_id wfΔ)); rasimpl in Raid; eapply irrLREq; tea; now rasimpl.
+          pose proof (PolyRed.posRed WA ρ wfΔ Raid).
+          assert[Δ |-[ ta ] (ParamRedTy.codL WA)[a .: ρ >> tRel] ≅ (ParamRedTy.codR WA)[a' .: ρ >> tRel]] by now escape.
+          assert [Δ |-[ ta ] arr (WRedTy.codL WA)[a .: ρ >> tRel] (WRedTy.outTy WA)⟨ρ⟩ ≅ arr (WRedTy.codL symW)[a' .: ρ >> tRel] (WRedTy.outTy symW)⟨ρ⟩].
+          1: eapply convty_simple_arr; [| | now eapply eqOutTy]; now escape.
+          destruct Rk'; econstructor.
+          1: now eapply redtmwf_conv.
+          destruct isfun; constructor; tea; cycle -1.
+          1: now eapply convneu_conv.
+          1: etransitivity; tea; now symmetry.
+          intros; unshelve eapply X0; tea.
+          eapply ihcod; now eapply irrLR.
+        + intros.
+          assert (Raid : [PolyRed.shpRed WA ρ wfΔ | _ ||- a ≅ a' : _]).
+          1: pose (Raid := (Ra Δ wk_id wfΔ)); rasimpl in Raid; eapply irrLREq; tea; now rasimpl.
+          pose proof (PolyRed.posRed WA ρ wfΔ Raid).
+          assert[Δ |-[ ta ] (ParamRedTy.codL WA)[a .: ρ >> tRel] ≅ (ParamRedTy.codR WA)[a' .: ρ >> tRel]] by now escape.
+          assert [Δ |-[ ta ] arr (WRedTy.codL WA)[a .: ρ >> tRel] (WRedTy.outTy WA)⟨ρ⟩ ≅ arr (WRedTy.codL symW)[a' .: ρ >> tRel] (WRedTy.outTy symW)⟨ρ⟩].
+          1: eapply convty_simple_arr; [| | now eapply eqOutTy]; now escape.
+          destruct Rk; econstructor.
+          1: now eapply redtmwf_conv.
+          destruct isfun; constructor; tea; cycle -1.
+          1: now eapply convneu_conv.
+          1: etransitivity; tea; now symmetry.
+          intros; unshelve eapply X; tea.
+          eapply ihcod; now eapply irrLR.
+        + intros; unshelve eapply X1; tea.
+          now eapply ihcod, irrLR.
+      Qed.
+
+    Definition symWRedTmBwd :
+      (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WRedTmEq symW ρ t u), WRedTmEq WA ρ u t) ×
+      (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WPropEq symW ρ t u), WPropEq WA ρ u t).
+    Proof.
+      apply WRedEqInduction.
+      - intros. assert (wfΔ : [|-Δ]) by gtyping.
+        econstructor; tea; try first [eapply redtmwf_conv; tea; now symmetry| eapply convtm_conv].
+        1: now symmetry. symmetry; eauto.
+      - intros ; econstructor; eapply NeNf.conv_; [|now eapply symNeNf].
+        symmetry; eapply eqOutTy; destruct Rne; gtyping.
+      - intros. assert (wfΔ : [|-Δ]) by gtyping.
+        unshelve econstructor.
+        2,3: etransitivity; tea; eapply convty_wk; tea; now eapply ParamRedTy.eqdom.
+        + intros ; eapply ihdom; eauto.
+        + intros.
+          assert (Raid : [PolyRed.shpRed symW ρ wfΔ | _ ||- a ≅ a' : _]).
+          1: pose (Raid := (Ra Δ wk_id wfΔ)); rasimpl in Raid; eapply irrLREq; tea; now rasimpl.
+          pose proof (PolyRed.posRed symW ρ wfΔ Raid).
+          assert[Δ |-[ ta ] (ParamRedTy.codL symW)[a .: ρ >> tRel] ≅ (ParamRedTy.codL WA)[a' .: ρ >> tRel]] by now escape.
+          assert [Δ |-[ ta ] arr (WRedTy.codL symW)[a .: ρ >> tRel] (WRedTy.outTy symW)⟨ρ⟩ ≅ arr (WRedTy.codL WA)[a' .: ρ >> tRel] (WRedTy.outTy WA)⟨ρ⟩].
+          1: eapply convty_simple_arr;[| | symmetry; eauto]; now escape.
+          destruct Rk'; econstructor.
+          1: eapply redtmwf_conv; tea.
+          destruct isfun; constructor; tea; cycle -1.
+          1: now eapply convneu_conv.
+          1: etransitivity; tea; now symmetry.
+          intros; unshelve eapply X0; tea.
+          eapply ihcod; now eapply irrLR.
+        + intros.
+          assert (Raid : [PolyRed.shpRed symW ρ wfΔ | _ ||- a ≅ a' : _]).
+          1: pose (Raid := (Ra Δ wk_id wfΔ)); rasimpl in Raid; eapply irrLREq; tea; now rasimpl.
+          pose proof (PolyRed.posRed symW ρ wfΔ Raid).
+          assert[Δ |-[ ta ] (ParamRedTy.codL symW)[a .: ρ >> tRel] ≅ (ParamRedTy.codL WA)[a' .: ρ >> tRel]] by now escape.
+          assert [Δ |-[ ta ] arr (WRedTy.codL symW)[a .: ρ >> tRel] (WRedTy.outTy symW)⟨ρ⟩ ≅ arr (WRedTy.codL WA)[a' .: ρ >> tRel] (WRedTy.outTy WA)⟨ρ⟩].
+          1: eapply convty_simple_arr;[| | symmetry; eauto]; now escape.
+          destruct Rk; econstructor.
+          1: now eapply redtmwf_conv.
+          destruct isfun; constructor; tea; cycle -1.
+          1: now eapply convneu_conv.
+          1: etransitivity; tea; now symmetry.
+          intros; unshelve eapply X; tea.
+          eapply ihcod; now eapply irrLR.
+        + intros; unshelve eapply X1; tea.
+          now eapply ihcod, irrLR.
+      Qed.
+
+    Definition symLRW : sym (LRW' WA).
+    Proof. exists (LRW' symW); intros; cbn; split; [eapply symWRedTmBwd | eapply symWRedTmFwd]. Qed.
+  End SymW.
+
   End SymLemmas.
 
   Arguments sym : clear implicits.
@@ -243,9 +353,7 @@ Section Symmetry.
         all: unshelve econstructor; cbn.
         5,6,8,9: eapply redtmwf_conv;tea; now symmetry.
         1,2: eapply convneu_conv; [now symmetry|]; tea; now symmetry.
-    - intros ΠA ihdom ihcod ih.
-      eapply symLRΠ.
-      all: intros; eauto.
+    - intros ΠA ihdom ihcod ih; eapply symLRΠ; intros; eauto.
     - intros NA _; unshelve econstructor.
       + eapply LRNat_; destruct NA; now econstructor.
       + intros; cbn; split; eapply symNatRedTmEq.
@@ -254,6 +362,7 @@ Section Symmetry.
       + intro; cbn; split; intros []; econstructor; tea; now eapply symNeNf.
     - intros ΣA ihdom ihcod ih; eapply symLRΣ; intros; eauto.
     - intros IA ihdom ih; eapply symLRId; eauto.
+    - intros WA ihdom ihcod ih; eapply symLRW; intros; eauto.
   Qed.
 
 

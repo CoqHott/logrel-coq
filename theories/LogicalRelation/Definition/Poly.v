@@ -48,6 +48,62 @@ End PolyRedPack.
 
 Export PolyRedPack(PolyRedPack, Build_PolyRedPack, PolyRedPackAdequate, Build_PolyRedPackAdequate).
 
+Import EqNotations.
+
+Lemma wk1_subst_scons B A a {Γ Δ} (ρ : Δ ≤ Γ) :  B⟨ρ⟩ = B⟨@wk1 Γ A⟩[a .: ρ >> tRel].
+Proof. now rewrite wk1_ren_on, shift_subst_scons. Qed.
+
+Definition mkPolyRedPackWk1@{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta}
+    {Γ : context} {shp shp' pos pos' : term}
+  (shpRed : forall {Δ} (ρ : Δ ≤ Γ), [ |- Δ ] -> LRPack@{i} Δ shp⟨ρ⟩ shp'⟨ρ⟩)
+  (posRed : forall {Δ} (ρ : Δ ≤ Γ), [ |- Δ ] -> LRPack@{i} Δ pos⟨ρ⟩ pos'⟨ρ⟩) :
+  PolyRedPack@{i} Γ shp shp' pos⟨@wk1 Γ shp⟩ pos'⟨@wk1 Γ shp'⟩.
+Proof.
+  exists shpRed; intros.
+  rewrite <-2! wk1_subst_scons; eauto.
+Defined.
+
+From Equations Require Import Equations.
+
+Definition mkPolyRedPackAdequateWk1@{i j} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta}
+    {Γ : context} {shp shp' pos pos' : term} {R : RedRel@{i j}}
+  (shpRed : forall {Δ} (ρ : Δ ≤ Γ), [ |- Δ ] -> LRPack@{i} Δ shp⟨ρ⟩ shp'⟨ρ⟩)
+  (shpAd : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), LRPackAdequate@{i j} R (shpRed ρ h))
+  (posRed : forall {Δ} (ρ : Δ ≤ Γ), [ |- Δ ] -> LRPack@{i} Δ pos⟨ρ⟩ pos'⟨ρ⟩)
+  (posAd : forall {Δ} (ρ : Δ ≤ Γ) (h : [ |- Δ ]), LRPackAdequate@{i j} R (posRed ρ h)) :
+  PolyRedPackAdequate@{i j} R (mkPolyRedPackWk1 (@shpRed) (@posRed)).
+Proof.
+  unfold mkPolyRedPackWk1; constructor.
+  + intros; apply shpAd.
+  + cbn; intros.
+    set (e' := wk1_subst_scons _ _ _ _); clearbody e'.
+    set (e := wk1_subst_scons _ _ _ _); clearbody e.
+    set (y := pos⟨wk1 shp⟩[a .: ρ >> tRel]) in e |- *.
+    clearbody y; depelim e.
+    set (y' := pos'⟨wk1 shp'⟩[b .: ρ >> tRel]) in e' |- *.
+    clearbody y'; depelim e'.
+    eapply posAd.
+Qed.
+
+Lemma ren_scons_ren_comp {Γ Δ Ξ B a} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) :
+  B[a .: ρ >> tRel]⟨ρ'⟩ = B[a⟨ρ'⟩ .: (ρ' ∘w ρ) >> tRel].
+Proof. now rasimpl. Qed.
+
+Definition instPos @{i} `{ta : tag}
+    `{WfContext ta} `{WfType ta} `{ConvType ta}
+    {Γ : context} {shp shp' pos pos' : term}
+  (P : PolyRedPack@{i} Γ shp shp' pos pos')
+  {Δ a a'} (ρ : Δ ≤ Γ)
+  (Ra : forall {Ξ} (ρ' : Ξ ≤ Δ) (wfΞ : [ |- Ξ ]),
+      [P.(PolyRedPack.shpRed) (ρ' ∘w ρ) wfΞ | _ ||- a⟨ρ'⟩ ≅ a'⟨ρ'⟩ : _ ≅ _]) :
+  forall [Ξ] (ρ' : Ξ ≤ Δ) (wfΞ : [ |- Ξ ]),
+    LRPack@{i} Ξ (pos[a .: (ρ >> tRel)])⟨ρ'⟩ (pos'[a' .: (ρ >> tRel)])⟨ρ'⟩.
+Proof.
+  intros; rewrite 2!ren_scons_ren_comp.
+  unshelve eapply P.(PolyRedPack.posRed); eauto.
+Defined.
 
 Module ParamRedTyPack.
 

@@ -153,61 +153,74 @@ Section Irrelevance.
 
   End IrrId.
 
-  (*
+
   Section IrrW.
   Context {l1 l2 Γ A B1 B2} (WA: [Γ ||-W< l1 > A ≅ B1]) (WA': [Γ ||-W< l2 > A ≅ B2])
-    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]) B2 (R2 : [Δ ||-< l2 > (ParamRedTy.domL WA)⟨ρ⟩ ≅ B2]), irr (PolyRed.shpRed WA ρ h) R2)
+    (ihdom: forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]), irr (PolyRed.shpRed WA ρ h) (PolyRed.shpRed WA' ρ h))
     (ihcod: forall Δ a b (ρ : Δ ≤ Γ) (h : [|- Δ]) (ha : [PolyRed.shpRed WA ρ h | Δ ||- a ≅ b : _]) B2
-      (R2 : [Δ ||-< l2 > (ParamRedTy.codL WA)[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed WA ρ h ha) R2)
+      (R2 : [Δ ||-< l2 > (ParamRedTy.codL WA')[a .: ρ >> tRel] ≅ B2]), irr (PolyRed.posRed WA ρ h ha) R2)
     (eqdom: ParamRedTy.domL WA' = ParamRedTy.domL WA)
     (eqcod: ParamRedTy.codL WA' = ParamRedTy.codL WA).
 
   Let eqOutTy {Δ} (ρ : Δ ≤ Γ) : (WRedTyPack.outTy WA)⟨ρ⟩ = (WRedTyPack.outTy WA')⟨ρ⟩.
   Proof.  unfold WRedTyPack.outTy; do 2 f_equal; now symmetry. Qed.
 
-  Lemma irrWRedTmFwd : forall Δ (ρ : Δ ≤ Γ),
-    (forall t u (Rtu : WRedTmEq WA ρ t u), WRedTmEq WA' ρ t u) ×
-    (forall t u (Rtu : WPropEq WA ρ t u), WPropEq WA' ρ t u).
+  Lemma irrWRedTmFwd :
+    (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WRedTmEq WA ρ t u), WRedTmEq WA' ρ t u) ×
+    (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WPropEq WA ρ t u), WPropEq WA' ρ t u).
   Proof.
     eapply WRedEqInduction.
     - intros; econstructor; now rewrite <-?eqOutTy.
-    - intros * ?????? ih ; unshelve eapply WRedTmEq.supReq.
-      2-5: cbn; rewrite ?eqdom, ?eqcod; tea.
-      + now unshelve (intros; destruct WA as [???????? PA] , WA' as [???????? PA']; cbn in *; subst; eapply ihdom; eauto).
-      + intros; unshelve eapply ih; tea.
-        destruct WA as [???????? PA] , WA' as [???????? PA']. cbn in *; subst. eapply ihdom; eauto).
-
-        pose proof (Ra' := Ra Ξ ρ' wfΞ).
-        eapply ihdom in Ra'.
-        epose (ihdom _ (ρ' ∘w ρ) wfΞ _ _). (PolyRed.shpRed PA' (ρ' ∘w ρ) wfΞ)).
-         eapply ihdom. .
-      intros * Rb.
-    constructor.
-    destruct ΣA, ΣA'; cbn in *; subst.
-    intros ? ; split ; intros [|].
-    2,4: constructor; tea; cbn in *.
-    1,2: unshelve eapply PairLRPair; tea; cbn in *.
-    1,2: now unshelve (intros; now eapply ihdom).
-    all: now unshelve (intros; eapply ihcod; eauto).
+    - intros; constructor; now rewrite <-eqOutTy.
+    - intros * ?????? ihk ihk' ihkk' ; unshelve eapply WRedTmEq.supReq.
+      2-3: cbn; rewrite ?eqdom, ?eqcod; tea.
+      + intros; now eapply ihdom.
+      + destruct Rk as [?? isfun]; econstructor.
+        1: cbn -[ren1]; now rewrite <-eqOutTy, eqcod.
+        destruct isfun.
+        2: constructor; cbn -[ren1] ; now rewrite <-eqOutTy, eqcod.
+        constructor; tea; [cbn; now rewrite eqcod| ].
+        intros; cbn in ihk; now unshelve now eapply ihk, ihcod.
+      + destruct Rk' as [?? isfun]; econstructor.
+        1: cbn -[ren1]; now rewrite <-eqOutTy, eqcod.
+        destruct isfun.
+        2: constructor; cbn -[ren1] ; now rewrite <-eqOutTy, eqcod.
+        constructor; tea; [cbn; now rewrite eqcod| ].
+        intros; now unshelve now eapply ihk', ihcod.
+      + intros; now unshelve now eapply ihkk', ihcod.
   Qed.
 
-  Lemma irrRedSigTm0 : forall t, SigRedTm ΣA' t <≈> SigRedTm ΣA t.
+  Lemma irrWRedTmBwd :
+    (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WRedTmEq WA' ρ t u), WRedTmEq WA ρ t u) ×
+    (forall Δ (ρ : Δ ≤ Γ) t u (Rtu : WPropEq WA' ρ t u), WPropEq WA ρ t u).
   Proof.
-    intros; split; intros [? red ?%irrIsLRPair]; econstructor; tea.
-    all: revert red; cbn; now rewrite eqdom, eqcod.
-  Defined.
+    eapply WRedEqInduction.
+    - intros; econstructor; now rewrite ?eqOutTy.
+    - intros; constructor; now rewrite eqOutTy.
+    - intros * ?????? ihk ihk' ihkk' ; unshelve eapply WRedTmEq.supReq.
+      2-3: cbn; rewrite <-?eqdom, <-?eqcod; tea.
+      + intros; now eapply ihdom.
+      + destruct Rk as [?? isfun]; econstructor.
+        1: cbn -[ren1]; now rewrite eqOutTy, <-eqcod.
+        destruct isfun.
+        2: constructor; cbn -[ren1] ; now rewrite eqOutTy, <-eqcod.
+        constructor; tea; [cbn; now rewrite <-eqcod| ].
+        intros; cbn in ihk; now unshelve now eapply ihk, ihcod.
+      + destruct Rk' as [?? isfun]; econstructor.
+        1: cbn -[ren1]; now rewrite eqOutTy, <-eqcod.
+        destruct isfun.
+        2: constructor; cbn -[ren1] ; now rewrite eqOutTy, <-eqcod.
+        constructor; tea; [cbn; now rewrite <-eqcod| ].
+        intros; now unshelve now eapply ihk', ihcod.
+      + intros; now unshelve now eapply ihkk', ihcod.
+  Qed.
 
   Lemma irrW : irr (LRW' WA) (LRW' WA').
   Proof.
-    intros ??; split. intros []; unshelve econstructor.
-    1,2,4,5: now eapply irrRedSigTm0.
-    all: cbn in *; destruct ΣA, ΣA'; cbn in *; subst; tea.
-    1,2: now unshelve (intros; eapply ihdom; eauto).
-    1,2: now unshelve (intros; eapply ihcod; eauto).
+    intros ??; split; [apply irrWRedTmFwd| apply irrWRedTmBwd].
   Qed.
 
-  End IrrΣ.
-*)
+  End IrrW.
 
   Lemma irrLR_rec@{h h'}
     {l1 l2}
@@ -232,6 +245,10 @@ Section Irrelevance.
       + intros; eapply ihcod; tea. now rewrite eqcod.
     - intros IA ih ? <- ?? [IA' [? eqty eqlhs eqrhs]] ?; subst.
       eapply irrId; eauto.
+    - intros WA ihdom ihcod ? <- ?? [WA' [? eqdom eqcod]] ?; subst; cbn in *.
+      eapply irrW; tea.
+      + intros; eapply ihdom; tea; now rewrite eqdom.
+      + intros; eapply ihcod; tea; now rewrite eqcod.
   Qed.
 
 
@@ -282,6 +299,10 @@ Proof.
     + intros ??? ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed _ eq_refl)
       ?%(irrLR_rec (fun l lt _ => ih l lt) tyRed _ eq_refl).
       apply (irrLR_rec (fun l lt _ => ih l lt) tyRed); now etransitivity.
+  - intros [] IHdom IHcod ?; cbn in *.
+    eapply LRW'; econstructor.
+    5: now eapply cumPolyRed.
+    all: tea.
 Qed.
 
 End Irrelevance.
@@ -294,13 +315,19 @@ Proof.
 Qed.
 
 
+Theorem irrLREq@{i j k l i' j' k' l' v} `{GenericTypingProperties} {l1 l2}
+  {Γ A1 A2 B1 B2} (R1 : [Γ ||-<l1> A1 ≅ B1]) (R2 : [Γ ||-<l2> A2 ≅ B2]) :
+    A1 = A2 ->
+    irr@{v i j k l i' j' k' l'} R1 R2.
+Proof.
+  split; eapply irrLR_rec; tea; try now symmetry.
+  1,2: intros l [] ?; exact cumLR0.
+Qed.
 
 Theorem irrLR@{i j k l i' j' k' l' v} `{GenericTypingProperties} {l1 l2}
   {Γ A B1 B2} (R1 : [Γ ||-<l1> A ≅ B1]) (R2 : [Γ ||-<l2> A ≅ B2]) :
     irr@{v i j k l i' j' k' l'} R1 R2.
-Proof.
-  split; eapply irrLR_rec; try reflexivity; intros l [] ?; exact cumLR0.
-Qed.
+Proof. now apply irrLREq. Qed.
 
 Theorem cumLR@{i j k l i' j' k' l'} `{GenericTypingProperties} {lA}
   {Γ A B} (lr : [ LogRel@{i j k l} lA | Γ ||- A ≅ B ]) :
@@ -308,3 +335,54 @@ Theorem cumLR@{i j k l i' j' k' l'} `{GenericTypingProperties} {lA}
 Proof.
   eapply cumLR_rec; tea; intros ? []; exact cumLR0.
 Qed.
+
+Section InstKripke.
+Context `{GenericTypingProperties}.
+
+Lemma instKripkeTm {Γ A A' t u l} (wfΓ : [|-Γ])
+  {h : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [Δ ||-<l> A⟨ρ⟩ ≅ A'⟨ρ⟩]}
+  (eq : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [h Δ ρ wfΔ | Δ ||- t⟨ρ⟩ ≅ u⟨ρ⟩ : _])
+  : [instKripke wfΓ h | Γ ||- t ≅ u : _].
+Proof.
+  specialize (eq Γ wk_id wfΓ); rewrite !wk_id_ren_on in eq.
+  eapply irrLREq; tea; now rewrite wk_id_ren_on.
+Qed.
+
+Lemma instKripkeSubst {Γ A A' B B' l}
+  {hA : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [Δ ||-<l> A⟨ρ⟩ ≅ A'⟨ρ⟩]}
+  (hB : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ])
+    (hab : [hA Δ ρ wfΔ | Δ ||- a ≅ b : _]),
+    [Δ ||-<l> B[a .: ρ >> tRel] ≅ B'[b .: ρ >> tRel]])
+  (RA : [Γ ||-<l> A ≅ A'])
+  [t t']
+  (ht : [_ ||-<l> t ≅ t' : _ | RA])
+  : [ Γ ||-<l> B[t..] ≅ B'[t'..]].
+Proof.
+  erewrite 2!eq_subst_scons; unshelve eapply hB.
+  2:rewrite 2! wk_id_ren_on; eapply irrLREq; tea; now rewrite wk_id_ren_on.
+  escape; gtyping.
+Qed.
+
+Lemma instKripkeSubstTm {Γ A A' B B' u u' l}
+  {hA : forall Δ (ρ : Δ ≤ Γ) (wfΔ : [|-Δ]), [Δ ||-<l> A⟨ρ⟩ ≅ A'⟨ρ⟩]}
+  {hB : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ])
+    (hab : [hA Δ ρ wfΔ | Δ ||- a ≅ b : _]),
+    [Δ ||-<l> B[a .: ρ >> tRel] ≅ B'[b .: ρ >> tRel]]}
+  (eq : forall Δ a b (ρ : Δ ≤ Γ) (wfΔ : [|-Δ])
+    (hab : [hA Δ ρ wfΔ | Δ ||- a ≅ b : _]),
+    [hB Δ a b ρ wfΔ hab | Δ ||- u[a .: ρ >> tRel] ≅ u'[b .: ρ >> tRel] : _])
+  (RA : [Γ ||-<l> A ≅ A'])
+  [t t' ]
+  (ht : [_ ||-<l> t ≅ t' : _ | RA])
+  : [ _ ||-<l> u[t..] ≅ u'[t'..] : _ | instKripkeSubst hB RA ht].
+Proof.
+  erewrite 2!eq_subst_scons; eapply irrLREq.
+  2: unshelve eapply eq.
+  1: now rewrite <-eq_subst_scons.
+  2: rewrite 2!wk_id_ren_on; eapply irrLREq; tea; now rewrite wk_id_ren_on.
+  escape; gtyping.
+Qed.
+
+End InstKripke.
+
+

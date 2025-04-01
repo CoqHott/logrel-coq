@@ -316,6 +316,84 @@ Section Transitivity.
 
   End transId.
 
+  Section transW.
+    Context (WAB : [Γ ||-W<l1> A ≅ B]) (WBC : [Γ ||-W<l2> B ≅ C])
+      (ihdom : forall Δ (ρ : Δ ≤ Γ) (h : [|- Δ]) l2 C (RBC : [Δ ||-< l2 > (ParamRedTy.domR WAB)⟨ρ⟩ ≅ C]),
+        trans (PolyRed.shpRed WAB ρ h) RBC)
+      (ihcod : forall Δ a b (ρ : Δ ≤ Γ) (h : [|- Δ])
+        (ha : [PolyRed.shpRed WAB ρ h | Δ ||- a ≅ b: _]) l2 C
+        (RBC : [Δ ||-< l2 > (ParamRedTy.codR WAB) [b .: ρ >> tRel] ≅ C]),
+        trans (PolyRed.posRed WAB ρ h ha) RBC)
+      (eqdom : ParamRedTy.domL WBC = ParamRedTy.domR WAB)
+      (eqcod : ParamRedTy.codL WBC = ParamRedTy.codR WAB).
+
+    Let eqW : outTyL WBC = outTyR WAB.
+    Proof. cbn; now rewrite eqdom, eqcod. Qed.
+
+    Definition transW : [Γ ||-W<l1> A ≅ C].
+    Proof.
+      destruct WAB, WBC; econstructor; tea; cbn in *; subst.
+      1,2: now etransitivity.
+      now eapply transPolyRed.
+    Defined.
+
+    #[local]
+    Definition sigRedTmLeft {t} : SigRedTm WAB t -> SigRedTm transW t.
+    Proof.
+      intros [?? ispair]; cbn in *; econstructor; tea.
+      destruct ispair as [???????? rfst rsnd|].
+      2:now constructor.
+      unshelve eapply PairLRPair; tea.
+      - intros ; now unshelve eapply irrLR, rfst.
+      - intros ; now unshelve eapply irrLR, rsnd.
+    Defined.
+
+    #[local]
+    Definition sigRedTmRight {t} : SigRedTm WBC t -> SigRedTm transW t.
+    Proof.
+      intros [?? ispair]; econstructor; cbn in *.
+      1: eapply redtmwf_conv; tea; rewrite eqW; symmetry; eapply ParamRedTy.eq.
+      destruct ispair as [???????? rfst rsnd|].
+      2: constructor; eapply convneu_conv; tea; cbn; rewrite eqW; symmetry; apply ParamRedTy.eq.
+      unshelve eapply PairLRPair; tea.
+      1,4: intros; now unshelve now eapply (symLR _).(symRedTm), irrLR, (symLR _).(symRedTm).
+      1: etransitivity; tea; cbn; rewrite eqdom; apply ParamRedTy.eqdom.
+      etransitivity; tea; cbn; destruct WAB as [???????? PAB]; cbn in *; subst.
+      erewrite 2!eq_subst_scons; eapply escapeEq.
+      unshelve eapply PAB.(PolyRed.posRed).
+      2: unshelve eapply (symLR _).(symRedTm), irrLR, rfst.
+      all: gtyping.
+    Defined.
+
+    Definition transLRW : trans (LRSig' WAB) (LRSig' WBC).
+    Proof.
+      exists (LRSig' transW); intros ??? [? ru ? fsttu sndtu] [ru' ? ? fstuv snduv].
+      pose proof (equ := whredtm_det (whredtm ru) (whredtm ru')); cbn in equ.
+      unshelve econstructor.
+      - now eapply sigRedTmLeft.
+      - now eapply sigRedTmRight.
+      - intros.
+        cbn in *; destruct WAB; cbn in *; subst; cbn.
+        unshelve (eapply irrLR, ihdom; [eapply fsttu|]).
+        5: replace (SigRedTmEq.nf ru) with (SigRedTmEq.nf ru'); now unshelve apply fstuv.
+        tea.
+      - cbn; etransitivity; tea.
+        replace (SigRedTmEq.nf ru) with (SigRedTmEq.nf ru').
+        eapply convtm_conv; tea; cbn in *; rewrite eqW; symmetry;apply ParamRedTy.eq.
+      - intros.
+        cbn in *; destruct WAB; cbn in *; subst; cbn.
+        unshelve (eapply irrLR, ihcod; [eapply sndtu|]).
+        4: replace (SigRedTmEq.nf ru) with (SigRedTmEq.nf ru'); eapply PolyRed.posRed, fstuv.
+        1: tea.
+        eapply (symLR _).(symRedTm), irrLR, (symLR _).(symRedTm).
+        replace (SigRedTmEq.nf ru) with (SigRedTmEq.nf ru').
+        eapply snduv.
+        Unshelve. all: tea.
+    Qed.
+
+  End transW.
+
+
   End TransitivityLemmas.
 
   Arguments trans : clear implicits.

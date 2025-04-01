@@ -31,6 +31,38 @@ Inductive isLRFun `{ta : tag} `{WfContext ta}
   isLRFun PA (tLambda A' t)
 | NeLRFun : forall f : term, [Γ |- f ~ f : tProd dom cod] -> isLRFun PA f.
 
+Inductive isLRSimpleFun `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta} `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta}
+  {Γ : context} (dom cod : term)
+  (domRed : forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u : term), Type)
+  (codRed : forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u : term), Type)
+  : term -> Type :=
+| LamLRSimpleFun : forall A' t : term,
+    [Γ |- A'] ->
+    [Γ |-  dom ≅ A'] ->
+    (forall {Δ a b} (ρ : Δ ≤ Γ) (h : [ |- Δ ]),
+      domRed ρ h a b -> codRed ρ h (t[a .: (ρ >> tRel)]) (t[b .: (ρ >> tRel)])) ->
+  isLRSimpleFun dom cod domRed codRed (tLambda A' t)
+| NeLRSimpleFun : forall f : term, [Γ |- f ~ f : arr dom cod] -> isLRSimpleFun dom cod domRed codRed f.
+
+Module ArrRedTm.
+Record ArrRedTm `{ta : tag} `{WfContext ta}
+  `{WfType ta} `{ConvType ta} `{RedType ta}
+  `{Typing ta} `{ConvTerm ta} `{ConvNeuConv ta} `{RedTerm ta}
+  {Γ : context} {domA codA}
+  {domRed : forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u : term), Type}
+  {codRed : forall [Δ] (ρ : Δ ≤ Γ) (wfΔ : [|- Δ]) (t u : term), Type}
+  {t : term}
+: Type := {
+  nf : term;
+  red : [ Γ |- t :⤳*: nf : arr domA codA ];
+  isfun : isLRSimpleFun domA codA domRed codRed nf;
+}.
+Arguments ArrRedTm {_ _ _ _ _ _ _ _ _}.
+End ArrRedTm.
+
+Export ArrRedTm(ArrRedTm, Build_ArrRedTm).
+
 Module PiRedTmEq.
 
   Import PiRedTyPack.
