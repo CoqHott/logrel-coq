@@ -22,6 +22,7 @@ Section Definitions.
   to bother with elimination of propositions, we put them in the Type sort. *)
 
   (** **** Context well-formation *)
+  About bool_to_term.
   Inductive WfContextDecl (l : wfLCon) : context -> Type :=
       | connil : [ |- ε ]< l >
       | concons {Γ A} : 
@@ -59,8 +60,7 @@ Section Definitions.
           [ Γ |- A : U ]< l > -> 
           [ Γ |- A ]< l >
       | ϝwfType {Γ A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- A ]< l ,,l (ne, true) > ->
-        [ Γ |- A ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- A ]< l ,,l (ne, m) >) ->
         [ Γ |- A ]< l >
   (** **** Typing *)
   with TypingDecl (l : wfLCon)  : context -> term -> term -> Type :=
@@ -113,7 +113,7 @@ Section Definitions.
           [ Γ |- tFalse : tBool]< l >
       | wfTermAlpha {Γ n} :
           [ Γ |- n : tNat]< l > ->
-          [ Γ |- tAlpha n : tBool]< l >
+          [ Γ |- tAlpha n : tNat]< l >
       | wfTermBoolElim {Γ P ht hf b} :
         [ Γ ,, tBool |- P ]< l > ->
         [ Γ |- ht : P[tTrue..]]< l > ->
@@ -158,8 +158,7 @@ Section Definitions.
           [ Γ |- A ≅ B ]< l > -> 
           [ Γ |- t : B ]< l >
       | ϝwfTerm {Γ t A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t : A ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- t : A ]< l ,,l (ne, m) >) ->
         [ Γ |- t : A ]< l >
   (** **** Conversion of types *)
   with ConvTypeDecl (l : wfLCon)  : context -> term -> term  -> Type :=  
@@ -193,8 +192,7 @@ Section Definitions.
           [ Γ |- B ≅ C]< l > ->
           [ Γ |- A ≅ C]< l >
       | ϝTypeConv {Γ A B n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- A ≅ B ]< l ,,l (ne, true) > ->
-        [ Γ |- A ≅ B ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- A ≅ B ]< l ,,l (ne, m) >) ->
         [ Γ |- A ≅ B ]< l >
   (** **** Conversion of terms *)
   with ConvTermDecl (l : wfLCon)  : context -> term -> term -> term -> Type :=
@@ -263,11 +261,11 @@ Section Definitions.
           [ Γ |- tBoolElim P ht hf tFalse ≅ hf : P[tFalse..]]< l >
       | TermAlphaCong {Γ} {n n'} :
           [ Γ |- n ≅ n' : tNat]< l > ->
-          [ Γ |- tAlpha n ≅ tAlpha n' : tBool]< l >
+          [ Γ |- tAlpha n ≅ tAlpha n' : tNat]< l >
       | TypeAlphaConv {Γ n b} :
         [ |- Γ ]< l > ->
         in_LCon (pi1 l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l >
+        [ Γ |- tAlpha (nat_to_term n) ≅ nat_to_term b : tNat ]< l >
       | TermSigCong {Γ} {A A' B B'} :
           [ Γ |- A : U]< l > ->
           [ Γ |- A ≅ A' : U ]< l > ->
@@ -353,8 +351,7 @@ Section Definitions.
           [ Γ |- t' ≅ t'' : A ]< l > ->
           [ Γ |- t ≅ t'' : A ]< l >
       | ϝTermConv {Γ t t' A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t ≅ t' : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t ≅ t' : A ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- t ≅ t' : A ]< l ,,l (ne, m) >) ->
         [ Γ |- t ≅ t' : A ]< l >
       
   where "[   |- Γ ]< l >" := (WfContextDecl l Γ)
@@ -383,18 +380,19 @@ Section Definitions.
   }.
 
 Lemma ϝwfCon {l Γ n} {ne : not_in_LCon (pi1 l) n} : 
-        [ |- Γ ]< l ,,l (ne, true) > ->
-        [ |- Γ ]< l ,,l (ne, false) > ->
+        (forall m, [ |- Γ ]< l ,,l (ne, m) >) ->
         [ |- Γ ]< l >.
 Proof.
   revert l n ne.
   induction Γ ; intros.
   - econstructor.
-  - inversion H ; subst.
-    inversion H0 ; subst.
-    econstructor.
-    + eapply IHΓ; eassumption.
-    + eapply ϝwfType ; eassumption.
+  - econstructor.
+    + unshelve eapply IHΓ ; [ | eauto | ].
+      intros m ; specialize (H m).
+      now inversion H ; subst.
+    + unshelve eapply ϝwfType ; [ | eauto | ].
+      intros m ; specialize (H m).
+      now inversion H ; subst.
 Qed.
       
   
@@ -544,39 +542,31 @@ Section LConTranslation.
     - intro IHA ; revert l' f.
       induction IHA ; try now econstructor.
       intros l' f.
-      case (decidInLCon l'.(pi1) n) ; intro H.
-      + eapply IHIHA1 ; now eapply LCon_le_in_LCon.
-      + eapply IHIHA2 ; now eapply LCon_le_in_LCon.
+      case (decidInLCon l'.(pi1) n) ; [ intros m Hm | intros notin ].
+      + eapply H ; now eapply LCon_le_in_LCon.
       + unshelve eapply ϝwfType ; try assumption.
-        * eapply IHIHA1 ; eapply LCon_le_up ; assumption.
-        * eapply IHIHA2 ; eapply LCon_le_up ; assumption.
+        * intros m ; eapply H, LCon_le_up ; assumption.
     - intro IHt ; revert l' f.
       induction IHt ; try now econstructor.
       intros l' f.
-      case (decidInLCon l'.(pi1) n) ; intro H.
-      + eapply IHIHt1 ; now eapply LCon_le_in_LCon.
-      + eapply IHIHt2 ; now eapply LCon_le_in_LCon.
+      case (decidInLCon l'.(pi1) n) ; [ intros m Hm | intros notin ].
+      + eapply H ; now eapply LCon_le_in_LCon.
       + unshelve eapply ϝwfTerm ; try assumption.
-        * eapply IHIHt1 ; eapply LCon_le_up ; assumption.
-        * eapply IHIHt2 ; eapply LCon_le_up ; assumption.
+        intros m ; eapply H, LCon_le_up ; assumption.
     - intro IHAB ; revert l' f.
       induction IHAB ; try now econstructor.
       intros l' f.
-      case (decidInLCon l'.(pi1) n) ; intro H.
-      + eapply IHIHAB1 ; now eapply LCon_le_in_LCon.
-      + eapply IHIHAB2 ; now eapply LCon_le_in_LCon.
+      case (decidInLCon l'.(pi1) n) ; [ intros m Hm | intros notin ].
+      + eapply H ; now eapply LCon_le_in_LCon.
       + unshelve eapply ϝTypeConv ; try assumption.
-        * eapply IHIHAB1 ; eapply LCon_le_up ; assumption.
-        * eapply IHIHAB2 ; eapply LCon_le_up ; assumption.
+        intros m ; eapply H, LCon_le_up ; assumption.
     - intro IHtu ; revert l' f.
       induction IHtu ; try now econstructor.
       intros l' f.
-      case (decidInLCon l'.(pi1) n) ; intro H.
-      + eapply IHIHtu1 ; now eapply LCon_le_in_LCon.
-      + eapply IHIHtu2 ; now eapply LCon_le_in_LCon.
+      case (decidInLCon l'.(pi1) n) ; [ intros m Hm | intros notin ].
+      + eapply H ; now eapply LCon_le_in_LCon.
       + unshelve eapply ϝTermConv ; try assumption.
-        * eapply IHIHtu1 ; eapply LCon_le_up ; assumption.
-        * eapply IHIHtu2 ; eapply LCon_le_up ; assumption.
+        intros m ; eapply H, LCon_le_up ; assumption.
 Qed.
       
       

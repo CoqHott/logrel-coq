@@ -33,7 +33,7 @@ Inductive OneRedAlg  {l : wfLCon} : term -> term -> Type :=
 | alphaSubst {n n' k} :
   [ n ⤳ n' ]< l > -> [ tAlpha (nSucc k n) ⤳ tAlpha (nSucc k n') ]< l >
 | alphaRed {n b} : in_LCon (pi1 l) n b ->
-                   [ tAlpha (nat_to_term n) ⤳ bool_to_term b]< l >   
+                   [ tAlpha (nat_to_term n) ⤳ nat_to_term b]< l >   
 | fstSubst {p p'} :
     [ p ⤳ p']< l > ->
     [ tFst p ⤳ tFst p']< l >
@@ -261,7 +261,8 @@ Proof.
     now asimpl.
   - cbn ; do 2 rewrite nSucc_ren.
     now constructor.
-  - enough (Heqb : (bool_to_term b)⟨ρ⟩ = bool_to_term b) ; [ | now induction b].
+  - enough (Heqb : (nat_to_term b)⟨ρ⟩ = nat_to_term b) ; [ | clear i ; induction b ; eauto].
+    2: cbn ;now f_equal.
     cbn ; rewrite Heqb ; clear Heqb.
     enough (Heqn : (nat_to_term n)⟨ρ⟩ = nat_to_term n) ; [ | clear ; induction n ; auto].
     2: unfold nat_to_term in * ; cbn in * ; now rewrite IHn.

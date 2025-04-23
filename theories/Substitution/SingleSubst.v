@@ -341,8 +341,9 @@ Proof.
     + now eapply Rt.
     + now eapply Rt'.
     + now eapply Rteq.
-  - intros wl'' n ne Hl Hr RGt RGt'.
-    unshelve eapply EqSplit' ; [ | | | | eapply Hl | eapply Hr].
+  - intros wl'' n ne Hl Hr RGt'.
+    unshelve eapply EqSplit' ; [ | | | intros m ; eapply Hl].
+    1: intros m.
     all: eapply WLtrans ; [ | eassumption].
     all: now eapply LCon_le_step, wfLCon_le_id.
   - cbn ; intros wl' Hover RGt RGt'.

@@ -206,8 +206,7 @@ Section GenericTyping.
     wfc_Ltrans {Γ l l'} (f : l' ≤ε l) :
     [ |- Γ ]< l > -> [ |- Γ ]< l' > ;
     wfc_ϝ {l Γ n} {ne : not_in_LCon (pi1 l) n} : 
-        [ |- Γ ]< l ,,l (ne, true) > ->
-        [ |- Γ ]< l ,,l (ne, false) > ->
+        (forall m, [ |- Γ ]< l ,,l (ne, m) >) ->
         [ |- Γ ]< l >
   }.
 
@@ -237,8 +236,7 @@ Section GenericTyping.
     wft_Ltrans {Γ l l' A} (f : l' ≤ε l) :
     [ Γ |- A ]< l > -> [ Γ |- A ]< l' >;
     wft_ϝ {l Γ A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- A ]< l ,,l (ne, true) > ->
-        [ Γ |- A ]< l ,,l (ne, false) > ->
+      (forall m, [ Γ |- A ]< l ,,l (ne, m) >) ->
         [ Γ |- A ]< l >
   }.
 
@@ -295,7 +293,7 @@ Section GenericTyping.
         [Γ |- tFalse : tBool]< l > ;
     ty_alpha {l Γ n} :
         [Γ |- n : tNat]< l > ->
-        [Γ |- tAlpha n : tBool]< l > ;
+        [Γ |- tAlpha n : tNat]< l > ;
     ty_boolElim {l Γ P ht hf b} :
       [Γ ,, tBool |- P ]< l > ->
       [Γ |- ht : P[tTrue..]]< l > ->
@@ -340,8 +338,7 @@ Section GenericTyping.
     ty_Ltrans {Γ l l' t A} (f : l' ≤ε l) :
     [ Γ |- t : A ]< l > -> [ Γ |- t : A ]< l' >;
     ty_ϝ {l Γ t A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t : A ]< l ,,l (ne, false) > ->
+      (forall m, [ Γ |- t : A ]< l ,,l (ne, m) >) ->
         [ Γ |- t : A ]< l >
   }.
 
@@ -373,8 +370,7 @@ Section GenericTyping.
     convty_Ltrans {Γ l l' A B} (f : l' ≤ε l) :
     [ Γ |- A ≅ B]< l > -> [ Γ |- A ≅ B]< l' >;
     convty_ϝ {l Γ A B n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- A ≅ B ]< l ,,l (ne, true) > ->
-        [ Γ |- A ≅ B ]< l ,,l (ne, false) > ->
+      (forall m, [ Γ |- A ≅ B ]< l ,,l (ne, m) >) ->
         [ Γ |- A ≅ B ]< l >
   }.
 
@@ -435,11 +431,11 @@ Section GenericTyping.
       [|-Γ]< l > -> [Γ |- tFalse ≅ tFalse : tBool]< l > ;
     convtm_alphacong {l Γ} {n n'} :
           [ Γ |- n ≅ n' : tNat]< l > ->
-          [ Γ |- tAlpha n ≅ tAlpha n' : tBool]< l >;
+          [ Γ |- tAlpha n ≅ tAlpha n' : tNat]< l >;
     convtm_alpha {l Γ n b} :
         [ |- Γ ]< l > ->
         in_LCon (pi1 l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ≅ bool_to_term b : tBool ]< l > ;
+        [ Γ |- tAlpha (nat_to_term n) ≅ nat_to_term b : tNat ]< l > ;
     convtm_Id {l Γ A A' x x' y y'} :
       (* [Γ |- A]< l > -> ?  *)
       [Γ |- A ≅ A' : U]< l > ->
@@ -453,8 +449,7 @@ Section GenericTyping.
     convtm_Ltrans {Γ l l' t u A} (f : l' ≤ε l) :
     [ Γ |- t ≅ u : A ]< l > -> [ Γ |- t ≅ u : A ]< l' >;
     convtm_ϝ {l Γ t u A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t ≅ u : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t ≅ u : A ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- t ≅ u : A ]< l ,,l (ne, m) >) ->
         [ Γ |- t ≅ u : A ]< l >
   }.
 
@@ -489,7 +484,7 @@ Section GenericTyping.
         [Γ |- tBoolElim P ht hf b ~ tBoolElim P' ht' hf' b' : P[b..]]< l > ;
     convneu_alpha {l Γ t u n} :
       [ Γ |- t ~ u : tNat ]< l > ->
-      [ Γ |- tAlpha (nSucc n t) ~ tAlpha (nSucc n u) : tBool ]< l > ;
+      [ Γ |- tAlpha (nSucc n t) ~ tAlpha (nSucc n u) : tNat ]< l > ;
     convneu_fst {l Γ A B p p'} :
       [Γ |- p ~ p' : tSig A B]< l > ->
       [Γ |- tFst p ~ tFst p' : A]< l > ;
@@ -510,8 +505,7 @@ Section GenericTyping.
     convneu_Ltrans {Γ l l' t u A} (f : l' ≤ε l) :
     [ Γ |- t ~ u : A ]< l > -> [ Γ |- t ~ u : A ]< l' >;
     convneu_ϝ {l Γ t u A n} {ne : not_in_LCon (pi1 l) n} : 
-        [ Γ |- t ~ u : A ]< l ,,l (ne, true) > ->
-        [ Γ |- t ~ u : A ]< l ,,l (ne, false) > ->
+        (forall m, [ Γ |- t ~ u : A ]< l ,,l (ne, m) >) ->
         [ Γ |- t ~ u : A ]< l >
   }.
 
@@ -582,11 +576,11 @@ Section GenericTyping.
         [Γ |- tBoolElim P ht hf b ⤳* tBoolElim P ht hf b' : P[b..]]< l > ;
     redtm_alphaSubst {l Γ t u n} :
       [ Γ |- t ⤳* u : tNat ]< l > ->
-      [ Γ |- tAlpha (nSucc n t) ⤳* tAlpha (nSucc n u) : tBool ]< l > ;
+      [ Γ |- tAlpha (nSucc n t) ⤳* tAlpha (nSucc n u) : tNat ]< l > ;
     redtm_alpha {l Γ n b} :
         [ |- Γ ]< l > ->
         in_LCon (pi1 l) n b ->
-        [ Γ |- tAlpha (nat_to_term n) ⤳* bool_to_term b : tBool ]< l > ;
+        [ Γ |- tAlpha (nat_to_term n) ⤳* nat_to_term b : tNat ]< l > ;
     redtm_emptyelim {l Γ P n n'} :
       [ Γ,, tEmpty |- P ]< l > ->
       [ Γ |- n ⤳* n' : tEmpty ]< l > ->

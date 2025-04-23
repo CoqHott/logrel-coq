@@ -38,14 +38,10 @@ Section Escapes.
       eapply WRed.
       now eapply wfLCon_le_id.
     - unshelve eapply (wft_ϝ (ne := ne)).
-      + eapply IHWT1.
+      + intros m ; eapply X.
         intros wl' Hover ; eapply WRed.
         assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_true Hyp).
-      + eapply IHWT2.
-        intros wl' Hover ; eapply WRed.
-        assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_false Hyp).
+        now erewrite (decidInLCon_true _ Hyp).
   Qed.
   
   Lemma escapeEq {l wl Γ A B} (lr : [Γ ||-< l > A]< wl >) :
@@ -91,15 +87,11 @@ Section Escapes.
       2: eapply dWRedEq.
       all: now apply wfLCon_le_id.
     - unshelve eapply (convty_ϝ (ne := ne)).
-      + eapply IHEqt.
+      + intros m ; eapply IHEqt.
         intros wl'' Hover ; eapply dWRedEq.
         Unshelve.
         assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_true Hyp).
-      + eapply IHEqf.
-        intros wl'' Hover ; unshelve eapply dWRedEq.
-        assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_false Hyp).
+        now erewrite (decidInLCon_true _ Hyp).
   Qed.
   
   Definition escapeTerm {l wl Γ t A} (lr : [Γ ||-< l > A ]< wl >) :
@@ -143,15 +135,11 @@ Section Escapes.
       1: eapply dWRed ; [now eapply wfLCon_le_id | ..].
       now eapply dWRedTm.
     - unshelve eapply (ty_ϝ (ne := ne)).
-      + eapply IHEqt.
+      + intros m ; eapply IHEqt.
         intros wl'' Hover ; eapply dWRedTm.
         Unshelve.
         assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_true Hyp).
-      + eapply IHEqf.
-        intros wl'' Hover ; unshelve eapply dWRedTm.
-        assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_false Hyp).
+        now erewrite (decidInLCon_true _ Hyp).
   Qed.
    
   Definition escapeEqTerm {l wl Γ t u A} (lr : [Γ ||-< l > A ]< wl >) :
@@ -215,14 +203,10 @@ Section Escapes.
       unshelve eapply dWRedTmEq.
       now eapply wfLCon_le_id.
     - unshelve eapply (convtm_ϝ (ne := ne)).
-      + eapply IHEqt.
+      + intros m ; eapply IHEqt.
         intros wl'' Hover ; unshelve eapply dWRedTmEq.
         assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_true Hyp).
-      + eapply IHEqf.
-        intros wl'' Hover ; unshelve eapply dWRedTmEq.
-        assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_false Hyp).
+        now erewrite (decidInLCon_true _ Hyp).
   Qed.
   
   
@@ -264,14 +248,10 @@ Section Escapes.
       unshelve eapply dWRedEq.
       now eapply wfLCon_le_id.
     - unshelve eapply (wft_ϝ (ne := ne)).
-      + eapply IHEqt.
+      + intros m ; eapply IHEqt.
         intros wl'' Hover ; unshelve eapply dWRedEq.
         assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_true Hyp).
-      + eapply IHEqf.
-        intros wl'' Hover ; unshelve eapply dWRedEq.
-        assert (Hyp := over_tree_le Hover _ _ (in_here_l _)).
-        now erewrite (decidInLCon_false Hyp).
+        now erewrite (decidInLCon_true m Hyp).
   Qed.
   
 End Escapes.

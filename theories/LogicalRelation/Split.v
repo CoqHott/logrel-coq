@@ -6,88 +6,79 @@ Section Split.
   Context `{GenericTypingProperties}.
 
   Lemma Split@{i j k l} {wl : wfLCon} {lA Γ A} {n : nat} {ne : not_in_LCon wl n} :
-    WLogRel@{i j k l} lA (wl ,,l (ne, true)) Γ A ->
-    WLogRel@{i j k l} lA (wl ,,l (ne, false)) Γ A ->
+    (forall m, WLogRel@{i j k l} lA (wl ,,l (ne, m)) Γ A) ->
     WLogRel@{i j k l} lA wl Γ A.
   Proof.
-    intros [WTt WRedt] [WTf WRedf].
-    exists (ϝnode _ WTt WTf).
+    intros Hyp.
+    unshelve eexists (ϝnode _ _).
+    2: eassumption.
+    1: intros m ; exact (WT _ (Hyp m)).
     intros wl' Hover.
     cbn in *.
-    destruct (decidInLCon wl' n) ; [ | | now inversion Hover].
-    - now eapply WRedt.
-    - now eapply WRedf.
+    destruct (decidInLCon wl' n) ; [ | now inversion Hover].
+    now eapply Hyp.
   Defined.
 
   Lemma EqSplit@{i j k l} {wl : wfLCon} {lA Γ A B} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf :
-    WLogRelEq@{i j k l} lA (wl ,,l (ne, true)) Γ A B HAt ->
-    WLogRelEq@{i j k l} lA (wl ,,l (ne, false)) Γ A B HAf ->
-    WLogRelEq@{i j k l} lA wl Γ A B (Split HAt HAf).
+    HAt :
+    (forall m, WLogRelEq@{i j k l} lA (wl ,,l (ne, m)) Γ A B (HAt m)) ->
+    WLogRelEq@{i j k l} lA wl Γ A B (Split HAt).
   Proof.
-    intros [WTt WRedt] [WTf WRedf].
-    exists (ϝnode _ WTt WTf).
+    intros Hyp. 
+    exists (ϝnode _ (fun m => WTEq _ (Hyp m))). 
     intros wl' Hover Hover' ; cbn in *.
-    destruct (decidInLCon wl' n) ; [ | | now inversion Hover].
-    - now eapply WRedt.
-    - now eapply WRedf.
+    destruct (decidInLCon wl' n) ; [ | now inversion Hover].
+    now eapply Hyp.
   Qed.
 
   Corollary EqSplit'@{i j k l} {wl : wfLCon} {lA Γ A B} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf HA :
-    WLogRelEq@{i j k l} lA (wl ,,l (ne, true)) Γ A B HAt ->
-    WLogRelEq@{i j k l} lA (wl ,,l (ne, false)) Γ A B HAf ->
+    HAt HA :
+    (forall m, WLogRelEq@{i j k l} lA (wl ,,l (ne, m)) Γ A B (HAt m)) ->
     WLogRelEq@{i j k l} lA wl Γ A B HA.
   Proof.
-    intros HBt HBf ; eapply WLRTyEqIrrelevant' ; [reflexivity | ].
+    intros HBt ; eapply WLRTyEqIrrelevant' ; [reflexivity | ].
     eapply EqSplit ; eassumption.
   Qed. 
 
   Lemma TmSplit@{i j k l} {wl : wfLCon} {lA Γ t A} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf :
-    WLogRelTm@{i j k l} lA (wl ,,l (ne, true)) Γ t A HAt ->
-    WLogRelTm@{i j k l} lA (wl ,,l (ne, false)) Γ t A HAf ->
-    WLogRelTm@{i j k l} lA wl Γ t A (Split HAt HAf).
+    HAt :
+    (forall m, WLogRelTm@{i j k l} lA (wl ,,l (ne, m)) Γ t A (HAt m)) ->
+    WLogRelTm@{i j k l} lA wl Γ t A (Split HAt).
   Proof.
-    intros [WTt WRedt] [WTf WRedf].
-    exists (ϝnode _ WTt WTf).
+    intros Hyp.
+    exists (ϝnode _ (fun m => WTTm _ (Hyp m))).
     intros wl' Hover Hover' ; cbn in *.
-    destruct (decidInLCon wl' n) ; [ | | now inversion Hover].
-    - now eapply WRedt.
-    - now eapply WRedf.
+    destruct (decidInLCon wl' n) ; [ | now inversion Hover].
+    now eapply Hyp.
   Qed.
 
   Corollary TmSplit'@{i j k l} {wl : wfLCon} {lA Γ t A} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf HA :
-    WLogRelTm@{i j k l} lA (wl ,,l (ne, true)) Γ t A HAt ->
-    WLogRelTm@{i j k l} lA (wl ,,l (ne, false)) Γ t A HAf ->
+    HAt HA :
+    (forall m, WLogRelTm@{i j k l} lA (wl ,,l (ne, m)) Γ t A (HAt m)) ->
     WLogRelTm@{i j k l} lA wl Γ t A HA.
   Proof.
-    intros Htt Htf ; eapply WLRTmRedIrrelevant' ; [reflexivity | ].
+    intros Htt ; eapply WLRTmRedIrrelevant' ; [reflexivity | ].
     eapply TmSplit ; eassumption.
   Qed. 
 
   Lemma TmEqSplit@{i j k l} {wl : wfLCon} {lA Γ t u A} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf :
-    WLogRelTmEq@{i j k l} lA (wl ,,l (ne, true)) Γ t u A HAt ->
-    WLogRelTmEq@{i j k l} lA (wl ,,l (ne, false)) Γ t u A HAf ->
-    WLogRelTmEq@{i j k l} lA wl Γ t u A (Split HAt HAf).
+    HAt :
+    (forall m, WLogRelTmEq@{i j k l} lA (wl ,,l (ne, m)) Γ t u A (HAt m)) ->
+    WLogRelTmEq@{i j k l} lA wl Γ t u A (Split HAt).
   Proof.
-    intros [WTt WRedt] [WTf WRedf].
-    exists (ϝnode _ WTt WTf).
+    intros Hyp.
+    exists (ϝnode _ (fun m => WTTmEq _ (Hyp m))).
     intros wl' Hover Hover' ; cbn in *.
-    destruct (decidInLCon wl' n) ; [ | | now inversion Hover].
-    - now eapply WRedt.
-    - now eapply WRedf.
+    destruct (decidInLCon wl' n) ; [ | now inversion Hover].
+    now eapply Hyp.
   Qed.
 
   Lemma TmEqSplit'@{i j k l} {wl : wfLCon} {lA Γ t u A} {n : nat} {ne : not_in_LCon wl n}
-    HAt HAf HA :
-    WLogRelTmEq@{i j k l} lA (wl ,,l (ne, true)) Γ t u A HAt ->
-    WLogRelTmEq@{i j k l} lA (wl ,,l (ne, false)) Γ t u A HAf ->
+    HAt HA :
+    (forall m, WLogRelTmEq@{i j k l} lA (wl ,,l (ne, m)) Γ t u A (HAt m)) ->
     WLogRelTmEq@{i j k l} lA wl Γ t u A HA.
   Proof.
-    intros Htt Htf ; eapply WLRTmEqIrrelevant' ; [reflexivity | ].
+    intros Htt ; eapply WLRTmEqIrrelevant' ; [reflexivity | ].
     eapply TmEqSplit ; eassumption.
   Qed.
 
@@ -109,10 +100,10 @@ Section Split.
   Proof.
     intros Hyp ; pattern wl.
     eapply (split_to_over_tree@{l}).
-    - intros wl' n ne HAt HAf HA ; cbn in *.
+    - intros wl' n ne HAt HA ; cbn in *.
       unshelve eapply EqSplit' ; eauto.
-      all: eapply WLtrans@{k i j k l} ; [ | eassumption ].
-      all: now eapply LCon_le_step, wfLCon_le_id.
+      intros m; eapply WLtrans@{k i j k l} ; [ | eassumption ].
+      now eapply LCon_le_step, wfLCon_le_id.
     - intros wl' Hover HA.
       now eapply Hyp.
   Qed.
@@ -126,10 +117,10 @@ Section Split.
   Proof.
     intros Hyp ; pattern wl.
     eapply (split_to_over_tree@{l}).
-    - intros wl' n ne HAt HAf HA ; cbn in *.
+    - intros wl' n ne HAt HA ; cbn in *.
       unshelve eapply TmSplit' ; eauto.
-      all: eapply WLtrans@{k i j k l} ; [ | eassumption ].
-      all: now eapply LCon_le_step, wfLCon_le_id.
+      intros m ; eapply WLtrans@{k i j k l} ; [ | eassumption ].
+      now eapply LCon_le_step, wfLCon_le_id.
     - intros wl' Hover HA.
       now eapply Hyp.
   Qed.
@@ -143,10 +134,10 @@ Section Split.
   Proof.
     intros Hyp ; pattern wl.
     eapply (split_to_over_tree@{l}).
-    - intros wl' n ne HAt HAf HA ; cbn in *.
+    - intros wl' n ne HAt HA ; cbn in *.
       unshelve eapply TmEqSplit' ; eauto.
-      all: eapply WLtrans@{k i j k l} ; [ | eassumption ].
-      all: now eapply LCon_le_step, wfLCon_le_id.
+      intros m ; eapply WLtrans@{k i j k l} ; [ | eassumption ].
+      now eapply LCon_le_step, wfLCon_le_id.
     - intros wl' Hover HA.
       now eapply Hyp.
   Qed.

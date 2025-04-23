@@ -6,13 +6,13 @@ Set Primitive Projections.
 Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 
-Definition Type_le_step (wl : wfLCon) (n : nat) (ne : not_in_LCon wl n) (b : bool)
+Definition Type_le_step (wl : wfLCon) (n : nat) (ne : not_in_LCon wl n) (b : nat)
   (P : forall wl', wl' ≤ε wl -> Type) : 
   forall wl', wl' ≤ε wl,,l (ne, b) -> Type :=
   fun wl' f => P wl' (wfLCon_le_trans f (LCon_le_step _ (wfLCon_le_id _))).
 Arguments Type_le_step [_ _ _ _] _ [_] _.
 
-Definition Pred_le_step (wl : wfLCon) (n : nat) (ne : not_in_LCon wl n) (b : bool)
+Definition Pred_le_step (wl : wfLCon) (n : nat) (ne : not_in_LCon wl n) (b : nat)
   (P : forall wl', wl' ≤ε wl -> Type)
   (Q : forall wl' (f: wl' ≤ε wl), P wl' f -> Type)  :
   forall wl' (f : wl' ≤ε wl,,l (ne, b)), Type_le_step P f -> Type :=
@@ -20,7 +20,7 @@ Definition Pred_le_step (wl : wfLCon) (n : nat) (ne : not_in_LCon wl n) (b : boo
 Arguments Pred_le_step [_ _ _ _ _] _ [_] _.
 
 Definition dPred_le_step (wl : wfLCon)
-  (n : nat) (ne : not_in_LCon wl n) (b : bool)
+  (n : nat) (ne : not_in_LCon wl n) (b : nat)
   (P : forall wl', wl' ≤ε wl -> Type)
   (Q : forall wl' (f: wl' ≤ε wl), P wl' f -> Type)
   (R : forall wl' (f : wl' ≤ε wl) (p : P wl' f), Q wl' f p -> Type) :
@@ -127,8 +127,7 @@ Fixpoint dBType2 (wl : wfLCon)
 Inductive DTree (k : wfLCon) : Type :=
 | leaf : DTree k
 | ϝnode {n} {ne : not_in_LCon (pi1 k) n} :
-  DTree (k ,,l (ne, true)) ->
-  DTree (k ,,l (ne, false)) ->
+  (forall m, DTree (k ,,l (ne, m))) ->
   DTree k.
 
 Fixpoint DTree_bind (k : wfLCon) (F : forall k' (f : k' ≤ε k), DTree k')
@@ -136,31 +135,24 @@ Fixpoint DTree_bind (k : wfLCon) (F : forall k' (f : k' ≤ε k), DTree k')
 Proof.
   refine (match d with
           | leaf _ => F k (wfLCon_le_id _)
-          | @ϝnode _ n ne dt df => @ϝnode _ n ne _ _
+          | @ϝnode _ n ne k => @ϝnode _ n ne _
           end).
-  + unshelve eapply DTree_bind ; [ | assumption].
-    intros k' f ; eapply F, wfLCon_le_trans ; [eassumption | ].
-    now eapply LCon_le_step, wfLCon_le_id.
-  + unshelve eapply DTree_bind ; [ | assumption].
-    intros k' f ; eapply F, wfLCon_le_trans ; [eassumption | ].
-    now eapply LCon_le_step, wfLCon_le_id.
+  intros m ; unshelve eapply DTree_bind ; [ | now eapply k].
+  intros k' f ; eapply F, wfLCon_le_trans ; [eassumption | ].
+  now eapply LCon_le_step, wfLCon_le_id.
 Defined.
 
 Fixpoint DTree_Ltrans_down (k k' : wfLCon) (f : k' ≤ε k) (d : DTree k) : DTree k'.
 Proof.
   refine (match d with
           | leaf _ => leaf _
-          | @ϝnode _ n ne dt df => _
+          | @ϝnode _ n ne dt => _
           end).
-  destruct (decidInLCon k' n) as [ Hint | Hinf | Hnotin].
-  - refine (DTree_Ltrans_down (k,,l (ne, true)) k' _ dt).
+  destruct (decidInLCon k' n) as [ m Hin | Hnotin].
+  - refine (DTree_Ltrans_down (k,,l (ne, m)) k' _ (dt m)).
     now eapply LCon_le_in_LCon.
-  - refine (DTree_Ltrans_down (k,,l (ne, false)) k' _ df).
-    now eapply LCon_le_in_LCon.
-  - refine (@ϝnode _ n Hnotin _ _).
-    + unshelve eapply (DTree_Ltrans_down _ _ _ dt).
-      now eapply LCon_le_up.
-    + unshelve eapply (DTree_Ltrans_down _ _ _ df).
+  - refine (@ϝnode _ n Hnotin _).
+    + intros m ; unshelve eapply (DTree_Ltrans_down _ _ _ (dt m)).
       now eapply LCon_le_up.
 Defined.
 
@@ -168,12 +160,10 @@ Fixpoint DTree_Ltrans_up (k k' : wfLCon) (f : k' ≤ε k) (d : DTree k') : DTree
 Proof.
   unshelve refine (match d with
           | leaf _ => leaf _
-          | @ϝnode _ n ne dt df => @ϝnode _ n _ _ _
+          | @ϝnode _ n ne dt => @ϝnode _ n _ _
           end).
   - now eapply not_in_LCon_le_not_in_LCon.
-  - eapply DTree_Ltrans_up ; [ | exact dt].
-    now eapply LCon_le_up.
-  - eapply DTree_Ltrans_up ; [ | exact df].
+  - intros m ; eapply DTree_Ltrans_up ; [ | exact (dt m)].
     now eapply LCon_le_up.
 Defined.  
 
@@ -183,12 +173,9 @@ Fixpoint DTree_fusion (k : wfLCon) (d d' : DTree k) : DTree k.
 Proof.
   refine (match d with
           | leaf _ => d'
-          | @ϝnode _ n ne dt df => @ϝnode _ n ne _ _
+          | @ϝnode _ n ne dt => @ϝnode _ n ne _
           end).
-  - refine (DTree_fusion _ dt _).
-    unshelve eapply (DTree_Ltrans_down _ _ _ d').
-    eapply LCon_le_step ; now apply wfLCon_le_id.
-  - refine (DTree_fusion _ df _).
+  - intros m ; refine (DTree_fusion _ (dt m) _).
     unshelve eapply (DTree_Ltrans_down _ _ _ d').
     eapply LCon_le_step ; now apply wfLCon_le_id.
 Defined.
@@ -197,10 +184,9 @@ Defined.
 Fixpoint over_tree (k k' : wfLCon) (d : DTree k) : SProp :=
   match d with
   | leaf _ => k' ≤ε k
-  | @ϝnode _ n ne kt kf =>
+  | @ϝnode _ n ne kt =>
       match (decidInLCon k' n) with
-      | or_inltrue H => over_tree (k ,,l (ne, true)) k' kt
-      | or_inlfalse H => over_tree (k ,,l (ne, false)) k' kf
+      | or_inl m H => over_tree (k ,,l (ne, m)) k' (kt m)
       | or_notinl _ => SFalse
       end
   end.
@@ -222,8 +208,7 @@ Lemma over_tree_le {k k' d} : over_tree k k' d -> k' ≤ε k.
 Proof.
   induction d as [ | k n ne kt IHt kf IHf] ; cbn ; intros H ; auto.
   destruct (decidInLCon k' n).
-  - exact ((IHt H) •ε (LCon_le_step _ (wfLCon_le_id _))).
-  - exact ((IHf H) •ε (LCon_le_step _ (wfLCon_le_id _))).
+  - exact ((IHt _ H) •ε (LCon_le_step _ (wfLCon_le_id _))).
   - now inversion H.
 Qed.
 
@@ -232,10 +217,8 @@ Proof.
   induction d as [ | k n ne kt IHt kf IHf] ; cbn ; intros Hinf Hinf' ; auto.
   - now eapply wfLCon_le_trans.
   - destruct (decidInLCon k' n).
-    + erewrite (decidInLCon_true (Hinf _ _ i)).
+    + erewrite (decidInLCon_true _ (Hinf _ _ i)).
       now eapply IHt.
-    + erewrite (decidInLCon_false (Hinf _ _ i)).
-      now eapply IHf.
     + now inversion Hinf'.
 Qed.
   
@@ -244,25 +227,18 @@ Lemma over_tree_Ltrans_down (k k' k'' : wfLCon) (f : k' ≤ε k) (d : DTree k) :
   over_tree k' k'' (DTree_Ltrans_down k k' f d) -> over_tree k k'' d.
 Proof.
   intros Hyp ; assert (f' : k'' ≤ε k') by now eapply over_tree_le.
-  revert k' k'' f f' Hyp ; induction d as [  | k n ne kt IHt kf IHf] ; cbn ; intros k' k'' f f' Hyp.
+  revert k' k'' f f' Hyp ; induction d as [  | k n ne kt IHt ] ; cbn ; intros k' k'' f f' Hyp.
   - eapply wfLCon_le_trans ; eassumption.
   - destruct (decidInLCon k' n).
     + destruct (decidInLCon k'' n).
-      * eapply IHt ; eassumption.
-      * exfalso.
-        assert (H := uniqueinLCon k''.(pi2) (f' _ _ i) i0) ; now inversion H.
-      * exfalso.
-        eapply notinLConnotinLCon ; eauto.
-    + destruct (decidInLCon k'' n).
-      * exfalso.
-        assert (H := uniqueinLCon k''.(pi2) (f' _ _ i) i0) ; now inversion H.
-      * eapply IHf ; eassumption.
+      * assert (H := uniqueinLCon k''.(pi2) (f' _ _ i) i0) ; subst.
+        unshelve eapply IHt.
+        4: eassumption.
+        eassumption.
       * exfalso.
         eapply notinLConnotinLCon ; eauto.
     + cbn in * ; destruct (decidInLCon k'' n).
       * eapply IHt ; [ | eassumption].
-        eapply wfLCon_le_trans ; [ eapply LCon_le_in_LCon ; eassumption | now eapply (idε _)].
-      * eapply IHf ; [ | eassumption].
         eapply wfLCon_le_trans ; [ eapply LCon_le_in_LCon ; eassumption | now eapply (idε _)].
       * assumption.
 Qed.
@@ -273,16 +249,12 @@ Proof.
   revert k' k'' f f' ; induction d as [  | k n ne kt IHt kf IHf] ; intros * f' ; cbn.
   - now eauto.
   - destruct (decidInLCon k' n).
-    + rewrite (decidInLCon_true (f' n _ i)) ; intros H.
+    + rewrite (decidInLCon_true _ (f' n _ i)) ; intros H.
       now eapply IHt.
-    + rewrite (decidInLCon_false (f' n _ i)) ; intros H.
-      now eapply IHf.
     + cbn in *.
       destruct (decidInLCon k'' n) ; cbn ; intros H ; eauto.
-      * eapply IHt ; eauto.
-        now eapply LCon_le_in_LCon ; eauto.
-      * eapply IHf ; eauto.
-        now eapply LCon_le_in_LCon ; eauto.
+      eapply IHt ; eauto.
+      now eapply LCon_le_in_LCon ; eauto.
 Qed.
 
 Lemma over_tree_Ltrans_up {k k' k'' : wfLCon} (f : k' ≤ε k) (f' : k'' ≤ε k') (d : DTree k') :
@@ -292,8 +264,6 @@ Proof.
   - eassumption.
   - destruct (decidInLCon k'' n).
     + eapply IHt ; eauto.
-      eapply LCon_le_in_LCon ; eassumption.
-    + eapply IHf ; eauto.
       eapply LCon_le_in_LCon ; eassumption.
     + assumption.
 Qed. 
@@ -308,7 +278,6 @@ Proof.
   - cbn in * ; subst.
     destruct (decidInLCon k' n).
     + eapply IHt ; eassumption.
-    + eapply IHf ; eassumption.
     + assumption.
 Qed.
 
@@ -322,7 +291,6 @@ Proof.
   - cbn in * ; subst.
     destruct (decidInLCon k' n).
     + eapply over_tree_Ltrans_down, IHt ; eassumption.
-    + eapply over_tree_Ltrans_down, IHf ; eassumption.
     + now inversion Hov.
 Qed.
 
@@ -334,28 +302,23 @@ Fixpoint DTree_bind_over (k : wfLCon) (d : DTree k) :
 Proof.
   refine (match d with
           | leaf _ => fun F => _
-          | @ϝnode _ n ne dt df => fun F => _
+          | @ϝnode _ n ne dt => fun F => _
           end).
   - now eapply F, wfLCon_le_id.
   - eapply (@ϝnode _ n ne).
-    + unshelve eapply DTree_bind_over ; [ assumption | ].
+    + intros m ; unshelve eapply DTree_bind_over ; [ exact (dt m) | ].
       intros k' f ; eapply F. cbn in *.
-      now rewrite (@decidInLCon_true k' n (over_tree_le f _ _ (in_here_l _))).
-    + unshelve eapply DTree_bind_over ; [ assumption | ].
-      intros k' f ; eapply F. cbn in *.
-      now rewrite (@decidInLCon_false k' n (over_tree_le f _ _ (in_here_l _))).
+      now rewrite (@decidInLCon_true k' n _ (over_tree_le f _ _ (in_here_l _))).
 Defined.
 
 Lemma DTree_bind_over_over k k' d P :
   over_tree k k' (DTree_bind_over k d P) ->
   over_tree k k' d.
 Proof.
-  induction d ; cbn in * ; intros H.
+  induction d ; cbn in * ; intros Hyp.
   - now eapply over_tree_le.
   - destruct (decidInLCon k' n) ; cbn in *.
-    + eapply IHd1.
-      eassumption.
-    + eapply IHd2.
+    + eapply H.
       eassumption.
     + assumption.
 Qed.
@@ -365,16 +328,15 @@ Fixpoint DTree_path (k k' : wfLCon) (d : DTree k) :
 Proof.
   refine (match d with
           | leaf _ => fun H => k
-          | @ϝnode _ n ne dt df => _
+          | @ϝnode _ n ne dt => _
           end).
   cbn in *.
   refine (match decidInLCon k' n with
-          | or_inltrue _ => _
-          | or_inlfalse _ => _
+          | or_inl m _ => _
           | or_notinl _ => _
           end).
   all: refine (fun H => _).
-  1,2: exact (DTree_path _ _ _ H).
+  1: exact (DTree_path _ _ _ H).
   now inversion H.
 Defined.
 
@@ -385,9 +347,7 @@ Proof.
   - now eapply wfLCon_le_id.
   - cbn in *.
     revert Hover ; destruct (decidInLCon k' n) ; intros Hover.
-    + eapply wfLCon_le_trans ; [eapply IHd1 | ].
-      now eapply LCon_le_step, wfLCon_le_id.
-    + eapply wfLCon_le_trans ; [eapply IHd2 | ].
+    + eapply wfLCon_le_trans ; [eapply H | ].
       now eapply LCon_le_step, wfLCon_le_id.
     + now destruct Hover.
 Qed.
@@ -401,14 +361,12 @@ Proof.
                   over_tree k (DTree_path k k' d0 Hover) d0
           with
           | leaf _ => fun Hover => _
-          | @ϝnode _ n ne dt df => _
+          | @ϝnode _ n ne dt => _
           end).
   - now eapply wfLCon_le_id.
   - cbn in *.
      destruct (decidInLCon k' n) ; cbn in * ; intros Hover.
-    + rewrite (decidInLCon_true (DTree_path_le _ k' dt Hover _ _ (in_here_l _))).
-      now eapply DTree_path_over.
-    + rewrite (decidInLCon_false (DTree_path_le _ k' df Hover _ _ (in_here_l _))).
+    + rewrite (decidInLCon_true _ (DTree_path_le _ k' (dt m) Hover _ _ (in_here_l _))).
       now eapply DTree_path_over.
     + now destruct Hover.
 Defined.
@@ -416,10 +374,9 @@ Defined.
 Lemma DTree_path_inf k k' d Hover :
   k' ≤ε (DTree_path k k' d Hover).
 Proof.
-  induction d as [  | k n ne kt IHt kf IHf] ; cbn in * ; [assumption | ].
+  induction d as [  | k n ne kt IHt] ; cbn in * ; [assumption | ].
   destruct (decidInLCon k' n) ; cbn in *.
   - now apply IHt.
-  - now apply IHf.
   - now inversion Hover.
 Qed.
 
@@ -434,41 +391,27 @@ Proof.
   induction d as [  | k n ne kt IHt kf IHf] ; cbn in * ; intros.
   - assumption.
   - destruct (decidInLCon k' n) ; cbn in *.
-    + set (P' := fun (k' : wfLCon) (f : over_tree (k,,l (ne, true)) k' kt) =>
+    + set (P' := fun (k' : wfLCon) (f : over_tree (k,,l (ne, m)) k' (kt m)) =>
                  P k'
                    (@eq_sind_r (or_inLCon k' n)
-                      (@or_inltrue k' n
-                         (@over_tree_le (k,,l (ne, true)) k' kt f n true (@in_here_l k n true)))
+                      (@or_inl k' n _
+                         (@over_tree_le (k,,l (ne, m)) k' (kt m) f n m (@in_here_l k n m)))
                       (fun o : or_inLCon k' n =>
                        match o with
-                       | @or_inltrue _ _ _ => over_tree (k,,l (ne, true)) k' kt
-                       | @or_inlfalse _ _ _ => over_tree (k,,l (ne, false)) k' kf
+                       | @or_inl _ _ m _ => over_tree (k,,l (ne, m)) k' (kt m)
                        | @or_notinl _ _ _ => SFalse
                        end) f (decidInLCon k' n)
-                      (@decidInLCon_true k' n
-                         (@over_tree_le (k,,l (ne, true)) k' kt f n true (@in_here_l k n true))))).
-      now eapply (IHt P' Hover Hover').
-    + set (P' := fun (k' : wfLCon) (f : over_tree (k,,l (ne, false)) k' kf) =>
-                 P k'
-                   (@eq_sind_r (or_inLCon k' n)
-                      (@or_inlfalse k' n
-                         (@over_tree_le (k,,l (ne, _)) k' kf f n _ (@in_here_l k n _)))
-                      (fun o : or_inLCon k' n =>
-                       match o with
-                       | @or_inltrue _ _ _ => over_tree (k,,l (ne, true)) k' kt
-                       | @or_inlfalse _ _ _ => over_tree (k,,l (ne, false)) k' kf
-                       | @or_notinl _ _ _ => SFalse
-                       end) f (decidInLCon k' n)
-                      (@decidInLCon_false k' n
-                         (@over_tree_le (k,,l (ne, false)) k' kf f n _ (@in_here_l k n _))))).
-      now eapply (IHf P' Hover Hover').
+                      (@decidInLCon_true k' n _
+                         (@over_tree_le (k,,l (ne, m)) k' (kt m) f n m (@in_here_l k n m))))).
+      now eapply (IHt _ P' Hover Hover').
     + now destruct Hover.
 Qed.
 
       
 Lemma split_to_over_tree 
   (P : wfLCon -> Type)
-  (Pe : forall wl n (ne : not_in_LCon (pi1 wl) n), P (wl ,,l (ne, true)) -> P (wl ,,l (ne, false)) -> P wl)
+  (Pe : forall wl n (ne : not_in_LCon (pi1 wl) n),
+      (forall m, P (wl ,,l (ne, m))) -> P wl)
   (wl : wfLCon)
   (d : DTree wl)
   (H : forall wl', over_tree wl wl' d -> P wl') : P wl. 
@@ -476,23 +419,18 @@ Proof.
   induction d.
   - apply H.
     now intros n b Hin.
-  - apply (Pe _ n ne).
-    + apply IHd1.
+  - apply (Pe _ n ne) ; intros m.
+    + apply X.
       intros wl' Hover ; cbn in *.
       apply H.
-      unshelve erewrite (decidInLCon_true _) ; [ | assumption].
-      apply (over_tree_le Hover) ; now constructor.
-    + apply IHd2.
-      intros wl' Hover ; cbn in *.
-      apply H.
-      unshelve erewrite (decidInLCon_false _) ; [ | assumption].
+      unshelve erewrite (decidInLCon_true _ _) ; [ |  | eassumption].
       apply (over_tree_le Hover) ; now constructor.
 Qed.
-
+(*
 Lemma dsplit_to_over_tree (wl : wfLCon)
   (P : forall wl', wl' ≤ε wl -> Type)
-  (Pe : forall wl' n (ne : not_in_LCon (pi1 wl') n) f ft ff,
-      P (wl' ,,l (ne, true)) ft -> P (wl' ,,l (ne, false)) ff -> P wl' f)
+  (Pe : forall wl' n (ne : not_in_LCon (pi1 wl') n) f ft,
+      (forall m, P (wl' ,,l (ne, m)) (ft m)) -> P wl' f)
   (d : DTree wl)
   (H : forall wl' f, over_tree wl wl' d -> P wl' f) : P wl (idε _). 
 Proof.
@@ -500,19 +438,24 @@ Proof.
   revert P Pe H.
   induction d ; intros P Pe H wl' f.
   - now apply H.
-  - cbn in * ; destruct (decidInLCon wl' n).
-    + pose proof (Hinf := LCon_le_step (l := k) (b := true) ne (wfLCon_le_id _)).
-      specialize (IHd1 (fun wl' f => P wl' (wfLCon_le_trans f Hinf))).
+  - cbn in *.
+    
+
+
+    
+    destruct (decidInLCon wl' n).
+    + pose proof (Hinf := LCon_le_step (l := k) (b := m) ne (wfLCon_le_id _)).
+      specialize (X _ (fun wl' f => P wl' (wfLCon_le_trans f Hinf))).
       cbn in *.
-      assert (Hinf' : wl' ≤ε (k,,l (ne, true))).
+      assert (Hinf' : wl' ≤ε (k,,l (ne, m))).
       { now eapply LCon_le_in_LCon. }
       change (P wl' (Hinf' •ε Hinf)).
-      eapply IHd1.
-      * intros ; eauto.
-      * intros wl'' f' Hover.
+      eapply X.
+      * intros wl'' n' ne' f' ft Hm.
         apply H ; cbn.
-        unshelve erewrite (decidInLCon_true _) ; [ | assumption].
-        now eapply f'; econstructor.
+        unshelve erewrite (decidInLCon_true _ _) ; [ | now eapply f' ; econstructor| ].
+        eapply ft.
+        2: now eapply f; econstructor.
     + pose proof (Hinf := LCon_le_step (l := k) (b := false) ne (wfLCon_le_id _)).
       specialize (IHd2 (fun wl' f => P wl' (wfLCon_le_trans f Hinf))).
       cbn in *.
@@ -548,7 +491,7 @@ Proof.
         unshelve erewrite (decidInLCon_false _) ; [ | assumption].
         now eapply f'; econstructor.
 Qed.        
-
+*)
 Section Typing.
 
   Context `{GenericTypingProperties}.
@@ -558,7 +501,7 @@ Section Typing.
     [ |- Γ ]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (wfc_ϝ Ht Hf).
+    intros * Ht ; now eapply (wfc_ϝ Ht).
   Qed.
 
   Lemma wft_over_tree {wl Γ A} (d : DTree wl) :
@@ -566,7 +509,7 @@ Section Typing.
     [ Γ |- A ]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (wft_ϝ Ht Hf).
+    intros * Ht ; now eapply (wft_ϝ Ht).
   Qed.
   
   Lemma ty_over_tree {wl Γ t A} (d : DTree wl) :
@@ -574,7 +517,7 @@ Section Typing.
     [Γ |- t : A]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (ty_ϝ Ht Hf).
+    intros * Ht ; now eapply (ty_ϝ Ht).
   Qed.
 
   Lemma convty_over_tree {wl Γ A B} (d : DTree wl) :
@@ -582,7 +525,7 @@ Section Typing.
     [Γ |- A ≅ B]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (convty_ϝ Ht Hf).
+    intros * Ht ; now eapply (convty_ϝ Ht).
   Qed.
 
   Lemma convtm_over_tree {wl Γ t u A} (d : DTree wl) :
@@ -590,7 +533,7 @@ Section Typing.
     [Γ |- t ≅ u : A]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (convtm_ϝ Ht Hf).
+    intros * Ht; now eapply (convtm_ϝ Ht).
   Qed.
 
   Lemma convneu_over_tree {wl Γ t u A} (d : DTree wl) :
@@ -598,7 +541,7 @@ Section Typing.
     [Γ |-  t ~ u : A]< wl >.
   Proof.
     apply split_to_over_tree.
-    intros * Ht Hf ; now eapply (convneu_ϝ Ht Hf).
+    intros * Ht ; now eapply (convneu_ϝ Ht).
   Qed.
 
 End Typing.

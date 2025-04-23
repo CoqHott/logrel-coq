@@ -47,10 +47,10 @@ Section TypingWk.
     - intros * _ IHA ? * ?.
       econstructor.
       now eapply IHA.
-    - intros * Ht Htren Hf Hfren * Hyp.
-      eapply ϝwfType ; [eapply Htren | eapply Hfren].
-      all: unshelve eapply (WfContextDecl_trans _ _ Hyp).
-      all: now eapply LCon_le_step, wfLCon_le_id.
+    - intros * Ht Htren * Hyp.
+      eapply ϝwfType ; intros m ; eapply Htren. 
+      unshelve eapply (WfContextDecl_trans _ _ Hyp).
+      now eapply LCon_le_step, wfLCon_le_id.
     - intros * _ IHΓ Hnth ? * ?.
       eapply typing_meta_conv.
       1: econstructor ; tea.
@@ -146,10 +146,10 @@ Section TypingWk.
       econstructor.
       1: now eapply IHt.
       now eapply IHAB.
-    - intros * ? iht ? ihf * Hyp.
-      eapply ϝwfTerm ; [eapply iht | eapply ihf].
-      all: unshelve eapply (WfContextDecl_trans _ _ Hyp).
-      all: eapply LCon_le_step ; now eapply wfLCon_le_id.
+    - intros * ? iht * Hyp.
+      eapply ϝwfTerm ; intros m ; eapply iht.
+      unshelve eapply (WfContextDecl_trans _ _ Hyp).
+      eapply LCon_le_step ; now eapply wfLCon_le_id.
     - intros l Γ A A' B B' _ IHA _ IHAA' _ IHBB' ? ρ ?.
       cbn.
       econstructor.
@@ -175,10 +175,10 @@ Section TypingWk.
       eapply TypeTrans.
       + now eapply IHA.
       + now eapply IHB.
-    - intros l Γ A B n ne HAt IHAt HAf IHAf Δ ρ HΔ.
-      eapply ϝTypeConv ; [eapply IHAt | eapply IHAf].
-      all: unshelve eapply (WfContextDecl_trans _ _ HΔ).
-      all: eapply LCon_le_step ; now eapply wfLCon_le_id.
+    - intros l Γ A B n ne HAt IHAt Δ ρ HΔ.
+      eapply ϝTypeConv ; intros m ; eapply IHAt.
+      unshelve eapply (WfContextDecl_trans _ _ HΔ).
+      eapply LCon_le_step ; now eapply wfLCon_le_id.
     - intros l Γ u t A B _ IHA _ IHt _ IHu ? ρ ?.
       cbn.
       eapply convtm_meta_conv.
@@ -289,8 +289,8 @@ Section TypingWk.
       econstructor.
       now eapply ihP.
     - intros * ? _ Hin * Hyp ; cbn.
-      rewrite bool_to_term_ren ; cbn.
-      unshelve econstructor; [exact tBool | | ].
+      rewrite nat_to_term_ren ; cbn.
+      unshelve econstructor; [exact tNat | | ].
       rewrite -> (nat_to_term_ren ρ n) .
       all: econstructor ; eauto.
       econstructor ; eauto.
@@ -352,10 +352,10 @@ Section TypingWk.
       now econstructor.
     - intros * _ IHt _ IHt' ? ρ ?.
       now econstructor.
-    - intros l Γ t u A n ne HAt IHAt HAf IHAf Δ ρ HΔ.
-      eapply ϝTermConv ; [eapply IHAt | eapply IHAf].
-      all: unshelve eapply (WfContextDecl_trans _ _ HΔ).
-      all: now eapply LCon_le_step, wfLCon_le_id.
+    - intros l Γ t u A n ne HAt IHAt Δ ρ HΔ.
+      eapply ϝTermConv ; intros m ; eapply IHAt.
+      unshelve eapply (WfContextDecl_trans _ _ HΔ).
+      now eapply LCon_le_step, wfLCon_le_id.
   Qed.
 
 End TypingWk.
@@ -387,9 +387,8 @@ Section Boundaries.
       [ |- Γ ]< l >.
   Proof.
     induction 1 ; try now eauto using boundary_ctx_ctx.
-    eapply ϝwfCon.
-    + now eapply IHTypingDecl1. 
-    + now eapply IHTypingDecl2.
+    eapply ϝwfCon ; intros m.
+    now eapply H.
   Qed.
   
   Definition boundary_ty_ctx {l Γ} {A} :
@@ -397,9 +396,8 @@ Section Boundaries.
       [ |- Γ ]< l >.
   Proof.
     induction 1 ; eauto using boundary_tm_ctx.
-    eapply ϝwfCon.
-    + now eapply IHWfTypeDecl1. 
-    + now eapply IHWfTypeDecl2.
+    eapply ϝwfCon ; intros m.
+    now eapply H.
   Qed.
 
   Definition boundary_tm_conv_ctx {l Γ} {t u A} :
@@ -407,9 +405,8 @@ Section Boundaries.
       [ |- Γ ]< l >.
   Proof.
     induction 1 ; eauto using boundary_tm_ctx, boundary_ty_ctx.
-    eapply ϝwfCon.
-    + now eapply IHConvTermDecl1. 
-    + now eapply IHConvTermDecl2.
+    eapply ϝwfCon ; intros m.
+    now eapply H. 
   Qed.
 
   Definition boundary_ty_conv_ctx {l Γ} {A B} :
@@ -417,9 +414,8 @@ Section Boundaries.
       [ |- Γ ]< l >.
   Proof.
     induction 1 ; eauto using  boundary_ty_ctx, boundary_tm_conv_ctx.
-    eapply ϝwfCon.
-    + now eapply IHConvTypeDecl1. 
-    + now eapply IHConvTypeDecl2.
+    eapply ϝwfCon ; intros m.
+    now eapply H.
   Qed.
 
   Definition boundary_red_l {l Γ t u K} : 
@@ -553,7 +549,8 @@ Module DeclarativeTypingProperties.
     1-2: now constructor.
     all: try now boundary.
     - intros ; now eapply WfContextDecl_trans.
-    - intros; now eapply ϝwfCon.
+    - intros; eapply ϝwfCon.
+      eassumption.
   Qed.
 
   #[export, refine] Instance WfTypeDeclProperties : WfTypeProperties (ta := de) := {}.
@@ -595,7 +592,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - intros ; now eapply ConvTypeDecl_trans.
   - intros.
-    now eapply ϝTypeConv.
+    eapply ϝTypeConv ; eassumption.
   Qed.
 
   #[export, refine] Instance ConvTermDeclProperties : ConvTermProperties (ta := de) := {}.
@@ -640,7 +637,7 @@ Module DeclarativeTypingProperties.
   - now econstructor.
   - intros ; now eapply ConvTermDecl_trans.
   - intros.
-    now eapply ϝTermConv.
+    eapply ϝTermConv ; eassumption.
   Qed.
 
   #[export, refine] Instance ConvNeuDeclProperties : ConvNeuProperties (ta := de) := {}.
@@ -668,9 +665,11 @@ Module DeclarativeTypingProperties.
   - intros ??????? [].
     econstructor ; eauto.
     now eapply ConvTermDecl_trans.
-  - intros ???????[] [].
-    econstructor ; eauto.
-    now econstructor.
+  - intros ??????? Hyp.
+    econstructor.
+    1,2: now destruct (Hyp 0).
+    eapply ϝTermConv ; intros m.
+    now destruct (Hyp m).
   Qed.
 
   #[export, refine] Instance RedTermDeclProperties : RedTermProperties (ta := de) := {}.

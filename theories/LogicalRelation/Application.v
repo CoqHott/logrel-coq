@@ -88,12 +88,11 @@ Proof.
   revert RGu.
   pattern wl.
   unshelve eapply split_to_over_tree.
-  2:{ intros wl' n ne Ht Hf RGu.
-      unshelve eapply (TmSplit' (ne := ne)).
-      1,2: eapply WLtrans ; [ | eassumption].
-      1,2: eapply LCon_le_step ; now eapply wfLCon_le_id.
+  2:{ intros wl' n ne Ht RGu.
+      unshelve eapply (TmSplit' (ne := ne)) ; intros m.
+      1: eapply WLtrans ; [ | eassumption].
+      1: eapply LCon_le_step ; now eapply wfLCon_le_id.
       + unshelve eapply Ht.
-      + unshelve eapply Hf.
   } 
   - eapply DTree_fusion ; eapply DTree_fusion.
     + exact (WT _ hΠ).
@@ -237,13 +236,12 @@ Proof.
     + exact (WTTm _ Ru).
     + exact (WTTm _ Ru').
     + exact (WTTmEq _ Ruu').
-  - intros wl' n ne Ht Hf RGu.
-    eapply WLRTmEqIrrelevant' ; [reflexivity | unshelve eapply TmEqSplit].
+  - intros wl' n ne Ht RGu.
+    unshelve eapply TmEqSplit'.
     2: exact ne.
-    1,2: eapply WLtrans ; [ | eassumption].
-    1,2: eapply LCon_le_step ; now eapply wfLCon_le_id.
-    + now apply Ht.
-    + now apply Hf.
+    1: intros m ;  eapply WLtrans ; [ | eassumption].
+    1: eapply LCon_le_step ; now eapply wfLCon_le_id.
+    + intros m ; now apply Ht.
   - intros wl' Hover RGu.
     unshelve eapply appcongTerm.
     3: unshelve eapply (WRed _ RΠ).

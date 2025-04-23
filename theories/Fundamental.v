@@ -621,10 +621,9 @@ Section Fundamental.
   Qed.
 
   Lemma FundTmAlpha : forall (wl : wfLCon) (Γ : context) (n : term),
-      FundTm wl Γ tNat n -> FundTm wl Γ tBool (tAlpha n).
+      FundTm wl Γ tNat n -> FundTm wl Γ tNat (tAlpha n).
   Proof.
     intros * []; unshelve econstructor; tea.
-    1: now eapply boolValid.
     eapply irrelevanceTm; eapply alphaValid; irrValid.
     Unshelve. tea.
   Qed.
@@ -809,30 +808,33 @@ Section Fundamental.
   Qed.
 
   Lemma FundTmEqAlphaCong : forall (wl : wfLCon) (Γ : context) (n n' : term),
-      FundTmEq wl Γ tNat n n' -> FundTmEq wl Γ tBool (tAlpha n) (tAlpha n').
+      FundTmEq wl Γ tNat n n' -> FundTmEq wl Γ tNat (tAlpha n) (tAlpha n').
   Proof.
     intros * []; unshelve econstructor; tea.
-    1: now eapply boolValid.
     1,2: eapply irrelevanceTm; eapply alphaValid; irrValid.
     eapply irrelevanceTmEq; eapply alphacongValid; irrValid.
     Unshelve. all: tea.
   Qed.
 
-  Lemma FundTmEqAlpha : forall (wl : wfLCon) (Γ : context) (n : nat) (b : bool),
+  Lemma FundTmEqAlpha : forall (wl : wfLCon) (Γ : context) (n b : nat),
       FundCon wl Γ -> in_LCon wl n b ->
-      FundTmEq wl Γ tBool (tAlpha (nat_to_term n)) (bool_to_term b).
+      FundTmEq wl Γ tNat (tAlpha (nat_to_term n)) (nat_to_term b).
   Proof.
     intros * wfG Hin.
     unshelve econstructor.
     - eassumption.
-    - now eapply boolValid.
+    - now eapply natValid.
     - eapply alphaValid.
       clear Hin ; induction n.
       + now eapply zeroValid.
       + cbn ; now eapply succValid.
-    - destruct b.
-      + now eapply trueValid.
-      + now eapply falseValid.
+    - unfold nat_to_term ; unshelve econstructor.
+      + intros ; rewrite nSucc_subst ; cbn.
+        unshelve eapply WnSucc_Red, zeroValid ; cycle 2 ; eassumption.
+      + intros ; do 2 rewrite nSucc_subst ; cbn.
+        clear Hin ; induction b ; cbn ; [unshelve eapply zeroValid ; cycle 8; eassumption| ].
+        eapply WsuccRedEq ; cbn ; try eassumption.
+        1,2: unshelve eapply WnSucc_Red, zeroValid ; [ .. | eassumption].
     - now eapply alphacongValidSubst.
   Qed.
   
@@ -1323,14 +1325,15 @@ Lemma FundTySplit : forall (wl : wfLCon)
   (A : term)
   (n : nat)
   (ne : not_in_LCon wl n),
-  FundTy (wl,,l (ne, true)) Γ A ->
-  FundTy (wl,,l (ne, false)) Γ A ->
+  (forall m, FundTy (wl,,l (ne, m)) Γ A) ->
   FundTy wl Γ A.
 Proof.
-  intros ????? [] [].
+  intros ????? Hyp.
   unshelve econstructor.
-  2: now unshelve eapply validTySplit.
-  now eapply WfCSplit.
+  2: unshelve eapply validTySplit ; try eassumption.
+  2: intros m ; destruct (Hyp m) ; now eauto.
+  2: cbn ; intros m ; now destruct (Hyp m).
+  eapply WfCSplit ;intros m ; now destruct (Hyp m).
 Qed.
 
 Lemma FundTmSplit : forall (wl : wfLCon)
@@ -1338,15 +1341,19 @@ Lemma FundTmSplit : forall (wl : wfLCon)
   (A t : term)
   (n : nat)
   (ne : not_in_LCon wl n),
-  FundTm (wl,,l (ne, true)) Γ A t ->
-  FundTm (wl,,l (ne, false)) Γ A t ->
+  (forall m, FundTm (wl,,l (ne, m)) Γ A t) ->
   FundTm wl Γ A t.
 Proof.
-  intros ?????? [] [].
+  intros ?????? Hyp.
   unshelve econstructor.
-  - now eapply WfCSplit.
-  - now eapply validTySplit.
-  - unshelve eapply validTmSplit' ; eassumption.
+  - eapply WfCSplit ; intros m ; now destruct (Hyp m).
+  - eapply validTySplit ; intros m ; destruct (Hyp m).
+    irrValid.
+  - unshelve eapply validTmSplit' ; [ | eassumption | ..].
+    all: intros m ;destruct (Hyp m) ; eauto.
+    all: irrValid.
+    Unshelve.
+    intros m ; now destruct (Hyp m).
 Qed.
 
 Lemma FundTyEqSplit : forall (wl : wfLCon)
@@ -1354,16 +1361,21 @@ Lemma FundTyEqSplit : forall (wl : wfLCon)
   (A B : term)
   (n : nat)
   (ne : not_in_LCon wl n),
-  FundTyEq (wl,,l (ne, true)) Γ A B ->
-  FundTyEq (wl,,l (ne, false)) Γ A B ->
+  (forall m, FundTyEq (wl,,l (ne, m)) Γ A B) ->
   FundTyEq wl Γ A B.
 Proof.
-  intros ?????? [] [].
+  intros ?????? Hyp.
   unshelve econstructor.
-  - now eapply WfCSplit.
-  - now eapply validTySplit.
-  - now eapply validTySplit.
-  - now unshelve eapply validEqTySplit'.
+  - now eapply WfCSplit ; intros m ; now destruct (Hyp m).
+  - eapply validTySplit ; intros m ; destruct (Hyp m).
+    irrValid.
+  - eapply validTySplit ; intros m ; destruct (Hyp m).
+    irrValid.
+  - unshelve eapply validEqTySplit' ; try eassumption.
+    all: intros m ;destruct (Hyp m) ; eauto.
+    all: irrValid.
+    Unshelve.
+    all: intros m ; now destruct (Hyp m).
 Qed.
 
 Lemma FundTmEqSplit : forall (wl : wfLCon)
@@ -1371,17 +1383,19 @@ Lemma FundTmEqSplit : forall (wl : wfLCon)
   (t u A : term)
   (n : nat)
   (ne : not_in_LCon wl n),
-  FundTmEq (wl,,l (ne, true)) Γ A t u ->
-  FundTmEq (wl,,l (ne, false)) Γ A t u ->
+  (forall m, FundTmEq (wl,,l (ne, m)) Γ A t u) ->
   FundTmEq wl Γ A t u.
 Proof.
-  intros ??????? [] [].
+  intros ??????? Hyp.
   unshelve econstructor.
-  - now eapply WfCSplit.
-  - now eapply validTySplit.
-  - now eapply validTmSplit'.
-  - now eapply validTmSplit'.
-  - now eapply validEqTmSplit'.
+  - now eapply WfCSplit ; intros m ; now destruct (Hyp m).
+  - eapply validTySplit ; intros m ; destruct (Hyp m) ; now irrValid.
+  - eapply validTmSplit' ; intros m ; destruct (Hyp m) ; now irrValid.
+  - eapply validTmSplit' ; intros m ; destruct (Hyp m) ; now irrValid.
+  - eapply validEqTmSplit' ; intros m ; destruct (Hyp m) ; now irrValid.
+    Unshelve.
+    all: intros m ; try now destruct (Hyp m).
+    all: destruct (Hyp m) ; now irrValid.
 Qed.  
   
   Lemma Fundamental (wl : wfLCon) :
