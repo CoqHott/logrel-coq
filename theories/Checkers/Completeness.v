@@ -249,20 +249,19 @@ Proof.
     all: now econstructor ; [exact (IHm tt)|constructor].
 Qed.
 
-(* Corollary implem_conv_complete `{!ConvImplies de al} Γ A B :
-  [Γ |-[de] A ≅ B] ->
+Import BundledTypingData.
+
+Corollary implem_conv_complete_ty Γ A B :
+  [Γ |-[bn] A ≅ B] ->
   graph tconv (Γ,A,B) ok.
 Proof.
   intros.
   unfold graph.
   simp tconv ; cbn.
   econstructor ; cbn.
-  - apply _implem_conv_complete.
-    split.
-    1-3: boundary.
-    now apply ty_conv_compl.
+  - now apply implem_conv_complete.
   - econstructor.
-Qed. *)
+Qed.
 
 End ConversionComplete.
 
