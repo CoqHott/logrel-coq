@@ -160,14 +160,80 @@ with alphaRed_auxnat' {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
        | @NatRedTm.neR _ _ _ _ _ _ _ _ _ _ _ ne _ => ne
        end.
 
+Lemma ty_nSucc wl Γ k n :
+  [Γ |-[ ta ] n : tNat]< wl > ->
+  [Γ |-[ ta ] (nSucc k n) : tNat]< wl > .
+Proof.
+  revert n ; induction k ; intros n Hn ; [now auto | ].
+  cbn ; eapply ty_succ.
+  now eapply IHk.
+Qed.
+
+Lemma convtm_nSucc wl Γ k n n' :
+  [Γ |-[ ta ] n ≅ n' : tNat ]< wl > ->
+  [Γ |-[ ta ] nSucc k n ≅ nSucc k n' : tNat ]< wl >.
+Proof.
+  induction k ; intros Hn ; [now auto | ].
+  cbn ; eapply convtm_succ.
+  now eapply IHk.
+Qed.
+  
+Lemma nSucc_Red {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
+  n (Hn: [Γ ||-Nat n : tNat | NNN ]< wl >) :
+  forall k,
+    [Γ ||-Nat nSucc k n : tNat | NNN ]< wl >
+with nSucc_NatProp {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
+       n (Hn: NatProp NNN n) :
+  forall k,
+    NatProp NNN (nSucc k n).
+Proof.
+  - induction k ; cbn ; [now auto | ].
+    econstructor.
+    + eapply redtmwf_refl, ty_succ, ty_nSucc.
+      destruct Hn, red.
+      now eapply redtm_ty_src.
+    + eapply convtm_succ, convtm_nSucc.
+      destruct Hn, red.
+      eapply convtm_exp ; try eassumption ; now gen_typing.
+    + now econstructor.
+  - induction k ; cbn ; [now auto | ].
+    econstructor.
+    econstructor ; [ | | eassumption].
+    + eapply redtmwf_refl, ty_nSucc.
+      destruct Hn.
+      * destruct NNN, red ; cbn in *.
+        gen_typing.
+      * destruct n0, red ; cbn in *.
+        gen_typing.
+      * now destruct r.
+    + eapply convtm_nSucc.
+      destruct Hn.
+      * destruct NNN, red ; cbn in * ; gen_typing.
+      * destruct n0, red ;  cbn in *.
+        eapply convtm_succ, convtm_exp ; try eassumption ; now gen_typing.
+      * destruct r.
+        eapply convtm_convneu ; [ | assumption].
+        now constructor.
+Qed.
+
+Lemma WnSucc_Red {wl Γ l n NNN} :
+  forall k,
+    W[ Γ ||-< l > n : tNat | LogtoW (LRNat_ _ NNN) ]< wl > ->
+    W[ Γ ||-< l > nSucc k n : tNat | LogtoW (LRNat_ _ NNN) ]< wl > .
+Proof.
+  intros k [d Hd] ; exists d.
+  intros wl' Ho Ho' ; cbn.
+  now eapply nSucc_Red, Hd.
+Qed.  
+
 Fixpoint alphaRed_auxnatred {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
   n (Hn: [Γ ||-Nat n : tNat | NNN ]< wl >) {struct Hn} :
   forall k,
-    [Γ |-[ ta ] tAlpha (nSucc k n) :⤳*: tAlpha (nSucc k (alphaRed_auxnat n Hn)) : tBool ]< wl >
+    [Γ |-[ ta ] tAlpha (nSucc k n) :⤳*: tAlpha (nSucc k (alphaRed_auxnat n Hn)) : tNat ]< wl >
 with alphaRed_auxnatred' {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
        n (Hn: NatProp NNN n) {struct Hn}:
   forall k,
-  [Γ |-[ ta ] tAlpha (nSucc k n) :⤳*: tAlpha (nSucc k (alphaRed_auxnat' n Hn)) : tBool ]< wl >.
+  [Γ |-[ ta ] tAlpha (nSucc k n) :⤳*: tAlpha (nSucc k (alphaRed_auxnat' n Hn)) : tNat ]< wl >.
 Proof.
   - destruct Hn ; cbn ; intros k.
     etransitivity.
@@ -190,54 +256,45 @@ Proof.
 Qed.
 
 Fixpoint alphaRed_aux {wl l Γ} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >}
   n (Hn: [Γ ||-Nat n : tNat | NNN ]< wl >) {struct Hn} :
   forall k,
-    W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat n Hn)) : _ | LogtoW (LRBool_ l NNB) ]< wl >
+    W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat n Hn)) : _ | LogtoW (LRNat_ l NNN) ]< wl >
 with alphaRed_aux' {wl l Γ} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >}
   n (Hn: NatProp NNN n) {struct Hn}:
   forall k,
-    W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat' n Hn)) : _ | LogtoW (LRBool_ l NNB) ]< wl >.
+    W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat' n Hn)) : _ | LogtoW (LRNat_ l NNN) ]< wl >.
 Proof.
   - destruct Hn ; cbn.
     now eapply alphaRed_aux'.
-  - pose (help := LRBool_ l NNB) ; escape.
+  - pose (help := LRNat_ l NNN) ; escape.
     destruct Hn ; cbn ; intros k.
     + change (nSucc k tZero) with (nat_to_term k).
-      destruct (decidInLCon wl k) as [ | | me].
-      1,2: unshelve econstructor ; [constructor 1 | intros wl' Ho Ho'].
-      * exists tTrue.
-        3: now constructor.
-        2: eapply convtm_Ltrans ; [now eapply over_tree_le | now gen_typing].
-        change tTrue with (bool_to_term true).
-        eapply redtmwf_Ltrans ; [exact Ho' | ].
-        econstructor ; [cbn ; now gen_typing | ] .
-        eapply redtm_alpha ; eauto ; now gen_typing.
-      * exists tFalse.
-        3: now constructor.
-        2: eapply convtm_Ltrans ; [now eapply over_tree_le | now gen_typing].
-        change tFalse with (bool_to_term false).
-        eapply redtmwf_Ltrans ; [exact Ho' | ].
-        econstructor ; [cbn ; now gen_typing | ] .
-        eapply redtm_alpha ; eauto ; now gen_typing.
-      * exists (ϝnode _ (ne := me) (leaf _) (leaf _)).
+      destruct (decidInLCon wl k) as [ | notin].
+      1: unshelve econstructor ; [constructor 1 | intros wl' Ho Ho'].
+      * exists (nat_to_term m).
+        3: unfold nat_to_term ; eapply nSucc_NatProp ; now constructor.
+        -- cbn in *.
+           eapply redtmwf_Ltrans ; [exact Ho' | ].
+           econstructor.
+           1: unfold nat_to_term ; eapply ty_nSucc ; now gen_typing.
+           eapply redtm_alpha ; eauto ; now gen_typing.
+        -- unfold nat_to_term ; eapply convtm_nSucc.
+           eapply convtm_Ltrans ; [exact Ho' | ] ; now gen_typing.
+      * exists (ϝnode _ (ne := notin) (fun m => leaf _)).
         intros wl' Ho Ho' ; cbn in *.
-        destruct (decidInLCon wl' k) as [i | i | ne] ; [.. | now inversion Ho'].
-        -- exists tTrue ; clear Ho'.
-           3: now constructor.
-           2: eapply convtm_Ltrans ; [ eassumption | now gen_typing].
-           change tTrue with (bool_to_term true).
-           econstructor ; [eapply ty_Ltrans ; [eauto | ] ; cbn ; now gen_typing | ].
-           eapply redtm_alpha ; eauto.
-           eapply wfc_Ltrans ; eauto ; now gen_typing.
-        -- exists tFalse ; clear Ho'.
-           3: now constructor.
-           2: eapply convtm_Ltrans ; [ eassumption | now gen_typing].
-           change tFalse with (bool_to_term false).
-           econstructor ; [eapply ty_Ltrans ; [eauto | ] ; cbn ; now gen_typing | ].
-           eapply redtm_alpha ; eauto.
-           eapply wfc_Ltrans ; eauto ; now gen_typing.
+        destruct (decidInLCon wl' k) as [m i | ne] ; [.. | now inversion Ho'].
+        pose (f := @LCon_le_step  _ _ _ m notin (wfLCon_le_id _)).
+        exists (nat_to_term m).
+        3: unfold nat_to_term ; eapply nSucc_NatProp ; now constructor.
+        -- cbn in *.
+           eapply redtmwf_Ltrans ; [exact Ho' | ].
+           econstructor ; [eapply ty_Ltrans ; try eassumption | ].
+           1: unfold nat_to_term ; eapply ty_nSucc ; now gen_typing.
+           eapply redtm_alpha ; eauto ; [ | now constructor].
+           eapply wfc_Ltrans ; try eassumption.
+           now gen_typing.
+        -- unfold nat_to_term ; eapply convtm_nSucc.
+           eapply convtm_Ltrans ; [exact Ho | ] ; now gen_typing.
     + replace (nSucc k (tSucc (alphaRed_auxnat n n0))) with (nSucc (S k) (alphaRed_auxnat n n0))
         by (induction k; [reflexivity | cbn ; now f_equal ]).
       now eapply alphaRed_aux.
@@ -249,29 +306,26 @@ Proof.
       all: now eapply convneu_alpha.
 Qed.      
   
-Lemma alphaRed {wl Γ l n} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >} :
+Lemma alphaRed {wl Γ l n} {NNN : [Γ ||-Nat tNat]< wl >} :
   [Γ ||-<l> n : _ | LRNat_ l NNN]< wl > ->
-  W[Γ ||-<l> tAlpha n : _ | LogtoW (LRBool_ l NNB)]< wl >.
+  W[Γ ||-<l> tAlpha n : _ | LogtoW (LRNat_ l NNN)]< wl >.
 Proof.
   intros Hn.
   pose (Help1 := alphaRed_auxnatred _ Hn 0).
-  pose (Help2 := alphaRed_aux (l := l) (NNB := NNB) _ Hn 0) ; cbn in *.
+  pose (Help2 := alphaRed_aux (l := l) _ Hn 0) ; cbn in *.
   eapply WredwfSubstTerm.
   all: eassumption.
 Qed.
 
-Lemma WalphaRed {wl Γ l n} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >} :
+Lemma WalphaRed {wl Γ l n} {NNN : [Γ ||-Nat tNat]< wl >} :
   W[Γ ||-<l> n : _ | LogtoW (LRNat_ l NNN)]< wl > ->
-  W[Γ ||-<l> tAlpha n : _ | LogtoW (LRBool_ l NNB)]< wl >.
+  W[Γ ||-<l> tAlpha n : _ | LogtoW (LRNat_ l NNN)]< wl >.
 Proof.
   intros [d Hd].
-  eapply (TreeTmSplit d); intros wl' Ho Ho'.
+  eapply (TreeTmSplit d); intros wl' Ho HN.
   Wirrelevance0 ; [reflexivity | now eapply alphaRed, Hd].
   Unshelve.
-  2: cbn ; now eapply over_tree_le.
-  constructor ; eapply redtywf_refl ; now Wescape.
+  cbn ; now eapply over_tree_le.
 Qed.
 
 Lemma NatProp_tZero_inv {wl Γ} {NNN : [Γ ||-Nat tNat]< wl >}
@@ -310,22 +364,20 @@ Proof.
 Qed.
    
 Fixpoint alphaRedEq_aux {wl l Γ} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >}
   n n' (Hn: [Γ ||-Nat n : tNat | NNN ]< wl >)
   (Hn': [Γ ||-Nat n' : tNat | NNN ]< wl >)
   (Hneq: [Γ ||-Nat n ≅ n' : tNat | NNN ]< wl >)
   {struct Hneq} :
   forall k,
     W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat n Hn)) ≅
-                 tAlpha (nSucc k (alphaRed_auxnat n' Hn')): _ | LogtoW (LRBool_ l NNB) ]< wl >
+                 tAlpha (nSucc k (alphaRed_auxnat n' Hn')): _ | LogtoW (LRNat_ l NNN) ]< wl >
 with alphaRedEq_aux' {wl l Γ} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >}
   n n' (Hn: NatProp NNN n)
   (Hn': NatProp NNN n')
   (Hneq: NatPropEq NNN n n') {struct Hneq}:
   forall k,
     W[Γ ||-<l> tAlpha (nSucc k (alphaRed_auxnat' n Hn)) ≅
-                 tAlpha (nSucc k (alphaRed_auxnat' n' Hn')) : _ | LogtoW (LRBool_ l NNB) ]< wl >.
+                 tAlpha (nSucc k (alphaRed_auxnat' n' Hn')) : _ | LogtoW (LRNat_ l NNN) ]< wl >.
 Proof.
   - destruct Hneq, Hn, Hn' ; intros k.
     epose proof (Heq := redtmwf_det (NatProp_whnf prop0) (fst (NatPropEq_whnf prop)) red redL).
@@ -350,7 +402,7 @@ Proof.
       destruct Hn'.
       1,2: symmetry in conv.
       1,2: eapply convneu_whne in conv ; now inversion conv.
-      pose (help := LRBool_ l NNB) ; escape ; cbn.
+      pose (help := LRNat_ l NNN) ; escape ; cbn.
       eapply Wreflect.
       1: now eapply Wcompleteness.
       1,2: eapply ty_alpha.
@@ -358,30 +410,28 @@ Proof.
       now eapply convneu_alpha.
 Qed.
 
-Lemma alphaRedEq {wl Γ l n n'} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >} :
+Lemma alphaRedEq {wl Γ l n n'} {NNN : [Γ ||-Nat tNat]< wl >} :
   [Γ ||-<l> n : _ | LRNat_ l NNN]< wl > ->
   [Γ ||-<l> n' : _ | LRNat_ l NNN]< wl > ->
   [Γ ||-<l> n ≅ n' : _ | LRNat_ l NNN]< wl > ->
-  W[Γ ||-<l> tAlpha n ≅ tAlpha n': _ | LogtoW (LRBool_ l NNB)]< wl >.
+  W[Γ ||-<l> tAlpha n ≅ tAlpha n': _ | LogtoW (LRNat_ l NNN)]< wl >.
 Proof.
   intros Hn Hn' Heq.
   pose (Help1 := alphaRed_auxnatred _ Hn 0).
-  pose (Help2 := alphaRed_aux (l := l) (NNB := NNB) _ Hn 0) ; cbn in *.
+  pose (Help2 := alphaRed_aux (l := l) _ Hn 0) ; cbn in *.
   pose (Help3 := alphaRed_auxnatred _ Hn' 0).
-  pose (Help4 := alphaRed_aux (l := l) (NNB := NNB) _ Hn' 0) ; cbn in *.
-  pose (Help5 := alphaRedEq_aux (l := l) (NNB := NNB) _ _ Hn Hn' Heq 0).
+  pose (Help4 := alphaRed_aux (l := l) _ Hn' 0) ; cbn in *.
+  pose (Help5 := alphaRedEq_aux (l := l) _ _ Hn Hn' Heq 0).
   eapply WtransEqTerm; [ | eapply WtransEqTerm, WLRTmEqSym].
   2: eassumption.
   all: eapply WredwfSubstTerm ; cycle 1 ; eassumption.
 Qed.
 
-Lemma WalphaRedEq {wl Γ l n n'} {NNN : [Γ ||-Nat tNat]< wl >}
-  {NNB : [Γ ||-Bool tBool]< wl >} :
+Lemma WalphaRedEq {wl Γ l n n'} {NNN : [Γ ||-Nat tNat]< wl >}:
   W[Γ ||-<l> n : _ | LogtoW (LRNat_ l NNN)]< wl > ->
   W[Γ ||-<l> n' : _ | LogtoW (LRNat_ l NNN)]< wl > ->
   W[Γ ||-<l> n ≅ n' : _ | LogtoW (LRNat_ l NNN)]< wl > ->
-  W[Γ ||-<l> tAlpha n ≅ tAlpha n': _ | LogtoW (LRBool_ l NNB)]< wl >.
+  W[Γ ||-<l> tAlpha n ≅ tAlpha n': _ | LogtoW (LRNat_ l NNN)]< wl >.
 Proof.
   intros Hn Hn' Hneq.
   eapply (TreeTmEqSplit _); intros wl' Ho Ho'.
@@ -390,17 +440,16 @@ Proof.
   - eapply Hn', over_tree_fusion_r, over_tree_fusion_l ; exact Ho.
   - eapply over_tree_fusion_r ; exact Ho.
     Unshelve.
-    2: cbn ; now eapply over_tree_le.
-    constructor ; eapply redtywf_refl ; now Wescape.
+    cbn ; now eapply over_tree_le.
 Qed.
 
 
 Lemma alphaValid {wl Γ l n} (VΓ : [||-v Γ]< wl >) 
   (Vn : [Γ ||-v<l> n : tNat | VΓ | natValid VΓ]< wl >) :
-  [Γ ||-v<l> tAlpha n : tBool | VΓ | boolValid VΓ]< wl >.
+  [Γ ||-v<l> tAlpha n : tNat | VΓ | natValid VΓ]< wl >.
 Proof.
   constructor; intros; cbn.
-  - instValid Vσ ; unshelve eapply WalphaRed ; [ | eassumption].
+  - instValid Vσ ; unshelve eapply WalphaRed ; eassumption.
   - instAllValid Vσ Vσ' Vσσ'; now eapply WalphaRedEq.
 Qed.
 
@@ -409,7 +458,7 @@ Lemma alphacongValid {wl Γ l n n'} (VΓ : [||-v Γ]< wl >)
   (Vn : [Γ ||-v<l> n : tNat | VΓ | natValid VΓ]< wl >)
   (Vn' : [Γ ||-v<l> n' : tNat | VΓ | natValid VΓ]< wl >)
   (Veqn : [Γ ||-v<l> n ≅ n' : tNat | VΓ | natValid VΓ]< wl >) :
-  [Γ ||-v<l> tAlpha n ≅ tAlpha n' : tBool | VΓ | boolValid VΓ]< wl >.
+  [Γ ||-v<l> tAlpha n ≅ tAlpha n' : tNat | VΓ | natValid VΓ]< wl >.
 Proof.
   constructor; intros; cbn; instValid Vσ; now eapply WalphaRedEq.
 Qed.
@@ -421,22 +470,16 @@ Proof.
   intros ; now rewrite IHn.
 Qed.
 
-Lemma bool_to_term_subst :
-  forall b (σ : nat -> term), (bool_to_term b)[σ] = bool_to_term b.
-Proof.
-  induction b ; cbn in * ; reflexivity. 
-Qed.  
-
 Lemma alphacongValidSubst {wl Γ n b} (VΓ : [||-v Γ]< wl >) (Hin : in_LCon wl n b) :
-  [Γ ||-v< one > tAlpha (nat_to_term n) ≅ bool_to_term b : tBool | VΓ | boolValid VΓ ]< wl >.
+  [Γ ||-v< one > tAlpha (nat_to_term n) ≅ nat_to_term b : tNat | VΓ | natValid VΓ ]< wl >.
 Proof.
   unshelve econstructor.
   intros ; eapply WredSubstTerm.
-  - destruct b ; cbn.
-    + unshelve eapply trueValid ; cycle 2 ; eassumption.
-    + unshelve eapply falseValid ; cycle 2 ; eassumption.
+  - unfold nat_to_term.
+    rewrite nSucc_subst ; cbn.
+    unshelve eapply WnSucc_Red, zeroValid ; cycle 2 ; eassumption.
   - cbn ; unfold nat_to_term.
-    rewrite nSucc_subst, bool_to_term_subst ; cbn.
+    do 2 rewrite nSucc_subst ; cbn.
     unshelve eapply redtm_alpha ; [assumption | ].
     now eapply f.
 Qed.    

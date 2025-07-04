@@ -22,7 +22,6 @@ Section Definitions.
   to bother with elimination of propositions, we put them in the Type sort. *)
 
   (** **** Context well-formation *)
-  About bool_to_term.
   Inductive WfContextDecl (l : wfLCon) : context -> Type :=
       | connil : [ |- ε ]< l >
       | concons {Γ A} : 

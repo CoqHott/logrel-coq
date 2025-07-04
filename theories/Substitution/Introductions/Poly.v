@@ -188,8 +188,8 @@ Qed.
       revert HG ; pattern wl.
       unshelve eapply split_to_over_tree ; [exact (DTree_fusion _ (WPol wl Γ l F G PFG) d) | | ].
       + intros ; unshelve eapply EqSplit' ; eauto.
-        1,2: eapply WLtrans ; [ | eassumption].
-        1,2: now eapply LCon_le_step, wfLCon_le_id.
+        1: intros m; eapply WLtrans ; [ | eassumption].
+        now eapply LCon_le_step, wfLCon_le_id.
       + intros wl'  Hover HG.
         pose proof (Ho := over_tree_fusion_l Hover).
         pose proof (Ho' := over_tree_fusion_r Hover).

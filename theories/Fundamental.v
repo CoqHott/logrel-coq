@@ -11,6 +11,7 @@ Set Universe Polymorphism.
 Set Polymorphic Inductive Cumulativity.
 Set Printing Primitive Projection Parameters.
 
+
 (** ** Definitions *)
 
 (** These records bundle together all the validity data: they do not only say that the
