@@ -290,7 +290,7 @@ holds, some of its components are themselves well-formed. For instance, if [Γ |
 [Γ |- t : A ]. The tactic boundary automates usage of these lemmas. *)
 
 (** We cannot prove yet that all boundaries are well-typed: this needs stability of typing
-by substitution and injectivity of type constructors, which we get from the logical relation.*)
+by substitution (c.f. SubstConsequences.v), which we get from the logical relation (even if that's provable "by hand").*)
 
 Section Boundaries.
   Import DeclarativeTypingData.
