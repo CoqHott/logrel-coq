@@ -1,5 +1,6 @@
 (** * LogRel.Syntax.Weakening: definition of well-formed weakenings, and some properties. *)
 From Stdlib Require Import Lia ssrbool.
+From Equations Require Import Equations.
 From LogRel Require Import Utils AutoSubst.Extra Notations.
 From LogRel.Syntax Require Import BasicAst Context NormalForms.
 
@@ -13,6 +14,8 @@ Inductive weakening : Set :=
   | _wk_empty : weakening
   | _wk_step (w : weakening) : weakening
   | _wk_up (w : weakening) : weakening.
+
+Equations Derive NoConfusion EqDec for weakening.
 
 Fixpoint _wk_id (Γ : context) : weakening :=
   match Γ with
@@ -87,6 +90,18 @@ Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_up {Γ Δ : context} (A : term) (ρ : weakening) :
     well_weakening ρ Γ Δ -> well_weakening (_wk_up ρ) (Γ,, A⟨ρ⟩) (Δ,, A).
 
+Derive Signature for well_weakening.
+
+Lemma well_wk_irr : forall ρ Γ Δ (w1 w2 : well_weakening ρ Γ Δ), w1 = w2.
+Proof.
+induction w1.
++ now depelim w2.
++ now depelim w2; now f_equal.
++ depelim w2.
+  replace e' with (@eq_refl _ (A⟨ρ⟩)) in H by apply eqdec_uip, term_EqDec.
+  cbn in H; rewrite H; now f_equal.
+Qed.
+
 Lemma well_wk_id (Γ : context) : well_weakening (_wk_id Γ) Γ Γ.
 Proof.
   induction Γ as [|d].
@@ -120,6 +135,13 @@ Qed.
 Arguments wk_well_wk : clear implicits.
 Arguments Build_wk_well_wk : clear implicits.
 Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
+
+Lemma wk_well_wk_wk_eq : forall Γ Δ (ρ1 ρ2 : Γ ≤ Δ),
+  ρ1.(wk) = ρ2.(wk) -> ρ1 = ρ2.
+Proof.
+intros Γ Δ [ρ1 w1] [ρ2 w2]; cbn; intros <-.
+assert (e : w1 = w2) by apply well_wk_irr; now destruct e.
+Qed.
 
 #[global] Hint Resolve well_wk : core.
 
