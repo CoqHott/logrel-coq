@@ -452,15 +452,46 @@ Lemma wk_idElim {A x P hr y e Δ Γ} (ρ : Δ ≤ Γ) :
   tIdElim A⟨ρ⟩ x⟨ρ⟩ P⟨wk_up (tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) (wk_up A ρ)⟩ hr⟨ρ⟩ y⟨ρ⟩ e⟨ρ⟩ = (tIdElim A x P hr y e)⟨ρ⟩.
 Proof.  now cbn. Qed.
 
-Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ =1 ρ.
-Proof. now bsimpl. Qed.
+Lemma wk_to_ren_inj : forall Γ Δ (ρ1 ρ2 : Γ ≤ Δ), wk_to_ren ρ1 =1 wk_to_ren ρ2 -> ρ1 = ρ2.
+Proof.
+intros * Heq; apply wk_well_wk_wk_eq.
+destruct ρ1 as [ρ1 wρ1], ρ2 as [ρ2 wρ2]; cbn in *.
+revert Γ Δ wρ1 ρ2 wρ2 Heq.
+induction ρ1; intros Γ Δ wρ1 ρ2 wρ2 Heq; cbn in *.
++ destruct ρ2; cbn in *; first [reflexivity|exfalso].
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
++ destruct ρ2; cbn in *; first [apply f_equal|exfalso].
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
+    eapply IHρ1; tea.
+    intros n; specialize (Heq n).
+    now injection Heq.
+  - specialize (Heq 0); discriminate Heq.
++ destruct ρ2; cbn in *; first [apply f_equal|exfalso].
+  - depelim wρ1; depelim wρ2.
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
+    eapply IHρ1; tea.
+    intros n; specialize (Heq (S n)); cbn in Heq.
+    now injection Heq.
+Qed.
 
-Lemma wk_comp_runit {Γ Δ} (ρ : Δ ≤ Γ) : ρ ∘w wk_id =1 ρ.
-Proof. now bsimpl. Qed.
+Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ = ρ.
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
+
+Lemma wk_comp_runit {Γ Δ} (ρ : Δ ≤ Γ) : ρ ∘w wk_id = ρ.
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
 
 Lemma wk_comp_assoc {Γ Δ Ξ ζ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) (ρ'' : ζ ≤ Ξ) :
-  (ρ'' ∘w ρ') ∘w ρ =1 ρ'' ∘w (ρ' ∘w ρ).
-Proof. now bsimpl. Qed.
+  (ρ'' ∘w ρ') ∘w ρ = ρ'' ∘w (ρ' ∘w ρ).
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
 
 Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
 Proof. intros; now rewrite 2!wk1_ren_on. Qed.
