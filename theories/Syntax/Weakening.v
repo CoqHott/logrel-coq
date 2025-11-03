@@ -1,5 +1,6 @@
 (** * LogRel.Syntax.Weakening: definition of well-formed weakenings, and some properties. *)
 From Stdlib Require Import Lia ssrbool.
+From Equations Require Import Equations.
 From LogRel Require Import Utils AutoSubst.Extra Notations.
 From LogRel.Syntax Require Import BasicAst Context NormalForms.
 
@@ -13,6 +14,8 @@ Inductive weakening : Set :=
   | _wk_empty : weakening
   | _wk_step (w : weakening) : weakening
   | _wk_up (w : weakening) : weakening.
+
+Equations Derive NoConfusion EqDec for weakening.
 
 Fixpoint _wk_id (Γ : context) : weakening :=
   match Γ with
@@ -87,6 +90,18 @@ Inductive well_weakening : weakening -> context -> context -> Type :=
   | well_up {Γ Δ : context} (A : term) (ρ : weakening) :
     well_weakening ρ Γ Δ -> well_weakening (_wk_up ρ) (Γ,, A⟨ρ⟩) (Δ,, A).
 
+Derive Signature for well_weakening.
+
+Lemma well_wk_irr : forall ρ Γ Δ (w1 w2 : well_weakening ρ Γ Δ), w1 = w2.
+Proof.
+induction w1.
++ now depelim w2.
++ now depelim w2; now f_equal.
++ depelim w2.
+  replace e' with (@eq_refl _ (A⟨ρ⟩)) in H by apply eqdec_uip, term_EqDec.
+  cbn in H; rewrite H; now f_equal.
+Qed.
+
 Lemma well_wk_id (Γ : context) : well_weakening (_wk_id Γ) Γ Γ.
 Proof.
   induction Γ as [|d].
@@ -120,6 +135,13 @@ Qed.
 Arguments wk_well_wk : clear implicits.
 Arguments Build_wk_well_wk : clear implicits.
 Notation "Γ ≤ Δ" := (wk_well_wk Γ Δ).
+
+Lemma wk_well_wk_wk_eq : forall Γ Δ (ρ1 ρ2 : Γ ≤ Δ),
+  ρ1.(wk) = ρ2.(wk) -> ρ1 = ρ2.
+Proof.
+intros Γ Δ [ρ1 w1] [ρ2 w2]; cbn; intros <-.
+assert (e : w1 = w2) by apply well_wk_irr; now destruct e.
+Qed.
 
 #[global] Hint Resolve well_wk : core.
 
@@ -430,15 +452,46 @@ Lemma wk_idElim {A x P hr y e Δ Γ} (ρ : Δ ≤ Γ) :
   tIdElim A⟨ρ⟩ x⟨ρ⟩ P⟨wk_up (tId A⟨@wk1 Γ A⟩ x⟨@wk1 Γ A⟩ (tRel 0)) (wk_up A ρ)⟩ hr⟨ρ⟩ y⟨ρ⟩ e⟨ρ⟩ = (tIdElim A x P hr y e)⟨ρ⟩.
 Proof.  now cbn. Qed.
 
-Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ =1 ρ.
-Proof. now bsimpl. Qed.
+Lemma wk_to_ren_inj : forall Γ Δ (ρ1 ρ2 : Γ ≤ Δ), wk_to_ren ρ1 =1 wk_to_ren ρ2 -> ρ1 = ρ2.
+Proof.
+intros * Heq; apply wk_well_wk_wk_eq.
+destruct ρ1 as [ρ1 wρ1], ρ2 as [ρ2 wρ2]; cbn in *.
+revert Γ Δ wρ1 ρ2 wρ2 Heq.
+induction ρ1; intros Γ Δ wρ1 ρ2 wρ2 Heq; cbn in *.
++ destruct ρ2; cbn in *; first [reflexivity|exfalso].
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
++ destruct ρ2; cbn in *; first [apply f_equal|exfalso].
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
+    eapply IHρ1; tea.
+    intros n; specialize (Heq n).
+    now injection Heq.
+  - specialize (Heq 0); discriminate Heq.
++ destruct ρ2; cbn in *; first [apply f_equal|exfalso].
+  - depelim wρ1; depelim wρ2.
+  - specialize (Heq 0); discriminate Heq.
+  - depelim wρ1; depelim wρ2.
+    eapply IHρ1; tea.
+    intros n; specialize (Heq (S n)); cbn in Heq.
+    now injection Heq.
+Qed.
 
-Lemma wk_comp_runit {Γ Δ} (ρ : Δ ≤ Γ) : ρ ∘w wk_id =1 ρ.
-Proof. now bsimpl. Qed.
+Lemma wk_comp_lunit {Γ Δ} (ρ : Δ ≤ Γ) : wk_id ∘w ρ = ρ.
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
+
+Lemma wk_comp_runit {Γ Δ} (ρ : Δ ≤ Γ) : ρ ∘w wk_id = ρ.
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
 
 Lemma wk_comp_assoc {Γ Δ Ξ ζ} (ρ : Δ ≤ Γ) (ρ' : Ξ ≤ Δ) (ρ'' : ζ ≤ Ξ) :
-  (ρ'' ∘w ρ') ∘w ρ =1 ρ'' ∘w (ρ' ∘w ρ).
-Proof. now bsimpl. Qed.
+  (ρ'' ∘w ρ') ∘w ρ = ρ'' ∘w (ρ' ∘w ρ).
+Proof.
+apply wk_to_ren_inj; now bsimpl.
+Qed.
 
 Lemma wk1_irr {Γ Γ' A A' t} : t⟨@wk1 Γ A⟩ = t⟨@wk1 Γ' A'⟩.
 Proof. intros; now rewrite 2!wk1_ren_on. Qed.
